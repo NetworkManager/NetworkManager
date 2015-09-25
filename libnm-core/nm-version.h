@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 Red Hat, Inc.
+ * Copyright 2011, 2015 Red Hat, Inc.
  */
 
 #ifndef NM_VERSION_H
@@ -23,56 +23,9 @@
 
 #include <glib.h>
 
-/**
- * NM_MAJOR_VERSION:
- *
- * Evaluates to the major version number of NetworkManager which this source
- * is compiled against.
- */
-#define NM_MAJOR_VERSION (@NM_MAJOR_VERSION@)
-
-/**
- * NM_MINOR_VERSION:
- *
- * Evaluates to the minor version number of NetworkManager which this source
- * is compiled against.
- */
-#define NM_MINOR_VERSION (@NM_MINOR_VERSION@)
-
-/**
- * NM_MICRO_VERSION:
- *
- * Evaluates to the micro version number of NetworkManager which this source
- * compiled against.
- */
-#define NM_MICRO_VERSION (@NM_MICRO_VERSION@)
-
-/**
- * NM_CHECK_VERSION:
- * @major: major version (e.g. 1 for version 1.2.5)
- * @minor: minor version (e.g. 2 for version 1.2.5)
- * @micro: micro version (e.g. 5 for version 1.2.5)
- *
- * Returns: %TRUE if the version of the NetworkManager header files
- * is the same as or newer than the passed-in version.
- */
-#define NM_CHECK_VERSION(major,minor,micro)                         \
-    (NM_MAJOR_VERSION > (major) ||                                  \
-     (NM_MAJOR_VERSION == (major) && NM_MINOR_VERSION > (minor)) || \
-     (NM_MAJOR_VERSION == (major) && NM_MINOR_VERSION == (minor) && NM_MICRO_VERSION >= (micro)))
-
+#include <nm-version-macros.h>
 
 /* Deprecation / Availability macros */
-
-#define NM_ENCODE_VERSION(major,minor,micro) ((major) << 16 | (minor) << 8 | (micro))
-
-#define NM_VERSION_0_9_8  (NM_ENCODE_VERSION (0, 9, 8))
-#define NM_VERSION_0_9_10 (NM_ENCODE_VERSION (0, 9, 10))
-#define NM_VERSION_1_0    (NM_ENCODE_VERSION (1, 0, 0))
-#define NM_VERSION_1_2    (NM_ENCODE_VERSION (1, 2, 0))
-
-#define NM_VERSION_CUR_STABLE  NM_VERSION_1_0
-#define NM_VERSION_NEXT_STABLE NM_VERSION_1_2
 
 #if !defined (NM_VERSION_MIN_REQUIRED) || (NM_VERSION_MIN_REQUIRED == 0)
 # undef NM_VERSION_MIN_REQUIRED

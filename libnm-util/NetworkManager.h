@@ -26,7 +26,9 @@
 #ifndef NETWORK_MANAGER_H
 #define NETWORK_MANAGER_H
 
-#include <nm-version.h>
+/* This header must not include glib or libnm. */
+
+#include <nm-version-macros.h>
 
 /*
  * dbus services details

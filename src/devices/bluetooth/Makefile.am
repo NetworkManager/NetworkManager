@@ -11,6 +11,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/devices/wwan \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/include \
+	-I$(top_builddir)/include \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-bluetooth"\" \

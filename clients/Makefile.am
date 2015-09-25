@@ -1,11 +1,12 @@
 SUBDIRS = cli tui
 
 AM_CPPFLAGS = \
+	-I${top_srcdir}/include \
+	-I$(top_builddir)/include \
 	-I${top_srcdir}/libnm-core \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm \
 	-I${top_builddir}/libnm \
-	-I${top_srcdir}/include \
 	$(GLIB_CFLAGS) \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"

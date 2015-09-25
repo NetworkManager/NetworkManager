@@ -26,6 +26,8 @@
 #ifndef __NM_DBUS_INTERFACE_H__
 #define __NM_DBUS_INTERFACE_H__
 
+/* This header must not include glib or libnm. */
+
 #ifndef NM_VERSION_H
 #define NM_AVAILABLE_IN_1_2
 #endif

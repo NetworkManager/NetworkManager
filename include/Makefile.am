@@ -4,6 +4,7 @@ EXTRA_DIST = \
      nm-default.h \
      nm-glib.h \
      nm-test-utils.h \
-     nm-macros-internal.h
+     nm-macros-internal.h \
+     nm-version-macros.h.in
 
 CLEANFILES=nm-version.h

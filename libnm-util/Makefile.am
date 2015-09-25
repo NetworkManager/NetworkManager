@@ -5,6 +5,7 @@ SUBDIRS = . tests
 AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
+	-I$(top_builddir)/include \
 	-DG_LOG_DOMAIN=\""libnm-util"\" \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
@@ -24,6 +25,7 @@ endif
 lib_LTLIBRARIES=libnm-util.la
 
 libnm_util_include_HEADERS = 		\
+	$(top_builddir)/include/nm-version-macros.h \
 	NetworkManager.h		\
 	NetworkManagerVPN.h		\
 	nm-connection.h			\
@@ -54,11 +56,11 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-wireless.h		\
 	nm-setting-wireless-security.h	\
 	nm-setting-vpn.h		\
-	nm-utils.h
+	nm-utils.h \
+	nm-version.h
 
 nodist_libnm_util_include_HEADERS = \
-	nm-utils-enum-types.h		\
-	nm-version.h
+	nm-utils-enum-types.h
 
 libnm_util_la_private_headers = \
 	crypto.h			\
@@ -159,7 +161,7 @@ pkgconfig_DATA = libnm-util.pc
 
 DISTCLEANFILES = libnm-util.pc
 
-EXTRA_DIST = libnm-util.pc.in libnm-util.ver nm-version.h.in
+EXTRA_DIST = libnm-util.pc.in libnm-util.ver
 
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_GIRS =

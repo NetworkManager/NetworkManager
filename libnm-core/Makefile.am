@@ -4,6 +4,7 @@ SUBDIRS = . tests
 
 AM_CPPFLAGS = \
 	-I${top_srcdir}/include \
+	-I${top_builddir}/include \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
@@ -26,7 +27,7 @@ libnm_core_la_SOURCES =			\
 	$(libnm_core_private_headers)
 
 GLIB_GENERATED = nm-core-enum-types.h nm-core-enum-types.c
-nm_core_enum_types_sources = $(notdir $(libnminclude_HEADERS))
+nm_core_enum_types_sources = $(filter-out %nm-core-enum-types.h,$(libnminclude_HEADERS))
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 

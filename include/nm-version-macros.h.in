@@ -15,13 +15,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 Red Hat, Inc.
+ * Copyright 2011, 2015 Red Hat, Inc.
  */
 
-#ifndef NM_VERSION_H
-#define NM_VERSION_H
+#ifndef __NM_VERSION_MACROS_H__
+#define __NM_VERSION_MACROS_H__
 
-#include <glib.h>
+/* This header must not include glib or libnm. */
 
 /**
  * NM_MAJOR_VERSION:
@@ -62,8 +62,6 @@
      (NM_MAJOR_VERSION == (major) && NM_MINOR_VERSION == (minor) && NM_MICRO_VERSION >= (micro)))
 
 
-/* Deprecation / Availability macros */
-
 #define NM_ENCODE_VERSION(major,minor,micro) ((major) << 16 | (minor) << 8 | (micro))
 
 #define NM_VERSION_0_9_8  (NM_ENCODE_VERSION (0, 9, 8))
@@ -74,67 +72,4 @@
 #define NM_VERSION_CUR_STABLE  NM_VERSION_1_0
 #define NM_VERSION_NEXT_STABLE NM_VERSION_1_2
 
-#if !defined (NM_VERSION_MIN_REQUIRED) || (NM_VERSION_MIN_REQUIRED == 0)
-# undef NM_VERSION_MIN_REQUIRED
-# define NM_VERSION_MIN_REQUIRED (NM_VERSION_CUR_STABLE)
-#endif
-
-#if !defined (NM_VERSION_MAX_ALLOWED) || (NM_VERSION_MAX_ALLOWED == 0)
-# undef NM_VERSION_MAX_ALLOWED
-# define NM_VERSION_MAX_ALLOWED (NM_VERSION_CUR_STABLE)
-#endif
-
-/* sanity checks */
-#if NM_VERSION_MIN_REQUIRED > NM_VERSION_NEXT_STABLE
-#error "NM_VERSION_MIN_REQUIRED must be <= NM_VERSION_NEXT_STABLE"
-#endif
-#if NM_VERSION_MAX_ALLOWED < NM_VERSION_MIN_REQUIRED
-#error "NM_VERSION_MAX_ALLOWED must be >= NM_VERSION_MIN_REQUIRED"
-#endif
-#if NM_VERSION_MIN_REQUIRED < NM_VERSION_0_9_8
-#error "NM_VERSION_MIN_REQUIRED must be >= NM_VERSION_0_9_8"
-#endif
-
-#if NM_VERSION_MIN_REQUIRED >= NM_VERSION_0_9_10
-# define NM_DEPRECATED_IN_0_9_10        G_DEPRECATED
-# define NM_DEPRECATED_IN_0_9_10_FOR(f) G_DEPRECATED_FOR(f)
-#else
-# define NM_DEPRECATED_IN_0_9_10
-# define NM_DEPRECATED_IN_0_9_10_FOR(f)
-#endif
-
-#if NM_VERSION_MAX_ALLOWED < NM_VERSION_0_9_10
-# define NM_AVAILABLE_IN_0_9_10         G_UNAVAILABLE(0.9,10)
-#else
-# define NM_AVAILABLE_IN_0_9_10
-#endif
-
-#if NM_VERSION_MIN_REQUIRED >= NM_VERSION_1_0
-# define NM_DEPRECATED_IN_1_0           G_DEPRECATED
-# define NM_DEPRECATED_IN_1_0_FOR(f)    G_DEPRECATED_FOR(f)
-#else
-# define NM_DEPRECATED_IN_1_0
-# define NM_DEPRECATED_IN_1_0_FOR(f)
-#endif
-
-#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_0
-# define NM_AVAILABLE_IN_1_0            G_UNAVAILABLE(1,0)
-#else
-# define NM_AVAILABLE_IN_1_0
-#endif
-
-#if NM_VERSION_MIN_REQUIRED >= NM_VERSION_1_2
-# define NM_DEPRECATED_IN_1_2           G_DEPRECATED
-# define NM_DEPRECATED_IN_1_2_FOR(f)    G_DEPRECATED_FOR(f)
-#else
-# define NM_DEPRECATED_IN_1_2
-# define NM_DEPRECATED_IN_1_2_FOR(f)
-#endif
-
-#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_2
-# define NM_AVAILABLE_IN_1_2            G_UNAVAILABLE(1,2)
-#else
-# define NM_AVAILABLE_IN_1_2
-#endif
-
-#endif  /* NM_VERSION_H */
+#endif  /* __NM_VERSION_MACROS_H__ */

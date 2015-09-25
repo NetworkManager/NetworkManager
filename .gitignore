@@ -136,6 +136,8 @@ test-*.trs
 /examples/C/qt/list-connections
 /examples/C/qt/change-ipv4-addresses
 
+/include/nm-version-macros.h
+
 /initscript/Slackware/rc.networkmanager
 /initscript/*/[Nn]etwork[Mm]anager
 
@@ -145,7 +147,6 @@ test-*.trs
 
 /libgsystem/
 
-/libnm-core/nm-version.h
 /libnm-core/tests/test-compare
 /libnm-core/tests/test-crypto
 /libnm-core/tests/test-settings-defaults
@@ -162,7 +163,6 @@ test-*.trs
 /libnm-glib/tests/test-nm-client
 /libnm-glib/tests/test-remote-settings-client
 
-/libnm-util/nm-version.h
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto
 /libnm-util/tests/test-settings-defaults

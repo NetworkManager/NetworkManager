@@ -562,6 +562,7 @@ fi
 %dir %{_includedir}/%{name}
 %{_includedir}/%{name}/%{name}.h
 %{_includedir}/%{name}/NetworkManagerVPN.h
+%{_includedir}/%{name}/nm-version-macros.h
 %{_includedir}/%{name}/nm-version.h
 %{_libdir}/pkgconfig/%{name}.pc
 %dir %{_datadir}/gtk-doc/html/NetworkManager

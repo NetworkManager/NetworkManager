@@ -6,8 +6,8 @@ core = $(top_srcdir)/libnm-core
 core_build = $(top_builddir)/libnm-core
 
 libnm_core_headers =				\
+	$(top_builddir)/include/nm-version-macros.h \
 	$(core_build)/nm-core-enum-types.h	\
-	$(core_build)/nm-version.h		\
 	$(core)/nm-connection.h			\
 	$(core)/nm-core-types.h			\
 	$(core)/nm-dbus-interface.h		\
@@ -42,6 +42,7 @@ libnm_core_headers =				\
 	$(core)/nm-setting.h			\
 	$(core)/nm-simple-connection.h		\
 	$(core)/nm-utils.h			\
+	$(core)/nm-version.h \
 	$(core)/nm-vpn-dbus-interface.h     \
 	$(core)/nm-vpn-editor-plugin.h \
 	$(core)/nm-vpn-plugin-info.h

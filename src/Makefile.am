@@ -33,6 +33,7 @@ endif
 
 AM_CPPFLAGS =				\
 	-I$(top_srcdir)/include		\
+	-I$(top_builddir)/include \
 	-I$(top_builddir)/introspection	\
 	-I$(top_srcdir)/libnm-core	\
 	-I$(top_builddir)/libnm-core	\
@@ -130,6 +131,7 @@ libsystemd_nm_la_SOURCES = \
 
 libsystemd_nm_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	$(SYSTEMD_NM_CFLAGS_PATHS) \
