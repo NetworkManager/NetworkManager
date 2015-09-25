@@ -9149,7 +9149,7 @@ do_connection_modify (NmCli *nmc,
 	}
 
 	if (!read_connection_properties (NM_CONNECTION (rc), argc, argv, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		g_string_assign (nmc->return_text, error->message);
 		nmc->return_value = error->code;
 		g_clear_error (&error);
 		goto finish;
