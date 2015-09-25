@@ -26,8 +26,6 @@
 #ifndef __NM_DBUS_INTERFACE_H__
 #define __NM_DBUS_INTERFACE_H__
 
-#include "nm-version.h"
-
 /*
  * dbus services details
  */
@@ -551,7 +549,6 @@ typedef enum {
  *
  * Since: 1.0.6
  **/
-NM_AVAILABLE_IN_1_0_6
 typedef enum {
 	NM_METERED_UNKNOWN    = 0,
 	NM_METERED_YES        = 1,

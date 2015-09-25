@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 
+#include <nm-version.h>
 #include <nm-dbus-interface.h>
 #include <nm-core-enum-types.h>
 

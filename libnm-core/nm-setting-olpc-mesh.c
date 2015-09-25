@@ -26,7 +26,6 @@
 #include <glib/gi18n-lib.h>
 
 #include "nm-setting-olpc-mesh.h"
-#include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"

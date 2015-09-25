@@ -25,7 +25,6 @@
 
 #include "nm-errors.h"
 #include "nm-glib-compat.h"
-#include "nm-dbus-interface.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"
 

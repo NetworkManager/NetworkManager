@@ -33,7 +33,6 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-dbus-interface.h"
 #include "nm-core-enum-types.h"
 #include "nm-setting-wireless-security.h"
 

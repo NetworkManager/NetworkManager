@@ -35,7 +35,6 @@
 
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
-#include "nm-dbus-interface.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
 #include "nm-setting-bluetooth.h"
