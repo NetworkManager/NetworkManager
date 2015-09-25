@@ -45,13 +45,13 @@
         <para>
           The <emphasis>ifcfg-rh</emphasis> plugin is used on the Fedora and Red Hat
           Enterprise Linux distributions to read/write configuration from/to
-          the standard <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename> files.
+          the traditional <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename> files.
           Each NetworkManager connection maps to one <filename>ifcfg-*</filename> file, with
           possible usage of <filename>keys-*</filename> for passwords, <filename>route-*</filename>
           for static IPv4 routes and <filename>route6-*</filename> for static IPv6 routes.
           The plugin currently supports reading and writing Ethernet, Wi-Fi, InfiniBand,
           VLAN, Bond, Bridge, and Team connections. Unsupported connection types (such as
-          WWAN, PPPoE, VPN, or ADSL are handled by <emphasis>keyfile</emphasis> plugin
+          WWAN, PPPoE, VPN, or ADSL) are handled by <emphasis>keyfile</emphasis> plugin
           (<citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry>).
           The main reason for using <emphasis>ifcfg-rh</emphasis> plugin is the compatibility
           with legacy configurations for <emphasis>ifup</emphasis> and <emphasis>ifdown</emphasis>
