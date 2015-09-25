@@ -26,6 +26,10 @@
 #ifndef __NM_DBUS_INTERFACE_H__
 #define __NM_DBUS_INTERFACE_H__
 
+#ifndef NM_VERSION_H
+#define NM_AVAILABLE_IN_1_2
+#endif
+
 /*
  * dbus services details
  */
@@ -549,6 +553,7 @@ typedef enum {
  *
  * Since: 1.2
  **/
+NM_AVAILABLE_IN_1_2
 typedef enum {
 	NM_METERED_UNKNOWN    = 0,
 	NM_METERED_YES        = 1,
@@ -635,5 +640,9 @@ typedef enum /*< flags >*/ {
 	/* boundary value */
 	NM_SECRET_AGENT_CAPABILITY_LAST = NM_SECRET_AGENT_CAPABILITY_VPN_HINTS
 } NMSecretAgentCapabilities;
+
+#ifndef NM_VERSION_H
+#undef NM_AVAILABLE_IN_1_2
+#endif
 
 #endif /* __NM_DBUS_INTERFACE_H__ */
