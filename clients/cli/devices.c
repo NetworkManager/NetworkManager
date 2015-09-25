@@ -38,14 +38,14 @@
 
 /* Available fields for 'device status' */
 static NmcOutputField nmc_fields_dev_status[] = {
-	{"DEVICE",     N_("DEVICE"),     10},  /* 0 */
-	{"TYPE",       N_("TYPE"),       17},  /* 1 */
-	{"STATE",      N_("STATE"),      13},  /* 2 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),  43},  /* 3 */
-	{"CONNECTION", N_("CONNECTION"), 20},  /* 4 */
-	{"CON-UUID",   N_("CON-UUID"),   38},  /* 5 */
-	{"CON-PATH",   N_("CON-PATH"),   51},  /* 6 */
-	{NULL,         NULL,              0}
+	{"DEVICE",     N_("DEVICE")},      /* 0 */
+	{"TYPE",       N_("TYPE")},        /* 1 */
+	{"STATE",      N_("STATE")},       /* 2 */
+	{"DBUS-PATH",  N_("DBUS-PATH")},   /* 3 */
+	{"CONNECTION", N_("CONNECTION")},  /* 4 */
+	{"CON-UUID",   N_("CON-UUID")},    /* 5 */
+	{"CON-PATH",   N_("CON-PATH")},    /* 6 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_STATUS_ALL     "DEVICE,TYPE,STATE,DBUS-PATH,CONNECTION,CON-UUID,CON-PATH"
 #define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE,CONNECTION"
@@ -53,32 +53,32 @@ static NmcOutputField nmc_fields_dev_status[] = {
 
 /* Available fields for 'device show' - GENERAL part */
 static NmcOutputField nmc_fields_dev_show_general[] = {
-	{"NAME",              N_("NAME"),              10},  /* 0 */
-	{"DEVICE",            N_("DEVICE"),            10},  /* 1 */
-	{"TYPE",              N_("TYPE"),              17},  /* 2 */
-	{"NM-TYPE",           N_("NM-TYPE"),           17},  /* 3 */
-	{"VENDOR",            N_("VENDOR"),            20},  /* 4 */
-	{"PRODUCT",           N_("PRODUCT"),           50},  /* 5 */
-	{"DRIVER",            N_("DRIVER"),             9},  /* 6 */
-	{"DRIVER-VERSION",    N_("DRIVER-VERSION"),    18},  /* 7 */
-	{"FIRMWARE-VERSION",  N_("FIRMWARE-VERSION"),  18},  /* 8 */
-	{"HWADDR",            N_("HWADDR"),            19},  /* 9 */
-	{"MTU",               N_("MTU"),               10},  /* 10 */
-	{"STATE",             N_("STATE"),             14},  /* 11 */
-	{"REASON",            N_("REASON"),            25},  /* 12 */
-	{"UDI",               N_("UDI"),               64},  /* 13 */
-	{"IP-IFACE",          N_("IP-IFACE"),          10},  /* 14 */
-	{"IS-SOFTWARE",       N_("IS-SOFTWARE"),       15},  /* 15 */
-	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 16 */
-	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 17 */
-	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 18 */
-	{"NM-PLUGIN-MISSING", N_("NM-PLUGIN-MISSING"), 18},  /* 19 */
-	{"PHYS-PORT-ID",      N_("PHYS-PORT-ID"),      18},  /* 20 */
-	{"CONNECTION",        N_("CONNECTION"),        20},  /* 21 */
-	{"CON-UUID",          N_("CON-UUID"),          38},  /* 22 */
-	{"CON-PATH",          N_("CON-PATH"),          51},  /* 23 */
-	{"METERED",           N_("METERED"),           10},  /* 24 */
-	{NULL, NULL, 0}
+	{"NAME",              N_("NAME")},               /* 0 */
+	{"DEVICE",            N_("DEVICE")},             /* 1 */
+	{"TYPE",              N_("TYPE")},               /* 2 */
+	{"NM-TYPE",           N_("NM-TYPE")},            /* 3 */
+	{"VENDOR",            N_("VENDOR")},             /* 4 */
+	{"PRODUCT",           N_("PRODUCT")},            /* 5 */
+	{"DRIVER",            N_("DRIVER")},             /* 6 */
+	{"DRIVER-VERSION",    N_("DRIVER-VERSION")},     /* 7 */
+	{"FIRMWARE-VERSION",  N_("FIRMWARE-VERSION")},   /* 8 */
+	{"HWADDR",            N_("HWADDR")},             /* 9 */
+	{"MTU",               N_("MTU")},                /* 10 */
+	{"STATE",             N_("STATE")},              /* 11 */
+	{"REASON",            N_("REASON")},             /* 12 */
+	{"UDI",               N_("UDI")},                /* 13 */
+	{"IP-IFACE",          N_("IP-IFACE")},           /* 14 */
+	{"IS-SOFTWARE",       N_("IS-SOFTWARE")},        /* 15 */
+	{"NM-MANAGED",        N_("NM-MANAGED")},         /* 16 */
+	{"AUTOCONNECT",       N_("AUTOCONNECT")},        /* 17 */
+	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING")},   /* 18 */
+	{"NM-PLUGIN-MISSING", N_("NM-PLUGIN-MISSING")},  /* 19 */
+	{"PHYS-PORT-ID",      N_("PHYS-PORT-ID")},       /* 20 */
+	{"CONNECTION",        N_("CONNECTION")},         /* 21 */
+	{"CON-UUID",          N_("CON-UUID")},           /* 22 */
+	{"CON-PATH",          N_("CON-PATH")},           /* 23 */
+	{"METERED",           N_("METERED")},            /* 24 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,NM-TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,MTU,"\
                                             "STATE,REASON,UDI,IP-IFACE,IS-SOFTWARE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,NM-PLUGIN-MISSING,"\
@@ -87,84 +87,84 @@ static NmcOutputField nmc_fields_dev_show_general[] = {
 
 /* Available fields for 'device show' - CONNECTIONS part */
 static NmcOutputField nmc_fields_dev_show_connections[] = {
-	{"NAME",                       N_("NAME"),                       10},  /* 0 */
-	{"AVAILABLE-CONNECTION-PATHS", N_("AVAILABLE-CONNECTION-PATHS"), 80},  /* 1 */
-	{"AVAILABLE-CONNECTIONS",      N_("AVAILABLE-CONNECTIONS"),      80},  /* 2 */
-	{NULL, NULL, 0}
+	{"NAME",                       N_("NAME")},                        /* 0 */
+	{"AVAILABLE-CONNECTION-PATHS", N_("AVAILABLE-CONNECTION-PATHS")},  /* 1 */
+	{"AVAILABLE-CONNECTIONS",      N_("AVAILABLE-CONNECTIONS")},       /* 2 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_CONNECTIONS_ALL     "AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
 #define NMC_FIELDS_DEV_SHOW_CONNECTIONS_COMMON  "AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
 
 /* Available fields for 'device show' - CAPABILITIES part */
 static NmcOutputField nmc_fields_dev_show_cap[] = {
-	{"NAME",            N_("NAME"),            13},  /* 0 */
-	{"CARRIER-DETECT",  N_("CARRIER-DETECT"),  16},  /* 1 */
-	{"SPEED",           N_("SPEED"),           10},  /* 2 */
-	{"IS-SOFTWARE",     N_("IS-SOFTWARE"),     12},  /* 3 */
-	{NULL,              NULL,                   0}
+	{"NAME",            N_("NAME")},            /* 0 */
+	{"CARRIER-DETECT",  N_("CARRIER-DETECT")},  /* 1 */
+	{"SPEED",           N_("SPEED")},           /* 2 */
+	{"IS-SOFTWARE",     N_("IS-SOFTWARE")},     /* 3 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_CAP_ALL     "NAME,CARRIER-DETECT,SPEED,IS-SOFTWARE"
 #define NMC_FIELDS_DEV_SHOW_CAP_COMMON  "NAME,CARRIER-DETECT,SPEED,IS-SOFTWARE"
 
 /* Available fields for 'device show' - wired properties part */
 static NmcOutputField nmc_fields_dev_show_wired_prop[] = {
-	{"NAME",            N_("NAME"),     18},  /* 0 */
-	{"CARRIER",         N_("CARRIER"),  10},  /* 1 */
-	{NULL,              NULL,            0}
+	{"NAME",            N_("NAME")},     /* 0 */
+	{"CARRIER",         N_("CARRIER")},  /* 1 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_WIRED_PROP_ALL     "NAME,CARRIER"
 #define NMC_FIELDS_DEV_SHOW_WIRED_PROP_COMMON  "NAME,CARRIER"
 
 /* Available fields for 'device show' - wireless properties part */
 static NmcOutputField nmc_fields_dev_show_wifi_prop[] = {
-	{"NAME",       N_("NAME"),   18},  /* 0 */
-	{"WEP",        N_("WEP"),     5},  /* 1 */
-	{"WPA",        N_("WPA"),     5},  /* 2 */
-	{"WPA2",       N_("WPA2"),    6},  /* 3 */
-	{"TKIP",       N_("TKIP"),    6},  /* 4 */
-	{"CCMP",       N_("CCMP"),    6},  /* 5 */
-	{"AP",         N_("AP"),      6},  /* 6 */
-	{"ADHOC",      N_("ADHOC"),   6},  /* 7 */
-	{"2GHZ",       N_("2GHZ"),   10},  /* 8 */
-	{"5GHZ",       N_("5GHZ"),   10},  /* 9 */
-	{NULL,         NULL,          0}
+	{"NAME",       N_("NAME")},   /* 0 */
+	{"WEP",        N_("WEP")},    /* 1 */
+	{"WPA",        N_("WPA")},    /* 2 */
+	{"WPA2",       N_("WPA2")},   /* 3 */
+	{"TKIP",       N_("TKIP")},   /* 4 */
+	{"CCMP",       N_("CCMP")},   /* 5 */
+	{"AP",         N_("AP")},     /* 6 */
+	{"ADHOC",      N_("ADHOC")},  /* 7 */
+	{"2GHZ",       N_("2GHZ")},   /* 8 */
+	{"5GHZ",       N_("5GHZ")},   /* 9 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC,2GHZ,5GHZ"
 #define NMC_FIELDS_DEV_SHOW_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
 
 /* Available fields for 'device show' - wimax properties part */
 static NmcOutputField nmc_fields_dev_show_wimax_prop[] = {
-	{"NAME",       N_("NAME"),     18},  /* 0 */
-	{"CTR-FREQ",   N_("CTR-FREQ"),  7},  /* 1 */
-	{"RSSI",       N_("RSSI"),      5},  /* 2 */
-	{"CINR",       N_("CINR"),      5},  /* 3 */
-	{"TX-POW",     N_("TX-POW"),    5},  /* 4 */
-	{"BSID",       N_("BSID"),     18},  /* 5 */
-	{NULL,         NULL,            0}
+	{"NAME",       N_("NAME")},      /* 0 */
+	{"CTR-FREQ",   N_("CTR-FREQ")},  /* 1 */
+	{"RSSI",       N_("RSSI")},      /* 2 */
+	{"CINR",       N_("CINR")},      /* 3 */
+	{"TX-POW",     N_("TX-POW")},    /* 4 */
+	{"BSID",       N_("BSID")},      /* 5 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_WIMAX_PROP_ALL     "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 #define NMC_FIELDS_DEV_SHOW_WIMAX_PROP_COMMON  "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 
 /* Available fields for 'device wifi list' */
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
-	{"NAME",       N_("NAME"),       15},  /* 0 */
-	{"SSID",       N_("SSID"),       33},  /* 1 */
-	{"SSID-HEX",   N_("SSID-HEX"),   66},  /* 2 */
-	{"BSSID",      N_("BSSID"),      19},  /* 3 */
-	{"MODE",       N_("MODE"),       16},  /* 4 */
-	{"CHAN",       N_("CHAN"),        6},  /* 5 */
-	{"FREQ",       N_("FREQ"),       10},  /* 6 */
-	{"RATE",       N_("RATE"),       10},  /* 7 */
-	{"SIGNAL",     N_("SIGNAL"),      8},  /* 8 */
-	{"BARS",       N_("BARS"),        6},  /* 9 */
-	{"SECURITY",   N_("SECURITY"),   10},  /* 10 */
-	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 11 */
-	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 12 */
-	{"DEVICE",     N_("DEVICE"),     10},  /* 13 */
-	{"ACTIVE",     N_("ACTIVE"),      8},  /* 14 */
-	{"IN-USE",     N_("*"),           1},  /* 15 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 16 */
-	{NULL,         NULL,              0}
+	{"NAME",       N_("NAME")},       /* 0 */
+	{"SSID",       N_("SSID")},       /* 1 */
+	{"SSID-HEX",   N_("SSID-HEX")},   /* 2 */
+	{"BSSID",      N_("BSSID")},      /* 3 */
+	{"MODE",       N_("MODE")},       /* 4 */
+	{"CHAN",       N_("CHAN")},       /* 5 */
+	{"FREQ",       N_("FREQ")},       /* 6 */
+	{"RATE",       N_("RATE")},       /* 7 */
+	{"SIGNAL",     N_("SIGNAL")},     /* 8 */
+	{"BARS",       N_("BARS")},       /* 9 */
+	{"SECURITY",   N_("SECURITY")},   /* 10 */
+	{"WPA-FLAGS",  N_("WPA-FLAGS")},  /* 11 */
+	{"RSN-FLAGS",  N_("RSN-FLAGS")},  /* 12 */
+	{"DEVICE",     N_("DEVICE")},     /* 13 */
+	{"ACTIVE",     N_("ACTIVE")},     /* 14 */
+	{"IN-USE",     N_("*")},          /* 15 */
+	{"DBUS-PATH",  N_("DBUS-PATH")},  /* 16 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,"\
                                                "WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH"
@@ -173,14 +173,14 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 
 /* Available fields for 'device wimax list' */
 static NmcOutputField nmc_fields_dev_wimax_list[] = {
-	{"NAME",       N_("NAME"),        15},  /* 0 */
-	{"NSP",        N_("NSP"),         33},  /* 1 */
-	{"SIGNAL",     N_("SIGNAL"),       8},  /* 2 */
-	{"TYPE",       N_("TYPE"),        16},  /* 3 */
-	{"DEVICE",     N_("DEVICE"),      10},  /* 4 */
-	{"ACTIVE",     N_("ACTIVE"),       8},  /* 5 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),   46},  /* 6 */
-	{NULL,         NULL,               0}
+	{"NAME",       N_("NAME")},       /* 0 */
+	{"NSP",        N_("NSP")},        /* 1 */
+	{"SIGNAL",     N_("SIGNAL")},     /* 2 */
+	{"TYPE",       N_("TYPE")},       /* 3 */
+	{"DEVICE",     N_("DEVICE")},     /* 4 */
+	{"ACTIVE",     N_("ACTIVE")},     /* 5 */
+	{"DBUS-PATH",  N_("DBUS-PATH")},  /* 6 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_WIMAX_LIST_ALL           "NSP,SIGNAL,TYPE,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON        "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
@@ -188,28 +188,28 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 
 /* Available fields for 'device show' - BOND, TEAM, BRIDGE part */
 static NmcOutputField nmc_fields_dev_show_master_prop[] = {
-	{"NAME",           N_("NAME"),     18},  /* 0 */
-	{"SLAVES",         N_("SLAVES"),   20},  /* 1 */
-	{NULL,             NULL,            0}
+	{"NAME",       N_("NAME")},    /* 0 */
+	{"SLAVES",     N_("SLAVES")},  /* 1 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_MASTER_PROP_ALL     "NAME,SLAVES"
 #define NMC_FIELDS_DEV_SHOW_MASTER_PROP_COMMON  "NAME,SLAVES"
 
 /* Available fields for 'device show' - VLAN part */
 static NmcOutputField nmc_fields_dev_show_vlan_prop[] = {
-	{"NAME",           N_("NAME"),     18},  /* 0 */
-	{"PARENT",         N_("PARENT"),   10},  /* 1 */
-	{"ID",             N_("ID"),        5},  /* 2 */
-	{NULL,             NULL,            0}
+	{"NAME",           N_("NAME")},    /* 0 */
+	{"PARENT",         N_("PARENT")},  /* 1 */
+	{"ID",             N_("ID")},      /* 2 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_VLAN_PROP_ALL     "NAME,PARENT,ID"
 #define NMC_FIELDS_DEV_SHOW_VLAN_PROP_COMMON  "NAME,PARENT,ID"
 
 /* Available fields for 'device show' - BLUETOOTH part */
 static NmcOutputField nmc_fields_dev_show_bluetooth[] = {
-	{"NAME",           N_("NAME"),         0},  /* 0 */
-	{"CAPABILITIES",   N_("CAPABILITIES"), 0},  /* 1 */
-	{NULL,             NULL,               0}
+	{"NAME",           N_("NAME")},          /* 0 */
+	{"CAPABILITIES",   N_("CAPABILITIES")},  /* 1 */
+	{NULL, NULL}
 };
 #define NMC_FIELDS_DEV_SHOW_BLUETOOTH_ALL     "NAME,CAPABILITIES"
 #define NMC_FIELDS_DEV_SHOW_BLUETOOTH_COMMON  "NAME,CAPABILITIES"
