@@ -73,7 +73,6 @@ typedef enum {
 
 struct _NMFirewallManagerCallId {
 	NMFirewallManager *self;
-	gboolean keep_mgr_alive;
 	CBInfoOpsType ops_type;
 	CBInfoMode mode;
 	char *iface;
@@ -145,7 +144,6 @@ static CBInfo *
 _cb_info_create (NMFirewallManager *self,
                  CBInfoOpsType ops_type,
                  const char *iface,
-                 gboolean keep_mgr_alive,
                  NMFirewallManagerAddRemoveCallback callback,
                  gpointer user_data)
 {
@@ -153,15 +151,11 @@ _cb_info_create (NMFirewallManager *self,
 	CBInfo *info;
 
 	info = g_slice_new0 (CBInfo);
-	info->self = self;
-	info->keep_mgr_alive = keep_mgr_alive;
+	info->self = g_object_ref (self);
 	info->ops_type = ops_type;
 	info->iface = g_strdup (iface);
 	info->callback = callback;
 	info->user_data = user_data;
-
-	if (keep_mgr_alive)
-		g_object_ref (self);
 
 	if (priv->running) {
 		info->mode = CB_INFO_MODE_DBUS;
@@ -181,7 +175,7 @@ _cb_info_free (CBInfo *info)
 	if (!_cb_info_is_idle (info))
 		g_object_unref (info->dbus.cancellable);
 	g_free (info->iface);
-	if (info->keep_mgr_alive)
+	if (info->self)
 		g_object_unref (info->self);
 	g_slice_free (CBInfo, info);
 }
@@ -204,31 +198,6 @@ _cb_info_complete_normal (CBInfo *info, GError *error)
 
 	_cb_info_callback (info, error);
 	_cb_info_free (info);
-}
-
-static void
-_cb_info_complete_cancel (CBInfo *info, gboolean is_disposing)
-{
-	NMFirewallManager *self = info->self;
-	gs_free_error GError *error = NULL;
-
-	nm_utils_error_set_cancelled (&error, is_disposing, "NMFirewallManager");
-
-	_LOGD (info, "complete: cancel (%s)", error->message);
-
-	_cb_info_callback (info, error);
-
-	if (_cb_info_is_idle (info)) {
-		g_source_remove (info->idle.id);
-		_cb_info_free (info);
-	} else {
-		info->mode = CB_INFO_MODE_DBUS_COMPLETED;
-		g_cancellable_cancel (info->dbus.cancellable);
-		if (info->keep_mgr_alive) {
-			info->keep_mgr_alive = FALSE;
-			g_object_unref (self);
-		}
-	}
 }
 
 static gboolean
@@ -298,7 +267,6 @@ _start_request (NMFirewallManager *self,
                 CBInfoOpsType ops_type,
                 const char *iface,
                 const char *zone,
-                gboolean keep_mgr_alive,
                 NMFirewallManagerAddRemoveCallback callback,
                 gpointer user_data)
 {
@@ -311,7 +279,7 @@ _start_request (NMFirewallManager *self,
 
 	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
-	info = _cb_info_create (self, ops_type, iface, keep_mgr_alive, callback, user_data);
+	info = _cb_info_create (self, ops_type, iface, callback, user_data);
 
 	_LOGD (info, "firewall zone %s %s:%s%s%s%s",
 	       _ops_type_to_string (info->ops_type),
@@ -370,7 +338,6 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
                                         const char *iface,
                                         const char *zone,
                                         gboolean add, /* TRUE == add, FALSE == change */
-                                        gboolean keep_mgr_alive,
                                         NMFirewallManagerAddRemoveCallback callback,
                                         gpointer user_data)
 {
@@ -378,7 +345,6 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 	                       add ? CB_INFO_OPS_ADD : CB_INFO_OPS_CHANGE,
 	                       iface,
 	                       zone,
-	                       keep_mgr_alive,
 	                       callback,
 	                       user_data);
 }
@@ -387,7 +353,6 @@ NMFirewallManagerCallId
 nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
                                       const char *iface,
                                       const char *zone,
-                                      gboolean keep_mgr_alive,
                                       NMFirewallManagerAddRemoveCallback callback,
                                       gpointer user_data)
 {
@@ -395,7 +360,6 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 	                       CB_INFO_OPS_REMOVE,
 	                       iface,
 	                       zone,
-	                       keep_mgr_alive,
 	                       callback,
 	                       user_data);
 }
@@ -403,18 +367,34 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 void
 nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 {
+	NMFirewallManager *self;
 	NMFirewallManagerPrivate *priv;
 	CBInfo *info = call;
+	gs_free_error GError *error = NULL;
 
 	g_return_if_fail (info);
 	g_return_if_fail (NM_IS_FIREWALL_MANAGER (info->self));
 
-	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (info->self);
+	self = info->self;
+	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
 	if (!g_hash_table_remove (priv->pending_calls, info))
 		g_return_if_reached ();
 
-	_cb_info_complete_cancel (info, FALSE);
+	nm_utils_error_set_cancelled (&error, FALSE, "NMFirewallManager");
+
+	_LOGD (info, "complete: cancel (%s)", error->message);
+
+	_cb_info_callback (info, error);
+
+	if (_cb_info_is_idle (info)) {
+		g_source_remove (info->idle.id);
+		_cb_info_free (info);
+	} else {
+		info->mode = CB_INFO_MODE_DBUS_COMPLETED;
+		g_cancellable_cancel (info->dbus.cancellable);
+		g_clear_object (&info->self);
+	}
 }
 
 /*******************************************************************/
@@ -502,22 +482,11 @@ dispose (GObject *object)
 {
 	NMFirewallManager *self = NM_FIREWALL_MANAGER (object);
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
 
 	if (priv->pending_calls) {
-		CBInfo *info;
-
-		/* we don't really expect any pending calls at this point because users
-		 * should keep the firewall manager alive as long as there are pending calls.
-		 * Anyway, cancel them now. */
-cancel_more:
-		g_hash_table_iter_init (&iter, priv->pending_calls);
-		if (g_hash_table_iter_next (&iter, (gpointer *) &info, NULL)) {
-			g_hash_table_iter_remove (&iter);
-			_cb_info_complete_cancel (info, TRUE);
-			/* restart iterating, the user might cancelled another call and modified the hash-table */
-			goto cancel_more;
-		}
+		/* as every pending operation takes a reference to the manager,
+		 * we don't expect pending operations at this point. */
+		g_assert (g_hash_table_size (priv->pending_calls) == 0);
 		g_hash_table_unref (priv->pending_calls);
 		priv->pending_calls = NULL;
 	}
