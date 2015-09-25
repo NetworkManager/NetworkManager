@@ -39,6 +39,7 @@ endif
 
 AM_CPPFLAGS =				\
 	-I$(top_srcdir)/include		\
+	-I$(top_builddir)/include		\
 	-I$(top_srcdir)/libnm-core	\
 	-I$(top_builddir)/libnm-core	\
 	-I$(top_srcdir)/callouts	\
@@ -117,6 +118,7 @@ libsystemd_dhcp_la_SOURCES = \
 
 libsystemd_dhcp_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include		\
 	$(SYSTEMD_DHCP_CFLAGS) \
 	$(GLIB_CFLAGS)
 

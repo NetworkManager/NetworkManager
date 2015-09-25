@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/platform \
 	-I${top_srcdir}/include \
+	-I$(top_builddir)/include \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-team"\" \
