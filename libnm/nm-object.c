@@ -85,6 +85,10 @@ typedef struct {
 	NMObject *parent;
 	gboolean suppress_property_updates;
 
+	gboolean inited;        /* async init finished? */
+	GSList *waiters;        /* if async init did not finish, users of this object need
+	                         * to defer their notifications by adding themselves here. */
+
 	GSList *notify_items;
 	guint32 notify_id;
 
@@ -200,6 +204,24 @@ deferred_notify_cb (gpointer data)
 	/* Wait until all reloads are done before notifying */
 	if (priv->reload_remaining)
 		return G_SOURCE_REMOVE;
+
+	/* If not all added object are finished yet, then defer the deferred
+	 * notification. */
+	for (iter = priv->notify_items; iter; iter = g_slist_next (iter)) {
+		NotifyItem *item = iter->data;
+		NMObjectPrivate *item_priv;
+
+		if (!item->changed)
+			continue;
+
+		item_priv = NM_OBJECT_GET_PRIVATE (item->changed);
+		if (!item_priv->inited) {
+			if (!g_slist_find (item_priv->waiters, object))
+				item_priv->waiters = g_slist_prepend (item_priv->waiters,
+				                                      g_object_ref (object));
+			return G_SOURCE_REMOVE;
+		}
+	}
 
 	/* Clear priv->notify_items early so that an NMObject subclass that
 	 * listens to property changes can queue up other property changes
@@ -426,6 +448,7 @@ _nm_object_create (GType type, GDBusConnection *connection, const char *path)
 	 * before any external code sees it.
 	 */
 	_nm_object_cache_add (NM_OBJECT (object));
+	NM_OBJECT_GET_PRIVATE (object)->inited = TRUE;
 	if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
 		dbgmsg ("Could not create object for %s: %s", path, error->message);
 		g_error_free (error);
@@ -460,6 +483,7 @@ create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMObjectTypeAsyncData *async_data = user_data;
 	GError *error = NULL;
 
+	NM_OBJECT_GET_PRIVATE (object)->inited = TRUE;
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
 		dbgmsg ("Could not create object for %s: %s",
 		        nm_object_get_path (NM_OBJECT (object)),
@@ -469,6 +493,19 @@ create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	create_async_complete (object, async_data);
+
+	if (object) {
+		NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+		/* Re-queue notification checks for whoever was waiting for
+		 * this object to initialize. */
+		while (priv->waiters) {
+			NMObject *item = priv->waiters->data;
+			priv->waiters = g_slist_remove (priv->waiters, item);
+			_nm_object_defer_notify (item);
+			g_object_unref (item);
+		}
+	}
 }
 
 static void
@@ -1679,6 +1716,7 @@ dispose (GObject *object)
 	g_slist_free_full (priv->notify_items, (GDestroyNotify) notify_item_free);
 	priv->notify_items = NULL;
 
+	g_slist_free_full (priv->waiters, g_object_unref);
 	g_clear_pointer (&priv->proxies, g_hash_table_unref);
 	g_clear_object (&priv->properties_proxy);
 
