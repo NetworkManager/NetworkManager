@@ -138,7 +138,6 @@ BuildRequires: wireless-tools-devel >= %{wireless_tools_version}
 BuildRequires: glib2-devel >= %{glib2_version}
 BuildRequires: gobject-introspection-devel >= 0.10.3
 BuildRequires: gettext-devel
-BuildRequires: /usr/bin/autopoint
 BuildRequires: pkgconfig
 BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: perl(XML::Parser)
@@ -381,7 +380,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %{__cp} -R docs ORIG-docs
 %endif
 
-autopoint --force
+autoreconf --install --force
 intltoolize --automake --copy --force
 %configure \
 	--disable-static \
