@@ -1916,6 +1916,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint32 j;
 	guint32 i, n, num;
 	gint64 route_metric;
+	int dhcp_timeout;
 	GString *searches;
 	gboolean success = FALSE;
 	gboolean fake_ip4 = FALSE;
@@ -2119,6 +2120,11 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		value = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
 		if (value)
 			svSetValue (ifcfg, "DHCP_CLIENT_ID", value, FALSE);
+
+		dhcp_timeout = nm_setting_ip4_config_get_dhcp_timeout (NM_SETTING_IP4_CONFIG (s_ip4));
+		tmp = dhcp_timeout ? g_strdup_printf ("%d", dhcp_timeout) : NULL;
+		svSetValue (ifcfg, "IPV4_DHCP_TIMEOUT", tmp, FALSE);
+		g_free (tmp);
 	}
 
 	svSetValue (ifcfg, "IPV4_FAILURE_FATAL",
