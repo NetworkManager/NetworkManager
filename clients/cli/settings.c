@@ -278,10 +278,11 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 9 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 10 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),     /* 11 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 12 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 13 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 14 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 15 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT),       /* 12 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 13 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 14 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 15 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 16 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
@@ -296,6 +297,7 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
                                               NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES","\
                                               NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS","\
                                               NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID","\
+                                              NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT","\
                                               NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
                                               NM_SETTING_IP_CONFIG_DHCP_HOSTNAME","\
                                               NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
@@ -1384,6 +1386,7 @@ DEFINE_GETTER (nmc_property_ipv4_get_route_metric, NM_SETTING_IP_CONFIG_ROUTE_ME
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES)
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_timeout, NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
 DEFINE_GETTER (nmc_property_ipv4_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
@@ -5909,6 +5912,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_TIMEOUT),
+	                    nmc_property_ipv4_get_dhcp_timeout,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (4, DHCP_SEND_HOSTNAME),
 	                    nmc_property_ipv4_get_dhcp_send_hostname,
 	                    nmc_property_set_bool,
@@ -7237,10 +7247,11 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 9, nmc_property_ipv4_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 10, nmc_property_ipv4_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 11, nmc_property_ipv4_get_dhcp_client_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_ipv4_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_timeout (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_ipv4_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_ipv4_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
