@@ -980,6 +980,9 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 			                           TRUE))
 				return FALSE;
 		}
+
+		if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex))
+			nm_platform_link_set_mtu (NM_PLATFORM_GET, priv->ip_ifindex, priv->mtu);
 	}
 
 	apply_parent_device_config (connection);
@@ -1149,10 +1152,6 @@ process_generic_config (NMVpnConnection *connection,
 		}
 	}
 
-	/* MTU; this is a per-connection value, though NM's API treats it
-	 * like it's IP4-specific. So we store it for now and retrieve it
-	 * later in ip4_config_get.
-	 */
 	priv->mtu = 0;
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_MTU);
 	if (val) {
@@ -1327,9 +1326,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_MSS);
 	if (val)
 		nm_ip4_config_set_mss (config, g_value_get_uint (val));
-
-	if (priv->mtu)
-		nm_ip4_config_set_mtu (config, priv->mtu, NM_IP_CONFIG_SOURCE_VPN);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN);
 	if (val)
