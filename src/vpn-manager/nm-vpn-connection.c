@@ -1069,6 +1069,9 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 			                           TRUE))
 				return FALSE;
 		}
+
+		if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex))
+			nm_platform_link_set_mtu (NM_PLATFORM_GET, priv->ip_ifindex, priv->mtu);
 	}
 
 	apply_parent_device_config (self);
@@ -1258,10 +1261,6 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 		return FALSE;
 	}
 
-	/* MTU; this is a per-connection value, though NM's API treats it
-	 * like it's IP4-specific. So we store it for now and retrieve it
-	 * later in ip4_config_get.
-	 */
 	priv->mtu = 0;
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "u", &u32))
 		priv->mtu = u32;
@@ -1403,9 +1402,6 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_MSS, "u", &u32))
 		nm_ip4_config_set_mss (config, u32);
-
-	if (priv->mtu)
-		nm_ip4_config_set_mtu (config, priv->mtu, NM_IP_CONFIG_SOURCE_VPN);
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, "&s", &str))
 		nm_ip4_config_add_domain (config, str);
