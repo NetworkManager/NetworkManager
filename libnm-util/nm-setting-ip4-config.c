@@ -82,6 +82,7 @@ typedef struct {
 	char *dhcp_client_id;
 	gboolean dhcp_send_hostname;
 	char *dhcp_hostname;
+	int dhcp_timeout;
 	gboolean never_default;
 	gboolean may_fail;
 } NMSettingIP4ConfigPrivate;
@@ -97,6 +98,7 @@ enum {
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_CLIENT_ID,
+	PROP_DHCP_TIMEOUT,
 	PROP_DHCP_SEND_HOSTNAME,
 	PROP_DHCP_HOSTNAME,
 	PROP_NEVER_DEFAULT,
@@ -801,6 +803,24 @@ nm_setting_ip4_config_get_dhcp_hostname (NMSettingIP4Config *setting)
 }
 
 /**
+ * nm_setting_ip4_config_get_dhcp_timeout:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:dhcp-timeout
+ * property.
+ *
+ * Returns: The number of seconds after which unfinished DHCP transaction
+ * fails or zero for "default".
+ **/
+int
+nm_setting_ip4_config_get_dhcp_timeout (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), 0);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_timeout;
+}
+
+/**
  * nm_setting_ip4_config_get_never_default:
  * @setting: the #NMSettingIP4Config
  *
@@ -1050,6 +1070,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->dhcp_hostname);
 		priv->dhcp_hostname = g_value_dup_string (value);
 		break;
+	case PROP_DHCP_TIMEOUT:
+		priv->dhcp_timeout = g_value_get_uint (value);
+		break;
 	case PROP_NEVER_DEFAULT:
 		priv->never_default = g_value_get_boolean (value);
 		break;
@@ -1102,6 +1125,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_HOSTNAME:
 		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_hostname (setting));
+		break;
+	case PROP_DHCP_TIMEOUT:
+		g_value_set_uint (value, nm_setting_ip4_config_get_dhcp_timeout (setting));
 		break;
 	case PROP_NEVER_DEFAULT:
 		g_value_set_boolean (value, priv->never_default);
@@ -1324,6 +1350,19 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIP4Config:dhcp-timeout:
+	 *
+	 * Number of seconds after which the unfinished DHCP transaction fails
+	 * or zero for default.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DHCP_TIMEOUT,
+		 g_param_spec_uint (NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:never-default:
