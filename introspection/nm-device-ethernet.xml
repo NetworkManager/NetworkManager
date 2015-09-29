@@ -22,6 +22,12 @@
       </tp:docstring>
     </property>
 
+    <property name="S390Subchannels" type="as" access="read">
+      <tp:docstring>
+        Array of S/390 subchannels for S/390 or z/Architecture devices.
+      </tp:docstring>
+    </property>
+
     <property name="Carrier" type="b" access="read">
       <tp:docstring>
         Indicates whether the physical carrier is found (e.g. whether a cable is plugged in or not).

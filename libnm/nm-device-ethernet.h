@@ -41,6 +41,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED       "speed"
 #define NM_DEVICE_ETHERNET_CARRIER     "carrier"
+#define NM_DEVICE_ETHERNET_S390_SUBCHANNELS "s390-subchannels"
 
 struct _NMDeviceEthernet {
 	NMDevice parent;
@@ -59,6 +60,8 @@ const char * nm_device_ethernet_get_hw_address (NMDeviceEthernet *device);
 const char * nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device);
 guint32      nm_device_ethernet_get_speed   (NMDeviceEthernet *device);
 gboolean     nm_device_ethernet_get_carrier (NMDeviceEthernet *device);
+NM_AVAILABLE_IN_1_2
+const char * const *nm_device_ethernet_get_s390_subchannels (NMDeviceEthernet *device);
 
 G_END_DECLS
 

@@ -1160,6 +1160,77 @@ test_activate_failed (void)
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
+static void
+test_device_connection_compatibility (void)
+{
+	NMClient *client;
+	NMDevice *device1, *device2;
+	NMConnection *conn;
+	NMSettingWired *s_wired;
+	GError *error = NULL;
+	const char *subchannels[] = { "0.0.8000", "0.0.8001", "0.0.8002", NULL };
+	const char *subchannels_2[] = { "0.0.8000", "0.0.8001", NULL };
+	const char *subchannels_x[] = { "0.0.8000", "0.0.8001", "0.0.800X", NULL };
+	const char *hw_addr1 = "52:54:00:ab:db:23";
+	const char *hw_addr2 = "52:54:00:ab:db:24";
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	/* Create two devices */
+	device1 = nm_test_service_add_wired_device (sinfo, client, "eth0", hw_addr1, subchannels);
+	device2 = nm_test_service_add_wired_device (sinfo, client, "eth1", hw_addr2, NULL);
+
+	g_assert_cmpstr (nm_device_get_hw_address (device1), ==, hw_addr1);
+	g_assert_cmpstr (nm_device_get_hw_address (device2), ==, hw_addr2);
+
+	conn = nmtst_create_minimal_connection ("wired-matches", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_wired = nm_connection_get_setting_wired (conn);
+	nm_setting_wired_add_mac_blacklist_item (s_wired, "00:11:22:33:44:55");
+
+	/* device1 and conn are compatible */
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, hw_addr1,
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchannels,
+	              NULL);
+	nm_device_connection_compatible (device1, conn, &error);
+	g_assert_no_error (error);
+
+	/* device2 and conn differ in subchannels */
+	g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, subchannels_x, NULL);
+	nm_device_connection_compatible (device2, conn, &error);
+	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION);
+	g_clear_error (&error);
+
+	/* device1 and conn differ in subchannels - 2 in connection, 3 in device */
+	g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, subchannels_2, NULL);
+	nm_device_connection_compatible (device1, conn, &error);
+	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION);
+	g_clear_error (&error);
+
+	g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, NULL, NULL);
+
+	/* device2 and conn differ in MAC address */
+	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, "aa:bb:cc:dd:ee:ee", NULL);
+	nm_device_connection_compatible (device2, conn, &error);
+	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION);
+	g_clear_error (&error);
+	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, NULL, NULL);
+
+	/* device1 is blacklisted in conn */
+	nm_setting_wired_add_mac_blacklist_item (s_wired, hw_addr1);
+	nm_device_connection_compatible (device1, conn, &error);
+	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION);
+	g_clear_error (&error);
+
+	g_object_unref (conn);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
 /*******************************************************************/
 
 NMTST_DEFINE ();
@@ -1182,6 +1253,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/active-connections", test_active_connections);
 	g_test_add_func ("/libnm/activate-virtual", test_activate_virtual);
 	g_test_add_func ("/libnm/activate-failed", test_activate_failed);
+	g_test_add_func ("/libnm/device-connection-compatibility", test_device_connection_compatibility);
 
 	return g_test_run ();
 }

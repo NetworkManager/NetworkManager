@@ -42,6 +42,7 @@ typedef struct {
 	char *perm_hw_address;
 	guint32 speed;
 	gboolean carrier;
+	char **s390_subchannels;
 } NMDeviceEthernetPrivate;
 
 enum {
@@ -50,6 +51,7 @@ enum {
 	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_CARRIER,
+	PROP_S390_SUBCHANNELS,
 
 	LAST_PROP
 };
@@ -120,18 +122,88 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->carrier;
 }
 
+/**
+ * nm_device_ethernet_get_s390_subchannels:
+ * @device: a #NMDeviceEthernet
+ *
+ * Return the list of s390 subchannels if the device supports them.
+ *
+ * Returns: (transfer none) (element-type utf8): array of strings, each specifying
+ *   one subchannel the s390 device uses to communicate to the host.
+ *
+ * Since: 1.2
+ **/
+const char * const *
+nm_device_ethernet_get_s390_subchannels (NMDeviceEthernet *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
+
+	return (const char * const *) NM_DEVICE_ETHERNET_GET_PRIVATE (device)->s390_subchannels;
+}
+
+static guint32
+_subchannels_count_num (const char * const *array)
+{
+	int i;
+
+	if (!array)
+		return 0;
+	for (i = 0; array[i]; i++)
+		/* NOP */;
+	return i;
+}
+
+static gboolean
+match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	const char * const *subchans;
+	guint32 num1, num2;
+	int i, j;
+
+	*try_mac = TRUE;
+
+	subchans = nm_setting_wired_get_s390_subchannels (s_wired);
+	num1 = _subchannels_count_num (subchans);
+	num2 = _subchannels_count_num ((const char * const *) priv->s390_subchannels);
+	/* connection has no subchannels */
+	if (num1 == 0)
+		return TRUE;
+	/* connection requires subchannels but the device has none */
+	if (num2 == 0)
+		return FALSE;
+	/* number of subchannels differ */
+	if (num1 != num2)
+		return FALSE;
+
+	/* Make sure each subchannel in the connection is a subchannel of this device */
+	for (i = 0; subchans[i]; i++) {
+		const char *candidate = subchans[i];
+		gboolean found = FALSE;
+
+		for (j = 0; priv->s390_subchannels[j]; j++) {
+			if (!g_strcmp0 (priv->s390_subchannels[j], candidate))
+				found = TRUE;
+		}
+		if (!found)
+			return FALSE;  /* a subchannel was not found */
+	}
+
+	*try_mac = FALSE;
+	return TRUE;
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingWired *s_wired;
-	gboolean is_pppoe = FALSE;
 
 	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
 
-	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME))
-		is_pppoe = TRUE;
-	else if (!nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
+	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
+		/* NOP */
+	} else if (!nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 		                     _("The connection was not an Ethernet or PPPoE connection."));
 		return FALSE;
@@ -140,23 +212,48 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	s_wired = nm_connection_get_setting_wired (connection);
 	/* Wired setting optional for PPPoE */
 	if (s_wired) {
-		const char *perm_addr, *setting_addr;
+		const char *perm_addr, *s_mac;
+		gboolean try_mac = TRUE;
+		const char * const *mac_blacklist;
+		int i;
 
-		/* FIXME: filter using s390 subchannels when they are exported over the bus */
+		/* Check s390 subchannels */
+		if (!match_subchans (NM_DEVICE_ETHERNET (device), s_wired, &try_mac)) {
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The connection and device differ in S390 subchannels."));
+			return FALSE;
+		}
 
 		/* Check MAC address */
 		perm_addr = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
+		s_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_addr) {
 			if (!nm_utils_hwaddr_valid (perm_addr, ETH_ALEN)) {
 				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 				                     _("Invalid device MAC address."));
 				return FALSE;
 			}
-			setting_addr = nm_setting_wired_get_mac_address (s_wired);
-			if (setting_addr && !nm_utils_hwaddr_matches (setting_addr, -1, perm_addr, -1)) {
+			if (try_mac && s_mac && !nm_utils_hwaddr_matches (s_mac, -1, perm_addr, -1)) {
 				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-				                     _("The MACs of the device and the connection didn't match."));
+				                     _("The MACs of the device and the connection do not match."));
 				return FALSE;
+			}
+
+			/* Check for MAC address blacklist */
+			mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
+			for (i = 0; mac_blacklist[i]; i++) {
+				if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
+					g_warn_if_reached ();
+					g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+				                     _("Invalid MAC in the blacklist: %s."), mac_blacklist[i]);
+					return FALSE;
+				}
+
+				if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_addr, -1)) {
+					g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+				                     _("Device MAC (%s) is blacklisted by the connection."), perm_addr);
+					return FALSE;
+				}
 			}
 		}
 	}
@@ -193,6 +290,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
 		{ NM_DEVICE_ETHERNET_SPEED,                &priv->speed },
 		{ NM_DEVICE_ETHERNET_CARRIER,              &priv->carrier },
+		{ NM_DEVICE_ETHERNET_S390_SUBCHANNELS,     &priv->s390_subchannels },
 		{ NULL },
 	};
 
@@ -210,6 +308,7 @@ finalize (GObject *object)
 
 	g_free (priv->hw_address);
 	g_free (priv->perm_hw_address);
+	g_strfreev (priv->s390_subchannels);
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->finalize (object);
 }
@@ -221,6 +320,7 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceEthernet *device = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -234,6 +334,9 @@ get_property (GObject *object,
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_ethernet_get_carrier (device));
+		break;
+	case PROP_S390_SUBCHANNELS:
+		g_value_set_boxed (value, priv->s390_subchannels);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -312,4 +415,18 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMDeviceEthernet:s390-subchannels:
+	 *
+	 * Identifies subchannels of this network device used for
+	 * communication with z/VM or s390 host.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_SUBCHANNELS,
+		 g_param_spec_boxed (NM_DEVICE_ETHERNET_S390_SUBCHANNELS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }
