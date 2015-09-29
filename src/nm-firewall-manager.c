@@ -325,7 +325,7 @@ _start_request (NMFirewallManager *self,
 		 * there is no point in scheduling an idle-request to fake success. Just
 		 * return right away. */
 		_LOGD (info, "complete: drop request simulating success");
-		_cb_info_free (info);
+		_cb_info_complete_normal (info, NULL);
 		return NULL;
 	} else
 		info->idle.id = g_idle_add (_handle_idle, info);
