@@ -30,6 +30,8 @@
 
 #include <glib/gi18n-lib.h>
 
+#include "gsystem-local-alloc.h"
+
 #include "nmt-newt.h"
 
 #include "nmtui.h"
