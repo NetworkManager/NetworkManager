@@ -941,7 +941,8 @@ nm_bus_manager_unregister_object (NMBusManager *self, NMExportedObject *object)
 	for (interfaces = nm_exported_object_get_interfaces (object); interfaces; interfaces = interfaces->next) {
 		GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (interfaces->data);
 
-		g_dbus_interface_skeleton_unexport (interface);
+		if (g_dbus_interface_skeleton_get_object_path (interface))
+			g_dbus_interface_skeleton_unexport (interface);
 	}
 }
 
