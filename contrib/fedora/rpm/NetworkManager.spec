@@ -229,19 +229,6 @@ This package contains NetworkManager support for mobile broadband (WWAN) devices
 %endif
 
 
-%package devel
-Summary: Headers defining the NetworkManager D-Bus APIs
-Group: Development/Libraries
-Requires: %{name} = %{epoch}:%{version}-%{release}
-Requires: dbus-devel >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
-Requires: pkgconfig
-
-%description devel
-This package contains various headers accessing some NetworkManager functionality
-from applications.
-
-
 %package glib
 Summary: Libraries for adding NetworkManager support to applications (old API).
 Group: Development/Libraries
@@ -257,11 +244,13 @@ See also NetworkManager-libnm.
 %package glib-devel
 Summary: Header files for adding NetworkManager support to applications (old API).
 Group: Development/Libraries
-Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
 Requires: dbus-glib-devel >= %{dbus_glib_version}
+Provides: %{name}-devel = %{epoch}:%{version}-%{release}
+Provides: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: %{name}-devel < %{epoch}:%{version}-%{release}
 
 %description glib-devel
 This package contains the header and pkg-config files for development applications using
@@ -282,7 +271,6 @@ NetworkManager-glib.
 %package libnm-devel
 Summary: Header files for adding NetworkManager support to applications (new API).
 Group: Development/Libraries
-Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
@@ -556,19 +544,6 @@ fi
 %{_libdir}/%{name}/libnm-wwan.so
 %endif
 
-%files devel
-%doc ChangeLog docs/api/html/*
-%dir %{_includedir}/%{name}
-%{_includedir}/%{name}/%{name}.h
-%{_includedir}/%{name}/NetworkManagerVPN.h
-%{_includedir}/%{name}/nm-version-macros.h
-%{_includedir}/%{name}/nm-version.h
-%{_libdir}/pkgconfig/%{name}.pc
-%dir %{_datadir}/gtk-doc/html/NetworkManager
-%{_datadir}/gtk-doc/html/NetworkManager/*
-%{_datadir}/vala/vapi/*.deps
-%{_datadir}/vala/vapi/*.vapi
-
 %files glib
 %{_libdir}/libnm-glib.so.*
 %{_libdir}/libnm-glib-vpn.so.*
@@ -577,15 +552,22 @@ fi
 %{_libdir}/girepository-1.0/NMClient-1.0.typelib
 
 %files glib-devel
+%doc ChangeLog docs/api/html/*
 %dir %{_includedir}/libnm-glib
+%dir %{_includedir}/%{name}
 %{_includedir}/libnm-glib/*.h
+%{_includedir}/%{name}/%{name}.h
+%{_includedir}/%{name}/NetworkManagerVPN.h
 %{_includedir}/%{name}/nm-setting*.h
 %{_includedir}/%{name}/nm-connection.h
 %{_includedir}/%{name}/nm-utils-enum-types.h
 %{_includedir}/%{name}/nm-utils.h
+%{_includedir}/%{name}/nm-version.h
+%{_includedir}/%{name}/nm-version-macros.h
 %{_libdir}/pkgconfig/libnm-glib.pc
 %{_libdir}/pkgconfig/libnm-glib-vpn.pc
 %{_libdir}/pkgconfig/libnm-util.pc
+%{_libdir}/pkgconfig/%{name}.pc
 %{_libdir}/libnm-glib.so
 %{_libdir}/libnm-glib-vpn.so
 %{_libdir}/libnm-util.so
@@ -595,12 +577,17 @@ fi
 %{_datadir}/gtk-doc/html/libnm-glib/*
 %dir %{_datadir}/gtk-doc/html/libnm-util
 %{_datadir}/gtk-doc/html/libnm-util/*
+%dir %{_datadir}/gtk-doc/html/NetworkManager
+%{_datadir}/gtk-doc/html/NetworkManager/*
+%{_datadir}/vala/vapi/*.deps
+%{_datadir}/vala/vapi/*.vapi
 
 %files libnm
 %{_libdir}/libnm.so.*
 %{_libdir}/girepository-1.0/NM-1.0.typelib
 
 %files libnm-devel
+%doc ChangeLog docs/api/html/*
 %dir %{_includedir}/libnm
 %{_includedir}/libnm/*.h
 %{_libdir}/pkgconfig/libnm.pc
