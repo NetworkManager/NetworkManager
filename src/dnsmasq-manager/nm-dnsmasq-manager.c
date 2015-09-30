@@ -202,6 +202,7 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 	}
   
 	priv->pid = 0;
+	priv->dm_watch_id = 0;
 
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_DNSMASQ_STATUS_DEAD);
 }
