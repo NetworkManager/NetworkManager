@@ -303,4 +303,43 @@ _g_key_file_save_to_file (GKeyFile     *key_file,
 #endif
 
 
+#if !GLIB_CHECK_VERSION(2, 40, 0) || defined (NM_GLIB_COMPAT_H_TEST)
+static inline gpointer *
+_nm_g_hash_table_get_keys_as_array (GHashTable *hash_table,
+                                    guint      *length)
+{
+	GHashTableIter iter;
+	gpointer key, *ret;
+	guint i = 0;
+
+	g_return_val_if_fail (hash_table, NULL);
+
+	ret = g_new0 (gpointer, g_hash_table_size (hash_table) + 1);
+	g_hash_table_iter_init (&iter, hash_table);
+
+	while (g_hash_table_iter_next (&iter, &key, NULL))
+		ret[i++] = key;
+
+	ret[i] = NULL;
+
+	if (length)
+		*length = i;
+
+	return ret;
+}
+#endif
+#if !GLIB_CHECK_VERSION(2, 40, 0)
+#define g_hash_table_get_keys_as_array(hash_table, length) \
+	G_GNUC_EXTENSION ({ \
+		_nm_g_hash_table_get_keys_as_array (hash_table, length); \
+	})
+#else
+#define g_hash_table_get_keys_as_array(hash_table, length) \
+	G_GNUC_EXTENSION ({ \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+			(g_hash_table_get_keys_as_array) ((hash_table), (length)); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	})
+#endif
+
 #endif  /* __NM_GLIB_H__ */

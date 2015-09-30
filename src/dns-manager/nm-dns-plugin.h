@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-config-data.h"
+
 #define NM_TYPE_DNS_PLUGIN            (nm_dns_plugin_get_type ())
 #define NM_DNS_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DNS_PLUGIN, NMDnsPlugin))
 #define NM_DNS_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DNS_PLUGIN, NMDnsPluginClass))
@@ -46,13 +48,15 @@ typedef struct {
 	 * NMIP4Config or NMIP6Config objects from VPN connections, while
 	 * 'dev_configs' is a list of NMPI4Config or NMIP6Config objects from
 	 * active devices.  'other_configs' represent other IP configuration that
-	 * may be in-use.  Configs of the same IP version are sorted in priority
+	 * may be in-use.  'global_config' is the optional global DNS
+	 * configuration.  Configs of the same IP version are sorted in priority
 	 * order.
 	 */
 	gboolean (*update) (NMDnsPlugin *self,
 	                    const GSList *vpn_configs,
 	                    const GSList *dev_configs,
 	                    const GSList *other_configs,
+	                    const NMGlobalDnsConfig *global_config,
 	                    const char *hostname);
 
 	/* Subclasses should override and return TRUE if they start a local
@@ -91,6 +95,7 @@ gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                const GSList *vpn_configs,
                                const GSList *dev_configs,
                                const GSList *other_configs,
+                               const NMGlobalDnsConfig *global_config,
                                const char *hostname);
 
 /* For subclasses/plugins */

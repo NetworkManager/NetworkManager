@@ -35,6 +35,7 @@
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS "org.freedesktop.NetworkManager.settings.modify.global-dns"
 
 
 typedef struct NMAuthChain NMAuthChain;

@@ -637,6 +637,72 @@ ipv6.ip6-privacy=1
   </refsect1>
 
   <refsect1>
+    <title><literal>global-dns</literal> section</title>
+    <para>This section specifies global DNS settings that override
+    connection-specific configuration.</para>
+    <para>
+      <variablelist>
+	<varlistentry>
+	  <term><varname>enable</varname></term>
+	  <listitem>
+	    <para>
+	      Whether the global DNS configuration should be used.
+	   </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><varname>searches</varname></term>
+	  <listitem>
+	    <para>
+	     A list of search domains to be used during hostname lookup.
+	   </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><varname>options</varname></term>
+	  <listitem>
+	    <para>
+	     A list of of options to be passed to the hostname resolver.
+	   </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title><literal>global-dns-domain</literal> sections</title>
+    <para>Sections with a name starting with the "global-dns-domain-"
+    prefix allow to define global DNS configuration for specific
+    domains.  The part of section name after "global-dns-domain-"
+    specifies the domain name a section applies to.  More specific
+    domains have the precedence over less specific ones and the
+    default domain is represented by the wildcard "*".  A default
+    domain section is mandatory.
+    </para>
+    <para>
+      <variablelist>
+	<varlistentry>
+	  <term><varname>servers</varname></term>
+	  <listitem>
+	    <para>
+	     A list of addresses of DNS servers to be used for the given domain.
+	   </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><varname>options</varname></term>
+	  <listitem>
+	    <para>
+	     A list of domain-specific DNS options. Not used at the moment.
+	   </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
     <title>Plugins</title>
 
     <variablelist>
