@@ -166,6 +166,38 @@ struct _PrivateServer {
 	NMBusManager *manager;
 };
 
+typedef struct {
+	GDBusConnection *connection;
+	PrivateServer *server;
+	gboolean remote_peer_vanished;
+} CloseConnectionInfo;
+
+static gboolean
+close_connection_in_idle (gpointer user_data)
+{
+	CloseConnectionInfo *info = user_data;
+	PrivateServer *server = info->server;
+
+	/* Emit this for the manager */
+	g_signal_emit (server->manager,
+	               signals[PRIVATE_CONNECTION_DISCONNECTED],
+	               server->detail,
+	               info->connection);
+
+	/* FIXME: there's a bug (754730) in GLib for which the connection
+	 * is marked as closed when the remote peer vanishes but its
+	 * resources are not cleaned up.  Work around it by explicitly
+	 * closing the connection in that case. */
+	if (info->remote_peer_vanished)
+		g_dbus_connection_close (info->connection, NULL, NULL, NULL);
+
+	g_hash_table_remove (server->connections, info->connection);
+	g_object_unref (server->manager);
+	g_slice_free (CloseConnectionInfo, info);
+
+	return G_SOURCE_REMOVE;
+}
+
 static void
 private_server_closed (GDBusConnection *conn,
                        gboolean remote_peer_vanished,
@@ -173,25 +205,22 @@ private_server_closed (GDBusConnection *conn,
                        gpointer user_data)
 {
 	PrivateServer *s = user_data;
+	CloseConnectionInfo *info;
 
 	/* Clean up after the connection */
 	nm_log_dbg (LOGD_CORE, "(%s) closed connection %p on private socket.",
 	            s->tag, conn);
 
-	/* Emit this for the manager */
-	g_signal_emit (s->manager,
-	               signals[PRIVATE_CONNECTION_DISCONNECTED],
-	               s->detail,
-	               conn);
+	info = g_slice_new0 (CloseConnectionInfo);
+	info->connection = conn;
+	info->server = s;
+	info->remote_peer_vanished = remote_peer_vanished;
 
-	/* FIXME: there's a bug (754730) in GLib for which the connection
-	 * is marked as closed when the remote peer vanishes but its
-	 * resources are not cleaned up.  Work around it by explicitly
-	 * closing the connection in that case. */
-	if (remote_peer_vanished)
-		g_dbus_connection_close (conn, NULL, NULL, NULL);
+	g_object_ref (s->manager);
 
-	g_hash_table_remove (s->connections, conn);
+	/* Delay the close of connection to ensure that D-Bus signals
+	 * are handled */
+	g_idle_add (close_connection_in_idle, info);
 }
 
 static gboolean
