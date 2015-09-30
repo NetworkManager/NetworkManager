@@ -578,7 +578,7 @@ props_changed_cb (GDBusProxy *proxy,
 		set_state_from_string (self, s);
 	}
 
-	if (g_variant_lookup (changed_properties, "BSSs", "^a&s", &array)) {
+	if (g_variant_lookup (changed_properties, "BSSs", "^a&o", &array)) {
 		iter = array;
 		while (*iter)
 			handle_new_bss (self, *iter++);
