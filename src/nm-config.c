@@ -1190,7 +1190,7 @@ out:
 	 * deletion of options from user configuration may cause the
 	 * internal options to appear again.
 	 */
-	if (nm_config_keyfile_get_boolean (keyfile_conf, NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS, "enable", FALSE)) {
+	if (nm_config_keyfile_get_boolean (keyfile_conf, NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, FALSE)) {
 		if (g_key_file_remove_group (keyfile_intern, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL))
 			needs_rewrite = TRUE;
 		for (g = 0; groups && groups[g]; g++) {

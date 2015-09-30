@@ -62,6 +62,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
+#define NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE             "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
