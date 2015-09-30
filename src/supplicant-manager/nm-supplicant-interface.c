@@ -128,16 +128,36 @@ bss_props_changed_cb (GDBusProxy *proxy,
 	               changed_properties);
 }
 
+static GVariant *
+_get_bss_proxy_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
+{
+	gs_strfreev char **properties = NULL;
+	GVariantBuilder builder;
+	char **iter;
+
+	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
+	if (!iter)
+		return NULL;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	while (*iter) {
+		GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
+
+		g_variant_builder_add (&builder, "{sv}", *iter++, copy);
+		g_variant_unref (copy);
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+#define BSS_PROXY_INITED "bss-proxy-inited"
+
 static void
 on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
 	gs_free_error GError *error = NULL;
-	gs_strfreev char **properties = NULL;
 	gs_unref_variant GVariant *props = NULL;
-	GVariantBuilder builder;
-	char **iter;
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
@@ -149,19 +169,12 @@ on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	}
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	props = _get_bss_proxy_properties (self, proxy);
+	if (!props)
+		return;
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	g_object_set_data (G_OBJECT (proxy), BSS_PROXY_INITED, GUINT_TO_POINTER (TRUE));
 
-	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
-	while (iter && *iter) {
-		GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
-
-		g_variant_builder_add (&builder, "{sv}", *iter++, copy);
-		g_variant_unref (copy);
-	}
-
-	props = g_variant_builder_end (&builder);
 	g_signal_emit (self, signals[NEW_BSS], 0,
 	               g_dbus_proxy_get_object_path (proxy),
 	               g_variant_ref_sink (props));
@@ -502,11 +515,29 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	GVariant *props;
+	GHashTableIter iter;
+	char *bss_path;
+	GDBusProxy *bss_proxy;
 
 	/* Cache last scan completed time */
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
 	g_signal_emit (self, signals[SCAN_DONE], 0, success);
+
+	/* Emit NEW_BSS so that wifi device has the APs (in case it removed them) */
+	g_hash_table_iter_init (&iter, priv->bss_proxies);
+	while (g_hash_table_iter_next (&iter, (gpointer) &bss_path, (gpointer) &bss_proxy)) {
+		if (g_object_get_data (G_OBJECT (bss_proxy), BSS_PROXY_INITED)) {
+			props = _get_bss_proxy_properties (self, bss_proxy);
+			if (props) {
+				g_signal_emit (self, signals[NEW_BSS], 0,
+				               bss_path,
+				               g_variant_ref_sink (props));
+				g_variant_unref (props);
+			}
+		}
+	}
 }
 
 static void
