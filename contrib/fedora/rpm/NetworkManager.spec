@@ -87,7 +87,6 @@ Requires(preun): systemd
 Requires(postun): systemd
 
 Requires: dbus >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
 Requires: glib2 >= %{glib2_version}
 Requires: iproute
 Requires: dhclient >= 12:4.1.0
