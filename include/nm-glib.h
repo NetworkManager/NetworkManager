@@ -283,7 +283,7 @@ _nm_g_hash_table_get_keys_as_array (GHashTable *hash_table,
 	gpointer key, *ret;
 	guint i = 0;
 
-	g_return_if_fail (hash_table);
+	g_return_val_if_fail (hash_table, NULL);
 
 	ret = g_new0 (gpointer, g_hash_table_size (hash_table) + 1);
 	g_hash_table_iter_init (&iter, hash_table);
