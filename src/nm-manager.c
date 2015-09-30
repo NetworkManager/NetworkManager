@@ -346,7 +346,7 @@ find_ac_for_connection (NMManager *manager, NMConnection *connection)
 
 	is_settings_connection = NM_IS_SETTINGS_CONNECTION (connection);
 
-	if (is_settings_connection)
+	if (!is_settings_connection)
 		uuid = nm_connection_get_uuid (connection);
 
 	for (iter = priv->active_connections; iter; iter = iter->next) {
