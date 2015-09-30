@@ -445,6 +445,7 @@ constructed (GObject *object)
 	NMFirewallManager *self = (NMFirewallManager *) object;
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
+	gs_free_error GError *error = NULL;
 
 	G_OBJECT_CLASS (nm_firewall_manager_parent_class)->constructed (object);
 
@@ -455,12 +456,16 @@ constructed (GObject *object)
 	                                             FIREWALL_DBUS_SERVICE,
 	                                             FIREWALL_DBUS_PATH,
 	                                             FIREWALL_DBUS_INTERFACE_ZONE,
-	                                             NULL, NULL);
+	                                             NULL, &error);
+        if (priv->proxy) {
+		g_signal_connect (priv->proxy, "notify::g-name-owner",
+				  G_CALLBACK (name_owner_changed), self);
+		owner = g_dbus_proxy_get_name_owner (priv->proxy);
+		priv->running = (owner != NULL);
+        } else {
+                _LOGW (NULL, "could not connect to system D-Bus (%s)", error->message);
+	}
 
-	g_signal_connect (priv->proxy, "notify::g-name-owner",
-	                  G_CALLBACK (name_owner_changed), self);
-	owner = g_dbus_proxy_get_name_owner (priv->proxy);
-	priv->running = (owner != NULL);
 	_LOGD (NULL, "firewall constructed (%srunning)", priv->running ? "" : "not");
 }
 
