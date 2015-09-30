@@ -1468,7 +1468,7 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 		goto done;
 
 	/* Set new values */
-	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, "enable", "yes");
+	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, "yes");
 
 	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
 	                                   "searches", nm_global_dns_config_get_searches (global_dns),
