@@ -873,12 +873,8 @@ nm_bus_manager_register_object (NMBusManager *self,
 	 * stable -- because the path is the identifier for the object in this
 	 * situation. */
 
-#if GLIB_CHECK_VERSION(2, 40, 0)
-	if (!g_hash_table_insert (priv->exported, (gpointer) path, object))
+	if (!nm_g_hash_table_insert (priv->exported, (gpointer) path, object))
 		g_return_if_reached ();
-#else
-	g_hash_table_insert (priv->exported, (gpointer) path, object);
-#endif
 
 	nm_assert_exported (self, path, object);
 
