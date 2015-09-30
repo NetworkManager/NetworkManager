@@ -569,8 +569,8 @@ nm_global_dns_config_get_options (const NMGlobalDnsConfig *dns)
 guint
 nm_global_dns_config_get_num_domains (const NMGlobalDnsConfig *dns)
 {
-	g_return_val_if_fail (dns, NULL);
-	g_return_val_if_fail (dns->domains, NULL);
+	g_return_val_if_fail (dns, 0);
+	g_return_val_if_fail (dns->domains, 0);
 
 	return g_hash_table_size (dns->domains);
 }
@@ -632,8 +632,8 @@ nm_global_dns_config_is_internal (const NMGlobalDnsConfig *dns)
 gboolean
 nm_global_dns_config_is_empty (const NMGlobalDnsConfig *dns)
 {
-	g_return_if_fail (dns);
-	g_return_if_fail (dns->domains);
+	g_return_val_if_fail (dns, TRUE);
+	g_return_val_if_fail (dns->domains, TRUE);
 
 	return    (!dns->searches || g_strv_length (dns->searches) == 0)
 	       && (!dns->options || g_strv_length (dns->options) == 0)
