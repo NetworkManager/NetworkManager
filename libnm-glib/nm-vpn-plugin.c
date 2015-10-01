@@ -69,7 +69,7 @@ static gboolean impl_vpn_plugin_set_failure (NMVPNPlugin *plugin,
 
 #include "nm-vpn-plugin-glue.h"
 
-#define NM_VPN_PLUGIN_QUIT_TIMER    20
+#define NM_VPN_PLUGIN_QUIT_TIMER    180
 
 G_DEFINE_ABSTRACT_TYPE (NMVPNPlugin, nm_vpn_plugin, G_TYPE_OBJECT)
 
