@@ -2876,10 +2876,7 @@ master_ready_cb (NMActiveConnection *active,
 	_LOGD (LOGD_DEVICE, "master connection ready; master device %s",
 	       nm_device_get_iface (priv->master));
 
-	if (priv->master_ready_id) {
-		g_signal_handler_disconnect (active, priv->master_ready_id);
-		priv->master_ready_id = 0;
-	}
+	nm_clear_g_signal_handler (active, &priv->master_ready_id);
 
 	nm_device_activate_schedule_stage2_device_config (self);
 }
@@ -6184,10 +6181,7 @@ clear_act_request (NMDevice *self)
 
 	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
 
-	if (priv->master_ready_id) {
-		g_signal_handler_disconnect (priv->act_request, priv->master_ready_id);
-		priv->master_ready_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);
 
 	g_clear_object (&priv->act_request);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
