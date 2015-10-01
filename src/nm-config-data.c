@@ -731,7 +731,7 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	                : NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN;
 	domain_prefix_len = strlen (domain_prefix);
 
-	if (!keyfile || !nm_config_keyfile_get_boolean (keyfile, group, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, FALSE))
+	if (!nm_config_keyfile_has_global_dns_config (keyfile, internal))
 		return NULL;
 
 	conf = g_malloc0 (sizeof (NMGlobalDnsConfig));

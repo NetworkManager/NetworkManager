@@ -1066,6 +1066,34 @@ _keyfile_serialize_section (GKeyFile *keyfile, const char *group)
 	return g_string_free (str, FALSE);
 }
 
+gboolean
+nm_config_keyfile_has_global_dns_config (GKeyFile *keyfile, gboolean internal)
+{
+	gs_strfreev char **groups = NULL;
+	guint g;
+	const char *prefix;
+
+	if (!keyfile)
+		return FALSE;
+	if (g_key_file_has_group (keyfile,
+	                          internal
+	                              ? NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS
+	                              : NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS))
+		return TRUE;
+
+	groups = g_key_file_get_groups (keyfile, NULL);
+	if (!groups)
+		return FALSE;
+
+	prefix = internal ? NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN : NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN;
+
+	for (g = 0; groups[g]; g++) {
+		if (g_str_has_prefix (groups[g], prefix))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /**
  * intern_config_read:
  * @filename: the filename where to store the internal config
@@ -1219,7 +1247,7 @@ out:
 	 * deletion of options from user configuration may cause the
 	 * internal options to appear again.
 	 */
-	if (nm_config_keyfile_get_boolean (keyfile_conf, NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, FALSE)) {
+	if (nm_config_keyfile_has_global_dns_config (keyfile_conf, FALSE)) {
 		if (g_key_file_remove_group (keyfile_intern, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL))
 			needs_rewrite = TRUE;
 		for (g = 0; groups && groups[g]; g++) {
@@ -1497,8 +1525,6 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 		goto done;
 
 	/* Set new values */
-	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, "yes");
-
 	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
 	                                   "searches", nm_global_dns_config_get_searches (global_dns),
 	                                   -1);

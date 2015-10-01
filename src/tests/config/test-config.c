@@ -305,13 +305,6 @@ test_config_global_dns (void)
 
 	g_object_unref (config);
 
-	/* Check that a file without "enable=yes" gives a NULL configuration */
-	config = setup_config (NULL, SRCDIR "/global-dns-disabled.conf", "", NULL,
-	                       "/no/such/dir", "", NULL);
-	dns = nm_config_data_get_global_dns_config (nm_config_get_data_orig (config));
-	g_assert (!dns);
-	g_object_unref (config);
-
 	/* Check that a file without a default domain section gives a NULL configuration */
 	config = setup_config (NULL, SRCDIR "/global-dns-invalid.conf", "", NULL,
 	                       "/no/such/dir", "", NULL);

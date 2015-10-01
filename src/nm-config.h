@@ -63,7 +63,6 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
-#define NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE             "enable"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
@@ -145,6 +144,8 @@ void nm_config_keyfile_set_string_list (GKeyFile *keyfile,
                                         const char *key,
                                         const char *const* strv,
                                         gssize len);
+gboolean nm_config_keyfile_has_global_dns_config (GKeyFile *keyfile, gboolean internal);
+
 GSList *nm_config_get_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key);
 
 void _nm_config_sort_groups (char **groups, gsize ngroups);
