@@ -149,6 +149,8 @@ typedef enum {
  * @NM_DEVICE_TYPE_BRIDGE: a bridge master interface
  * @NM_DEVICE_TYPE_TEAM: a team master interface
  * @NM_DEVICE_TYPE_TUN: a TUN or TAP interface
+ * @NM_DEVICE_TYPE_IP_TUNNEL: a IP tunnel interface
+ * @NM_DEVICE_TYPE_MACVLAN: a MACVLAN interface
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
@@ -174,6 +176,7 @@ typedef enum {
 	NM_DEVICE_TYPE_TEAM       = 15,
 	NM_DEVICE_TYPE_TUN        = 16,
 	NM_DEVICE_TYPE_IP_TUNNEL  = 17,
+	NM_DEVICE_TYPE_MACVLAN    = 18,
 } NMDeviceType;
 
 /**

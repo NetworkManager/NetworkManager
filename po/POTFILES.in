@@ -153,6 +153,7 @@ src/devices/nm-device-ethernet.c
 src/devices/nm-device-ethernet-utils.c
 src/devices/nm-device-infiniband.c
 src/devices/nm-device-ip-tunnel.c
+src/devices/nm-device-macvlan.c
 src/devices/nm-device-tun.c
 src/devices/nm-device-vlan.c
 src/devices/team/nm-device-team.c

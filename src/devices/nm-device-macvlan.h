@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_MACVLAN_H__
 #define __NETWORKMANAGER_DEVICE_MACVLAN_H__
 
-#include "nm-device-generic.h"
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -35,9 +35,10 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MACVLAN_PARENT     "parent"
 #define NM_DEVICE_MACVLAN_MODE       "mode"
 #define NM_DEVICE_MACVLAN_NO_PROMISC "no-promisc"
+#define NM_DEVICE_MACVLAN_TAP        "tap"
 
-typedef NMDeviceGeneric NMDeviceMacvlan;
-typedef NMDeviceGenericClass NMDeviceMacvlanClass;
+typedef NMDevice NMDeviceMacvlan;
+typedef NMDeviceClass NMDeviceMacvlanClass;
 
 GType nm_device_macvlan_get_type (void);
 
