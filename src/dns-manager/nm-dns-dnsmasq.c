@@ -135,6 +135,30 @@ ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
 	return buf;
 }
 
+static void
+add_global_config (GString *str, const NMGlobalDnsConfig *config)
+{
+	guint i, j;
+
+	g_return_if_fail (config);
+
+	for (i = 0; i < nm_global_dns_config_get_num_domains (config); i++) {
+		NMGlobalDnsDomain *domain = nm_global_dns_config_get_domain (config, i);
+		const char *const *servers = nm_global_dns_domain_get_servers (domain);
+
+		for (j = 0; servers && servers[j]; j++) {
+			if (!strcmp (servers[j], "*"))
+				g_string_append_printf (str, "server=%s\n", servers[j]);
+			else {
+				g_string_append_printf (str, "server=/%s/%s\n",
+				                        nm_global_dns_domain_get_name (domain),
+				                        servers[j]);
+			}
+		}
+
+	}
+}
+
 static gboolean
 add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 {
@@ -201,6 +225,7 @@ update (NMDnsPlugin *plugin,
         const GSList *vpn_configs,
         const GSList *dev_configs,
         const GSList *other_configs,
+        const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
@@ -229,28 +254,32 @@ update (NMDnsPlugin *plugin,
 	/* Build up the new dnsmasq config file */
 	conf = g_string_sized_new (150);
 
-	/* Use split DNS for VPN configs */
-	for (iter = (GSList *) vpn_configs; iter; iter = g_slist_next (iter)) {
-		if (NM_IS_IP4_CONFIG (iter->data))
-			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), TRUE);
-		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), TRUE);
-	}
+	if (global_config)
+		add_global_config (conf, global_config);
+	else {
+		/* Use split DNS for VPN configs */
+		for (iter = (GSList *) vpn_configs; iter; iter = g_slist_next (iter)) {
+			if (NM_IS_IP4_CONFIG (iter->data))
+				add_ip4_config (conf, NM_IP4_CONFIG (iter->data), TRUE);
+			else if (NM_IS_IP6_CONFIG (iter->data))
+				add_ip6_config (conf, NM_IP6_CONFIG (iter->data), TRUE);
+		}
 
-	/* Now add interface configs without split DNS */
-	for (iter = (GSList *) dev_configs; iter; iter = g_slist_next (iter)) {
-		if (NM_IS_IP4_CONFIG (iter->data))
-			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
-		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
-	}
+		/* Now add interface configs without split DNS */
+		for (iter = (GSList *) dev_configs; iter; iter = g_slist_next (iter)) {
+			if (NM_IS_IP4_CONFIG (iter->data))
+				add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
+			else if (NM_IS_IP6_CONFIG (iter->data))
+				add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
+		}
 
-	/* And any other random configs */
-	for (iter = (GSList *) other_configs; iter; iter = g_slist_next (iter)) {
-		if (NM_IS_IP4_CONFIG (iter->data))
-			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
-		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
+		/* And any other random configs */
+		for (iter = (GSList *) other_configs; iter; iter = g_slist_next (iter)) {
+			if (NM_IS_IP4_CONFIG (iter->data))
+				add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
+			else if (NM_IS_IP6_CONFIG (iter->data))
+				add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
+		}
 	}
 
 	/* Write out the config file */
