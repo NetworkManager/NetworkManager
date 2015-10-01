@@ -188,6 +188,40 @@ _nm_singleton_instance_register_destruction (GObject *instance)
 
 /*****************************************************************************/
 
+gint
+nm_utils_ascii_str_to_bool (const char *str,
+                            gint default_value)
+{
+	gsize len;
+	char *s = NULL;
+
+	if (!str)
+		return default_value;
+
+	while (str[0] && g_ascii_isspace (str[0]))
+		str++;
+
+	if (!str[0])
+		return default_value;
+
+	len = strlen (str);
+	if (g_ascii_isspace (str[len - 1])) {
+		s = g_strdup (str);
+		g_strchomp (s);
+		str = s;
+	}
+
+	if (!g_ascii_strcasecmp (str, "true") || !g_ascii_strcasecmp (str, "yes") || !g_ascii_strcasecmp (str, "on") || !g_ascii_strcasecmp (str, "1"))
+		default_value = TRUE;
+	else if (!g_ascii_strcasecmp (str, "false") || !g_ascii_strcasecmp (str, "no") || !g_ascii_strcasecmp (str, "off") || !g_ascii_strcasecmp (str, "0"))
+		default_value = FALSE;
+	if (s)
+		g_free (s);
+	return default_value;
+}
+
+/*****************************************************************************/
+
 /*
  * nm_ethernet_address_is_valid:
  * @addr: pointer to a binary or ASCII Ethernet address
