@@ -1416,7 +1416,7 @@ intern_config_write (const char *filename,
 /************************************************************************/
 
 GSList *
-nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
+nm_config_get_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
 {
 	gs_free char *value = NULL;
 
