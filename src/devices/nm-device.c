@@ -335,6 +335,7 @@ typedef struct {
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
 	gboolean        enslaved;
+	gboolean        master_ready_handled;
 	guint           master_ready_id;
 
 	/* slave management */
@@ -2855,18 +2856,21 @@ get_ip_config_may_fail (NMDevice *self, int family)
 }
 
 static void
-master_ready_cb (NMActiveConnection *active,
-                 GParamSpec *pspec,
-                 NMDevice *self)
+master_ready (NMDevice *self,
+              NMActiveConnection *active)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActiveConnection *master;
 
-	g_assert (priv->state == NM_DEVICE_STATE_PREPARE);
+	g_return_if_fail (priv->state == NM_DEVICE_STATE_PREPARE);
+	g_return_if_fail (!priv->master_ready_handled);
 
 	/* Notify a master device that it has a new slave */
-	g_assert (nm_active_connection_get_master_ready (active));
+	g_return_if_fail (nm_active_connection_get_master_ready (active));
 	master = nm_active_connection_get_master (active);
+
+	priv->master_ready_handled = TRUE;
+	nm_clear_g_signal_handler (active, &priv->master_ready_id);
 
 	priv->master = g_object_ref (nm_active_connection_get_device (master));
 	nm_device_master_add_slave (priv->master,
@@ -2876,8 +2880,14 @@ master_ready_cb (NMActiveConnection *active,
 	_LOGD (LOGD_DEVICE, "master connection ready; master device %s",
 	       nm_device_get_iface (priv->master));
 
-	nm_clear_g_signal_handler (active, &priv->master_ready_id);
+}
 
+static void
+master_ready_cb (NMActiveConnection *active,
+                 GParamSpec *pspec,
+                 NMDevice *self)
+{
+	master_ready (self, active);
 	nm_device_activate_schedule_stage2_device_config (self);
 }
 
@@ -2925,23 +2935,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
 
-	if (nm_active_connection_get_master (active)) {
-		/* If the master connection is ready for slaves, attach ourselves */
-		if (nm_active_connection_get_master_ready (active))
-			master_ready_cb (active, NULL, self);
-		else {
-			_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
-
-			/* Attach a signal handler and wait for the master connection to begin activating */
-			g_assert (priv->master_ready_id == 0);
-			priv->master_ready_id = g_signal_connect (active,
-			                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
-			                                          (GCallback) master_ready_cb,
-			                                          self);
-			/* Postpone */
-		}
-	} else
-		nm_device_activate_schedule_stage2_device_config (self);
+	nm_device_activate_schedule_stage2_device_config (self);
 
 out:
 	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) complete.");
@@ -2994,6 +2988,28 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	gboolean no_firmware = FALSE;
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
 	GSList *iter;
+
+	if (!priv->master_ready_handled) {
+		if (!nm_active_connection_get_master (active))
+			priv->master_ready_handled = TRUE;
+		else {
+			/* If the master connection is ready for slaves, attach ourselves */
+			if (nm_active_connection_get_master_ready (active))
+				master_ready (self, active);
+			else {
+				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
+
+				if (priv->master_ready_id == 0) {
+					priv->master_ready_id = g_signal_connect (active,
+					                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+					                                          (GCallback) master_ready_cb,
+					                                          self);
+				}
+				/* Postpone */
+				return FALSE;
+			}
+		}
+	}
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -6181,6 +6197,7 @@ clear_act_request (NMDevice *self)
 
 	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
 
+	priv->master_ready_handled = FALSE;
 	nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);
 
 	g_clear_object (&priv->act_request);
