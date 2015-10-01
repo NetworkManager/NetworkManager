@@ -187,6 +187,7 @@ NMMatchSpecMatchType nm_match_spec_device_type (const GSList *specs, const char 
 NMMatchSpecMatchType nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 NMMatchSpecMatchType nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
 NMMatchSpecMatchType nm_match_spec_interface_name (const GSList *specs, const char *interface_name);
+NMMatchSpecMatchType nm_match_spec_match_config (const GSList *specs, guint nm_version, const char *env);
 GSList *nm_match_spec_split (const char *value);
 char *nm_match_spec_join (GSList *specs);
 

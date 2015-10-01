@@ -34,4 +34,5 @@ EXTRA_DIST = \
 	global-dns-invalid.conf \
 	conf.d/00-overrides.conf \
 	conf.d/10-more.conf \
+	conf.d/20-config-enable-1.conf \
 	conf.d/90-last.conf

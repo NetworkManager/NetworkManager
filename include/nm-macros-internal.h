@@ -286,4 +286,19 @@ nm_strstrip (char *str)
 
 /*****************************************************************************/
 
+static inline guint
+nm_encode_version (guint major, guint minor, guint micro) {
+	/* analog to the preprocessor macro NM_ENCODE_VERSION(). */
+	return (major << 16) | (minor << 8) | micro;
+}
+
+static inline void
+nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
+	*major = (version & 0xFFFF0000u) >> 16;
+	*minor = (version & 0x0000FF00u) >>  8;
+	*micro = (version & 0x000000FFu);
+}
+
+/*****************************************************************************/
+
 #endif /* __NM_MACROS_INTERNAL_H__ */

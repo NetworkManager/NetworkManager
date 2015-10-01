@@ -495,6 +495,47 @@ nm_config_create_keyfile ()
 	return keyfile;
 }
 
+/* this is an external variable, to make loading testable. Other then that,
+ * no code is supposed to change this. */
+guint _nm_config_match_nm_version = NM_VERSION_CUR_STABLE;
+char *_nm_config_match_env = NULL;
+
+static gboolean
+ignore_config_snippet (GKeyFile *keyfile, gboolean is_base_config)
+{
+	GSList *specs;
+	gboolean as_bool;
+	NMMatchSpecMatchType match_type;
+
+	if (is_base_config)
+		return FALSE;
+
+	if (!g_key_file_has_key (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, NULL))
+		return FALSE;
+
+	/* first, let's try to parse the value as plain boolean. If that is possible, we don't treat
+	 * the value as match-spec. */
+	as_bool = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, -1);
+	if (as_bool != -1)
+		return !as_bool;
+
+	if (G_UNLIKELY (!_nm_config_match_env)) {
+		const char *e;
+
+		e = g_getenv ("NM_CONFIG_ENABLE_TAG");
+		_nm_config_match_env = g_strdup (e ? e : "");
+	}
+
+	/* second, interpret the value as match-spec. */
+	specs = nm_config_get_match_spec (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, NULL);
+	match_type = nm_match_spec_match_config (specs,
+	                                         _nm_config_match_nm_version,
+	                                         _nm_config_match_env);
+	g_slist_free_full (specs, g_free);
+
+	return match_type != NM_MATCH_SPEC_MATCH;
+}
+
 static int
 _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 {
@@ -568,7 +609,7 @@ _setting_is_string_list (const char *group, const char *key)
 }
 
 static gboolean
-read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **error)
+read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, const char *path, GError **error)
 {
 	GKeyFile *kf;
 	char **groups, **keys;
@@ -597,6 +638,16 @@ read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **
 		g_key_file_free (kf);
 		return FALSE;
 	}
+
+	if (ignore_config_snippet (kf, is_base_config)) {
+		g_key_file_free (kf);
+		return TRUE;
+	}
+
+	/* the config-group is internal to every configuration snippets. It doesn't make sense
+	 * to merge the into the global configuration, and it doesn't make sense to preserve the
+	 * group beyond this point. */
+	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
 
 	/* Override the current settings with the new ones */
 	groups = g_key_file_get_groups (kf, &ngroups);
@@ -744,7 +795,7 @@ read_base_config (GKeyFile *keyfile,
 	/* Try a user-specified config file first */
 	if (cli_config_main_file) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (keyfile, NULL, cli_config_main_file, error)) {
+		if (read_config (keyfile, TRUE, NULL, cli_config_main_file, error)) {
 			*out_config_main_file = g_strdup (cli_config_main_file);
 			return TRUE;
 		} else
@@ -759,7 +810,7 @@ read_base_config (GKeyFile *keyfile,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (keyfile, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
+	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE_OLD);
 		return TRUE;
 	}
@@ -772,7 +823,7 @@ read_base_config (GKeyFile *keyfile,
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (keyfile, NULL, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
+	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 		return TRUE;
 	}
@@ -878,7 +929,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, system_config_dir, filename, error)) {
+		if (!read_config (keyfile, FALSE, system_config_dir, filename, error)) {
 			g_key_file_free (keyfile);
 			return NULL;
 		}
@@ -894,7 +945,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	g_assert (o_config_main_file);
 
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (keyfile, config_dir, confs->pdata[i], error)) {
+		if (!read_config (keyfile, FALSE, config_dir, confs->pdata[i], error)) {
 			g_key_file_free (keyfile);
 			return NULL;
 		}
@@ -1066,6 +1117,9 @@ intern_config_read (const char *filename,
 		gs_strfreev char **keys = NULL;
 		const char *group = groups[g];
 		gboolean is_intern, is_atomic;
+
+		if (!strcmp (group, NM_CONFIG_KEYFILE_GROUP_CONFIG))
+			continue;
 
 		keys = g_key_file_get_keys (keyfile, group, NULL, NULL);
 		if (!keys)
