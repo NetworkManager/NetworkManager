@@ -37,7 +37,7 @@
 
 #include "nmdbus-vpn-plugin.h"
 
-#define NM_VPN_PLUGIN_OLD_QUIT_TIMER    20
+#define NM_VPN_PLUGIN_OLD_QUIT_TIMER    180
 
 static void nm_vpn_plugin_old_initable_iface_init (GInitableIface *iface);
 
