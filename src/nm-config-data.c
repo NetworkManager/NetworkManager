@@ -660,7 +660,7 @@ nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns, GChecksum *s
 	for (key = keys; key; key = g_list_next (key)) {
 
 		domain = g_hash_table_lookup (dns->domains, key->data);
-		g_assert_nonnull (domain);
+		g_assert (domain != NULL);
 		g_checksum_update (sum, (guchar *) domain->name, strlen (domain->name));
 
 		for (i = 0; domain->servers && domain->servers[i]; i++)
