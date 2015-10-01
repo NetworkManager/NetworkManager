@@ -50,6 +50,11 @@ typedef struct {
 	char *password;
 	NMSettingSecretFlags password_flags;
 
+	/* Restrict connection to certain devices or SIMs */
+	char *device_id;
+	char *sim_id;
+	char *sim_operator_id;
+
 	char *apn; /* NULL for dynamic */
 	char *network_id; /* for manual registration or NULL for automatic */
 
@@ -70,6 +75,9 @@ enum {
 	PROP_PIN,
 	PROP_PIN_FLAGS,
 	PROP_HOME_ONLY,
+	PROP_DEVICE_ID,
+	PROP_SIM_ID,
+	PROP_SIM_OPERATOR_ID,
 
 	LAST_PROP
 };
@@ -213,6 +221,54 @@ nm_setting_gsm_get_home_only (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->home_only;
 }
 
+/**
+ * nm_setting_gsm_get_device_id:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:device-id property of the setting
+ *
+ * Since: 1.2
+ **/
+const char *
+nm_setting_gsm_get_device_id (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NULL);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->device_id;
+}
+
+/**
+ * nm_setting_gsm_get_sim_id:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:sim-id property of the setting
+ *
+ * Since: 1.2
+ **/
+const char *
+nm_setting_gsm_get_sim_id (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NULL);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->sim_id;
+}
+
+/**
+ * nm_setting_gsm_get_sim_operator_id:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:sim-operator-id property of the setting
+ *
+ * Since: 1.2
+ **/
+const char *
+nm_setting_gsm_get_sim_operator_id (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NULL);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->sim_operator_id;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -312,6 +368,49 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->device_id && !priv->device_id[0]) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_DEVICE_ID);
+		return FALSE;
+	}
+
+	if (priv->sim_id && !priv->sim_id[0]) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_SIM_ID);
+		return FALSE;
+	}
+
+	if (priv->sim_operator_id) {
+		size_t len = strlen (priv->sim_operator_id);
+		const char *p = priv->sim_operator_id;
+
+		if (len == 0 || (len != 5 && len != 6)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("property is empty or wrong size"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_SIM_OPERATOR_ID);
+			return FALSE;
+		}
+
+		while (p && *p) {
+			if (!g_ascii_isdigit (*p++)) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("property must contain only digits"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_SIM_OPERATOR_ID);
+				return FALSE;
+			}
+		}
+	}
+
 	return TRUE;
 }
 
@@ -401,6 +500,18 @@ set_property (GObject *object, guint prop_id,
 	case PROP_HOME_ONLY:
 		priv->home_only = g_value_get_boolean (value);
 		break;
+	case PROP_DEVICE_ID:
+		g_free (priv->device_id);
+		priv->device_id = g_value_dup_string (value);
+		break;
+	case PROP_SIM_ID:
+		g_free (priv->sim_id);
+		priv->sim_id = g_value_dup_string (value);
+		break;
+	case PROP_SIM_OPERATOR_ID:
+		g_free (priv->sim_operator_id);
+		priv->sim_operator_id = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -440,6 +551,15 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_HOME_ONLY:
 		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
+		break;
+	case PROP_DEVICE_ID:
+		g_value_set_string (value, nm_setting_gsm_get_device_id (setting));
+		break;
+	case PROP_SIM_ID:
+		g_value_set_string (value, nm_setting_gsm_get_sim_id (setting));
+		break;
+	case PROP_SIM_OPERATOR_ID:
+		g_value_set_string (value, nm_setting_gsm_get_sim_operator_id (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -595,6 +715,57 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                       FALSE,
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingGsm:device-id:
+	 *
+	 * The device unique identifier (as given by the WWAN management service)
+	 * which this connection applies to.  If given, the connection will only
+	 * apply to the specified device.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DEVICE_ID,
+		 g_param_spec_string (NM_SETTING_GSM_DEVICE_ID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingGsm:sim-id:
+	 *
+	 * The SIM card unique identifier (as given by the WWAN management service)
+	 * which this connection applies to.  If given, the connection will apply
+	 * to any device also allowed by #NMSettingGsm:device-id which contains a
+	 * SIM card matching the given identifier.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_SIM_ID,
+		 g_param_spec_string (NM_SETTING_GSM_SIM_ID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingGsm:sim-operator-id:
+	 *
+	 * A MCC/MNC string like "310260" or "21601" identifying the specific
+	 * mobile network operator which this connection applies to.  If given,
+	 * the connection will apply to any device also allowed by
+	 * #NMSettingGsm:device-id and #NMSettingGsm:sim-id which contains a SIM
+	 * card provisioined by the given operator.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_SIM_OPERATOR_ID,
+		 g_param_spec_string (NM_SETTING_GSM_SIM_OPERATOR_ID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Ignore incoming deprecated properties */
 	_nm_setting_class_add_dbus_only_property (parent_class, "allowed-bands",

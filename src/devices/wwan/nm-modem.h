@@ -36,18 +36,19 @@ G_BEGIN_DECLS
 #define NM_MODEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM, NMModemClass))
 
 /* Properties */
-#define NM_MODEM_UID          "uid"
-#define NM_MODEM_PATH         "path"
-#define NM_MODEM_DRIVER       "driver"
-#define NM_MODEM_CONTROL_PORT "control-port"
-#define NM_MODEM_DATA_PORT    "data-port"
-#define NM_MODEM_IP4_METHOD   "ip4-method"
-#define NM_MODEM_IP6_METHOD   "ip6-method"
-#define NM_MODEM_IP_TIMEOUT   "ip-timeout"
-#define NM_MODEM_STATE        "state"
-#define NM_MODEM_DEVICE_ID    "device-id"
-#define NM_MODEM_SIM_ID       "sim-id"
-#define NM_MODEM_IP_TYPES     "ip-types"   /* Supported IP types */
+#define NM_MODEM_UID             "uid"
+#define NM_MODEM_PATH            "path"
+#define NM_MODEM_DRIVER          "driver"
+#define NM_MODEM_CONTROL_PORT    "control-port"
+#define NM_MODEM_DATA_PORT       "data-port"
+#define NM_MODEM_IP4_METHOD      "ip4-method"
+#define NM_MODEM_IP6_METHOD      "ip6-method"
+#define NM_MODEM_IP_TIMEOUT      "ip-timeout"
+#define NM_MODEM_STATE           "state"
+#define NM_MODEM_DEVICE_ID       "device-id"
+#define NM_MODEM_SIM_ID          "sim-id"
+#define NM_MODEM_IP_TYPES        "ip-types"   /* Supported IP types */
+#define NM_MODEM_SIM_OPERATOR_ID "sim-operator-id"
 
 /* Signals */
 #define NM_MODEM_PPP_STATS         "ppp-stats"
@@ -179,12 +180,15 @@ typedef struct {
 
 GType nm_modem_get_type (void);
 
-const char *nm_modem_get_path         (NMModem *modem);
-const char *nm_modem_get_uid          (NMModem *modem);
-const char *nm_modem_get_control_port (NMModem *modem);
-const char *nm_modem_get_data_port    (NMModem *modem);
-const char *nm_modem_get_driver       (NMModem *modem);
-gboolean    nm_modem_get_iid          (NMModem *modem, NMUtilsIPv6IfaceId *out_iid);
+const char *nm_modem_get_path            (NMModem *modem);
+const char *nm_modem_get_uid             (NMModem *modem);
+const char *nm_modem_get_control_port    (NMModem *modem);
+const char *nm_modem_get_data_port       (NMModem *modem);
+const char *nm_modem_get_driver          (NMModem *modem);
+const char *nm_modem_get_device_id       (NMModem *modem);
+const char *nm_modem_get_sim_id          (NMModem *modem);
+const char *nm_modem_get_sim_operator_id (NMModem *modem);
+gboolean    nm_modem_get_iid             (NMModem *modem, NMUtilsIPv6IfaceId *out_iid);
 
 gboolean    nm_modem_owns_port        (NMModem *modem, const char *iface);
 

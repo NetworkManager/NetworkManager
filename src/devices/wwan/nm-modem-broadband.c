@@ -1126,6 +1126,7 @@ get_sim_ready (MMModem *modem,
 	if (new_sim) {
 		g_object_set (G_OBJECT (self),
 		              NM_MODEM_SIM_ID, mm_sim_get_identifier (new_sim),
+		              NM_MODEM_SIM_OPERATOR_ID, mm_sim_get_operator_identifier (new_sim),
 		              NULL);
 		g_object_unref (new_sim);
 	} else {
@@ -1150,7 +1151,10 @@ sim_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
 		                  (GAsyncReadyCallback) get_sim_ready,
 		                  g_object_ref (self));
 	} else
-		g_object_set (G_OBJECT (self), NM_MODEM_SIM_ID, NULL, NULL);
+		g_object_set (G_OBJECT (self),
+		              NM_MODEM_SIM_ID, NULL,
+		              NM_MODEM_SIM_OPERATOR_ID, NULL,
+		              NULL);
 }
 
 static void

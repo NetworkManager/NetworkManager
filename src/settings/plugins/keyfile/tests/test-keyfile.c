@@ -1882,153 +1882,43 @@ test_read_gsm_connection (void)
 	NMSettingConnection *s_con;
 	NMSettingSerial *s_serial;
 	NMSettingGsm *s_gsm;
-	NMSettingBluetooth *s_bluetooth;
 	GError *error = NULL;
-	const char *tmp;
-	NMSettingSerialParity parity;
-	const char *expected_id = "AT&T Data Connect";
-	const char *expected_apn = "ISP.CINGULAR";
-	const char *expected_username = "ISP@CINGULARGPRS.COM";
-	const char *expected_password = "CINGULAR1";
-	const char *expected_network_id = "24005";
-	const char *expected_pin = "2345";
+	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_GSM_FILE, NULL);
-	ASSERT (connection != NULL,
-			"connection-read", "failed to read %s", TEST_GSM_FILE);
+	connection = nm_keyfile_plugin_connection_from_file (TEST_GSM_FILE, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
 
-	ASSERT (nm_connection_verify (connection, &error),
-	        "connection-verify", "failed to verify %s: %s", TEST_GSM_FILE, error->message);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
 
 	/* ===== CONNECTION SETTING ===== */
-
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "connection-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_GSM_FILE,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-
-	tmp = nm_setting_connection_get_connection_type (s_con);
-	ASSERT (tmp != NULL,
-	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, NM_SETTING_GSM_SETTING_NAME) == 0,
-	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_TYPE);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "AT&T Data Connect");
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_GSM_SETTING_NAME);
 
 	/* ===== BLUETOOTH SETTING ===== */
-
 	/* Plain GSM, so no BT setting expected */
-	s_bluetooth = nm_connection_get_setting_bluetooth (connection);
-	ASSERT (s_bluetooth == NULL,
-	        "connection-verify-bt", "unexpected %s setting",
-	        TEST_GSM_FILE,
-	        NM_SETTING_BLUETOOTH_SETTING_NAME);
+	g_assert (nm_connection_get_setting_bluetooth (connection) == NULL);
 
 	/* ===== GSM SETTING ===== */
-
 	s_gsm = nm_connection_get_setting_gsm (connection);
-	ASSERT (s_gsm != NULL,
-	        "connection-verify-gsm", "failed to verify %s: missing %s setting",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME);
-
-	/* APN */
-	tmp = nm_setting_gsm_get_apn (s_gsm);
-	ASSERT (tmp != NULL,
-	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_APN);
-	ASSERT (strcmp (tmp, expected_apn) == 0,
-	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_APN);
-
-	/* Username */
-	tmp = nm_setting_gsm_get_username (s_gsm);
-	ASSERT (tmp != NULL,
-	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_USERNAME);
-	ASSERT (strcmp (tmp, expected_username) == 0,
-	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_USERNAME);
-
-	/* Password */
-	tmp = nm_setting_gsm_get_password (s_gsm);
-	ASSERT (tmp != NULL,
-	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_PASSWORD);
-	ASSERT (strcmp (tmp, expected_password) == 0,
-	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_PASSWORD);
-
-	/* Network ID */
-	tmp = nm_setting_gsm_get_network_id (s_gsm);
-	ASSERT (tmp != NULL,
-	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_NETWORK_ID);
-	ASSERT (strcmp (tmp, expected_network_id) == 0,
-	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_NETWORK_ID);
-
-	/* PIN */
-	tmp = nm_setting_gsm_get_pin (s_gsm);
-	ASSERT (tmp != NULL,
-	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_PIN);
-	ASSERT (strcmp (tmp, expected_pin) == 0,
-	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_GSM_SETTING_NAME,
-	        NM_SETTING_GSM_PIN);
+	g_assert (s_gsm);
+	g_assert_cmpstr (nm_setting_gsm_get_apn (s_gsm), ==, "ISP.CINGULAR");
+	g_assert_cmpstr (nm_setting_gsm_get_username (s_gsm), ==, "ISP@CINGULARGPRS.COM");
+	g_assert_cmpstr (nm_setting_gsm_get_password (s_gsm), ==, "CINGULAR1");
+	g_assert_cmpstr (nm_setting_gsm_get_network_id (s_gsm), ==, "24005");
+	g_assert_cmpstr (nm_setting_gsm_get_pin (s_gsm), ==, "2345");
+	g_assert_cmpstr (nm_setting_gsm_get_device_id (s_gsm), ==, "da812de91eec16620b06cd0ca5cbc7ea25245222");
+	g_assert_cmpstr (nm_setting_gsm_get_sim_id (s_gsm), ==, "89148000000060671234");
+	g_assert_cmpstr (nm_setting_gsm_get_sim_operator_id (s_gsm), ==, "310260");
 
 	/* ===== SERIAL SETTING ===== */
-
 	s_serial = nm_connection_get_setting_serial (connection);
-	ASSERT (s_serial != NULL,
-	        "connection-verify-serial", "failed to verify %s: missing %s setting",
-	        TEST_GSM_FILE,
-	        NM_SETTING_SERIAL_SETTING_NAME);
-
-	parity = nm_setting_serial_get_parity (s_serial);
-	ASSERT (parity == NM_SETTING_SERIAL_PARITY_ODD,
-	        "connection-verify-serial", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_GSM_FILE,
-	        NM_SETTING_SERIAL_SETTING_NAME,
-	        NM_SETTING_SERIAL_PARITY);
+	g_assert (s_serial);
+	g_assert_cmpint (nm_setting_serial_get_parity (s_serial), ==, NM_SETTING_SERIAL_PARITY_ODD);
 
 	g_object_unref (connection);
 }
@@ -2087,22 +1977,23 @@ test_write_gsm_connection (void)
 	              NM_SETTING_GSM_PIN, "123456",
 	              NM_SETTING_GSM_NETWORK_ID, "254098",
 	              NM_SETTING_GSM_HOME_ONLY, TRUE,
+	              NM_SETTING_GSM_DEVICE_ID, "da812de91eec16620b06cd0ca5cbc7ea25245222",
+	              NM_SETTING_GSM_SIM_ID, "89148000000060671234",
+	              NM_SETTING_GSM_SIM_OPERATOR_ID, "310260",
 	              NULL);
 
 	/* Write out the connection */
 	owner_uid = geteuid ();
 	owner_grp = getegid ();
 	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	ASSERT (success == TRUE,
-			"connection-write", "failed to write keyfile: %s",
-			error ? error->message : "(none)");
-
-	ASSERT (testfile != NULL,
-			"connection-write", "didn't get keyfile name back after writing connection");
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile != NULL);
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
-	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 

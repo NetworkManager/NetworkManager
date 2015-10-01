@@ -15,6 +15,9 @@ password=CINGULAR1
 apn=ISP.CINGULAR
 network-id=24005
 pin=2345
+device-id=da812de91eec16620b06cd0ca5cbc7ea25245222
+sim-id=89148000000060671234
+sim-operator-id=310260
 
 [serial]
 baud=115200
