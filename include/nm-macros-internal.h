@@ -198,6 +198,19 @@ nm_clear_g_source (guint *id)
 	return FALSE;
 }
 
+static inline gboolean
+nm_clear_g_signal_handler (gpointer self, guint *id)
+{
+	g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
+
+	if (id && *id) {
+		g_signal_handler_disconnect (self, *id);
+		*id = 0;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 /* Determine whether @x is a power of two (@x being an integer type).
