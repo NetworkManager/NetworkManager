@@ -267,6 +267,7 @@ usage (void)
 	              "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	              "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden yes|no]\n\n"
+	              "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]\n\n"
 	              "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
 	              ));
 }
@@ -370,6 +371,18 @@ usage_device_wifi (void)
 	              "bring up the existing profile as follows: nmcli con up id <name>. Note that\n"
 	              "only open, WEP and WPA-PSK networks are supported at the moment. It is also\n"
 	              "assumed that IP configuration is obtained via DHCP.\n"
+	              "\n"
+	              "ARGUMENTS := wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
+	              "                          [band a|bg] [channel <channel>]\n"
+	              "\n"
+	              "Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
+	              "to stop the hotspot.\n"
+	              "Parameters of the hotspot can be influenced by the optional parameters:\n"
+	              "ifname - Wi-Fi device to use\n"
+	              "con-name - name of the created hotspot connection profile\n"
+	              "ssid - SSID of the hotspot\n"
+	              "band - Wi-Fi band to use\n"
+	              "channel - Wi-Fi channel to use\n"
 	              "\n"
 	              "ARGUMENTS := rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
 	              "\n"
@@ -1349,6 +1362,7 @@ connected_state_cb (NMDevice *device, NMActiveConnection *active)
 typedef struct {
 	NmCli *nmc;
 	NMDevice *device;
+	gboolean hotspot;
 } AddAndActivateInfo;
 
 static void
@@ -1366,8 +1380,12 @@ add_and_activate_cb (GObject *client,
 	active = nm_client_add_and_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
-		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: %s"),
-		                 error->message);
+		if (info->hotspot)
+			g_string_printf (nmc->return_text, _("Error: Failed to setup a Wi-Fi hotspot: %s"),
+			                 error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: %s"),
+			                 error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
@@ -1375,7 +1393,10 @@ add_and_activate_cb (GObject *client,
 		state = nm_active_connection_get_state (active);
 
 		if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
+			if (info->hotspot)
+				g_string_printf (nmc->return_text, _("Error: Failed to setup a Wi-Fi hotspot"));
+			else
+				g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			g_object_unref (active);
 			quit ();
@@ -1386,8 +1407,12 @@ add_and_activate_cb (GObject *client,
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				if (nmc->print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
-				g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-				         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+				if (info->hotspot)
+					g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+					         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+				else
+					g_print (_("Hotspot '%s' activated on device '%s'\n"),
+					         nm_active_connection_get_id (active), nm_device_get_iface (device));
 			}
 			g_object_unref (active);
 			quit ();
@@ -1566,6 +1591,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
 	info->device = device;
+	info->hotspot = FALSE;
 
 	nm_client_activate_connection_async (nmc->client,
 	                                     NULL,  /* let NM find a connection automatically */
@@ -2659,6 +2685,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
 	info->device = device;
+	info->hotspot = FALSE;
 
 	nm_client_add_and_activate_connection_async (nmc->client,
 	                                             connection,
@@ -2676,6 +2703,298 @@ error:
 	g_free (ssid_ask);
 	g_free (passwd_ask);
 
+	return nmc->return_value;
+}
+
+static GBytes *
+generate_ssid_for_hotspot (const char *ssid)
+{
+	GBytes *ssid_bytes;
+	char *hotspot_ssid = NULL;
+
+	if (!ssid) {
+		hotspot_ssid = g_strdup_printf ("Hotspot-%s", g_get_host_name ());
+		if (strlen (hotspot_ssid) > 32)
+			hotspot_ssid[32] = '\0';
+		ssid = hotspot_ssid;
+	}
+	ssid_bytes = g_bytes_new (ssid, strlen (ssid));
+	g_free (hotspot_ssid);
+	return ssid_bytes;
+}
+
+#define WPA_PASSKEY_SIZE 8
+static void
+generate_wpa_key (char *key, size_t len)
+{
+	guint i;
+
+	g_return_if_fail (key);
+	g_return_if_fail (len > WPA_PASSKEY_SIZE);
+
+	/* generate a 8-chars ASCII WPA key */
+	for (i = 0; i < WPA_PASSKEY_SIZE; i++) {
+		int c;
+		c = g_random_int_range (33, 126);
+		/* too many non alphanumeric characters are hard to remember for humans */
+		while (!g_ascii_isalnum (c))
+			c = g_random_int_range (33, 126);
+
+		key[i] = (gchar) c;
+	}
+	key[WPA_PASSKEY_SIZE] = '\0';
+}
+
+static void
+generate_wep_key (char *key, size_t len)
+{
+	int i;
+	const char *hexdigits = "0123456789abcdef";
+
+	g_return_if_fail (key);
+	g_return_if_fail (len > 10);
+
+	/* generate a 10-digit hex WEP key */
+	for (i = 0; i < 10; i++) {
+		int digit;
+		digit = g_random_int_range (0, 16);
+		key[i] = hexdigits[digit];
+	}
+	key[10] = '\0';
+}
+
+static void
+set_wireless_security_for_hotspot (NMSettingWirelessSecurity *s_wsec,
+                                   const char *wifi_mode,
+                                   NMDeviceWifiCapabilities caps)
+{
+        char key[11];
+	const char *key_mgmt;
+
+	if (g_strcmp0 (wifi_mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
+		if (caps & NM_WIFI_DEVICE_CAP_RSN) {
+			nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+			nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+			nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+			generate_wpa_key (key, sizeof (key));
+			key_mgmt = "wpa-psk";
+		} else if (caps & NM_WIFI_DEVICE_CAP_WPA) {
+			nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+			nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+			nm_setting_wireless_security_add_group (s_wsec, "tkip");
+			generate_wpa_key (key, sizeof (key));
+			key_mgmt = "wpa-psk";
+		} else {
+			generate_wep_key (key, sizeof (key));
+			key_mgmt = "none";
+		}
+	} else {
+		generate_wep_key (key, sizeof (key));
+		key_mgmt = "none";
+	}
+
+	if (g_strcmp0 (key_mgmt, "wpa-psk") == 0) {
+		g_object_set (s_wsec,
+		              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt,
+		              NM_SETTING_WIRELESS_SECURITY_PSK, key,
+		              NULL);
+	} else {
+		g_object_set (s_wsec,
+		              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt,
+		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, key,
+		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_KEY,
+		              NULL);
+	}
+}
+
+static NMCResultCode
+do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
+{
+	AddAndActivateInfo *info;
+	const char *ifname = NULL;
+	const char *con_name = NULL;
+	char *default_name = NULL;
+	const char *ssid = NULL;
+	const char *wifi_mode;
+	const char *band = NULL;
+	const char *channel = NULL;
+	unsigned long channel_int;
+	NMDevice *device = NULL;
+	int devices_idx;
+	const GPtrArray *devices;
+	NMDeviceWifiCapabilities caps;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	GBytes *ssid_bytes;
+
+	/* Set default timeout waiting for operation completion. */
+	if (nmc->timeout == -1)
+		nmc->timeout = 60;
+
+	while (argc > 0) {
+		if (strcmp (*argv, "ifname") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			ifname = *argv;
+		} else if (strcmp (*argv, "con-name") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			con_name = *argv;
+		} else if (strcmp (*argv, "ssid") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			ssid = *argv;
+			if (strlen (ssid) > 32) {
+				g_string_printf (nmc->return_text, _("Error: ssid is too long."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		} else if (strcmp (*argv, "band") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			band = *argv;
+			if (strcmp (band, "a") && strcmp (band, "bg")) {
+				g_string_printf (nmc->return_text, _("Error: band argument value '%s' is invalid; use 'a' or 'bg'."),
+				                 band);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		} else if (strcmp (*argv, "channel") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			channel = *argv;
+		} else {
+			g_string_printf (nmc->return_text, _("Error: Unknown parameter %s."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+
+		argc--;
+		argv++;
+	}
+
+	/* Verify band and channel parameters */
+	if (!channel) {
+		if (g_strcmp0 (band, "bg") == 0)
+			channel = "1";
+		if (g_strcmp0 (band, "a") == 0)
+			channel = "7";
+	}
+	if (channel) {
+		if (!band) {
+			g_string_printf (nmc->return_text, _("Error: channel requires band too."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+		if (   !nmc_string_to_uint (channel, TRUE, 1, 5825, &channel_int)
+		    || !nm_utils_wifi_is_channel_valid (channel_int, band)) {
+			g_string_printf (nmc->return_text, _("Error: channel '%s' not valid for band '%s'."),
+			                 channel, band);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+	}
+
+	/* Find Wi-Fi device. When no ifname is provided, the first Wi-Fi is used. */
+	devices = nm_client_get_devices (nmc->client);
+	devices_idx = 0;
+	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
+
+	if (!device) {
+		if (ifname)
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
+		else
+			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+
+	/* Check device supported mode */
+	caps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
+	if (caps & NM_WIFI_DEVICE_CAP_AP)
+		wifi_mode = NM_SETTING_WIRELESS_MODE_AP;
+	else if (caps & NM_WIFI_DEVICE_CAP_ADHOC)
+		wifi_mode = NM_SETTING_WIRELESS_MODE_ADHOC;
+	else {
+		g_string_printf (nmc->return_text, _("Error: Device '%s' supports neither AP nor Ad-Hoc mode."),
+		                 nm_device_get_iface (device));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+
+	/* Create a connection with appropriate parameters */
+	connection = nm_simple_connection_new ();
+	s_con =  (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+	if (!con_name)
+		con_name = default_name = nmc_unique_connection_name (nm_client_get_connections (nmc->client), "Hotspot");
+	g_object_set (s_con,
+                      NM_SETTING_CONNECTION_ID, con_name,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NULL);
+	g_free (default_name);
+
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+	ssid_bytes = generate_ssid_for_hotspot (ssid);
+	g_object_set (s_wifi, NM_SETTING_WIRELESS_MODE, wifi_mode,
+	                      NM_SETTING_WIRELESS_SSID, ssid_bytes,
+	                      NULL);
+	g_bytes_unref (ssid_bytes);
+	if (channel)
+		g_object_set (s_wifi,
+		              NM_SETTING_WIRELESS_CHANNEL, (guint32) channel_int,
+		              NM_SETTING_WIRELESS_BAND, band,
+		              NULL);
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+	set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps);
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED, NULL);
+
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	/* Activate the connection now */
+	nmc->nowait_flag = (nmc->timeout == 0);
+	nmc->should_wait = TRUE;
+
+	info = g_malloc0 (sizeof (AddAndActivateInfo));
+	info->nmc = nmc;
+	info->device = device;
+	info->hotspot = TRUE;
+
+	nm_client_add_and_activate_connection_async (nmc->client,
+	                                             connection,
+	                                             device,
+	                                             NULL,
+	                                             NULL,
+	                                             add_and_activate_cb,
+	                                             info);
+
+error:
 	return nmc->return_value;
 }
 
@@ -2791,6 +3110,8 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
 		} else if (matches (*argv, "connect") == 0) {
 			nmc->return_value = do_device_wifi_connect_network (nmc, argc-1, argv+1);
+		} else if (matches (*argv, "hotspot") == 0) {
+			nmc->return_value = do_device_wifi_hotspot (nmc, argc-1, argv+1);
 		} else if (matches (*argv, "rescan") == 0) {
 			nmc->return_value = do_device_wifi_rescan (nmc, argc-1, argv+1);
 		} else {

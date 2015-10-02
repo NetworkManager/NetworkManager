@@ -589,6 +589,12 @@ _nmcli_compl_ARGS()
                     return 0
                 fi
                 ;;
+            band)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "a bg"
+                    return 0
+                fi
+                ;;
             *)
                 return 1
                 ;;
@@ -1317,7 +1323,7 @@ _nmcli()
                         ;;
                     w|wi|wif|wifi)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND "${words[2]}" list connect rescan
+                            _nmcli_compl_COMMAND "${words[2]}" list connect hotspot rescan
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
@@ -1337,6 +1343,11 @@ _nmcli()
                                         local OPTIONS=(password wep-key-type ifname bssid name private hidden)
                                         _nmcli_compl_ARGS
                                     fi
+                                    ;;
+                                h|ho|hot|hots|hotsp|hotspo|hotspot)
+                                    _nmcli_array_delete_at words 0 2
+                                    OPTIONS=(ifname con-name ssid band channel)
+                                    _nmcli_compl_ARGS
                                     ;;
                                 r|re|res|resc|resca|rescan)
                                     _nmcli_array_delete_at words 0 2
