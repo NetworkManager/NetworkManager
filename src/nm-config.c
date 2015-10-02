@@ -1480,7 +1480,7 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 
 	for (i = 0; i < nm_global_dns_config_get_num_domains (global_dns); i++) {
 		NMGlobalDnsDomain *domain = nm_global_dns_config_get_domain (global_dns, i);
-		gs_free char *group_name;
+		gs_free char *group_name = NULL;
 
 		group_name = g_strdup_printf (NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN "%s",
 		                              nm_global_dns_domain_get_name (domain));
