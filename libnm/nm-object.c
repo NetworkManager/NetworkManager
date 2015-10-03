@@ -33,6 +33,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
@@ -1260,10 +1261,7 @@ reload_complete (NMObject *object, gboolean emit_now)
 	GError *error;
 
 	if (emit_now) {
-		if (priv->notify_id) {
-			g_source_remove (priv->notify_id);
-			priv->notify_id = 0;
-		}
+		nm_clear_g_source (&priv->notify_id);
 		deferred_notify_cb (object);
 	} else
 		_nm_object_defer_notify (object);
