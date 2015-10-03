@@ -40,6 +40,7 @@ main (int argc, char **argv)
 	NMRDisc *rdisc;
 	int ifindex = 1;
 	const char *ifname;
+	NMUtilsIPv6IfaceId iid;
 
 	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
@@ -66,6 +67,8 @@ main (int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	iid.id_u8[7] = 1;
+	nm_rdisc_set_iid (rdisc, iid);
 	nm_rdisc_start (rdisc);
 	g_main_loop_run (loop);
 

@@ -87,10 +87,45 @@ nm_rdisc_add_gateway (NMRDisc *rdisc, const NMRDiscGateway *new)
 	return !!new->lifetime;
 }
 
+/**
+ * complete_address:
+ * @rdisc: the #NMRDisc
+ * @addr: the #NMRDiscAddress
+ *
+ * Adds the host part to the address that has network part set.
+ * If the address already has a host part, add a different host part
+ * if possible (this is useful in case DAD failed).
+ *
+ * Can fail if a different address can not be generated (DAD failure
+ * for an EUI-64 address or DAD counter overflow).
+ *
+ * Returns: %TRUE if the address could be completed, %FALSE otherwise.
+ **/
+static gboolean
+complete_address (NMRDisc *rdisc, NMRDiscAddress *addr)
+{
+	if (!rdisc->iid.id) {
+		_LOGW ("complete-address: can't generate an EUI-64 address: no interface identifier");
+		return FALSE;
+	}
+
+	if (addr->address.s6_addr32[2] == 0x0 && addr->address.s6_addr32[3] == 0x0) {
+		_LOGD ("complete-address: adding an EUI-64 address");
+		nm_utils_ipv6_addr_set_interface_identfier (&addr->address, rdisc->iid);
+		return TRUE;
+	}
+
+	_LOGW ("complete-address: can't generate a new EUI-64 address");
+	return FALSE;
+}
+
 gboolean
-nm_rdisc_add_address (NMRDisc *rdisc, const NMRDiscAddress *new)
+nm_rdisc_complete_and_add_address (NMRDisc *rdisc, NMRDiscAddress *new)
 {
 	int i;
+
+	if (!complete_address (rdisc, new))
+		return FALSE;
 
 	for (i = 0; i < rdisc->addresses->len; i++) {
 		NMRDiscAddress *item = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
