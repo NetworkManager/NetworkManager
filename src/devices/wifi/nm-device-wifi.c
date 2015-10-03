@@ -1455,7 +1455,7 @@ ap_list_dump (gpointer user_data)
 	       priv->scheduled_scan_time);
 	sorted = get_sorted_ap_list (self);
 	for (iter = sorted; iter; iter = iter->next)
-		nm_ap_dump (NM_AP (iter->data), "  ", nm_device_get_iface (NM_DEVICE (self)));
+		nm_ap_dump (NM_AP (iter->data), "dump    ", nm_device_get_iface (NM_DEVICE (self)));
 	g_slist_free (sorted);
 	return G_SOURCE_REMOVE;
 }
