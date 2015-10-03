@@ -274,6 +274,7 @@ receive_ra (gpointer user_data)
 				.timestamp = item->timestamp,
 				.lifetime = item->lifetime,
 				.preferred = item->preferred,
+				.dad_counter = 0,
 			};
 
 			if (nm_rdisc_complete_and_add_address (rdisc, &address))

@@ -61,6 +61,7 @@ typedef struct {
 
 typedef struct {
 	struct in6_addr address;
+	guint8 dad_counter;
 	guint32 timestamp;
 	guint32 lifetime;
 	guint32 preferred;
@@ -143,5 +144,6 @@ GType nm_rdisc_get_type (void);
 
 gboolean nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
 void nm_rdisc_start (NMRDisc *rdisc);
+void nm_rdisc_dad_failed (NMRDisc *rdisc, struct in6_addr *address);
 
 #endif /* __NETWORKMANAGER_RDISC_H__ */

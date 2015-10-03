@@ -321,6 +321,20 @@ do_early_setup (int *argc, char **argv[])
 		global_opt.priority_v6 = (guint32) priority64_v6;
 }
 
+static void
+ip6_address_changed (NMPlatform *platform,
+                     NMPObjectType obj_type,
+                     int iface,
+                     NMPlatformIP6Address *addr,
+                     NMPlatformSignalChangeType change_type,
+                     NMPlatformReason reason,
+                     NMRDisc *rdisc)
+{
+	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
+	    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE))
+		nm_rdisc_dad_failed (rdisc, &addr->address);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -467,6 +481,10 @@ main (int argc, char *argv[])
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_pinfo"), "0");
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_rtr_pref"), "0");
 
+		g_signal_connect (NM_PLATFORM_GET,
+		                  NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
+		                  G_CALLBACK (ip6_address_changed),
+		                  rdisc);
 		g_signal_connect (rdisc,
 		                  NM_RDISC_CONFIG_CHANGED,
 		                  G_CALLBACK (rdisc_config_changed),

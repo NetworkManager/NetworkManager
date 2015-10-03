@@ -201,6 +201,7 @@ typedef struct {
 	guint queued_ip4_config_id;
 	guint queued_ip6_config_id;
 	GSList *pending_actions;
+	GSList *dad6_failed_addrs;
 
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
@@ -4774,16 +4775,20 @@ linklocal6_cleanup (NMDevice *self)
 	}
 }
 
+static void
+linklocal6_failed (NMDevice *self)
+{
+	linklocal6_cleanup (self);
+	nm_device_activate_schedule_ip6_config_timeout (self);
+}
+
 static gboolean
 linklocal6_timeout_cb (gpointer user_data)
 {
 	NMDevice *self = user_data;
 
-	linklocal6_cleanup (self);
-
 	_LOGD (LOGD_DEVICE, "linklocal6: waiting for link-local addresses failed due to timeout");
-
-	nm_device_activate_schedule_ip6_config_timeout (self);
+	linklocal6_failed (self);
 	return G_SOURCE_REMOVE;
 }
 
@@ -4840,7 +4845,8 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 			const NMPlatformIP6Address *addr;
 
 			addr = nm_ip6_config_get_address (priv->ip6_config, i);
-			if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+			if (   IN6_IS_ADDR_LINKLOCAL (&addr->address)
+			    && !(addr->flags & IFA_F_DADFAILED)) {
 				/* Already have an LL address, nothing to do */
 				return;
 			}
@@ -4855,7 +4861,16 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	memset (&lladdr, 0, sizeof (lladdr));
 	lladdr.s6_addr16[0] = htons (0xfe80);
 	nm_utils_ipv6_addr_set_interface_identfier (&lladdr, iid);
-	_LOGD (LOGD_IP6, "adding IPv6LL address %s", nm_utils_inet6_ntop (&lladdr, NULL));
+
+	if (priv->linklocal6_timeout_id) {
+		/* We already started and attempt to add a LL address. For the EUI-64
+		 * mode we can't pick a new one, we'll just fail. */
+		_LOGW (LOGD_IP6, "linklocal6: DAD failed for an EUI-64 address");
+		linklocal6_failed (self);
+		return;
+	}
+
+	_LOGD (LOGD_IP6, "linklocal6: adding IPv6LL address %s", nm_utils_inet6_ntop (&lladdr, NULL));
 	if (!nm_platform_ip6_address_add (NM_PLATFORM_GET,
 	                                  ip_ifindex,
 	                                  lladdr,
@@ -7794,6 +7809,8 @@ queued_ip6_config_change (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GSList *iter;
+	gboolean need_ipv6ll = FALSE;
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
@@ -7803,12 +7820,32 @@ queued_ip6_config_change (gpointer user_data)
 	g_object_ref (self);
 	update_ip6_config (self, FALSE);
 
+	/* Handle DAD falures */
+	for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
+		NMPlatformIP6Address *addr = iter->data;
+
+		if (addr->source >= NM_IP_CONFIG_SOURCE_USER)
+			continue;
+
+		_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
+		       nm_platform_ip6_address_to_string (addr, NULL, 0));
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+			need_ipv6ll = TRUE;
+		else
+			nm_rdisc_dad_failed (priv->rdisc, &addr->address);
+	}
+	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+
 	/* If no IPv6 link-local address exists but other addresses do then we
 	 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
 	 * ("Addressing Model"): "All interfaces are required to have at least
 	 * one link-local unicast address".
 	 */
 	if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
+		need_ipv6ll = TRUE;
+
+	if (need_ipv6ll)
 		check_and_add_ipv6ll_addr (self);
 
 	g_object_unref (self);
@@ -7826,11 +7863,13 @@ device_ipx_changed (NMPlatform *platform,
                     NMDevice *self)
 {
 	NMDevicePrivate *priv;
+	NMPlatformIP6Address *addr;
 
 	if (nm_device_get_ip_ifindex (self) != ifindex)
 		return;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	switch (obj_type) {
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
@@ -7840,6 +7879,14 @@ device_ipx_changed (NMPlatform *platform,
 		}
 		break;
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+		addr = platform_object;
+
+		if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
+		    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE)) {
+			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
+			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
+		}
+		/* fallthrough */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		if (!priv->queued_ip6_config_id) {
 			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
@@ -9731,6 +9778,7 @@ finalize (GObject *object)
 	g_free (priv->perm_hw_addr);
 	g_free (priv->initial_hw_addr);
 	g_slist_free_full (priv->pending_actions, g_free);
+	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
 	g_free (priv->iface);

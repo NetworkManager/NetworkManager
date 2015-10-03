@@ -385,6 +385,28 @@ nm_rdisc_start (NMRDisc *rdisc)
 	solicit (rdisc);
 }
 
+void
+nm_rdisc_dad_failed (NMRDisc *rdisc, struct in6_addr *address)
+{
+	int i;
+	gboolean changed = FALSE;
+
+	for (i = 0; i < rdisc->addresses->len; i++) {
+		NMRDiscAddress *item = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
+
+		if (!IN6_ARE_ADDR_EQUAL (&item->address, address))
+			continue;
+
+		_LOGD ("DAD failed for discovered address %s", nm_utils_inet6_ntop (address, NULL));
+		if (!complete_address (rdisc, item))
+			g_array_remove_index (rdisc->addresses, i--);
+		changed = TRUE;
+	}
+
+	if (changed)
+		g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, NM_RDISC_CONFIG_ADDRESSES);
+}
+
 #define CONFIG_MAP_MAX_STR 7
 
 static void
