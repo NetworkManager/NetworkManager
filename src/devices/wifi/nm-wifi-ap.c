@@ -739,14 +739,13 @@ nm_ap_dump (NMAccessPoint *self,
 	if (priv->supplicant_path)
 		supplicant_id = strrchr (priv->supplicant_path, '/');
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "%s[%s%c] %-32s[%s%u %s%u%% %c W:%04X R:%04X] [%3u] %s%s",
+	nm_log_dbg (LOGD_WIFI_SCAN, "%s[%s%c] %-32s[%s%u %3u%% %c W:%04X R:%04X] [%3u] %s%s",
 	            prefix,
 	            str_if_set (priv->address, "(none)"),
 	            mode_to_char (self),
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	            chan > 99 ? "" : (chan > 9 ? " " : "  "),
 	            chan,
-	            priv->strength < 100 ? " " : "",
 	            priv->strength,
 	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : ' ',
 	            priv->wpa_flags & 0xFFFF,
