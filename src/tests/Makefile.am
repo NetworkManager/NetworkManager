@@ -24,7 +24,8 @@ noinst_PROGRAMS = \
 	test-route-manager-fake \
 	test-dcb \
 	test-resolvconf-capture \
-	test-wired-defname
+	test-wired-defname \
+	test-utils
 
 ####### ip4 config test #######
 
@@ -110,6 +111,22 @@ test_wired_defname_SOURCES = \
 test_wired_defname_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### utils test #######
+
+test_utils_SOURCES = \
+	test-utils.c
+
+test_utils_DEPENDENCIES = \
+	$(top_srcdir)/src/NetworkManagerUtils.c
+
+test_utils_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-DPREFIX=\"/nonexistent\" \
+	-DNMSTATEDIR=\"/nonsense\"
+
+test_utils_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
 ####### secret agent interface test #######
 
 EXTRA_DIST = test-secret-agent.py
@@ -126,7 +143,8 @@ TESTS = \
 	test-resolvconf-capture \
 	test-general \
 	test-general-with-expect \
-	test-wired-defname
+	test-wired-defname \
+	test-utils
 
 
 if ENABLE_TESTS

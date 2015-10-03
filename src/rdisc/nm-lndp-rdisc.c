@@ -297,7 +297,7 @@ ipv6_sysctl_get (const char *ifname, const char *property, gint32 defval)
 }
 
 NMRDisc *
-nm_lndp_rdisc_new (int ifindex, const char *ifname)
+nm_lndp_rdisc_new (int ifindex, const char *ifname, const char *uuid, NMSettingIP6ConfigAddrGenMode addr_gen_mode)
 {
 	NMRDisc *rdisc;
 	NMLNDPRDiscPrivate *priv;
@@ -307,6 +307,8 @@ nm_lndp_rdisc_new (int ifindex, const char *ifname)
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
+	rdisc->uuid = g_strdup (uuid);
+	rdisc->addr_gen_mode = addr_gen_mode;
 
 	rdisc->max_addresses = ipv6_sysctl_get (ifname, "max_addresses",
 	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);

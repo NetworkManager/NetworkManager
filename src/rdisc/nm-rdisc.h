@@ -26,6 +26,7 @@
 #include <netinet/in.h>
 
 #include "nm-default.h"
+#include "nm-setting-ip6-config.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_TYPE_RDISC            (nm_rdisc_get_type ())
@@ -115,6 +116,8 @@ typedef struct {
 
 	int ifindex;
 	char *ifname;
+	char *uuid;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMUtilsIPv6IfaceId iid;
 	gint32 max_addresses;
 	gint32 rtr_solicitations;

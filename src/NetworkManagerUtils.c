@@ -29,6 +29,7 @@
 #include <resolv.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <linux/if.h>
 #include <linux/if_infiniband.h>
 
@@ -3213,7 +3214,6 @@ nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 	}
 	return FALSE;
 }
-
 void
 nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,
                                             const NMUtilsIPv6IfaceId iid)
@@ -3226,6 +3226,125 @@ nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
                                                  const struct in6_addr *addr)
 {
 	memcpy (iid, addr->s6_addr + 8, 8);
+}
+
+static gboolean
+_set_stable_privacy (struct in6_addr *addr,
+                     const char *ifname,
+                     const char *uuid,
+                     guint dad_counter,
+                     gchar *secret_key,
+                     gsize key_len,
+                     GError **error)
+{
+	GChecksum *sum;
+	guint8 digest[32];
+	guint32 tmp[2];
+	gsize len = sizeof (digest);
+
+	g_return_val_if_fail (key_len, FALSE);
+
+	/* Documentation suggests that this can fail.
+	 * Maybe in case of a missing algorithm in crypto library? */
+	sum = g_checksum_new (G_CHECKSUM_SHA256);
+	if (!sum) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "Can't create a SHA256 hash");
+		return FALSE;
+	}
+
+	key_len = CLAMP (key_len, 0, G_MAXUINT32);
+
+	g_checksum_update (sum, addr->s6_addr, 8);
+	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
+	if (!uuid)
+		uuid = "";
+	g_checksum_update (sum, (const guchar *) uuid, strlen (uuid) + 1);
+	tmp[0] = htonl (dad_counter);
+	tmp[1] = htonl (key_len);
+	g_checksum_update (sum, (const guchar *) tmp, sizeof (tmp));
+	g_checksum_update (sum, (const guchar *) secret_key, key_len);
+
+	g_checksum_get_digest (sum, digest, &len);
+	g_checksum_free (sum);
+
+	g_return_val_if_fail (len == 32, FALSE);
+
+	memcpy (addr->s6_addr + 8, &digest[0], 8);
+
+	return TRUE;
+}
+
+#define RFC7217_IDGEN_RETRIES 3
+/**
+ * nm_utils_ipv6_addr_set_stable_privacy:
+ *
+ * Extend the address prefix with an interface identifier using the
+ * RFC 7217 Stable Privacy mechanism.
+ *
+ * Returns: %TRUE on success, %FALSE if the address could not be generated.
+ */
+gboolean
+nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
+                                       const char *ifname,
+                                       const char *uuid,
+                                       guint dad_counter,
+                                       GError **error)
+{
+	gchar *secret_key = NULL;
+	gsize key_len = 0;
+	gboolean success = FALSE;
+
+	if (dad_counter >= RFC7217_IDGEN_RETRIES) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "Too many DAD collisions");
+		return FALSE;
+	}
+
+	/* Let's try to load a saved secret key first. */
+	if (g_file_get_contents (NMSTATEDIR "/secret_key", &secret_key, &key_len, NULL)) {
+		if (key_len < 16) {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     "Key is too short to be usable");
+			key_len = 0;
+		}
+	} else {
+		int urandom = open ("/dev/urandom", O_RDONLY);
+		mode_t key_mask;
+
+		if (!urandom) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			             "Can't open /dev/urandom: %s", strerror (errno));
+			return FALSE;
+		}
+
+		/* RFC7217 mandates the key SHOULD be at least 128 bits.
+		 * Let's use twice as much. */
+		key_len = 32;
+		secret_key = g_malloc (key_len);
+
+		key_mask = umask (0077);
+		if (read (urandom, secret_key, key_len) == key_len) {
+			if (!g_file_set_contents (NMSTATEDIR "/secret_key", secret_key, key_len, error)) {
+				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key");
+				key_len = 0;
+			}
+		} else {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     "Could not obtain a secret");
+			key_len = 0;
+		}
+		umask (key_mask);
+		close (urandom);
+	}
+
+	if (key_len) {
+		success = _set_stable_privacy (addr, ifname, uuid, dad_counter,
+		                               secret_key, key_len, error);
+	}
+
+	g_free (secret_key);
+	return success;
 }
 
 /**

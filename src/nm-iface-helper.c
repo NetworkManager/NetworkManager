@@ -44,6 +44,7 @@ extern unsigned int if_nametoindex (const char *__ifname);
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-utils.h"
+#include "nm-setting-ip6-config.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -69,6 +70,7 @@ static struct {
 	char *dhcp4_clientid;
 	char *dhcp4_hostname;
 	char *iid_str;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *logging_backend;
 	char *opt_log_level;
 	char *opt_log_domains;
@@ -292,6 +294,7 @@ do_early_setup (int *argc, char **argv[])
 		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
 		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
 		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &global_opt.iid_str, N_("Hex-encoded Interface Identifier"), "" },
+		{ "addr-gen-mode", 'e', 0, G_OPTION_ARG_INT, &global_opt.addr_gen_mode, N_("IPv6 SLAAC address generation mode"), "eui64" },
 		{ "logging-backend", '\0', 0, G_OPTION_ARG_STRING, &global_opt.logging_backend, N_("The logging backend configuration value. See logging.backend in NetworkManager.conf"), NULL },
 
 		/* Logging/debugging */
@@ -470,7 +473,7 @@ main (int argc, char *argv[])
 	if (global_opt.slaac) {
 		nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, TRUE);
 
-		rdisc = nm_lndp_rdisc_new (ifindex, global_opt.ifname);
+		rdisc = nm_lndp_rdisc_new (ifindex, global_opt.ifname, global_opt.uuid, global_opt.addr_gen_mode);
 		g_assert (rdisc);
 
 		if (iid)

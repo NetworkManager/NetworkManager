@@ -61,7 +61,10 @@ main (int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	rdisc = nm_lndp_rdisc_new (ifindex, ifname);
+	rdisc = nm_lndp_rdisc_new (ifindex,
+	                           ifname,
+	                           "8ce666e8-d34d-4fb1-b858-f15a7al28086",
+	                           NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64);
 	if (!rdisc) {
 		g_print ("Failed to create NMRDisc instance\n");
 		return EXIT_FAILURE;

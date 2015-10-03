@@ -286,6 +286,12 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 void nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,
                                                  const NMUtilsIPv6IfaceId iid);
 
+gboolean nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
+                                                const char *ifname,
+                                                const char *uuid,
+                                                guint dad_counter,
+                                                GError **error);
+
 void nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
                                                       const struct in6_addr *addr);
 
