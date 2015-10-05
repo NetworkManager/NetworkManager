@@ -731,7 +731,7 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	                : NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN;
 	domain_prefix_len = strlen (domain_prefix);
 
-	if (!keyfile || !nm_config_keyfile_get_boolean (keyfile, group, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, FALSE))
+	if (!nm_config_keyfile_has_global_dns_config (keyfile, internal))
 		return NULL;
 
 	conf = g_malloc0 (sizeof (NMGlobalDnsConfig));
@@ -1087,10 +1087,10 @@ _get_connection_info_init (ConnectionInfo *connection_info, GKeyFile *keyfile, c
 	/* pass ownership of @group on... */
 	connection_info->group_name = group;
 
-	connection_info->match_device.spec = nm_config_get_device_match_spec (keyfile,
-	                                                                      group,
-	                                                                      "match-device",
-	                                                                      &connection_info->match_device.has);
+	connection_info->match_device.spec = nm_config_get_match_spec (keyfile,
+	                                                               group,
+	                                                               "match-device",
+	                                                               &connection_info->match_device.has);
 	connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, group, "stop-match", FALSE);
 }
 
@@ -1362,10 +1362,10 @@ constructed (GObject *object)
 	priv->dns_mode = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL));
 	priv->rc_manager = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL));
 
-	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier", NULL);
-	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only", NULL);
+	priv->ignore_carrier = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier", NULL);
+	priv->assume_ipv6ll_only = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only", NULL);
 
-	priv->no_auto_default.specs_config = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default", NULL);
+	priv->no_auto_default.specs_config = nm_config_get_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default", NULL);
 
 	priv->global_dns = load_global_dns (priv->keyfile_user, FALSE);
 	if (!priv->global_dns)

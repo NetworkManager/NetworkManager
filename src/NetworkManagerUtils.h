@@ -114,6 +114,11 @@ gboolean nm_utils_error_is_cancelled (GError *error,
 
 /*****************************************************************************/
 
+gint nm_utils_ascii_str_to_bool (const char *str,
+                                 gint default_value);
+
+/*****************************************************************************/
+
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
@@ -182,6 +187,7 @@ NMMatchSpecMatchType nm_match_spec_device_type (const GSList *specs, const char 
 NMMatchSpecMatchType nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 NMMatchSpecMatchType nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
 NMMatchSpecMatchType nm_match_spec_interface_name (const GSList *specs, const char *interface_name);
+NMMatchSpecMatchType nm_match_spec_match_config (const GSList *specs, guint nm_version, const char *env);
 GSList *nm_match_spec_split (const char *value);
 char *nm_match_spec_join (GSList *specs);
 

@@ -126,32 +126,7 @@ gint
 nm_config_parse_boolean (const char *str,
                          gint default_value)
 {
-	gsize len;
-	char *s = NULL;
-
-	if (!str)
-		return default_value;
-
-	while (str[0] && g_ascii_isspace (str[0]))
-		str++;
-
-	if (!str[0])
-		return default_value;
-
-	len = strlen (str);
-	if (g_ascii_isspace (str[len - 1])) {
-		s = g_strdup (str);
-		g_strchomp (s);
-		str = s;
-	}
-
-	if (!g_ascii_strcasecmp (str, "true") || !g_ascii_strcasecmp (str, "yes") || !g_ascii_strcasecmp (str, "on") || !g_ascii_strcasecmp (str, "1"))
-		default_value = TRUE;
-	else if (!g_ascii_strcasecmp (str, "false") || !g_ascii_strcasecmp (str, "no") || !g_ascii_strcasecmp (str, "off") || !g_ascii_strcasecmp (str, "0"))
-		default_value = FALSE;
-	if (s)
-		g_free (s);
-	return default_value;
+	return nm_utils_ascii_str_to_bool (str, default_value);
 }
 
 gint
@@ -520,6 +495,47 @@ nm_config_create_keyfile ()
 	return keyfile;
 }
 
+/* this is an external variable, to make loading testable. Other then that,
+ * no code is supposed to change this. */
+guint _nm_config_match_nm_version = NM_VERSION_CUR_STABLE;
+char *_nm_config_match_env = NULL;
+
+static gboolean
+ignore_config_snippet (GKeyFile *keyfile, gboolean is_base_config)
+{
+	GSList *specs;
+	gboolean as_bool;
+	NMMatchSpecMatchType match_type;
+
+	if (is_base_config)
+		return FALSE;
+
+	if (!g_key_file_has_key (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, NULL))
+		return FALSE;
+
+	/* first, let's try to parse the value as plain boolean. If that is possible, we don't treat
+	 * the value as match-spec. */
+	as_bool = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, -1);
+	if (as_bool != -1)
+		return !as_bool;
+
+	if (G_UNLIKELY (!_nm_config_match_env)) {
+		const char *e;
+
+		e = g_getenv ("NM_CONFIG_ENABLE_TAG");
+		_nm_config_match_env = g_strdup (e ? e : "");
+	}
+
+	/* second, interpret the value as match-spec. */
+	specs = nm_config_get_match_spec (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, NULL);
+	match_type = nm_match_spec_match_config (specs,
+	                                         _nm_config_match_nm_version,
+	                                         _nm_config_match_env);
+	g_slist_free_full (specs, g_free);
+
+	return match_type != NM_MATCH_SPEC_MATCH;
+}
+
 static int
 _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 {
@@ -593,7 +609,7 @@ _setting_is_string_list (const char *group, const char *key)
 }
 
 static gboolean
-read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **error)
+read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, const char *path, GError **error)
 {
 	GKeyFile *kf;
 	char **groups, **keys;
@@ -622,6 +638,16 @@ read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **
 		g_key_file_free (kf);
 		return FALSE;
 	}
+
+	if (ignore_config_snippet (kf, is_base_config)) {
+		g_key_file_free (kf);
+		return TRUE;
+	}
+
+	/* the config-group is internal to every configuration snippets. It doesn't make sense
+	 * to merge the into the global configuration, and it doesn't make sense to preserve the
+	 * group beyond this point. */
+	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
 
 	/* Override the current settings with the new ones */
 	groups = g_key_file_get_groups (kf, &ngroups);
@@ -769,7 +795,7 @@ read_base_config (GKeyFile *keyfile,
 	/* Try a user-specified config file first */
 	if (cli_config_main_file) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (keyfile, NULL, cli_config_main_file, error)) {
+		if (read_config (keyfile, TRUE, NULL, cli_config_main_file, error)) {
 			*out_config_main_file = g_strdup (cli_config_main_file);
 			return TRUE;
 		} else
@@ -784,7 +810,7 @@ read_base_config (GKeyFile *keyfile,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (keyfile, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
+	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE_OLD);
 		return TRUE;
 	}
@@ -797,7 +823,7 @@ read_base_config (GKeyFile *keyfile,
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (keyfile, NULL, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
+	if (read_config (keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 		return TRUE;
 	}
@@ -903,7 +929,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, system_config_dir, filename, error)) {
+		if (!read_config (keyfile, FALSE, system_config_dir, filename, error)) {
 			g_key_file_free (keyfile);
 			return NULL;
 		}
@@ -919,7 +945,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	g_assert (o_config_main_file);
 
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (keyfile, config_dir, confs->pdata[i], error)) {
+		if (!read_config (keyfile, FALSE, config_dir, confs->pdata[i], error)) {
 			g_key_file_free (keyfile);
 			return NULL;
 		}
@@ -1040,6 +1066,34 @@ _keyfile_serialize_section (GKeyFile *keyfile, const char *group)
 	return g_string_free (str, FALSE);
 }
 
+gboolean
+nm_config_keyfile_has_global_dns_config (GKeyFile *keyfile, gboolean internal)
+{
+	gs_strfreev char **groups = NULL;
+	guint g;
+	const char *prefix;
+
+	if (!keyfile)
+		return FALSE;
+	if (g_key_file_has_group (keyfile,
+	                          internal
+	                              ? NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS
+	                              : NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS))
+		return TRUE;
+
+	groups = g_key_file_get_groups (keyfile, NULL);
+	if (!groups)
+		return FALSE;
+
+	prefix = internal ? NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN : NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN;
+
+	for (g = 0; groups[g]; g++) {
+		if (g_str_has_prefix (groups[g], prefix))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /**
  * intern_config_read:
  * @filename: the filename where to store the internal config
@@ -1091,6 +1145,9 @@ intern_config_read (const char *filename,
 		gs_strfreev char **keys = NULL;
 		const char *group = groups[g];
 		gboolean is_intern, is_atomic;
+
+		if (!strcmp (group, NM_CONFIG_KEYFILE_GROUP_CONFIG))
+			continue;
 
 		keys = g_key_file_get_keys (keyfile, group, NULL, NULL);
 		if (!keys)
@@ -1190,7 +1247,7 @@ out:
 	 * deletion of options from user configuration may cause the
 	 * internal options to appear again.
 	 */
-	if (nm_config_keyfile_get_boolean (keyfile_conf, NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, FALSE)) {
+	if (nm_config_keyfile_has_global_dns_config (keyfile_conf, FALSE)) {
 		if (g_key_file_remove_group (keyfile_intern, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL))
 			needs_rewrite = TRUE;
 		for (g = 0; groups && groups[g]; g++) {
@@ -1416,7 +1473,7 @@ intern_config_write (const char *filename,
 /************************************************************************/
 
 GSList *
-nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
+nm_config_get_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
 {
 	gs_free char *value = NULL;
 
@@ -1468,8 +1525,6 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 		goto done;
 
 	/* Set new values */
-	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, "yes");
-
 	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
 	                                   "searches", nm_global_dns_config_get_searches (global_dns),
 	                                   -1);

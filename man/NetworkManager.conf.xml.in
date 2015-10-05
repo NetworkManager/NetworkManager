@@ -643,14 +643,6 @@ ipv6.ip6-privacy=1
     <para>
       <variablelist>
 	<varlistentry>
-	  <term><varname>enable</varname></term>
-	  <listitem>
-	    <para>
-	      Whether the global DNS configuration should be used.
-	   </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
 	  <term><varname>searches</varname></term>
 	  <listitem>
 	    <para>
@@ -698,6 +690,95 @@ ipv6.ip6-privacy=1
 	   </para>
 	  </listitem>
 	</varlistentry>
+      </variablelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title><literal>.config</literal> sections</title>
+      <para>This is a special section that contains options which apply
+      to the configuration file that contains the option.
+    </para>
+    <para>
+      <variablelist>
+        <varlistentry>
+          <term><varname>enable</varname></term>
+          <listitem>
+            <para>
+              Defaults to "<literal>true</literal>". If "<literal>false</literal>",
+              the configuration file will be skipped during loading.
+              Note that the main configation file <literal>NetworkManger.conf</literal>
+              cannot be disabled.
+<programlisting>
+# always skip loading the config file
+[.config]
+enable=false
+</programlisting>
+            </para>
+            <para>
+              You can also match against the version of NetworkManager. For example
+              the following are valid configurations:
+<programlisting>
+# only load on version 1.0.6
+[.config]
+enable=nm-version:1.0.6
+
+# load on all versions 1.0.x, but not 1.2.x
+[.config]
+enable=nm-version:1.0
+
+# only load on versions &gt;= 1.1.6. This does not match
+# with version 1.2.0 or 1.4.4. Only the last digit is considered.
+[.config]
+enable=nm-version-min:1.1.6
+
+# only load on versions &gt;= 1.2. Contrary to the previous
+# example, this also matches with 1.2.0, 1.2.10, 1.4.4, etc.
+[.config]
+enable=nm-version-min:1.2
+
+# Match against the maximum allowed version. The example matches
+# versions 1.2.0, 1.2.2, 1.2.4. Again, only the last version digit
+# is allowed to be smaller. So this would not match match on 1.1.10.
+[.config]
+enable=nm-version-max:1.2.6
+</programlisting>
+            </para>
+            <para>
+              You can also match against the value of the environment variable
+              <literal>NM_CONFIG_ENABLE_TAG</literal>, like:
+<programlisting>
+# always skip loading the file when running NetworkManager with
+# environment variable "NM_CONFIG_ENABLE_TAG=TAG1"
+[.config]
+enable=env:TAG1
+</programlisting>
+            </para>
+            <para>
+              More then one match can be specified. The configuration will be
+              enabled if one of the predicates matches ("or"). The special prefix "except:" can
+              be used to negate the match. Note that if one except-predicate
+              matches, the entire configuration will be disabled.
+              In other words, a except predicate always wins over other predicates.
+<programlisting>
+# enable the configuration either when the environment variable
+# is present or the version is at least 1.2.0.
+[.config]
+enable=env:TAG2,nm-version-min:1.2
+
+# enable the configuration for version &gt;= 1.2.0, but disable
+# it when the environment variable is set to "TAG3"
+[.config]
+enable=except:env:TAG3,nm-version-min:1.2
+
+# enable the configuration on &gt;= 1.3, &gt;= 1.2.6, and &gt;= 1.0.16.
+# Useful if a certain feature is only present since those releases.
+[.config]
+enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
+</programlisting>
+            </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>

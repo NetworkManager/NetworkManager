@@ -305,13 +305,6 @@ test_config_global_dns (void)
 
 	g_object_unref (config);
 
-	/* Check that a file without "enable=yes" gives a NULL configuration */
-	config = setup_config (NULL, SRCDIR "/global-dns-disabled.conf", "", NULL,
-	                       "/no/such/dir", "", NULL);
-	dns = nm_config_data_get_global_dns_config (nm_config_get_data_orig (config));
-	g_assert (!dns);
-	g_object_unref (config);
-
 	/* Check that a file without a default domain section gives a NULL configuration */
 	config = setup_config (NULL, SRCDIR "/global-dns-invalid.conf", "", NULL,
 	                       "/no/such/dir", "", NULL);
@@ -905,6 +898,40 @@ test_config_signal (void)
 
 /*****************************************************************************/
 
+static void
+test_config_enable (void)
+{
+	gs_unref_object NMConfig *config = NULL;
+	guint match_nm_version = _nm_config_match_nm_version;
+	char *match_env = g_strdup (_nm_config_match_env);
+
+	g_clear_pointer (&_nm_config_match_env, g_free);
+	_nm_config_match_env = g_strdup ("something-else");
+
+	_nm_config_match_nm_version = nm_encode_version (1, 3, 4);
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
+	assert_config_value (nm_config_get_data_orig (config), "test-group-config-enable-1", "key1", NULL);
+	g_clear_object (&config);
+
+	_nm_config_match_nm_version = nm_encode_version (1, 5, 32);
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
+	assert_config_value (nm_config_get_data_orig (config), "test-group-config-enable-1", "key1", "enabled");
+	g_clear_object (&config);
+
+	_nm_config_match_nm_version = nm_encode_version (1, 5, 3);
+	g_clear_pointer (&_nm_config_match_env, g_free);
+	_nm_config_match_env = g_strdup ("test-match-env-1");
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
+	assert_config_value (nm_config_get_data_orig (config), "test-group-config-enable-1", "key1", "enabled");
+	g_clear_object (&config);
+
+	_nm_config_match_nm_version = match_nm_version;
+	g_clear_pointer (&_nm_config_match_env, g_free);
+	_nm_config_match_env = match_env;
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -932,6 +959,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/global-dns", test_config_global_dns);
 
 	g_test_add_func ("/config/signal", test_config_signal);
+
+	g_test_add_func ("/config/enable", test_config_enable);
 
 	/* This one has to come last, because it leaves its values in
 	 * nm-config.c's global variables, and there's no way to reset
