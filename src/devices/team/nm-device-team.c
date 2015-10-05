@@ -33,7 +33,6 @@
 #include "nm-device-private.h"
 #include "nm-platform.h"
 #include "nm-enum-types.h"
-#include "nm-team-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 #include "nm-dbus-compat.h"

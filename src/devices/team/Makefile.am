@@ -21,13 +21,6 @@ if WITH_TEAMDCTL
 AM_CPPFLAGS += ${LIBTEAMDCTL_CFLAGS}
 endif
 
-GLIB_GENERATED = nm-team-enum-types.h nm-team-enum-types.c
-GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
-GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-nm_team_enum_types_sources = $(srcdir)/nm-device-team.h
-
-BUILT_SOURCES = $(GLIB_GENERATED)
-
 pkglib_LTLIBRARIES = libnm-device-plugin-team.la
 
 SYMBOL_VIS_FILE=$(srcdir)/exports.ver
@@ -36,9 +29,7 @@ libnm_device_plugin_team_la_SOURCES = \
 	nm-device-team.c \
 	nm-device-team.h \
 	nm-team-factory.c \
-	nm-team-factory.h \
-	\
-	$(BUILT_SOURCES)
+	nm-team-factory.h
 
 libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \
@@ -53,7 +44,6 @@ if WITH_TEAMDCTL
 libnm_device_plugin_team_la_LIBADD += $(LIBTEAMDCTL_LIBS)
 endif
 
-CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST = $(SYMBOL_VIS_FILE)
 
 if ENABLE_TESTS

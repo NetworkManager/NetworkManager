@@ -23,16 +23,6 @@ AM_CPPFLAGS = \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS)
 
-GLIB_GENERATED = nm-wifi-enum-types.h nm-wifi-enum-types.c
-GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
-GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-nm_wifi_enum_types_sources = \
-	$(srcdir)/nm-device-wifi.h \
-	$(srcdir)/nm-wifi-ap.h \
-	$(srcdir)/nm-device-olpc-mesh.h
-
-BUILT_SOURCES = $(GLIB_GENERATED)
-
 pkglib_LTLIBRARIES = libnm-device-plugin-wifi.la
 
 libnm_device_plugin_wifi_la_SOURCES = \
@@ -44,9 +34,7 @@ libnm_device_plugin_wifi_la_SOURCES = \
 	nm-wifi-ap-utils.c \
 	nm-wifi-ap-utils.h \
 	nm-device-olpc-mesh.c \
-	nm-device-olpc-mesh.h \
-	\
-	$(BUILT_SOURCES)
+	nm-device-olpc-mesh.h
 
 SYMBOL_VIS_FILE=$(srcdir)/exports.ver
 
@@ -58,8 +46,6 @@ libnm_device_plugin_wifi_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)
-
-CLEANFILES = $(BUILT_SOURCES)
 
 EXTRA_DIST = $(SYMBOL_VIS_FILE)
 
