@@ -212,11 +212,6 @@ nm_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin, GError **err)
 		break;
 	case NM_VPN_SERVICE_STATE_STARTING:
 	case NM_VPN_SERVICE_STATE_STARTED:
-		if (priv->peer_watch_id) {
-			g_dbus_connection_signal_unsubscribe (nm_vpn_service_plugin_get_connection (plugin),
-			                                      priv->peer_watch_id);
-			priv->peer_watch_id = 0;
-		}
 		nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPING);
 		ret = NM_VPN_SERVICE_PLUGIN_GET_CLASS (plugin)->disconnect (plugin, err);
 		nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
@@ -1128,7 +1123,15 @@ state_changed (NMVpnServicePlugin *plugin, NMVpnServiceState state)
 		nm_clear_g_source (&priv->fail_stop_id);
 		break;
 	case NM_VPN_SERVICE_STATE_STOPPED:
-		schedule_quit_timer (plugin);
+		if (priv->dbus_watch_peer)
+			nm_vpn_service_plugin_emit_quit (plugin);
+		else
+			schedule_quit_timer (plugin);
+		if (priv->peer_watch_id) {
+			g_dbus_connection_signal_unsubscribe (nm_vpn_service_plugin_get_connection (plugin),
+			                                      priv->peer_watch_id);
+			priv->peer_watch_id = 0;
+		}
 		break;
 	default:
 		/* Clean up all timers we might have set up. */
