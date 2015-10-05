@@ -106,7 +106,7 @@ nm_bus_manager_setup (NMBusManager *instance)
 static void
 nm_assert_exported (NMBusManager *self, const char *path, NMExportedObject *object)
 {
-#ifdef NM_MORE_ASSERTS
+#if NM_MORE_ASSERTS
 	NMBusManagerPrivate *priv;
 	const char *p2, *po;
 	NMExportedObject *o2;

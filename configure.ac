@@ -891,10 +891,23 @@ AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 NM_COMPILER_WARNINGS
 
 AC_ARG_ENABLE(more-asserts,
-              AS_HELP_STRING([--enable-more-asserts], [Enable more assertions for debugging (default: no)]))
+              AS_HELP_STRING([--enable-more-asserts], [Enable more assertions for debugging (default: no). Deprecated option. Use --with-more-asserts=level]))
+more_asserts=0
 if test "${enable_more_asserts}" = "yes"; then
-    AC_DEFINE(NM_MORE_ASSERTS, [1], [Define if more asserts are enabled])
+    more_asserts=100
 fi
+AC_ARG_WITH(more-asserts,
+            AS_HELP_STRING([--with-more-asserts=level], [Enable more assertions for debugging (default: 0)]),
+            [more_asserts=${with_more_asserts}],
+            [])
+if test "${more_asserts}" = "no"; then
+    more_asserts=0
+else
+    if test "${more_asserts}" = "yes"; then
+        more_asserts=100
+    fi
+fi
+AC_DEFINE_UNQUOTED(NM_MORE_ASSERTS, $more_asserts, [Define if more asserts are enabled])
 
 AC_ARG_ENABLE(more-logging,
               AS_HELP_STRING([--enable-more-logging], [Enable more debug logging (default: no)]))
@@ -1169,6 +1182,7 @@ echo
 echo "Miscellaneous:"
 echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
+echo "  more-asserts: $more_asserts"
 echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"

@@ -1727,7 +1727,7 @@ nmp_cache_free (NMPCache *cache)
 void
 ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
 {
-#ifdef NM_MORE_ASSERTS
+#if NM_MORE_ASSERTS
 	NMMultiIndexIter iter_multi;
 	GHashTableIter iter_hash;
 	guint i, len;
