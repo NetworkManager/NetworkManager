@@ -179,7 +179,7 @@
 
 /*****************************************************************************/
 
-#ifdef NM_MORE_ASSERTS
+#if NM_MORE_ASSERTS
 #define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
 #else
 #define nm_assert(cond) G_STMT_START { if (FALSE) { if (cond) { } } } G_STMT_END

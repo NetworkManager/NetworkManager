@@ -8018,6 +8018,33 @@ nm_device_update_metered (NMDevice *self)
 	}
 }
 
+static gboolean
+_nm_device_check_connection_available (NMDevice *self,
+                                       NMConnection *connection,
+                                       NMDeviceCheckConAvailableFlags flags,
+                                       const char *specific_object)
+{
+	NMDeviceState state;
+
+	state = nm_device_get_state (self);
+	if (state < NM_DEVICE_STATE_UNMANAGED)
+		return FALSE;
+	if (   state < NM_DEVICE_STATE_UNAVAILABLE
+	    && nm_device_get_unmanaged (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
+		return FALSE;
+	if (   state < NM_DEVICE_STATE_DISCONNECTED
+	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
+	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
+	        || (    NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
+	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))))
+		return FALSE;
+
+	if (!nm_device_check_connection_compatible (self, connection))
+		return FALSE;
+
+	return NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, flags, specific_object);
+}
+
 /**
  * nm_device_check_connection_available():
  * @self: the #NMDevice
@@ -8039,25 +8066,33 @@ nm_device_check_connection_available (NMDevice *self,
                                       NMDeviceCheckConAvailableFlags flags,
                                       const char *specific_object)
 {
-	NMDeviceState state;
+	gboolean available;
 
-	state = nm_device_get_state (self);
-	if (state < NM_DEVICE_STATE_UNMANAGED)
-		return FALSE;
-	if (   state < NM_DEVICE_STATE_UNAVAILABLE
-	    && nm_device_get_unmanaged (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
-		return FALSE;
-	if (   state < NM_DEVICE_STATE_DISCONNECTED
-	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
-	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
-	        || (    NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
-	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))))
-		return FALSE;
+	available = _nm_device_check_connection_available (self, connection, flags, specific_object);
 
-	if (!nm_device_check_connection_compatible (self, connection))
-		return FALSE;
+#if NM_MORE_ASSERTS >= 2
+	{
+		/* The meaning of the flags is so that *adding* a flag relaxes a condition, thus making
+		 * the device *more* available. Assert against that requirement by testing all the flags. */
+		NMDeviceCheckConAvailableFlags i, j, k;
+		gboolean available_all[NM_DEVICE_CHECK_CON_AVAILABLE_ALL + 1] = { FALSE };
 
-	return NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, flags, specific_object);
+		for (i = 0; i <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; i++)
+			available_all[i] = _nm_device_check_connection_available (self, connection, i, specific_object);
+
+		for (i = 0; i <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; i++) {
+			for (j = 1; j <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; j <<= 1) {
+				if (NM_FLAGS_HAS (i, j)) {
+					k = i & ~j;
+					nm_assert (   available_all[i] == available_all[k]
+					           || available_all[i]);
+				}
+			}
+		}
+	}
+#endif
+
+	return available;
 }
 
 static void

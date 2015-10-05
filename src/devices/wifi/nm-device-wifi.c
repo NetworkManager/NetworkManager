@@ -47,7 +47,6 @@
 #include "nm-auth-utils.h"
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
-#include "nm-wifi-enum-types.h"
 #include "nm-connection-provider.h"
 #include "nm-core-internal.h"
 

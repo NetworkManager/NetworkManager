@@ -147,7 +147,7 @@ static gboolean _ip4_device_routes_cancel (NMRouteManager *self);
 
 /*********************************************************************************************/
 
-#if defined (NM_MORE_ASSERTS) && !defined (G_DISABLE_ASSERT)
+#if NM_MORE_ASSERTS && !defined (G_DISABLE_ASSERT)
 inline static void
 ASSERT_route_index_valid (const VTableIP *vtable, const GArray *entries, const RouteIndex *index, gboolean unique_ifindexes)
 {
