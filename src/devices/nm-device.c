@@ -8701,15 +8701,14 @@ deactivate_async_ready (NMDevice *self,
 	/* If operation cancelled, just return */
 	if (   g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
 	    || (priv->deactivating_cancellable && g_cancellable_is_cancelled (priv->deactivating_cancellable))) {
-		nm_log_warn (LOGD_DEVICE, "Deactivation (%s) cancelled",
-		             nm_device_get_iface (self));
+		_LOGW (LOGD_DEVICE, "Deactivation cancelled");
 	}
 	/* In every other case, transition to the DISCONNECTED state */
 	else {
-		if (error)
-			nm_log_warn (LOGD_DEVICE, "Deactivation (%s) failed: %s",
-			             nm_device_get_iface (self),
-			             error->message);
+		if (error) {
+			_LOGW (LOGD_DEVICE, "Deactivation failed: %s",
+			       error->message);
+		}
 		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
 	}
 
