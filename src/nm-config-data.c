@@ -19,6 +19,8 @@
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
+#include "config.h"
+
 #include "nm-config-data.h"
 
 #include <string.h>
