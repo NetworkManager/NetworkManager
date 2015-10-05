@@ -1011,6 +1011,29 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 	}
 }
 
+char *
+nmc_unique_connection_name (const GPtrArray *connections, const char *try_name)
+{
+	NMConnection *connection;
+	const char *name;
+	char *new_name;
+	unsigned int num = 1;
+	int i = 0;
+
+	new_name = g_strdup (try_name);
+	while (i < connections->len) {
+		connection = NM_CONNECTION (connections->pdata[i]);
+
+		name = nm_connection_get_id (connection);
+		if (g_strcmp0 (new_name, name) == 0) {
+			g_free (new_name);
+			new_name = g_strdup_printf ("%s-%d", try_name, num++);
+			i = 0;
+		} else
+			i++;
+	}
+	return new_name;
+}
 
 /**
  * nmc_cleanup_readline:

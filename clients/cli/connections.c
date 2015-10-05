@@ -5810,30 +5810,6 @@ cleanup_bridge_slave:
 	return TRUE;
 }
 
-static char *
-unique_connection_name (const GPtrArray *connections, const char *try_name)
-{
-	NMConnection *connection;
-	const char *name;
-	char *new_name;
-	unsigned int num = 1;
-	int i = 0;
-
-	new_name = g_strdup (try_name);
-	while (i < connections->len) {
-		connection = NM_CONNECTION (connections->pdata[i]);
-
-		name = nm_connection_get_id (connection);
-		if (g_strcmp0 (new_name, name) == 0) {
-			g_free (new_name);
-			new_name = g_strdup_printf ("%s-%d", try_name, num++);
-			i = 0;
-		} else
-			i++;
-	}
-	return new_name;
-}
-
 typedef struct {
 	NmCli *nmc;
 	char *con_name;
@@ -6180,7 +6156,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		char *try_name = ifname ?
 		                     g_strdup_printf ("%s-%s", get_name_alias (setting_name, nmc_valid_connection_types), ifname)
 		                   : g_strdup (get_name_alias (setting_name, nmc_valid_connection_types));
-		default_name = unique_connection_name (nmc->connections, try_name);
+		default_name = nmc_unique_connection_name (nmc->connections, try_name);
 		g_free (try_name);
 	}
 
@@ -9015,8 +8991,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		if (con_name)
 			default_name = g_strdup (con_name);
 		else
-			default_name = unique_connection_name (nmc->connections,
-			                                       get_name_alias (connection_type, nmc_valid_connection_types));
+			default_name = nmc_unique_connection_name (nmc->connections,
+			                                           get_name_alias (connection_type, nmc_valid_connection_types));
 
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_ID, default_name,
