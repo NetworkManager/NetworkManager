@@ -2984,25 +2984,21 @@ activate_stage1_device_prepare (NMDevice *self)
 	/* Notify the new ActiveConnection along with the state change */
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) started...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_active_connection_get_assumed (active)) {
 		ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
-			goto out;
+			return;
 		} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-			goto out;
+			return;
 		}
 		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
 
 	nm_device_activate_schedule_stage2_device_config (self);
-
-out:
-	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) complete.");
 }
 
 
@@ -3023,8 +3019,6 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	activation_source_schedule (self, activate_stage1_device_prepare, AF_INET);
-
-	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) scheduled...");
 }
 
 static NMActStageReturn
@@ -3051,7 +3045,6 @@ activate_stage2_device_config (NMDevice *self)
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
 	GSList *iter;
 
-	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) starting...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Assumed connections were already set up outside NetworkManager */
@@ -3061,15 +3054,15 @@ activate_stage2_device_config (NMDevice *self)
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
 			else
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-			goto out;
+			return;
 		}
 
 		ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, &reason);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
-			goto out;
+			return;
 		else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-			goto out;
+			return;
 		}
 		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
@@ -3086,12 +3079,7 @@ activate_stage2_device_config (NMDevice *self)
 			nm_device_queue_recheck_assume (info->slave);
 	}
 
-	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) successful.");
-
 	nm_device_activate_schedule_stage3_ip_config_start (self);
-
-out:
-	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) complete.");
 }
 
 
@@ -3137,8 +3125,6 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	}
 
 	activation_source_schedule (self, activate_stage2_device_config, AF_INET);
-
-	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) scheduled...");
 }
 
 /*
@@ -3374,8 +3360,7 @@ ipv4ll_start (NMDevice *self, NMDeviceStateReason *reason)
 		goto fail;
 	}
 
-	_LOGI (LOGD_DEVICE | LOGD_AUTOIP4,
-	       "Activation: Stage 3 of 5 (IP Configure Start) IPv4LL started");
+	_LOGI (LOGD_DEVICE | LOGD_AUTOIP4, "IPv4LL: started");
 
 	/* Start a timeout to bound the address attempt */
 	priv->ipv4ll_timeout = g_timeout_add_seconds (20, ipv4ll_timeout_cb, self);
@@ -5559,7 +5544,6 @@ activate_stage3_ip_config_start (NMDevice *self)
 
 	priv->ip4_state = priv->ip6_state = IP_WAIT;
 
-	_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) started...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Device should be up before we can do anything with it */
@@ -5583,21 +5567,18 @@ activate_stage3_ip_config_start (NMDevice *self)
 			       nm_connection_get_id (nm_device_get_applied_connection (self)),
 			       master_device ? nm_device_get_iface (master_device) : "(unknown)");
 		}
-		goto out;
+		return;
 	}
 
 	/* IPv4 */
 	if (!nm_device_activate_stage3_ip4_start (self))
-		goto out;
+		return;
 
 	/* IPv6 */
 	if (!nm_device_activate_stage3_ip6_start (self))
-		goto out;
+		return;
 
 	nm_device_check_ip_failed (self, TRUE);
-
-out:
-	_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) complete.");
 }
 
 
@@ -5626,10 +5607,8 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
 
 	if (priv->state == NM_DEVICE_STATE_IP_CHECK)
 		nm_device_start_ip_check (self);
-	else {
+	else
 		activation_source_schedule (self, activate_stage3_ip_config_start, AF_INET);
-		_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
-	}
 }
 
 /*
@@ -5662,7 +5641,6 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	if (nm_device_uses_assumed_connection (self)) {
 		_LOGD (LOGD_DEVICE, "Activation: skip setting firewall zone '%s' for assumed device", zone ? zone : "default");
 		activation_source_schedule (self, activate_stage3_ip_config_start, AF_INET);
-		_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
 		return;
 	}
 
@@ -5699,23 +5677,18 @@ activate_stage4_ip4_config_timeout (NMDevice *self)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 4 of 5 (IPv4 Configure Timeout) started...");
-
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip4_config_timeout (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
-		goto out;
+		return;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-		goto out;
+		return;
 	}
-	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
 	priv->ip4_state = IP_FAIL;
 
 	nm_device_check_ip_failed (self, FALSE);
-
-out:
-	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 4 of 5 (IPv4 Configure Timeout) complete.");
 }
 
 
@@ -5736,8 +5709,6 @@ nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	activation_source_schedule (self, activate_stage4_ip4_config_timeout, AF_INET);
-
-	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 4 of 5 (IPv4 Configure Timeout) scheduled...");
 }
 
 
@@ -5766,23 +5737,18 @@ activate_stage4_ip6_config_timeout (NMDevice *self)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) started...");
-
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip6_config_timeout (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
-		goto out;
-	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		return;
+	if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-		goto out;
+		return;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
 	priv->ip6_state = IP_FAIL;
 
 	nm_device_check_ip_failed (self, FALSE);
-
-out:
-	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) complete.");
 }
 
 
@@ -5803,8 +5769,6 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	activation_source_schedule (self, activate_stage4_ip6_config_timeout, AF_INET6);
-
-	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) scheduled...");
 }
 
 static gboolean
@@ -6020,8 +5984,6 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
 
-	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) started...");
-
 	req = nm_device_get_act_request (self);
 	g_assert (req);
 	connection = nm_act_request_get_applied_connection (req);
@@ -6039,7 +6001,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	if (!ip4_config_merge_and_apply (self, NULL, TRUE, &reason)) {
 		_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Commit) failed");
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-		goto out;
+		return;
 	}
 
 	/* Start IPv4 sharing if we need it */
@@ -6049,7 +6011,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 		if (!start_sharing (self, priv->ip4_config)) {
 			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed.");
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
-			goto out;
+			return;
 		}
 	}
 
@@ -6078,9 +6040,6 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
-
-out:
-	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) complete.");
 }
 
 static void
@@ -6114,8 +6073,6 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 
 	nm_device_queued_ip_config_change_clear (self);
 	activation_source_schedule (self, activate_stage5_ip4_config_commit, AF_INET);
-
-	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Configure Commit) scheduled...");
 }
 
 gboolean
@@ -6140,8 +6097,6 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
-
-	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) started...");
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -6185,8 +6140,6 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 	}
-
-	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) complete.");
 }
 
 void
@@ -6203,8 +6156,6 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 		priv->ip6_state = IP_CONF;
 
 	activation_source_schedule (self, activate_stage5_ip6_config_commit, AF_INET6);
-
-	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) scheduled...");
 }
 
 gboolean
