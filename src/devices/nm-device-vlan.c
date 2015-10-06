@@ -49,6 +49,7 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 typedef struct {
 	NMDevice *parent;
 	guint parent_state_id;
+	guint parent_hwaddr_id;
 	int vlan_id;
 } NMDeviceVlanPrivate;
 
@@ -79,6 +80,36 @@ parent_state_changed (NMDevice *parent,
 }
 
 static void
+parent_hwaddr_changed (NMDevice *parent,
+                       GParamSpec *pspec,
+                       gpointer user_data)
+{
+	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	const char *cloned_mac = NULL;
+
+	/* Never touch assumed devices */
+	if (nm_device_uses_assumed_connection (self))
+		return;
+
+	connection = nm_device_get_applied_connection (self);
+	if (!connection)
+		return;
+
+	/* Update the VLAN MAC only if configuration does not specify one */
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired)
+		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+
+	if (!cloned_mac) {
+		_LOGD (LOGD_VLAN, "parent hardware address changed");
+		nm_device_set_hw_addr (self, nm_device_get_hw_address (parent),
+		                       "set", LOGD_VLAN);
+	}
+}
+
+static void
 nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
@@ -87,10 +118,8 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 	if (parent == priv->parent)
 		return;
 
-	if (priv->parent_state_id) {
-		g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
-		priv->parent_state_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->parent, &priv->parent_state_id);
+	nm_clear_g_signal_handler (priv->parent, &priv->parent_hwaddr_id);
 	g_clear_object (&priv->parent);
 
 	if (parent) {
@@ -99,6 +128,9 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 		                                          "state-changed",
 		                                          G_CALLBACK (parent_state_changed),
 		                                          device);
+
+		priv->parent_hwaddr_id = g_signal_connect (priv->parent, "notify::" NM_DEVICE_HW_ADDRESS,
+		                                           G_CALLBACK (parent_hwaddr_changed), device);
 
 		/* Set parent-dependent unmanaged flag */
 		nm_device_set_unmanaged (device,
