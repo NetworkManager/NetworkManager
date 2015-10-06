@@ -59,6 +59,7 @@ typedef struct {
 	GSList *seen_bssids;
 	gboolean hidden;
 	guint32 powersave;
+	NMSettingMacRandomization mac_address_randomization;
 } NMSettingWirelessPrivate;
 
 enum {
@@ -77,6 +78,7 @@ enum {
 	PROP_SEEN_BSSIDS,
 	PROP_HIDDEN,
 	PROP_POWERSAVE,
+	PROP_MAC_ADDRESS_RANDOMIZATION,
 
 	LAST_PROP
 };
@@ -618,6 +620,23 @@ nm_setting_wireless_get_powersave (NMSettingWireless *setting)
 }
 
 /**
+ * nm_setting_wireless_get_mac_address_randomization:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns: the #NMSettingWireless:mac-address-randomization property of the
+ * setting
+ *
+ * Since: 1.2
+ **/
+NMSettingMacRandomization
+nm_setting_wireless_get_mac_address_randomization (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_randomization;
+}
+
+/**
  * nm_setting_wireless_add_seen_bssid:
  * @setting: the #NMSettingWireless
  * @bssid: the new BSSID to add to the list
@@ -935,6 +954,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_POWERSAVE:
 		priv->powersave = g_value_get_uint (value);
 		break;
+	case PROP_MAC_ADDRESS_RANDOMIZATION:
+		priv->mac_address_randomization = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -990,6 +1012,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_POWERSAVE:
 		g_value_set_uint (value, nm_setting_wireless_get_powersave (setting));
+		break;
+	case PROP_MAC_ADDRESS_RANDOMIZATION:
+		g_value_set_uint (value, nm_setting_wireless_get_mac_address_randomization (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1359,6 +1384,24 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_POWERSAVE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_POWERSAVE, "", "",
 		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingWireless:mac-address-randomization:
+	 *
+	 * One of %NM_SETTING_MAC_RANDOMIZATION_DEFAULT (never randomize unless
+	 * the user has set a global default to randomize and the supplicant
+	 * supports randomization),  %NM_SETTING_MAC_RANDOMIZATION_NEVER (never
+	 * randomize the MAC address), or %NM_SETTING_MAC_RANDOMIZATION_ALWAYS
+	 * (always randomize the MAC address).
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MAC_ADDRESS_RANDOMIZATION,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION, "", "",
+		                    0, G_MAXUINT32, NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
 
