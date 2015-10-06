@@ -297,6 +297,7 @@ typedef struct {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
+	gboolean       fw_ready;
 	NMFirewallManagerCallId fw_call;
 
 	/* IPv4LL stuff */
@@ -5581,34 +5582,56 @@ activate_stage3_ip_config_start (NMDevice *self)
 	nm_device_check_ip_failed (self, TRUE);
 }
 
+static gboolean
+fw_change_zone_handle (NMDevice *self,
+                       NMFirewallManagerCallId call_id,
+                       GError *error)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->fw_call == call_id, FALSE);
+	priv->fw_call = NULL;
+
+	return !nm_utils_error_is_cancelled (error, FALSE);
+}
 
 static void
-fw_change_zone_cb (NMFirewallManager *firewall_manager,
-                   NMFirewallManagerCallId call_id,
-                   GError *error,
-                   gpointer user_data)
+fw_change_zone_cb_stage2 (NMFirewallManager *firewall_manager,
+                          NMFirewallManagerCallId call_id,
+                          GError *error,
+                          gpointer user_data)
 {
 	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	g_return_if_fail (priv->fw_call == call_id);
-	priv->fw_call = NULL;
-
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (!fw_change_zone_handle (self, call_id, error))
 		return;
 
-	if (error) {
-		/* FIXME: fail the device activation? */
-	}
+	/* FIXME: fail the device on error? */
 
-	if (priv->state == NM_DEVICE_STATE_IP_CHECK)
-		nm_device_start_ip_check (self);
-	else
-		activation_source_schedule (self, activate_stage3_ip_config_start, AF_INET);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	priv->fw_ready = TRUE;
+
+	nm_device_activate_schedule_stage3_ip_config_start (self);
+}
+
+static void
+fw_change_zone_cb_ip_check (NMFirewallManager *firewall_manager,
+                            NMFirewallManagerCallId call_id,
+                            GError *error,
+                            gpointer user_data)
+{
+	NMDevice *self = user_data;
+
+	if (!fw_change_zone_handle (self, call_id, error))
+		return;
+
+	/* FIXME: fail the device on error? */
+	nm_device_start_ip_check (self);
 }
 
 /*
@@ -5629,28 +5652,31 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	g_return_if_fail (!priv->fw_call);
-
 	/* Add the interface to the specified firewall zone */
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
 	s_con = nm_connection_get_setting_connection (connection);
 
-	zone = nm_setting_connection_get_zone (s_con);
+	if (!priv->fw_ready) {
+		if (nm_device_uses_assumed_connection (self))
+			priv->fw_ready = TRUE;
+		else {
+			if (!priv->fw_call) {
+				zone = nm_setting_connection_get_zone (s_con);
 
-	if (nm_device_uses_assumed_connection (self)) {
-		_LOGD (LOGD_DEVICE, "Activation: skip setting firewall zone '%s' for assumed device", zone ? zone : "default");
-		activation_source_schedule (self, activate_stage3_ip_config_start, AF_INET);
-		return;
+				_LOGD (LOGD_DEVICE, "Activation: setting firewall zone '%s'", zone ? zone : "default");
+				priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
+				                                                        nm_device_get_ip_iface (self),
+				                                                        zone,
+				                                                        FALSE,
+				                                                        fw_change_zone_cb_stage2,
+				                                                        self);
+			}
+			return;
+		}
 	}
 
-	_LOGD (LOGD_DEVICE, "Activation: setting firewall zone '%s'", zone ? zone : "default");
-	priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
-	                                                        nm_device_get_ip_iface (self),
-	                                                        zone,
-	                                                        FALSE,
-	                                                        fw_change_zone_cb,
-	                                                        self);
+	activation_source_schedule (self, activate_stage3_ip_config_start, AF_INET);
 }
 
 static NMActStageReturn
@@ -8360,6 +8386,7 @@ _cancel_activation (NMDevice *self)
 		g_warn_if_fail (!priv->fw_call);
 		priv->fw_call = NULL;
 	}
+	priv->fw_ready = FALSE;
 
 	ip_check_gw_ping_cleanup (self);
 
@@ -9049,7 +9076,7 @@ _set_state_full (NMDevice *self,
 			                                                        nm_device_get_ip_iface (self),
 			                                                        zone,
 			                                                        FALSE,
-			                                                        fw_change_zone_cb,
+			                                                        fw_change_zone_cb_ip_check,
 			                                                        self);
 		} else
 			nm_device_start_ip_check (self);
