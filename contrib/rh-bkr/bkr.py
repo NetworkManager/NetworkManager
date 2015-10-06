@@ -380,20 +380,26 @@ class UploadFile_ParseWebsite(UploadFile):
                 return True
         return False
 
+    def read_page(self, url = None, follow_gz = True):
+        if url is None:
+            url = self._mainpage
+        p = urllib.urlopen(url)
+        page = p.read()
+        p.close()
+
+        if follow_gz and re.match('.*\.gz$', url):
+            import gzip, StringIO
+            p = StringIO.StringIO(page)
+            page = gzip.GzipFile(fileobj=p).read()
+            p.close()
+        return page
+
     def init(self):
         if self._urls is not None:
             return
         self.parse_uri()
 
-        p = urllib.urlopen(self._mainpage)
-        page = p.read()
-        p.close()
-
-        if re.match('.*\.gz$', self._mainpage):
-            import gzip, StringIO
-            p = StringIO.StringIO(page)
-            page = gzip.GzipFile(fileobj=p).read()
-            p.close()
+        page = self.read_page()
 
         urls = list(self.parse_urls(page))
         if not urls:
@@ -451,16 +457,33 @@ class UploadFileBrew(UploadFile_ParseWebsite):
             self._mainpage = '%sbuildinfo?buildID=%s' % (UploadFileBrew.brew_base_url, self._id)
         elif self._type == "brewtask":
             self._mainpage = '%staskinfo?taskID=%s' % (UploadFileBrew.brew_base_url, self._id)
+
     def parse_urls(self, page):
+        found_anything = False
         if self._type == "brew":
             p = 'href=[\'"](http://download.devel.redhat.com/brewroot/packages/[^\'"]*\.rpm)[\'"]'
         elif self._type == "brewtask":
             p = 'href=[\'"](http://download.devel.redhat.com/brewroot/work/tasks/[^\'"]*\.rpm)[\'"]'
 
         for a in re.finditer(p, page):
+            found_anything = True
             url = a.group(1)
             if self.is_matching_url(url):
                 yield url
+
+        if not found_anything and self._type == "brewtask":
+            # when the task-id is the main-page, we have to repeat... search deeper.
+            p2 = '<a href="(taskinfo\?taskID=[0-9]+)" class="taskclosed" title="closed">buildArch \(.*.rpm, x86_64\)</a>'
+            for a in re.finditer(p2, page):
+                page = self.read_page('https://brewweb.devel.redhat.com/%s' % (a.group(1)))
+                for a in re.finditer(p, page):
+                    url = a.group(1)
+                    if self.is_matching_url(url):
+                        yield url
+                return
+            return
+
+
     def raise_no_urls(self):
         if self.pattern_is_default:
             raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\"). Try giving a pattern \"%s://%s/.*\"" % (self.uri, self._mainpage, self._type, self._id))
