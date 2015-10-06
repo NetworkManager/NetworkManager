@@ -2992,28 +2992,6 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
 
-	if (!priv->master_ready_handled) {
-		if (!nm_active_connection_get_master (active))
-			priv->master_ready_handled = TRUE;
-		else {
-			/* If the master connection is ready for slaves, attach ourselves */
-			if (nm_active_connection_get_master_ready (active))
-				master_ready (self, active);
-			else {
-				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
-
-				if (priv->master_ready_id == 0) {
-					priv->master_ready_id = g_signal_connect (active,
-					                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
-					                                          (GCallback) master_ready_cb,
-					                                          self);
-				}
-				/* Postpone */
-				return FALSE;
-			}
-		}
-	}
-
 	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) starting...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
@@ -3074,6 +3052,30 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
+
+	if (!priv->master_ready_handled) {
+		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+
+		if (!nm_active_connection_get_master (active))
+			priv->master_ready_handled = TRUE;
+		else {
+			/* If the master connection is ready for slaves, attach ourselves */
+			if (nm_active_connection_get_master_ready (active))
+				master_ready (self, active);
+			else {
+				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
+
+				if (priv->master_ready_id == 0) {
+					priv->master_ready_id = g_signal_connect (active,
+					                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+					                                          (GCallback) master_ready_cb,
+					                                          self);
+				}
+				/* Postpone */
+				return;
+			}
+		}
+	}
 
 	activation_source_schedule (self, nm_device_activate_stage2_device_config, 0);
 
