@@ -2989,6 +2989,9 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
 	GSList *iter;
 
+	/* Clear the activation source ID now that this stage has run */
+	activation_source_clear (self, FALSE, 0);
+
 	if (!priv->master_ready_handled) {
 		if (!nm_active_connection_get_master (active))
 			priv->master_ready_handled = TRUE;
@@ -3010,9 +3013,6 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 			}
 		}
 	}
-
-	/* Clear the activation source ID now that this stage has run */
-	activation_source_clear (self, FALSE, 0);
 
 	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) starting...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
