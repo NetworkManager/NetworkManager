@@ -3056,9 +3056,10 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	if (!priv->master_ready_handled) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
 
-		if (!nm_active_connection_get_master (active))
+		if (!nm_active_connection_get_master (active)) {
+			g_warn_if_fail (!priv->master_ready_id);
 			priv->master_ready_handled = TRUE;
-		else {
+		} else {
 			/* If the master connection is ready for slaves, attach ourselves */
 			if (nm_active_connection_get_master_ready (active))
 				master_ready (self, active);
