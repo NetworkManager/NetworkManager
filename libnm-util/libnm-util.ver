@@ -355,6 +355,7 @@ global:
 	nm_setting_ip4_config_get_dhcp_client_id;
 	nm_setting_ip4_config_get_dhcp_hostname;
 	nm_setting_ip4_config_get_dhcp_send_hostname;
+	nm_setting_ip4_config_get_dhcp_timeout;
 	nm_setting_ip4_config_get_dns;
 	nm_setting_ip4_config_get_dns_search;
 	nm_setting_ip4_config_get_ignore_auto_dns;

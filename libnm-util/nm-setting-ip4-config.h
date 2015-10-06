@@ -66,6 +66,7 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID     "dhcp-client-id"
 #define NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME "dhcp-send-hostname"
 #define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
+#define NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
 #define NM_SETTING_IP4_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP4_CONFIG_MAY_FAIL           "may-fail"
 
@@ -223,6 +224,8 @@ gboolean      nm_setting_ip4_config_get_ignore_auto_dns    (NMSettingIP4Config *
 const char *  nm_setting_ip4_config_get_dhcp_client_id     (NMSettingIP4Config *setting);
 gboolean      nm_setting_ip4_config_get_dhcp_send_hostname (NMSettingIP4Config *setting);
 const char *  nm_setting_ip4_config_get_dhcp_hostname      (NMSettingIP4Config *setting);
+NM_AVAILABLE_IN_1_2
+int           nm_setting_ip4_config_get_dhcp_timeout       (NMSettingIP4Config *setting);
 
 gboolean      nm_setting_ip4_config_get_never_default      (NMSettingIP4Config *setting);
 
