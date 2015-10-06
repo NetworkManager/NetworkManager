@@ -731,6 +731,7 @@ struct _NMLinuxPlatformPrivate {
 	GIOChannel *event_channel;
 	guint event_id;
 
+	gboolean sysctl_get_warned;
 	GHashTable *sysctl_get_prev_values;
 
 	GUdevClient *udev_client;
@@ -2546,15 +2547,32 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	return (nwrote == len);
 }
 
+static GSList *sysctl_clear_cache_list;
+
+void
+_nm_linux_platform_sysctl_clear_cache (void)
+{
+	while (sysctl_clear_cache_list) {
+		NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (sysctl_clear_cache_list->data);
+
+		sysctl_clear_cache_list = g_slist_delete_link (sysctl_clear_cache_list, sysctl_clear_cache_list);
+
+		g_hash_table_destroy (priv->sysctl_get_prev_values);
+		priv->sysctl_get_prev_values = NULL;
+		priv->sysctl_get_warned = FALSE;
+	}
+}
+
 static void
 _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *contents)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *prev_value = NULL;
 
-	if (!priv->sysctl_get_prev_values)
+	if (!priv->sysctl_get_prev_values) {
+		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
 		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-	else
+	} else
 		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, path);
 
 	if (prev_value) {
@@ -2574,20 +2592,18 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *co
 		g_free (contents_escaped);
 		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
 	}
+
+	if (   !priv->sysctl_get_warned
+	    && g_hash_table_size (priv->sysctl_get_prev_values) > 50000) {
+		_LOGW ("sysctl: the internal cache for debug-logging of sysctl values grew pretty large. You can clear it by disabling debug-logging: `nmcli general logging level KEEP domains PLATFORM:INFO`.");
+		priv->sysctl_get_warned = TRUE;
+	}
 }
 
 #define _log_dbg_sysctl_get(platform, path, contents) \
 	G_STMT_START { \
-		if (_LOGD_ENABLED ()) { \
+		if (_LOGD_ENABLED ()) \
 			_log_dbg_sysctl_get_impl (platform, path, contents); \
-		} else { \
-			NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform); \
-			\
-			if (priv->sysctl_get_prev_values) { \
-				g_hash_table_destroy (priv->sysctl_get_prev_values); \
-				priv->sysctl_get_prev_values = NULL; \
-			} \
-		} \
 	} G_STMT_END
 
 static char *
@@ -5029,8 +5045,10 @@ nm_linux_platform_finalize (GObject *object)
 	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->wifi_data);
 
-	if (priv->sysctl_get_prev_values)
+	if (priv->sysctl_get_prev_values) {
+		sysctl_clear_cache_list = g_slist_remove (sysctl_clear_cache_list, object);
 		g_hash_table_destroy (priv->sysctl_get_prev_values);
+	}
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }

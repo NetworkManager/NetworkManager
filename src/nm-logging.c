@@ -40,6 +40,7 @@
 #include "nm-default.h"
 #include "nm-errors.h"
 #include "NetworkManagerUtils.h"
+#include "nm-linux-platform.h"
 
 static void
 nm_log_handler (const gchar *log_domain,
@@ -169,6 +170,7 @@ nm_logging_setup (const char  *level,
 	NMLogLevel new_log_level = log_level;
 	char **tmp, **iter;
 	int i;
+	gboolean had_platform_debug;
 
 	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
@@ -276,9 +278,19 @@ nm_logging_setup (const char  *level,
 
 	g_clear_pointer (&logging_domains_to_string, g_free);
 
+	had_platform_debug = nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM);
+
 	log_level = new_log_level;
 	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
 		logging[i] = new_logging[i];
+
+	if (   had_platform_debug
+	    && !nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		/* when debug logging is enabled, platform will cache all access to
+		 * sysctl. When the user disables debug-logging, we want to clear that
+		 * cache right away. */
+		_nm_linux_platform_sysctl_clear_cache ();
+	}
 
 	if (unrecognized)
 		*bad_domains = g_string_free (unrecognized, FALSE);
