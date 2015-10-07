@@ -79,6 +79,7 @@ static const LogLevelDesc level_desc[_LOGL_N] = {
 	[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, FALSE },
 	[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, TRUE  },
 	[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   FALSE },
+	[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   FALSE },
 };
 
 static const LogDesc domain_descs[] = {
@@ -181,6 +182,11 @@ nm_logging_setup (const char  *level,
 	if (level && *level) {
 		if (!match_log_level (level, &new_log_level, error))
 			return FALSE;
+		if (new_log_level == _LOGL_KEEP) {
+			new_log_level = log_level;
+			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
+				new_logging[i] = logging[i];
+		}
 	}
 
 	/* domains */
@@ -249,11 +255,16 @@ nm_logging_setup (const char  *level,
 			}
 		}
 
-		for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
-			if (i < domain_log_level)
-				new_logging[i] &= ~bits;
-			else
-				new_logging[i] |= bits;
+		if (domain_log_level == _LOGL_KEEP) {
+			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
+				new_logging[i] = (new_logging[i] & ~bits) | (logging[i] & bits);
+		} else {
+			for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
+				if (i < domain_log_level)
+					new_logging[i] &= ~bits;
+				else
+					new_logging[i] |= bits;
+			}
 		}
 	}
 	g_strfreev (tmp);
