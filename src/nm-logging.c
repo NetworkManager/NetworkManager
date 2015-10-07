@@ -48,18 +48,6 @@ nm_log_handler (const gchar *log_domain,
                 const gchar *message,
                 gpointer ignored);
 
-static NMLogLevel log_level = LOGL_INFO;
-static char *log_domains;
-static NMLogDomain logging[_LOGL_N_REAL];
-static gboolean logging_set_up;
-enum {
-	LOG_BACKEND_GLIB,
-	LOG_BACKEND_SYSLOG,
-	LOG_BACKEND_JOURNAL,
-	LOG_BACKEND_JOURNAL_SYSLOG_STYLE,
-} log_backend = LOG_BACKEND_GLIB;
-static char *logging_domains_to_string;
-
 typedef struct {
 	NMLogDomain num;
 	const char *name;
@@ -72,6 +60,18 @@ typedef struct {
 	GLogLevelFlags g_log_level;
 	gboolean full_details;
 } LogLevelDesc;
+
+static NMLogLevel log_level = LOGL_INFO;
+static char *log_domains;
+static NMLogDomain logging[_LOGL_N_REAL];
+static gboolean logging_set_up;
+enum {
+	LOG_BACKEND_GLIB,
+	LOG_BACKEND_SYSLOG,
+	LOG_BACKEND_JOURNAL,
+	LOG_BACKEND_JOURNAL_SYSLOG_STYLE,
+} log_backend = LOG_BACKEND_GLIB;
+static char *logging_domains_to_string;
 
 static const LogLevelDesc level_desc[_LOGL_N] = {
 	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   TRUE  },
