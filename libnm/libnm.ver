@@ -869,7 +869,9 @@ global:
 	nm_setting_bridge_get_multicast_snooping;
 	nm_setting_connection_autoconnect_slaves_get_type;
 	nm_setting_connection_get_autoconnect_slaves;
+	nm_setting_connection_get_lldp;
 	nm_setting_connection_get_metered;
+	nm_setting_connection_lldp_get_type;
 	nm_setting_ip4_config_get_dhcp_timeout;
 	nm_setting_ip_config_add_dns_option;
 	nm_setting_ip_config_clear_dns_options;

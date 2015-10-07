@@ -60,6 +60,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_SECONDARIES    "secondaries"
 #define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT "gateway-ping-timeout"
 #define NM_SETTING_CONNECTION_METERED        "metered"
+#define NM_SETTING_CONNECTION_LLDP           "lldp"
 
 /* Types for property values */
 /**
@@ -79,6 +80,19 @@ typedef enum {
 	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES = 1,
 } NMSettingConnectionAutoconnectSlaves;
 
+/**
+ * NMSettingConnectionLldp:
+ * @NM_SETTING_CONNECTION_LLDP_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_LLDP_DISABLE: disable LLDP
+ * @NM_SETTING_CONNECTION_LLDP_ENABLE_RX: enable reception of LLDP frames
+ *
+ * #NMSettingConnectionLldp values indicate whether LLDP should be enabled.
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_LLDP_DEFAULT = -1,
+	NM_SETTING_CONNECTION_LLDP_DISABLE = 0,
+	NM_SETTING_CONNECTION_LLDP_ENABLE_RX = 1,
+} NMSettingConnectionLldp;
 
 /**
  * NMSettingConnection:
@@ -144,6 +158,8 @@ gboolean    nm_setting_connection_remove_secondary_by_value (NMSettingConnection
 guint32     nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_2
 NMMetered   nm_setting_connection_get_metered (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_2
+NMSettingConnectionLldp nm_setting_connection_get_lldp (NMSettingConnection *setting);
 
 G_END_DECLS
 
