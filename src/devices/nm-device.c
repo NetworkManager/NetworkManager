@@ -2814,19 +2814,23 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 		act_source_func = &priv->act_source_func;
 	}
 
-	if (*act_source_id)
-		_LOGE (LOGD_DEVICE, "activation stage already scheduled");
-
-	/* Don't bother rescheduling the same function that's about to
-	 * run anyway.  Fixes issues with crappy wireless drivers sending
-	 * streams of associate events before NM has had a chance to process
-	 * the first one.
-	 */
-	if (!*act_source_id || (*act_source_func != func)) {
-		activation_source_clear (self, TRUE, family);
-		*act_source_id = g_idle_add (func, self);
-		*act_source_func = func;
+	if (*act_source_id) {
+		if (*act_source_func == func) {
+			/* Don't bother rescheduling the same function that's about to
+			 * run anyway.  Fixes issues with crappy wireless drivers sending
+			 * streams of associate events before NM has had a chance to process
+			 * the first one.
+			 */
+			_LOGD (LOGD_DEVICE, "activation stage already scheduled");
+			return;
+		} else {
+			_LOGW (LOGD_DEVICE, "a different activation stage already scheduled");
+			activation_source_clear (self, TRUE, family);
+		}
 	}
+
+	*act_source_id = g_idle_add (func, self);
+	*act_source_func = func;
 }
 
 static gboolean
