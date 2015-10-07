@@ -3245,7 +3245,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 		return;
 
 	switch (event) {
-	case IPV4LL_EVENT_BIND:
+	case SD_IPV4LL_EVENT_BIND:
 		r = sd_ipv4ll_get_address (ll, &address);
 		if (r < 0) {
 			_LOGE (LOGD_AUTOIP4, "invalid IPv4 link-local address received, error %d.", r);

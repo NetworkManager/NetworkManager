@@ -491,15 +491,15 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 	nm_log_dbg (LOGD_DHCP4, "(%s): DHCPv4 client event %d", iface, event);
 
 	switch (event) {
-	case DHCP_EVENT_EXPIRED:
+	case SD_DHCP_CLIENT_EVENT_EXPIRED:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (user_data), NM_DHCP_STATE_EXPIRE, NULL, NULL);
 		break;
-	case DHCP_EVENT_STOP:
+	case SD_DHCP_CLIENT_EVENT_STOP:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (user_data), NM_DHCP_STATE_FAIL, NULL, NULL);
 		break;
-	case DHCP_EVENT_RENEW:
-	case DHCP_EVENT_IP_CHANGE:
-	case DHCP_EVENT_IP_ACQUIRE:
+	case SD_DHCP_CLIENT_EVENT_RENEW:
+	case SD_DHCP_CLIENT_EVENT_IP_CHANGE:
+	case SD_DHCP_CLIENT_EVENT_IP_ACQUIRE:
 		bound4_handle (self);
 		break;
 	default:
@@ -671,14 +671,14 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 	nm_log_dbg (LOGD_DHCP6, "(%s): DHCPv6 client event %d", iface, event);
 
 	switch (event) {
-	case DHCP6_EVENT_RETRANS_MAX:
+	case SD_DHCP6_CLIENT_EVENT_RETRANS_MAX:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (user_data), NM_DHCP_STATE_TIMEOUT, NULL, NULL);
 		break;
-	case DHCP6_EVENT_RESEND_EXPIRE:
-	case DHCP6_EVENT_STOP:
+	case SD_DHCP6_CLIENT_EVENT_RESEND_EXPIRE:
+	case SD_DHCP6_CLIENT_EVENT_STOP:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (user_data), NM_DHCP_STATE_FAIL, NULL, NULL);
 		break;
-	case DHCP6_EVENT_IP_ACQUIRE:
+	case SD_DHCP6_CLIENT_EVENT_IP_ACQUIRE:
 		bound6_handle (self);
 		break;
 	default:

@@ -69,13 +69,18 @@ G_STMT_START { \
 	g_assert_not_reached (); \
 } G_STMT_END
 
+#define log_assert_failed_unreachable(text, file, line, func) \
+G_STMT_START { \
+	log_internal (LOG_CRIT, 0, file, line, func, "Code should not be reached '%s' at %s:%u, function %s(). Aborting.", text, file, line, func); \
+	g_assert_not_reached (); \
+} G_STMT_END
+
 #define log_assert_failed_return(text, file, line, func) \
 ({ \
 	log_internal (LOG_DEBUG, 0, file, line, func, "Assertion '%s' failed at %s:%u, function %s(). Ignoring.", text, file, line, func); \
 	g_return_if_fail_warning (G_LOG_DOMAIN, G_STRFUNC, text); \
 	(void) 0; \
 })
-
 
 /*****************************************************************************
  * The remainder of the header is only enabled when building the systemd code
@@ -130,6 +135,10 @@ G_STMT_START { \
 
 static inline pid_t gettid(void) {
         return (pid_t) syscall(SYS_gettid);
+}
+
+static inline bool is_main_thread(void) {
+        return TRUE;
 }
 
 #endif /* (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD */

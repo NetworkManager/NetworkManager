@@ -205,8 +205,7 @@ int config_parse_ifname(const char *unit,
                 return log_oom();
 
         if (!ascii_is_valid(n) || strlen(n) >= IFNAMSIZ) {
-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
-                           "Interface name is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
+                log_syntax(unit, LOG_ERR, filename, line, 0, "Interface name is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
                 return 0;
         }
 
@@ -249,8 +248,7 @@ int config_parse_ifnames(const char *unit,
                         return log_oom();
 
                 if (!ascii_is_valid(n) || strlen(n) >= IFNAMSIZ) {
-                        log_syntax(unit, LOG_ERR, filename, line, EINVAL,
-                                   "Interface name is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
+                        log_syntax(unit, LOG_ERR, filename, line, 0, "Interface name is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
                         free(n);
                         return 0;
                 }
@@ -287,8 +285,7 @@ int config_parse_ifalias(const char *unit,
                 return log_oom();
 
         if (!ascii_is_valid(n) || strlen(n) >= IFALIASZ) {
-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
-                           "Interface alias is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
+                log_syntax(unit, LOG_ERR, filename, line, 0, "Interface alias is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
                 return 0;
         }
 
@@ -333,8 +330,7 @@ int config_parse_hwaddr(const char *unit,
                    &n->ether_addr_octet[4],
                    &n->ether_addr_octet[5]);
         if (r != 6) {
-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
-                           "Not a valid MAC address, ignoring assignment: %s", rvalue);
+                log_syntax(unit, LOG_ERR, filename, line, 0, "Not a valid MAC address, ignoring assignment: %s", rvalue);
                 free(n);
                 return 0;
         }
@@ -404,8 +400,8 @@ void serialize_in6_addrs(FILE *f, const struct in6_addr *addresses,
         assert(size);
 
         for (i = 0; i < size; i++)
-                fprintf(f, SD_ICMP6_ADDRESS_FORMAT_STR"%s",
-                        SD_ICMP6_ADDRESS_FORMAT_VAL(addresses[i]),
+                fprintf(f, SD_ICMP6_ND_ADDRESS_FORMAT_STR"%s",
+                        SD_ICMP6_ND_ADDRESS_FORMAT_VAL(addresses[i]),
                         (i < (size - 1)) ? " ": "");
 }
 

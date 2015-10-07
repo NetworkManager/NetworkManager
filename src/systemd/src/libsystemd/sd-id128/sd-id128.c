@@ -31,7 +31,7 @@
 #include "random-util.h"
 
 #if 0 /* NM_IGNORED */
-_public_ char *sd_id128_to_string(sd_id128_t id, char s[33]) {
+_public_ char *sd_id128_to_string(sd_id128_t id, char s[SD_ID128_STRING_MAX]) {
         unsigned n;
 
         assert_return(s, NULL);

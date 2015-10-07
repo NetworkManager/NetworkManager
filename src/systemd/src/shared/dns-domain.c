@@ -382,9 +382,8 @@ int dns_name_concat(const char *a, const char *b, char **_ret) {
 }
 
 #if 0 /* NM_IGNORED */
-unsigned long dns_name_hash_func(const void *s, const uint8_t hash_key[HASH_KEY_SIZE]) {
+void dns_name_hash_func(const void *s, struct siphash *state) {
         const char *p = s;
-        unsigned long ul = hash_key[0];
         int r;
 
         assert(p);
@@ -403,13 +402,17 @@ unsigned long dns_name_hash_func(const void *s, const uint8_t hash_key[HASH_KEY_
                 if (k > 0)
                         r = k;
 
+                if (r == 0)
+                        break;
+
                 label[r] = 0;
                 ascii_strlower(label);
 
-                ul = ul * hash_key[1] + ul + string_hash_func(label, hash_key);
+                string_hash_func(label, state);
         }
 
-        return ul;
+        /* enforce that all names are terminated by the empty label */
+        string_hash_func("", state);
 }
 
 int dns_name_compare_func(const void *a, const void *b) {

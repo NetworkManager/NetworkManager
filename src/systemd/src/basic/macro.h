@@ -125,8 +125,11 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
         return 1UL << (sizeof(u) * 8 - __builtin_clzl(u - 1UL));
 }
 
-#define ELEMENTSOF(x) (sizeof(x)/sizeof((x)[0]))
-
+#define ELEMENTSOF(x)                                                    \
+        __extension__ (__builtin_choose_expr(                            \
+                !__builtin_types_compatible_p(typeof(x), typeof(&*(x))), \
+                sizeof(x)/sizeof((x)[0]),                                \
+                (void)0))
 /*
  * container_of - cast a member of a structure out to the containing structure
  * @ptr: the pointer to the member.
@@ -215,18 +218,20 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
                 (__x / __y + !!(__x % __y));                            \
         })
 
-#define assert_se(expr)                                                 \
+#define assert_message_se(expr, message)                                \
         do {                                                            \
                 if (_unlikely_(!(expr)))                                \
-                        log_assert_failed(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
-        } while (false)                                                 \
+                        log_assert_failed(message, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        } while (false)
+
+#define assert_se(expr) assert_message_se(expr, #expr)
 
 /* We override the glibc assert() here. */
 #undef assert
 #ifdef NDEBUG
 #define assert(expr) do {} while(false)
 #else
-#define assert(expr) assert_se(expr)
+#define assert(expr) assert_message_se(expr, #expr)
 #endif
 
 #define assert_not_reached(t)                                           \
@@ -251,19 +256,19 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
         REENABLE_WARNING
 #endif
 
-#define assert_log(expr) ((_likely_(expr))      \
-        ? (true)                                \
-        : (log_assert_failed_return(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__), false))
+#define assert_log(expr, message) ((_likely_(expr))                     \
+        ? (true)                                                        \
+        : (log_assert_failed_return(message, __FILE__, __LINE__, __PRETTY_FUNCTION__), false))
 
 #define assert_return(expr, r)                                          \
         do {                                                            \
-                if (!assert_log(expr))                                  \
+                if (!assert_log(expr, #expr))                           \
                         return (r);                                     \
         } while (false)
 
 #define assert_return_errno(expr, r, err)                               \
         do {                                                            \
-                if (!assert_log(expr)) {                                \
+                if (!assert_log(expr, #expr)) {                         \
                         errno = err;                                    \
                         return (r);                                     \
                 }                                                       \
@@ -468,18 +473,6 @@ do {                                                                    \
 #define GID_INVALID ((gid_t) -1)
 #define MODE_INVALID ((mode_t) -1)
 #endif /* NM_IGNORED */
-
-static inline bool UID_IS_INVALID(uid_t uid) {
-        /* We consider both the old 16bit -1 user and the newer 32bit
-         * -1 user invalid, since they are or used to be incompatible
-         * with syscalls such as setresuid() or chown(). */
-
-        return uid == (uid_t) ((uint32_t) -1) || uid == (uid_t) ((uint16_t) -1);
-}
-
-static inline bool GID_IS_INVALID(gid_t gid) {
-        return gid == (gid_t) ((uint32_t) -1) || gid == (gid_t) ((uint16_t) -1);
-}
 
 #define DEFINE_TRIVIAL_CLEANUP_FUNC(type, func)                 \
         static inline void func##p(type *p) {                   \
