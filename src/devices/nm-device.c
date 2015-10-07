@@ -3176,17 +3176,6 @@ nm_device_check_ip_failed (NMDevice *self, gboolean may_fail)
 /* IPv4LL stuff */
 
 static void
-ipv4ll_timeout_remove (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->ipv4ll_timeout) {
-		g_source_remove (priv->ipv4ll_timeout);
-		priv->ipv4ll_timeout = 0;
-	}
-}
-
-static void
 ipv4ll_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -3197,7 +3186,7 @@ ipv4ll_cleanup (NMDevice *self)
 		priv->ipv4ll = sd_ipv4ll_unref (priv->ipv4ll);
 	}
 
-	ipv4ll_timeout_remove (self);
+	nm_clear_g_source (&priv->ipv4ll_timeout);
 }
 
 static NMIP4Config *
@@ -3278,7 +3267,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 		}
 
 		if (priv->ip4_state == IP_CONF) {
-			ipv4ll_timeout_remove (self);
+			nm_clear_g_source (&priv->ipv4ll_timeout);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
 			if (!ip4_config_merge_and_apply (self, config, TRUE, NULL)) {
