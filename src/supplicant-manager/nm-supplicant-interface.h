@@ -168,4 +168,6 @@ NMSupplicantFeature nm_supplicant_interface_get_ap_support (NMSupplicantInterfac
 void nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
                                              NMSupplicantFeature apmode);
 
+NMSupplicantFeature nm_supplicant_interface_get_mac_randomization_support (NMSupplicantInterface *self);
+
 #endif	/* NM_SUPPLICANT_INTERFACE_H */

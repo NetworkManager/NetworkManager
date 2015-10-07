@@ -72,6 +72,7 @@ typedef struct {
 	gboolean       is_wireless;
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
 	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
+	NMSupplicantFeature mac_randomization_support;
 	gboolean       fast_supported;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
@@ -480,8 +481,14 @@ nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
 		priv->ap_support = ap_support;
 }
 
+NMSupplicantFeature
+nm_supplicant_interface_get_mac_randomization_support (NMSupplicantInterface *self)
+{
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->mac_randomization_support;
+}
+
 static void
-iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
@@ -489,7 +496,6 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	gs_free_error GError *error = NULL;
 	const char *data;
 
-	/* The ProbeRequest method only exists if AP mode has been enabled */
 	variant = _nm_dbus_proxy_call_finish (proxy, result,
 	                                      G_VARIANT_TYPE ("(s)"),
 	                                      &error);
@@ -501,8 +507,13 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 
 	if (variant) {
 		g_variant_get (variant, "(&s)", &data);
+
+		/* The ProbeRequest method only exists if AP mode has been enabled */
 		if (strstr (data, "ProbeRequest"))
 			priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
+
+		if (strstr (data, "PreassocMacAddr"))
+			priv->mac_randomization_support = NM_SUPPLICANT_FEATURE_YES;
 	}
 
 	iface_check_ready (self);
@@ -714,7 +725,8 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   (GAsyncReadyCallback) iface_check_netreply_cb,
 	                   self);
 
-	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
+	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN ||
+	    priv->mac_randomization_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
 		/* If the global supplicant capabilities property is not present, we can
 		 * fall back to checking whether the ProbeRequest method is supported.  If
 		 * neither of these works we have no way of determining if AP mode is
@@ -727,7 +739,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
 		                   priv->init_cancellable,
-		                   (GAsyncReadyCallback) iface_check_ap_mode_cb,
+		                   (GAsyncReadyCallback) iface_introspect_cb,
 		                   self);
 	}
 }
