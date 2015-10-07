@@ -83,6 +83,7 @@ get_option (GVariant *options, const char *key)
 			*d = *s;
 	}
 	*d = '\0';
+	g_variant_unref (value);
 
 	return converted;
 }
