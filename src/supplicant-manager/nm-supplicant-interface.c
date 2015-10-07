@@ -71,7 +71,7 @@ typedef struct {
 	char *         dev;
 	gboolean       is_wireless;
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
-	ApSupport      ap_support;   /* Lightweight AP mode support */
+	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
 	gboolean       fast_supported;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
@@ -461,7 +461,7 @@ iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	iface_check_ready (self);
 }
 
-ApSupport
+NMSupplicantFeature
 nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self)
 {
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->ap_support;
@@ -469,7 +469,7 @@ nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self)
 
 void
 nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
-                                        ApSupport ap_support)
+                                        NMSupplicantFeature ap_support)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
@@ -502,7 +502,7 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	if (variant) {
 		g_variant_get (variant, "(&s)", &data);
 		if (strstr (data, "ProbeRequest"))
-			priv->ap_support = AP_SUPPORT_YES;
+			priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
 	}
 
 	iface_check_ready (self);
@@ -714,7 +714,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   (GAsyncReadyCallback) iface_check_netreply_cb,
 	                   self);
 
-	if (priv->ap_support == AP_SUPPORT_UNKNOWN) {
+	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
 		/* If the global supplicant capabilities property is not present, we can
 		 * fall back to checking whether the ProbeRequest method is supported.  If
 		 * neither of these works we have no way of determining if AP mode is
@@ -1330,7 +1330,7 @@ NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
                              gboolean is_wireless,
                              gboolean fast_supported,
-                             ApSupport ap_support,
+                             NMSupplicantFeature ap_support,
                              gboolean start_now)
 {
 	NMSupplicantInterface *self;
