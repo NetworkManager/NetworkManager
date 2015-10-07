@@ -67,12 +67,6 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 
-typedef enum {
-	NM_SUPPLICANT_FEATURE_UNKNOWN = 0,  /* Can't detect whether supported or not */
-	NM_SUPPLICANT_FEATURE_NO = 1,       /* Feature definitely not supported */
-	NM_SUPPLICANT_FEATURE_YES = 2,      /* Feature definitely supported */
-} NMSupplicantFeature;
-
 struct _NMSupplicantInterface {
 	GObject parent;
 };

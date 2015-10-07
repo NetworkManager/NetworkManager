@@ -488,6 +488,23 @@ nm_supplicant_interface_get_mac_randomization_support (NMSupplicantInterface *se
 }
 
 static void
+set_preassoc_scan_mac_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	gs_unref_variant GVariant *variant = NULL;
+	gs_free_error GError *error = NULL;
+
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("()"),
+	                                      &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+	if (error)
+		nm_log_warn (LOGD_SUPPLICANT, "Failed to enable scan MAC address randomization");
+
+	iface_check_ready (NM_SUPPLICANT_INTERFACE (user_data));
+}
+
+static void
 iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
@@ -512,8 +529,23 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 		if (strstr (data, "ProbeRequest"))
 			priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
 
-		if (strstr (data, "PreassocMacAddr"))
+		if (strstr (data, "PreassocMacAddr")) {
 			priv->mac_randomization_support = NM_SUPPLICANT_FEATURE_YES;
+
+			/* Turn on MAC randomization during scans by default */
+			priv->ready_count++;
+			g_dbus_proxy_call (priv->iface_proxy,
+			                   DBUS_INTERFACE_PROPERTIES ".Set",
+			                   g_variant_new ("(ssv)",
+			                                  WPAS_DBUS_IFACE_INTERFACE,
+			                                  "PreassocMacAddr",
+			                                  g_variant_new_string ("1")),
+			                   G_DBUS_CALL_FLAGS_NONE,
+			                   -1,
+			                   priv->init_cancellable,
+			                   (GAsyncReadyCallback) set_preassoc_scan_mac_cb,
+			                   self);
+		}
 	}
 
 	iface_check_ready (self);
@@ -1126,6 +1158,51 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 }
 
 static void
+add_network (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_dbus_proxy_call (priv->iface_proxy,
+	                   "AddNetwork",
+	                   g_variant_new ("(@a{sv})", nm_supplicant_config_to_variant (priv->cfg)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->assoc_cancellable,
+	                   (GAsyncReadyCallback) add_network_cb,
+	                   self);
+}
+
+static void
+set_mac_randomization_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_unref_variant GVariant *reply = NULL;
+	gs_free_error GError *error = NULL;
+
+	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (!reply) {
+		g_dbus_error_strip_remote_error (error);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't send MAC randomization mode to "
+		             "the supplicant interface: %s.",
+		             error->message);
+		emit_error_helper (self, error);
+		return;
+	}
+
+	nm_log_info (LOGD_SUPPLICANT, "Config: set MAC randomization to %s",
+	             nm_supplicant_config_get_mac_randomization (priv->cfg));
+
+	add_network (self);
+}
+
+static void
 set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
@@ -1151,14 +1228,24 @@ set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	nm_log_info (LOGD_SUPPLICANT, "Config: set interface ap_scan to %d",
 	             nm_supplicant_config_get_ap_scan (priv->cfg));
 
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "AddNetwork",
-	                   g_variant_new ("(@a{sv})", nm_supplicant_config_to_variant (priv->cfg)),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->assoc_cancellable,
-	                   (GAsyncReadyCallback) add_network_cb,
-	                   self);
+	if (priv->mac_randomization_support == NM_SUPPLICANT_FEATURE_YES) {
+		const char *mac_randomization = nm_supplicant_config_get_mac_randomization (priv->cfg);
+
+		/* Enable/disable association MAC address randomization */
+		g_dbus_proxy_call (priv->iface_proxy,
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
+		                   g_variant_new ("(ssv)",
+		                                  WPAS_DBUS_IFACE_INTERFACE,
+		                                  "MacAddr",
+		                                  g_variant_new_string (mac_randomization)),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   priv->assoc_cancellable,
+		                   (GAsyncReadyCallback) set_mac_randomization_cb,
+		                   self);
+	} else {
+		add_network (self);
+	}
 }
 
 gboolean

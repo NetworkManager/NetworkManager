@@ -39,7 +39,7 @@ G_DEFINE_TYPE (NMSupplicantConfig, nm_supplicant_config, G_TYPE_OBJECT)
 
 typedef struct {
 	char *value;
-	guint32 len;	
+	guint32 len;
 	OptType type;
 } ConfigOption;
 
@@ -48,6 +48,7 @@ typedef struct
 	GHashTable *config;
 	GHashTable *blobs;
 	guint32    ap_scan;
+	NMSettingMacRandomization mac_randomization;
 	gboolean   fast_required;
 	gboolean   dispose_has_run;
 } NMSupplicantConfigPrivate;
@@ -85,6 +86,7 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	                                     (GDestroyNotify) blob_free);
 
 	priv->ap_scan = 1;
+	priv->mac_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
 	priv->dispose_has_run = FALSE;
 }
 
@@ -240,14 +242,30 @@ nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->ap_scan;
 }
 
-void
-nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
-                                  guint32 ap_scan)
+const char *
+nm_supplicant_config_get_mac_randomization (NMSupplicantConfig *self)
 {
-	g_return_if_fail (NM_IS_SUPPLICANT_CONFIG (self));
-	g_return_if_fail (ap_scan <= 2);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), 0);
 
-	NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->ap_scan = ap_scan;
+	/**
+	 * mac_addr - MAC address policy default
+	 *
+	 * 0 = use permanent MAC address
+	 * 1 = use random MAC address for each ESS connection
+	 * 2 = like 1, but maintain OUI (with local admin bit set)
+	 *
+	 * By default, permanent MAC address is used unless policy is changed by
+	 * the per-network mac_addr parameter.
+	 */
+
+	switch (NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->mac_randomization) {
+	case NM_SETTING_MAC_RANDOMIZATION_ALWAYS:
+		return "1";
+	case NM_SETTING_MAC_RANDOMIZATION_NEVER:
+	case NM_SETTING_MAC_RANDOMIZATION_DEFAULT:
+	default:
+		return "0";
+	}
 }
 
 gboolean
@@ -336,7 +354,9 @@ wifi_freqs_to_string (gboolean bg_band)
 gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
-                                           guint32 fixed_freq)
+                                           guint32 fixed_freq,
+                                           NMSupplicantFeature mac_randomization_support,
+                                           NMSettingMacRandomization mac_randomization_fallback)
 {
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap;
@@ -439,6 +459,21 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 				return FALSE;
 			}
 		}
+	}
+
+	priv->mac_randomization = nm_setting_wireless_get_mac_address_randomization (setting);
+	if (priv->mac_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
+		priv->mac_randomization = mac_randomization_fallback;
+		if (priv->mac_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
+			/* the value is unconfigured. For now, that means we don't use randomization.*/
+			priv->mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+		}
+	}
+
+	if (   priv->mac_randomization != NM_SETTING_MAC_RANDOMIZATION_NEVER
+	    && mac_randomization_support != NM_SUPPLICANT_FEATURE_YES) {
+		nm_log_warn (LOGD_SUPPLICANT, "MAC address randomization is not supported");
+		return FALSE;
 	}
 
 	return TRUE;
@@ -805,7 +840,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		/* Wired 802.1x must always use eapol_flags=0 */
 		if (!add_string_val (self, "0", "eapol_flags", FALSE, FALSE))
 			return FALSE;
-		nm_supplicant_config_set_ap_scan (self, 0);
+		priv->ap_scan = 0;
 	}
 
 	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, FALSE);

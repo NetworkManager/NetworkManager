@@ -49,6 +49,7 @@
 #include "nm-enum-types.h"
 #include "nm-connection-provider.h"
 #include "nm-core-internal.h"
+#include "nm-config.h"
 
 #include "nmdbus-device-wifi.h"
 
@@ -2201,6 +2202,9 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSupplicantConfig *config = NULL;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	NMSupplicantFeature mac_randomization_support;
+	NMSettingMacRandomization mac_randomization_fallback;
+	gs_free char *svalue = NULL;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
@@ -2217,9 +2221,20 @@ build_supplicant_config (NMDeviceWifi *self,
 		_LOGW (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
 	}
 
+	mac_randomization_support = nm_supplicant_interface_get_mac_randomization_support (priv->sup_iface);
+	svalue = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                                "wifi." NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
+	                                                NM_DEVICE (self));
+	mac_randomization_fallback = _nm_utils_ascii_str_to_int64 (svalue, 10,
+	                                                           NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                                                           NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
+	                                                           NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
+
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
-	                                                fixed_freq)) {
+	                                                fixed_freq,
+	                                                mac_randomization_support,
+	                                                mac_randomization_fallback)) {
 		_LOGE (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
