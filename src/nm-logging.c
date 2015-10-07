@@ -61,65 +61,75 @@ typedef struct {
 	gboolean full_details;
 } LogLevelDesc;
 
-static NMLogLevel log_level = LOGL_INFO;
-static char *log_domains;
-static NMLogDomain logging[_LOGL_N_REAL];
-static gboolean logging_set_up;
-enum {
-	LOG_BACKEND_GLIB,
-	LOG_BACKEND_SYSLOG,
-	LOG_BACKEND_JOURNAL,
-	LOG_BACKEND_JOURNAL_SYSLOG_STYLE,
-} log_backend = LOG_BACKEND_GLIB;
-static char *logging_domains_to_string;
+static struct {
+	NMLogLevel log_level;
+	char *log_domains;
+	NMLogDomain logging[_LOGL_N_REAL];
+	gboolean logging_set_up;
+	enum {
+		LOG_BACKEND_GLIB,
+		LOG_BACKEND_SYSLOG,
+		LOG_BACKEND_JOURNAL,
+		LOG_BACKEND_JOURNAL_SYSLOG_STYLE,
+	} log_backend;
+	char *logging_domains_to_string;
+	const LogLevelDesc level_desc[_LOGL_N];
 
-static const LogLevelDesc level_desc[_LOGL_N] = {
-	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   TRUE  },
-	[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   TRUE  },
-	[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, FALSE },
-	[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, FALSE },
-	[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, TRUE  },
-	[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   FALSE },
-	[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   FALSE },
-};
-
-static const LogDesc domain_descs[] = {
-	{ LOGD_PLATFORM,  "PLATFORM" },
-	{ LOGD_RFKILL,    "RFKILL" },
-	{ LOGD_ETHER,     "ETHER" },
-	{ LOGD_WIFI,      "WIFI" },
-	{ LOGD_BT,        "BT" },
-	{ LOGD_MB,        "MB" },
-	{ LOGD_DHCP4,     "DHCP4" },
-	{ LOGD_DHCP6,     "DHCP6" },
-	{ LOGD_PPP,       "PPP" },
-	{ LOGD_WIFI_SCAN, "WIFI_SCAN" },
-	{ LOGD_IP4,       "IP4" },
-	{ LOGD_IP6,       "IP6" },
-	{ LOGD_AUTOIP4,   "AUTOIP4" },
-	{ LOGD_DNS,       "DNS" },
-	{ LOGD_VPN,       "VPN" },
-	{ LOGD_SHARING,   "SHARING" },
-	{ LOGD_SUPPLICANT,"SUPPLICANT" },
-	{ LOGD_AGENTS,    "AGENTS" },
-	{ LOGD_SETTINGS,  "SETTINGS" },
-	{ LOGD_SUSPEND,   "SUSPEND" },
-	{ LOGD_CORE,      "CORE" },
-	{ LOGD_DEVICE,    "DEVICE" },
-	{ LOGD_OLPC,      "OLPC" },
-	{ LOGD_INFINIBAND,"INFINIBAND" },
-	{ LOGD_FIREWALL,  "FIREWALL" },
-	{ LOGD_ADSL,      "ADSL" },
-	{ LOGD_BOND,      "BOND" },
-	{ LOGD_VLAN,      "VLAN" },
-	{ LOGD_BRIDGE,    "BRIDGE" },
-	{ LOGD_DBUS_PROPS,"DBUS_PROPS" },
-	{ LOGD_TEAM,      "TEAM" },
-	{ LOGD_CONCHECK,  "CONCHECK" },
-	{ LOGD_DCB,       "DCB" },
-	{ LOGD_DISPATCH,  "DISPATCH" },
-	{ LOGD_AUDIT,     "AUDIT" },
-	{ 0, NULL }
+#define _DOMAIN_DESC_LEN 36
+	/* Would be nice to use C99 flexible array member here,
+	 * but that feature doesn't seem well supported. */
+	const LogDesc domain_desc[_DOMAIN_DESC_LEN];
+} global = {
+	.log_level = LOGL_INFO,
+	.log_backend = LOG_BACKEND_GLIB,
+	.level_desc = {
+		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   TRUE  },
+		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   TRUE  },
+		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, FALSE },
+		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, FALSE },
+		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, TRUE  },
+		[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   FALSE },
+		[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   FALSE },
+	},
+	.domain_desc = {
+		{ LOGD_PLATFORM,  "PLATFORM" },
+		{ LOGD_RFKILL,    "RFKILL" },
+		{ LOGD_ETHER,     "ETHER" },
+		{ LOGD_WIFI,      "WIFI" },
+		{ LOGD_BT,        "BT" },
+		{ LOGD_MB,        "MB" },
+		{ LOGD_DHCP4,     "DHCP4" },
+		{ LOGD_DHCP6,     "DHCP6" },
+		{ LOGD_PPP,       "PPP" },
+		{ LOGD_WIFI_SCAN, "WIFI_SCAN" },
+		{ LOGD_IP4,       "IP4" },
+		{ LOGD_IP6,       "IP6" },
+		{ LOGD_AUTOIP4,   "AUTOIP4" },
+		{ LOGD_DNS,       "DNS" },
+		{ LOGD_VPN,       "VPN" },
+		{ LOGD_SHARING,   "SHARING" },
+		{ LOGD_SUPPLICANT,"SUPPLICANT" },
+		{ LOGD_AGENTS,    "AGENTS" },
+		{ LOGD_SETTINGS,  "SETTINGS" },
+		{ LOGD_SUSPEND,   "SUSPEND" },
+		{ LOGD_CORE,      "CORE" },
+		{ LOGD_DEVICE,    "DEVICE" },
+		{ LOGD_OLPC,      "OLPC" },
+		{ LOGD_INFINIBAND,"INFINIBAND" },
+		{ LOGD_FIREWALL,  "FIREWALL" },
+		{ LOGD_ADSL,      "ADSL" },
+		{ LOGD_BOND,      "BOND" },
+		{ LOGD_VLAN,      "VLAN" },
+		{ LOGD_BRIDGE,    "BRIDGE" },
+		{ LOGD_DBUS_PROPS,"DBUS_PROPS" },
+		{ LOGD_TEAM,      "TEAM" },
+		{ LOGD_CONCHECK,  "CONCHECK" },
+		{ LOGD_DCB,       "DCB" },
+		{ LOGD_DISPATCH,  "DISPATCH" },
+		{ LOGD_AUDIT,     "AUDIT" },
+		{ 0, NULL }
+		/* keep _DOMAIN_DESC_LEN in sync */
+	},
 };
 
 /* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
@@ -136,7 +146,7 @@ G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
 static void
 _ensure_initialized (void)
 {
-	if (G_UNLIKELY (!logging_set_up))
+	if (G_UNLIKELY (!global.logging_set_up))
 		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
 }
 
@@ -147,8 +157,8 @@ match_log_level (const char  *level,
 {
 	int i;
 
-	for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
-		if (!g_ascii_strcasecmp (level_desc[i].name, level)) {
+	for (i = 0; i < G_N_ELEMENTS (global.level_desc); i++) {
+		if (!g_ascii_strcasecmp (global.level_desc[i].name, level)) {
 			*out_level = i;
 			return TRUE;
 		}
@@ -166,8 +176,8 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	NMLogDomain new_logging[G_N_ELEMENTS (logging)];
-	NMLogLevel new_log_level = log_level;
+	NMLogDomain new_logging[G_N_ELEMENTS (global.logging)];
+	NMLogLevel new_log_level = global.log_level;
 	char **tmp, **iter;
 	int i;
 	gboolean had_platform_debug;
@@ -175,7 +185,7 @@ nm_logging_setup (const char  *level,
 	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	logging_set_up = TRUE;
+	global.logging_set_up = TRUE;
 
 	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
 		new_logging[i] = 0;
@@ -185,15 +195,15 @@ nm_logging_setup (const char  *level,
 		if (!match_log_level (level, &new_log_level, error))
 			return FALSE;
 		if (new_log_level == _LOGL_KEEP) {
-			new_log_level = log_level;
+			new_log_level = global.log_level;
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-				new_logging[i] = logging[i];
+				new_logging[i] = global.logging[i];
 		}
 	}
 
 	/* domains */
 	if (!domains || !*domains)
-		domains = log_domains ? log_domains : "DEFAULT";
+		domains = global.log_domains ? global.log_domains : "DEFAULT";
 
 	tmp = g_strsplit_set (domains, ", ", 0);
 	for (iter = tmp; iter && *iter; iter++) {
@@ -234,7 +244,7 @@ nm_logging_setup (const char  *level,
 			continue;
 
 		else {
-			for (diter = &domain_descs[0]; diter->name; diter++) {
+			for (diter = &global.domain_desc[0]; diter->name; diter++) {
 				if (!g_ascii_strcasecmp (diter->name, *iter)) {
 					bits = diter->num;
 					break;
@@ -259,7 +269,7 @@ nm_logging_setup (const char  *level,
 
 		if (domain_log_level == _LOGL_KEEP) {
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-				new_logging[i] = (new_logging[i] & ~bits) | (logging[i] & bits);
+				new_logging[i] = (new_logging[i] & ~bits) | (global.logging[i] & bits);
 		} else {
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
 				if (i < domain_log_level)
@@ -271,18 +281,18 @@ nm_logging_setup (const char  *level,
 	}
 	g_strfreev (tmp);
 
-	if (log_domains != (char *)domains) {
-		g_free (log_domains);
-		log_domains = g_strdup (domains);
+	if (global.log_domains != (char *)domains) {
+		g_free (global.log_domains);
+		global.log_domains = g_strdup (domains);
 	}
 
-	g_clear_pointer (&logging_domains_to_string, g_free);
+	g_clear_pointer (&global.logging_domains_to_string, g_free);
 
 	had_platform_debug = nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM);
 
-	log_level = new_log_level;
+	global.log_level = new_log_level;
 	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-		logging[i] = new_logging[i];
+		global.logging[i] = new_logging[i];
 
 	if (   had_platform_debug
 	    && !nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
@@ -301,7 +311,7 @@ nm_logging_setup (const char  *level,
 const char *
 nm_logging_level_to_string (void)
 {
-	return level_desc[log_level].name;
+	return global.level_desc[global.log_level].name;
 }
 
 const char *
@@ -313,10 +323,10 @@ nm_logging_all_levels_to_string (void)
 		int i;
 
 		str = g_string_new (NULL);
-		for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
+		for (i = 0; i < G_N_ELEMENTS (global.level_desc); i++) {
 			if (str->len)
 				g_string_append_c (str, ',');
-			g_string_append (str, level_desc[i].name);
+			g_string_append (str, global.level_desc[i].name);
 		}
 	}
 
@@ -328,19 +338,19 @@ nm_logging_domains_to_string (void)
 {
 	_ensure_initialized ();
 
-	if (G_UNLIKELY (!logging_domains_to_string)) {
+	if (G_UNLIKELY (!global.logging_domains_to_string)) {
 		const LogDesc *diter;
 		GString *str;
 		int i;
 
-		/* We don't just return g_strdup (log_domains) because we want to expand
+		/* We don't just return g_strdup (global.log_domains) because we want to expand
 		 * "DEFAULT" and "ALL".
 		 */
 
 		str = g_string_sized_new (75);
-		for (diter = &domain_descs[0]; diter->name; diter++) {
+		for (diter = &global.domain_desc[0]; diter->name; diter++) {
 			/* If it's set for any lower level, it will also be set for LOGL_ERR */
-			if (!(diter->num & logging[LOGL_ERR]))
+			if (!(diter->num & global.logging[LOGL_ERR]))
 				continue;
 
 			if (str->len)
@@ -348,25 +358,25 @@ nm_logging_domains_to_string (void)
 			g_string_append (str, diter->name);
 
 			/* Check if it's logging at a lower level than the default. */
-			for (i = 0; i < log_level; i++) {
-				if (diter->num & logging[i]) {
-					g_string_append_printf (str, ":%s", level_desc[i].name);
+			for (i = 0; i < global.log_level; i++) {
+				if (diter->num & global.logging[i]) {
+					g_string_append_printf (str, ":%s", global.level_desc[i].name);
 					break;
 				}
 			}
 			/* Check if it's logging at a higher level than the default. */
-			if (!(diter->num & logging[log_level])) {
-				for (i = log_level + 1; i < G_N_ELEMENTS (logging); i++) {
-					if (diter->num & logging[i]) {
-						g_string_append_printf (str, ":%s", level_desc[i].name);
+			if (!(diter->num & global.logging[global.log_level])) {
+				for (i = global.log_level + 1; i < G_N_ELEMENTS (global.logging); i++) {
+					if (diter->num & global.logging[i]) {
+						g_string_append_printf (str, ":%s", global.level_desc[i].name);
 						break;
 					}
 				}
 			}
 		}
-		logging_domains_to_string = g_string_free (str, FALSE);
+		global.logging_domains_to_string = g_string_free (str, FALSE);
 	}
-	return logging_domains_to_string;
+	return global.logging_domains_to_string;
 }
 
 const char *
@@ -378,7 +388,7 @@ nm_logging_all_domains_to_string (void)
 		const LogDesc *diter;
 
 		str = g_string_new (LOGD_DEFAULT_STRING);
-		for (diter = &domain_descs[0]; diter->name; diter++) {
+		for (diter = &global.domain_desc[0]; diter->name; diter++) {
 			g_string_append_c (str, ',');
 			g_string_append (str, diter->name);
 			if (diter->num == LOGD_DHCP6)
@@ -395,12 +405,12 @@ nm_logging_all_domains_to_string (void)
 gboolean
 nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
-	if ((guint) level >= G_N_ELEMENTS (logging))
+	if ((guint) level >= G_N_ELEMENTS (global.logging))
 		g_return_val_if_reached (FALSE);
 
 	_ensure_initialized ();
 
-	return !!(logging[level] & domain);
+	return !!(global.logging[level] & domain);
 }
 
 #if SYSTEMD_JOURNAL
@@ -445,12 +455,12 @@ _nm_log_impl (const char *file,
 	char *fullmsg = NULL;
 	GTimeVal tv;
 
-	if ((guint) level >= G_N_ELEMENTS (logging))
+	if ((guint) level >= G_N_ELEMENTS (global.logging))
 		g_return_if_reached ();
 
 	_ensure_initialized ();
 
-	if (!(logging[level] & domain))
+	if (!(global.logging[level] & domain))
 		return;
 
 	/* Make sure that %m maps to the specified error */
@@ -464,7 +474,7 @@ _nm_log_impl (const char *file,
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	switch (log_backend) {
+	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
 	case LOG_BACKEND_JOURNAL_SYSLOG_STYLE:
@@ -479,13 +489,13 @@ _nm_log_impl (const char *file,
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
-			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", level_desc[level].syslog_level);
-			if (   log_backend == LOG_BACKEND_JOURNAL_SYSLOG_STYLE
-			    && level_desc[level].full_details) {
+			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", global.level_desc[level].syslog_level);
+			if (   global.log_backend == LOG_BACKEND_JOURNAL_SYSLOG_STYLE
+			    && global.level_desc[level].full_details) {
 				g_get_current_time (&tv);
-				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
+				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s [%ld.%06ld] [%s:%u] %s(): %s", global.level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
 			} else
-				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", level_desc[level].level_str, msg);
+				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", global.level_desc[level].level_str, msg);
 			_iovec_set_literal_string (iov, iov_free, i_field++, "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN);
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
 			{
@@ -494,9 +504,9 @@ _nm_log_impl (const char *file,
 				const char *s_domain_1 = NULL;
 				GString *s_domain_all = NULL;
 				NMLogDomain dom_all = domain;
-				NMLogDomain dom = dom_all & logging[level];
+				NMLogDomain dom = dom_all & global.logging[level];
 
-				for (diter = &domain_descs[0]; diter->name; diter++) {
+				for (diter = &global.domain_desc[0]; diter->name; diter++) {
 					if (!NM_FLAGS_HAS (dom_all, diter->num))
 						continue;
 
@@ -530,7 +540,7 @@ _nm_log_impl (const char *file,
 				} else
 					_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
-			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", level_desc[level].name);
+			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", global.level_desc[level].name);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_FILE=%s", file);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_LINE=%u", line);
@@ -552,16 +562,16 @@ _nm_log_impl (const char *file,
 		break;
 #endif
 	default:
-		if (level_desc[level].full_details) {
+		if (global.level_desc[level].full_details) {
 			g_get_current_time (&tv);
-			fullmsg = g_strdup_printf ("%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
+			fullmsg = g_strdup_printf ("%-7s [%ld.%06ld] [%s:%u] %s(): %s", global.level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		} else
-			fullmsg = g_strdup_printf ("%-7s %s", level_desc[level].level_str, msg);
+			fullmsg = g_strdup_printf ("%-7s %s", global.level_desc[level].level_str, msg);
 
-		if (log_backend == LOG_BACKEND_SYSLOG)
-			syslog (level_desc[level].syslog_level, "%s", fullmsg);
+		if (global.log_backend == LOG_BACKEND_SYSLOG)
+			syslog (global.level_desc[level].syslog_level, "%s", fullmsg);
 		else
-			g_log (G_LOG_DOMAIN, level_desc[level].g_log_level, "%s", fullmsg);
+			g_log (G_LOG_DOMAIN, global.level_desc[level].g_log_level, "%s", fullmsg);
 		break;
 	}
 
@@ -601,7 +611,7 @@ nm_log_handler (const gchar *log_domain,
 		break;
 	}
 
-	switch (log_backend) {
+	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
 	case LOG_BACKEND_JOURNAL_SYSLOG_STYLE:
@@ -633,28 +643,28 @@ nm_log_handler (const gchar *log_domain,
 void
 nm_logging_syslog_openlog (const char *logging_backend)
 {
-	if (log_backend != LOG_BACKEND_GLIB)
+	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
 
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_LOGGING_BACKEND_DEFAULT;
 
 	if (strcmp (logging_backend, "debug") == 0) {
-		log_backend = LOG_BACKEND_SYSLOG;
+		global.log_backend = LOG_BACKEND_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
 	} else if (strcmp (logging_backend, "syslog") != 0) {
 		if (strcmp (logging_backend, "journal-syslog-style") != 0)
-			log_backend = LOG_BACKEND_JOURNAL;
+			global.log_backend = LOG_BACKEND_JOURNAL;
 		else
-			log_backend = LOG_BACKEND_JOURNAL_SYSLOG_STYLE;
+			global.log_backend = LOG_BACKEND_JOURNAL_SYSLOG_STYLE;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
 		nm_utils_get_monotonic_timestamp_ns ();
 #endif
 	} else {
-		log_backend = LOG_BACKEND_SYSLOG;
+		global.log_backend = LOG_BACKEND_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	}
 
