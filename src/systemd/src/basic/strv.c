@@ -277,8 +277,8 @@ char **strv_split_newlines(const char *s) {
 }
 
 int strv_split_extract(char ***t, const char *s, const char *separators, ExtractFlags flags) {
-        size_t n = 0, allocated = 0;
         _cleanup_strv_free_ char **l = NULL;
+        size_t n = 0, allocated = 0;
         int r;
 
         assert(t);
@@ -302,13 +302,16 @@ int strv_split_extract(char ***t, const char *s, const char *separators, Extract
                 l[n] = NULL;
         }
 
-        if (!l)
+        if (!l) {
                 l = new0(char*, 1);
+                if (!l)
+                        return -ENOMEM;
+        }
 
         *t = l;
         l = NULL;
 
-        return 0;
+        return (int) n;
 }
 
 char *strv_join(char **l, const char *separator) {
@@ -719,4 +722,67 @@ bool strv_fnmatch(char* const* patterns, const char *s, int flags) {
                         return true;
 
         return false;
+}
+
+char ***strv_free_free(char ***l) {
+        char ***i;
+
+        if (!l)
+                return NULL;
+
+        for (i = l; *i; i++)
+                strv_free(*i);
+
+        free(l);
+        return NULL;
+}
+
+char **strv_skip(char **l, size_t n) {
+
+        while (n > 0) {
+                if (strv_isempty(l))
+                        return l;
+
+                l++, n--;
+        }
+
+        return l;
+}
+
+int strv_extend_n(char ***l, const char *value, size_t n) {
+        size_t i, j, k;
+        char **nl;
+
+        assert(l);
+
+        if (!value)
+                return 0;
+        if (n == 0)
+                return 0;
+
+        /* Adds the value value n times to l */
+
+        k = strv_length(*l);
+
+        nl = realloc(*l, sizeof(char*) * (k + n + 1));
+        if (!nl)
+                return -ENOMEM;
+
+        *l = nl;
+
+        for (i = k; i < k + n; i++) {
+                nl[i] = strdup(value);
+                if (!nl[i])
+                        goto rollback;
+        }
+
+        nl[i] = NULL;
+        return 0;
+
+rollback:
+        for (j = k; j < i; i++)
+                free(nl[j]);
+
+        nl[k] = NULL;
+        return -ENOMEM;
 }

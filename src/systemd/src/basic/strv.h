@@ -154,3 +154,9 @@ static inline bool strv_fnmatch_or_empty(char* const* patterns, const char *s, i
         return strv_isempty(patterns) ||
                strv_fnmatch(patterns, s, flags);
 }
+
+char ***strv_free_free(char ***l);
+
+char **strv_skip(char **l, size_t n);
+
+int strv_extend_n(char ***l, const char *value, size_t n);

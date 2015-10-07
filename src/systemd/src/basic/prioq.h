@@ -5,7 +5,7 @@
 /***
   This file is part of systemd.
 
-  Copyright (C) 2014 Axis Communications AB. All rights reserved.
+  Copyright 2013 Lennart Poettering
 
   systemd is free software; you can redistribute it and/or modify it
   under the terms of the GNU Lesser General Public License as published by
@@ -21,18 +21,22 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include <netinet/if_ether.h>
+#include "hashmap.h"
 
-#include "sparse-endian.h"
-#include "socket-util.h"
+typedef struct Prioq Prioq;
 
-int arp_network_bind_raw_socket(int index, union sockaddr_union *link);
-int arp_network_send_raw_socket(int fd, const union sockaddr_union *link,
-                                        const struct ether_arp *arp);
+#define PRIOQ_IDX_NULL ((unsigned) -1)
 
-void arp_packet_init(struct ether_arp *arp);
-void arp_packet_probe(struct ether_arp *arp, be32_t pa, const struct ether_addr *ha);
-void arp_packet_announcement(struct ether_arp *arp, be32_t pa, const struct ether_addr *ha);
-int arp_packet_verify_headers(struct ether_arp *arp);
+Prioq *prioq_new(compare_func_t compare);
+Prioq *prioq_free(Prioq *q);
+int prioq_ensure_allocated(Prioq **q, compare_func_t compare_func);
 
-#define log_ipv4ll(ll, fmt, ...) log_internal(LOG_DEBUG, 0, __FILE__, __LINE__, __func__, "IPv4LL: " fmt, ##__VA_ARGS__)
+int prioq_put(Prioq *q, void *data, unsigned *idx);
+int prioq_remove(Prioq *q, void *data, unsigned *idx);
+int prioq_reshuffle(Prioq *q, void *data, unsigned *idx);
+
+void *prioq_peek(Prioq *q) _pure_;
+void *prioq_pop(Prioq *q);
+
+unsigned prioq_size(Prioq *q) _pure_;
+bool prioq_isempty(Prioq *q) _pure_;
