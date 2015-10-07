@@ -109,6 +109,15 @@
 /* macro to return strlen() of a compile time string. */
 #define STRLEN(str)     ( sizeof ("" str) - 1 )
 
+#define NM_SET_OUT(out_val, value) \
+	G_STMT_START { \
+		typeof(*(out_val)) *_out_val = (out_val); \
+		\
+		if (_out_val) { \
+			*_out_val = (value); \
+		} \
+	} G_STMT_END
+
 /********************************************************/
 
 #define _NM_IN_SET_EVAL_1(op, x, y1)                              \
