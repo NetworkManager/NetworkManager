@@ -9255,6 +9255,7 @@ nm_device_update_hw_address (NMDevice *self)
 	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddrlen);
 
 	if (hwaddrlen) {
+		priv->hw_addr_len = hwaddrlen;
 		if (!priv->hw_addr || !nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen)) {
 			g_free (priv->hw_addr);
 			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
@@ -9266,12 +9267,12 @@ nm_device_update_hw_address (NMDevice *self)
 		/* Invalid or no hardware address */
 		if (priv->hw_addr_len != 0) {
 			g_clear_pointer (&priv->hw_addr, g_free);
+			priv->hw_addr_len = 0;
 			_LOGD (LOGD_HW | LOGD_DEVICE,
 			       "previous hardware address is no longer valid");
 			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
 		}
 	}
-	priv->hw_addr_len = hwaddrlen;
 }
 
 gboolean
