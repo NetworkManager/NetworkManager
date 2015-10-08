@@ -445,6 +445,15 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		g_free (keyValue);
 }
 
+void
+svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
+{
+	gs_free char *v = NULL;
+
+	v = g_strdup_printf ("%"G_GINT64_FORMAT, value);
+	svSetValueFull (s, key, v, TRUE);
+}
+
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.
  * The mode argument is only used if creating the file, not if

@@ -75,6 +75,7 @@ gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, g
  */
 void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim);
 void svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim);
+void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 
 
 /* Write the current contents iff modified.  Returns FALSE on error
