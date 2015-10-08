@@ -218,6 +218,17 @@ nm_clear_g_signal_handler (gpointer self, guint *id)
 	return FALSE;
 }
 
+static inline gboolean
+nm_clear_g_variant (GVariant **variant)
+{
+	if (variant && *variant) {
+		g_variant_unref (*variant);
+		*variant = NULL;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 /* Determine whether @x is a power of two (@x being an integer type).
