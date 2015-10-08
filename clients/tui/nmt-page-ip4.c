@@ -177,6 +177,12 @@ nmt_page_ip4_constructed (GObject *object)
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
+	widget = nmt_newt_checkbox_new (_("Ignore automatically obtained routes"));
+	g_object_bind_property (s_ip4, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
+	                        widget, "active",
+	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
+
 	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_checkbox_new (_("Require IPv4 addressing for this connection"));
