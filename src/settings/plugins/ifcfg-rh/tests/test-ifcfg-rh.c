@@ -58,6 +58,12 @@
 
 #include "nm-test-utils.h"
 
+typedef struct {
+	const char *name;
+	const NMSettingMacRandomization value;
+	const char *write_expected;
+} WifiMacRandomData;
+
 #if 0
 static void
 connection_diff (NMConnection *a, NMConnection *b)
@@ -5450,6 +5456,117 @@ test_write_wifi_hidden (void)
 	/* re-read the connection for comparison */
 	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
 	                                    NULL, &error);
+	unlink (testfile);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_read_wifi_mac_random (gconstpointer user_data)
+{
+	const WifiMacRandomData *test_data = user_data;
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	gboolean success;
+	GError *error = NULL;
+	char *path;
+
+	path = g_strdup_printf (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-mac-random-%s", test_data->name);
+	connection = connection_from_file_test (path, NULL, TYPE_WIRELESS, NULL, &error);
+	g_free (path);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wifi);
+	g_assert_cmpint (nm_setting_wireless_get_mac_address_randomization (s_wifi), ==, test_data->value);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_wifi_mac_random (gconstpointer user_data)
+{
+	const WifiMacRandomData *test_data = user_data;
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	char *uuid, *testfile = NULL, *val;
+	gboolean success;
+	GError *error = NULL;
+	shvarFile *f;
+	GBytes *ssid;
+	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	val = g_strdup_printf ("Test Write WiFi MAC %s", test_data->name);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, val,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+	g_free (val);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION, test_data->value,
+	              NULL);
+	g_bytes_unref (ssid);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+		                             TEST_SCRATCH_DIR "/network-scripts/",
+		                             &testfile,
+		                             &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
+
+	/* re-read the file to check that what key was written. */
+	val = svGetValue (f, "MAC_ADDRESS_RANDOMIZATION", FALSE);
+	g_assert_cmpstr (val, ==, test_data->write_expected);
+	g_free (val);
+	svCloseFile (f);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_connection_normalize (connection, NULL, NULL, NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS, NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 	g_assert (reread);
@@ -13061,6 +13178,35 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/read-band-a-channel-mismatch", test_read_wifi_band_a_channel_mismatch);
 	g_test_add_func (TPATH "wifi/read-band-bg-channel-mismatch", test_read_wifi_band_bg_channel_mismatch);
 	g_test_add_func (TPATH "wifi/read-hidden", test_read_wifi_hidden);
+
+	{
+		static const WifiMacRandomData test_wifi_mac_random[] = {
+			{ "always",  NM_SETTING_MAC_RANDOMIZATION_ALWAYS,  "always" },
+			{ "never",   NM_SETTING_MAC_RANDOMIZATION_NEVER,   "never" },
+			{ "default", NM_SETTING_MAC_RANDOMIZATION_DEFAULT, "default" },
+			{ "missing", NM_SETTING_MAC_RANDOMIZATION_NEVER,   "never" },
+		};
+		int i;
+
+		for (i = 0; i < G_N_ELEMENTS (test_wifi_mac_random); i++) {
+			char *tpath;
+
+			tpath = g_strdup_printf (TPATH "wifi/read-mac-random-%s", test_wifi_mac_random[i].name);
+			g_test_add_data_func_full (tpath,
+			                           g_memdup (&test_wifi_mac_random[i], sizeof (test_wifi_mac_random[i])),
+			                           test_read_wifi_mac_random,
+			                           g_free);
+			g_free (tpath);
+
+			tpath = g_strdup_printf (TPATH "wifi/write-mac-random-%s", test_wifi_mac_random[i].name);
+			g_test_add_data_func_full (tpath,
+			                           g_memdup (&test_wifi_mac_random[i], sizeof (test_wifi_mac_random[i])),
+			                           test_write_wifi_mac_random,
+			                           g_free);
+			g_free (tpath);
+		}
+	}
+
 	test_read_wired_qeth_static ();
 	test_read_wired_ctc_static ();
 	test_read_wifi_wep_no_keys ();

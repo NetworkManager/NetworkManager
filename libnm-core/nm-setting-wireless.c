@@ -1398,6 +1398,15 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 *
 	 * Since: 1.2
 	 **/
+	/* ---ifcfg-rh---
+	 * property: mac-address-randomization
+	 * variable: MAC_ADDRESS_RANDOMIZATION(+)
+	 * values: 0 (default), (1) never, (2) always
+	 * default: 1
+	 * description: Enables or disables Wi-Fi MAC address randomization.
+	 * example: MAC_ADDRESS_RANDOMIZATION=2
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_RANDOMIZATION,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION, "", "",

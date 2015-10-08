@@ -1,0 +1,7 @@
+TYPE=Wireless
+DEVICE=eth2
+BOOTPROTO=dhcp
+ESSID=blahblah
+ONBOOT=yes
+MAC_ADDRESS_RANDOMIZATION=always
+
