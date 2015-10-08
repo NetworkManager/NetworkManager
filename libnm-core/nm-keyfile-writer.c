@@ -608,9 +608,16 @@ static KeyWriter key_writers[] = {
 static gboolean
 can_omit_default_value (NMSetting *setting, const char *property)
 {
-	if (   (NM_IS_SETTING_VLAN (setting)       && !strcmp (property, NM_SETTING_VLAN_FLAGS))
-	    || (NM_IS_SETTING_IP6_CONFIG (setting) && !strcmp (property, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE)))
-		return FALSE;
+	if (NM_IS_SETTING_VLAN (setting)) {
+		if (!strcmp (property, NM_SETTING_VLAN_FLAGS))
+			return FALSE;
+	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
+		if (!strcmp (property, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE))
+			return FALSE;
+	} else if (NM_IS_SETTING_WIRELESS (setting)) {
+		if (!strcmp (property, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION))
+			return FALSE;
+	}
 
 	return TRUE;
 }
