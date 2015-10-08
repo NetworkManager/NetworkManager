@@ -956,7 +956,10 @@ make_ip4_setting (shvarFile *ifcfg,
 	} else if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")) {
 		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 	} else if (!g_ascii_strcasecmp (value, "static")) {
-		method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+		if (is_any_ip4_address_defined (ifcfg, NULL))
+			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+		else
+			method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 	} else if (!g_ascii_strcasecmp (value, "autoip")) {
 		g_free (value);
 		g_object_set (s_ip4,

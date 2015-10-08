@@ -1685,9 +1685,10 @@ test_read_wired_ipv6_manual (void)
 }
 
 #define TEST_IFCFG_WIRED_IPV6_ONLY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only"
+#define TEST_IFCFG_WIRED_IPV6_ONLY_1 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only-1"
 
 static void
-test_read_wired_ipv6_only (void)
+test_read_wired_ipv6_only (const char *file, const char *expected_id)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -1697,17 +1698,16 @@ test_read_wired_ipv6_only (void)
 	char *unmanaged = NULL;
 	GError *error = NULL;
 	const char *tmp;
-	const char *expected_id = "System test-wired-ipv6-only";
 	NMIPAddress *ip6_addr;
 	const char *method;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_IPV6_ONLY,
+	connection = connection_from_file_test (file,
 	                                        NULL,
 	                                        TYPE_ETHERNET,
 	                                        &unmanaged,
 	                                        &error);
 	ASSERT (connection != NULL,
-	        "wired-ipv6-only-read", "failed to read %s: %s", TEST_IFCFG_WIRED_IPV6_ONLY, error->message);
+	        "wired-ipv6-only-read", "failed to read %s: %s", file, error->message);
 
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-ipv6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_IPV6_ONLY, error->message);
@@ -12914,7 +12914,8 @@ int main (int argc, char **argv)
 	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_3, "System test-wired-ipv4-manual-3");
 	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_4, "System test-wired-ipv4-manual-4");
 	test_read_wired_ipv6_manual ();
-	test_read_wired_ipv6_only ();
+	test_read_wired_ipv6_only (TEST_IFCFG_WIRED_IPV6_ONLY, "System test-wired-ipv6-only");
+	test_read_wired_ipv6_only (TEST_IFCFG_WIRED_IPV6_ONLY_1, "System test-wired-ipv6-only-1");
 	test_read_wired_dhcp6_only ();
 	test_read_onboot_no ();
 	test_read_noip ();
