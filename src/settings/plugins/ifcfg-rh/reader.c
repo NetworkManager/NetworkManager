@@ -128,6 +128,7 @@ make_connection_setting (const char *file,
                          const char *prefix)
 {
 	NMSettingConnection *s_con;
+	NMSettingConnectionLldp lldp;
 	const char *ifcfg_name = NULL;
 	char *new_id, *uuid = NULL, *zone = NULL, *value;
 
@@ -165,6 +166,12 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
+	value = svGetValue (ifcfg, "LLDP", FALSE);
+	if (!g_strcmp0 (value, "rx"))
+		lldp = NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
+	else
+		lldp = svParseBoolean (value, NM_SETTING_CONNECTION_LLDP_DEFAULT);
+
 	/* Missing ONBOOT is treated as "ONBOOT=true" by the old network service */
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_AUTOCONNECT,
@@ -176,6 +183,7 @@ make_connection_setting (const char *file,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT),
 	              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
 	              svGetValueBoolean (ifcfg, "AUTOCONNECT_SLAVES", NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT),
+	              NM_SETTING_CONNECTION_LLDP, lldp,
 	              NULL);
 
 	value = svGetValue (ifcfg, "USERS", FALSE);

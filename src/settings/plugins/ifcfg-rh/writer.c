@@ -1772,6 +1772,18 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		            FALSE);
 	}
 
+	switch (nm_setting_connection_get_lldp (s_con)) {
+	case NM_SETTING_CONNECTION_LLDP_ENABLE_RX:
+		tmp = "rx";
+		break;
+	case NM_SETTING_CONNECTION_LLDP_DISABLE:
+		tmp = "no";
+		break;
+	default:
+		tmp = NULL;
+	}
+	svSetValue (ifcfg, "LLDP", tmp, FALSE);
+
 	/* Permissions */
 	svSetValue (ifcfg, "USERS", NULL, FALSE);
 	n = nm_setting_connection_get_num_permissions (s_con);

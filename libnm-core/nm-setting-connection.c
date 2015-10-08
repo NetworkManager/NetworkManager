@@ -1736,6 +1736,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * Since: 1.2
 	 **/
+	/* ---ifcfg-rh---
+	 * property: lldp
+	 * variable: LLDP
+	 * values: boolean value or 'rx'
+	 * default: missing variable means global default
+	 * description: whether LLDP is enabled for the connection
+	 * example: LLDP=no
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_LLDP,
 		 g_param_spec_int (NM_SETTING_CONNECTION_LLDP, "", "",
