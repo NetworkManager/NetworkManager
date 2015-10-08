@@ -391,7 +391,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 
 	path = get_leasefile_path (iface, uuid, FALSE);
 	r = dhcp_lease_load (&lease, path);
-	if (r == 0) {
+	if (r == 0 && lease) {
 		ip4_config = lease_to_ip4_config (iface, ifindex, lease, NULL, default_route_metric, FALSE, NULL);
 		if (ip4_config)
 			leases = g_slist_append (leases, ip4_config);
