@@ -59,6 +59,7 @@ NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES),           /* 14 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),  /* 15 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_METERED),               /* 16 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_LLDP),                  /* 17 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -77,7 +78,8 @@ NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES","\
                                               NM_SETTING_CONNECTION_SECONDARIES","\
                                               NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT","\
-                                              NM_SETTING_CONNECTION_METERED
+                                              NM_SETTING_CONNECTION_METERED","\
+                                              NM_SETTING_CONNECTION_LLDP
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
@@ -2929,6 +2931,56 @@ nmc_property_connection_describe_metered (NMSetting *setting, const char *prop)
 	         "'unknown' to let NetworkManager choose a value using some heuristics\n");
 }
 
+/* 'lldp' */
+static char *
+nmc_property_connection_get_lldp (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
+	NMSettingConnectionLldp lldp;
+	char *tmp, *str;
+
+	lldp = nm_setting_connection_get_lldp (s_conn);
+	tmp = nm_utils_enum_to_str (nm_setting_connection_lldp_get_type (), lldp);
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "default");
+	else
+		str = g_strdup_printf ("%d (%s)", lldp, tmp && *tmp ? tmp : "default");
+	g_free (tmp);
+	return str;
+}
+
+static gboolean
+nmc_property_connection_set_lldp (NMSetting *setting, const char *prop,
+                                  const char *val, GError **error)
+{
+	NMSettingConnectionLldp lldp;
+	gboolean ret;
+	long int t;
+
+	if (nmc_string_to_int_base (val, 0, TRUE,
+	                           NM_SETTING_CONNECTION_LLDP_DEFAULT,
+	                           NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
+	                           &t))
+		lldp = t;
+	else {
+		ret = nm_utils_enum_from_str (nm_setting_connection_lldp_get_type (), val,
+		                              (int *) &lldp, NULL);
+
+		if (!ret) {
+			if (g_ascii_strcasecmp (val, "enable") == 0)
+				lldp = NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
+			else {
+				g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
+				             val, "default,disable,enable-rx,enable");
+				return FALSE;
+			}
+		}
+	}
+
+	g_object_set (setting, prop, lldp, NULL);
+	return TRUE;
+}
+
 /* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
 	static gboolean \
@@ -5624,6 +5676,13 @@ nmc_properties_init (void)
 	                    nmc_property_connection_describe_metered,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, LLDP),
+	                    nmc_property_connection_get_lldp,
+	                    nmc_property_connection_set_lldp,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_DCB_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (DCB, APP_FCOE_FLAGS),
@@ -7035,6 +7094,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 14, nmc_property_connection_get_secondaries (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 15, nmc_property_connection_get_gateway_ping_timeout (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 16, nmc_property_connection_get_metered (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_connection_get_lldp (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
