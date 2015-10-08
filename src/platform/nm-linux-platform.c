@@ -3263,7 +3263,6 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 {
 	auto_nl_object struct rtnl_link *change = (struct rtnl_link *) build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_VLAN);
 
-	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_ingress_map (change, from, to);
 
 	_LOGD ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
@@ -3276,7 +3275,6 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 {
 	auto_nl_object struct rtnl_link *change = (struct rtnl_link *) build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_VLAN);
 
-	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_egress_map (change, from, to);
 
 	_LOGD ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
