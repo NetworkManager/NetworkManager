@@ -1376,6 +1376,8 @@ device_link_changed (NMDevice *self)
 	NMPlatformLink info;
 	const NMPlatformLink *pllink;
 	int ifindex;
+	gboolean emit_link_initialized = FALSE;
+	gboolean was_up;
 
 	priv->device_link_changed_id = 0;
 
@@ -1451,8 +1453,31 @@ device_link_changed (NMDevice *self)
 	if (ip_ifname_changed)
 		update_dynamic_ip_setup (self);
 
-	if (priv->up != NM_FLAGS_HAS (info.flags, IFF_UP)) {
-		priv->up = NM_FLAGS_HAS (info.flags, IFF_UP);
+	if (priv->ifindex > 0 && !priv->platform_link_initialized && info.initialized) {
+		gboolean platform_unmanaged = FALSE;
+
+		priv->platform_link_initialized = TRUE;
+
+		if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged)) {
+			nm_device_set_unmanaged (self,
+			                         NM_UNMANAGED_DEFAULT,
+			                         platform_unmanaged,
+			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		}
+
+		nm_device_set_unmanaged (self,
+		                         NM_UNMANAGED_PLATFORM_INIT,
+		                         FALSE,
+		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
+
+		emit_link_initialized = TRUE;
+	}
+
+	was_up = priv->up;
+	priv->up = NM_FLAGS_HAS (info.flags, IFF_UP);
+
+	if (   priv->platform_link_initialized
+	    && (emit_link_initialized || priv->up != was_up)) {
 
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
@@ -1494,25 +1519,8 @@ device_link_changed (NMDevice *self)
 		}
 	}
 
-	if (priv->ifindex > 0 && !priv->platform_link_initialized && info.initialized) {
-		gboolean platform_unmanaged = FALSE;
-
-		priv->platform_link_initialized = TRUE;
-
-		if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged)) {
-			nm_device_set_unmanaged (self,
-			                         NM_UNMANAGED_DEFAULT,
-			                         platform_unmanaged,
-			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-		}
-
-		nm_device_set_unmanaged (self,
-		                         NM_UNMANAGED_PLATFORM_INIT,
-		                         FALSE,
-		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
-
+	if (emit_link_initialized)
 		g_signal_emit (self, signals[LINK_INITIALIZED], 0);
-	}
 
 	return G_SOURCE_REMOVE;
 }
