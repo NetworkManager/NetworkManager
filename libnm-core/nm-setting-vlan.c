@@ -558,6 +558,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+static GVariant *
+_override_flags_get (NMSetting *setting, const char *property)
+{
+	return g_variant_new_uint32 (nm_setting_vlan_get_flags ((NMSettingVlan *) setting));
+}
+
 static GSList *
 priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 {
@@ -753,6 +759,11 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     G_PARAM_CONSTRUCT |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_override_property (parent_class, NM_SETTING_VLAN_FLAGS,
+	                                     NULL,
+	                                     _override_flags_get,
+	                                     NULL,
+	                                     NULL);
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
