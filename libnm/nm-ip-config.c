@@ -406,7 +406,8 @@ nm_ip_config_get_gateway (NMIPConfig *config)
  *
  * Returns: (element-type NMIPAddress) (transfer none): the #GPtrArray
  * containing #NMIPAddress<!-- -->es.  This is the internal copy used by the
- * configuration and must not be modified.
+ * configuration and must not be modified. The library never modifies the
+ * returned array and thus it is safe for callers to reference and keep using it.
  **/
 GPtrArray *
 nm_ip_config_get_addresses (NMIPConfig *config)
@@ -491,7 +492,9 @@ nm_ip_config_get_wins_servers (NMIPConfig *config)
  *
  * Returns: (element-type NMIPRoute) (transfer none): the #GPtrArray containing
  * #NMIPRoutes. This is the internal copy used by the configuration, and must
- * not be modified.
+ * not be modified. The library never modifies the returned array and thus it is
+ * safe for callers to reference and keep using it.
+ *
  **/
 GPtrArray *
 nm_ip_config_get_routes (NMIPConfig *config)

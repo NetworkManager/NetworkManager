@@ -2075,7 +2075,8 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_device_get_metered, (NMDevice *de
  *
  * Returns: (element-type NMLldpNeighbor) (transfer none): the #GPtrArray
  * containing #NMLldpNeighbor<!-- -->s. This is the internal copy used by the
- * device and must not be modified.
+ * device and must not be modified. The library never modifies the returned
+ * array and thus it is safe for callers to reference and keep using it.
  *
  * Since: 1.2
  **/
