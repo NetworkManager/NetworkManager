@@ -349,7 +349,7 @@ ppp_secrets_cb (NMActRequest *req,
 	 */
 	g_dbus_method_invocation_return_value (
 		priv->pending_secrets_context,
-		g_variant_new ("(ss)", username, password));
+		g_variant_new ("(ss)", username ? username : "", password ? password : ""));
 
  out:
 	priv->pending_secrets_context = NULL;
