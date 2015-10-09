@@ -184,7 +184,13 @@
       </tp:docstring>
       <arg name="level" type="s" direction="in">
         <tp:docstring>
-          One of [ERR, WARN, INFO, DEBUG, TRACE].
+          One of [ERR, WARN, INFO, DEBUG, TRACE, OFF, KEEP].
+          This level is applied to the domains as specified in the domains
+          argument. Except for the special level "KEEP", all unmentioned
+          domains are disabled entirely. "KEEP" is special and allows
+          not to change the current setting except for the specified
+          domains. E.g. level=KEEP and domains=PLATFORM:DEBUG will only
+          touch the platform domain.
         </tp:docstring>
       </arg>
       <arg name="domains" type="s" direction="in">

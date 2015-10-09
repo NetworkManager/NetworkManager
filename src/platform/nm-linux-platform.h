@@ -50,4 +50,6 @@ GType nm_linux_platform_get_type (void);
 
 void nm_linux_platform_setup (void);
 
+void _nm_linux_platform_sysctl_clear_cache (void);
+
 #endif /* __NETWORKMANAGER_LINUX_PLATFORM_H__ */
