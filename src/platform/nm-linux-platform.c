@@ -2396,13 +2396,13 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		/* The event notifies about a deleted object. We don't need to initialize all the
 		 * fields of the nmp-object. Shortcut nmp_object_from_nl(). */
 		obj = nmp_object_from_nl (platform, nlo, TRUE, TRUE);
-		_LOGD ("event-notification: %s, seq %u: %s",
+		_LOGt ("event-notification: %s, seq %u: %s",
 		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
 		       msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 		break;
 	default:
 		obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
-		_LOGD ("event-notification: %s, seq %u: %s",
+		_LOGt ("event-notification: %s, seq %u: %s",
 		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
 		       msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		break;
