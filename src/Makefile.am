@@ -298,7 +298,6 @@ libNetworkManager_la_SOURCES = \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
 	\
-	settings/plugins/keyfile/common.h \
 	settings/plugins/keyfile/nm-keyfile-connection.c \
 	settings/plugins/keyfile/nm-keyfile-connection.h \
 	settings/plugins/keyfile/plugin.c \

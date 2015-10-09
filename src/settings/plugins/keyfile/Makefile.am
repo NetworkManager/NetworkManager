@@ -27,8 +27,7 @@ libkeyfile_io_la_SOURCES = \
 	writer.c \
 	writer.h \
 	utils.c \
-	utils.h \
-	common.h
+	utils.h
 
 libkeyfile_io_la_LIBADD = $(GLIB_LIBS)
 

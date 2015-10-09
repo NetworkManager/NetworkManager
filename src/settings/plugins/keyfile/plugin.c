@@ -41,7 +41,6 @@
 #include "nm-settings-plugin.h"
 #include "nm-keyfile-connection.h"
 #include "writer.h"
-#include "common.h"
 #include "utils.h"
 
 static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);

@@ -29,7 +29,6 @@
 
 #include "nm-default.h"
 #include "writer.h"
-#include "common.h"
 #include "utils.h"
 #include "nm-keyfile-internal.h"
 
