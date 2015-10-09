@@ -210,7 +210,8 @@ nm_clear_g_source (guint *id)
 static inline gboolean
 nm_clear_g_signal_handler (gpointer self, guint *id)
 {
-	g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
+	if (!self)
+		return FALSE;
 
 	if (id && *id) {
 		g_signal_handler_disconnect (self, *id);
