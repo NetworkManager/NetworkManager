@@ -63,7 +63,6 @@ typedef struct {
 
 static struct {
 	NMLogLevel log_level;
-	char *log_domains;
 	NMLogDomain logging[_LOGL_N_REAL];
 	gboolean logging_set_up;
 	enum {
@@ -143,11 +142,15 @@ G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
 
 /************************************************************************/
 
+static char *_domains_to_string (gboolean include_level_override);
+
+/************************************************************************/
+
 static void
 _ensure_initialized (void)
 {
 	if (G_UNLIKELY (!global.logging_set_up))
-		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
+		nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
 }
 
 static gboolean
@@ -181,9 +184,17 @@ nm_logging_setup (const char  *level,
 	char **tmp, **iter;
 	int i;
 	gboolean had_platform_debug;
+	gs_free char *domains_free = NULL;
 
 	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
+
+	/* domains */
+	if (!domains || !*domains) {
+		domains = global.logging_set_up
+		          ? (domains_free = _domains_to_string (FALSE))
+		          : LOGD_DEFAULT_STRING;
+	}
 
 	global.logging_set_up = TRUE;
 
@@ -200,10 +211,6 @@ nm_logging_setup (const char  *level,
 				new_logging[i] = global.logging[i];
 		}
 	}
-
-	/* domains */
-	if (!domains || !*domains)
-		domains = global.log_domains ? global.log_domains : "DEFAULT";
 
 	tmp = g_strsplit_set (domains, ", ", 0);
 	for (iter = tmp; iter && *iter; iter++) {
@@ -281,11 +288,6 @@ nm_logging_setup (const char  *level,
 	}
 	g_strfreev (tmp);
 
-	if (global.log_domains != (char *)domains) {
-		g_free (global.log_domains);
-		global.log_domains = g_strdup (domains);
-	}
-
 	g_clear_pointer (&global.logging_domains_to_string, g_free);
 
 	had_platform_debug = nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM);
@@ -338,45 +340,54 @@ nm_logging_domains_to_string (void)
 {
 	_ensure_initialized ();
 
-	if (G_UNLIKELY (!global.logging_domains_to_string)) {
-		const LogDesc *diter;
-		GString *str;
-		int i;
+	if (G_UNLIKELY (!global.logging_domains_to_string))
+		global.logging_domains_to_string = _domains_to_string (TRUE);
 
-		/* We don't just return g_strdup (global.log_domains) because we want to expand
-		 * "DEFAULT" and "ALL".
-		 */
+	return global.logging_domains_to_string;
+}
 
-		str = g_string_sized_new (75);
-		for (diter = &global.domain_desc[0]; diter->name; diter++) {
-			/* If it's set for any lower level, it will also be set for LOGL_ERR */
-			if (!(diter->num & global.logging[LOGL_ERR]))
-				continue;
+static char *
+_domains_to_string (gboolean include_level_override)
+{
+	const LogDesc *diter;
+	GString *str;
+	int i;
 
-			if (str->len)
-				g_string_append_c (str, ',');
-			g_string_append (str, diter->name);
+	/* We don't just return g_strdup (global.log_domains) because we want to expand
+	 * "DEFAULT" and "ALL".
+	 */
 
-			/* Check if it's logging at a lower level than the default. */
-			for (i = 0; i < global.log_level; i++) {
+	str = g_string_sized_new (75);
+	for (diter = &global.domain_desc[0]; diter->name; diter++) {
+		/* If it's set for any lower level, it will also be set for LOGL_ERR */
+		if (!(diter->num & global.logging[LOGL_ERR]))
+			continue;
+
+		if (str->len)
+			g_string_append_c (str, ',');
+		g_string_append (str, diter->name);
+
+		if (!include_level_override)
+			continue;
+
+		/* Check if it's logging at a lower level than the default. */
+		for (i = 0; i < global.log_level; i++) {
+			if (diter->num & global.logging[i]) {
+				g_string_append_printf (str, ":%s", global.level_desc[i].name);
+				break;
+			}
+		}
+		/* Check if it's logging at a higher level than the default. */
+		if (!(diter->num & global.logging[global.log_level])) {
+			for (i = global.log_level + 1; i < G_N_ELEMENTS (global.logging); i++) {
 				if (diter->num & global.logging[i]) {
 					g_string_append_printf (str, ":%s", global.level_desc[i].name);
 					break;
 				}
 			}
-			/* Check if it's logging at a higher level than the default. */
-			if (!(diter->num & global.logging[global.log_level])) {
-				for (i = global.log_level + 1; i < G_N_ELEMENTS (global.logging); i++) {
-					if (diter->num & global.logging[i]) {
-						g_string_append_printf (str, ":%s", global.level_desc[i].name);
-						break;
-					}
-				}
-			}
 		}
-		global.logging_domains_to_string = g_string_free (str, FALSE);
 	}
-	return global.logging_domains_to_string;
+	return g_string_free (str, FALSE);
 }
 
 const char *
