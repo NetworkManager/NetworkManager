@@ -1146,8 +1146,9 @@ nm_device_finish_init (NMDevice *self)
 
 	/* Do not manage externally created software devices until they are IFF_UP */
 	if (   NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)
-	    && !nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex)
-	    && priv->ifindex > 0)
+	    && priv->ifindex > 0
+	    && (   !priv->up
+	        || !priv->platform_link_initialized))
 		nm_device_set_unmanaged_initial (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
 
 	if (priv->master)
