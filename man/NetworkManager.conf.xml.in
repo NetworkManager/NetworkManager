@@ -336,6 +336,14 @@ no-auto-default=*
 	  system configuration files according to build options.
 	  </para></listitem>
 	</varlistentry>
+        <varlistentry>
+          <term><varname>path</varname></term>
+          <listitem>
+            <para>The location where keyfiles are read and stored.
+            This defaults to "<literal>@NM_CONFIG_KEYFILE_PATH_DEFAULT@</literal>".
+            </para>
+          </listitem>
+        </varlistentry>
 	<varlistentry>
 	  <term><varname>unmanaged-devices</varname></term>
 	  <listitem><para>Set devices that should be ignored by

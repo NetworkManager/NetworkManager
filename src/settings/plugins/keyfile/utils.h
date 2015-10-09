@@ -27,8 +27,6 @@
 #define KEYFILE_PLUGIN_NAME "keyfile"
 #define KEYFILE_PLUGIN_INFO "(c) 2007 - 2015 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
-#define KEYFILE_DIR NMCONFDIR "/system-connections"
-
 #define NM_KEYFILE_CONNECTION_LOG_PATH(path)  str_if_set (path,"in-memory")
 #define NM_KEYFILE_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
 #define NM_KEYFILE_CONNECTION_LOG_ARG(con)    NM_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con))
@@ -38,6 +36,8 @@
 gboolean nm_keyfile_plugin_utils_should_ignore_file (const char *filename);
 
 char *nm_keyfile_plugin_utils_escape_filename (const char *filename);
+
+const char *nm_keyfile_plugin_get_path (void);
 
 #endif  /* _UTILS_H_ */
 

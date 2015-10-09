@@ -366,7 +366,7 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
                                     GError **error)
 {
 	return _internal_write_connection (connection,
-	                                   KEYFILE_DIR,
+	                                   nm_keyfile_plugin_get_path (),
 	                                   0, 0,
 	                                   existing_path,
 	                                   force_rename,
