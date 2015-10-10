@@ -959,7 +959,7 @@ nm_ip6_config_intersect (NMIP6Config *dst, const NMIP6Config *src)
 gboolean
 nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relevant_changes)
 {
-#ifndef G_DISABLE_ASSERT
+#if NM_MORE_ASSERTS
 	gboolean config_equal;
 #endif
 	gboolean has_minor_changes = FALSE, has_relevant_changes = FALSE, are_equal;
@@ -972,7 +972,7 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	g_return_val_if_fail (dst != NULL, FALSE);
 	g_return_val_if_fail (src != dst, FALSE);
 
-#ifndef G_DISABLE_ASSERT
+#if NM_MORE_ASSERTS
 	config_equal = nm_ip6_config_equal (dst, src);
 #endif
 
@@ -1132,9 +1132,11 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 	}
 
+#if NM_MORE_ASSERTS
 	/* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
 	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
-	g_assert (config_equal == !has_relevant_changes);
+	nm_assert (config_equal == !has_relevant_changes);
+#endif
 
 	g_object_thaw_notify (G_OBJECT (dst));
 
