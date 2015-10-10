@@ -583,7 +583,7 @@ do_ip4_address_add (char **argv)
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
 
-		gboolean value = nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, address, 0, plen, lifetime, preferred, NULL);
+		gboolean value = nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, address, plen, 0, lifetime, preferred, NULL);
 		return value;
 	} else
 		return FALSE;
@@ -601,7 +601,7 @@ do_ip6_address_add (char **argv)
 		guint32 preferred = strtol (*argv++, NULL, 10);
 		guint flags = (*argv) ? rtnl_addr_str2flags (*argv++) : 0;
 
-		gboolean value = nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, address, in6addr_any, plen, lifetime, preferred, flags);
+		gboolean value = nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, address, plen, in6addr_any, lifetime, preferred, flags);
 		return value;
 	} else
 		return FALSE;

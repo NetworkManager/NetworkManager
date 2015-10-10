@@ -1849,8 +1849,8 @@ gboolean
 nm_platform_ip4_address_add (NMPlatform *self,
                              int ifindex,
                              in_addr_t address,
-                             in_addr_t peer_address,
                              int plen,
+                             in_addr_t peer_address,
                              guint32 lifetime,
                              guint32 preferred,
                              const char *label)
@@ -1879,15 +1879,15 @@ nm_platform_ip4_address_add (NMPlatform *self,
 
 		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
 	}
-	return klass->ip4_address_add (self, ifindex, address, peer_address, plen, lifetime, preferred, label);
+	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, label);
 }
 
 gboolean
 nm_platform_ip6_address_add (NMPlatform *self,
                              int ifindex,
                              struct in6_addr address,
-                             struct in6_addr peer_address,
                              int plen,
+                             struct in6_addr peer_address,
                              guint32 lifetime,
                              guint32 preferred,
                              guint flags)
@@ -1914,7 +1914,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 
 		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr));
 	}
-	return klass->ip6_address_add (self, ifindex, address, peer_address, plen, lifetime, preferred, flags);
+	return klass->ip6_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
 }
 
 gboolean
@@ -2069,7 +2069,7 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
-		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
+		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen, known_address->peer_address, lifetime, preferred, known_address->label))
 			return FALSE;
 
 		if (out_added_addresses) {
@@ -2130,7 +2130,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
-		                                  known_address->peer_address, known_address->plen,
+		                                  known_address->plen, known_address->peer_address,
 		                                  lifetime, preferred, known_address->flags))
 			return FALSE;
 	}

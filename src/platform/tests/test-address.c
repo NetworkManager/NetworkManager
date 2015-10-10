@@ -65,12 +65,12 @@ test_ip4_address (void)
 
 	/* Add address */
 	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN));
-	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, 0, IP4_PLEN, lifetime, preferred, NULL));
+	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0, lifetime, preferred, NULL));
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN));
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, 0, IP4_PLEN, lifetime, preferred, NULL));
+	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0, lifetime, preferred, NULL));
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
@@ -114,12 +114,12 @@ test_ip6_address (void)
 
 	/* Add address */
 	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
-	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
+	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags));
 	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
+	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags));
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
@@ -175,7 +175,7 @@ test_ip4_address_external (void)
 	/* Add/delete conflict */
 	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
 			IP4_ADDRESS, IP4_PLEN, DEVICE_NAME, lifetime, preferred);
-	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, 0, IP4_PLEN, lifetime, preferred, NULL));
+	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0, lifetime, preferred, NULL));
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN));
 	accept_signal (address_added);
 	/*run_command ("ip address delete %s/%d dev %s", IP4_ADDRESS, IP4_PLEN, DEVICE_NAME);
@@ -212,7 +212,7 @@ test_ip6_address_external (void)
 	/* Add/delete conflict */
 	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
 			IP6_ADDRESS, IP6_PLEN, DEVICE_NAME, lifetime, preferred);
-	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
+	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags));
 	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 	accept_signal (address_added);
 	/*run_command ("ip address delete %s/%d dev %s", IP6_ADDRESS, IP6_PLEN, DEVICE_NAME);

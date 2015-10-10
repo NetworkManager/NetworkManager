@@ -4862,8 +4862,8 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	if (!nm_platform_ip6_address_add (NM_PLATFORM_GET,
 	                                  ip_ifindex,
 	                                  lladdr,
-	                                  in6addr_any,
 	                                  64,
+	                                  in6addr_any,
 	                                  NM_PLATFORM_LIFETIME_PERMANENT,
 	                                  NM_PLATFORM_LIFETIME_PERMANENT,
 	                                  0)) {

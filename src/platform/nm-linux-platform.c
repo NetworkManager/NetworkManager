@@ -4238,8 +4238,8 @@ static gboolean
 ip4_address_add (NMPlatform *platform,
                  int ifindex,
                  in_addr_t addr,
-                 in_addr_t peer_addr,
                  int plen,
+                 in_addr_t peer_addr,
                  guint32 lifetime,
                  guint32 preferred,
                  const char *label)
@@ -4260,8 +4260,8 @@ static gboolean
 ip6_address_add (NMPlatform *platform,
                  int ifindex,
                  struct in6_addr addr,
-                 struct in6_addr peer_addr,
                  int plen,
+                 struct in6_addr peer_addr,
                  guint32 lifetime,
                  guint32 preferred,
                  guint flags)
