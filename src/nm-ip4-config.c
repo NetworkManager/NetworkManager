@@ -179,7 +179,8 @@ static gboolean
 addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
 	return    a->address == b->address
-	       && a->plen == b->plen;
+	       && a->plen == b->plen
+	       && nm_platform_ip4_address_equal_peer_net (a, b);
 }
 
 static gboolean
@@ -2014,6 +2015,7 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 			const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
 			hash_u32 (sum, address->address);
 			hash_u32 (sum, address->plen);
+			hash_u32 (sum, nm_platform_ip4_address_get_peer_net (address));
 		}
 
 		for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {

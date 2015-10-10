@@ -1823,6 +1823,43 @@ _to_string_dev (NMPlatform *self, int ifindex, char *buf, size_t size)
 
 /******************************************************************/
 
+in_addr_t
+nm_platform_ip4_address_get_peer (const NMPlatformIP4Address *addr)
+{
+	return addr->peer_address ?: addr->address;
+}
+
+const struct in6_addr *
+nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr)
+{
+	if (   IN6_IS_ADDR_UNSPECIFIED (&addr->peer_address)
+	    || IN6_ARE_ADDR_EQUAL (&addr->peer_address, &addr->address))
+		return &addr->address;
+	return &addr->peer_address;
+}
+
+in_addr_t
+nm_platform_ip4_address_get_peer_net (const NMPlatformIP4Address *addr)
+{
+	return (addr->peer_address ?: addr->address) & nm_utils_ip4_prefix_to_netmask (addr->plen);
+}
+
+gboolean
+nm_platform_ip4_address_equal_peer_net (const NMPlatformIP4Address *addr1, const NMPlatformIP4Address *addr2)
+{
+	guint32 a1, a2;
+
+	if (addr1->plen != addr2->plen)
+		return FALSE;
+
+	/* For kernel, if the peer address is unset, that effectively means that
+	 * the peer address equals the local address. */
+	a1 = addr1->peer_address ? addr1->peer_address : addr1->address;
+	a2 = addr2->peer_address ? addr2->peer_address : addr2->address;
+
+	return ((a1 ^ a2) & nm_utils_ip4_prefix_to_netmask (addr1->plen)) == 0;
+}
+
 GArray *
 nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 {
@@ -1957,13 +1994,13 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 }
 
 const NMPlatformIP4Address *
-nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen)
+nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen, guint32 peer_address)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (plen > 0, NULL);
 
-	return klass->ip4_address_get (self, ifindex, address, plen);
+	return klass->ip4_address_get (self, ifindex, address, plen, peer_address);
 }
 
 const NMPlatformIP6Address *
@@ -1985,7 +2022,9 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (candidate->address == address->address && candidate->plen == address->plen) {
+		if (   candidate->address == address->address
+		    && candidate->plen == address->plen
+		    && nm_platform_ip4_address_equal_peer_net (candidate, address)) {
 			guint32 lifetime, preferred;
 
 			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
@@ -2702,6 +2741,12 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return 1;                                       \
     } G_STMT_END
 
+#define _CMP_DIRECT(a, b)                                   \
+    G_STMT_START {                                          \
+        if ((a) != (b))                                     \
+            return ((a) < (b)) ? -1 : 1;                    \
+    } G_STMT_END
+
 #define _CMP_FIELD(a, b, field)                             \
     G_STMT_START {                                          \
         if (((a)->field) != ((b)->field))                   \
@@ -2784,12 +2829,20 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
+	in_addr_t p_a, p_b;
+
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD (a, b, address);
-	_CMP_FIELD (a, b, peer_address);
 	_CMP_FIELD (a, b, plen);
+
+	/* a peer-address of zero is the same as setting it to address.
+	 * Here we consider the full address, including the host-part. */
+	p_a = nm_platform_ip4_address_get_peer (a);
+	p_b = nm_platform_ip4_address_get_peer (b);
+	_CMP_DIRECT (p_a, p_b);
+
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);

@@ -1031,15 +1031,24 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 }
 
 static const NMPlatformIP4Address *
-ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
+	NMPlatformIP4Address a = {
+		.ifindex = ifindex,
+		.address = addr,
+		.plen = plen,
+		.peer_address = peer_address,
+	};
 
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
 
-		if (address->ifindex == ifindex && address->plen == plen && address->address == addr)
+		if (   address->ifindex == ifindex
+		    && address->plen == plen
+		    && address->address == addr
+		    && nm_platform_ip4_address_equal_peer_net (address, &a))
 			return address;
 	}
 

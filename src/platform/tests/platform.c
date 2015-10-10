@@ -624,11 +624,11 @@ do_ip6_address_add (char **argv)
 		} else \
 			return FALSE; \
 	}
-#define ADDR_CMD(cmdname) ADDR_CMD_FULL (ip4, cmdname, FALSE, 0) ADDR_CMD_FULL (ip6, cmdname, FALSE)
-#define ADDR_CMD_PRINT(cmdname) ADDR_CMD_FULL (ip4, cmdname, TRUE) ADDR_CMD_FULL (ip6, cmdname, TRUE)
+#define ADDR_CMD(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, FALSE, 0, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, FALSE)
+#define ADDR_CMD_PRINT(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, TRUE, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, TRUE)
 
 ADDR_CMD (delete)
-ADDR_CMD_PRINT (get)
+ADDR_CMD_PRINT (get, 0)
 
 static gboolean
 do_ip4_route_get_all (char **argv)

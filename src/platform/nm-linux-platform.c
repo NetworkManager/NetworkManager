@@ -4252,7 +4252,7 @@ ip4_address_add (NMPlatform *platform,
 	                       plen, lifetime, preferred, 0,
 	                       label);
 	return do_add_addrroute (platform,
-	                         nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen),
+	                         nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen, peer_addr),
 	                         nlo);
 }
 
@@ -4283,8 +4283,7 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen,
 {
 	NMPObject obj_needle;
 
-	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen);
-	obj_needle.ip4_address.peer_address = peer_address;
+	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen, peer_address);
 	return do_delete_object (platform, &obj_needle, NULL);
 }
 
@@ -4298,12 +4297,12 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 }
 
 static const NMPlatformIP4Address *
-ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
 	NMPObject obj_needle;
 	const NMPObject *obj;
 
-	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen);
+	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen, peer_address);
 	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
 	if (nmp_object_is_visible (obj))
 		return &obj->ip4_address;
