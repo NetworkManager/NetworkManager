@@ -454,6 +454,16 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	/* ensure that monotonic timestamp is called (because it initially logs a line) */
 	nm_utils_get_monotonic_timestamp_s ();
 #endif
+
+#ifdef NM_UTILS_H
+	{
+		gs_free_error GError *error = NULL;
+
+		if (!nm_utils_init (&error))
+			g_assert_not_reached ();
+		g_assert_no_error (error);
+	}
+#endif
 }
 
 #ifdef __NETWORKMANAGER_LOGGING_H__
