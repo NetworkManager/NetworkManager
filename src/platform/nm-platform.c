@@ -1847,7 +1847,7 @@ nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 
 gboolean
 nm_platform_ip4_address_add (NMPlatform *self,
-	                         int ifindex,
+                             int ifindex,
                              in_addr_t address,
                              in_addr_t peer_address,
                              int plen,
@@ -1959,9 +1959,9 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 const NMPlatformIP4Address *
 nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (plen > 0, NULL);
 
 	return klass->ip4_address_get (self, ifindex, address, plen);
 }
@@ -1969,9 +1969,9 @@ nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, i
 const NMPlatformIP6Address *
 nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, int plen)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (plen > 0, NULL);
 
 	return klass->ip6_address_get (self, ifindex, address, plen);
 }
