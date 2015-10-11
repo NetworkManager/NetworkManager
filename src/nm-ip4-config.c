@@ -662,8 +662,7 @@ _addresses_get_index (const NMIP4Config *self, const NMPlatformIP4Address *addr)
 	for (i = 0; i < priv->addresses->len; i++) {
 		const NMPlatformIP4Address *a = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
 
-		if (addr->address == a->address &&
-		    addr->plen == a->plen)
+		if (addresses_are_duplicate (addr, a))
 			return (int) i;
 	}
 	return -1;
@@ -1435,16 +1434,7 @@ gboolean
 nm_ip4_config_address_exists (const NMIP4Config *config,
                               const NMPlatformIP4Address *needle)
 {
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	guint i;
-
-	for (i = 0; i < priv->addresses->len; i++) {
-		const NMPlatformIP4Address *haystack = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
-
-		if (needle->address == haystack->address && needle->plen == haystack->plen)
-			return TRUE;
-	}
-	return FALSE;
+	return _addresses_get_index (config, needle) >= 0;
 }
 
 /******************************************************************/
