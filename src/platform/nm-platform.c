@@ -2692,7 +2692,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 	return _nm_platform_to_string_buffer;
 }
 
-#define _CMP_POINTER(a, b)                                  \
+#define _CMP_SELF(a, b)                                     \
     G_STMT_START {                                          \
         if ((a) == (b))                                     \
             return 0;                                       \
@@ -2757,7 +2757,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, type);
 	_CMP_FIELD_STR (a, b, name);
@@ -2784,7 +2784,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD (a, b, address);
@@ -2800,7 +2800,7 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 int
 nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, address);
@@ -2816,7 +2816,7 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 int
 nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD (a, b, network);
@@ -2832,7 +2832,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 int
 nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, network);
@@ -2842,9 +2842,6 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	_CMP_FIELD (a, b, mss);
 	return 0;
 }
-
-#undef _CMP_FIELD
-#undef _CMP_FIELD_MEMCMP
 
 /**
  * nm_platform_ip_address_cmp_expiry:
@@ -2864,7 +2861,7 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 {
 	gint64 ta = 0, tb = 0;
 
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 
 	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
 		ta = G_MAXINT64;
@@ -2896,8 +2893,6 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 
 	return ta < tb ? -1 : 1;
 }
-
-#undef _CMP_POINTER
 
 const char *
 nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type)
