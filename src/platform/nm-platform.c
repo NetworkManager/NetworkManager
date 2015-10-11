@@ -2747,6 +2747,13 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return ((a) < (b)) ? -1 : 1;                    \
     } G_STMT_END
 
+#define _CMP_DIRECT_MEMCMP(a, b, size)                      \
+    G_STMT_START {                                          \
+        int c = memcmp ((a), (b), (size));                  \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
 #define _CMP_FIELD(a, b, field)                             \
     G_STMT_START {                                          \
         if (((a)->field) != ((b)->field))                   \
@@ -2853,11 +2860,17 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 int
 nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
 {
+	const struct in6_addr *p_a, *p_b;
+
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, address);
-	_CMP_FIELD_MEMCMP (a, b, peer_address);
+
+	p_a = nm_platform_ip6_address_get_peer (a);
+	p_b = nm_platform_ip6_address_get_peer (b);
+	_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
+
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
