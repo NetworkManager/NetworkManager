@@ -176,9 +176,10 @@ nm_ip4_config_capture_resolv_conf (GArray *nameservers,
 }
 
 static gboolean
-addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b, gboolean consider_plen)
+addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
-	return a->address == b->address && (!consider_plen || a->plen == b->plen);
+	return    a->address == b->address
+	       && a->plen == b->plen;
 }
 
 static gboolean
@@ -994,7 +995,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			if (nm_platform_ip4_address_cmp (src_addr = nm_ip4_config_get_address (src, i),
 			                                 dst_addr = nm_ip4_config_get_address (dst, i))) {
 				are_equal = FALSE;
-				if (!addresses_are_duplicate (src_addr, dst_addr, TRUE)) {
+				if (!addresses_are_duplicate (src_addr, dst_addr)) {
 					has_relevant_changes = TRUE;
 					break;
 				}
@@ -1367,7 +1368,7 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 	for (i = 0; i < priv->addresses->len; i++ ) {
 		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
 
-		if (addresses_are_duplicate (item, new, FALSE)) {
+		if (addresses_are_duplicate (item, new)) {
 			if (nm_platform_ip4_address_cmp (item, new) == 0)
 				return;
 
