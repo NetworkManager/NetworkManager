@@ -6856,12 +6856,21 @@ nm_device_set_ip4_config (NMDevice *self,
 
 		if (nm_device_uses_generated_assumed_connection (self)) {
 			NMConnection *connection = nm_device_get_applied_connection (self);
+			NMConnection *settings_connection = NM_CONNECTION (nm_device_get_settings_connection (self));
 			NMSetting *s_ip4;
 
 			g_object_freeze_notify (G_OBJECT (connection));
+			g_object_freeze_notify (G_OBJECT (settings_connection));
+
+			nm_connection_remove_setting (settings_connection, NM_TYPE_SETTING_IP4_CONFIG);
+			s_ip4 = nm_ip4_config_create_setting (priv->ip4_config);
+			nm_connection_add_setting (settings_connection, s_ip4);
+
 			nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 			s_ip4 = nm_ip4_config_create_setting (priv->ip4_config);
 			nm_connection_add_setting (connection, s_ip4);
+
+			g_object_thaw_notify (G_OBJECT (settings_connection));
 			g_object_thaw_notify (G_OBJECT (connection));
 		}
 
@@ -7014,12 +7023,21 @@ nm_device_set_ip6_config (NMDevice *self,
 
 		if (nm_device_uses_generated_assumed_connection (self)) {
 			NMConnection *connection = nm_device_get_applied_connection (self);
+			NMConnection *settings_connection = NM_CONNECTION (nm_device_get_settings_connection (self));
 			NMSetting *s_ip6;
 
 			g_object_freeze_notify (G_OBJECT (connection));
+			g_object_freeze_notify (G_OBJECT (settings_connection));
+
+			nm_connection_remove_setting (settings_connection, NM_TYPE_SETTING_IP6_CONFIG);
+			s_ip6 = nm_ip6_config_create_setting (priv->ip6_config);
+			nm_connection_add_setting (settings_connection, s_ip6);
+
 			nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 			s_ip6 = nm_ip6_config_create_setting (priv->ip6_config);
 			nm_connection_add_setting (connection, s_ip6);
+
+			g_object_thaw_notify (G_OBJECT (settings_connection));
 			g_object_thaw_notify (G_OBJECT (connection));
 		}
 
