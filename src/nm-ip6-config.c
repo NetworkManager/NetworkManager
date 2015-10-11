@@ -1013,7 +1013,9 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			                                 dst_addr = nm_ip6_config_get_address (dst, i))) {
 				are_equal = FALSE;
 				if (   !addresses_are_duplicate (src_addr, dst_addr)
-				    || src_addr->plen != dst_addr->plen) {
+				    || src_addr->plen != dst_addr->plen
+				    || !IN6_ARE_ADDR_EQUAL (nm_platform_ip6_address_get_peer (src_addr),
+				                            nm_platform_ip6_address_get_peer (dst_addr)))  {
 					has_relevant_changes = TRUE;
 					break;
 				}
@@ -1931,6 +1933,12 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "prefix",
 				                       g_variant_new_uint32 (address->plen));
+				if (   !IN6_IS_ADDR_UNSPECIFIED (&address->peer_address)
+				    && !IN6_ARE_ADDR_EQUAL (&address->peer_address, &address->address)) {
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       "peer",
+					                       g_variant_new_string (nm_utils_inet6_ntop (&address->peer_address, NULL)));
+				}
 
 				g_variant_builder_add (&array_builder, "a{sv}", &addr_builder);
 			}

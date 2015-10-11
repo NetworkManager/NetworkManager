@@ -995,7 +995,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			if (nm_platform_ip4_address_cmp (src_addr = nm_ip4_config_get_address (src, i),
 			                                 dst_addr = nm_ip4_config_get_address (dst, i))) {
 				are_equal = FALSE;
-				if (!addresses_are_duplicate (src_addr, dst_addr)) {
+				if (   !addresses_are_duplicate (src_addr, dst_addr)
+				    || (nm_platform_ip4_address_get_peer (src_addr) != nm_platform_ip4_address_get_peer (dst_addr))) {
 					has_relevant_changes = TRUE;
 					break;
 				}
@@ -2162,6 +2163,12 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "prefix",
 				                       g_variant_new_uint32 (address->plen));
+				if (   address->peer_address
+				    && address->peer_address != address->address) {
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       "peer",
+					                       g_variant_new_string (nm_utils_inet4_ntop (address->peer_address, NULL)));
+				}
 
 				if (*address->label) {
 					g_variant_builder_add (&addr_builder, "{sv}",
