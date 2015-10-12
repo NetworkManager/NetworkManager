@@ -313,7 +313,7 @@ typedef struct {
 	int addr_family;
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b);
-	const char *(*route_to_string) (const NMPlatformIPXRoute *route);
+	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
 	GArray *(*route_get_all) (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric);
 	gboolean (*route_delete) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
@@ -323,8 +323,6 @@ typedef struct {
 
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
-
-extern char _nm_platform_to_string_buffer[256];
 
 typedef struct {
 	int peer;
@@ -745,11 +743,13 @@ gboolean nm_platform_ip6_route_add (NMPlatform *self, int ifindex, NMIPConfigSou
 gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric);
 gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric);
 
-const char *nm_platform_link_to_string (const NMPlatformLink *link);
-const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address);
-const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address);
-const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route);
-const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route);
+extern char _nm_platform_to_string_buffer[1024];
+
+const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
+const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *buf, gsize len);
+const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len);
+const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len);
+const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len);
 
 int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);

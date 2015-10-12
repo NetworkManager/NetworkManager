@@ -372,7 +372,6 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 	const NMPClass *klass;
 	char buf2[sizeof (_nm_platform_to_string_buffer)];
 	char buf3[sizeof (_nm_platform_to_string_buffer)];
-	const char *str;
 
 	if (!buf) {
 		buf = _nm_platform_to_string_buffer;
@@ -380,7 +379,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 	}
 
 	if (!obj) {
-		g_strlcpy (buf, "NULL", buf_size);
+		g_strlcpy (buf, "(null)", buf_size);
 		return buf;
 	}
 
@@ -392,7 +391,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 	case NMP_OBJECT_TO_STRING_ID:
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
-		g_strlcpy (buf2, NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object), sizeof (buf2));
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
 
 		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
 			g_snprintf (buf3, sizeof (buf3),
@@ -411,9 +410,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 		            buf3, buf2);
 		return buf;
 	case NMP_OBJECT_TO_STRING_PUBLIC:
-		str = NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object);
-		if (str != buf)
-			g_strlcpy (buf, str, buf_size);
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
 		return buf;
 	default:
 		g_return_val_if_reached ("ERROR");
@@ -1800,7 +1797,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_link,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_link,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_link,
-		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_link_to_string,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_link_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_link_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP4_ADDRESS - 1] = {
@@ -1824,7 +1821,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_address,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_address,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip4_address,
-		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip4_address_to_string,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_address_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_address_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP6_ADDRESS - 1] = {
@@ -1848,7 +1845,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_address,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_address,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip6_address,
-		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip6_address_to_string,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_address_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_address_cmp
 	},
 	[NMP_OBJECT_TYPE_IP4_ROUTE - 1] = {
@@ -1872,7 +1869,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_route,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_route,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip4_route,
-		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip4_route_to_string,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_route_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_route_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP6_ROUTE - 1] = {
@@ -1896,7 +1893,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_route,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_route,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip6_route,
-		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip6_route_to_string,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_route_cmp,
 	},
 };

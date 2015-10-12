@@ -320,7 +320,7 @@ process_classful_routes (GHashTable *options, guint32 priority, NMIP4Config *ip4
 
 		nm_ip4_config_add_route (ip4_config, &route);
 		nm_log_info (LOGD_DHCP, "  static route %s",
-		             nm_platform_ip4_route_to_string (&route));
+		             nm_platform_ip4_route_to_string (&route, NULL, 0));
 	}
 
 out:
@@ -469,7 +469,7 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 				route.metric = priority;
 				nm_ip4_config_add_route (ip4_config, &route);
 				nm_log_dbg (LOGD_IP, "adding route for server identifier: %s",
-				                      nm_platform_ip4_route_to_string (&route));
+				                      nm_platform_ip4_route_to_string (&route, NULL, 0));
 			}
 		}
 		else

@@ -58,28 +58,28 @@ test_nm_platform_ip6_address_to_string_flags (void)
 {
 	NMPlatformIP6Address addr = { 0 };
 
-	g_assert_cmpstr (strstr (nm_platform_ip6_address_to_string (&addr), " flags "), ==, NULL);
+	g_assert_cmpstr (strstr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags "), ==, NULL);
 
 	addr.flags = IFA_F_MANAGETEMPADDR;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags mngtmpaddr ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags mngtmpaddr ");
 
 	addr.flags = IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags noprefixroute ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags noprefixroute ");
 
 	addr.flags = IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags mngtmpaddr,noprefixroute ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags mngtmpaddr,noprefixroute ");
 
 	addr.flags = IFA_F_TENTATIVE | IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags tentative,noprefixroute ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,noprefixroute ");
 
 	addr.flags = IFA_F_TENTATIVE | IFA_F_PERMANENT | IFA_F_MANAGETEMPADDR| IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags tentative,permanent,mngtmpaddr,noprefixroute ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,permanent,mngtmpaddr,noprefixroute ");
 
 	addr.flags = IFA_F_TENTATIVE | IFA_F_PERMANENT | IFA_F_MANAGETEMPADDR| IFA_F_NOPREFIXROUTE | 0x8000;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags tentative,permanent,mngtmpaddr,noprefixroute, ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,permanent,mngtmpaddr,noprefixroute, ");
 
 	addr.flags = IFA_F_TENTATIVE | IFA_F_PERMANENT | IFA_F_MANAGETEMPADDR| IFA_F_NOPREFIXROUTE | ((G_MAXUINT - (G_MAXUINT >> 1)) >> 1);
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr), " flags tentative,permanent,mngtmpaddr,noprefixroute, ");
+	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,permanent,mngtmpaddr,noprefixroute, ");
 }
 
 /******************************************************************/

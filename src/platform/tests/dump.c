@@ -75,12 +75,12 @@ dump_interface (NMPlatformLink *link)
 
 	for (i = 0; i < ip4_addresses->len; i++) {
 		ip4_address = &g_array_index (ip4_addresses, NMPlatformIP4Address, i);
-		printf ("    ip4-address %s\n", nm_platform_ip4_address_to_string (ip4_address));
+		printf ("    ip4-address %s\n", nm_platform_ip4_address_to_string (ip4_address, NULL, 0));
 	}
 
 	for (i = 0; i < ip6_addresses->len; i++) {
 		ip6_address = &g_array_index (ip6_addresses, NMPlatformIP6Address, i);
-		printf ("    ip6-address %s\n", nm_platform_ip6_address_to_string (ip6_address));
+		printf ("    ip6-address %s\n", nm_platform_ip6_address_to_string (ip6_address, NULL, 0));
 	}
 
 	g_array_unref (ip4_addresses);

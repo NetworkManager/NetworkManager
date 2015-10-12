@@ -138,7 +138,7 @@ typedef struct {
 	gboolean (*cmd_plobj_id_equal) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 	guint (*cmd_plobj_id_hash) (const NMPlatformObject *obj);
 	const char *(*cmd_plobj_to_string_id) (const NMPlatformObject *obj, char *buf, gsize buf_size);
-	const char *(*cmd_plobj_to_string) (const NMPlatformObject *obj);
+	const char *(*cmd_plobj_to_string) (const NMPlatformObject *obj, char *buf, gsize len);
 	int (*cmd_plobj_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 } NMPClass;
 

@@ -430,7 +430,7 @@ nm_platform_link_get_all (NMPlatform *self)
 	for (i = 0; i < links->len; i++) {
 		item = &g_array_index (links, NMPlatformLink, i);
 
-		_LOGT ("link-get: %3d: %s", i, nm_platform_link_to_string (item));
+		_LOGT ("link-get: %3d: %s", i, nm_platform_link_to_string (item, NULL, 0));
 
 		nm_assert (item->ifindex > 0 && !g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
 
@@ -486,7 +486,7 @@ nm_platform_link_get_all (NMPlatform *self)
 			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
 				continue;
 
-			_LOGT ("link-get: add %3d -> %3d: %s", i, j, nm_platform_link_to_string (item));
+			_LOGT ("link-get: add %3d -> %3d: %s", i, j, nm_platform_link_to_string (item, NULL, 0));
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
@@ -499,7 +499,7 @@ nm_platform_link_get_all (NMPlatform *self)
 			 * This can happen for veth pairs where each peer is parent of the other end. */
 			item = &g_array_index (links, NMPlatformLink, first_idx);
 
-			_LOGT ("link-get: add (loop) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item));
+			_LOGT ("link-get: add (loop) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item, NULL, 0));
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
@@ -1918,7 +1918,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
 		if (label)
 			g_strlcpy (addr.label, label, sizeof (addr.label));
 
-		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
+		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr, NULL, 0));
 	}
 	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, label);
 }
@@ -1953,7 +1953,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 		addr.preferred = preferred;
 		addr.flags = flags;
 
-		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr));
+		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr, NULL, 0));
 	}
 	return klass->ip6_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
 }
@@ -2236,7 +2236,7 @@ nm_platform_ip4_route_add (NMPlatform *self,
 		route.mss = mss;
 		route.pref_src = pref_src;
 
-		_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
+		_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route, NULL, 0));
 	}
 	return klass->ip4_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
@@ -2263,7 +2263,7 @@ nm_platform_ip6_route_add (NMPlatform *self,
 		route.metric = metric;
 		route.mss = mss;
 
-		_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route));
+		_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route, NULL, 0));
 	}
 	return klass->ip6_route_add (self, ifindex, source, network, plen, gateway, metric, mss);
 }
@@ -2368,10 +2368,34 @@ _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, g
 	return buf;
 }
 
-char _nm_platform_to_string_buffer[256];
+char _nm_platform_to_string_buffer[];
 
+static gboolean
+_to_string_buffer_init (gconstpointer obj, char **buf, gsize *len)
+{
+	if (!*buf) {
+		*buf = _nm_platform_to_string_buffer;
+		*len = sizeof (_nm_platform_to_string_buffer);
+	}
+	if (!obj) {
+		g_strlcpy (*buf, "(null)", *len);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+/**
+ * nm_platform_link_to_string:
+ * @route: pointer to NMPlatformLink address structure
+ * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
+ *
+ * A method for converting an link struct into a string representation.
+ *
+ * Returns: a string representation of the link.
+ */
 const char *
-nm_platform_link_to_string (const NMPlatformLink *link)
+nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 {
 	char master[20];
 	char parent[20];
@@ -2381,8 +2405,8 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	gs_free char *str_addr = NULL;
 	gs_free char *str_inet6_token = NULL;
 
-	if (!link)
-		return "(unknown link)";
+	if (!_to_string_buffer_init (link, &buf, &len))
+		return buf;
 
 	str_flags = g_string_new (NULL);
 	if (NM_FLAGS_HAS (link->flags, IFF_NOARP))
@@ -2438,7 +2462,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	if (link->inet6_token.is_valid)
 		str_inet6_token = nm_utils_hwaddr_ntoa (&link->inet6_token.iid, sizeof (link->inet6_token.iid));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	g_snprintf (buf, len,
 	            "%d: " /* ifindex */
 	            "%s" /* name */
 	            "%s" /* parent */
@@ -2475,23 +2499,23 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	            link->driver ? " driver " : "",
 	            link->driver ? link->driver : "");
 	g_string_free (str_flags, TRUE);
-	return _nm_platform_to_string_buffer;
+	return buf;
 }
 
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
+ * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting an address struct into a string representation.
  *
  * Example output: ""
  *
- * Returns: a string representation of the address. The returned string
- * is an internal buffer, so do not keep or free the returned string.
- * Also, this function is not thread safe.
+ * Returns: a string representation of the address.
  */
 const char *
-nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
+nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *buf, gsize len)
 {
 	char s_address[INET_ADDRSTRLEN];
 	char s_peer[INET_ADDRSTRLEN];
@@ -2502,7 +2526,8 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
-	g_return_val_if_fail (address, "(unknown)");
+	if (!_to_string_buffer_init (address, &buf, &len))
+		return buf;
 
 	inet_ntop (AF_INET, &address->address, s_address, sizeof (s_address));
 
@@ -2528,14 +2553,15 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	g_snprintf (buf, len,
+	            "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            str_label,
 	            source_to_string (address->source));
 	g_free (str_peer);
-	return _nm_platform_to_string_buffer;
+	return buf;
 }
 
 /**
@@ -2584,17 +2610,17 @@ nm_platform_addr_flags2str (int flags, char *buf, size_t size)
 /**
  * nm_platform_ip6_address_to_string:
  * @route: pointer to NMPlatformIP6Address address structure
+ * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting an address struct into a string representation.
  *
  * Example output: "2001:db8:0:f101::1/64 lft 4294967295 pref 4294967295 time 16922666 on dev em1"
  *
- * Returns: a string representation of the address. The returned string
- * is an internal buffer, so do not keep or free the returned string.
- * Also, this function is not thread safe.
+ * Returns: a string representation of the address.
  */
 const char *
-nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
+nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len)
 {
 #define S_FLAGS_PREFIX " flags "
 	char s_flags[256];
@@ -2606,7 +2632,8 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
-	g_return_val_if_fail (address, "(unknown)");
+	if (!_to_string_buffer_init (address, &buf, &len))
+		return buf;
 
 	inet_ntop (AF_INET6, &address->address, s_address, sizeof (s_address));
 
@@ -2633,44 +2660,46 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	g_snprintf (buf, len,
+	            "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            s_flags,
 	            source_to_string (address->source));
 	g_free (str_peer);
-	return _nm_platform_to_string_buffer;
+	return buf;
 }
 
 /**
  * nm_platform_ip4_route_to_string:
  * @route: pointer to NMPlatformIP4Route route structure
+ * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting a route struct into a string representation.
  *
  * Example output: "192.168.1.0/24 via 0.0.0.0 dev em1 metric 0 mss 0"
  *
- * Returns: a string representation of the route. The returned string
- * is an internal buffer, so do not keep or free the returned string.
- * Also, this function is not thread safe.
+ * Returns: a string representation of the route.
  */
 const char *
-nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
+nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len)
 {
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
 	char s_pref_src[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_scope[30];
 
-	g_return_val_if_fail (route, "(unknown)");
+	if (!_to_string_buffer_init (route, &buf, &len))
+		return buf;
 
 	inet_ntop (AF_INET, &route->network, s_network, sizeof(s_network));
 	inet_ntop (AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	g_snprintf (buf, len,
 	            "%s/%d"
 	            " via %s"
 	            "%s"
@@ -2690,35 +2719,36 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
 	            route->pref_src ? inet_ntop (AF_INET, &route->pref_src, s_pref_src, sizeof(s_pref_src)) : "");
-	return _nm_platform_to_string_buffer;
+	return buf;
 }
 
 /**
  * nm_platform_ip6_route_to_string:
  * @route: pointer to NMPlatformIP6Route route structure
+ * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting a route struct into a string representation.
  *
  * Example output: "ff02::fb/128 via :: dev em1 metric 0"
  *
- * Returns: a string representation of the route. The returned string
- * is an internal buffer, so do not keep or free the returned string.
- * Also, this function is not thread safe.
+ * Returns: a string representation of the route.
  */
 const char *
-nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
+nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len)
 {
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
-	g_return_val_if_fail (route, "(unknown)");
+	if (!_to_string_buffer_init (route, &buf, &len))
+		return buf;
 
 	inet_ntop (AF_INET6, &route->network, s_network, sizeof(s_network));
 	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof(s_gateway));
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	g_snprintf (buf, len,
 	            "%s/%d"
 	            " via %s"
 	            "%s"
@@ -2732,7 +2762,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 	            route->metric,
 	            route->mss,
 	            source_to_string (route->source));
-	return _nm_platform_to_string_buffer;
+	return buf;
 }
 
 #define _CMP_SELF(a, b)                                     \
@@ -2983,31 +3013,31 @@ static void
 log_link (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
 
-	_LOGD ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device));
+	_LOGD ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device, NULL, 0));
 }
 
 static void
 log_ip4_address (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
+	_LOGD ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address, NULL, 0));
 }
 
 static void
 log_ip6_address (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
+	_LOGD ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address, NULL, 0));
 }
 
 static void
 log_ip4_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
+	_LOGD ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route, NULL, 0));
 }
 
 static void
 log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	_LOGD ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
+	_LOGD ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route, NULL, 0));
 }
 
 /******************************************************************/
@@ -3084,7 +3114,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.addr_family                    = AF_INET,
 	.sizeof_route                   = sizeof (NMPlatformIP4Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b)) nm_platform_ip4_route_cmp,
-	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route)) nm_platform_ip4_route_to_string,
+	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
 	.route_get_all                  = nm_platform_ip4_route_get_all,
 	.route_add                      = _vtr_v4_route_add,
 	.route_delete                   = _vtr_v4_route_delete,
@@ -3097,7 +3127,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.addr_family                    = AF_INET6,
 	.sizeof_route                   = sizeof (NMPlatformIP6Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b)) nm_platform_ip6_route_cmp,
-	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route)) nm_platform_ip6_route_to_string,
+	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 	.route_get_all                  = nm_platform_ip6_route_get_all,
 	.route_add                      = _vtr_v6_route_add,
 	.route_delete                   = _vtr_v6_route_delete,

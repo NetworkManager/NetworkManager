@@ -1199,7 +1199,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	/* addresses */
 	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++)
-		g_message ("      a: %s", nm_platform_ip4_address_to_string (nm_ip4_config_get_address (config, i)));
+		g_message ("      a: %s", nm_platform_ip4_address_to_string (nm_ip4_config_get_address (config, i), NULL, 0));
 
 	/* default gateway */
 	if (nm_ip4_config_has_gateway (config)) {
@@ -1215,7 +1215,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	/* routes */
 	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++)
-		g_message ("     rt: %s", nm_platform_ip4_route_to_string (nm_ip4_config_get_route (config, i)));
+		g_message ("     rt: %s", nm_platform_ip4_route_to_string (nm_ip4_config_get_route (config, i), NULL, 0));
 
 	/* domains */
 	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++)
