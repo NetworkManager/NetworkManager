@@ -1415,7 +1415,7 @@ nm_setting_ip_config_get_num_addresses (NMSettingIPConfig *setting)
  * @setting: the #NMSettingIPConfig
  * @i: index number of the address to return
  *
- * Returns: the address at index @i
+ * Returns: (transfer none): the address at index @i
  **/
 NMIPAddress *
 nm_setting_ip_config_get_address (NMSettingIPConfig *setting, int i)
@@ -1567,7 +1567,7 @@ nm_setting_ip_config_get_num_routes (NMSettingIPConfig *setting)
  * @setting: the #NMSettingIPConfig
  * @i: index number of the route to return
  *
- * Returns: the route at index @i
+ * Returns: (transfer none): the route at index @i
  **/
 NMIPRoute *
 nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int i)
