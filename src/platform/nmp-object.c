@@ -515,8 +515,10 @@ nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only)
 
 		if (id_only)
 			klass->cmd_plobj_id_copy (&dst->object, &src->object);
-		else
+		else if (klass->cmd_obj_copy)
 			klass->cmd_obj_copy (dst, src);
+		else
+			memcpy (&dst->object, &src->object, klass->sizeof_data);
 	}
 }
 
@@ -553,12 +555,6 @@ _vt_cmd_plobj_id_copy (ip6_route, NMPlatformIP6Route, {
 	dst->metric = src->metric;
 	dst->network = src->network;
 });
-
-static void
-_vt_cmd_obj_copy_plain (NMPObject *dst, const NMPObject *src)
-{
-	memcpy (&dst->object, &src->object, NMP_OBJECT_GET_CLASS (dst)->sizeof_data);
-}
 
 static void
 _vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
@@ -1810,7 +1806,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
-		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_address,
@@ -1833,7 +1828,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
-		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_address,
@@ -1856,7 +1850,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
-		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_route,
@@ -1879,7 +1872,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
-		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_route,
