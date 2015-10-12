@@ -128,6 +128,7 @@ make_connection_setting (const char *file,
                          const char *prefix)
 {
 	NMSettingConnection *s_con;
+	NMSettingConnectionLldp lldp;
 	const char *ifcfg_name = NULL;
 	char *new_id, *uuid = NULL, *zone = NULL, *value;
 
@@ -165,17 +166,24 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
+	value = svGetValue (ifcfg, "LLDP", FALSE);
+	if (!g_strcmp0 (value, "rx"))
+		lldp = NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
+	else
+		lldp = svParseBoolean (value, NM_SETTING_CONNECTION_LLDP_DEFAULT);
+
 	/* Missing ONBOOT is treated as "ONBOOT=true" by the old network service */
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_AUTOCONNECT,
-	              svTrueValue (ifcfg, "ONBOOT", TRUE),
+	              svGetValueBoolean (ifcfg, "ONBOOT", TRUE),
 	              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
 	              (gint) svGetValueInt64 (ifcfg, "AUTOCONNECT_PRIORITY", 10,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT),
 	              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-	              svTrueValue (ifcfg, "AUTOCONNECT_SLAVES", NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT),
+	              svGetValueBoolean (ifcfg, "AUTOCONNECT_SLAVES", NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT),
+	              NM_SETTING_CONNECTION_LLDP, lldp,
 	              NULL);
 
 	value = svGetValue (ifcfg, "USERS", FALSE);
@@ -247,7 +255,7 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
-	switch (svTrueValue (ifcfg, "CONNECTION_METERED", -1)) {
+	switch (svGetValueBoolean (ifcfg, "CONNECTION_METERED", -1)) {
 	case TRUE:
 		g_object_set (s_con, NM_SETTING_CONNECTION_METERED, NM_METERED_YES, NULL);
 		break;
@@ -923,7 +931,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	 * specified is DEFROUTE=yes which means that this connection can be used
 	 * as a default route
 	 */
-	never_default = !svTrueValue (ifcfg, "DEFROUTE", TRUE);
+	never_default = !svGetValueBoolean (ifcfg, "DEFROUTE", TRUE);
 
 	/* Then check if GATEWAYDEV; it's global and overrides DEFROUTE */
 	network_ifcfg = svOpenFile (network_file, NULL);
@@ -998,10 +1006,10 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
-	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
-	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svGetValueBoolean (ifcfg, "PEERDNS", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svGetValueBoolean (ifcfg, "PEERROUTES", TRUE),
 	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
-	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV4_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
 	              NULL);
@@ -1017,7 +1025,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_free (value);
 
 		g_object_set (s_ip4,
-		              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svTrueValue (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
+		              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
 		              NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT, svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXUINT32, 0),
 		              NULL);
 
@@ -1318,7 +1326,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	 * specified is IPV6_DEFROUTE=yes which means that this connection can be used
 	 * as a default route
 	 */
-	never_default = !svTrueValue (ifcfg, "IPV6_DEFROUTE", TRUE);
+	never_default = !svGetValueBoolean (ifcfg, "IPV6_DEFROUTE", TRUE);
 
 	/* Then check if IPV6_DEFAULTGW or IPV6_DEFAULTDEV is specified;
 	 * they are global and override IPV6_DEFROUTE
@@ -1358,11 +1366,11 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* Find out method property */
 	/* Is IPV6 enabled? Set method to "ignored", when not enabled */
 	str_value = svGetValue (ifcfg, "IPV6INIT", FALSE);
-	ipv6init = svTrueValue (ifcfg, "IPV6INIT", FALSE);
+	ipv6init = svGetValueBoolean (ifcfg, "IPV6INIT", FALSE);
 	if (!str_value) {
 		network_ifcfg = svOpenFile (network_file, NULL);
 		if (network_ifcfg) {
-			ipv6init = svTrueValue (network_ifcfg, "IPV6INIT", FALSE);
+			ipv6init = svGetValueBoolean (network_ifcfg, "IPV6INIT", FALSE);
 			svCloseFile (network_ifcfg);
 		}
 	}
@@ -1371,9 +1379,9 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (!ipv6init)
 		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;  /* IPv6 is disabled */
 	else {
-		ipv6forwarding = svTrueValue (ifcfg, "IPV6FORWARDING", FALSE);
-		ipv6_autoconf = svTrueValue (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
-		dhcp6 = svTrueValue (ifcfg, "DHCPV6C", FALSE);
+		ipv6forwarding = svGetValueBoolean (ifcfg, "IPV6FORWARDING", FALSE);
+		ipv6_autoconf = svGetValueBoolean (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
+		dhcp6 = svGetValueBoolean (ifcfg, "DHCPV6C", FALSE);
 
 		if (ipv6_autoconf)
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
@@ -1395,12 +1403,12 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* Read IPv6 Privacy Extensions configuration */
 	ip6_privacy_str = svGetValue (ifcfg, "IPV6_PRIVACY", FALSE);
 	if (ip6_privacy_str) {
-		ip6_privacy = svTrueValue (ifcfg, "IPV6_PRIVACY", FALSE);
+		ip6_privacy = svGetValueBoolean (ifcfg, "IPV6_PRIVACY", FALSE);
 		if (!ip6_privacy)
 			ip6_privacy = g_strcmp0 (ip6_privacy_str, "rfc4941") == 0 ||
 			              g_strcmp0 (ip6_privacy_str, "rfc3041") == 0;
 	}
-	ip6_privacy_prefer_public_ip = svTrueValue (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
+	ip6_privacy_prefer_public_ip = svGetValueBoolean (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
 	ip6_privacy_val = ip6_privacy_str ?
 	                      (ip6_privacy ?
 	                          (ip6_privacy_prefer_public_ip ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) :
@@ -1410,10 +1418,10 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
-	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
-	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svGetValueBoolean (ifcfg, "IPV6_PEERDNS", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svGetValueBoolean (ifcfg, "IPV6_PEERROUTES", TRUE),
 	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
-	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV6_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
@@ -1617,11 +1625,11 @@ read_dcb_flags (shvarFile *ifcfg, DcbFlagsProperty *property)
 {
 	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
 
-	if (svTrueValue (ifcfg, property->enable_key, FALSE))
+	if (svGetValueBoolean (ifcfg, property->enable_key, FALSE))
 		flags |= NM_SETTING_DCB_FLAG_ENABLE;
-	if (svTrueValue (ifcfg, property->advertise_key, FALSE))
+	if (svGetValueBoolean (ifcfg, property->advertise_key, FALSE))
 		flags |= NM_SETTING_DCB_FLAG_ADVERTISE;
-	if (svTrueValue (ifcfg, property->willing_key, FALSE))
+	if (svGetValueBoolean (ifcfg, property->willing_key, FALSE))
 		flags |= NM_SETTING_DCB_FLAG_WILLING;
 
 	return flags;
@@ -1851,7 +1859,7 @@ make_dcb_setting (shvarFile *ifcfg,
 
 	g_return_val_if_fail (out_setting != NULL, FALSE);
 
-	dcb_on = !!svTrueValue (ifcfg, "DCB", FALSE);
+	dcb_on = !!svGetValueBoolean (ifcfg, "DCB", FALSE);
 	if (!dcb_on)
 		return TRUE;
 
@@ -2649,7 +2657,7 @@ eap_peap_reader (const char *eap_method,
 		}
 	}
 
-	if (svTrueValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", FALSE))
+	if (svGetValueBoolean (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", FALSE))
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1", NULL);
 
 	anon_ident = svGetValue (ifcfg, "IEEE_8021X_ANON_IDENTITY", FALSE);
@@ -3090,9 +3098,9 @@ make_wpa_setting (shvarFile *ifcfg,
 		allow_wpa = svGetValue (ifcfg, "WPA_ALLOW_WPA", FALSE);
 		allow_rsn = svGetValue (ifcfg, "WPA_ALLOW_WPA2", FALSE);
 
-		if (allow_wpa && svTrueValue (ifcfg, "WPA_ALLOW_WPA", TRUE))
+		if (allow_wpa && svGetValueBoolean (ifcfg, "WPA_ALLOW_WPA", TRUE))
 			nm_setting_wireless_security_add_proto (wsec, "wpa");
-		if (allow_rsn && svTrueValue (ifcfg, "WPA_ALLOW_WPA2", TRUE))
+		if (allow_rsn && svGetValueBoolean (ifcfg, "WPA_ALLOW_WPA2", TRUE))
 			nm_setting_wireless_security_add_proto (wsec, "rsn");
 
 		/* If neither WPA_ALLOW_WPA or WPA_ALLOW_WPA2 were present, default
@@ -3462,12 +3470,12 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_HIDDEN,
-	              svTrueValue (ifcfg, "SSID_HIDDEN", FALSE),
+	              svGetValueBoolean (ifcfg, "SSID_HIDDEN", FALSE),
 	              NULL);
 
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_POWERSAVE,
-	              svTrueValue (ifcfg, "POWERSAVE", FALSE) ? 1 : 0,
+	              svGetValueBoolean (ifcfg, "POWERSAVE", FALSE) ? 1 : 0,
 	              NULL);
 
 	return NM_SETTING (s_wireless);
@@ -3905,12 +3913,12 @@ make_infiniband_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (svTrueValue (ifcfg, "CONNECTED_MODE", FALSE))
+	if (svGetValueBoolean (ifcfg, "CONNECTED_MODE", FALSE))
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected", NULL);
 	else
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
 
-	if (svTrueValue (ifcfg, "PKEY", FALSE)) {
+	if (svGetValueBoolean (ifcfg, "PKEY", FALSE)) {
 		int p_key;
 		char *parent;
 
@@ -4447,7 +4455,7 @@ is_bond_device (const char *name, shvarFile *parsed)
 	g_return_val_if_fail (name != NULL, FALSE);
 	g_return_val_if_fail (parsed != NULL, FALSE);
 
-	if (svTrueValue (parsed, "BONDING_MASTER", FALSE))
+	if (svGetValueBoolean (parsed, "BONDING_MASTER", FALSE))
 		return TRUE;
 	
 	/* XXX: Check for "bond[\d]+"? */
@@ -4461,7 +4469,7 @@ is_vlan_device (const char *name, shvarFile *parsed)
 	g_return_val_if_fail (name != NULL, FALSE);
 	g_return_val_if_fail (parsed != NULL, FALSE);
 
-	if (svTrueValue (parsed, "VLAN", FALSE))
+	if (svGetValueBoolean (parsed, "VLAN", FALSE))
 		return TRUE;
 
 	return FALSE;
@@ -4595,7 +4603,7 @@ make_vlan_setting (shvarFile *ifcfg,
 	g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
 	g_clear_pointer (&parent, g_free);
 
-	if (svTrueValue (ifcfg, "REORDER_HDR", FALSE))
+	if (svGetValueBoolean (ifcfg, "REORDER_HDR", FALSE))
 		vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
 
 	value = svGetValue (ifcfg, "VLAN_FLAGS", FALSE);
@@ -4811,7 +4819,7 @@ connection_from_file_full (const char *filename,
 	if (!parsed)
 		return NULL;
 
-	if (!svTrueValue (parsed, "NM_CONTROLLED", TRUE)) {
+	if (!svGetValueBoolean (parsed, "NM_CONTROLLED", TRUE)) {
 		g_assert (out_unhandled != NULL);
 
 		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
@@ -4890,7 +4898,7 @@ connection_from_file_full (const char *filename,
 		}
 	}
 
-	if (svTrueValue (parsed, "BONDING_MASTER", FALSE) &&
+	if (svGetValueBoolean (parsed, "BONDING_MASTER", FALSE) &&
 	    strcasecmp (type, TYPE_BOND)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "BONDING_MASTER=yes key only allowed in TYPE=bond connections");

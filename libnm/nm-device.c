@@ -105,6 +105,7 @@ typedef struct {
 
 	char *physical_port_id;
 	guint32 mtu;
+	GPtrArray *lldp_neighbors;
 } NMDevicePrivate;
 
 enum {
@@ -134,6 +135,7 @@ enum {
 	PROP_PHYSICAL_PORT_ID,
 	PROP_MTU,
 	PROP_METERED,
+	PROP_LLDP_NEIGHBORS,
 
 	LAST_PROP
 };
@@ -146,6 +148,11 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+struct _NMLldpNeighbor {
+	guint refcount;
+	GHashTable *attrs;
+};
+
 static void
 nm_device_init (NMDevice *device)
 {
@@ -153,6 +160,7 @@ nm_device_init (NMDevice *device)
 
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
 	priv->reason = NM_DEVICE_STATE_REASON_NONE;
+	priv->lldp_neighbors = g_ptr_array_new ();
 }
 
 static gboolean
@@ -162,6 +170,38 @@ demarshal_state_reason (NMObject *object, GParamSpec *pspec, GVariant *value, gp
 
 	g_variant_get (value, "(uu)", NULL, reason_field);
 	_nm_object_queue_notify (object, NM_DEVICE_STATE_REASON);
+	return TRUE;
+}
+
+static gboolean
+demarshal_lldp_neighbors (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	GVariantIter iter, attrs_iter;
+	GVariant *variant, *attr_variant;
+	const char *attr_name;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), FALSE);
+
+	g_ptr_array_unref (priv->lldp_neighbors);
+	priv->lldp_neighbors = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_lldp_neighbor_unref);
+	g_variant_iter_init (&iter, value);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &variant)) {
+		NMLldpNeighbor *neigh;
+
+		neigh = nm_lldp_neighbor_new ();
+		g_variant_iter_init (&attrs_iter, variant);
+
+		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_variant))
+			g_hash_table_insert (neigh->attrs, g_strdup (attr_name), attr_variant);
+
+		g_variant_unref (variant);
+		g_ptr_array_add (priv->lldp_neighbors, neigh);
+	}
+
+	_nm_object_queue_notify (object, NM_DEVICE_LLDP_NEIGHBORS);
+
 	return TRUE;
 }
 
@@ -199,6 +239,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_PHYSICAL_PORT_ID,  &priv->physical_port_id },
 		{ NM_DEVICE_MTU,               &priv->mtu },
 		{ NM_DEVICE_METERED,           &priv->metered },
+		{ NM_DEVICE_LLDP_NEIGHBORS,    &priv->lldp_neighbors, demarshal_lldp_neighbors },
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
@@ -350,6 +391,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->active_connection);
 
 	g_clear_pointer (&priv->available_connections, g_ptr_array_unref);
+	g_clear_pointer (&priv->lldp_neighbors, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -460,6 +502,9 @@ get_property (GObject *object,
 		break;
 	case PROP_METERED:
 		g_value_set_uint (value, nm_device_get_metered (device));
+		break;
+	case PROP_LLDP_NEIGHBORS:
+		g_value_set_boxed (value, nm_device_get_lldp_neighbors (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -838,6 +883,18 @@ nm_device_class_init (NMDeviceClass *device_class)
 		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDevice:lldp-neighbors:
+	 *
+	 * The LLDP neighbors.
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_LLDP_NEIGHBORS,
+	     g_param_spec_boxed (NM_DEVICE_LLDP_NEIGHBORS, "", "",
+	                         G_TYPE_PTR_ARRAY,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 
@@ -2011,6 +2068,27 @@ nm_device_get_metered (NMDevice *device)
 NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_device_get_metered, (NMDevice *device), (device));
 
 /**
+ * nm_device_get_lldp_neighbors:
+ * @device: a #NMDevice
+ *
+ * Gets the list of neighbors discovered through LLDP.
+ *
+ * Returns: (element-type NMLldpNeighbor) (transfer none): the #GPtrArray
+ * containing #NMLldpNeighbor<!-- -->s. This is the internal copy used by the
+ * device and must not be modified. The library never modifies the returned
+ * array and thus it is safe for callers to reference and keep using it.
+ *
+ * Since: 1.2
+ **/
+GPtrArray *
+nm_device_get_lldp_neighbors (NMDevice *device)
+{
+       g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+       return NM_DEVICE_GET_PRIVATE (device)->lldp_neighbors;
+}
+
+/**
  * nm_device_is_software:
  * @device: a #NMDevice
  *
@@ -2359,4 +2437,183 @@ nm_device_get_setting_type (NMDevice *device)
 	g_return_val_if_fail (NM_DEVICE_GET_CLASS (device)->get_setting_type != NULL, G_TYPE_INVALID);
 
 	return NM_DEVICE_GET_CLASS (device)->get_setting_type (device);
+}
+
+/**
+ * nm_lldp_neighbor_new
+ *
+ * Creates a new #NMLldpNeighbor object.
+ *
+ * Returns: (transfer full): the new #NMLldpNeighbor object.
+ *
+ * Since: 1.2
+ **/
+NMLldpNeighbor *
+nm_lldp_neighbor_new (void)
+{
+	NMLldpNeighbor *neigh;
+
+	neigh = g_new0 (NMLldpNeighbor, 1);
+	neigh->refcount = 1;
+	neigh->attrs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+	                                      (GDestroyNotify) g_variant_unref);
+
+	return neigh;
+}
+
+/**
+ * nm_lldp_neighbor_ref
+ * @neighbor: the #NMLldpNeighbor
+ *
+ * Increases the reference count of the object.
+ *
+ * Since: 1.2
+ **/
+void
+nm_lldp_neighbor_ref (NMLldpNeighbor *neighbor)
+{
+	g_return_if_fail (neighbor);
+	g_return_if_fail (neighbor->refcount > 0);
+
+	neighbor->refcount++;
+}
+
+/**
+ * nm_lldp_neighbor_unref:
+ * @neighbor: the #NMLldpNeighbor
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ *
+ * Since: 1.2
+ **/
+void
+nm_lldp_neighbor_unref (NMLldpNeighbor *neighbor)
+{
+	g_return_if_fail (neighbor);
+	g_return_if_fail (neighbor->refcount > 0);
+
+	if (--neighbor->refcount == 0) {
+		g_return_if_fail (neighbor->attrs);
+		g_hash_table_unref (neighbor->attrs);
+		g_free (neighbor);
+	}
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_names:
+ * @neighbor: the #NMLldpNeighbor
+ *
+ * Gets an array of attribute names available for @neighbor.
+ *
+ * Returns: (transfer full): a %NULL-terminated array of attribute names.
+ *
+ * Since: 1.2
+ **/
+char **
+nm_lldp_neighbor_get_attr_names (NMLldpNeighbor *neighbor)
+{
+	GHashTableIter iter;
+	const char *key;
+	GPtrArray *names;
+
+	g_return_val_if_fail (neighbor, NULL);
+	g_return_val_if_fail (neighbor->attrs, NULL);
+
+	names = g_ptr_array_new ();
+
+	g_hash_table_iter_init (&iter, neighbor->attrs);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
+		g_ptr_array_add (names, g_strdup (key));
+
+	g_ptr_array_add (names, NULL);
+
+	return (char **) g_ptr_array_free (names, FALSE);
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_string_value:
+ * @neighbor: the #NMLldpNeighbor
+ * @name: the attribute name
+ * @out_value: (out) (allow-none) (transfer none): on return, the attribute value
+ *
+ * Gets the string value of attribute with name @name on @neighbor
+ *
+ * Returns: %TRUE if a string attribute with name @name was found, %FALSE otherwise
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char *name,
+                                        const char **out_value)
+{
+	GVariant *variant;
+
+	g_return_val_if_fail (neighbor, FALSE);
+	g_return_val_if_fail (name && name[0], FALSE);
+
+	variant = g_hash_table_lookup (neighbor->attrs, name);
+	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
+		if (out_value)
+			*out_value = g_variant_get_string (variant, NULL);
+		return TRUE;
+	} else
+		return FALSE;
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_uint_value:
+ * @neighbor: the #NMLldpNeighbor
+ * @name: the attribute name
+ * @out_value: (out) (allow-none) on return, the attribute value
+ *
+ * Gets the uint value of attribute with name @name on @neighbor
+ *
+ * Returns: %TRUE if a uint attribute with name @name was found, %FALSE otherwise
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, char *name,
+                                      guint *out_value)
+{
+	GVariant *variant;
+
+	g_return_val_if_fail (neighbor, FALSE);
+	g_return_val_if_fail (name && name[0], FALSE);
+
+	variant = g_hash_table_lookup (neighbor->attrs, name);
+	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32)) {
+		if (out_value)
+			*out_value = g_variant_get_uint32 (variant);
+		return TRUE;
+	} else
+		return FALSE;
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_type:
+ * @neighbor: the #NMLldpNeighbor
+ * @name: the attribute name
+ *
+ * Get the type of an attribute.
+ *
+ * Returns: the #GVariantType of the attribute with name @name
+ *
+ * Since: 1.2
+ **/
+const GVariantType *
+nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, char *name)
+{
+	GVariant *variant;
+
+	g_return_val_if_fail (neighbor, NULL);
+	g_return_val_if_fail (name && name[0], NULL);
+
+	variant = g_hash_table_lookup (neighbor->attrs, name);
+	if (variant)
+		return g_variant_get_type (variant);
+	else
+		return NULL;
+
 }

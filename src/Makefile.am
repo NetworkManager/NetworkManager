@@ -221,6 +221,8 @@ libNetworkManager_la_SOURCES = \
 	$(nm_dhcp_client_headers) \
 	devices/nm-device.c \
 	devices/nm-device.h \
+	devices/nm-lldp-listener.c \
+	devices/nm-lldp-listener.h \
 	devices/nm-device-ethernet-utils.c \
 	devices/nm-device-ethernet-utils.h \
 	devices/nm-device-factory.c \

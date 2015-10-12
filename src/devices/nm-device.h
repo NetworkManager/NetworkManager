@@ -58,6 +58,7 @@
 #define NM_DEVICE_MTU              "mtu"
 #define NM_DEVICE_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_METERED          "metered"
+#define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
 
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */

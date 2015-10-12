@@ -647,4 +647,23 @@ typedef enum /*< flags >*/ {
 #undef NM_AVAILABLE_IN_1_2
 #endif
 
+#define NM_LLDP_ATTR_DESTINATION "destination"
+#define NM_LLDP_ATTR_CHASSIS_ID_TYPE "chassis-id-type"
+#define NM_LLDP_ATTR_CHASSIS_ID "chassis-id"
+#define NM_LLDP_ATTR_PORT_ID_TYPE "port-id-type"
+#define NM_LLDP_ATTR_PORT_ID "port-id"
+#define NM_LLDP_ATTR_PORT_DESCRIPTION "port-description"
+#define NM_LLDP_ATTR_SYSTEM_NAME "system-name"
+#define NM_LLDP_ATTR_SYSTEM_DESCRIPTION "system-description"
+#define NM_LLDP_ATTR_SYSTEM_CAPABILITIES "system-capabilities"
+#define NM_LLDP_ATTR_IEEE_802_1_PVID "ieee-802-1-pvid"
+#define NM_LLDP_ATTR_IEEE_802_1_PPVID "ieee-802-1-ppvid"
+#define NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS "ieee-802-1-ppvid-flags"
+#define NM_LLDP_ATTR_IEEE_802_1_VID "ieee-802-1-pvid"
+#define NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME "ieee-802-1-vlan-name"
+
+#define NM_LLDP_DEST_NEAREST_BRIDGE "nearest-bridge"
+#define NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE "nearest-non-tpmr-bridge"
+#define NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE "nearest-customer-bridge"
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

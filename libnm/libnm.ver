@@ -859,17 +859,27 @@ libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
 	nm_device_ethernet_get_s390_subchannels;
+	nm_device_get_lldp_neighbors;
 	nm_device_get_metered;
 	nm_device_get_nm_plugin_missing;
 	nm_device_set_managed;
 	nm_device_wifi_request_scan_options;
 	nm_device_wifi_request_scan_options_async;
+	nm_lldp_neighbor_get_attr_names;
+	nm_lldp_neighbor_get_attr_string_value;
+	nm_lldp_neighbor_get_attr_type;
+	nm_lldp_neighbor_get_attr_uint_value;
+	nm_lldp_neighbor_new;
+	nm_lldp_neighbor_ref;
+	nm_lldp_neighbor_unref;
 	nm_metered_get_type;
 	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;
 	nm_setting_connection_autoconnect_slaves_get_type;
 	nm_setting_connection_get_autoconnect_slaves;
+	nm_setting_connection_get_lldp;
 	nm_setting_connection_get_metered;
+	nm_setting_connection_lldp_get_type;
 	nm_setting_ip4_config_get_dhcp_timeout;
 	nm_setting_ip_config_add_dns_option;
 	nm_setting_ip_config_clear_dns_options;

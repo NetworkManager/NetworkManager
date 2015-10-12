@@ -62,6 +62,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_MTU "mtu"
 #define NM_DEVICE_METERED "metered"
+#define NM_DEVICE_LLDP_NEIGHBORS "lldp-neighbors"
 
 struct _NMDevice {
 	NMObject parent;
@@ -89,6 +90,8 @@ typedef struct {
 	/*< private >*/
 	gpointer padding[8];
 } NMDeviceClass;
+
+typedef struct _NMLldpNeighbor NMLldpNeighbor;
 
 GType nm_device_get_type (void);
 
@@ -127,6 +130,8 @@ const char *         nm_device_get_vendor            (NMDevice  *device);
 const char *         nm_device_get_description       (NMDevice  *device);
 NM_AVAILABLE_IN_1_2
 NMMetered            nm_device_get_metered           (NMDevice  *device);
+NM_AVAILABLE_IN_1_2
+GPtrArray *          nm_device_get_lldp_neighbors    (NMDevice *device);
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 
@@ -163,6 +168,24 @@ gboolean             nm_device_connection_compatible (NMDevice *device,
                                                       GError **error);
 
 GType                nm_device_get_setting_type     (NMDevice *device);
+
+NM_AVAILABLE_IN_1_2
+NMLldpNeighbor *nm_lldp_neighbor_new (void);
+NM_AVAILABLE_IN_1_2
+void nm_lldp_neighbor_ref (NMLldpNeighbor *neighbor);
+NM_AVAILABLE_IN_1_2
+void nm_lldp_neighbor_unref (NMLldpNeighbor *neighbor);
+NM_AVAILABLE_IN_1_2
+char **nm_lldp_neighbor_get_attr_names (NMLldpNeighbor *neighbor);
+NM_AVAILABLE_IN_1_2
+gboolean nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char *name,
+                                                 const char **out_value);
+NM_AVAILABLE_IN_1_2
+gboolean nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, char *name,
+                                               guint *out_value);
+
+NM_AVAILABLE_IN_1_2
+const GVariantType *nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, char *name);
 
 G_END_DECLS
 

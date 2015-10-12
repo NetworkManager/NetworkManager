@@ -298,35 +298,55 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
 	return value;
 }
 
-/* return TRUE if <key> resolves to any truth value (e.g. "yes", "true", "y", "t", "1")
- * return FALSE if <key> resolves to any non-truth value (e.g. "no", "false", "n", "f", "0")
- * return <default> otherwise
+/**
+ * svParseBoolean:
+ * @value: the input string
+ * @fallback: the fallback value
+ *
+ * Parses a string and returns the boolean value it contains or,
+ * in case no valid value is found, the fallback value. Valid values
+ * are: "yes", "true", "t", "y", "1" and "no", "false", "f", "n", "0".
+ *
+ * Returns: the parsed boolean value or @fallback.
  */
 gint
-svTrueValue (shvarFile *s, const char *key, gint def)
+svParseBoolean (const char *value, gint fallback)
 {
-	char *tmp;
-	gint returnValue = def;
+	if (!value)
+		return fallback;
+
+	if (   !g_ascii_strcasecmp ("yes", value)
+	    || !g_ascii_strcasecmp ("true", value)
+	    || !g_ascii_strcasecmp ("t", value)
+	    || !g_ascii_strcasecmp ("y", value)
+	    || !g_ascii_strcasecmp ("1", value))
+		return TRUE;
+	else if (   !g_ascii_strcasecmp ("no", value)
+	         || !g_ascii_strcasecmp ("false", value)
+	         || !g_ascii_strcasecmp ("f", value)
+	         || !g_ascii_strcasecmp ("n", value)
+	         || !g_ascii_strcasecmp ("0", value))
+		return FALSE;
+
+	return fallback;
+}
+
+/* svGetValueBoolean:
+ * @s: fhe file
+ * @key: the name of the key to read
+ * @fallback: the fallback value in any error case
+ *
+ * Reads a value @key and converts it to a boolean using svParseBoolean().
+ *
+ * Returns: the parsed boolean value or @fallback.
+ */
+gint
+svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
+{
+	gs_free char *tmp = NULL;
 
 	tmp = svGetValue (s, key, FALSE);
-	if (!tmp)
-		return returnValue;
-
-	if (   !g_ascii_strcasecmp ("yes", tmp)
-	    || !g_ascii_strcasecmp ("true", tmp)
-	    || !g_ascii_strcasecmp ("t", tmp)
-	    || !g_ascii_strcasecmp ("y", tmp)
-	    || !g_ascii_strcasecmp ("1", tmp))
-		returnValue = TRUE;
-	else if (   !g_ascii_strcasecmp ("no", tmp)
-	         || !g_ascii_strcasecmp ("false", tmp)
-	         || !g_ascii_strcasecmp ("f", tmp)
-	         || !g_ascii_strcasecmp ("n", tmp)
-	         || !g_ascii_strcasecmp ("0", tmp))
-		returnValue = FALSE;
-
-	g_free (tmp);
-	return returnValue;
+	return svParseBoolean (tmp, fallback);
 }
 
 /* svGetValueInt64:

@@ -58,11 +58,13 @@ shvarFile *svOpenFile (const char *name, GError **error);
 char *svGetValue (shvarFile *s, const char *key, gboolean verbatim);
 char *svGetValueFull (shvarFile *s, const char *key, gboolean verbatim);
 
+gint svParseBoolean (const char *value, gint def);
+
 /* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <def> otherwise
  */
-gint svTrueValue (shvarFile *s, const char *key, gint def);
+gint svGetValueBoolean (shvarFile *s, const char *key, gint def);
 
 gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 

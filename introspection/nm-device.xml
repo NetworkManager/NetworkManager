@@ -155,6 +155,12 @@
         subject to limitations, for example set by service providers.
       </tp:docstring>
     </property>
+    <property name="LldpNeighbors" type="aa{sv}" access="read">
+      <tp:docstring>
+        Array of LLDP neighbors; each element is a dictionary mapping
+        LLDP TLV names to variant boxed values.
+      </tp:docstring>
+    </property>
 
     <method name="Disconnect">
       <tp:docstring>

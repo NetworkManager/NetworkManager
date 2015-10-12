@@ -77,6 +77,7 @@ typedef struct {
 	GSList *secondaries; /* secondary connections to activate with the base connection */
 	guint gateway_ping_timeout;
 	NMMetered metered;
+	NMSettingConnectionLldp lldp;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -97,6 +98,7 @@ enum {
 	PROP_SECONDARIES,
 	PROP_GATEWAY_PING_TIMEOUT,
 	PROP_METERED,
+	PROP_LLDP,
 
 	LAST_PROP
 };
@@ -786,6 +788,24 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_setting_connection_get_metered, (
 
 NM_BACKPORT_SYMBOL (libnm_1_0_6, GType, nm_metered_get_type, (void), ());
 
+/**
+ * nm_setting_connection_get_lldp:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:lldp property of the connection.
+ *
+ * Returns: a %NMSettingConnectionLldp which indicates whether LLDP must be
+ * enabled for the connection.
+ *
+ * Since: 1.2
+ **/
+NMSettingConnectionLldp
+nm_setting_connection_get_lldp (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NM_SETTING_CONNECTION_LLDP_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->lldp;
+}
 
 static void
 _set_error_missing_base_setting (GError **error, const char *type)
@@ -1196,6 +1216,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_METERED:
 		priv->metered = g_value_get_enum (value);
 		break;
+	case PROP_LLDP:
+		priv->lldp = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1271,6 +1294,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_METERED:
 		g_value_set_enum (value, priv->metered);
+		break;
+	case PROP_LLDP:
+		g_value_set_int (value, priv->lldp);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1702,4 +1728,29 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                    G_PARAM_READWRITE |
 		                    NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:lldp:
+	 *
+	 * Whether LLDP is enabled for the connection.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: lldp
+	 * variable: LLDP
+	 * values: boolean value or 'rx'
+	 * default: missing variable means global default
+	 * description: whether LLDP is enabled for the connection
+	 * example: LLDP=no
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_LLDP,
+		 g_param_spec_int (NM_SETTING_CONNECTION_LLDP, "", "",
+		                   G_MININT32, G_MAXINT32, NM_SETTING_CONNECTION_LLDP_DEFAULT,
+		                   NM_SETTING_PARAM_FUZZY_IGNORE |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
+		                   G_PARAM_STATIC_STRINGS));
 }
