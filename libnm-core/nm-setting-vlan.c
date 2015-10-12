@@ -181,9 +181,25 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 	return NULL;
 }
 
+static gint
+prio_map_compare (PriorityMap *a, PriorityMap *b)
+{
+	return a->from < b->from
+	       ? -1
+	       : (a->from > b->from
+	          ? 1
+	          : (a->to < b->to ? -1 : (a->to > b->to ? 1 : 0)));
+}
+
 static void
 set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 {
+	/* Sort the list.
+	 * First, it looks better. Second, it assures that comparing lists works
+	 * as expected.
+	 */
+	list = g_slist_sort (list, (GCompareFunc) prio_map_compare);
+
 	if (map == NM_VLAN_INGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map = list;
 		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
@@ -598,7 +614,7 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 				list = g_slist_prepend (list, item);
 		}
 	}
-	return g_slist_reverse (list);
+	return g_slist_sort (list, (GCompareFunc) prio_map_compare);
 }
 
 static void

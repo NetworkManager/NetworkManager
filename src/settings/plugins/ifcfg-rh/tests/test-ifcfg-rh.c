@@ -11004,16 +11004,16 @@ test_read_vlan_interface (void)
 	g_assert_cmpint (nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP), ==, 3);
 
 	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 0, &from, &to));
+	g_assert_cmpint (from, ==, 3);
+	g_assert_cmpint (to, ==, 1);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1, &from, &to));
 	g_assert_cmpint (from, ==, 12);
 	g_assert_cmpint (to, ==, 3);
 
-	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1, &from, &to));
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 2, &from, &to));
 	g_assert_cmpint (from, ==, 14);
 	g_assert_cmpint (to, ==, 7);
-
-	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 2, &from, &to));
-	g_assert_cmpint (from, ==, 3);
-	g_assert_cmpint (to, ==, 1);
 
 	g_object_unref (connection);
 }
