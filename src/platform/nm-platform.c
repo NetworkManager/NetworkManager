@@ -1382,6 +1382,28 @@ nm_platform_link_get_master (NMPlatform *self, int slave)
 	return pllink ? pllink->master : 0;
 }
 
+/*****************************************************************************/
+
+gconstpointer
+nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	NM_SET_OUT (out_link, NULL);
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	return klass->link_get_lnk (self, ifindex, link_type, out_link);
+}
+
+const NMPlatformLnkVlan *
+nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_VLAN, out_link);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_bridge_add:
  * @self: platform instance
@@ -1516,24 +1538,6 @@ nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option)
 	g_return_val_if_fail (klass->slave_set_option, FALSE);
 
 	return klass->slave_get_option (self, ifindex, option);
-}
-
-gboolean
-nm_platform_vlan_get_info (NMPlatform *self, int ifindex, int *parent, int *vlanid)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (klass->vlan_get_info, FALSE);
-
-	if (parent)
-		*parent = 0;
-	if (vlanid)
-		*vlanid = 0;
-
-	if (nm_platform_link_get_type (self, ifindex) != NM_LINK_TYPE_VLAN)
-		return FALSE;
-
-	return klass->vlan_get_info (self, ifindex, parent, vlanid);
 }
 
 gboolean
@@ -2458,7 +2462,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 {
 	char master[20];
 	char parent[20];
-	char str_vlan[16];
 	GString *str_flags;
 	char str_addrmode[30];
 	gs_free char *str_addr = NULL;
@@ -2497,11 +2500,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	else
 		parent[0] = 0;
 
-	if (link->vlan_id)
-		g_snprintf (str_vlan, sizeof (str_vlan), " vlan %u", (guint) link->vlan_id);
-	else
-		str_vlan[0] = '\0';
-
 	if (link->inet6_addr_gen_mode_inv) {
 		switch (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv)) {
 			case 0:
@@ -2531,7 +2529,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            " <%s>" /* flags */
 	            " mtu %d"
 	            "%s" /* master */
-	            "%s" /* vlan */
 	            " arp %u" /* arptype */
 	            "%s%s" /* link->type */
 	            "%s%s" /* kind */
@@ -2546,7 +2543,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            parent,
 	            str_flags->str,
 	            link->mtu, master,
-	            str_vlan,
 	            link->arptype,
 	            str_link_type ? " " : "",
 	            str_if_set (str_link_type, "???"),
@@ -2561,6 +2557,16 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->driver ? " driver " : "",
 	            link->driver ? link->driver : "");
 	g_string_free (str_flags, TRUE);
+	return buf;
+}
+
+const char *
+nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
+{
+	if (!_to_string_buffer_init (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len, "vlan %u", (guint) lnk->id);
 	return buf;
 }
 
@@ -2911,7 +2917,6 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD_STR (a, b, name);
 	_CMP_FIELD (a, b, master);
 	_CMP_FIELD (a, b, parent);
-	_CMP_FIELD (a, b, vlan_id);
 	_CMP_FIELD (a, b, flags);
 	_CMP_FIELD (a, b, connected);
 	_CMP_FIELD (a, b, mtu);
@@ -2926,6 +2931,14 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
 	if (a->inet6_token.is_valid)
 		_CMP_FIELD_MEMCMP (a, b, inet6_token.iid);
+	return 0;
+}
+
+int
+nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, id);
 	return 0;
 }
 

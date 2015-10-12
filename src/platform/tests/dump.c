@@ -22,10 +22,11 @@ dump_interface (NMPlatformLink *link)
 	const NMPlatformIP4Route *ip4_route;
 	char networkstr[INET6_ADDRSTRLEN];
 	char gatewaystr[INET6_ADDRSTRLEN];
-	int vlan_id, vlan_parent;
 	const char *address;
 	size_t addrlen;
 	int i;
+	const NMPlatformLink *plink_vlan;
+	const NMPlatformLnkVlan *plnk;
 
 	g_assert (NM_FLAGS_HAS (link->flags, IFF_UP) || !link->connected);
 
@@ -45,10 +46,13 @@ dump_interface (NMPlatformLink *link)
 	if (link->driver)
 		printf ("    driver: %s\n", link->driver);
 	printf ("    UDI: %s\n", nm_platform_link_get_udi (NM_PLATFORM_GET, link->ifindex));
-	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, link->ifindex, &vlan_parent, &vlan_id))
-		g_assert_not_reached ();
-	if (vlan_parent)
-		printf ("    vlan parent %d id %d\n", vlan_parent, vlan_id);
+
+	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, link->ifindex, &plink_vlan);
+	g_assert (plnk);
+	g_assert_cmpint (link->parent, ==, plink_vlan->parent);
+
+	if (link->parent)
+		printf ("    vlan parent %d id %d\n", link->parent, plnk->id);
 
 	if (nm_platform_link_is_software (NM_PLATFORM_GET, link->ifindex))
 		printf ("    class software\n");

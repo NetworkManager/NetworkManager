@@ -45,7 +45,7 @@ test_bogus(void)
 	g_assert (!nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	g_assert (!nm_platform_link_supports_vlans (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
-	g_assert (!nm_platform_vlan_get_info (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL, NULL));
+	g_assert (!nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
 	g_assert (!nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
 	g_assert (!nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
 }
@@ -305,7 +305,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 {
 	int ifindex;
 	char *value;
-	int vlan_parent, vlan_id;
+	int vlan_parent = -1, vlan_id;
 
 	SignalData *link_added, *link_changed, *link_removed;
 
@@ -321,7 +321,15 @@ test_software (NMLinkType link_type, const char *link_typename)
 	link_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, ifindex);
 	link_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, ifindex);
 	if (link_type == NM_LINK_TYPE_VLAN) {
-		g_assert (nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &vlan_parent, &vlan_id));
+		const NMPlatformLink *plink;
+		const NMPlatformLnkVlan *plnk;
+
+		plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, &plink);
+		g_assert (plnk);
+		g_assert (plink);
+
+		vlan_parent = plink->parent;
+		vlan_id = plnk->id;
 		g_assert_cmpint (vlan_parent, ==, nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME));
 		g_assert_cmpint (vlan_id, ==, VLAN_ID);
 	}

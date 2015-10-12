@@ -324,13 +324,14 @@ static gboolean
 do_vlan_get_info (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	int parent;
-	int vlanid;
+	const NMPlatformLink *plink;
+	const NMPlatformLnkVlan *plnk;
 
-	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &parent, &vlanid))
+	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, &plink);
+	if (!plnk)
 		return FALSE;
 
-	printf ("%d %d\n", parent, vlanid);
+	printf ("%d %d\n", plink->parent, plnk->id);
 
 	return TRUE;
 }

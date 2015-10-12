@@ -150,9 +150,6 @@ struct _NMPlatformLink {
 	 * initialized with memset(0) has and unset value.*/
 	guint8 inet6_addr_gen_mode_inv;
 
-	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
-	guint16 vlan_id;
-
 	/* IFF_* flags as u32. Note that ifi_flags in 'struct ifinfomsg' is declared as 'unsigned',
 	 * but libnl stores the flag internally as u32.  */
 	guint32 flags;
@@ -344,6 +341,11 @@ extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
 
 typedef struct {
+	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
+	guint16 id;
+} NMPlatformLnkVlan;
+
+typedef struct {
 	int peer;
 } NMPlatformVethProperties;
 
@@ -440,6 +442,8 @@ typedef struct {
 	const NMPlatformLink *(*link_get_by_ifname) (NMPlatform *platform, const char *ifname);
 	const NMPlatformLink *(*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length);
 
+	gconstpointer (*link_get_lnk) (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
+
 	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *,
 	                      const char *name,
@@ -491,7 +495,6 @@ typedef struct {
 	char * (*slave_get_option) (NMPlatform *, int ifindex, const char *option);
 
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
-	gboolean (*vlan_get_info) (NMPlatform *, int ifindex, int *parent, int *vlan_id);
 	gboolean (*vlan_set_ingress_map) (NMPlatform *, int ifindex, int from, int to);
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
@@ -688,8 +691,10 @@ char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *
 gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
 char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option);
 
+gconstpointer nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
+const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+
 NMPlatformError nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
-gboolean nm_platform_vlan_get_info (NMPlatform *self, int ifindex, int *parent, int *vlanid);
 gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 
@@ -766,12 +771,14 @@ gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6
 extern char _nm_platform_to_string_buffer[1024];
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
+const char *nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *buf, gsize len);
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len);
 const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len);
 
 int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
+int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b);

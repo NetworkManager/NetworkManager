@@ -158,6 +158,10 @@ typedef struct {
 } NMPObjectLink;
 
 typedef struct {
+	NMPlatformLnkVlan _public;
+} NMPObjectLnkVlan;
+
+typedef struct {
 	NMPlatformIP4Address _public;
 } NMPObjectIP4Address;
 
@@ -182,6 +186,9 @@ struct _NMPObject {
 
 		NMPlatformLink          link;
 		NMPObjectLink           _link;
+
+		NMPlatformLnkVlan       lnk_vlan;
+		NMPObjectLnkVlan        _lnk_vlan;
 
 		NMPlatformIPAddress     ip_address;
 		NMPlatformIPXAddress    ipx_address;

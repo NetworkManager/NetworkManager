@@ -74,7 +74,7 @@ typedef struct {
 	NMPlatformLink link;
 
 	char *udi;
-	int vlan_id;
+	NMPlatformLnkVlan lnk_vlan;
 	int ib_p_key;
 	struct in6_addr ip6_lladdr;
 } NMFakePlatformLink;
@@ -250,6 +250,30 @@ _nm_platform_link_get_by_address (NMPlatform *platform,
 		}
 	}
 	return NULL;
+}
+
+static gconstpointer
+link_get_lnk (NMPlatform *platform,
+              int ifindex,
+              NMLinkType link_type,
+              const NMPlatformLink **out_link)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return NULL;
+
+	NM_SET_OUT (out_link, &device->link);
+
+	if (link_type != device->link.type)
+		return NULL;
+
+	switch (link_type) {
+	case NM_LINK_TYPE_VLAN:
+		return &device->lnk_vlan;
+	default:
+		return NULL;
+	}
 }
 
 static gboolean
@@ -632,26 +656,11 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 
 	g_return_val_if_fail (device, FALSE);
 
-	device->vlan_id = vlan_id;
+	device->lnk_vlan.id = vlan_id;
 	device->link.parent = parent;
 
 	if (out_link)
 		*out_link = device->link;
-	return TRUE;
-}
-
-static gboolean
-vlan_get_info (NMPlatform *platform, int ifindex, int *parent, int *vlan_id)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	g_return_val_if_fail (device, FALSE);
-
-	if (parent)
-		*parent = device->link.parent;
-	if (vlan_id)
-		*vlan_id = device->vlan_id;
-
 	return TRUE;
 }
 
@@ -1433,6 +1442,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_delete = link_delete;
 	platform_class->link_get_type_name = link_get_type_name;
 
+	platform_class->link_get_lnk = link_get_lnk;
+
 	platform_class->link_get_udi = link_get_udi;
 
 	platform_class->link_set_up = link_set_up;
@@ -1456,7 +1467,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
-	platform_class->vlan_get_info = vlan_get_info;
 	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 

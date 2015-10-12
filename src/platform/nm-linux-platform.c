@@ -883,8 +883,8 @@ errout:
 /*****************************************************************************/
 
 /* Copied and heavily modified from libnl3's vlan_parse() */
-static gboolean
-_parse_io_vlan (const char *kind, struct nlattr *data, guint16 *out_vlan_id)
+static NMPObject *
+_parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 {
 	static struct nla_policy policy[IFLA_VLAN_MAX+1] = {
 		[IFLA_VLAN_ID]          = { .type = NLA_U16 },
@@ -895,24 +895,21 @@ _parse_io_vlan (const char *kind, struct nlattr *data, guint16 *out_vlan_id)
 	};
 	struct nlattr *tb[IFLA_VLAN_MAX+1];
 	int err;
-	gboolean success = FALSE;
-	guint16 vlan_id;
+	NMPObject *obj = NULL;
 
-	if (!data || g_strcmp0 (kind, "vlan"))
-		goto errout;
+	if (!info_data || g_strcmp0 (kind, "vlan"))
+		return NULL;
 
-	if ((err = nla_parse_nested (tb, IFLA_VLAN_MAX, data, policy)) < 0)
-		goto errout;
+	if ((err = nla_parse_nested (tb, IFLA_VLAN_MAX, info_data, policy)) < 0)
+		return NULL;
 
 	if (!tb[IFLA_VLAN_ID])
-		goto errout;
+		return NULL;
 
-	vlan_id = nla_get_u16(tb[IFLA_VLAN_ID]);
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
+	obj->lnk_vlan.id = nla_get_u16(tb[IFLA_VLAN_ID]);
 
-	success = TRUE;
-	*out_vlan_id = vlan_id;
-errout:
-	return success;
+	return obj;
 }
 
 /*****************************************************************************/
@@ -966,6 +963,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	gboolean completed_from_cache_val = FALSE;
 	gboolean *completed_from_cache = cache ? &completed_from_cache_val : NULL;
 	const NMPObject *link_cached = NULL;
+	nm_auto_nmpobj NMPObject *lnk_data = NULL;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
 		return NULL;
@@ -1055,20 +1053,34 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	if (tb[IFLA_MTU])
 		obj->link.mtu = nla_get_u32 (tb[IFLA_MTU]);
 
-	if (obj->link.type == NM_LINK_TYPE_VLAN) {
-		if (_parse_io_vlan (nl_info_kind,
-		                    nl_info_data,
-		                    &obj->link.vlan_id))
-			goto vlan_done;
-		if (completed_from_cache) {
-			_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
-			if (link_cached)
-				obj->link.vlan_id = link_cached->link.vlan_id;
-		}
-vlan_done: ;
+	switch (obj->link.type) {
+	case NM_LINK_TYPE_VLAN:
+		lnk_data = _parse_lnk_vlan (nl_info_kind, nl_info_data);
+		break;
+	default:
+		goto no_lnk_data;
 	}
 
+	/* We always try to look into the cache and reuse the object there.
+	 * We do that, because we consider the lnk object as immutable and don't
+	 * modify it after creating. Hence we can share it and reuse. */
+	if (completed_from_cache) {
+		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
+		if (   link_cached
+		    && link_cached->link.type == obj->link.type
+		    && (   !lnk_data
+		        || nmp_object_equal (lnk_data, link_cached->_link.netlink.lnk))) {
+			nmp_object_unref (lnk_data);
+			lnk_data = nmp_object_ref (link_cached->_link.netlink.lnk);
+		}
+	}
+
+no_lnk_data:
+
 	obj->_link.netlink.is_in_netlink = TRUE;
+
+	obj->_link.netlink.lnk = lnk_data;
+	lnk_data = NULL;
 
 done:
 	obj_result = obj;
@@ -3009,6 +3021,34 @@ _nm_platform_link_get_by_address (NMPlatform *platform,
 	return obj ? &obj->link : NULL;
 }
 
+/*****************************************************************************/
+
+static gconstpointer
+link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
+{
+	const NMPObject *obj = cache_lookup_link (platform, ifindex);
+
+	if (!obj)
+		return NULL;
+
+	NM_SET_OUT (out_link, &obj->link);
+
+	if (link_type != obj->link.type)
+		return NULL;
+
+	switch (link_type) {
+	case NM_LINK_TYPE_VLAN:
+		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_VLAN)
+			return &obj->_link.netlink.lnk->lnk_vlan;
+		break;
+	default:
+		break;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
 static struct nl_object *
 build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 {
@@ -3532,23 +3572,6 @@ vlan_add (NMPlatform *platform,
 	       name, parent, vlan_id, (unsigned int) vlan_flags, kernel_flags);
 
 	return do_add_link_with_lookup (platform, name, rtnllink, NM_LINK_TYPE_VLAN, out_link);
-}
-
-static gboolean
-vlan_get_info (NMPlatform *platform, int ifindex, int *parent, int *vlan_id)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-	int p = 0, v = 0;
-
-	if (obj) {
-		p = obj->link.parent;
-		v = obj->link.vlan_id;
-	}
-	if (parent)
-		*parent = p;
-	if (vlan_id)
-		*vlan_id = v;
-	return !!obj;
 }
 
 static gboolean
@@ -5284,6 +5307,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_type_name = link_get_type_name;
 	platform_class->link_get_unmanaged = link_get_unmanaged;
 
+	platform_class->link_get_lnk = link_get_lnk;
+
 	platform_class->link_refresh = link_refresh;
 
 	platform_class->link_set_up = link_set_up;
@@ -5316,7 +5341,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
-	platform_class->vlan_get_info = vlan_get_info;
 	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
