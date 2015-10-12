@@ -28,7 +28,9 @@
 #include <string.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
+#include <linux/ip.h>
 #include <linux/if_tun.h>
+#include <linux/if_tunnel.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -67,6 +69,8 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
+
+/*****************************************************************************/
 
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
 
@@ -1396,6 +1400,12 @@ nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, c
 	return klass->link_get_lnk (self, ifindex, link_type, out_link);
 }
 
+const NMPlatformLnkGre *
+nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
+}
+
 const NMPlatformLnkVlan *
 nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1713,17 +1723,6 @@ nm_platform_vxlan_get_properties (NMPlatform *self, int ifindex, NMPlatformVxlan
 	g_return_val_if_fail (props != NULL, FALSE);
 
 	return klass->vxlan_get_properties (self, ifindex, props);
-}
-
-gboolean
-nm_platform_gre_get_properties (NMPlatform *self, int ifindex, NMPlatformGreProperties *props)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props != NULL, FALSE);
-
-	return klass->gre_get_properties (self, ifindex, props);
 }
 
 gboolean
@@ -2561,6 +2560,52 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 }
 
 const char *
+nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len)
+{
+	char str_local[30];
+	char str_local1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_remote[30];
+	char str_remote1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_ttl[30];
+	char str_tos[30];
+	char str_parent_ifindex[30];
+	char str_input_flags[30];
+	char str_output_flags[30];
+	char str_input_key[30];
+	char str_input_key1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_output_key[30];
+	char str_output_key1[NM_UTILS_INET_ADDRSTRLEN];
+
+	if (!_to_string_buffer_init (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "gre"
+	            "%s" /* remote */
+	            "%s" /* local */
+	            "%s" /* parent_ifindex */
+	            "%s" /* ttl */
+	            "%s" /* tos */
+	            "%s" /* path_mtu_discovery */
+	            "%s" /* iflags */
+	            "%s" /* oflags */
+	            "%s" /* ikey */
+	            "%s" /* okey */
+	            "",
+	            lnk->remote ? nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet4_ntop (lnk->remote, str_remote1)) : "",
+	            lnk->local ? nm_sprintf_buf (str_local, " local %s", nm_utils_inet4_ntop (lnk->local, str_local1)) : "",
+	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
+	            lnk->ttl ? nm_sprintf_buf (str_ttl, " ttl %u", lnk->ttl) : " ttl inherit",
+	            lnk->tos ? (lnk->tos == 1 ? " tos inherit" : nm_sprintf_buf (str_tos, " tos 0x%x", lnk->tos)) : "",
+	            lnk->path_mtu_discovery ? "" : " nopmtudisc",
+	            lnk->input_flags ? nm_sprintf_buf (str_input_flags, " iflags 0x%x", lnk->input_flags) : "",
+	            lnk->output_flags ? nm_sprintf_buf (str_output_flags, " oflags 0x%x", lnk->output_flags) : "",
+	            NM_FLAGS_HAS (lnk->input_flags, GRE_KEY) || lnk->input_key ? nm_sprintf_buf (str_input_key, " ikey %s", nm_utils_inet4_ntop (lnk->input_key, str_input_key1)) : "",
+	            NM_FLAGS_HAS (lnk->output_flags, GRE_KEY) || lnk->output_key ? nm_sprintf_buf (str_output_key, " okey %s", nm_utils_inet4_ntop (lnk->output_key, str_output_key1)) : "");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
 	if (!_to_string_buffer_init (lnk, &buf, &len))
@@ -2931,6 +2976,23 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
 	if (a->inet6_token.is_valid)
 		_CMP_FIELD_MEMCMP (a, b, inet6_token.iid);
+	return 0;
+}
+
+int
+nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, parent_ifindex);
+	_CMP_FIELD (a, b, input_flags);
+	_CMP_FIELD (a, b, output_flags);
+	_CMP_FIELD (a, b, input_key);
+	_CMP_FIELD (a, b, output_key);
+	_CMP_FIELD (a, b, local);
+	_CMP_FIELD (a, b, remote);
+	_CMP_FIELD (a, b, ttl);
+	_CMP_FIELD (a, b, tos);
+	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
 }
 

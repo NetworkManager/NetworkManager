@@ -882,6 +882,52 @@ errout:
 
 /*****************************************************************************/
 
+static NMPObject *
+_parse_lnk_gre (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[IFLA_GRE_MAX + 1] = {
+		[IFLA_GRE_LINK]     = { .type = NLA_U32 },
+		[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
+		[IFLA_GRE_OFLAGS]   = { .type = NLA_U16 },
+		[IFLA_GRE_IKEY]     = { .type = NLA_U32 },
+		[IFLA_GRE_OKEY]     = { .type = NLA_U32 },
+		[IFLA_GRE_LOCAL]    = { .type = NLA_U32 },
+		[IFLA_GRE_REMOTE]   = { .type = NLA_U32 },
+		[IFLA_GRE_TTL]      = { .type = NLA_U8 },
+		[IFLA_GRE_TOS]      = { .type = NLA_U8 },
+		[IFLA_GRE_PMTUDISC] = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[IFLA_GRE_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkGre *props;
+
+	if (!info_data || g_strcmp0 (kind, "gre"))
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_GRE, NULL);
+	props = &obj->lnk_gre;
+
+	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
+	props->input_flags = tb[IFLA_GRE_IFLAGS] ? nla_get_u16 (tb[IFLA_GRE_IFLAGS]) : 0;
+	props->output_flags = tb[IFLA_GRE_OFLAGS] ? nla_get_u16 (tb[IFLA_GRE_OFLAGS]) : 0;
+	props->input_key = (props->input_flags & GRE_KEY) && tb[IFLA_GRE_IKEY] ? nla_get_u32 (tb[IFLA_GRE_IKEY]) : 0;
+	props->output_key = (props->output_flags & GRE_KEY) && tb[IFLA_GRE_OKEY] ? nla_get_u32 (tb[IFLA_GRE_OKEY]) : 0;
+	props->local = tb[IFLA_GRE_LOCAL] ? nla_get_u32 (tb[IFLA_GRE_LOCAL]) : 0;
+	props->remote = tb[IFLA_GRE_REMOTE] ? nla_get_u32 (tb[IFLA_GRE_REMOTE]) : 0;
+	props->tos = tb[IFLA_GRE_TOS] ? nla_get_u8 (tb[IFLA_GRE_TOS]) : 0;
+	props->ttl = tb[IFLA_GRE_TTL] ? nla_get_u8 (tb[IFLA_GRE_TTL]) : 0;
+	props->path_mtu_discovery = !tb[IFLA_GRE_PMTUDISC] || !!nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
 /* Copied and heavily modified from libnl3's vlan_parse() */
 static NMPObject *
 _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
@@ -1054,6 +1100,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		obj->link.mtu = nla_get_u32 (tb[IFLA_MTU]);
 
 	switch (obj->link.type) {
+	case NM_LINK_TYPE_GRE:
+		lnk_data = _parse_lnk_gre (nl_info_kind, nl_info_data);
+		break;
 	case NM_LINK_TYPE_VLAN:
 		lnk_data = _parse_lnk_vlan (nl_info_kind, nl_info_data);
 		break;
@@ -3037,6 +3086,10 @@ link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMP
 		return NULL;
 
 	switch (link_type) {
+	case NM_LINK_TYPE_GRE:
+		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_GRE)
+			return &obj->_link.netlink.lnk->lnk_gre;
+		break;
 	case NM_LINK_TYPE_VLAN:
 		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_VLAN)
 			return &obj->_link.netlink.lnk->lnk_vlan;
@@ -4056,62 +4109,6 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	                                vxlan_info_data_parser, props);
 	if (err != 0) {
 		_LOGW ("(%s) could not read vxlan properties: %s",
-		       nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
-	}
-	return (err == 0);
-}
-
-/******************************************************************/
-
-static const struct nla_policy gre_info_policy[IFLA_GRE_MAX + 1] = {
-	[IFLA_GRE_LINK]     = { .type = NLA_U32 },
-	[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
-	[IFLA_GRE_OFLAGS]   = { .type = NLA_U16 },
-	[IFLA_GRE_IKEY]     = { .type = NLA_U32 },
-	[IFLA_GRE_OKEY]     = { .type = NLA_U32 },
-	[IFLA_GRE_LOCAL]    = { .type = NLA_U32 },
-	[IFLA_GRE_REMOTE]   = { .type = NLA_U32 },
-	[IFLA_GRE_TTL]      = { .type = NLA_U8 },
-	[IFLA_GRE_TOS]      = { .type = NLA_U8 },
-	[IFLA_GRE_PMTUDISC] = { .type = NLA_U8 },
-};
-
-static int
-gre_info_data_parser (struct nlattr *info_data, gpointer parser_data)
-{
-	NMPlatformGreProperties *props = parser_data;
-	struct nlattr *tb[IFLA_GRE_MAX + 1];
-	int err;
-
-	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data,
-	                        (struct nla_policy *) gre_info_policy);
-	if (err < 0)
-		return err;
-
-	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
-	props->input_flags = nla_get_u16 (tb[IFLA_GRE_IFLAGS]);
-	props->output_flags = nla_get_u16 (tb[IFLA_GRE_OFLAGS]);
-	props->input_key = (props->input_flags & GRE_KEY) ? nla_get_u32 (tb[IFLA_GRE_IKEY]) : 0;
-	props->output_key = (props->output_flags & GRE_KEY) ? nla_get_u32 (tb[IFLA_GRE_OKEY]) : 0;
-	props->local = nla_get_u32 (tb[IFLA_GRE_LOCAL]);
-	props->remote = nla_get_u32 (tb[IFLA_GRE_REMOTE]);
-	props->tos = nla_get_u8 (tb[IFLA_GRE_TOS]);
-	props->ttl = nla_get_u8 (tb[IFLA_GRE_TTL]);
-	props->path_mtu_discovery = !!nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
-
-	return 0;
-}
-
-static gboolean
-gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *props)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int err;
-
-	err = _nl_link_parse_info_data (priv->nlh, ifindex,
-	                                gre_info_data_parser, props);
-	if (err != 0) {
-		_LOGW ("(%s) could not read gre properties: %s",
 		       nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
@@ -5350,7 +5347,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
-	platform_class->gre_get_properties = gre_get_properties;
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;

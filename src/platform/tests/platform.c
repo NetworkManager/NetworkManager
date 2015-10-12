@@ -465,31 +465,32 @@ static gboolean
 do_gre_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	NMPlatformGreProperties props;
+	const NMPlatformLnkGre *props;
 	char addrstr[INET_ADDRSTRLEN];
 
-	if (!nm_platform_gre_get_properties (NM_PLATFORM_GET, ifindex, &props))
+	props = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL);
+	if (!props)
 		return FALSE;
 
-	printf ("parent-ifindex: %u\n", props.parent_ifindex);
-	printf ("input-flags: %u\n", props.input_flags);
-	printf ("output-flags: %u\n", props.input_flags);
-	printf ("input-key: %u\n", props.input_key);
-	printf ("output-key: %u\n", props.output_key);
-	if (props.local)
-		inet_ntop (AF_INET, &props.local, addrstr, sizeof (addrstr));
+	printf ("parent-ifindex: %u\n", props->parent_ifindex);
+	printf ("input-flags: %u\n", props->input_flags);
+	printf ("output-flags: %u\n", props->input_flags);
+	printf ("input-key: %u\n", props->input_key);
+	printf ("output-key: %u\n", props->output_key);
+	if (props->local)
+		inet_ntop (AF_INET, &props->local, addrstr, sizeof (addrstr));
 	else
 		strcpy (addrstr, "-");
 	printf ("local: %s\n", addrstr);
-	if (props.remote)
-		inet_ntop (AF_INET, &props.remote, addrstr, sizeof (addrstr));
+	if (props->remote)
+		inet_ntop (AF_INET, &props->remote, addrstr, sizeof (addrstr));
 	else
 		strcpy (addrstr, "-");
 	printf ("remote: %s\n", addrstr);
-	printf ("ttl: %u\n", props.ttl);
-	printf ("tos: %u\n", props.tos);
+	printf ("ttl: %u\n", props->ttl);
+	printf ("tos: %u\n", props->tos);
 	printf ("path-mtu-discovery: ");
-	print_boolean (props.path_mtu_discovery);
+	print_boolean (props->path_mtu_discovery);
 
 	return TRUE;
 }

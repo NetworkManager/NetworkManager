@@ -41,7 +41,7 @@ G_DEFINE_TYPE (NMDeviceGre, nm_device_gre, NM_TYPE_DEVICE_GENERIC)
 #define NM_DEVICE_GRE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GRE, NMDeviceGrePrivate))
 
 typedef struct {
-	NMPlatformGreProperties props;
+	NMPlatformLnkGre props;
 } NMDeviceGrePrivate;
 
 enum {
@@ -68,37 +68,38 @@ update_properties (NMDevice *device)
 	NMDeviceGre *self = NM_DEVICE_GRE (device);
 	NMDeviceGrePrivate *priv = NM_DEVICE_GRE_GET_PRIVATE (self);
 	GObject *object = G_OBJECT (device);
-	NMPlatformGreProperties props;
+	const NMPlatformLnkGre *props;
 
-	if (!nm_platform_gre_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
+	props = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+	if (!props) {
 		_LOGW (LOGD_HW, "could not read gre properties");
 		return;
 	}
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.parent_ifindex != props.parent_ifindex)
+	if (priv->props.parent_ifindex != props->parent_ifindex)
 		g_object_notify (object, NM_DEVICE_GRE_PARENT);
-	if (priv->props.input_flags != props.input_flags)
+	if (priv->props.input_flags != props->input_flags)
 		g_object_notify (object, NM_DEVICE_GRE_INPUT_FLAGS);
-	if (priv->props.output_flags != props.output_flags)
+	if (priv->props.output_flags != props->output_flags)
 		g_object_notify (object, NM_DEVICE_GRE_OUTPUT_FLAGS);
-	if (priv->props.input_key != props.input_key)
+	if (priv->props.input_key != props->input_key)
 		g_object_notify (object, NM_DEVICE_GRE_INPUT_KEY);
-	if (priv->props.output_key != props.output_key)
+	if (priv->props.output_key != props->output_key)
 		g_object_notify (object, NM_DEVICE_GRE_OUTPUT_KEY);
-	if (priv->props.local != props.local)
+	if (priv->props.local != props->local)
 		g_object_notify (object, NM_DEVICE_GRE_LOCAL);
-	if (priv->props.remote != props.remote)
+	if (priv->props.remote != props->remote)
 		g_object_notify (object, NM_DEVICE_GRE_REMOTE);
-	if (priv->props.ttl != props.ttl)
+	if (priv->props.ttl != props->ttl)
 		g_object_notify (object, NM_DEVICE_GRE_TTL);
-	if (priv->props.tos != props.tos)
+	if (priv->props.tos != props->tos)
 		g_object_notify (object, NM_DEVICE_GRE_TOS);
-	if (priv->props.path_mtu_discovery != props.path_mtu_discovery)
+	if (priv->props.path_mtu_discovery != props->path_mtu_discovery)
 		g_object_notify (object, NM_DEVICE_GRE_PATH_MTU_DISCOVERY);
 
-	memcpy (&priv->props, &props, sizeof (NMPlatformGreProperties));
+	priv->props = *props;
 
 	g_object_thaw_notify (object);
 }

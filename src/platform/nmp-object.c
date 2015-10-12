@@ -1897,6 +1897,14 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_route_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_GRE - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_GRE,
+		.sizeof_data                        = sizeof (NMPObjectLnkGre),
+		.sizeof_public                      = sizeof (NMPlatformLnkGre),
+		.obj_type_name                      = "gre",
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_gre_to_string,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_VLAN - 1] = {
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_VLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkVlan),

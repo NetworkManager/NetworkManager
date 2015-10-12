@@ -158,6 +158,10 @@ typedef struct {
 } NMPObjectLink;
 
 typedef struct {
+	NMPlatformLnkGre _public;
+} NMPObjectLnkGre;
+
+typedef struct {
 	NMPlatformLnkVlan _public;
 } NMPObjectLnkVlan;
 
@@ -186,6 +190,9 @@ struct _NMPObject {
 
 		NMPlatformLink          link;
 		NMPObjectLink           _link;
+
+		NMPlatformLnkGre        lnk_gre;
+		NMPObjectLnkGre         _lnk_gre;
 
 		NMPlatformLnkVlan       lnk_vlan;
 		NMPObjectLnkVlan        _lnk_vlan;
