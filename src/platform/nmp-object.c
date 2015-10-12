@@ -442,6 +442,8 @@ _vt_cmd_plobj_to_string_id (ip6_route,   NMPlatformIP6Route,   "%d: %s/%d %d",  
 int
 nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2)
 {
+	const NMPClass *klass1, *klass2;
+
 	if (obj1 == obj2)
 		return 0;
 	if (!obj1)
@@ -452,49 +454,47 @@ nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2)
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj1), -1);
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj2), 1);
 
-	if (NMP_OBJECT_GET_CLASS (obj1) != NMP_OBJECT_GET_CLASS (obj2))
-		return NMP_OBJECT_GET_CLASS (obj1) < NMP_OBJECT_GET_CLASS (obj2) ? -1 : 1;
+	klass1 = NMP_OBJECT_GET_CLASS (obj1);
+	klass2 = NMP_OBJECT_GET_CLASS (obj2);
 
-	return NMP_OBJECT_GET_CLASS (obj1)->cmd_plobj_cmp (&obj1->object, &obj2->object);
+	if (klass1 != klass2)
+		return klass1->obj_type < klass2->obj_type ? -1 : 1;
+
+	if (klass1->cmd_obj_cmp)
+		return klass1->cmd_obj_cmp (obj1, obj2);
+	return klass1->cmd_plobj_cmp (&obj1->object, &obj2->object);
+}
+
+static int
+_vt_cmd_obj_cmp_link (const NMPObject *obj1, const NMPObject *obj2)
+{
+	int i;
+
+	i = nm_platform_link_cmp (&obj1->link, &obj2->link);
+	if (i)
+		return i;
+	if (obj1->_link.netlink.is_in_netlink != obj2->_link.netlink.is_in_netlink)
+		return obj1->_link.netlink.is_in_netlink ? -1 : 1;
+	if (obj1->_link.udev.device != obj2->_link.udev.device) {
+		if (!obj1->_link.udev.device)
+			return -1;
+		if (!obj2->_link.udev.device)
+			return 1;
+
+		/* Only compare based on pointer values. That is ugly because it's not a
+		 * stable sort order, but probably udev gives us always the same GUdevDevice
+		 * instance.
+		 *
+		 * Have this check as very last. */
+		return (obj1->_link.udev.device < obj2->_link.udev.device) ? -1 : 1;
+	}
+	return 0;
 }
 
 gboolean
 nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2)
 {
-	const NMPClass *klass;
-
-	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj1), FALSE);
-	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj2), FALSE);
-
-	if (obj1 == obj2)
-		return TRUE;
-
-	klass = NMP_OBJECT_GET_CLASS (obj1);
-
-	if (klass != NMP_OBJECT_GET_CLASS (obj2))
-		return FALSE;
-
-	return klass->cmd_obj_equal (obj1, obj2);
-}
-
-static gboolean
-_vt_cmd_obj_equal_plain (const NMPObject *obj1, const NMPObject *obj2)
-{
-	return NMP_OBJECT_GET_CLASS (obj1)->cmd_plobj_cmp (&obj1->object, &obj2->object) == 0;
-}
-
-static gboolean
-_vt_cmd_obj_equal_link (const NMPObject *obj1, const NMPObject *obj2)
-{
-	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj1);
-
-	if (klass->cmd_plobj_cmp (&obj1->object, &obj2->object) != 0)
-		return FALSE;
-	if (obj1->_link.netlink.is_in_netlink != obj2->_link.netlink.is_in_netlink)
-		return FALSE;
-	if (obj1->_link.udev.device != obj2->_link.udev.device)
-		return FALSE;
-	return TRUE;
+	return nmp_object_cmp (obj1, obj2) == 0;
 }
 
 /* @src is a const object, which is not entirely correct for link types, where
@@ -1785,7 +1785,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETLINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_link,
-		.cmd_obj_equal                      = _vt_cmd_obj_equal_link,
+		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_link,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_link,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_link,
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_link,
@@ -1810,7 +1810,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
-		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
@@ -1834,7 +1833,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
-		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
@@ -1858,7 +1856,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
-		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
@@ -1882,7 +1879,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
-		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,

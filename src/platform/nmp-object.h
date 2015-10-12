@@ -124,7 +124,7 @@ typedef struct {
 	 * initialize @id and set @out_id to it. Otherwise, @out_id is NULL. */
 	gboolean (*cmd_obj_init_cache_id) (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id);
 
-	gboolean (*cmd_obj_equal) (const NMPObject *obj1, const NMPObject *obj2);
+	int (*cmd_obj_cmp) (const NMPObject *obj1, const NMPObject *obj2);
 	void (*cmd_obj_copy) (NMPObject *dst, const NMPObject *src);
 	void (*cmd_obj_stackinit_id) (NMPObject *obj, const NMPObject *src);
 	void (*cmd_obj_dispose) (NMPObject *obj);
