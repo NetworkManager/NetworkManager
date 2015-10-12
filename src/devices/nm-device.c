@@ -3883,6 +3883,28 @@ dhcp4_state_changed (NMDhcpClient *client,
 	}
 }
 
+static int
+dhcp4_get_timeout (NMDevice *self, NMSettingIP4Config *s_ip4)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free char *value = NULL;
+	int timeout;
+
+	timeout = nm_setting_ip4_config_get_dhcp_timeout (s_ip4);
+	if (timeout)
+		return timeout;
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "ipv4.dhcp-timeout",
+	                                               self);
+	timeout = _nm_utils_ascii_str_to_int64 (value, 10,
+	                                        0, G_MAXINT32, 0);
+	if (timeout)
+		return timeout;
+
+	return priv->dhcp_timeout;
+}
+
 static NMActStageReturn
 dhcp4_start (NMDevice *self,
              NMConnection *connection,
@@ -3918,7 +3940,7 @@ dhcp4_start (NMDevice *self,
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
-	                                                nm_setting_ip4_config_get_dhcp_timeout (NM_SETTING_IP4_CONFIG (s_ip4)) ?: priv->dhcp_timeout,
+	                                                dhcp4_get_timeout (self, NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                priv->dhcp_anycast_address,
 	                                                NULL);
 

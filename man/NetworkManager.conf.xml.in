@@ -584,6 +584,11 @@ ipv6.ip6-privacy=1
           <term><varname>ipv4.route-metric</varname></term>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.dhcp-timeout</varname></term>
+          <listitem><para>If left unspecified, the default value for
+           the interface type is used.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.ip6-privacy</varname></term>
           <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, use the content of
             "/proc/sys/net/ipv6/conf/default/use_tempaddr" as last fallback.
