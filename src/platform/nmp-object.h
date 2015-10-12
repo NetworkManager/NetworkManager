@@ -117,7 +117,6 @@ typedef struct {
 	int sizeof_data;
 	int sizeof_public;
 	const char *obj_type_name;
-	const char *nl_type;
 	const char *signal_type;
 
 	/* returns %FALSE, if the obj type would never have an entry for index type @id_type. If @obj has an index,
