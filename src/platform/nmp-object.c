@@ -522,6 +522,18 @@ nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only)
 	}
 }
 
+static void
+_vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
+{
+	if (dst->_link.udev.device != src->_link.udev.device) {
+		if (dst->_link.udev.device)
+			g_object_unref (dst->_link.udev.device);
+		if (src->_link.udev.device)
+			g_object_ref (src->_link.udev.device);
+	}
+	dst->_link = src->_link;
+}
+
 #define _vt_cmd_plobj_id_copy(type, plat_type, cmd) \
 static void \
 _vt_cmd_plobj_id_copy_##type (NMPlatformObject *_dst, const NMPlatformObject *_src) \
@@ -555,18 +567,6 @@ _vt_cmd_plobj_id_copy (ip6_route, NMPlatformIP6Route, {
 	dst->metric = src->metric;
 	dst->network = src->network;
 });
-
-static void
-_vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
-{
-	if (dst->_link.udev.device != src->_link.udev.device) {
-		if (dst->_link.udev.device)
-			g_object_unref (dst->_link.udev.device);
-		if (src->_link.udev.device)
-			g_object_ref (src->_link.udev.device);
-	}
-	dst->_link = src->_link;
-}
 
 /* Uses internally nmp_object_copy(), hence it also violates the const
  * promise for @obj.
