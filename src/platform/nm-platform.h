@@ -383,7 +383,7 @@ typedef struct {
 	gboolean rsc;
 	gboolean l2miss;
 	gboolean l3miss;
-} NMPlatformVxlanProperties;
+} NMPlatformLnkVxlan;
 
 typedef struct {
 	int parent_ifindex;
@@ -507,7 +507,6 @@ typedef struct {
 
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*macvlan_get_properties) (NMPlatform *, int ifindex, NMPlatformMacvlanProperties *props);
-	gboolean (*vxlan_get_properties) (NMPlatform *, int ifindex, NMPlatformVxlanProperties *props);
 
 	gboolean    (*wifi_get_capabilities) (NMPlatform *, int ifindex, NMDeviceWifiCapabilities *caps);
 	gboolean    (*wifi_get_bssid)        (NMPlatform *, int ifindex, guint8 *bssid);
@@ -693,6 +692,7 @@ char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *o
 gconstpointer nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 
 NMPlatformError nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
 gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
@@ -704,7 +704,6 @@ gboolean nm_platform_infiniband_get_info (NMPlatform *self, int ifindex, int *pa
 gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties         (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);
 gboolean nm_platform_macvlan_get_properties     (NMPlatform *self, int ifindex, NMPlatformMacvlanProperties *props);
-gboolean nm_platform_vxlan_get_properties       (NMPlatform *self, int ifindex, NMPlatformVxlanProperties *props);
 
 gboolean nm_platform_tun_get_properties_ifname  (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
 
@@ -772,6 +771,7 @@ extern char _nm_platform_to_string_buffer[1024];
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize len);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *buf, gsize len);
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len);
@@ -780,6 +780,7 @@ const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, ch
 int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);
 int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);
+int nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b);

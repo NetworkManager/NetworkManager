@@ -40,7 +40,7 @@ G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE_GENERIC)
 #define NM_DEVICE_VXLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VXLAN, NMDeviceVxlanPrivate))
 
 typedef struct {
-	NMPlatformVxlanProperties props;
+	NMPlatformLnkVxlan props;
 } NMDeviceVxlanPrivate;
 
 enum {
@@ -73,53 +73,54 @@ update_properties (NMDevice *device)
 	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
-	NMPlatformVxlanProperties props;
+	const NMPlatformLnkVxlan *props;
 
-	if (!nm_platform_vxlan_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
-		_LOGW (LOGD_HW, "could not read vxlan properties");
+	props = nm_platform_link_get_lnk_vxlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+	if (!props) {
+		_LOGW (LOGD_HW, "could not get vxlan properties");
 		return;
 	}
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.parent_ifindex != props.parent_ifindex)
+	if (priv->props.parent_ifindex != props->parent_ifindex)
 		g_object_notify (object, NM_DEVICE_VXLAN_PARENT);
-	if (priv->props.id != props.id)
+	if (priv->props.id != props->id)
 		g_object_notify (object, NM_DEVICE_VXLAN_ID);
-	if (priv->props.group != props.group)
+	if (priv->props.group != props->group)
 		g_object_notify (object, NM_DEVICE_VXLAN_GROUP);
-	if (priv->props.local != props.local)
+	if (priv->props.local != props->local)
 		g_object_notify (object, NM_DEVICE_VXLAN_LOCAL);
-	if (memcmp (&priv->props.group6, &props.group6, sizeof (props.group6)) != 0)
+	if (memcmp (&priv->props.group6, &props->group6, sizeof (props->group6)) != 0)
 		g_object_notify (object, NM_DEVICE_VXLAN_GROUP);
-	if (memcmp (&priv->props.local6, &props.local6, sizeof (props.local6)) != 0)
+	if (memcmp (&priv->props.local6, &props->local6, sizeof (props->local6)) != 0)
 		g_object_notify (object, NM_DEVICE_VXLAN_LOCAL);
-	if (priv->props.tos != props.tos)
+	if (priv->props.tos != props->tos)
 		g_object_notify (object, NM_DEVICE_VXLAN_TOS);
-	if (priv->props.ttl != props.ttl)
+	if (priv->props.ttl != props->ttl)
 		g_object_notify (object, NM_DEVICE_VXLAN_TTL);
-	if (priv->props.learning != props.learning)
+	if (priv->props.learning != props->learning)
 		g_object_notify (object, NM_DEVICE_VXLAN_LEARNING);
-	if (priv->props.ageing != props.ageing)
+	if (priv->props.ageing != props->ageing)
 		g_object_notify (object, NM_DEVICE_VXLAN_AGEING);
-	if (priv->props.limit != props.limit)
+	if (priv->props.limit != props->limit)
 		g_object_notify (object, NM_DEVICE_VXLAN_LIMIT);
-	if (priv->props.dst_port != props.dst_port)
+	if (priv->props.dst_port != props->dst_port)
 		g_object_notify (object, NM_DEVICE_VXLAN_DST_PORT);
-	if (priv->props.src_port_min != props.src_port_min)
+	if (priv->props.src_port_min != props->src_port_min)
 		g_object_notify (object, NM_DEVICE_VXLAN_SRC_PORT_MIN);
-	if (priv->props.src_port_max != props.src_port_max)
+	if (priv->props.src_port_max != props->src_port_max)
 		g_object_notify (object, NM_DEVICE_VXLAN_SRC_PORT_MAX);
-	if (priv->props.proxy != props.proxy)
+	if (priv->props.proxy != props->proxy)
 		g_object_notify (object, NM_DEVICE_VXLAN_PROXY);
-	if (priv->props.rsc != props.rsc)
+	if (priv->props.rsc != props->rsc)
 		g_object_notify (object, NM_DEVICE_VXLAN_RSC);
-	if (priv->props.l2miss != props.l2miss)
+	if (priv->props.l2miss != props->l2miss)
 		g_object_notify (object, NM_DEVICE_VXLAN_L2MISS);
-	if (priv->props.l3miss != props.l3miss)
+	if (priv->props.l3miss != props->l3miss)
 		g_object_notify (object, NM_DEVICE_VXLAN_L3MISS);
 
-	memcpy (&priv->props, &props, sizeof (NMPlatformVxlanProperties));
+	priv->props = *props;
 
 	g_object_thaw_notify (object);
 }

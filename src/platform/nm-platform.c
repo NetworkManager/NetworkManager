@@ -1412,6 +1412,12 @@ nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLi
 	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_VLAN, out_link);
 }
 
+const NMPlatformLnkVxlan *
+nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_VXLAN, out_link);
+}
+
 /*****************************************************************************/
 
 /**
@@ -1712,17 +1718,6 @@ nm_platform_macvlan_get_properties (NMPlatform *self, int ifindex, NMPlatformMac
 	g_return_val_if_fail (props != NULL, FALSE);
 
 	return klass->macvlan_get_properties (self, ifindex, props);
-}
-
-gboolean
-nm_platform_vxlan_get_properties (NMPlatform *self, int ifindex, NMPlatformVxlanProperties *props)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props != NULL, FALSE);
-
-	return klass->vxlan_get_properties (self, ifindex, props);
 }
 
 gboolean
@@ -2615,6 +2610,93 @@ nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize l
 	return buf;
 }
 
+const char *
+nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize len)
+{
+	char str_group[100];
+	char str_group6[100];
+	char str_local[100];
+	char str_local6[100];
+	char str_dev[25];
+	char str_limit[25];
+	char str_src_port[35];
+	char str_dst_port[25];
+	char str_tos[25];
+	char str_ttl[25];
+
+	if (!_to_string_buffer_init (lnk, &buf, &len))
+		return buf;
+
+	if (lnk->group == 0)
+		str_group[0] = '\0';
+	else {
+		g_snprintf (str_group, sizeof (str_group),
+		            " %s %s",
+		            IN_MULTICAST (ntohl (lnk->group)) ? "group" : "remote",
+		            nm_utils_inet4_ntop (lnk->group, NULL));
+	}
+	if (IN6_IS_ADDR_UNSPECIFIED (&lnk->group6))
+		str_group6[0] = '\0';
+	else {
+		g_snprintf (str_group6, sizeof (str_group6),
+		            " %s%s %s",
+		            IN6_IS_ADDR_MULTICAST (&lnk->group6) ? "group" : "remote",
+		            str_group[0] ? "6" : "", /* usually, a vxlan has either v4 or v6 only. */
+		            nm_utils_inet6_ntop (&lnk->group6, NULL));
+	}
+
+	if (lnk->local == 0)
+		str_local[0] = '\0';
+	else {
+		g_snprintf (str_local, sizeof (str_local),
+		            " local %s",
+		            nm_utils_inet4_ntop (lnk->local, NULL));
+	}
+	if (IN6_IS_ADDR_UNSPECIFIED (&lnk->local6))
+		str_local6[0] = '\0';
+	else {
+		g_snprintf (str_local6, sizeof (str_local6),
+		            " local%s %s",
+		            str_local[0] ? "6" : "", /* usually, a vxlan has either v4 or v6 only. */
+		            nm_utils_inet6_ntop (&lnk->local6, NULL));
+	}
+
+	g_snprintf (buf, len,
+	            "vxlan"
+	            " id %u" /* id */
+	            "%s%s" /* group/group6 */
+	            "%s%s" /* local/local6 */
+	            "%s" /* dev */
+	            "%s" /* src_port_min/src_port_max */
+	            "%s" /* dst_port */
+	            "%s" /* learning */
+	            "%s" /* proxy */
+	            "%s" /* rsc */
+	            "%s" /* l2miss */
+	            "%s" /* l3miss */
+	            "%s" /* tos */
+	            "%s" /* ttl */
+	            " ageing %u" /* ageing */
+	            "%s" /* limit */
+	            "",
+	            (guint) lnk->id,
+	            str_group, str_group6,
+	            str_local, str_local6,
+	            lnk->parent_ifindex ? nm_sprintf_buf (str_dev, " dev %d", lnk->parent_ifindex) : "",
+	            lnk->src_port_min || lnk->src_port_max ? nm_sprintf_buf (str_src_port, " srcport %u %u", lnk->src_port_min, lnk->src_port_max) : "",
+	            lnk->dst_port ? nm_sprintf_buf (str_dst_port, " dstport %u", lnk->dst_port) : "",
+	            !lnk->learning ? " nolearning" : "",
+	            lnk->proxy ? " proxy" : "",
+	            lnk->rsc ? " rsc" : "",
+	            lnk->l2miss ? " l2miss" : "",
+	            lnk->l3miss ? " l3miss" : "",
+	            lnk->tos == 1 ? " tos inherit" : nm_sprintf_buf (str_tos, " tos %#x", lnk->tos),
+	            lnk->ttl ? nm_sprintf_buf (str_ttl, " ttl %u", lnk->ttl) : "",
+	            lnk->ageing,
+	            lnk->limit ? nm_sprintf_buf (str_limit, " maxaddr %u", lnk->limit) : "");
+	return buf;
+}
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
@@ -3001,6 +3083,31 @@ nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, id);
+	return 0;
+}
+
+int
+nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, parent_ifindex);
+	_CMP_FIELD (a, b, id);
+	_CMP_FIELD (a, b, group);
+	_CMP_FIELD (a, b, local);
+	_CMP_FIELD_MEMCMP (a, b, group6);
+	_CMP_FIELD_MEMCMP (a, b, local6);
+	_CMP_FIELD (a, b, tos);
+	_CMP_FIELD (a, b, ttl);
+	_CMP_FIELD_BOOL (a, b, learning);
+	_CMP_FIELD (a, b, ageing);
+	_CMP_FIELD (a, b, limit);
+	_CMP_FIELD (a, b, dst_port);
+	_CMP_FIELD (a, b, src_port_min);
+	_CMP_FIELD (a, b, src_port_max);
+	_CMP_FIELD_BOOL (a, b, proxy);
+	_CMP_FIELD_BOOL (a, b, rsc);
+	_CMP_FIELD_BOOL (a, b, l2miss);
+	_CMP_FIELD_BOOL (a, b, l3miss);
 	return 0;
 }
 

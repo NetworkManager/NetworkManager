@@ -1913,5 +1913,13 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vlan_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_VXLAN - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_VXLAN,
+		.sizeof_data                        = sizeof (NMPObjectLnkVxlan),
+		.sizeof_public                      = sizeof (NMPlatformLnkVxlan),
+		.obj_type_name                      = "vxlan",
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vxlan_to_string,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vxlan_cmp,
+	},
 };
 
