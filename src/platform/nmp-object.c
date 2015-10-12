@@ -209,6 +209,7 @@ static void
 _vt_cmd_obj_dispose_link (NMPObject *obj)
 {
 	g_clear_object (&obj->_link.udev.device);
+	nmp_object_unref (obj->_link.netlink.lnk);
 }
 
 static NMPObject *
@@ -380,6 +381,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 	const NMPClass *klass;
 	char buf2[sizeof (_nm_platform_to_string_buffer)];
 	char buf3[sizeof (_nm_platform_to_string_buffer)];
+	char buf4[sizeof (_nm_platform_to_string_buffer)];
 
 	if (!buf) {
 		buf = _nm_platform_to_string_buffer;
@@ -410,19 +412,38 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 			            ",%cin-nl,%p",
 			            obj->_link.netlink.is_in_netlink ? '+' : '-',
 			            obj->_link.udev.device);
-		} else
+			if (obj->_link.netlink.lnk) {
+				char b[sizeof (_nm_platform_to_string_buffer)];
+
+				g_snprintf (buf4, sizeof (buf4),
+				            ", link:%s, %s",
+				            NMP_OBJECT_GET_CLASS (obj->_link.netlink.lnk)->obj_type_name,
+				            nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, b, sizeof (b)));
+			} else
+				buf4[0] = '\0';
+		} else {
 			buf3[0] = '\0';
+			buf4[0] = '\0';
+		}
 
 		g_snprintf (buf, buf_size,
-		            "[%s,%p,%d,%ccache,%calive,%cvisible%s; %s]",
+		            "[%s,%p,%d,%ccache,%calive,%cvisible%s; %s%s]",
 		            klass->obj_type_name, obj, obj->_ref_count,
 		            obj->is_cached ? '+' : '-',
 		            nmp_object_is_alive (obj) ? '+' : '-',
 		            nmp_object_is_visible (obj) ? '+' : '-',
-		            buf3, buf2);
+		            buf3, buf2, buf4);
 		return buf;
 	case NMP_OBJECT_TO_STRING_PUBLIC:
-		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
+		if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
+		    && obj->_link.netlink.lnk) {
+			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
+			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, buf3, sizeof (buf3));
+			g_snprintf (buf, buf_size,
+			            "%s; %s",
+			            buf2, buf3);
+		} else
+			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
 		return buf;
 	default:
 		g_return_val_if_reached ("ERROR");
@@ -487,6 +508,9 @@ _vt_cmd_obj_cmp_link (const NMPObject *obj1, const NMPObject *obj2)
 		return i;
 	if (obj1->_link.netlink.is_in_netlink != obj2->_link.netlink.is_in_netlink)
 		return obj1->_link.netlink.is_in_netlink ? -1 : 1;
+	i = nmp_object_cmp (obj1->_link.netlink.lnk, obj2->_link.netlink.lnk);
+	if (i)
+		return i;
 	if (obj1->_link.udev.device != obj2->_link.udev.device) {
 		if (!obj1->_link.udev.device)
 			return -1;
@@ -539,10 +563,16 @@ static void
 _vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
 {
 	if (dst->_link.udev.device != src->_link.udev.device) {
-		if (dst->_link.udev.device)
-			g_object_unref (dst->_link.udev.device);
 		if (src->_link.udev.device)
 			g_object_ref (src->_link.udev.device);
+		if (dst->_link.udev.device)
+			g_object_unref (dst->_link.udev.device);
+	}
+	if (dst->_link.netlink.lnk != src->_link.netlink.lnk) {
+		if (src->_link.netlink.lnk)
+			nmp_object_ref (src->_link.netlink.lnk);
+		if (dst->_link.netlink.lnk)
+			nmp_object_unref (dst->_link.netlink.lnk);
 	}
 	dst->_link = src->_link;
 }

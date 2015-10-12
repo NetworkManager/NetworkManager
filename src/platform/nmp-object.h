@@ -147,6 +147,9 @@ typedef struct {
 
 	struct {
 		guint8 is_in_netlink;
+
+		/* Additional data that depends on the link-type (IFLA_INFO_DATA) */
+		NMPObject *lnk;
 	} netlink;
 
 	struct {
