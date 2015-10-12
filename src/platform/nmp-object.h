@@ -131,7 +131,6 @@ typedef struct {
 	gboolean (*cmd_obj_is_visible) (const NMPObject *obj);
 
 	/* functions that operate on NMPlatformObject */
-	gboolean (*cmd_plobj_init_from_nl) (NMPlatform *platform, NMPlatformObject *obj, const struct nl_object *nlo, gboolean id_only, gboolean complete_from_cache);
 	struct nl_object *(*cmd_plobj_to_nl) (NMPlatform *platform, const NMPlatformObject *obj, gboolean id_only);
 	void (*cmd_plobj_id_copy) (NMPlatformObject *dst, const NMPlatformObject *src);
 	gboolean (*cmd_plobj_id_equal) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
@@ -340,17 +339,10 @@ NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache, int ifi
 NMPCache *nmp_cache_new (void);
 void nmp_cache_free (NMPCache *cache);
 
-NMPObject *nmp_object_from_nl (NMPlatform *platform, const struct nl_object *nlo, gboolean id_only, gboolean complete_from_cache);
 struct nl_object *nmp_object_to_nl (NMPlatform *platform, const NMPObject *obj, gboolean id_only);
 
 /* the following functions are currently implemented inside nm-linux-platform, because
  * they depend on utility functions there. */
-NMPObjectType _nlo_get_object_type (const struct nl_object *nlo);
-gboolean _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
-gboolean _nmp_vt_cmd_plobj_init_from_nl_ip4_address (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
-gboolean _nmp_vt_cmd_plobj_init_from_nl_ip6_address (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
-gboolean _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
-gboolean _nmp_vt_cmd_plobj_init_from_nl_ip6_route (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
 struct nl_object *_nmp_vt_cmd_plobj_to_nl_link (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only);
 struct nl_object *_nmp_vt_cmd_plobj_to_nl_ip4_address (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only);
 struct nl_object *_nmp_vt_cmd_plobj_to_nl_ip6_address (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only);

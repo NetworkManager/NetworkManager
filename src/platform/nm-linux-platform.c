@@ -42,12 +42,6 @@
 
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE || HAVE_LIBNL_INET6_TOKEN
 #include <netlink/route/link/inet6.h>
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE && HAVE_KERNEL_INET6_ADDR_GEN_MODE
-#include <linux/if_link.h>
-#else
-#define IN6_ADDR_GEN_MODE_EUI64 0
-#define IN6_ADDR_GEN_MODE_NONE  1
-#endif
 #endif
 
 #include "nm-core-internal.h"
@@ -65,6 +59,32 @@
 #include "nm-setting-vlan.h"
 
 #define VLAN_FLAG_MVRP 0x8
+
+/*********************************************************************************************/
+
+#define IFQDISCSIZ                      32
+
+/*********************************************************************************************/
+
+#ifndef IFLA_PROMISCUITY
+#define IFLA_PROMISCUITY                30
+#endif
+#define IFLA_NUM_TX_QUEUES              31
+#define IFLA_NUM_RX_QUEUES              32
+#define IFLA_CARRIER                    33
+#define IFLA_PHYS_PORT_ID               34
+#define IFLA_LINK_NETNSID               37
+#define __IFLA_MAX                      39
+
+#define IFLA_INET6_TOKEN                7
+#define IFLA_INET6_ADDR_GEN_MODE        8
+#define __IFLA_INET6_MAX                9
+
+#define IFLA_VLAN_PROTOCOL              5
+#define __IFLA_VLAN_MAX                 6
+
+#define IFA_FLAGS                       8
+#define __IFA_MAX                       9
 
 /*********************************************************************************************/
 
@@ -153,16 +173,11 @@ _support_user_ipv6ll_get (void)
 }
 
 static void
-_support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
+_support_user_ipv6ll_detect (struct nlattr **tb)
 {
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	/* If we ever see a link with valid IPv6 link-local address
-	 * generation modes, the kernel supports it.
-	 */
 	if (_support_user_ipv6ll_still_undecided ()) {
-		uint8_t mode;
-
-		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
+		if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
 			_support_user_ipv6ll = 1;
 			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
 		} else {
@@ -351,15 +366,14 @@ _timestamp_nl_to_ms (guint32 timestamp_nl, gint64 monotonic_ms)
 }
 
 static guint32
-_rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out_now_nm)
+_addrtime_timestamp_to_nm (guint32 timestamp, gint32 *out_now_nm)
 {
-	guint32 last_update_time = rtnl_addr_get_last_update_time ((struct rtnl_addr *) rtnladdr);
 	struct timespec tp;
 	gint64 now_nl, now_nm, result;
 	int err;
 
 	/* timestamp is unset. Default to 1. */
-	if (!last_update_time) {
+	if (!timestamp) {
 		if (out_now_nm)
 			*out_now_nm = 0;
 		return 1;
@@ -373,17 +387,17 @@ _rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out
 	now_nl = (((gint64) tp.tv_sec) * ((gint64) 1000)) +
 	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
 
-	result = now_nm - (now_nl - _timestamp_nl_to_ms (last_update_time, now_nl));
+	result = now_nm - (now_nl - _timestamp_nl_to_ms (timestamp, now_nl));
 
 	if (out_now_nm)
 		*out_now_nm = now_nm / 1000;
 
-	/* converting the last_update_time into nm_utils_get_monotonic_timestamp_ms() scale is
+	/* converting the timestamp into nm_utils_get_monotonic_timestamp_ms() scale is
 	 * a good guess but fails in the following situations:
 	 *
 	 * - If the address existed before start of the process, the timestamp in nm scale would
 	 *   be negative or zero. In this case we default to 1.
-	 * - during hibernation, the CLOCK_MONOTONIC/last_update_time drifts from
+	 * - during hibernation, the CLOCK_MONOTONIC/timestamp drifts from
 	 *   nm_utils_get_monotonic_timestamp_ms() scale.
 	 */
 	if (result <= 1000)
@@ -396,7 +410,7 @@ _rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out
 }
 
 static guint32
-_extend_lifetime (guint32 lifetime, guint32 seconds)
+_addrtime_extend_lifetime (guint32 lifetime, guint32 seconds)
 {
 	guint64 v;
 
@@ -421,21 +435,20 @@ _extend_lifetime (guint32 lifetime, guint32 seconds)
  * via netlink, the lifetimes keep counting down.
  **/
 static void
-_nlo_rtnl_addr_get_lifetimes (const struct rtnl_addr *rtnladdr,
-                              guint32 *out_timestamp,
-                              guint32 *out_lifetime,
-                              guint32 *out_preferred)
+_addrtime_get_lifetimes (guint32 timestamp,
+                         guint32 lifetime,
+                         guint32 preferred,
+                         guint32 *out_timestamp,
+                         guint32 *out_lifetime,
+                         guint32 *out_preferred)
 {
-	guint32 timestamp = 0;
 	gint32 now;
-	guint32 lifetime = rtnl_addr_get_valid_lifetime ((struct rtnl_addr *) rtnladdr);
-	guint32 preferred = rtnl_addr_get_preferred_lifetime ((struct rtnl_addr *) rtnladdr);
 
 	if (   lifetime != NM_PLATFORM_LIFETIME_PERMANENT
 	    || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
 		if (preferred > lifetime)
 			preferred = lifetime;
-		timestamp = _rtnl_addr_last_update_time_to_nm (rtnladdr, &now);
+		timestamp = _addrtime_timestamp_to_nm (timestamp, &now);
 
 		if (now == 0) {
 			/* strange. failed to detect the last-update time and assumed that timestamp is 1. */
@@ -445,14 +458,171 @@ _nlo_rtnl_addr_get_lifetimes (const struct rtnl_addr *rtnladdr,
 		if (timestamp < now) {
 			guint32 diff = now - timestamp;
 
-			lifetime = _extend_lifetime (lifetime, diff);
-			preferred = _extend_lifetime (preferred, diff);
+			lifetime = _addrtime_extend_lifetime (lifetime, diff);
+			preferred = _addrtime_extend_lifetime (preferred, diff);
 		} else
 			nm_assert (timestamp == now);
-	}
+	} else
+		timestamp = 0;
 	*out_timestamp = timestamp;
 	*out_lifetime = lifetime;
 	*out_preferred = preferred;
+}
+
+/******************************************************************/
+
+static const NMPObject *
+_lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_from_cache, const NMPObject **link_cached)
+{
+	const NMPObject *obj;
+
+	nm_assert (completed_from_cache && link_cached);
+
+	if (!*completed_from_cache) {
+		obj = ifindex > 0 && cache ? nmp_cache_lookup_link (cache, ifindex) : NULL;
+
+		if (obj && !obj->_link.netlink.is_in_netlink)
+			*link_cached = obj;
+		else
+			*link_cached = NULL;
+		*completed_from_cache = TRUE;
+	}
+	return *link_cached;
+}
+
+/******************************************************************/
+
+#define DEVTYPE_PREFIX "DEVTYPE="
+
+static char *
+_linktype_read_devtype (const char *sysfs_path)
+{
+	gs_free char *uevent = g_strdup_printf ("%s/uevent", sysfs_path);
+	char *contents = NULL;
+	char *cont, *end;
+
+	if (!g_file_get_contents (uevent, &contents, NULL, NULL))
+		return NULL;
+	for (cont = contents; cont; cont = end) {
+		end = strpbrk (cont, "\r\n");
+		if (end)
+			*end++ = '\0';
+		if (strncmp (cont, DEVTYPE_PREFIX, STRLEN (DEVTYPE_PREFIX)) == 0) {
+			cont += STRLEN (DEVTYPE_PREFIX);
+			memmove (contents, cont, strlen (cont) + 1);
+			return contents;
+		}
+	}
+	g_free (contents);
+	return NULL;
+}
+
+static NMLinkType
+_linktype_get_type (NMPlatform *platform,
+                    const NMPCache *cache,
+                    const char *kind,
+                    int ifindex,
+                    const char *ifname,
+                    unsigned flags,
+                    unsigned arptype,
+                    gboolean *completed_from_cache,
+                    const NMPObject **link_cached,
+                    const char **out_kind)
+{
+	guint i;
+
+	if (!kind && completed_from_cache) {
+		const NMPObject *obj;
+
+		obj = _lookup_cached_link (cache, ifindex, completed_from_cache, link_cached);
+		if (obj && obj->link.kind)
+			kind = obj->link.kind;
+	}
+
+	*out_kind = kind;
+
+	if (kind) {
+		for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+			if (g_strcmp0 (kind, linktypes[i].rtnl_type) == 0)
+				return linktypes[i].nm_type;
+		}
+
+		if (!strcmp (kind, "tun")) {
+			NMPlatformTunProperties props;
+
+			if (   platform
+			    && nm_platform_tun_get_properties_ifname (platform, ifname, &props)) {
+				if (!g_strcmp0 (props.mode, "tap"))
+					return NM_LINK_TYPE_TAP;
+				if (!g_strcmp0 (props.mode, "tun"))
+					return NM_LINK_TYPE_TUN;
+			}
+
+			/* try guessing the type using the link flags instead... */
+			if (flags & IFF_POINTOPOINT)
+				return NM_LINK_TYPE_TUN;
+			return NM_LINK_TYPE_TAP;
+		}
+	}
+
+	if (arptype == ARPHRD_LOOPBACK)
+		return NM_LINK_TYPE_LOOPBACK;
+	else if (arptype == ARPHRD_INFINIBAND)
+		return NM_LINK_TYPE_INFINIBAND;
+
+	if (ifname) {
+		gs_free char *driver = NULL;
+		gs_free char *sysfs_path = NULL;
+		gs_free char *anycast_mask = NULL;
+		gs_free char *devtype = NULL;
+
+		/* Fallback OVS detection for kernel <= 3.16 */
+		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
+			if (!g_strcmp0 (driver, "openvswitch"))
+				return NM_LINK_TYPE_OPENVSWITCH;
+
+			if (arptype == 256) {
+				/* Some s390 CTC-type devices report 256 for the encapsulation type
+				 * for some reason, but we need to call them Ethernet.
+				 */
+				if (!g_strcmp0 (driver, "ctcm"))
+					return NM_LINK_TYPE_ETHERNET;
+			}
+		}
+
+		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
+		anycast_mask = g_strdup_printf ("%s/anycast_mask", sysfs_path);
+		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
+			return NM_LINK_TYPE_OLPC_MESH;
+
+		devtype = _linktype_read_devtype (sysfs_path);
+		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
+			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
+				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
+					/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
+					 * use arptype to distinguish between them.
+					 */
+					if (arptype != ARPHRD_ETHER)
+						continue;
+				}
+				return linktypes[i].nm_type;
+			}
+		}
+
+		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
+		if (wifi_utils_is_wifi (ifname, sysfs_path))
+			return NM_LINK_TYPE_WIFI;
+
+		/* Standard wired ethernet interfaces don't report an rtnl_link_type, so
+		 * only allow fallback to Ethernet if no type is given.  This should
+		 * prevent future virtual network drivers from being treated as Ethernet
+		 * when they should be Generic instead.
+		 */
+		if (arptype == ARPHRD_ETHER && !kind && !devtype)
+			return NM_LINK_TYPE_ETHERNET;
+	}
+
+	return NM_LINK_TYPE_UNKNOWN;
 }
 
 /******************************************************************
@@ -462,10 +632,8 @@ _nlo_rtnl_addr_get_lifetimes (const struct rtnl_addr *rtnladdr,
 struct libnl_vtable
 {
 	void *handle;
-	void *handle_route;
 
 	int (*f_nl_has_capability) (int capability);
-	int (*f_rtnl_link_get_link_netnsid) (const struct rtnl_link *link, gint32 *out_link_netnsid);
 };
 
 static int
@@ -484,18 +652,11 @@ _nl_get_vtable (void)
 		if (vtable.handle) {
 			vtable.f_nl_has_capability = dlsym (vtable.handle, "nl_has_capability");
 		}
-		vtable.handle_route = dlopen ("libnl-route-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
-		if (vtable.handle_route) {
-			vtable.f_rtnl_link_get_link_netnsid = dlsym (vtable.handle_route, "rtnl_link_get_link_netnsid");
-		}
 
 		if (!vtable.f_nl_has_capability)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
-		_LOG2t ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
-
 		g_return_val_if_fail (vtable.handle, &vtable);
-		g_return_val_if_fail (vtable.handle_route, &vtable);
 	}
 
 	return &vtable;
@@ -505,26 +666,6 @@ static gboolean
 _nl_has_capability (int capability)
 {
 	return (_nl_get_vtable ()->f_nl_has_capability) (capability);
-}
-
-static int
-_rtnl_link_get_link_netnsid (const struct rtnl_link *link, gint32 *out_link_netnsid)
-{
-	const struct libnl_vtable *vtable;
-
-	g_return_val_if_fail (link, -NLE_INVAL);
-	g_return_val_if_fail (out_link_netnsid, -NLE_INVAL);
-
-	vtable = _nl_get_vtable ();
-	return vtable->f_rtnl_link_get_link_netnsid
-	    ? vtable->f_rtnl_link_get_link_netnsid (link, out_link_netnsid)
-	    : -NLE_OPNOTSUPP;
-}
-
-gboolean
-nm_platform_check_support_libnl_link_netnsid (void)
-{
-	return !!(_nl_get_vtable ()->f_rtnl_link_get_link_netnsid);
 }
 
 /* Automatic deallocation of local variables */
@@ -647,6 +788,634 @@ _nl_nlmsg_type_to_str (guint16 type, char *buf, gsize len)
 	else
 		g_snprintf (buf, len, "(%d)", type);
 	return buf;
+}
+
+/******************************************************************
+ * NMPObject/netlink functions
+ ******************************************************************/
+
+#define _check_addr_or_errout(tb, attr, addr_len) \
+	({ \
+	    const struct nlattr *__t = (tb)[(attr)]; \
+		\
+	    if (__t) { \
+			if (nla_len (__t) != (addr_len)) { \
+				goto errout; \
+			} \
+		} \
+		!!__t; \
+	})
+
+/*****************************************************************************/
+
+/* Copied and heavily modified from libnl3's inet6_parse_protinfo(). */
+static gboolean
+_parse_af_inet6 (NMPlatform *platform,
+                 struct nlattr *attr,
+                 NMUtilsIPv6IfaceId *out_iid,
+                 guint8 *out_iid_is_valid,
+                 guint8 *out_addr_gen_mode_inv)
+{
+	static struct nla_policy policy[IFLA_INET6_MAX+1] = {
+		[IFLA_INET6_FLAGS]              = { .type = NLA_U32 },
+		[IFLA_INET6_CACHEINFO]          = { .minlen = sizeof(struct ifla_cacheinfo) },
+		[IFLA_INET6_CONF]               = { .minlen = 4 },
+		[IFLA_INET6_STATS]              = { .minlen = 8 },
+		[IFLA_INET6_ICMP6STATS]         = { .minlen = 8 },
+		[IFLA_INET6_TOKEN]              = { .minlen = sizeof(struct in6_addr) },
+		[IFLA_INET6_ADDR_GEN_MODE]      = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[IFLA_INET6_MAX+1];
+	int err;
+	struct in6_addr i6_token;
+	gboolean iid_is_valid = FALSE;
+	guint8 i6_addr_gen_mode_inv = 0;
+	gboolean success = FALSE;
+
+	err = nla_parse_nested (tb, IFLA_INET6_MAX, attr, policy);
+	if (err < 0)
+		goto errout;
+
+	if (tb[IFLA_INET6_CONF] && nla_len(tb[IFLA_INET6_CONF]) % 4)
+		goto errout;
+	if (tb[IFLA_INET6_STATS] && nla_len(tb[IFLA_INET6_STATS]) % 8)
+		goto errout;
+	if (tb[IFLA_INET6_ICMP6STATS] && nla_len(tb[IFLA_INET6_ICMP6STATS]) % 8)
+		goto errout;
+
+	if (_check_addr_or_errout (tb, IFLA_INET6_TOKEN, sizeof (struct in6_addr))) {
+		nla_memcpy (&i6_token, tb[IFLA_INET6_TOKEN], sizeof (struct in6_addr));
+		if (!IN6_IS_ADDR_UNSPECIFIED (&i6_token))
+			iid_is_valid = TRUE;
+	}
+
+	/* Hack to detect support addrgenmode of the kernel. We only parse
+	 * netlink messages that we receive from kernel, hence this check
+	 * is valid. */
+	_support_user_ipv6ll_detect (tb);
+
+	if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
+		i6_addr_gen_mode_inv = _nm_platform_uint8_inv (nla_get_u8 (tb[IFLA_INET6_ADDR_GEN_MODE]));
+		if (i6_addr_gen_mode_inv == 0) {
+			/* an inverse addrgenmode of zero is unexpected. We need to reserve zero
+			 * to signal "unset". */
+			goto errout;
+		}
+	}
+
+	success = TRUE;
+	if (iid_is_valid) {
+		out_iid->id_u8[7] = i6_token.s6_addr[15];
+		out_iid->id_u8[6] = i6_token.s6_addr[14];
+		out_iid->id_u8[5] = i6_token.s6_addr[13];
+		out_iid->id_u8[4] = i6_token.s6_addr[12];
+		out_iid->id_u8[3] = i6_token.s6_addr[11];
+		out_iid->id_u8[2] = i6_token.s6_addr[10];
+		out_iid->id_u8[1] = i6_token.s6_addr[9];
+		out_iid->id_u8[0] = i6_token.s6_addr[8];
+		*out_iid_is_valid = TRUE;
+	}
+	*out_addr_gen_mode_inv = i6_addr_gen_mode_inv;
+errout:
+	return success;
+}
+
+/*****************************************************************************/
+
+/* Copied and heavily modified from libnl3's vlan_parse() */
+static gboolean
+_parse_io_vlan (const char *kind, struct nlattr *data, guint16 *out_vlan_id)
+{
+	static struct nla_policy policy[IFLA_VLAN_MAX+1] = {
+		[IFLA_VLAN_ID]          = { .type = NLA_U16 },
+		[IFLA_VLAN_FLAGS]       = { .minlen = sizeof(struct ifla_vlan_flags) },
+		[IFLA_VLAN_INGRESS_QOS] = { .type = NLA_NESTED },
+		[IFLA_VLAN_EGRESS_QOS]  = { .type = NLA_NESTED },
+		[IFLA_VLAN_PROTOCOL]    = { .type = NLA_U16 },
+	};
+	struct nlattr *tb[IFLA_VLAN_MAX+1];
+	int err;
+	gboolean success = FALSE;
+	guint16 vlan_id;
+
+	if (!data || g_strcmp0 (kind, "vlan"))
+		goto errout;
+
+	if ((err = nla_parse_nested (tb, IFLA_VLAN_MAX, data, policy)) < 0)
+		goto errout;
+
+	if (!tb[IFLA_VLAN_ID])
+		goto errout;
+
+	vlan_id = nla_get_u16(tb[IFLA_VLAN_ID]);
+
+	success = TRUE;
+	*out_vlan_id = vlan_id;
+errout:
+	return success;
+}
+
+/*****************************************************************************/
+
+/* Copied and heavily modified from libnl3's link_msg_parser(). */
+static NMPObject *
+_new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr *nlh, gboolean id_only)
+{
+	static struct nla_policy policy[IFLA_MAX+1] = {
+		[IFLA_IFNAME]           = { .type = NLA_STRING,
+		                            .maxlen = IFNAMSIZ },
+		[IFLA_MTU]              = { .type = NLA_U32 },
+		[IFLA_TXQLEN]           = { .type = NLA_U32 },
+		[IFLA_LINK]             = { .type = NLA_U32 },
+		[IFLA_WEIGHT]           = { .type = NLA_U32 },
+		[IFLA_MASTER]           = { .type = NLA_U32 },
+		[IFLA_OPERSTATE]        = { .type = NLA_U8 },
+		[IFLA_LINKMODE]         = { .type = NLA_U8 },
+		[IFLA_LINKINFO]         = { .type = NLA_NESTED },
+		[IFLA_QDISC]            = { .type = NLA_STRING,
+		                            .maxlen = IFQDISCSIZ },
+		[IFLA_STATS]            = { .minlen = sizeof(struct rtnl_link_stats) },
+		[IFLA_STATS64]          = { .minlen = sizeof(struct rtnl_link_stats64)},
+		[IFLA_MAP]              = { .minlen = sizeof(struct rtnl_link_ifmap) },
+		[IFLA_IFALIAS]          = { .type = NLA_STRING, .maxlen = IFALIASZ },
+		[IFLA_NUM_VF]           = { .type = NLA_U32 },
+		[IFLA_AF_SPEC]          = { .type = NLA_NESTED },
+		[IFLA_PROMISCUITY]      = { .type = NLA_U32 },
+		[IFLA_NUM_TX_QUEUES]    = { .type = NLA_U32 },
+		[IFLA_NUM_RX_QUEUES]    = { .type = NLA_U32 },
+		[IFLA_GROUP]            = { .type = NLA_U32 },
+		[IFLA_CARRIER]          = { .type = NLA_U8 },
+		[IFLA_PHYS_PORT_ID]     = { .type = NLA_UNSPEC },
+		[IFLA_NET_NS_PID]       = { .type = NLA_U32 },
+		[IFLA_NET_NS_FD]        = { .type = NLA_U32 },
+	};
+	static struct nla_policy policy_link_info[IFLA_INFO_MAX+1] = {
+		[IFLA_INFO_KIND]        = { .type = NLA_STRING },
+		[IFLA_INFO_DATA]        = { .type = NLA_NESTED },
+		[IFLA_INFO_XSTATS]      = { .type = NLA_NESTED },
+	};
+	const struct ifinfomsg *ifi;
+	struct nlattr *tb[IFLA_MAX+1];
+	struct nlattr *li[IFLA_INFO_MAX+1];
+	struct nlattr *nl_info_data = NULL;
+	const char *nl_info_kind = NULL;
+	int err;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	NMPObject *obj_result = NULL;
+	const char *kind = NULL;
+	gboolean completed_from_cache_val = FALSE;
+	gboolean *completed_from_cache = cache ? &completed_from_cache_val : NULL;
+	const NMPObject *link_cached = NULL;
+
+	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
+		return NULL;
+	ifi = nlmsg_data(nlh);
+
+	obj = nmp_object_new_link (ifi->ifi_index);
+
+	if (id_only)
+		goto done;
+
+	err = nlmsg_parse (nlh, sizeof (*ifi), tb, IFLA_MAX, policy);
+	if (err < 0)
+		goto errout;
+
+	if (!tb[IFLA_IFNAME])
+		goto errout;
+	nla_strlcpy(obj->link.name, tb[IFLA_IFNAME], IFNAMSIZ);
+	if (!obj->link.name[0])
+		goto errout;
+
+	if (tb[IFLA_LINKINFO]) {
+		err = nla_parse_nested (li, IFLA_INFO_MAX, tb[IFLA_LINKINFO], policy_link_info);
+		if (err < 0)
+			goto errout;
+
+		if (li[IFLA_INFO_KIND])
+			nl_info_kind = nla_get_string (li[IFLA_INFO_KIND]);
+
+		nl_info_data = li[IFLA_INFO_DATA];
+	}
+
+	obj->link.flags = ifi->ifi_flags;
+	obj->link.connected = NM_FLAGS_HAS (obj->link.flags, IFF_LOWER_UP);
+	obj->link.arptype = ifi->ifi_type;
+
+	obj->link.type = _linktype_get_type (platform,
+	                                     cache,
+	                                     nl_info_kind,
+	                                     obj->link.ifindex,
+	                                     obj->link.name,
+	                                     obj->link.flags,
+	                                     obj->link.arptype,
+	                                     completed_from_cache,
+	                                     &link_cached,
+	                                     &kind);
+
+	kind = g_intern_string (kind);
+	obj->link.kind = kind;
+
+	if (tb[IFLA_MASTER])
+		obj->link.master = nla_get_u32 (tb[IFLA_MASTER]);
+
+	if (tb[IFLA_LINK]) {
+		if (!tb[IFLA_LINK_NETNSID])
+			obj->link.parent = nla_get_u32 (tb[IFLA_LINK]);
+		else
+			obj->link.parent = NM_PLATFORM_LINK_OTHER_NETNS;
+	}
+
+	if (tb[IFLA_ADDRESS]) {
+		int l = nla_len (tb[IFLA_ADDRESS]);
+
+		if (l > 0 && l <= NM_UTILS_HWADDR_LEN_MAX) {
+			G_STATIC_ASSERT (NM_UTILS_HWADDR_LEN_MAX == sizeof (obj->link.addr.data));
+			memcpy (obj->link.addr.data, nla_data (tb[IFLA_ADDRESS]), l);
+			obj->link.addr.len = l;
+		}
+	}
+
+	if (tb[IFLA_AF_SPEC]) {
+		struct nlattr *af_attr;
+		int remaining;
+
+		nla_for_each_nested (af_attr, tb[IFLA_AF_SPEC], remaining) {
+			switch (nla_type (af_attr)) {
+			case AF_INET6:
+				_parse_af_inet6 (platform,
+				                 af_attr,
+				                 &obj->link.inet6_token.iid,
+				                 &obj->link.inet6_token.is_valid,
+				                 &obj->link.inet6_addr_gen_mode_inv);
+				break;
+			}
+		}
+	}
+
+	if (tb[IFLA_MTU])
+		obj->link.mtu = nla_get_u32 (tb[IFLA_MTU]);
+
+	if (obj->link.type == NM_LINK_TYPE_VLAN) {
+		if (_parse_io_vlan (nl_info_kind,
+		                    nl_info_data,
+		                    &obj->link.vlan_id))
+			goto vlan_done;
+		if (completed_from_cache) {
+			_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
+			if (link_cached)
+				obj->link.vlan_id = link_cached->link.vlan_id;
+		}
+vlan_done: ;
+	}
+
+	obj->_link.netlink.is_in_netlink = TRUE;
+
+done:
+	obj_result = obj;
+	obj = NULL;
+errout:
+	return obj_result;
+}
+
+/* Copied and heavily modified from libnl3's addr_msg_parser(). */
+static NMPObject *
+_new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
+{
+	static struct nla_policy policy[IFA_MAX+1] = {
+		[IFA_LABEL]     = { .type = NLA_STRING,
+		                     .maxlen = IFNAMSIZ },
+		[IFA_CACHEINFO] = { .minlen = sizeof(struct ifa_cacheinfo) },
+	};
+	const struct ifaddrmsg *ifa;
+	struct nlattr *tb[IFA_MAX+1];
+	int err;
+	gboolean is_v4;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	NMPObject *obj_result = NULL;
+	int addr_len;
+	guint32 lifetime, preferred, timestamp;
+
+	if (!nlmsg_valid_hdr (nlh, sizeof (*ifa)))
+		return NULL;
+	ifa = nlmsg_data(nlh);
+
+	if (!NM_IN_SET (ifa->ifa_family, AF_INET, AF_INET6))
+		goto errout;
+	is_v4 = ifa->ifa_family == AF_INET;
+
+	err = nlmsg_parse(nlh, sizeof(*ifa), tb, IFA_MAX, policy);
+	if (err < 0)
+		goto errout;
+
+	addr_len = is_v4
+	           ? sizeof (in_addr_t)
+	           : sizeof (struct in6_addr);
+
+	/*****************************************************************/
+
+	obj = nmp_object_new (is_v4 ? NMP_OBJECT_TYPE_IP4_ADDRESS : NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
+
+	obj->ip_address.ifindex = ifa->ifa_index;
+	obj->ip_address.plen = ifa->ifa_prefixlen;
+
+	if (_check_addr_or_errout (tb, IFA_LOCAL, addr_len))
+		memcpy (obj->ip_address.address_ptr, nla_data (tb[IFA_LOCAL]), addr_len);
+
+	if (_check_addr_or_errout (tb, IFA_ADDRESS, addr_len)) {
+		NMIPAddr *a = nla_data (tb[IFA_ADDRESS]);
+
+		/* IPv6 sends the local address as IFA_ADDRESS with
+		 * no IFA_LOCAL, IPv4 sends both IFA_LOCAL and IFA_ADDRESS
+		 * with IFA_ADDRESS being the peer address if they differ */
+		if (   !tb[IFA_LOCAL]
+		    || !memcmp (a, obj->ip_address.address_ptr, addr_len)) {
+			memcpy (obj->ip_address.address_ptr, a, addr_len);
+		} else {
+			if (is_v4)
+				obj->ip4_address.peer_address = a->addr4;
+			else
+				obj->ip6_address.peer_address = a->addr6;
+		}
+	}
+
+	obj->ip_address.source = NM_IP_CONFIG_SOURCE_KERNEL;
+
+	if (!is_v4) {
+		obj->ip6_address.flags = tb[IFA_FLAGS]
+		                         ? nla_get_u32 (tb[IFA_FLAGS])
+		                         : ifa->ifa_flags;
+	}
+
+	if (is_v4) {
+		if (tb[IFA_LABEL]) {
+			char label[IFNAMSIZ];
+
+			nla_strlcpy (label, tb[IFA_LABEL], IFNAMSIZ);
+
+			/* Check for ':'; we're only interested in labels used as interface aliases */
+			if (strchr (label, ':'))
+				g_strlcpy (obj->ip4_address.label, label, sizeof (obj->ip4_address.label));
+		}
+	}
+
+	lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+	preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+	timestamp = 0;
+	/* IPv6 only */
+	if (tb[IFA_CACHEINFO]) {
+		const struct ifa_cacheinfo *ca = nla_data(tb[IFA_CACHEINFO]);
+
+		lifetime = ca->ifa_valid;
+		preferred = ca->ifa_prefered;
+		timestamp = ca->tstamp;
+	}
+	_addrtime_get_lifetimes (timestamp,
+	                         lifetime,
+	                         preferred,
+	                         &obj->ip_address.timestamp,
+	                         &obj->ip_address.lifetime,
+	                         &obj->ip_address.preferred);
+
+	obj_result = obj;
+	obj = NULL;
+errout:
+	return obj_result;
+}
+
+/* Copied and heavily modified from libnl3's rtnl_route_parse() and parse_multipath(). */
+static NMPObject *
+_new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
+{
+	static struct nla_policy policy[RTA_MAX+1] = {
+		[RTA_IIF]       = { .type = NLA_U32 },
+		[RTA_OIF]       = { .type = NLA_U32 },
+		[RTA_PRIORITY]  = { .type = NLA_U32 },
+		[RTA_FLOW]      = { .type = NLA_U32 },
+		[RTA_CACHEINFO] = { .minlen = sizeof(struct rta_cacheinfo) },
+		[RTA_METRICS]   = { .type = NLA_NESTED },
+		[RTA_MULTIPATH] = { .type = NLA_NESTED },
+	};
+	const struct rtmsg *rtm;
+	struct nlattr *tb[RTA_MAX + 1];
+	int err;
+	gboolean is_v4;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	NMPObject *obj_result = NULL;
+	int addr_len;
+	struct {
+		gboolean is_present;
+		int ifindex;
+		NMIPAddr gateway;
+	} nh;
+	guint32 mss;
+	guint32 table;
+
+	if (!nlmsg_valid_hdr (nlh, sizeof (*rtm)))
+		return NULL;
+	rtm = nlmsg_data(nlh);
+
+	/*****************************************************************
+	 * only handle ~normal~ routes.
+	 *****************************************************************/
+
+	if (!NM_IN_SET (rtm->rtm_family, AF_INET, AF_INET6))
+		goto errout;
+
+	if (   rtm->rtm_type != RTN_UNICAST
+	    || rtm->rtm_tos != 0)
+		goto errout;
+
+	err = nlmsg_parse (nlh, sizeof (struct rtmsg), tb, RTA_MAX, policy);
+	if (err < 0)
+		goto errout;
+
+	table = tb[RTA_TABLE]
+	        ? nla_get_u32 (tb[RTA_TABLE])
+	        : (guint32) rtm->rtm_table;
+	if (table != RT_TABLE_MAIN)
+		goto errout;
+
+	/*****************************************************************/
+
+	is_v4 = rtm->rtm_family == AF_INET;
+	addr_len = is_v4
+	           ? sizeof (in_addr_t)
+	           : sizeof (struct in6_addr);
+
+	/*****************************************************************
+	 * parse nexthops. Only handle routes with one nh.
+	 *****************************************************************/
+
+	memset (&nh, 0, sizeof (nh));
+
+	if (tb[RTA_MULTIPATH]) {
+		struct rtnexthop *rtnh = nla_data (tb[RTA_MULTIPATH]);
+		size_t tlen = nla_len(tb[RTA_MULTIPATH]);
+
+		while (tlen >= sizeof(*rtnh) && tlen >= rtnh->rtnh_len) {
+
+			if (nh.is_present) {
+				/* we don't support multipath routes. */
+				goto errout;
+			}
+			nh.is_present = TRUE;
+
+			nh.ifindex = rtnh->rtnh_ifindex;
+
+			if (rtnh->rtnh_len > sizeof(*rtnh)) {
+				struct nlattr *ntb[RTA_MAX + 1];
+
+				err = nla_parse (ntb, RTA_MAX, (struct nlattr *)
+				                 RTNH_DATA(rtnh),
+				                 rtnh->rtnh_len - sizeof (*rtnh),
+				                 policy);
+				if (err < 0)
+					goto errout;
+
+				if (_check_addr_or_errout (ntb, RTA_GATEWAY, addr_len))
+					memcpy (&nh.gateway, nla_data (ntb[RTA_GATEWAY]), addr_len);
+			}
+
+			tlen -= RTNH_ALIGN(rtnh->rtnh_len);
+			rtnh = RTNH_NEXT(rtnh);
+		}
+	}
+
+	if (   tb[RTA_OIF]
+	    || tb[RTA_GATEWAY]
+	    || tb[RTA_FLOW]) {
+		int ifindex = 0;
+		NMIPAddr gateway = NMIPAddrInit;
+
+		if (tb[RTA_OIF])
+			ifindex = nla_get_u32 (tb[RTA_OIF]);
+		if (_check_addr_or_errout (tb, RTA_GATEWAY, addr_len))
+			memcpy (&gateway, nla_data (tb[RTA_GATEWAY]), addr_len);
+
+		if (!nh.is_present) {
+			/* If no nexthops have been provided via RTA_MULTIPATH
+			 * we add it as regular nexthop to maintain backwards
+			 * compatibility */
+			nh.ifindex = ifindex;
+			nh.gateway = gateway;
+		} else {
+			/* Kernel supports new style nexthop configuration,
+			 * verify that it is a duplicate and ignore old-style nexthop. */
+			if (   nh.ifindex != ifindex
+			    || memcmp (&nh.gateway, &gateway, addr_len) != 0)
+				goto errout;
+		}
+	} else if (!nh.is_present)
+		goto errout;
+
+	/*****************************************************************/
+
+	mss = 0;
+	if (tb[RTA_METRICS]) {
+		struct nlattr *mtb[RTAX_MAX + 1];
+		int i;
+
+		err = nla_parse_nested(mtb, RTAX_MAX, tb[RTA_METRICS], NULL);
+		if (err < 0)
+			goto errout;
+
+		for (i = 1; i <= RTAX_MAX; i++) {
+			if (mtb[i]) {
+				if (i == RTAX_ADVMSS) {
+					if (nla_len (mtb[i]) >= sizeof (uint32_t))
+						mss = nla_get_u32(mtb[i]);
+					break;
+				}
+			}
+		}
+	}
+
+	/*****************************************************************/
+
+	obj = nmp_object_new (is_v4 ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
+
+	obj->ip_route.ifindex = nh.ifindex;
+
+	if (_check_addr_or_errout (tb, RTA_DST, addr_len))
+		memcpy (obj->ip_route.network_ptr, nla_data (tb[RTA_DST]), addr_len);
+
+	obj->ip_route.plen = rtm->rtm_dst_len;
+
+	if (tb[RTA_PRIORITY])
+		obj->ip_route.metric = nla_get_u32(tb[RTA_PRIORITY]);
+
+	if (is_v4)
+		obj->ip4_route.gateway = nh.gateway.addr4;
+	else
+		obj->ip6_route.gateway = nh.gateway.addr6;
+
+	if (is_v4)
+		obj->ip4_route.scope_inv = nm_platform_route_scope_inv (rtm->rtm_scope);
+
+	if (is_v4) {
+		if (_check_addr_or_errout (tb, RTA_PREFSRC, addr_len))
+			memcpy (&obj->ip4_route.network, nla_data (tb[RTA_PREFSRC]), addr_len);
+	}
+
+	obj->ip_route.mss = mss;
+
+	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
+		/* we must not straight way reject cloned routes, because we might have cached
+		 * a non-cloned route. If we now receive an update of the route with the route
+		 * being cloned, we must still return the object, so that we can remove the old
+		 * one from the cache.
+		 *
+		 * This happens, because this route is not nmp_object_is_alive().
+		 * */
+		obj->ip_route.source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
+	} else
+		obj->ip_route.source = _nm_ip_config_source_from_rtprot (rtm->rtm_protocol);
+
+	obj_result = obj;
+	obj = NULL;
+errout:
+	return obj_result;
+}
+
+/**
+ * nmp_object_new_from_nl:
+ * @platform: (allow-none): for creating certain objects, the constructor wants to check
+ *   sysfs. For this the platform instance is needed. If missing, the object might not
+ *   be correctly detected.
+ * @cache: (allow-none): for certain objects, the netlink message doesn't contain all the information.
+ *   If a cache is given, the object is completed with information from the cache.
+ * @nlh: the netlink message header
+ * @id_only: whether only to create an empty object with only the ID fields set.
+ *
+ * Returns: %NULL or a newly created NMPObject instance.
+ **/
+static NMPObject *
+nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_msg *msg, gboolean id_only)
+{
+	struct nlmsghdr *msghdr;
+
+	if (nlmsg_get_proto (msg) != NETLINK_ROUTE)
+		return NULL;
+
+	msghdr = nlmsg_hdr (msg);
+
+	switch (msghdr->nlmsg_type) {
+	case RTM_NEWLINK:
+	case RTM_DELLINK:
+	case RTM_GETLINK:
+	case RTM_SETLINK:
+		return _new_from_nl_link (platform, cache, msghdr, id_only);
+	case RTM_NEWADDR:
+	case RTM_DELADDR:
+	case RTM_GETADDR:
+		return _new_from_nl_addr (msghdr, id_only);
+	case RTM_NEWROUTE:
+	case RTM_DELROUTE:
+	case RTM_GETROUTE:
+		return _new_from_nl_route (msghdr, id_only);
+	default:
+		return NULL;
+	}
 }
 
 /******************************************************************/
@@ -934,40 +1703,6 @@ nm_linux_platform_setup (void)
 
 /******************************************************************/
 
-NMPObjectType
-_nlo_get_object_type (const struct nl_object *object)
-{
-	const char *type_str;
-
-	if (!object || !(type_str = nl_object_get_type (object)))
-		return NMP_OBJECT_TYPE_UNKNOWN;
-
-	if (!strcmp (type_str, "route/link"))
-		return NMP_OBJECT_TYPE_LINK;
-	else if (!strcmp (type_str, "route/addr")) {
-		switch (rtnl_addr_get_family ((struct rtnl_addr *) object)) {
-		case AF_INET:
-			return NMP_OBJECT_TYPE_IP4_ADDRESS;
-		case AF_INET6:
-			return NMP_OBJECT_TYPE_IP6_ADDRESS;
-		default:
-			return NMP_OBJECT_TYPE_UNKNOWN;
-		}
-	} else if (!strcmp (type_str, "route/route")) {
-		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
-		case AF_INET:
-			return NMP_OBJECT_TYPE_IP4_ROUTE;
-		case AF_INET6:
-			return NMP_OBJECT_TYPE_IP6_ROUTE;
-		default:
-			return NMP_OBJECT_TYPE_UNKNOWN;
-		}
-	} else
-		return NMP_OBJECT_TYPE_UNKNOWN;
-}
-
-/******************************************************************/
-
 static gboolean
 check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 {
@@ -996,455 +1731,6 @@ process_events (NMPlatform *platform)
 	((const type *const*) nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE ((platform))->cache, \
 	                                              nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, (obj_type), (visible_only)), \
 	                                              NULL))
-
-
-/******************************************************************/
-
-#define DEVTYPE_PREFIX "DEVTYPE="
-
-static char *
-read_devtype (const char *sysfs_path)
-{
-	gs_free char *uevent = g_strdup_printf ("%s/uevent", sysfs_path);
-	char *contents = NULL;
-	char *cont, *end;
-
-	if (!g_file_get_contents (uevent, &contents, NULL, NULL))
-		return NULL;
-	for (cont = contents; cont; cont = end) {
-		end = strpbrk (cont, "\r\n");
-		if (end)
-			*end++ = '\0';
-		if (strncmp (cont, DEVTYPE_PREFIX, STRLEN (DEVTYPE_PREFIX)) == 0) {
-			cont += STRLEN (DEVTYPE_PREFIX);
-			memmove (contents, cont, strlen (cont) + 1);
-			return contents;
-		}
-	}
-	g_free (contents);
-	return NULL;
-}
-
-static const NMPObject *
-_lookup_link_cached (NMPlatform *platform, int ifindex, gboolean *completed_from_cache, const NMPObject **link_cached)
-{
-	const NMPObject *obj;
-
-	nm_assert (completed_from_cache && link_cached);
-
-	if (!*completed_from_cache) {
-		obj = ifindex > 0 ? nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex) : NULL;
-
-		if (obj && !obj->_link.netlink.is_in_netlink)
-			*link_cached = obj;
-		else
-			*link_cached = NULL;
-		*completed_from_cache = TRUE;
-	}
-	return *link_cached;
-}
-
-static NMLinkType
-link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean *completed_from_cache, const NMPObject **link_cached, const char **out_kind)
-{
-	const char *rtnl_type, *ifname;
-	int i, arptype;
-
-	if (!rtnllink) {
-		if (out_kind)
-			*out_kind = NULL;
-		return NM_LINK_TYPE_NONE;
-	}
-
-	rtnl_type = rtnl_link_get_type (rtnllink);
-	if (!rtnl_type && completed_from_cache) {
-		const NMPObject *obj;
-
-		obj = _lookup_link_cached (platform, rtnl_link_get_ifindex (rtnllink), completed_from_cache, link_cached);
-		if (obj && obj->link.kind) {
-			rtnl_type = obj->link.kind;
-			_LOGT ("link_extract_type(): complete kind from cache: ifindex=%d, kind=%s", rtnl_link_get_ifindex (rtnllink), rtnl_type);
-		}
-	}
-	if (out_kind)
-		*out_kind = rtnl_type;
-	if (rtnl_type) {
-		for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-			if (g_strcmp0 (rtnl_type, linktypes[i].rtnl_type) == 0)
-				return linktypes[i].nm_type;
-		}
-
-		if (!strcmp (rtnl_type, "tun")) {
-			NMPlatformTunProperties props;
-			guint flags;
-
-			if (nm_platform_tun_get_properties_ifname (platform, rtnl_link_get_name (rtnllink), &props)) {
-				if (!g_strcmp0 (props.mode, "tap"))
-					return NM_LINK_TYPE_TAP;
-				if (!g_strcmp0 (props.mode, "tun"))
-					return NM_LINK_TYPE_TUN;
-			}
-			flags = rtnl_link_get_flags (rtnllink);
-
-			_LOGD ("Failed to read tun properties for interface %d (link flags: %X)",
-			       rtnl_link_get_ifindex (rtnllink), flags);
-
-			/* try guessing the type using the link flags instead... */
-			if (flags & IFF_POINTOPOINT)
-				return NM_LINK_TYPE_TUN;
-			return NM_LINK_TYPE_TAP;
-		}
-	}
-
-	arptype = rtnl_link_get_arptype (rtnllink);
-	if (arptype == ARPHRD_LOOPBACK)
-		return NM_LINK_TYPE_LOOPBACK;
-	else if (arptype == ARPHRD_INFINIBAND)
-		return NM_LINK_TYPE_INFINIBAND;
-
-	ifname = rtnl_link_get_name (rtnllink);
-	if (ifname) {
-		gs_free char *driver = NULL;
-		gs_free char *sysfs_path = NULL;
-		gs_free char *anycast_mask = NULL;
-		gs_free char *devtype = NULL;
-
-		/* Fallback OVS detection for kernel <= 3.16 */
-		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
-			if (!g_strcmp0 (driver, "openvswitch"))
-				return NM_LINK_TYPE_OPENVSWITCH;
-
-			if (arptype == 256) {
-				/* Some s390 CTC-type devices report 256 for the encapsulation type
-				 * for some reason, but we need to call them Ethernet.
-				 */
-				if (!g_strcmp0 (driver, "ctcm"))
-					return NM_LINK_TYPE_ETHERNET;
-			}
-		}
-
-		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
-		anycast_mask = g_strdup_printf ("%s/anycast_mask", sysfs_path);
-		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
-			return NM_LINK_TYPE_OLPC_MESH;
-
-		devtype = read_devtype (sysfs_path);
-		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
-			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
-				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
-					/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
-					 * use arptype to distinguish between them.
-					 */
-					if (arptype != ARPHRD_ETHER)
-						continue;
-				}
-				return linktypes[i].nm_type;
-			}
-		}
-
-		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-		if (wifi_utils_is_wifi (ifname, sysfs_path))
-			return NM_LINK_TYPE_WIFI;
-
-		/* Standard wired ethernet interfaces don't report an rtnl_link_type, so
-		 * only allow fallback to Ethernet if no type is given.  This should
-		 * prevent future virtual network drivers from being treated as Ethernet
-		 * when they should be Generic instead.
-		 */
-		if (arptype == ARPHRD_ETHER && !rtnl_type && !devtype)
-			return NM_LINK_TYPE_ETHERNET;
-	}
-
-	return NM_LINK_TYPE_UNKNOWN;
-}
-
-gboolean
-_nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache)
-{
-	NMPlatformLink *obj = (NMPlatformLink *) _obj;
-	NMPObjectLink *obj_priv = (NMPObjectLink *) _obj;
-	struct rtnl_link *nlo = (struct rtnl_link *) _nlo;
-	const char *name;
-	struct nl_addr *nladdr;
-	const char *kind;
-	gboolean completed_from_cache_val = FALSE;
-	gboolean *completed_from_cache = complete_from_cache ? &completed_from_cache_val : NULL;
-	const NMPObject *link_cached = NULL;
-	int parent;
-
-	nm_assert (memcmp (obj, ((char [sizeof (NMPObjectLink)]) { 0 }), sizeof (NMPObjectLink)) == 0);
-
-	if (_LOGT_ENABLED () && !NM_IN_SET (rtnl_link_get_family (nlo), AF_UNSPEC, AF_BRIDGE))
-		_LOGT ("netlink object for ifindex %d has unusual family %d", rtnl_link_get_ifindex (nlo), rtnl_link_get_family (nlo));
-
-	obj->ifindex = rtnl_link_get_ifindex (nlo);
-
-	if (id_only)
-		return TRUE;
-
-	name = rtnl_link_get_name (nlo);
-	if (name)
-		g_strlcpy (obj->name, name, sizeof (obj->name));
-	obj->type = link_extract_type (platform, nlo, completed_from_cache, &link_cached, &kind);
-	obj->kind = g_intern_string (kind);
-	obj->flags = rtnl_link_get_flags (nlo);
-	obj->connected = NM_FLAGS_HAS (obj->flags, IFF_LOWER_UP);
-	obj->master = rtnl_link_get_master (nlo);
-	parent = rtnl_link_get_link (nlo);
-	if (parent > 0) {
-		gint32 link_netnsid;
-
-		if (_rtnl_link_get_link_netnsid (nlo, &link_netnsid) == 0)
-			obj->parent = NM_PLATFORM_LINK_OTHER_NETNS;
-		else
-			obj->parent = parent;
-	}
-	obj->mtu = rtnl_link_get_mtu (nlo);
-	obj->arptype = rtnl_link_get_arptype (nlo);
-
-	if (obj->type == NM_LINK_TYPE_VLAN) {
-		if (!g_strcmp0 (rtnl_link_get_type (nlo), "vlan"))
-			obj->vlan_id = rtnl_link_vlan_get_id (nlo);
-		else if (completed_from_cache) {
-			_lookup_link_cached (platform, obj->ifindex, completed_from_cache, &link_cached);
-			if (link_cached)
-				obj->vlan_id = link_cached->link.vlan_id;
-		}
-	}
-
-	if ((nladdr = rtnl_link_get_addr (nlo))) {
-		unsigned int l = 0;
-
-		l = nl_addr_get_len (nladdr);
-		if (l > 0 && l <= NM_UTILS_HWADDR_LEN_MAX) {
-			G_STATIC_ASSERT (NM_UTILS_HWADDR_LEN_MAX == sizeof (obj->addr.data));
-			memcpy (obj->addr.data, nl_addr_get_binary_addr (nladdr), l);
-			obj->addr.len = l;
-		}
-	}
-
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	if (_support_user_ipv6ll_get ()) {
-		guint8 mode = 0;
-
-		if (rtnl_link_inet6_get_addr_gen_mode (nlo, &mode) == 0)
-			obj->inet6_addr_gen_mode_inv = _nm_platform_uint8_inv (mode);
-	}
-#endif
-
-#if HAVE_LIBNL_INET6_TOKEN
-	if ((rtnl_link_inet6_get_token (nlo, &nladdr)) == 0) {
-		if (   nl_addr_get_family (nladdr) == AF_INET6
-		    && nl_addr_get_len (nladdr) == sizeof (struct in6_addr)) {
-			struct in6_addr *addr;
-			NMUtilsIPv6IfaceId *iid = &obj->inet6_token.iid;
-
-			addr = nl_addr_get_binary_addr (nladdr);
-			iid->id_u8[7] = addr->s6_addr[15];
-			iid->id_u8[6] = addr->s6_addr[14];
-			iid->id_u8[5] = addr->s6_addr[13];
-			iid->id_u8[4] = addr->s6_addr[12];
-			iid->id_u8[3] = addr->s6_addr[11];
-			iid->id_u8[2] = addr->s6_addr[10];
-			iid->id_u8[1] = addr->s6_addr[9];
-			iid->id_u8[0] = addr->s6_addr[8];
-			obj->inet6_token.is_valid = TRUE;
-		}
-		nl_addr_put (nladdr);
-	}
-#endif
-
-	obj_priv->netlink.is_in_netlink = TRUE;
-
-	return TRUE;
-}
-
-gboolean
-_nmp_vt_cmd_plobj_init_from_nl_ip4_address (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache)
-{
-	NMPlatformIP4Address *obj = (NMPlatformIP4Address *) _obj;
-	struct rtnl_addr *nlo = (struct rtnl_addr *) _nlo;
-	struct nl_addr *nladdr = rtnl_addr_get_local (nlo);
-	struct nl_addr *nlpeer = rtnl_addr_get_peer (nlo);
-	const char *label;
-
-	if (!nladdr || nl_addr_get_len (nladdr) != sizeof (obj->address))
-		g_return_val_if_reached (FALSE);
-
-	obj->ifindex = rtnl_addr_get_ifindex (nlo);
-	obj->plen = rtnl_addr_get_prefixlen (nlo);
-	memcpy (&obj->address, nl_addr_get_binary_addr (nladdr), sizeof (obj->address));
-
-	if (id_only)
-		return TRUE;
-
-	obj->source = NM_IP_CONFIG_SOURCE_KERNEL;
-	_nlo_rtnl_addr_get_lifetimes (nlo,
-	                              &obj->timestamp,
-	                              &obj->lifetime,
-	                              &obj->preferred);
-	if (nlpeer) {
-		if (nl_addr_get_len (nlpeer) != sizeof (obj->peer_address))
-			g_warn_if_reached ();
-		else
-			memcpy (&obj->peer_address, nl_addr_get_binary_addr (nlpeer), sizeof (obj->peer_address));
-	}
-	label = rtnl_addr_get_label (nlo);
-	/* Check for ':'; we're only interested in labels used as interface aliases */
-	if (label && strchr (label, ':'))
-		g_strlcpy (obj->label, label, sizeof (obj->label));
-
-	return TRUE;
-}
-
-gboolean
-_nmp_vt_cmd_plobj_init_from_nl_ip6_address (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache)
-{
-	NMPlatformIP6Address *obj = (NMPlatformIP6Address *) _obj;
-	struct rtnl_addr *nlo = (struct rtnl_addr *) _nlo;
-	struct nl_addr *nladdr = rtnl_addr_get_local (nlo);
-	struct nl_addr *nlpeer = rtnl_addr_get_peer (nlo);
-
-	if (!nladdr || nl_addr_get_len (nladdr) != sizeof (obj->address))
-		g_return_val_if_reached (FALSE);
-
-	obj->ifindex = rtnl_addr_get_ifindex (nlo);
-	obj->plen = rtnl_addr_get_prefixlen (nlo);
-	memcpy (&obj->address, nl_addr_get_binary_addr (nladdr), sizeof (obj->address));
-
-	if (id_only)
-		return TRUE;
-
-	obj->source = NM_IP_CONFIG_SOURCE_KERNEL;
-	_nlo_rtnl_addr_get_lifetimes (nlo,
-	                              &obj->timestamp,
-	                              &obj->lifetime,
-	                              &obj->preferred);
-	obj->flags = rtnl_addr_get_flags (nlo);
-
-	if (nlpeer) {
-		if (nl_addr_get_len (nlpeer) != sizeof (obj->peer_address))
-			g_warn_if_reached ();
-		else
-			memcpy (&obj->peer_address, nl_addr_get_binary_addr (nlpeer), sizeof (obj->peer_address));
-	}
-
-	return TRUE;
-}
-
-gboolean
-_nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache)
-{
-	NMPlatformIP4Route *obj = (NMPlatformIP4Route *) _obj;
-	struct rtnl_route *nlo = (struct rtnl_route *) _nlo;
-	struct nl_addr *dst, *gw;
-	struct rtnl_nexthop *nexthop;
-	struct nl_addr *pref_src;
-
-	if (rtnl_route_get_type (nlo) != RTN_UNICAST ||
-	    rtnl_route_get_table (nlo) != RT_TABLE_MAIN ||
-	    rtnl_route_get_tos (nlo) != 0 ||
-	    rtnl_route_get_nnexthops (nlo) != 1)
-		return FALSE;
-
-	nexthop = rtnl_route_nexthop_n (nlo, 0);
-	if (!nexthop)
-		g_return_val_if_reached (FALSE);
-
-	dst = rtnl_route_get_dst (nlo);
-	if (!dst)
-		g_return_val_if_reached (FALSE);
-
-	if (nl_addr_get_len (dst)) {
-		if (nl_addr_get_len (dst) != sizeof (obj->network))
-			g_return_val_if_reached (FALSE);
-		memcpy (&obj->network, nl_addr_get_binary_addr (dst), sizeof (obj->network));
-	}
-	obj->ifindex = rtnl_route_nh_get_ifindex (nexthop);
-	obj->plen = nl_addr_get_prefixlen (dst);
-	obj->metric = rtnl_route_get_priority (nlo);
-	obj->scope_inv = nm_platform_route_scope_inv (rtnl_route_get_scope (nlo));
-
-	gw = rtnl_route_nh_get_gateway (nexthop);
-	if (gw) {
-		if (nl_addr_get_len (gw) != sizeof (obj->gateway))
-			g_warn_if_reached ();
-		else
-			memcpy (&obj->gateway, nl_addr_get_binary_addr (gw), sizeof (obj->gateway));
-	}
-	rtnl_route_get_metric (nlo, RTAX_ADVMSS, &obj->mss);
-	if (rtnl_route_get_flags (nlo) & RTM_F_CLONED) {
-		/* we must not straight way reject cloned routes, because we might have cached
-		 * a non-cloned route. If we now receive an update of the route with the route
-		 * being cloned, we must still return the object, so that we can remove the old
-		 * one from the cache.
-		 *
-		 * This happens, because this route is not nmp_object_is_alive().
-		 * */
-		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
-	} else
-		obj->source = _nm_ip_config_source_from_rtprot (rtnl_route_get_protocol (nlo));
-
-	pref_src = rtnl_route_get_pref_src (nlo);
-	if (pref_src) {
-		if (nl_addr_get_len (pref_src) != sizeof (obj->pref_src))
-			g_warn_if_reached ();
-		else
-			memcpy (&obj->pref_src, nl_addr_get_binary_addr (pref_src), sizeof (obj->pref_src));
-	}
-
-	return TRUE;
-}
-
-gboolean
-_nmp_vt_cmd_plobj_init_from_nl_ip6_route (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache)
-{
-	NMPlatformIP6Route *obj = (NMPlatformIP6Route *) _obj;
-	struct rtnl_route *nlo = (struct rtnl_route *) _nlo;
-	struct nl_addr *dst, *gw;
-	struct rtnl_nexthop *nexthop;
-
-	if (rtnl_route_get_type (nlo) != RTN_UNICAST ||
-	    rtnl_route_get_table (nlo) != RT_TABLE_MAIN ||
-	    rtnl_route_get_tos (nlo) != 0 ||
-	    rtnl_route_get_nnexthops (nlo) != 1)
-		return FALSE;
-
-	nexthop = rtnl_route_nexthop_n (nlo, 0);
-	if (!nexthop)
-		g_return_val_if_reached (FALSE);
-
-	dst = rtnl_route_get_dst (nlo);
-	if (!dst)
-		g_return_val_if_reached (FALSE);
-
-	if (nl_addr_get_len (dst)) {
-		if (nl_addr_get_len (dst) != sizeof (obj->network))
-			g_return_val_if_reached (FALSE);
-		memcpy (&obj->network, nl_addr_get_binary_addr (dst), sizeof (obj->network));
-	}
-	obj->ifindex = rtnl_route_nh_get_ifindex (nexthop);
-	obj->plen = nl_addr_get_prefixlen (dst);
-	obj->metric = rtnl_route_get_priority (nlo);
-
-	if (id_only)
-		return TRUE;
-
-	gw = rtnl_route_nh_get_gateway (nexthop);
-	if (gw) {
-		if (nl_addr_get_len (gw) != sizeof (obj->gateway))
-			g_warn_if_reached ();
-		else
-			memcpy (&obj->gateway, nl_addr_get_binary_addr (gw), sizeof (obj->gateway));
-	}
-	rtnl_route_get_metric (nlo, RTAX_ADVMSS, &obj->mss);
-	if (rtnl_route_get_flags (nlo) & RTM_F_CLONED)
-		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
-	else
-		obj->source = _nm_ip_config_source_from_rtprot (rtnl_route_get_protocol (nlo));
-
-	return TRUE;
-}
 
 /******************************************************************/
 
@@ -2343,15 +2629,6 @@ errout:
 	return nle;
 }
 
-static void
-ref_object (struct nl_object *obj, void *data)
-{
-	struct nl_object **out = data;
-
-	nl_object_get (obj);
-	*out = obj;
-}
-
 static int
 event_seq_check (struct nl_msg *msg, gpointer user_data)
 {
@@ -2399,84 +2676,74 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 {
 	NMPlatform *platform = NM_PLATFORM (user_data);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
-	auto_nl_object struct nl_object *nlo = NULL;
 	nm_auto_nmpobj NMPObject *obj = NULL;
+	nm_auto_nmpobj NMPObject *obj_cache = NULL;
 	struct nlmsghdr *msghdr;
 	char buf_nlmsg_type[16];
+	gboolean id_only = FALSE;
 
 	msghdr = nlmsg_hdr (msg);
 
 	if (_support_kernel_extended_ifa_flags_still_undecided () && msghdr->nlmsg_type == RTM_NEWADDR)
 		_support_kernel_extended_ifa_flags_detect (msg);
 
-	nl_msg_parse (msg, ref_object, &nlo);
-	if (!nlo)
-		return NL_OK;
+	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK, RTM_DELADDR, RTM_DELROUTE)) {
+		/* The event notifies about a deleted object. We don't need to initialize all
+		 * fields of the object. */
+		id_only = TRUE;
+	}
 
-	if (_support_user_ipv6ll_still_undecided() && msghdr->nlmsg_type == RTM_NEWLINK)
-		_support_user_ipv6ll_detect ((struct rtnl_link *) nlo);
+	obj = nmp_object_new_from_nl (platform, priv->cache, msg, id_only);
+	if (!obj) {
+		_LOGt ("event-notification: %s, seq %u: ignore",
+		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
+		       msghdr->nlmsg_seq);
+		return NL_OK;
+	}
+
+	_LOGt ("event-notification: %s, seq %u: %s",
+	       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
+	       msghdr->nlmsg_seq, nmp_object_to_string (obj,
+	           id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	switch (msghdr->nlmsg_type) {
-	case RTM_DELADDR:
+
+	case RTM_NEWLINK:
+		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
+			if (g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
+				/* the object is scheduled for delayed deletion. Replace that object
+				 * by clearing the value from priv->delayed_deletion. */
+				_LOGT ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
+			}
+			delayed_action_clear_REFRESH_LINK (platform, obj->link.ifindex);
+		}
+		/* fall-through */
+	case RTM_NEWADDR:
+	case RTM_NEWROUTE:
+		cache_update_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
+		break;
+
 	case RTM_DELLINK:
-	case RTM_DELROUTE:
-		/* The event notifies about a deleted object. We don't need to initialize all the
-		 * fields of the nmp-object. Shortcut nmp_object_from_nl(). */
-		obj = nmp_object_from_nl (platform, nlo, TRUE, TRUE);
-		_LOGt ("event-notification: %s, seq %u: %s",
-		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
-		       msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-		break;
-	default:
-		obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
-		_LOGt ("event-notification: %s, seq %u: %s",
-		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
-		       msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
-		break;
-	}
-
-	if (obj) {
-		nm_auto_nmpobj NMPObject *obj_cache = NULL;
-
-		switch (msghdr->nlmsg_type) {
-
-		case RTM_NEWLINK:
-			if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
-				if (g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
-					/* the object is scheduled for delayed deletion. Replace that object
-					 * by clearing the value from priv->delayed_deletion. */
-					_LOGT ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-					g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
-				}
-				delayed_action_clear_REFRESH_LINK (platform, obj->link.ifindex);
-			}
-			/* fall-through */
-		case RTM_NEWADDR:
-		case RTM_NEWROUTE:
-			cache_update_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
-			break;
-
-		case RTM_DELLINK:
-			if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
-			    && g_hash_table_contains (priv->delayed_deletion, obj)) {
-				/* We sometimes receive spurious RTM_DELLINK events. In this case, we want to delay
-				 * the deletion of the object until later. */
-				_LOGT ("delayed-deletion: delay deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), nmp_object_ref (obj));
-				break;
-			}
-			/* fall-through */
-		case RTM_DELADDR:
-		case RTM_DELROUTE:
-			cache_remove_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
-			break;
-
-		default:
+		if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
+		    && g_hash_table_contains (priv->delayed_deletion, obj)) {
+			/* We sometimes receive spurious RTM_DELLINK events. In this case, we want to delay
+			 * the deletion of the object until later. */
+			_LOGT ("delayed-deletion: delay deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), nmp_object_ref (obj));
 			break;
 		}
+		/* fall-through */
+	case RTM_DELADDR:
+	case RTM_DELROUTE:
+		cache_remove_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
+		break;
 
-		cache_prune_candidates_drop (platform, obj_cache);
+	default:
+		break;
 	}
+
+	cache_prune_candidates_drop (platform, obj_cache);
 
 	return NL_OK;
 }
@@ -3118,7 +3385,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	if (_support_user_ipv6ll_get ()) {
 		auto_nl_object struct rtnl_link *nlo = _nl_rtnl_link_alloc (ifindex, NULL);
-		guint8 mode = enabled ? IN6_ADDR_GEN_MODE_NONE : IN6_ADDR_GEN_MODE_EUI64;
+		guint8 mode = enabled ? NM_IN6_ADDR_GEN_MODE_NONE : NM_IN6_ADDR_GEN_MODE_EUI64;
 		char buf[32];
 
 		rtnl_link_inet6_set_addr_gen_mode (nlo, mode);

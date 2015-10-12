@@ -82,6 +82,8 @@ _id_hash_ip6_addr (const struct in6_addr *addr)
 	return hash;
 }
 
+/******************************************************************/
+
 static const char *
 _link_get_driver (GUdevDevice *udev_device, const char *kind, const char *ifname)
 {
@@ -796,38 +798,6 @@ _vt_cmd_obj_is_visible_ipx_route (const NMPObject *obj)
 
 /******************************************************************/
 
-/**
- * nmp_object_from_nl:
- * @platform: platform instance (needed to lookup sysctl)
- * @nlo:
- * @id_only: if %TRUE, only fill the id fields of the object and leave the
- *   other fields unset. This is useful to create a needle to lookup a matching
- *   item in the cache.
- * @complete_from_cache: sometimes the netlink object doesn't contain all information.
- *   If true, look them up in the cache and preserve the original value.
- *
- * Convert a libnl object to a platform object.
- * Returns: a NMPObject containing @nlo. If @id_only is %TRUE, only the id fields
- *   are defined.
- **/
-NMPObject *
-nmp_object_from_nl (NMPlatform *platform, const struct nl_object *nlo, gboolean id_only, gboolean complete_from_cache)
-{
-	NMPObjectType obj_type = _nlo_get_object_type (nlo);
-	NMPObject *obj;
-
-	if (obj_type == NMP_OBJECT_TYPE_UNKNOWN)
-		return NULL;
-
-	obj = nmp_object_new (obj_type, NULL);
-
-	if (!NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_init_from_nl (platform, &obj->object, nlo, id_only, complete_from_cache)) {
-		nmp_object_unref (obj);
-		return NULL;
-	}
-	return obj;
-}
-
 struct nl_object *
 nmp_object_to_nl (NMPlatform *platform, const NMPObject *obj, gboolean id_only)
 {
@@ -1522,8 +1492,8 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 		 * We could add efficient reverse lookup by adding a reverse index to NMMultiIndex. But that
 		 * also adds some cost to support an (uncommon?) usage pattern.
 		 *
-		 * Instead we just don't support it. Actually, we expect the user to
-		 * create a new instance with nmp_object_from_nl(). That is what nmp_cache_update_netlink().
+		 * Instead we just don't support it, instead we expect the user to
+		 * create a new instance from netlink.
 		 *
 		 * TL;DR: a cached object must never be modified.
 		 */
@@ -1809,7 +1779,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_link,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_link,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_link,
-		.cmd_plobj_init_from_nl             = _nmp_vt_cmd_plobj_init_from_nl_link,
 		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_link,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_link,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_link,
@@ -1830,7 +1799,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_address,
-		.cmd_plobj_init_from_nl             = _nmp_vt_cmd_plobj_init_from_nl_ip4_address,
 		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip4_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_address,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_address,
@@ -1851,7 +1819,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_address,
-		.cmd_plobj_init_from_nl             = _nmp_vt_cmd_plobj_init_from_nl_ip6_address,
 		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip6_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_address,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_address,
@@ -1872,7 +1839,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_route,
-		.cmd_plobj_init_from_nl             = _nmp_vt_cmd_plobj_init_from_nl_ip4_route,
 		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip4_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_route,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_route,
@@ -1893,7 +1859,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_route,
-		.cmd_plobj_init_from_nl             = _nmp_vt_cmd_plobj_init_from_nl_ip6_route,
 		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip6_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_route,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_route,

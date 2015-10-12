@@ -454,8 +454,7 @@ nm_platform_link_get_all (NMPlatform *self)
 			if (item->parent != NM_PLATFORM_LINK_OTHER_NETNS) {
 				g_warn_if_fail (item->parent > 0);
 				g_warn_if_fail (item->parent != item->ifindex);
-				g_warn_if_fail (   !nm_platform_check_support_libnl_link_netnsid ()
-				                || g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)));
+				g_warn_if_fail (g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)));
 			}
 		}
 	}
@@ -951,22 +950,17 @@ nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
 {
+	const NMPlatformLink *pllink;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE && HAVE_KERNEL_INET6_ADDR_GEN_MODE
-	{
-		const NMPlatformLink *pllink;
-
-		pllink = nm_platform_link_get (self, ifindex);
-		if (pllink && pllink->inet6_addr_gen_mode_inv)
-			return _nm_platform_uint8_inv (pllink->inet6_addr_gen_mode_inv) == IN6_ADDR_GEN_MODE_NONE;
-	}
-#endif
+	pllink = nm_platform_link_get (self, ifindex);
+	if (pllink && pllink->inet6_addr_gen_mode_inv)
+		return _nm_platform_uint8_inv (pllink->inet6_addr_gen_mode_inv) == NM_IN6_ADDR_GEN_MODE_NONE;
 	return FALSE;
 }
-
 
 /**
  * nm_platform_link_set_user_ip6vll_enabled:

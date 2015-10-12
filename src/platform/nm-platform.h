@@ -52,6 +52,13 @@ typedef struct _NMPlatform NMPlatform;
 #define IFA_F_NOPREFIXROUTE 0x200
 #endif
 
+/* Define of the IN6_ADDR_GEN_MODE_* values to workaround old kernel headers
+ * that don't define it. */
+#define NM_IN6_ADDR_GEN_MODE_UNKNOWN           255  /* no corresponding value.  */
+#define NM_IN6_ADDR_GEN_MODE_EUI64             0    /* IN6_ADDR_GEN_MODE_EUI64 */
+#define NM_IN6_ADDR_GEN_MODE_NONE              1    /* IN6_ADDR_GEN_MODE_NONE */
+#define NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY    2    /* IN6_ADDR_GEN_MODE_STABLE_PRIVACY */
+
 typedef enum { /*< skip >*/
 
 	/* dummy value, to enforce that the enum type is signed and has a size
@@ -771,7 +778,6 @@ int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4R
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b);
 
 gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
-gboolean nm_platform_check_support_libnl_link_netnsid (void);
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
 
