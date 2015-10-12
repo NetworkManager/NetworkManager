@@ -39,7 +39,8 @@ G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE_GENERIC)
 #define NM_DEVICE_MACVLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanPrivate))
 
 typedef struct {
-	NMPlatformMacvlanProperties props;
+	int parent_ifindex;
+	NMPlatformLnkMacvlan props;
 } NMDeviceMacvlanPrivate;
 
 enum {
@@ -61,23 +62,26 @@ update_properties (NMDevice *device)
 	NMDeviceMacvlan *self = NM_DEVICE_MACVLAN (device);
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
-	NMPlatformMacvlanProperties props;
+	const NMPlatformLnkMacvlan *props;
+	const NMPlatformLink *plink;
 
-	if (!nm_platform_macvlan_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
-		_LOGW (LOGD_HW, "could not read macvlan properties");
+	props = nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
+	if (!props) {
+		_LOGW (LOGD_HW, "could not get macvlan properties");
 		return;
 	}
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.parent_ifindex != props.parent_ifindex)
+	if (priv->parent_ifindex != plink->parent)
 		g_object_notify (object, NM_DEVICE_MACVLAN_PARENT);
-	if (g_strcmp0 (priv->props.mode, props.mode) != 0)
+	if (g_strcmp0 (priv->props.mode, props->mode) != 0)
 		g_object_notify (object, NM_DEVICE_MACVLAN_MODE);
-	if (priv->props.no_promisc != props.no_promisc)
+	if (priv->props.no_promisc != props->no_promisc)
 		g_object_notify (object, NM_DEVICE_MACVLAN_NO_PROMISC);
 
-	memcpy (&priv->props, &props, sizeof (NMPlatformMacvlanProperties));
+	priv->parent_ifindex = plink->parent;
+	priv->props = *props;
 
 	g_object_thaw_notify (object);
 }
@@ -113,8 +117,8 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PARENT:
-		if (priv->props.parent_ifindex > 0)
-			parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
+		if (priv->parent_ifindex > 0)
+			parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->parent_ifindex);
 		else
 			parent = NULL;
 		nm_utils_g_value_set_object_path (value, parent);

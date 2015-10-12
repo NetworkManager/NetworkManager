@@ -1406,6 +1406,12 @@ nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLin
 	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
 }
 
+const NMPlatformLnkMacvlan *
+nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
+}
+
 const NMPlatformLnkVlan *
 nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1707,17 +1713,6 @@ nm_platform_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProp
 	g_return_val_if_fail (props != NULL, FALSE);
 
 	return nm_platform_tun_get_properties_ifname (self, nm_platform_link_get_name (self, ifindex), props);
-}
-
-gboolean
-nm_platform_macvlan_get_properties (NMPlatform *self, int ifindex, NMPlatformMacvlanProperties *props)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props != NULL, FALSE);
-
-	return klass->macvlan_get_properties (self, ifindex, props);
 }
 
 gboolean
@@ -2601,6 +2596,20 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 }
 
 const char *
+nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len)
+{
+	if (!_to_string_buffer_init (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "macvlan%s%s%s",
+	            lnk->mode ? " mode " : "",
+	            lnk->mode ?: "",
+	            lnk->no_promisc ? " not-promisc" : " promisc");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
 	if (!_to_string_buffer_init (lnk, &buf, &len))
@@ -3075,6 +3084,15 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 	_CMP_FIELD (a, b, ttl);
 	_CMP_FIELD (a, b, tos);
 	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	return 0;
+}
+
+int
+nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	_CMP_FIELD_BOOL (a, b, no_promisc);
 	return 0;
 }
 

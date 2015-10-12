@@ -86,6 +86,13 @@
 #define IFA_FLAGS                       8
 #define __IFA_MAX                       9
 
+#define IFLA_MACVLAN_FLAGS              2
+#define __IFLA_MACVLAN_MAX              3
+
+#ifndef MACVLAN_FLAG_NOPROMISC
+#define MACVLAN_FLAG_NOPROMISC          1
+#endif
+
 /*********************************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "platform-linux"
@@ -928,6 +935,58 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 
 /*****************************************************************************/
 
+static NMPObject *
+_parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[IFLA_MACVLAN_MAX + 1] = {
+		[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
+		[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
+	};
+	NMPlatformLnkMacvlan *props;
+	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
+	int err;
+	NMPObject *obj;
+	const char *mode;
+
+	if (!info_data || g_strcmp0 (kind, "macvlan"))
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_MACVLAN_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	if (!tb[IFLA_MACVLAN_MODE])
+		return NULL;
+
+	switch (nla_get_u32 (tb[IFLA_MACVLAN_MODE])) {
+	case MACVLAN_MODE_PRIVATE:
+		mode = "private";
+		break;
+	case MACVLAN_MODE_VEPA:
+		mode = "vepa";
+		break;
+	case MACVLAN_MODE_BRIDGE:
+		mode = "bridge";
+		break;
+	case MACVLAN_MODE_PASSTHRU:
+		mode = "passthru";
+		break;
+	default:
+		return NULL;
+	}
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACVLAN, NULL);
+	props = &obj->lnk_macvlan;
+	props->mode = mode;
+
+	if (tb[IFLA_MACVLAN_FLAGS])
+		props->no_promisc = NM_FLAGS_HAS (nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]), MACVLAN_FLAG_NOPROMISC);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
 /* Copied and heavily modified from libnl3's vlan_parse() */
 static NMPObject *
 _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
@@ -1224,6 +1283,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	switch (obj->link.type) {
 	case NM_LINK_TYPE_GRE:
 		lnk_data = _parse_lnk_gre (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_MACVLAN:
+		lnk_data = _parse_lnk_macvlan (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_VLAN:
 		lnk_data = _parse_lnk_vlan (nl_info_kind, nl_info_data);
@@ -3215,6 +3277,10 @@ link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMP
 		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_GRE)
 			return &obj->_link.netlink.lnk->lnk_gre;
 		break;
+	case NM_LINK_TYPE_MACVLAN:
+		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_MACVLAN)
+			return &obj->_link.netlink.lnk->lnk_macvlan;
+		break;
 	case NM_LINK_TYPE_VLAN:
 		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_VLAN)
 			return &obj->_link.netlink.lnk->lnk_vlan;
@@ -4039,75 +4105,6 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 
 	props->peer = peer_ifindex;
 	return TRUE;
-}
-
-/******************************************************************/
-
-static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
-	[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
-#ifdef MACVLAN_FLAG_NOPROMISC
-	[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
-#endif
-};
-
-static int
-macvlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
-{
-	NMPlatformMacvlanProperties *props = parser_data;
-	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
-	int err;
-
-	err = nla_parse_nested (tb, IFLA_MACVLAN_MAX, info_data,
-	                        (struct nla_policy *) macvlan_info_policy);
-	if (err < 0)
-		return err;
-
-	switch (nla_get_u32 (tb[IFLA_MACVLAN_MODE])) {
-	case MACVLAN_MODE_PRIVATE:
-		props->mode = "private";
-		break;
-	case MACVLAN_MODE_VEPA:
-		props->mode = "vepa";
-		break;
-	case MACVLAN_MODE_BRIDGE:
-		props->mode = "bridge";
-		break;
-	case MACVLAN_MODE_PASSTHRU:
-		props->mode = "passthru";
-		break;
-	default:
-		return -NLE_PARSE_ERR;
-	}
-
-#ifdef MACVLAN_FLAG_NOPROMISC
-	props->no_promisc = !!(nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]) & MACVLAN_FLAG_NOPROMISC);
-#else
-	props->no_promisc = FALSE;
-#endif
-
-	return 0;
-}
-
-static gboolean
-macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProperties *props)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int err;
-	const NMPObject *obj;
-
-	obj = cache_lookup_link (platform, ifindex);
-	if (!obj)
-		return FALSE;
-
-	props->parent_ifindex = obj->link.parent;
-
-	err = _nl_link_parse_info_data (priv->nlh, ifindex,
-	                                macvlan_info_data_parser, props);
-	if (err != 0) {
-		_LOGW ("(%s) could not read properties: %s",
-		       obj->link.name, nl_geterror (err));
-	}
-	return (err == 0);
 }
 
 /******************************************************************/
@@ -5341,7 +5338,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->infiniband_get_info = infiniband_get_info;
 
 	platform_class->veth_get_properties = veth_get_properties;
-	platform_class->macvlan_get_properties = macvlan_get_properties;
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;

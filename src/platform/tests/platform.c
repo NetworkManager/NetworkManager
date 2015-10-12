@@ -402,15 +402,17 @@ static gboolean
 do_macvlan_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	NMPlatformMacvlanProperties props;
+	const NMPlatformLink *plink;
+	const NMPlatformLnkMacvlan *props;
 
-	if (!nm_platform_macvlan_get_properties (NM_PLATFORM_GET, ifindex, &props))
+	props = nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, &plink);
+	if (!props)
 		return FALSE;
 
-	printf ("parent: %d\n", props.parent_ifindex);
-	printf ("mode: %s\n", props.mode);
+	printf ("parent: %d\n", plink->parent);
+	printf ("mode: %s\n", props->mode);
 	printf ("no-promisc: ");
-	print_boolean (props.no_promisc);
+	print_boolean (props->no_promisc);
 	return TRUE;
 }
 
