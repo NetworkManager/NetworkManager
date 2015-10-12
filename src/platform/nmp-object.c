@@ -274,10 +274,16 @@ nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformOb
 const NMPObject *
 nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src)
 {
+	const NMPClass *klass;
+
 	nm_assert (NMP_OBJECT_IS_VALID (src));
 	nm_assert (obj);
 
-	NMP_OBJECT_GET_CLASS (src)->cmd_obj_stackinit_id (obj, src);
+	klass = NMP_OBJECT_GET_CLASS (src);
+	if (!klass->cmd_obj_stackinit_id)
+		nmp_object_stackinit (obj, klass->obj_type, NULL);
+	else
+		klass->cmd_obj_stackinit_id (obj, src);
 	return obj;
 }
 
@@ -389,6 +395,10 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 
 	switch (to_string_mode) {
 	case NMP_OBJECT_TO_STRING_ID:
+		if (!klass->cmd_plobj_to_string_id) {
+			g_snprintf (buf, buf_size, "%p", obj);
+			return buf;
+		}
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
 		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
@@ -513,9 +523,10 @@ nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only)
 
 		g_return_if_fail (klass == NMP_OBJECT_GET_CLASS (src));
 
-		if (id_only)
-			klass->cmd_plobj_id_copy (&dst->object, &src->object);
-		else if (klass->cmd_obj_copy)
+		if (id_only) {
+			if (klass->cmd_plobj_id_copy)
+				klass->cmd_plobj_id_copy (&dst->object, &src->object);
+		} else if (klass->cmd_obj_copy)
 			klass->cmd_obj_copy (dst, src);
 		else
 			memcpy (&dst->object, &src->object, klass->sizeof_data);
@@ -601,6 +612,7 @@ nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2)
 
 	klass = NMP_OBJECT_GET_CLASS (obj1);
 	return    klass == NMP_OBJECT_GET_CLASS (obj2)
+	       && klass->cmd_plobj_id_equal
 	       && klass->cmd_plobj_id_equal (&obj1->object, &obj2->object);
 }
 
@@ -639,11 +651,20 @@ _vt_cmd_plobj_id_equal (ip6_route, NMPlatformIP6Route,
 guint
 nmp_object_id_hash (const NMPObject *obj)
 {
+	const NMPClass *klass;
+
 	if (!obj)
 		return 0;
 
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), 0);
-	return NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_id_hash (&obj->object);
+
+	klass = NMP_OBJECT_GET_CLASS (obj);
+
+	if (klass->cmd_plobj_id_hash)
+		return klass->cmd_plobj_id_hash (&obj->object);
+
+	/* unhashable objects implement pointer equality. */
+	return g_direct_hash (obj);
 }
 
 #define _vt_cmd_plobj_id_hash(type, plat_type, cmd) \
@@ -692,11 +713,15 @@ _vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
 gboolean
 nmp_object_is_alive (const NMPObject *obj)
 {
+	const NMPClass *klass;
+
 	/* for convenience, allow NULL. */
 	if (!obj)
 		return FALSE;
 
-	return  NMP_OBJECT_GET_CLASS (obj)->cmd_obj_is_alive (obj);
+	klass = NMP_OBJECT_GET_CLASS (obj);
+	return    !klass->cmd_obj_is_alive
+	       || klass->cmd_obj_is_alive (obj);
 }
 
 static gboolean
@@ -734,13 +759,17 @@ _vt_cmd_obj_is_alive_ipx_route (const NMPObject *obj)
 
 gboolean
 nmp_object_is_visible (const NMPObject *obj)
-
 {
+	const NMPClass *klass;
+
 	/* for convenience, allow NULL. */
 	if (!obj)
 		return FALSE;
 
-	return NMP_OBJECT_GET_CLASS (obj)->cmd_obj_is_visible (obj);
+	klass = NMP_OBJECT_GET_CLASS (obj);
+
+	return    !klass->cmd_obj_is_visible
+	       || klass->cmd_obj_is_visible (obj);
 }
 
 static gboolean
@@ -932,14 +961,9 @@ _nmp_object_init_cache_id (const NMPObject *obj, NMPCacheIdType id_type, NMPCach
 			*out_id = NULL;
 		return TRUE;
 	default:
-		return klass->cmd_obj_init_cache_id (obj, id_type, id, out_id);
+		return    klass->cmd_obj_init_cache_id
+		       && klass->cmd_obj_init_cache_id (obj, id_type, id, out_id);
 	}
-}
-
-static gboolean
-_vt_cmd_obj_init_cache_id_link (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
-{
-	return FALSE;
 }
 
 static gboolean
@@ -1779,7 +1803,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.addr_family                        = AF_UNSPEC,
 		.rtm_gettype                        = RTM_GETLINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
-		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_link,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_link,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_link,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_link,
