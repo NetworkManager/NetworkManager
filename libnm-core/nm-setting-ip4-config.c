@@ -633,7 +633,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 * A timeout for a DHCP transaction in seconds.
 	 **/
 	/* ---ifcfg-rh---
-	 * property: dhcp-client-id
+	 * property: dhcp-timeout
 	 * variable: DHCP_TIMEOUT(+)
 	 * description: A timeout after which the DHCP transaction fails in case of no response.
 	 * example: DHCP_TIMEOUT=10
