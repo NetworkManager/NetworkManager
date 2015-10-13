@@ -128,6 +128,334 @@ static gboolean event_handler_read_netlink_all (NMPlatform *platform, gboolean w
 static NMPCacheOpsType cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_needle, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason);
 
 /******************************************************************
+ * Support IFLA_INET6_ADDR_GEN_MODE
+ ******************************************************************/
+
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+static int _support_user_ipv6ll = 0;
+#define _support_user_ipv6ll_still_undecided() (G_UNLIKELY (_support_user_ipv6ll == 0))
+#else
+#define _support_user_ipv6ll_still_undecided() (FALSE)
+#endif
+
+static gboolean
+_support_user_ipv6ll_get (void)
+{
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	if (_support_user_ipv6ll_still_undecided ()) {
+		_support_user_ipv6ll = -1;
+		_LOG2W ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
+	} else
+		return _support_user_ipv6ll > 0;
+#endif
+
+	return FALSE;
+}
+
+static void
+_support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
+{
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	/* If we ever see a link with valid IPv6 link-local address
+	 * generation modes, the kernel supports it.
+	 */
+	if (_support_user_ipv6ll_still_undecided ()) {
+		uint8_t mode;
+
+		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
+			_support_user_ipv6ll = 1;
+			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
+		} else {
+			_support_user_ipv6ll = -1;
+			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
+		}
+	}
+#endif
+}
+
+/******************************************************************
+ * Various utilities
+ ******************************************************************/
+
+static guint
+_nm_ip_config_source_to_rtprot (NMIPConfigSource source)
+{
+	switch (source) {
+	case NM_IP_CONFIG_SOURCE_UNKNOWN:
+		return RTPROT_UNSPEC;
+	case NM_IP_CONFIG_SOURCE_KERNEL:
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+		return RTPROT_KERNEL;
+	case NM_IP_CONFIG_SOURCE_DHCP:
+		return RTPROT_DHCP;
+	case NM_IP_CONFIG_SOURCE_RDISC:
+		return RTPROT_RA;
+
+	default:
+		return RTPROT_STATIC;
+	}
+}
+
+static NMIPConfigSource
+_nm_ip_config_source_from_rtprot (guint rtprot)
+{
+	switch (rtprot) {
+	case RTPROT_UNSPEC:
+		return NM_IP_CONFIG_SOURCE_UNKNOWN;
+	case RTPROT_KERNEL:
+		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+	case RTPROT_REDIRECT:
+		return NM_IP_CONFIG_SOURCE_KERNEL;
+	case RTPROT_RA:
+		return NM_IP_CONFIG_SOURCE_RDISC;
+	case RTPROT_DHCP:
+		return NM_IP_CONFIG_SOURCE_DHCP;
+
+	default:
+		return NM_IP_CONFIG_SOURCE_USER;
+	}
+}
+
+static void
+clear_host_address (int family, const void *network, int plen, void *dst)
+{
+	g_return_if_fail (plen == (guint8)plen);
+	g_return_if_fail (network);
+
+	switch (family) {
+	case AF_INET:
+		*((in_addr_t *) dst) = nm_utils_ip4_address_clear_host_address (*((in_addr_t *) network), plen);
+		break;
+	case AF_INET6:
+		nm_utils_ip6_address_clear_host_address ((struct in6_addr *) dst, (const struct in6_addr *) network, plen);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+/******************************************************************
+ * NMLinkType functions
+ ******************************************************************/
+
+typedef struct {
+	const NMLinkType nm_type;
+	const char *type_string;
+
+	/* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
+	 * should only be specified if the device type can be created without
+	 * additional parameters, and if the device type can be determined from
+	 * the rtnl_type.  eg, tun/tap should not be specified since both
+	 * tun and tap devices use "tun", and InfiniBand should not be
+	 * specified because a PKey is required at creation. Drivers set this
+	 * value from their 'struct rtnl_link_ops' structure.
+	 */
+	const char *rtnl_type;
+
+	/* uevent DEVTYPE where applicable, from /sys/class/net/<ifname>/uevent;
+	 * drivers set this value from their SET_NETDEV_DEV() call and the
+	 * 'struct device_type' name member.
+	 */
+	const char *devtype;
+} LinkDesc;
+
+static const LinkDesc linktypes[] = {
+	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
+	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
+
+	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
+	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
+	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
+	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
+	{ NM_LINK_TYPE_WWAN_ETHERNET, "wwan",        NULL,          "wwan" },
+	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
+
+	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
+	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
+	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
+	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
+	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
+	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
+	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
+	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
+	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
+	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
+	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
+	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
+	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
+	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
+
+	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
+	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
+	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
+};
+
+static const char *
+nm_link_type_to_rtnl_type_string (NMLinkType type)
+{
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+		if (type == linktypes[i].nm_type)
+			return linktypes[i].rtnl_type;
+	}
+	g_return_val_if_reached (NULL);
+}
+
+const char *
+nm_link_type_to_string (NMLinkType type)
+{
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+		if (type == linktypes[i].nm_type)
+			return linktypes[i].type_string;
+	}
+	g_return_val_if_reached (NULL);
+}
+
+/******************************************************************
+ * Utilities
+ ******************************************************************/
+
+/* _timestamp_nl_to_ms:
+ * @timestamp_nl: a timestamp from ifa_cacheinfo.
+ * @monotonic_ms: *now* in CLOCK_MONOTONIC. Needed to estimate the current
+ * uptime and how often timestamp_nl wrapped.
+ *
+ * Convert the timestamp from ifa_cacheinfo to CLOCK_MONOTONIC milliseconds.
+ * The ifa_cacheinfo fields tstamp and cstamp contains timestamps that counts
+ * with in 1/100th of a second of clock_gettime(CLOCK_MONOTONIC). However,
+ * the uint32 counter wraps every 497 days of uptime, so we have to compensate
+ * for that. */
+static gint64
+_timestamp_nl_to_ms (guint32 timestamp_nl, gint64 monotonic_ms)
+{
+	const gint64 WRAP_INTERVAL = (((gint64) G_MAXUINT32) + 1) * (1000 / 100);
+	gint64 timestamp_nl_ms;
+
+	/* convert timestamp from 1/100th of a second to msec. */
+	timestamp_nl_ms = ((gint64) timestamp_nl) * (1000 / 100);
+
+	/* timestamp wraps every 497 days. Try to compensate for that.*/
+	if (timestamp_nl_ms > monotonic_ms) {
+		/* timestamp_nl_ms is in the future. Truncate it to *now* */
+		timestamp_nl_ms = monotonic_ms;
+	} else if (monotonic_ms >= WRAP_INTERVAL) {
+		timestamp_nl_ms += (monotonic_ms / WRAP_INTERVAL) * WRAP_INTERVAL;
+		if (timestamp_nl_ms > monotonic_ms)
+			timestamp_nl_ms -= WRAP_INTERVAL;
+	}
+
+	return timestamp_nl_ms;
+}
+
+static guint32
+_rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out_now_nm)
+{
+	guint32 last_update_time = rtnl_addr_get_last_update_time ((struct rtnl_addr *) rtnladdr);
+	struct timespec tp;
+	gint64 now_nl, now_nm, result;
+	int err;
+
+	/* timestamp is unset. Default to 1. */
+	if (!last_update_time) {
+		if (out_now_nm)
+			*out_now_nm = 0;
+		return 1;
+	}
+
+	/* do all the calculations in milliseconds scale */
+
+	err = clock_gettime (CLOCK_MONOTONIC, &tp);
+	g_assert (err == 0);
+	now_nm = nm_utils_get_monotonic_timestamp_ms ();
+	now_nl = (((gint64) tp.tv_sec) * ((gint64) 1000)) +
+	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
+
+	result = now_nm - (now_nl - _timestamp_nl_to_ms (last_update_time, now_nl));
+
+	if (out_now_nm)
+		*out_now_nm = now_nm / 1000;
+
+	/* converting the last_update_time into nm_utils_get_monotonic_timestamp_ms() scale is
+	 * a good guess but fails in the following situations:
+	 *
+	 * - If the address existed before start of the process, the timestamp in nm scale would
+	 *   be negative or zero. In this case we default to 1.
+	 * - during hibernation, the CLOCK_MONOTONIC/last_update_time drifts from
+	 *   nm_utils_get_monotonic_timestamp_ms() scale.
+	 */
+	if (result <= 1000)
+		return 1;
+
+	if (result > now_nm)
+		return now_nm / 1000;
+
+	return result / 1000;
+}
+
+static guint32
+_extend_lifetime (guint32 lifetime, guint32 seconds)
+{
+	guint64 v;
+
+	if (   lifetime == NM_PLATFORM_LIFETIME_PERMANENT
+	    || seconds == 0)
+		return lifetime;
+
+	v = (guint64) lifetime + (guint64) seconds;
+	return MIN (v, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+}
+
+/* The rtnl_addr object contains relative lifetimes @valid and @preferred
+ * that count in seconds, starting from the moment when the kernel constructed
+ * the netlink message.
+ *
+ * There is also a field rtnl_addr_last_update_time(), which is the absolute
+ * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
+ * was modified (wrapping every 497 days).
+ * Immediately at the time when the address was last modified, #NOW and @last_update_time
+ * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
+ * However, this is not true in general. As time goes by, whenever kernel sends a new address
+ * via netlink, the lifetimes keep counting down.
+ **/
+static void
+_nlo_rtnl_addr_get_lifetimes (const struct rtnl_addr *rtnladdr,
+                              guint32 *out_timestamp,
+                              guint32 *out_lifetime,
+                              guint32 *out_preferred)
+{
+	guint32 timestamp = 0;
+	gint32 now;
+	guint32 lifetime = rtnl_addr_get_valid_lifetime ((struct rtnl_addr *) rtnladdr);
+	guint32 preferred = rtnl_addr_get_preferred_lifetime ((struct rtnl_addr *) rtnladdr);
+
+	if (   lifetime != NM_PLATFORM_LIFETIME_PERMANENT
+	    || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
+		if (preferred > lifetime)
+			preferred = lifetime;
+		timestamp = _rtnl_addr_last_update_time_to_nm (rtnladdr, &now);
+
+		if (now == 0) {
+			/* strange. failed to detect the last-update time and assumed that timestamp is 1. */
+			nm_assert (timestamp == 1);
+			now = nm_utils_get_monotonic_timestamp_s ();
+		}
+		if (timestamp < now) {
+			guint32 diff = now - timestamp;
+
+			lifetime = _extend_lifetime (lifetime, diff);
+			preferred = _extend_lifetime (preferred, diff);
+		} else
+			nm_assert (timestamp == now);
+	}
+	*out_timestamp = timestamp;
+	*out_lifetime = lifetime;
+	*out_preferred = preferred;
+}
+
+/******************************************************************
  * libnl unility functions and wrappers
  ******************************************************************/
 
@@ -513,50 +841,6 @@ errout:
 
 /******************************************************************/
 
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-static int _support_user_ipv6ll = 0;
-#define _support_user_ipv6ll_still_undecided() (G_UNLIKELY (_support_user_ipv6ll == 0))
-#else
-#define _support_user_ipv6ll_still_undecided() (FALSE)
-#endif
-
-static gboolean
-_support_user_ipv6ll_get (void)
-{
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	if (_support_user_ipv6ll_still_undecided ()) {
-		_support_user_ipv6ll = -1;
-		_LOG2W ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
-	} else
-		return _support_user_ipv6ll > 0;
-#endif
-
-	return FALSE;
-}
-
-static void
-_support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
-{
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	/* If we ever see a link with valid IPv6 link-local address
-	 * generation modes, the kernel supports it.
-	 */
-	if (_support_user_ipv6ll_still_undecided ()) {
-		uint8_t mode;
-
-		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
-			_support_user_ipv6ll = 1;
-			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
-		} else {
-			_support_user_ipv6ll = -1;
-			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
-		}
-	}
-#endif
-}
-
-/******************************************************************/
-
 static int _support_kernel_extended_ifa_flags = 0;
 
 #define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == 0))
@@ -594,127 +878,6 @@ _support_kernel_extended_ifa_flags_get (void)
 		_support_kernel_extended_ifa_flags = -1;
 	}
 	return _support_kernel_extended_ifa_flags > 0;
-}
-
-/******************************************************************
- * Object type specific utilities
- ******************************************************************/
-
-static guint
-_nm_ip_config_source_to_rtprot (NMIPConfigSource source)
-{
-	switch (source) {
-	case NM_IP_CONFIG_SOURCE_UNKNOWN:
-		return RTPROT_UNSPEC;
-	case NM_IP_CONFIG_SOURCE_KERNEL:
-	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
-		return RTPROT_KERNEL;
-	case NM_IP_CONFIG_SOURCE_DHCP:
-		return RTPROT_DHCP;
-	case NM_IP_CONFIG_SOURCE_RDISC:
-		return RTPROT_RA;
-
-	default:
-		return RTPROT_STATIC;
-	}
-}
-
-static NMIPConfigSource
-_nm_ip_config_source_from_rtprot (guint rtprot)
-{
-	switch (rtprot) {
-	case RTPROT_UNSPEC:
-		return NM_IP_CONFIG_SOURCE_UNKNOWN;
-	case RTPROT_KERNEL:
-		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
-	case RTPROT_REDIRECT:
-		return NM_IP_CONFIG_SOURCE_KERNEL;
-	case RTPROT_RA:
-		return NM_IP_CONFIG_SOURCE_RDISC;
-	case RTPROT_DHCP:
-		return NM_IP_CONFIG_SOURCE_DHCP;
-
-	default:
-		return NM_IP_CONFIG_SOURCE_USER;
-	}
-}
-
-/******************************************************************/
-
-typedef struct {
-	const NMLinkType nm_type;
-	const char *type_string;
-
-	/* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
-	 * should only be specified if the device type can be created without
-	 * additional parameters, and if the device type can be determined from
-	 * the rtnl_type.  eg, tun/tap should not be specified since both
-	 * tun and tap devices use "tun", and InfiniBand should not be
-	 * specified because a PKey is required at creation. Drivers set this
-	 * value from their 'struct rtnl_link_ops' structure.
-	 */
-	const char *rtnl_type;
-
-	/* uevent DEVTYPE where applicable, from /sys/class/net/<ifname>/uevent;
-	 * drivers set this value from their SET_NETDEV_DEV() call and the
-	 * 'struct device_type' name member.
-	 */
-	const char *devtype;
-} LinkDesc;
-
-static const LinkDesc linktypes[] = {
-	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
-	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
-
-	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
-	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
-	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
-	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
-	{ NM_LINK_TYPE_WWAN_ETHERNET, "wwan",        NULL,          "wwan" },
-	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
-
-	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
-	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
-	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
-	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
-	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
-	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
-	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
-	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
-	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
-	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
-	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
-	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
-	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
-	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
-
-	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
-	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
-	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
-};
-
-static const char *
-nm_link_type_to_rtnl_type_string (NMLinkType type)
-{
-	int i;
-
-	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-		if (type == linktypes[i].nm_type)
-			return linktypes[i].rtnl_type;
-	}
-	g_return_val_if_reached (NULL);
-}
-
-const char *
-nm_link_type_to_string (NMLinkType type)
-{
-	int i;
-
-	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-		if (type == linktypes[i].nm_type)
-			return linktypes[i].type_string;
-	}
-	g_return_val_if_reached (NULL);
 }
 
 /******************************************************************
@@ -1094,143 +1257,6 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	obj_priv->netlink.is_in_netlink = TRUE;
 
 	return TRUE;
-}
-
-/* _timestamp_nl_to_ms:
- * @timestamp_nl: a timestamp from ifa_cacheinfo.
- * @monotonic_ms: *now* in CLOCK_MONOTONIC. Needed to estimate the current
- * uptime and how often timestamp_nl wrapped.
- *
- * Convert the timestamp from ifa_cacheinfo to CLOCK_MONOTONIC milliseconds.
- * The ifa_cacheinfo fields tstamp and cstamp contains timestamps that counts
- * with in 1/100th of a second of clock_gettime(CLOCK_MONOTONIC). However,
- * the uint32 counter wraps every 497 days of uptime, so we have to compensate
- * for that. */
-static gint64
-_timestamp_nl_to_ms (guint32 timestamp_nl, gint64 monotonic_ms)
-{
-	const gint64 WRAP_INTERVAL = (((gint64) G_MAXUINT32) + 1) * (1000 / 100);
-	gint64 timestamp_nl_ms;
-
-	/* convert timestamp from 1/100th of a second to msec. */
-	timestamp_nl_ms = ((gint64) timestamp_nl) * (1000 / 100);
-
-	/* timestamp wraps every 497 days. Try to compensate for that.*/
-	if (timestamp_nl_ms > monotonic_ms) {
-		/* timestamp_nl_ms is in the future. Truncate it to *now* */
-		timestamp_nl_ms = monotonic_ms;
-	} else if (monotonic_ms >= WRAP_INTERVAL) {
-		timestamp_nl_ms += (monotonic_ms / WRAP_INTERVAL) * WRAP_INTERVAL;
-		if (timestamp_nl_ms > monotonic_ms)
-			timestamp_nl_ms -= WRAP_INTERVAL;
-	}
-
-	return timestamp_nl_ms;
-}
-
-static guint32
-_rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out_now_nm)
-{
-	guint32 last_update_time = rtnl_addr_get_last_update_time ((struct rtnl_addr *) rtnladdr);
-	struct timespec tp;
-	gint64 now_nl, now_nm, result;
-	int err;
-
-	/* timestamp is unset. Default to 1. */
-	if (!last_update_time) {
-		if (out_now_nm)
-			*out_now_nm = 0;
-		return 1;
-	}
-
-	/* do all the calculations in milliseconds scale */
-
-	err = clock_gettime (CLOCK_MONOTONIC, &tp);
-	g_assert (err == 0);
-	now_nm = nm_utils_get_monotonic_timestamp_ms ();
-	now_nl = (((gint64) tp.tv_sec) * ((gint64) 1000)) +
-	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
-
-	result = now_nm - (now_nl - _timestamp_nl_to_ms (last_update_time, now_nl));
-
-	if (out_now_nm)
-		*out_now_nm = now_nm / 1000;
-
-	/* converting the last_update_time into nm_utils_get_monotonic_timestamp_ms() scale is
-	 * a good guess but fails in the following situations:
-	 *
-	 * - If the address existed before start of the process, the timestamp in nm scale would
-	 *   be negative or zero. In this case we default to 1.
-	 * - during hibernation, the CLOCK_MONOTONIC/last_update_time drifts from
-	 *   nm_utils_get_monotonic_timestamp_ms() scale.
-	 */
-	if (result <= 1000)
-		return 1;
-
-	if (result > now_nm)
-		return now_nm / 1000;
-
-	return result / 1000;
-}
-
-static guint32
-_extend_lifetime (guint32 lifetime, guint32 seconds)
-{
-	guint64 v;
-
-	if (   lifetime == NM_PLATFORM_LIFETIME_PERMANENT
-	    || seconds == 0)
-		return lifetime;
-
-	v = (guint64) lifetime + (guint64) seconds;
-	return MIN (v, NM_PLATFORM_LIFETIME_PERMANENT - 1);
-}
-
-/* The rtnl_addr object contains relative lifetimes @valid and @preferred
- * that count in seconds, starting from the moment when the kernel constructed
- * the netlink message.
- *
- * There is also a field rtnl_addr_last_update_time(), which is the absolute
- * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
- * was modified (wrapping every 497 days).
- * Immediately at the time when the address was last modified, #NOW and @last_update_time
- * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
- * However, this is not true in general. As time goes by, whenever kernel sends a new address
- * via netlink, the lifetimes keep counting down.
- **/
-static void
-_nlo_rtnl_addr_get_lifetimes (const struct rtnl_addr *rtnladdr,
-                              guint32 *out_timestamp,
-                              guint32 *out_lifetime,
-                              guint32 *out_preferred)
-{
-	guint32 timestamp = 0;
-	gint32 now;
-	guint32 lifetime = rtnl_addr_get_valid_lifetime ((struct rtnl_addr *) rtnladdr);
-	guint32 preferred = rtnl_addr_get_preferred_lifetime ((struct rtnl_addr *) rtnladdr);
-
-	if (   lifetime != NM_PLATFORM_LIFETIME_PERMANENT
-	    || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
-		if (preferred > lifetime)
-			preferred = lifetime;
-		timestamp = _rtnl_addr_last_update_time_to_nm (rtnladdr, &now);
-
-		if (now == 0) {
-			/* strange. failed to detect the last-update time and assumed that timestamp is 1. */
-			nm_assert (timestamp == 1);
-			now = nm_utils_get_monotonic_timestamp_s ();
-		}
-		if (timestamp < now) {
-			guint32 diff = now - timestamp;
-
-			lifetime = _extend_lifetime (lifetime, diff);
-			preferred = _extend_lifetime (preferred, diff);
-		} else
-			nm_assert (timestamp == now);
-	}
-	*out_timestamp = timestamp;
-	*out_lifetime = lifetime;
-	*out_preferred = preferred;
 }
 
 gboolean
@@ -4303,24 +4329,6 @@ static GArray *
 ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, flags);
-}
-
-static void
-clear_host_address (int family, const void *network, int plen, void *dst)
-{
-	g_return_if_fail (plen == (guint8)plen);
-	g_return_if_fail (network);
-
-	switch (family) {
-	case AF_INET:
-		*((in_addr_t *) dst) = nm_utils_ip4_address_clear_host_address (*((in_addr_t *) network), plen);
-		break;
-	case AF_INET6:
-		nm_utils_ip6_address_clear_host_address ((struct in6_addr *) dst, (const struct in6_addr *) network, plen);
-		break;
-	default:
-		g_assert_not_reached ();
-	}
 }
 
 static struct nl_object *
