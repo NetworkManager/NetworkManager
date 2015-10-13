@@ -119,7 +119,6 @@ typedef enum {
 	DELAYED_ACTION_TYPE_MAX                         = __DELAYED_ACTION_TYPE_MAX -1,
 } DelayedActionType;
 
-static gboolean tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
 static void delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data);
 static gboolean delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink);
 static void do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean handle_delayed_action);
@@ -916,7 +915,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean *c
 			NMPlatformTunProperties props;
 			guint flags;
 
-			if (tun_get_properties_ifname (platform, rtnl_link_get_name (rtnllink), &props)) {
+			if (nm_platform_tun_get_properties_ifname (platform, rtnl_link_get_name (rtnllink), &props)) {
 				if (!g_strcmp0 (props.mode, "tap"))
 					return NM_LINK_TYPE_TAP;
 				if (!g_strcmp0 (props.mode, "tun"))
@@ -3546,76 +3545,6 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 
 /******************************************************************/
 
-static gboolean
-tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props)
-{
-	char *path, *val;
-	gboolean success = TRUE;
-
-	g_return_val_if_fail (props, FALSE);
-
-	memset (props, 0, sizeof (*props));
-	props->owner = -1;
-	props->group = -1;
-
-	if (!ifname || !nm_utils_iface_valid_name (ifname))
-		return FALSE;
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
-
-	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (platform, path);
-	g_free (path);
-	if (val) {
-		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
-		if (errno)
-			success = FALSE;
-		g_free (val);
-	} else
-		success = FALSE;
-
-	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (platform, path);
-	g_free (path);
-	if (val) {
-		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
-		if (errno)
-			success = FALSE;
-		g_free (val);
-	} else
-		success = FALSE;
-
-	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (platform, path);
-	g_free (path);
-	if (val) {
-		gint64 flags;
-
-		flags = _nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
-		if (!errno) {
-#ifndef IFF_MULTI_QUEUE
-			const int IFF_MULTI_QUEUE = 0x0100;
-#endif
-			props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
-			props->no_pi = !!(flags & IFF_NO_PI);
-			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
-			props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
-		} else
-			success = FALSE;
-		g_free (val);
-	} else
-		success = FALSE;
-
-	return success;
-}
-
-static gboolean
-tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *props)
-{
-	return tun_get_properties_ifname (platform, nm_platform_link_get_name (platform, ifindex), props);
-}
-
-/******************************************************************/
-
 static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
 	[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
 #ifdef MACVLAN_FLAG_NOPROMISC
@@ -5120,7 +5049,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->infiniband_get_info = infiniband_get_info;
 
 	platform_class->veth_get_properties = veth_get_properties;
-	platform_class->tun_get_properties = tun_get_properties;
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
 	platform_class->gre_get_properties = gre_get_properties;

@@ -715,12 +715,6 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 }
 
 static gboolean
-tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *props)
-{
-	return FALSE;
-}
-
-static gboolean
 macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProperties *props)
 {
 	return FALSE;
@@ -1470,7 +1464,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->infiniband_get_info = infiniband_get_info;
 
 	platform_class->veth_get_properties = veth_get_properties;
-	platform_class->tun_get_properties = tun_get_properties;
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
 	platform_class->gre_get_properties = gre_get_properties;

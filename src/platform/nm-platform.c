@@ -28,6 +28,7 @@
 #include <string.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
+#include <linux/if_tun.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -1620,6 +1621,70 @@ nm_platform_veth_get_properties (NMPlatform *self, int ifindex, NMPlatformVethPr
 }
 
 gboolean
+nm_platform_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMPlatformTunProperties *props)
+{
+	char *path, *val;
+	gboolean success = TRUE;
+
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (props, FALSE);
+
+	memset (props, 0, sizeof (*props));
+	props->owner = -1;
+	props->group = -1;
+
+	if (!ifname || !nm_utils_iface_valid_name (ifname))
+		return FALSE;
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+
+	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
+	val = nm_platform_sysctl_get (self, path);
+	g_free (path);
+	if (val) {
+		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
+		if (errno)
+			success = FALSE;
+		g_free (val);
+	} else
+		success = FALSE;
+
+	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
+	val = nm_platform_sysctl_get (self, path);
+	g_free (path);
+	if (val) {
+		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
+		if (errno)
+			success = FALSE;
+		g_free (val);
+	} else
+		success = FALSE;
+
+	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
+	val = nm_platform_sysctl_get (self, path);
+	g_free (path);
+	if (val) {
+		gint64 flags;
+
+		flags = _nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
+		if (!errno) {
+#ifndef IFF_MULTI_QUEUE
+			const int IFF_MULTI_QUEUE = 0x0100;
+#endif
+			props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
+			props->no_pi = !!(flags & IFF_NO_PI);
+			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
+			props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
+		} else
+			success = FALSE;
+		g_free (val);
+	} else
+		success = FALSE;
+
+	return success;
+}
+
+gboolean
 nm_platform_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
@@ -1627,7 +1692,7 @@ nm_platform_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProp
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
 
-	return klass->tun_get_properties (self, ifindex, props);
+	return nm_platform_tun_get_properties_ifname (self, nm_platform_link_get_name (self, ifindex), props);
 }
 
 gboolean
