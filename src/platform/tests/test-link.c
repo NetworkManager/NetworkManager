@@ -262,7 +262,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	/* Set slave option */
 	switch (type) {
 	case NM_LINK_TYPE_BRIDGE:
-		if (nmtst_platform_is_sysfs_writable ()) {
+		if (nmtstp_is_sysfs_writable ()) {
 			g_assert (nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, "priority", "789"));
 			value = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex, "priority");
 			g_assert_cmpstr (value, ==, "789");
@@ -341,7 +341,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	/* Set master option */
 	switch (link_type) {
 	case NM_LINK_TYPE_BRIDGE:
-		if (nmtst_platform_is_sysfs_writable ()) {
+		if (nmtstp_is_sysfs_writable ()) {
 			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "forward_delay", "789"));
 			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "forward_delay");
 			g_assert_cmpstr (value, ==, "789");
@@ -349,7 +349,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 		}
 		break;
 	case NM_LINK_TYPE_BOND:
-		if (nmtst_platform_is_sysfs_writable ()) {
+		if (nmtstp_is_sysfs_writable ()) {
 			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "mode", "active-backup"));
 			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "mode");
 			/* When reading back, the output looks slightly different. */
@@ -408,7 +408,7 @@ test_bridge (void)
 static void
 test_bond (void)
 {
-	if (nmtst_platform_is_root_test () &&
+	if (nmtstp_is_root_test () &&
 	    !g_file_test ("/proc/1/net/bonding", G_FILE_TEST_IS_DIR) &&
 	    system("modprobe --show bonding") != 0) {
 		g_test_skip ("Skipping test for bonding: bonding module not available");
@@ -519,7 +519,7 @@ test_external (void)
 	SignalData *link_changed, *link_removed;
 	int ifindex;
 
-	run_command ("ip link add %s type %s", DEVICE_NAME, "dummy");
+	nmtstp_run_command_check ("ip link add %s type %s", DEVICE_NAME, "dummy");
 	wait_signal (link_added);
 
 	g_assert (nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
@@ -543,24 +543,24 @@ test_external (void)
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
 
-	run_command ("ip link set %s up", DEVICE_NAME);
+	nmtstp_run_command_check ("ip link set %s up", DEVICE_NAME);
 	wait_signal (link_changed);
 
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
-	run_command ("ip link set %s down", DEVICE_NAME);
+	nmtstp_run_command_check ("ip link set %s down", DEVICE_NAME);
 	wait_signal (link_changed);
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 
-	run_command ("ip link set %s arp on", DEVICE_NAME);
+	nmtstp_run_command_check ("ip link set %s arp on", DEVICE_NAME);
 	wait_signal (link_changed);
 	g_assert (nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
-	run_command ("ip link set %s arp off", DEVICE_NAME);
+	nmtstp_run_command_check ("ip link set %s arp off", DEVICE_NAME);
 	wait_signal (link_changed);
 	g_assert (!nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
 
-	run_command ("ip link del %s", DEVICE_NAME);
+	nmtstp_run_command_check ("ip link del %s", DEVICE_NAME);
 	wait_signal (link_removed);
 	accept_signals (link_changed, 0, 1);
 	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
