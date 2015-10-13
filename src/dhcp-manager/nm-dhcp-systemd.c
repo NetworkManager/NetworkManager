@@ -531,7 +531,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	const uint8_t *client_id = NULL;
 	size_t client_id_len = 0;
 	struct in_addr last_addr = { 0 };
-	const char *hostname;
+	const char *hostname, *fqdn;
 	int r, i;
 	gboolean success = FALSE;
 
@@ -642,6 +642,15 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 
 		if (r < 0) {
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP hostname (%d)", iface, r);
+			goto error;
+		}
+	}
+
+	fqdn = nm_dhcp_client_get_fqdn (client);
+	if (fqdn) {
+		r = sd_dhcp_client_set_hostname (priv->client4, fqdn);
+		if (r < 0) {
+			nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP FQDN (%d)", iface, r);
 			goto error;
 		}
 	}

@@ -153,6 +153,7 @@ merge_dhclient_config (const char *iface,
                        GBytes *client_id,
                        const char *anycast_addr,
                        const char *hostname,
+                       const char *fqdn,
                        const char *orig_path,
                        GBytes **out_new_client_id,
                        GError **error)
@@ -173,7 +174,7 @@ merge_dhclient_config (const char *iface,
 		}
 	}
 
-	new = nm_dhcp_dhclient_create_config (iface, is_ip6, client_id, anycast_addr, hostname, orig_path, orig, out_new_client_id);
+	new = nm_dhcp_dhclient_create_config (iface, is_ip6, client_id, anycast_addr, hostname, fqdn, orig_path, orig, out_new_client_id);
 	g_assert (new);
 	success = g_file_set_contents (conf_file, new, -1, error);
 	g_free (new);
@@ -260,6 +261,7 @@ create_dhclient_config (const char *iface,
                         GBytes *client_id,
                         const char *dhcp_anycast_addr,
                         const char *hostname,
+                        const char *fqdn,
                         GBytes **out_new_client_id)
 {
 	char *orig = NULL, *new = NULL;
@@ -285,7 +287,7 @@ create_dhclient_config (const char *iface,
 	}
 
 	error = NULL;
-	success = merge_dhclient_config (iface, new, is_ip6, client_id, dhcp_anycast_addr, hostname, orig, out_new_client_id, &error);
+	success = merge_dhclient_config (iface, new, is_ip6, client_id, dhcp_anycast_addr, hostname, fqdn, orig, out_new_client_id, &error);
 	if (!success) {
 		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient%s configuration: %s",
 		             iface, is_ip6 ? "6" : "", error->message);
@@ -465,15 +467,17 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GBytes *client_id;
 	gs_unref_bytes GBytes *new_client_id = NULL;
-	const char *iface, *uuid, *hostname;
+	const char *iface, *uuid, *hostname, *fqdn;
 	gboolean success = FALSE;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 	client_id = nm_dhcp_client_get_client_id (client);
 	hostname = nm_dhcp_client_get_hostname (client);
+	fqdn = nm_dhcp_client_get_fqdn (client);
 
-	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, client_id, dhcp_anycast_addr, hostname, &new_client_id);
+	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, client_id, dhcp_anycast_addr,
+	                                          hostname, fqdn, &new_client_id);
 	if (priv->conf_file) {
 		if (new_client_id)
 			nm_dhcp_client_set_client_id (client, new_client_id);
@@ -499,7 +503,7 @@ ip6_start (NMDhcpClient *client,
 	uuid = nm_dhcp_client_get_uuid (client);
 	hostname = nm_dhcp_client_get_hostname (client);
 
-	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, NULL);
+	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, NULL, NULL);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP6, "(%s): error creating dhclient6 configuration file.", iface);
 		return FALSE;

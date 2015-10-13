@@ -29,6 +29,7 @@ char *nm_dhcp_dhclient_create_config (const char *interface,
                                       GBytes *client_id,
                                       const char *anycast_addr,
                                       const char *hostname,
+                                      const char *fqdn,
                                       const char *orig_path,
                                       const char *orig_contents,
                                       GBytes **out_new_client_id);
