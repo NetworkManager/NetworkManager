@@ -449,9 +449,6 @@ nm_vpn_plugin_info_list_add (GSList **list, NMVpnPluginInfo *plugin_info, GError
 gboolean
 nm_vpn_plugin_info_list_remove (GSList **list, NMVpnPluginInfo *plugin_info)
 {
-	if (!plugin_info)
-		return FALSE;
-
 	g_return_val_if_fail (list, FALSE);
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (plugin_info), FALSE);
 
@@ -618,6 +615,26 @@ nm_vpn_plugin_info_get_program (NMVpnPluginInfo *self)
 	return g_hash_table_lookup (NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->keys,
 	                            _nm_utils_strstrdictkey_static (NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION, "program"));
 }
+
+/**
+ * nm_vpn_plugin_info_supports_multiple:
+ * @self: plugin info instance
+ *
+ * Returns: %TRUE if the service supports multiple instances with different bus names, otherwise %FALSE
+ *
+ * Since: 1.2
+ */
+gboolean
+nm_vpn_plugin_info_supports_multiple (NMVpnPluginInfo *self)
+{
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), FALSE);
+
+	return g_key_file_get_boolean (NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->keyfile,
+	                               NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
+	                               "supports-multiple-connections",
+	                               NULL);
+}
+
 
 /**
  * nm_vpn_plugin_info_lookup_property:

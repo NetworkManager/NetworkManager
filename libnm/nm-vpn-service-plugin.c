@@ -53,11 +53,13 @@ typedef struct {
 	GDBusConnection *connection;
 	NMDBusVpnPlugin *dbus_vpn_service_plugin;
 	char *dbus_service_name;
+	gboolean dbus_watch_peer;
 
 	/* Temporary stuff */
 	guint connect_timer;
 	guint quit_timer;
 	guint fail_stop_id;
+	guint peer_watch_id;
 	gboolean interactive;
 
 	gboolean got_config;
@@ -88,6 +90,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_DBUS_SERVICE_NAME,
+	PROP_DBUS_WATCH_PEER,
 	PROP_STATE,
 
 	LAST_PROP
@@ -130,7 +133,7 @@ nm_vpn_service_plugin_get_connection (NMVpnServicePlugin *plugin)
 	return connection;
 }
 
-NMVpnServiceState
+static NMVpnServiceState
 nm_vpn_service_plugin_get_state (NMVpnServicePlugin *plugin)
 {
 	g_return_val_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin), NM_VPN_SERVICE_STATE_UNKNOWN);
@@ -138,7 +141,7 @@ nm_vpn_service_plugin_get_state (NMVpnServicePlugin *plugin)
 	return NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin)->state;
 }
 
-void
+static void
 nm_vpn_service_plugin_set_state (NMVpnServicePlugin *plugin,
                                  NMVpnServiceState state)
 {
@@ -168,27 +171,36 @@ nm_vpn_service_plugin_set_login_banner (NMVpnServicePlugin *plugin,
 	nmdbus_vpn_plugin_emit_login_banner (priv->dbus_vpn_service_plugin, banner);
 }
 
+static void
+_emit_failure (NMVpnServicePlugin *plugin,
+               NMVpnPluginFailure reason)
+{
+	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
+
+	g_signal_emit (plugin, signals[FAILURE], 0, reason);
+	nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
+}
+
 void
 nm_vpn_service_plugin_failure (NMVpnServicePlugin *plugin,
                                NMVpnPluginFailure reason)
 {
-	NMVpnServicePluginPrivate *priv;
-
 	g_return_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin));
 
-	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
-	g_signal_emit (plugin, signals[FAILURE], 0, reason);
-	nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
+	_emit_failure (plugin, reason);
+	nm_vpn_service_plugin_disconnect (plugin, NULL);
 }
 
 gboolean
 nm_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin, GError **err)
 {
+	NMVpnServicePluginPrivate *priv;
 	gboolean ret = FALSE;
 	NMVpnServiceState state;
 
 	g_return_val_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin), FALSE);
 
+	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 	state = nm_vpn_service_plugin_get_state (plugin);
 	switch (state) {
 	case NM_VPN_SERVICE_STATE_STOPPING:
@@ -206,6 +218,8 @@ nm_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin, GError **err)
 		             "Could not process the request because no VPN connection was active.");
 		break;
 	case NM_VPN_SERVICE_STATE_STARTING:
+		_emit_failure (plugin, NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
+		/* fallthru */
 	case NM_VPN_SERVICE_STATE_STARTED:
 		nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPING);
 		ret = NM_VPN_SERVICE_PLUGIN_GET_CLASS (plugin)->disconnect (plugin, err);
@@ -414,6 +428,37 @@ connect_timer_start (NMVpnServicePlugin *plugin)
 }
 
 static void
+peer_vanished (GDBusConnection *connection,
+               const gchar *sender_name,
+               const gchar *object_path,
+               const gchar *interface_name,
+               const gchar *signal_name,
+               GVariant *parameters,
+               gpointer user_data)
+{
+	nm_vpn_service_plugin_disconnect (NM_VPN_SERVICE_PLUGIN (user_data), NULL);
+}
+
+static guint
+watch_peer (NMVpnServicePlugin *plugin,
+            GDBusMethodInvocation *context)
+{
+	GDBusConnection *connection = g_dbus_method_invocation_get_connection (context);
+	const gchar *peer = g_dbus_message_get_sender (g_dbus_method_invocation_get_message (context));
+
+	return g_dbus_connection_signal_subscribe (connection,
+	                                           "org.freedesktop.DBus",
+	                                           "org.freedesktop.DBus",
+	                                           "NameOwnerChanged",
+	                                           "/org/freedesktop/DBus",
+	                                           peer,
+	                                           G_DBUS_SIGNAL_FLAGS_NONE,
+	                                           peer_vanished,
+	                                           plugin,
+	                                           NULL);
+}
+
+static void
 _connect_generic (NMVpnServicePlugin *plugin,
                   GDBusMethodInvocation *context,
                   GVariant *properties,
@@ -443,6 +488,7 @@ _connect_generic (NMVpnServicePlugin *plugin,
 		                                       "Invalid connection: (%d) %s",
 		                                       error->code, error->message);
 		g_clear_error (&error);
+		return;
 	}
 
 	priv->interactive = FALSE;
@@ -455,6 +501,9 @@ _connect_generic (NMVpnServicePlugin *plugin,
 	}
 
 	nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
+
+	if (priv->dbus_watch_peer)
+		priv->peer_watch_id = watch_peer (plugin, context);
 
 	if (details) {
 		priv->interactive = TRUE;
@@ -993,6 +1042,10 @@ set_property (GObject *object, guint prop_id,
 		/* Construct-only */
 		priv->dbus_service_name = g_value_dup_string (value);
 		break;
+	case PROP_DBUS_WATCH_PEER:
+		/* Construct-only */
+		priv->dbus_watch_peer = g_value_get_boolean (value);
+		break;
 	case PROP_STATE:
 		nm_vpn_service_plugin_set_state (NM_VPN_SERVICE_PLUGIN (object),
 		                             (NMVpnServiceState) g_value_get_enum (value));
@@ -1012,6 +1065,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_DBUS_SERVICE_NAME:
 		g_value_set_string (value, priv->dbus_service_name);
+		break;
+	case PROP_DBUS_WATCH_PEER:
+		g_value_set_boolean (value, priv->dbus_watch_peer);
 		break;
 	case PROP_STATE:
 		g_value_set_enum (value, nm_vpn_service_plugin_get_state (NM_VPN_SERVICE_PLUGIN (object)));
@@ -1076,7 +1132,15 @@ state_changed (NMVpnServicePlugin *plugin, NMVpnServiceState state)
 		nm_clear_g_source (&priv->fail_stop_id);
 		break;
 	case NM_VPN_SERVICE_STATE_STOPPED:
-		schedule_quit_timer (plugin);
+		if (priv->dbus_watch_peer)
+			nm_vpn_service_plugin_emit_quit (plugin);
+		else
+			schedule_quit_timer (plugin);
+		if (priv->peer_watch_id) {
+			g_dbus_connection_signal_unsubscribe (nm_vpn_service_plugin_get_connection (plugin),
+			                                      priv->peer_watch_id);
+			priv->peer_watch_id = 0;
+		}
 		break;
 	default:
 		/* Clean up all timers we might have set up. */
@@ -1120,19 +1184,18 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMVpnServicePlugin:state:
+	 * NMVpnServicePlugin:service-name:
 	 *
-	 * The state of the plugin.
+	 * The D-Bus service name of this plugin.
 	 *
 	 * Since: 1.2
 	 */
 	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_VPN_SERVICE_PLUGIN_STATE, "", "",
-		                    NM_TYPE_VPN_SERVICE_STATE,
-		                    NM_VPN_SERVICE_STATE_INIT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		(object_class, PROP_DBUS_WATCH_PEER,
+		 g_param_spec_boolean (NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
 	signals[STATE_CHANGED] =

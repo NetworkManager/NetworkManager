@@ -324,8 +324,6 @@ libNetworkManager_la_SOURCES = \
 	vpn-manager/nm-vpn-connection.h \
 	vpn-manager/nm-vpn-manager.c \
 	vpn-manager/nm-vpn-manager.h \
-	vpn-manager/nm-vpn-service.c \
-	vpn-manager/nm-vpn-service.h \
 	\
 	nm-activation-request.c \
 	nm-activation-request.h \

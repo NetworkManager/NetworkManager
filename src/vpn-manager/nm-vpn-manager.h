@@ -48,8 +48,4 @@ gboolean nm_vpn_manager_activate_connection (NMVpnManager *manager,
                                              NMVpnConnection *vpn,
                                              GError **error);
 
-gboolean nm_vpn_manager_deactivate_connection (NMVpnManager *manager,
-                                               NMVpnConnection *connection,
-                                               NMVpnConnectionStateReason reason);
-
 #endif /* __NETWORKMANAGER_VPN_MANAGER_H__ */
