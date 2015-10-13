@@ -62,6 +62,7 @@
 #include "nm-setting-tun.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-vxlan.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless-security.h"

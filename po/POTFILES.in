@@ -75,6 +75,7 @@ libnm-core/nm-setting-team-port.c
 libnm-core/nm-setting-tun.c
 libnm-core/nm-setting-vlan.c
 libnm-core/nm-setting-vpn.c
+libnm-core/nm-setting-vxlan.c
 libnm-core/nm-setting-wimax.c
 libnm-core/nm-setting-wired.c
 libnm-core/nm-setting-wireless-security.c
