@@ -567,9 +567,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->flags & ~(NM_VLAN_FLAG_REORDER_HEADERS |
-	                    NM_VLAN_FLAG_GVRP |
-	                    NM_VLAN_FLAG_LOOSE_BINDING)) {
+	if (priv->flags & ~NM_VLAN_FLAGS_ALL) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -778,7 +776,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
 	 * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
 	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
-	 * master device's operating state).
+	 * master device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
+	 * protocol).
 	 *
 	 * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,
 	 * but it used to be 0. To preserve backward compatibility, the default-value
@@ -787,8 +786,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: flags
-	 * variable: REORDER_HDR, GVRP, VLAN_FLAGS
-	 * values: "yes or "no" for REORDER_HDR and GVRP; "LOOSE_BINDING" for VLAN_FLAGS
+	 * variable: REORDER_HDR, GVRP, MVRP, VLAN_FLAGS
+	 * values: "yes or "no" for REORDER_HDR, GVRP and MVRP; "LOOSE_BINDING" for VLAN_FLAGS
 	 * description: VLAN flags.
 	 * ---end---
 	 */

@@ -1270,6 +1270,8 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
 		svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
 
+	svSetValue (ifcfg, "MVRP", vlan_flags & NM_VLAN_FLAG_MVRP ? "yes" : "no", FALSE);
+
 	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
 	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", tmp, FALSE);
 	g_free (tmp);

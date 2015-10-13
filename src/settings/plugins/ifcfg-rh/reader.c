@@ -4666,6 +4666,9 @@ make_vlan_setting (shvarFile *ifcfg,
 			vlan_flags |= NM_VLAN_FLAG_LOOSE_BINDING;
 	}
 
+	if (svGetValueBoolean (ifcfg, "MVRP", FALSE))
+		vlan_flags |= NM_VLAN_FLAG_MVRP;
+
 	g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, vlan_flags, NULL);
 	g_free (value);
 

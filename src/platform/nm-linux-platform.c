@@ -3220,7 +3220,7 @@ vlan_add (NMPlatform *platform,
 {
 	auto_nl_object struct rtnl_link *rtnllink = (struct rtnl_link *) build_rtnl_link (0, name, NM_LINK_TYPE_VLAN);
 	unsigned int kernel_flags;
-	unsigned int all_flags = VLAN_FLAG_REORDER_HDR | VLAN_FLAG_GVRP | VLAN_FLAG_LOOSE_BINDING;
+	unsigned int all_flags = NM_VLAN_FLAGS_ALL;
 
 	kernel_flags = 0;
 	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
@@ -3229,6 +3229,9 @@ vlan_add (NMPlatform *platform,
 		kernel_flags |= VLAN_FLAG_GVRP;
 	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
 		kernel_flags |= VLAN_FLAG_LOOSE_BINDING;
+#define VLAN_FLAG_MVRP 0x8
+	if (vlan_flags & NM_VLAN_FLAG_MVRP)
+		kernel_flags |= VLAN_FLAG_MVRP;
 
 	rtnl_link_set_link (rtnllink, parent);
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);

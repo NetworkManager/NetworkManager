@@ -79,6 +79,8 @@ typedef enum {
  * @NM_VLAN_FLAG_LOOSE_BINDING: indicates that this interface's operating
  *  state is tied to the underlying network interface but other details
  *  (like routing) are not.
+ * @NM_VLAN_FLAG_MVRP: indicates that this interface should use MVRP to register
+ *  itself with it's switch
  *
  * #NMVlanFlags values control the behavior of the VLAN interface.
  **/
@@ -86,9 +88,15 @@ typedef enum { /*< flags >*/
 	NM_VLAN_FLAG_REORDER_HEADERS = 0x1,
 	NM_VLAN_FLAG_GVRP            = 0x2,
 	NM_VLAN_FLAG_LOOSE_BINDING   = 0x4,
+	NM_VLAN_FLAG_MVRP            = 0x8,
 
 	/* NOTE: if adding flags update nm-setting-vlan.c::verify() */
 } NMVlanFlags;
+
+#define NM_VLAN_FLAGS_ALL  (NM_VLAN_FLAG_REORDER_HEADERS | \
+                            NM_VLAN_FLAG_GVRP | \
+                            NM_VLAN_FLAG_LOOSE_BINDING | \
+                            NM_VLAN_FLAG_MVRP)
 
 GType nm_setting_vlan_get_type (void);
 NMSetting *nm_setting_vlan_new (void);
