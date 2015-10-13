@@ -41,8 +41,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_SETTING_NAME "ipv4"
 
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID     "dhcp-client-id"
-
 #define NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
+#define NM_SETTING_IP4_CONFIG_DHCP_FQDN          "dhcp-fqdn"
 
 /**
  * NM_SETTING_IP4_CONFIG_METHOD_AUTO:
@@ -106,6 +106,8 @@ NMSetting *nm_setting_ip4_config_new (void);
 const char *nm_setting_ip4_config_get_dhcp_client_id     (NMSettingIP4Config *setting);
 NM_AVAILABLE_IN_1_2
 int nm_setting_ip4_config_get_dhcp_timeout               (NMSettingIP4Config *setting);
+NM_AVAILABLE_IN_1_2
+const char *nm_setting_ip4_config_get_dhcp_fqdn          (NMSettingIP4Config *setting);
 
 G_END_DECLS
 

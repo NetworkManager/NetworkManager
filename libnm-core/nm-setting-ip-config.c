@@ -2595,6 +2595,8 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	 *
 	 * If the #NMSettingIPConfig:dhcp-send-hostname property is %TRUE, then the
 	 * specified name will be sent to the DHCP server when acquiring a lease.
+	 * This property and #NMSettingIP4Config:dhcp-fqdn are mutually exclusive and
+	 * cannot be set at the same time.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,
