@@ -854,6 +854,7 @@ Otherwise the SSID would not be found and the connection attempt would fail.
 .RE
 .TP
 .B wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]
+.B [password <password>]
 .br
 Create a Wi-Fi hotspot. The command creates a hotspot connection profile according to
 Wi-Fi device capabilities and activates it on the device. The hotspot is secured with WPA
@@ -873,6 +874,10 @@ Parameters of the hotspot can be influenced by the optional parameters:
 \(en Wi-Fi band to use
 .IP \fIchannel\fP 10
 \(en Wi-Fi channel to use
+.IP \fIpassword\fP 10
+\(en password to use for the created hotspot. If not provided,
+nmcli will generate a password. The password is either WPA
+pre-shared key or WEP key.
 .RE
 .TP
 .B wifi rescan [ifname <ifname>] [[ssid <SSID>] ...]

@@ -1346,7 +1346,7 @@ _nmcli()
                                     ;;
                                 h|ho|hot|hots|hotsp|hotspo|hotspot)
                                     _nmcli_array_delete_at words 0 2
-                                    OPTIONS=(ifname con-name ssid band channel)
+                                    OPTIONS=(ifname con-name ssid band channel password)
                                     _nmcli_compl_ARGS
                                     ;;
                                 r|re|res|resc|resca|rescan)
