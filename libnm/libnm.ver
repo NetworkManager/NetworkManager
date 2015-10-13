@@ -923,7 +923,6 @@ global:
 	nm_vpn_service_plugin_failure;
 	nm_vpn_service_plugin_get_connection;
 	nm_vpn_service_plugin_get_secret_flags;
-	nm_vpn_service_plugin_get_state;
 	nm_vpn_service_plugin_get_type;
 	nm_vpn_service_plugin_read_vpn_details;
 	nm_vpn_service_plugin_secrets_required;
@@ -931,5 +930,4 @@ global:
 	nm_vpn_service_plugin_set_ip4_config;
 	nm_vpn_service_plugin_set_ip6_config;
 	nm_vpn_service_plugin_set_login_banner;
-	nm_vpn_service_plugin_set_state;
 } libnm_1_0_0;

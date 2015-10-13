@@ -133,7 +133,7 @@ nm_vpn_service_plugin_get_connection (NMVpnServicePlugin *plugin)
 	return connection;
 }
 
-NMVpnServiceState
+static NMVpnServiceState
 nm_vpn_service_plugin_get_state (NMVpnServicePlugin *plugin)
 {
 	g_return_val_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin), NM_VPN_SERVICE_STATE_UNKNOWN);
@@ -141,7 +141,7 @@ nm_vpn_service_plugin_get_state (NMVpnServicePlugin *plugin)
 	return NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin)->state;
 }
 
-void
+static void
 nm_vpn_service_plugin_set_state (NMVpnServicePlugin *plugin,
                                  NMVpnServiceState state)
 {
@@ -171,17 +171,24 @@ nm_vpn_service_plugin_set_login_banner (NMVpnServicePlugin *plugin,
 	nmdbus_vpn_plugin_emit_login_banner (priv->dbus_vpn_service_plugin, banner);
 }
 
+static void
+_emit_failure (NMVpnServicePlugin *plugin,
+               NMVpnPluginFailure reason)
+{
+	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
+
+	g_signal_emit (plugin, signals[FAILURE], 0, reason);
+	nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
+}
+
 void
 nm_vpn_service_plugin_failure (NMVpnServicePlugin *plugin,
                                NMVpnPluginFailure reason)
 {
-	NMVpnServicePluginPrivate *priv;
-
 	g_return_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin));
 
-	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
-	g_signal_emit (plugin, signals[FAILURE], 0, reason);
-	nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
+	_emit_failure (plugin, reason);
+	nm_vpn_service_plugin_disconnect (plugin, NULL);
 }
 
 gboolean
@@ -211,6 +218,8 @@ nm_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin, GError **err)
 		             "Could not process the request because no VPN connection was active.");
 		break;
 	case NM_VPN_SERVICE_STATE_STARTING:
+		_emit_failure (plugin, NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
+		/* fallthru */
 	case NM_VPN_SERVICE_STATE_STARTED:
 		nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPING);
 		ret = NM_VPN_SERVICE_PLUGIN_GET_CLASS (plugin)->disconnect (plugin, err);
@@ -1187,21 +1196,6 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 		                       FALSE,
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT_ONLY));
-
-	/**
-	 * NMVpnServicePlugin:state:
-	 *
-	 * The state of the plugin.
-	 *
-	 * Since: 1.2
-	 */
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_VPN_SERVICE_PLUGIN_STATE, "", "",
-		                    NM_TYPE_VPN_SERVICE_STATE,
-		                    NM_VPN_SERVICE_STATE_INIT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[STATE_CHANGED] =

@@ -37,7 +37,6 @@ G_BEGIN_DECLS
 
 #define NM_VPN_SERVICE_PLUGIN_DBUS_SERVICE_NAME "service-name"
 #define NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER   "watch-peer"
-#define NM_VPN_SERVICE_PLUGIN_STATE             "state"
 
 typedef struct {
 	NM_AVAILABLE_IN_1_2
@@ -113,11 +112,6 @@ GType  nm_vpn_service_plugin_get_type       (void);
 
 NM_AVAILABLE_IN_1_2
 GDBusConnection   *nm_vpn_service_plugin_get_connection (NMVpnServicePlugin *plugin);
-NM_AVAILABLE_IN_1_2
-NMVpnServiceState  nm_vpn_service_plugin_get_state      (NMVpnServicePlugin *plugin);
-NM_AVAILABLE_IN_1_2
-void               nm_vpn_service_plugin_set_state      (NMVpnServicePlugin *plugin,
-                                                         NMVpnServiceState state);
 
 NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
