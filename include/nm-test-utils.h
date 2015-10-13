@@ -577,6 +577,12 @@ nmtst_get_rand (void)
 	return __nmtst_internal.rand;
 }
 
+inline static guint32
+nmtst_get_rand_int (void)
+{
+	return g_rand_int (nmtst_get_rand ());
+}
+
 inline static const char *
 nmtst_get_sudo_cmd (void)
 {
