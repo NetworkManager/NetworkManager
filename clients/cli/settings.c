@@ -764,6 +764,46 @@ NmcOutputField nmc_fields_setting_macvlan[] = {
                                            NM_SETTING_MACVLAN_TAP
 #define NMC_FIELDS_SETTING_MACVLAN_COMMON  NMC_FIELDS_SETTING_MACVLAN_ALL
 
+/* Available fields for NM_SETTING_VXLAN_SETTING_NAME */
+NmcOutputField nmc_fields_setting_vxlan[] = {
+	SETTING_FIELD ("name"),                            /* 0 */
+	SETTING_FIELD (NM_SETTING_VXLAN_PARENT),           /* 1 */
+	SETTING_FIELD (NM_SETTING_VXLAN_ID),               /* 2 */
+	SETTING_FIELD (NM_SETTING_VXLAN_LOCAL),            /* 3 */
+	SETTING_FIELD (NM_SETTING_VXLAN_REMOTE),           /* 4 */
+	SETTING_FIELD (NM_SETTING_VXLAN_SOURCE_PORT_MIN),  /* 5 */
+	SETTING_FIELD (NM_SETTING_VXLAN_SOURCE_PORT_MAX),  /* 6 */
+	SETTING_FIELD (NM_SETTING_VXLAN_DESTINATION_PORT), /* 7 */
+	SETTING_FIELD (NM_SETTING_VXLAN_TOS),              /* 8 */
+	SETTING_FIELD (NM_SETTING_VXLAN_TTL),              /* 9 */
+	SETTING_FIELD (NM_SETTING_VXLAN_AGEING),           /* 10 */
+	SETTING_FIELD (NM_SETTING_VXLAN_LIMIT),            /* 11 */
+	SETTING_FIELD (NM_SETTING_VXLAN_LEARNING),         /* 12 */
+	SETTING_FIELD (NM_SETTING_VXLAN_PROXY),            /* 13 */
+	SETTING_FIELD (NM_SETTING_VXLAN_RSC),              /* 14 */
+	SETTING_FIELD (NM_SETTING_VXLAN_L2_MISS),          /* 15 */
+	SETTING_FIELD (NM_SETTING_VXLAN_L3_MISS),          /* 16 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_VXLAN_ALL         "name"","\
+                                             NM_SETTING_VXLAN_PARENT","\
+                                             NM_SETTING_VXLAN_ID","\
+                                             NM_SETTING_VXLAN_LOCAL","\
+                                             NM_SETTING_VXLAN_REMOTE","\
+                                             NM_SETTING_VXLAN_SOURCE_PORT_MIN","\
+                                             NM_SETTING_VXLAN_SOURCE_PORT_MAX","\
+                                             NM_SETTING_VXLAN_DESTINATION_PORT","\
+                                             NM_SETTING_VXLAN_TOS","\
+                                             NM_SETTING_VXLAN_TTL","\
+                                             NM_SETTING_VXLAN_AGEING","\
+                                             NM_SETTING_VXLAN_LIMIT","\
+                                             NM_SETTING_VXLAN_LEARNING","\
+                                             NM_SETTING_VXLAN_PROXY","\
+                                             NM_SETTING_VXLAN_RSC","\
+                                             NM_SETTING_VXLAN_L2_MISS","\
+                                             NM_SETTING_VXLAN_L3_MISS
+#define NMC_FIELDS_SETTING_VXLAN_COMMON      NMC_FIELDS_SETTING_VXLAN_ALL
+
 /*----------------------------------------------------------------------------*/
 static char *
 wep_key_type_to_string (NMWepKeyType type)
@@ -1936,6 +1976,24 @@ nmc_property_macvlan_set_mode (NMSetting *setting, const char *prop,
 	g_object_set (setting, prop, (guint) mode, NULL);
 	return TRUE;
 }
+
+/* --- NM_SETTING_VXLAN_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_vxlan_get_parent, NM_SETTING_VXLAN_PARENT)
+DEFINE_GETTER (nmc_property_vxlan_get_id, NM_SETTING_VXLAN_ID)
+DEFINE_GETTER (nmc_property_vxlan_get_local, NM_SETTING_VXLAN_LOCAL)
+DEFINE_GETTER (nmc_property_vxlan_get_remote, NM_SETTING_VXLAN_REMOTE)
+DEFINE_GETTER (nmc_property_vxlan_get_source_port_min, NM_SETTING_VXLAN_SOURCE_PORT_MIN)
+DEFINE_GETTER (nmc_property_vxlan_get_source_port_max, NM_SETTING_VXLAN_SOURCE_PORT_MAX)
+DEFINE_GETTER (nmc_property_vxlan_get_destination_port, NM_SETTING_VXLAN_DESTINATION_PORT)
+DEFINE_GETTER (nmc_property_vxlan_get_tos, NM_SETTING_VXLAN_TOS)
+DEFINE_GETTER (nmc_property_vxlan_get_ttl, NM_SETTING_VXLAN_TTL)
+DEFINE_GETTER (nmc_property_vxlan_get_ageing, NM_SETTING_VXLAN_AGEING)
+DEFINE_GETTER (nmc_property_vxlan_get_limit, NM_SETTING_VXLAN_LIMIT)
+DEFINE_GETTER (nmc_property_vxlan_get_learning, NM_SETTING_VXLAN_LEARNING)
+DEFINE_GETTER (nmc_property_vxlan_get_proxy, NM_SETTING_VXLAN_PROXY)
+DEFINE_GETTER (nmc_property_vxlan_get_rsc, NM_SETTING_VXLAN_RSC)
+DEFINE_GETTER (nmc_property_vxlan_get_l2_miss, NM_SETTING_VXLAN_L2_MISS)
+DEFINE_GETTER (nmc_property_vxlan_get_l3_miss, NM_SETTING_VXLAN_L3_MISS)
 
 /*----------------------------------------------------------------------------*/
 
@@ -7332,6 +7390,120 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+
+	/* Add editable properties for NM_SETTING_VXLAN_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (VXLAN, PARENT),
+	                    nmc_property_vxlan_get_parent,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, ID),
+	                    nmc_property_vxlan_get_id,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, LOCAL),
+	                    nmc_property_vxlan_get_local,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, REMOTE),
+	                    nmc_property_vxlan_get_remote,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, SOURCE_PORT_MIN),
+	                    nmc_property_vxlan_get_source_port_min,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, SOURCE_PORT_MAX),
+	                    nmc_property_vxlan_get_source_port_max,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, DESTINATION_PORT),
+	                    nmc_property_vxlan_get_destination_port,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, TOS),
+	                    nmc_property_vxlan_get_tos,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, TTL),
+	                    nmc_property_vxlan_get_ttl,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, AGEING),
+	                    nmc_property_vxlan_get_ageing,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, LIMIT),
+	                    nmc_property_vxlan_get_limit,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, LEARNING),
+	                    nmc_property_vxlan_get_learning,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, PROXY),
+	                    nmc_property_vxlan_get_proxy,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, RSC),
+	                    nmc_property_vxlan_get_rsc,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, L2_MISS),
+	                    nmc_property_vxlan_get_l2_miss,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VXLAN, L3_MISS),
+	                    nmc_property_vxlan_get_l3_miss,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 }
 
 void
@@ -8577,6 +8749,47 @@ setting_macvlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, 
 	return TRUE;
 }
 
+ static gboolean
+setting_vxlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+{
+	NMSettingVxlan *s_vxlan = NM_SETTING_VXLAN (setting);
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_VXLAN (s_vxlan), FALSE);
+
+	tmpl = nmc_fields_setting_vxlan;
+	tmpl_len = sizeof (nmc_fields_setting_vxlan);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_VXLAN_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (arr, 1, nmc_property_vxlan_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_vxlan_get_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_vxlan_get_local (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_vxlan_get_remote (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_vxlan_get_source_port_min (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_vxlan_get_source_port_max (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_vxlan_get_destination_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_vxlan_get_tos (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_vxlan_get_ttl (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_vxlan_get_ageing (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_vxlan_get_limit (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_vxlan_get_learning (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_vxlan_get_proxy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_vxlan_get_rsc (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_vxlan_get_l2_miss (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_vxlan_get_l3_miss (setting, NMC_PROPERTY_GET_PRETTY));
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	return TRUE;
+}
+
 typedef struct {
 	const char *sname;
 	gboolean (*func) (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets);
@@ -8611,6 +8824,7 @@ static const SettingDetails detail_printers[] = {
 	{ NM_SETTING_TUN_SETTING_NAME,               setting_tun_details },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,         setting_ip_tunnel_details },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,           setting_macvlan_details },
+	{ NM_SETTING_VXLAN_SETTING_NAME,             setting_vxlan_details },
 	{ NULL },
 };
 

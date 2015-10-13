@@ -120,6 +120,7 @@ extern NmcOutputField nmc_fields_setting_dcb[];
 extern NmcOutputField nmc_fields_setting_tun[];
 extern NmcOutputField nmc_fields_setting_ip_tunnel[];
 extern NmcOutputField nmc_fields_setting_macvlan[];
+extern NmcOutputField nmc_fields_setting_vxlan[];
 
 /* Available settings for 'connection show <con>' - profile part */
 static NmcOutputField nmc_fields_settings_names[] = {
@@ -151,6 +152,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_TUN_SETTING_NAME,               nmc_fields_setting_tun + 1),               /* 25 */
 	SETTING_FIELD (NM_SETTING_IP_TUNNEL_SETTING_NAME,         nmc_fields_setting_ip_tunnel + 1),         /* 26 */
 	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 27 */
+	SETTING_FIELD (NM_SETTING_VXLAN_SETTING_NAME,             nmc_fields_setting_vxlan + 1),             /* 28 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -179,7 +181,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_DCB_SETTING_NAME"," \
                                          NM_SETTING_TUN_SETTING_NAME"," \
                                          NM_SETTING_IP_TUNNEL_SETTING_NAME"," \
-                                         NM_SETTING_MACVLAN_SETTING_NAME
+                                         NM_SETTING_MACVLAN_SETTING_NAME"," \
+                                         NM_SETTING_VXLAN_SETTING_NAME
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
 
 /* Active connection data */
@@ -429,6 +432,13 @@ usage_connection_add (void)
 	              "    macvlan:      dev <parent device (connection  UUID, ifname, or MAC)>\n"
 	              "                  mode vepa|bridge|private|passthru|source\n"
 	              "                  [tap yes|no]\n\n"
+	              "    vxlan:        id <VXLAN ID>\n"
+	              "                  remote <IP of multicast group or remote address>\n"
+	              "                  [dev <parent device (ifname or connection UUID)>]\n"
+	              "                  [local <source IP>]\n"
+	              "                  [source-port-min <0-65535>]\n"
+	              "                  [source-port-max <0-65535>]\n"
+	              "                  [destination-port <0-65535>]\n\n"
 	              "  SLAVE_OPTIONS:\n"
 	              "    bridge:       [priority <0-63>]\n"
 	              "                  [path-cost <1-65535>]\n"
@@ -2826,6 +2836,14 @@ static const NameItem nmc_macvlan_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
+static const NameItem nmc_vxlan_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
+	{ NM_SETTING_VXLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,  NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,  NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
+
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      },
@@ -2850,6 +2868,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,        nmc_ip_tunnel_settings    },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,        nmc_macvlan_settings      },
+	{ NM_SETTING_VXLAN_SETTING_NAME,      NULL,        nmc_vxlan_settings        },
 	{ NULL, NULL, NULL }
 };
 
@@ -4222,7 +4241,6 @@ do_questionnaire_adsl (gboolean echo, char **password, char **encapsulation)
 	}
 }
 
-
 static void
 do_questionnaire_macvlan (char **tap)
 {
@@ -4244,6 +4262,85 @@ do_questionnaire_macvlan (char **tap)
 				g_print (_("Error: 'tap': %s.\n"), error->message);
 				g_clear_error (&error);
 				g_free (*tap);
+			}
+		} while (once_more);
+	}
+}
+
+static void
+do_questionnaire_vxlan (char **parent, char **local, char **src_port_min,
+                        char **src_port_max, char **dst_port)
+{
+	unsigned long tmp;
+	gboolean once_more;
+
+	/* Ask for optional 'vxlan' arguments. */
+	if (!want_provide_opt_args (_("VXLAN"), 4))
+		return;
+
+	if (!*parent) {
+		do {
+			*parent = nmc_readline (_("Parent device [none]: "));
+			once_more =    *parent
+			            && !nm_utils_is_uuid (*parent)
+			            && !nm_utils_iface_valid_name (*parent);
+			if (once_more) {
+				g_print (_("Error: 'dev': '%s' is neither UUID nor interface name.\n"),
+				         *parent);
+				g_free (*parent);
+			}
+		} while (once_more);
+	}
+
+	if (!*local) {
+		do {
+			*local = nmc_readline (_("Local address [none]: "));
+			once_more =    *local
+			            && !nm_utils_ipaddr_valid (AF_INET, *local)
+			            && !nm_utils_ipaddr_valid (AF_INET6, *local);
+			if (once_more) {
+				g_print (_("Error: 'local': '%s' is not a valid IP address.\n"),
+				         *local);
+				g_free (*local);
+			}
+		} while (once_more);
+	}
+
+	if (!*src_port_min) {
+		do {
+			*src_port_min = nmc_readline (_("Minimum source port [0]: "));
+			*src_port_min = *src_port_min ? *src_port_min : g_strdup ("0");
+			once_more = !nmc_string_to_uint (*src_port_min, TRUE, 0, 65535, &tmp);
+			if (once_more) {
+				g_print (_("Error: 'source-port-min': '%s' is not a valid number <0-65535>.\n"),
+				         *src_port_min);
+				g_free (*src_port_min);
+			}
+		} while (once_more);
+	}
+
+	if (!*src_port_max) {
+		do {
+			*src_port_max = nmc_readline (_("Maximum source port [0]: "));
+			*src_port_max = *src_port_max ? *src_port_max : g_strdup ("0");
+			once_more = !nmc_string_to_uint (*src_port_max, TRUE, 0, 65535, &tmp);
+			if (once_more) {
+				g_print (_("Error: 'source-port-max': '%s' is not a valid number <0-65535>.\n"),
+				         *src_port_max);
+				g_free (*src_port_max);
+			}
+		} while (once_more);
+	}
+
+	if (!*dst_port) {
+		do {
+			*dst_port = nmc_readline (_("Destination port [8472]: "));
+			*dst_port = *dst_port ? *dst_port : g_strdup ("8472");
+			once_more = !nmc_string_to_uint (*dst_port, TRUE, 0, 65535, &tmp);
+			if (once_more) {
+				g_print (_("Error: 'destination-port': '%s' is not a valid number <0-65535>.\n"),
+				         *dst_port);
+				g_free (*dst_port);
 			}
 		} while (once_more);
 	}
@@ -4720,6 +4817,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingTun *s_tun;
 	NMSettingIPTunnel *s_ip_tunnel;
 	NMSettingMacvlan *s_macvlan;
+	NMSettingVxlan *s_vxlan;
 	const char *slave_type;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -6119,6 +6217,144 @@ cleanup_tun:
 cleanup_tunnel:
 		g_free (remote_ask);
 		g_free (mode_ask);
+	} else if (!strcmp (con_type, NM_SETTING_VXLAN_SETTING_NAME)) {
+		/* Build up the settings required for 'vxlan' */
+		gboolean success = FALSE;
+		char *id_ask = NULL;
+		const char *id = NULL;
+		char *remote_ask = NULL;
+		const char *remote = NULL;
+		const char *parent_c = NULL, *local_c = NULL;
+		const char *src_port_min_c = NULL, *src_port_max_c = NULL;
+		const char *dst_port_c = NULL;
+		char *parent = NULL, *local = NULL;
+		char *src_port_min = NULL, *src_port_max = NULL, *dst_port = NULL;
+		unsigned long int vni;
+		unsigned long sport_min = G_MAXULONG, sport_max = G_MAXULONG;
+		unsigned long dport = G_MAXULONG;
+		nmc_arg_t exp_args[] = { {"id",               TRUE, &id,             !ask},
+		                         {"remote",           TRUE, &remote,         !ask},
+		                         {"dev",              TRUE, &parent_c,        FALSE},
+		                         {"local",            TRUE, &local_c,         FALSE},
+		                         {"source-port-min",  TRUE, &src_port_min_c,  FALSE},
+		                         {"source-port-max",  TRUE, &src_port_max_c,  FALSE},
+		                         {"destination-port", TRUE, &dst_port_c,      FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!id && ask)
+			id = id_ask = nmc_readline (_("VXLAN ID: "));
+		if (!id) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'id' is required."));
+			goto cleanup_vxlan;
+		}
+
+		if (!remote && ask)
+			remote = remote_ask = nmc_readline (_("Remote: "));
+		if (!remote) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'remote' is required."));
+			goto cleanup_vxlan;
+		}
+
+		if (!nmc_string_to_uint (id, TRUE, 0, (1UL << 24) - 1, &vni)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'id': '%s' is not valid; use <0-16777215>."), id);
+			goto cleanup_vxlan;
+		}
+
+		parent = g_strdup (parent_c);
+		local = g_strdup (local_c);
+		src_port_min = g_strdup (src_port_min_c);
+		src_port_max = g_strdup (src_port_max_c);
+		dst_port = g_strdup (dst_port_c);
+
+		if (ask)
+			do_questionnaire_vxlan (&parent, &local, &src_port_min, &src_port_max, &dst_port);
+
+		if (parent) {
+			if (   !nm_utils_is_uuid (parent)
+			    && !nm_utils_iface_valid_name (parent)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'dev': '%s' is neither UUID nor interface name."),
+				             parent);
+				goto cleanup_vxlan;
+			}
+		}
+
+		if (   !nm_utils_ipaddr_valid (AF_INET, remote)
+		    && !nm_utils_ipaddr_valid (AF_INET6, remote)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'remote': '%s' is not a valid IP address"),
+			             remote);
+			goto cleanup_vxlan;
+		}
+
+		if (local) {
+			if (   !nm_utils_ipaddr_valid (AF_INET, local)
+			    && !nm_utils_ipaddr_valid (AF_INET6, local)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'local': '%s' is not a valid IP address"),
+				             local);
+				goto cleanup_vxlan;
+			}
+		}
+
+		if (src_port_min) {
+			if (!nmc_string_to_uint (src_port_min, TRUE, 0, 65535, &sport_min)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'source-port-min': %s is not valid; use <0-65535>."),
+				             src_port_min);
+				goto cleanup_vxlan;
+			}
+		}
+
+		if (src_port_max) {
+			if (!nmc_string_to_uint (src_port_max, TRUE, 0, 65535, &sport_max)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'source-port-max': %s is not valid; use <0-65535>."),
+				             src_port_max);
+				goto cleanup_vxlan;
+			}
+		}
+
+		if (dst_port) {
+			if (!nmc_string_to_uint (dst_port, TRUE, 0, 65535, &dport)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'destination-port': %s is not valid; use <0-65535>."),
+				             dst_port);
+				goto cleanup_vxlan;
+			}
+		}
+
+		/* Add 'vxlan' setting */
+		s_vxlan = (NMSettingVxlan *) nm_setting_vxlan_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_vxlan));
+
+		g_object_set (s_vxlan, NM_SETTING_VXLAN_ID, (guint) vni, NULL);
+		g_object_set (s_vxlan, NM_SETTING_VXLAN_REMOTE, remote, NULL);
+		g_object_set (s_vxlan, NM_SETTING_VXLAN_LOCAL, local, NULL);
+		g_object_set (s_vxlan, NM_SETTING_VXLAN_PARENT, parent, NULL);
+
+		if (sport_min != G_MAXULONG)
+			g_object_set (s_vxlan, NM_SETTING_VXLAN_SOURCE_PORT_MIN, sport_min, NULL);
+		if (sport_max != G_MAXULONG)
+			g_object_set (s_vxlan, NM_SETTING_VXLAN_SOURCE_PORT_MAX, sport_max, NULL);
+		if (dport != G_MAXULONG)
+			g_object_set (s_vxlan, NM_SETTING_VXLAN_DESTINATION_PORT, dport, NULL);
+
+		success = TRUE;
+
+cleanup_vxlan:
+		g_free (id_ask);
+		g_free (remote_ask);
+		g_free (parent);
+		g_free (local);
+		g_free (src_port_min);
+		g_free (src_port_max);
 		if (!success)
 			return FALSE;
 
