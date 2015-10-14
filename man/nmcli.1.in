@@ -1070,6 +1070,11 @@ using password "caffeine". This is mainly useful when connecting to "Cafe Hotspo
 the first time. Next time, it is better to use 'nmcli con up id "My cafe"' so that the
 existing connection profile can be used and no additional is created.
 
+.IP "\fB\f(CWnmcli dev wifi hotspot -s con-name QuickHotspot\fP\fP"
+.IP
+creates a hotspot profile and connects it. Prints the hotspot password the user should use
+to connect to the hotspot from other devices.
+
 .IP "\fB\f(CWnmcli connection add type ethernet autoconnect no ifname eth0\fP\fP"
 .IP
 non-interactively adds an Ethernet connection tied to eth0 interface with automatic IP configuration (DHCP),
