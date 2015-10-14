@@ -2469,6 +2469,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	char str_addrmode[30];
 	gs_free char *str_addr = NULL;
 	gs_free char *str_inet6_token = NULL;
+	const char *str_link_type;
 
 	if (!_to_string_buffer_init (link, &buf, &len))
 		return buf;
@@ -2527,6 +2528,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	if (link->inet6_token.is_valid)
 		str_inet6_token = nm_utils_hwaddr_ntoa (&link->inet6_token.iid, sizeof (link->inet6_token.iid));
 
+	str_link_type = nm_link_type_to_string (link->type);
+
 	g_snprintf (buf, len,
 	            "%d: " /* ifindex */
 	            "%s" /* name */
@@ -2551,10 +2554,10 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->mtu, master,
 	            str_vlan,
 	            link->arptype,
-	            nm_link_type_to_string (link->type) ? " " : "",
-	            str_if_set (nm_link_type_to_string (link->type), "???"),
-	            link->kind ? (g_strcmp0 (nm_link_type_to_string (link->type), link->kind) ? "/" : "*") : "",
-	            link->kind && g_strcmp0 (nm_link_type_to_string (link->type), link->kind) ? link->kind : "",
+	            str_link_type ? " " : "",
+	            str_if_set (str_link_type, "???"),
+	            link->kind ? (g_strcmp0 (str_link_type, link->kind) ? "/" : "*") : "",
+	            link->kind && g_strcmp0 (str_link_type, link->kind) ? link->kind : "",
 	            link->initialized ? " init" : " not-init",
 	            str_addrmode,
 	            str_addr ? " addr " : "",
