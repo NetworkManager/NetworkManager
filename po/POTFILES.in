@@ -158,6 +158,7 @@ src/devices/nm-device-ip-tunnel.c
 src/devices/nm-device-macvlan.c
 src/devices/nm-device-tun.c
 src/devices/nm-device-vlan.c
+src/devices/nm-device-vxlan.c
 src/devices/team/nm-device-team.c
 src/devices/wifi/nm-device-olpc-mesh.c
 src/devices/wifi/nm-device-wifi.c
