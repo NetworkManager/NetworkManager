@@ -41,7 +41,6 @@
 #include "nm-settings-plugin.h"
 #include "nm-keyfile-connection.h"
 #include "writer.h"
-#include "common.h"
 #include "utils.h"
 
 static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
@@ -335,7 +334,7 @@ setup_monitoring (NMSettingsPlugin *config)
 	GFileMonitor *monitor;
 
 	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
-		file = g_file_new_for_path (KEYFILE_DIR);
+		file = g_file_new_for_path (nm_keyfile_plugin_get_path ());
 		monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
 		g_object_unref (file);
 
@@ -404,10 +403,10 @@ read_connections (NMSettingsPlugin *config)
 	GPtrArray *filenames;
 	GHashTable *paths;
 
-	dir = g_dir_open (KEYFILE_DIR, 0, &error);
+	dir = g_dir_open (nm_keyfile_plugin_get_path (), 0, &error);
 	if (!dir) {
 		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot read directory '%s': (%d) %s",
-		             KEYFILE_DIR,
+		             nm_keyfile_plugin_get_path (),
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
@@ -420,7 +419,7 @@ read_connections (NMSettingsPlugin *config)
 	while ((item = g_dir_read_name (dir))) {
 		if (nm_keyfile_plugin_utils_should_ignore_file (item))
 			continue;
-		g_ptr_array_add (filenames, g_build_filename (KEYFILE_DIR, item, NULL));
+		g_ptr_array_add (filenames, g_build_filename (nm_keyfile_plugin_get_path (), item, NULL));
 	}
 	g_dir_close (dir);
 
@@ -480,9 +479,9 @@ load_connection (NMSettingsPlugin *config,
 {
 	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
 	NMKeyfileConnection *connection;
-	int dir_len = strlen (KEYFILE_DIR);
+	int dir_len = strlen (nm_keyfile_plugin_get_path ());
 
-	if (   strncmp (filename, KEYFILE_DIR, dir_len) != 0
+	if (   strncmp (filename, nm_keyfile_plugin_get_path (), dir_len) != 0
 	    || filename[dir_len] != '/'
 	    || strchr (filename + dir_len + 1, '/') != NULL)
 		return FALSE;

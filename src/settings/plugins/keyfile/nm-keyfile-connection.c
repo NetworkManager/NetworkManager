@@ -32,7 +32,6 @@
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
-#include "common.h"
 #include "utils.h"
 #include "nm-logging.h"
 

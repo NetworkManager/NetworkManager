@@ -27,6 +27,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
+#include "nm-config.h"
 
 static const char temp_letters[] =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -143,4 +144,24 @@ nm_keyfile_plugin_utils_escape_filename (const char *filename)
 
 	return g_string_free (str, FALSE);;
 }
+
+/*****************************************************************************/
+
+const char *
+nm_keyfile_plugin_get_path (void)
+{
+	static char *path = NULL;
+
+	if (G_UNLIKELY (!path)) {
+		path = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
+		                                 NM_CONFIG_KEYFILE_GROUP_KEYFILE,
+		                                 NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
+		                                 NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+		if (!path)
+			path = g_strdup (""NM_CONFIG_KEYFILE_PATH_DEFAULT"");
+	}
+	return path;
+}
+
+/*****************************************************************************/
 

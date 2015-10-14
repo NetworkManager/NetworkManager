@@ -138,6 +138,9 @@ if test "$enable_ifcfg_rh" = "yes"; then
 fi
 AC_SUBST(DISTRO_NETWORK_SERVICE)
 
+AC_SUBST(NM_CONFIG_KEYFILE_PATH_DEFAULT, "${sysconfdir}/$PACKAGE/system-connections", [The keyfile directory])
+AC_DEFINE_UNQUOTED(NM_CONFIG_KEYFILE_PATH_DEFAULT, "$NM_CONFIG_KEYFILE_PATH_DEFAULT", [The keyfile directory])
+
 # Code coverage
 GNOME_CODE_COVERAGE
 

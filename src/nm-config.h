@@ -65,6 +65,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
+#define NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH                  "path"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
 #define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"

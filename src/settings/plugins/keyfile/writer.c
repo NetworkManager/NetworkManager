@@ -29,7 +29,6 @@
 
 #include "nm-default.h"
 #include "writer.h"
-#include "common.h"
 #include "utils.h"
 #include "nm-keyfile-internal.h"
 
@@ -367,7 +366,7 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
                                     GError **error)
 {
 	return _internal_write_connection (connection,
-	                                   KEYFILE_DIR,
+	                                   nm_keyfile_plugin_get_path (),
 	                                   0, 0,
 	                                   existing_path,
 	                                   force_rename,
