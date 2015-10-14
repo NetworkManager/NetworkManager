@@ -2550,13 +2550,14 @@ _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **er
 
 	g_assert (NM_IS_VPN_CONNECTION (active));
 
+	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 	success = nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
 	                                              NM_VPN_CONNECTION (active),
 	                                              error);
-	if (success) {
-		nm_exported_object_export (NM_EXPORTED_OBJECT (active));
+	if (success)
 		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
-	}
+	else
+		nm_exported_object_unexport (NM_EXPORTED_OBJECT (active));
 	return success;
 }
 
