@@ -41,6 +41,20 @@ _nmcli_list_nl()
         fi
         (( i++ ))
     done
+
+    # Work-around bash_completion issue where bash interprets a colon
+    # as a separator.
+    # Colon is escaped here. Change "\\:" back to ":".
+    # See also:
+    # http://stackoverflow.com/questions/28479216/how-to-give-correct-suggestions-to-tab-complete-when-my-words-contains-colons
+    # http://stackoverflow.com/questions/2805412/bash-completion-for-maven-escapes-colon/12495727
+    i=0
+    for entry in ${COMPREPLY[*]}
+    do
+        entry="${entry//\\\\:/:}"
+        COMPREPLY[$i]=${entry}
+        (( i++ ))
+    done
 }
 
 _nmcli_con_show()
