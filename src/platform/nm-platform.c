@@ -1823,6 +1823,43 @@ _to_string_dev (NMPlatform *self, int ifindex, char *buf, size_t size)
 
 /******************************************************************/
 
+in_addr_t
+nm_platform_ip4_address_get_peer (const NMPlatformIP4Address *addr)
+{
+	return addr->peer_address ?: addr->address;
+}
+
+const struct in6_addr *
+nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr)
+{
+	if (   IN6_IS_ADDR_UNSPECIFIED (&addr->peer_address)
+	    || IN6_ARE_ADDR_EQUAL (&addr->peer_address, &addr->address))
+		return &addr->address;
+	return &addr->peer_address;
+}
+
+in_addr_t
+nm_platform_ip4_address_get_peer_net (const NMPlatformIP4Address *addr)
+{
+	return (addr->peer_address ?: addr->address) & nm_utils_ip4_prefix_to_netmask (addr->plen);
+}
+
+gboolean
+nm_platform_ip4_address_equal_peer_net (const NMPlatformIP4Address *addr1, const NMPlatformIP4Address *addr2)
+{
+	guint32 a1, a2;
+
+	if (addr1->plen != addr2->plen)
+		return FALSE;
+
+	/* For kernel, if the peer address is unset, that effectively means that
+	 * the peer address equals the local address. */
+	a1 = addr1->peer_address ? addr1->peer_address : addr1->address;
+	a2 = addr2->peer_address ? addr2->peer_address : addr2->address;
+
+	return ((a1 ^ a2) & nm_utils_ip4_prefix_to_netmask (addr1->plen)) == 0;
+}
+
 GArray *
 nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 {
@@ -1849,8 +1886,8 @@ gboolean
 nm_platform_ip4_address_add (NMPlatform *self,
                              int ifindex,
                              in_addr_t address,
-                             in_addr_t peer_address,
                              int plen,
+                             in_addr_t peer_address,
                              guint32 lifetime,
                              guint32 preferred,
                              const char *label)
@@ -1879,15 +1916,15 @@ nm_platform_ip4_address_add (NMPlatform *self,
 
 		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
 	}
-	return klass->ip4_address_add (self, ifindex, address, peer_address, plen, lifetime, preferred, label);
+	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, label);
 }
 
 gboolean
 nm_platform_ip6_address_add (NMPlatform *self,
                              int ifindex,
                              struct in6_addr address,
-                             struct in6_addr peer_address,
                              int plen,
+                             struct in6_addr peer_address,
                              guint32 lifetime,
                              guint32 preferred,
                              guint flags)
@@ -1914,7 +1951,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 
 		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr));
 	}
-	return klass->ip6_address_add (self, ifindex, address, peer_address, plen, lifetime, preferred, flags);
+	return klass->ip6_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
 }
 
 gboolean
@@ -1957,13 +1994,13 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 }
 
 const NMPlatformIP4Address *
-nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen)
+nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen, guint32 peer_address)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (plen > 0, NULL);
 
-	return klass->ip4_address_get (self, ifindex, address, plen);
+	return klass->ip4_address_get (self, ifindex, address, plen, peer_address);
 }
 
 const NMPlatformIP6Address *
@@ -1985,7 +2022,9 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (candidate->address == address->address && candidate->plen == address->plen) {
+		if (   candidate->address == address->address
+		    && candidate->plen == address->plen
+		    && nm_platform_ip4_address_equal_peer_net (candidate, address)) {
 			guint32 lifetime, preferred;
 
 			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
@@ -2069,7 +2108,7 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
-		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
+		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen, known_address->peer_address, lifetime, preferred, known_address->label))
 			return FALSE;
 
 		if (out_added_addresses) {
@@ -2130,7 +2169,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
-		                                  known_address->peer_address, known_address->plen,
+		                                  known_address->plen, known_address->peer_address,
 		                                  lifetime, preferred, known_address->flags))
 			return FALSE;
 	}
@@ -2692,7 +2731,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 	return _nm_platform_to_string_buffer;
 }
 
-#define _CMP_POINTER(a, b)                                  \
+#define _CMP_SELF(a, b)                                     \
     G_STMT_START {                                          \
         if ((a) == (b))                                     \
             return 0;                                       \
@@ -2700,6 +2739,19 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return -1;                                      \
         if (!(b))                                           \
             return 1;                                       \
+    } G_STMT_END
+
+#define _CMP_DIRECT(a, b)                                   \
+    G_STMT_START {                                          \
+        if ((a) != (b))                                     \
+            return ((a) < (b)) ? -1 : 1;                    \
+    } G_STMT_END
+
+#define _CMP_DIRECT_MEMCMP(a, b, size)                      \
+    G_STMT_START {                                          \
+        int c = memcmp ((a), (b), (size));                  \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
 #define _CMP_FIELD(a, b, field)                             \
@@ -2757,7 +2809,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, type);
 	_CMP_FIELD_STR (a, b, name);
@@ -2784,12 +2836,20 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
-	_CMP_POINTER (a, b);
+	in_addr_t p_a, p_b;
+
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD (a, b, address);
-	_CMP_FIELD (a, b, peer_address);
 	_CMP_FIELD (a, b, plen);
+
+	/* a peer-address of zero is the same as setting it to address.
+	 * Here we consider the full address, including the host-part. */
+	p_a = nm_platform_ip4_address_get_peer (a);
+	p_b = nm_platform_ip4_address_get_peer (b);
+	_CMP_DIRECT (p_a, p_b);
+
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
@@ -2800,11 +2860,17 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 int
 nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
 {
-	_CMP_POINTER (a, b);
+	const struct in6_addr *p_a, *p_b;
+
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, address);
-	_CMP_FIELD_MEMCMP (a, b, peer_address);
+
+	p_a = nm_platform_ip6_address_get_peer (a);
+	p_b = nm_platform_ip6_address_get_peer (b);
+	_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
+
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
@@ -2816,7 +2882,7 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 int
 nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD (a, b, network);
@@ -2832,7 +2898,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 int
 nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
 {
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, network);
@@ -2842,9 +2908,6 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	_CMP_FIELD (a, b, mss);
 	return 0;
 }
-
-#undef _CMP_FIELD
-#undef _CMP_FIELD_MEMCMP
 
 /**
  * nm_platform_ip_address_cmp_expiry:
@@ -2864,7 +2927,7 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 {
 	gint64 ta = 0, tb = 0;
 
-	_CMP_POINTER (a, b);
+	_CMP_SELF (a, b);
 
 	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
 		ta = G_MAXINT64;
@@ -2896,8 +2959,6 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 
 	return ta < tb ? -1 : 1;
 }
-
-#undef _CMP_POINTER
 
 const char *
 nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type)

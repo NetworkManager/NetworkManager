@@ -87,9 +87,14 @@ G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 
 static void link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_signal);
 
-static gboolean ip6_address_add (NMPlatform *platform, int ifindex,
-                                 struct in6_addr addr, struct in6_addr peer_addr,
-                                 int plen, guint32 lifetime, guint32 preferred, guint flags);
+static gboolean ip6_address_add (NMPlatform *platform,
+                                 int ifindex,
+                                 struct in6_addr addr,
+                                 int plen,
+                                 struct in6_addr peer_addr,
+                                 guint32 lifetime,
+                                 guint32 preferred,
+                                 guint flags);
 static gboolean ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen);
 
 /******************************************************************/
@@ -335,7 +340,7 @@ link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_s
 
 	if (device->link.ifindex && !IN6_IS_ADDR_UNSPECIFIED (&device->ip6_lladdr)) {
 		if (device->link.connected)
-			ip6_address_add (platform, device->link.ifindex, device->ip6_lladdr, in6addr_any, 64, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
+			ip6_address_add (platform, device->link.ifindex, in6addr_any, 64, device->ip6_lladdr, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
 		else
 			ip6_address_delete (platform, device->link.ifindex, device->ip6_lladdr, 64);
 	}
@@ -886,9 +891,13 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-ip4_address_add (NMPlatform *platform, int ifindex,
-                 in_addr_t addr, in_addr_t peer_addr,
-                 int plen, guint32 lifetime, guint32 preferred,
+ip4_address_add (NMPlatform *platform,
+                 int ifindex,
+                 in_addr_t addr,
+                 int plen,
+                 in_addr_t peer_addr,
+                 guint32 lifetime,
+                 guint32 preferred,
                  const char *label)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -899,7 +908,7 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
-	address.peer_address = peer_addr;
+	address.peer_address = peer_addr && peer_addr != addr ? peer_addr : 0;
 	address.plen = plen;
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
@@ -916,6 +925,8 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 			continue;
 		if (item->plen != address.plen)
 			continue;
+		if (!nm_platform_ip4_address_equal_peer_net (item, &address))
+			continue;
 
 		memcpy (item, &address, sizeof (address));
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
@@ -929,9 +940,13 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 }
 
 static gboolean
-ip6_address_add (NMPlatform *platform, int ifindex,
-                 struct in6_addr addr, struct in6_addr peer_addr,
-                 int plen, guint32 lifetime, guint32 preferred, guint flags)
+ip6_address_add (NMPlatform *platform,
+                 int ifindex,
+                 struct in6_addr addr,
+                 int plen,
+                 struct in6_addr peer_addr,
+                 guint32 lifetime,
+                 guint32 preferred, guint flags)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP6Address address;
@@ -941,7 +956,7 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
-	address.peer_address = peer_addr;
+	address.peer_address = (IN6_IS_ADDR_UNSPECIFIED (&peer_addr) || IN6_ARE_ADDR_EQUAL (&addr, &peer_addr)) ? in6addr_any : peer_addr;
 	address.plen = plen;
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
@@ -1018,15 +1033,24 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 }
 
 static const NMPlatformIP4Address *
-ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
+	NMPlatformIP4Address a = {
+		.ifindex = ifindex,
+		.address = addr,
+		.plen = plen,
+		.peer_address = peer_address,
+	};
 
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
 
-		if (address->ifindex == ifindex && address->plen == plen && address->address == addr)
+		if (   address->ifindex == ifindex
+		    && address->plen == plen
+		    && address->address == addr
+		    && nm_platform_ip4_address_equal_peer_net (address, &a))
 			return address;
 	}
 

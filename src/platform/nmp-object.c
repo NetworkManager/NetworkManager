@@ -296,19 +296,20 @@ _vt_cmd_obj_stackinit_id_link (NMPObject *obj, const NMPObject *src)
 }
 
 const NMPObject *
-nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, int plen)
+nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, int plen, guint32 peer_address)
 {
 	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP4_ADDRESS, NULL);
 	obj->ip4_address.ifindex = ifindex;
 	obj->ip4_address.address = address;
 	obj->ip4_address.plen = plen;
+	obj->ip4_address.peer_address = peer_address;
 	return obj;
 }
 
 static void
 _vt_cmd_obj_stackinit_id_ip4_address (NMPObject *obj, const NMPObject *src)
 {
-	nmp_object_stackinit_id_ip4_address (obj, src->ip_address.ifindex, src->ip4_address.address, src->ip_address.plen);
+	nmp_object_stackinit_id_ip4_address (obj, src->ip_address.ifindex, src->ip4_address.address, src->ip_address.plen, src->ip4_address.peer_address);
 }
 
 const NMPObject *
@@ -425,17 +426,21 @@ _vt_cmd_plobj_to_string_id_##type (const NMPlatformObject *_obj, char *buf, gsiz
 { \
 	plat_type *const obj = (plat_type *) _obj; \
 	char buf1[NM_UTILS_INET_ADDRSTRLEN]; \
+	char buf2[NM_UTILS_INET_ADDRSTRLEN]; \
 	\
 	(void) buf1; \
+	(void) buf2; \
 	g_snprintf (buf, buf_len, \
 	            __VA_ARGS__); \
 	return buf; \
 }
-_vt_cmd_plobj_to_string_id (link,        NMPlatformLink,       "%d",           obj->ifindex);
-_vt_cmd_plobj_to_string_id (ip4_address, NMPlatformIP4Address, "%d: %s/%d",    obj->ifindex, nm_utils_inet4_ntop ( obj->address, buf1), obj->plen);
-_vt_cmd_plobj_to_string_id (ip6_address, NMPlatformIP6Address, "%d: %s/%d",    obj->ifindex, nm_utils_inet6_ntop (&obj->address, buf1), obj->plen);
-_vt_cmd_plobj_to_string_id (ip4_route,   NMPlatformIP4Route,   "%d: %s/%d %d", obj->ifindex, nm_utils_inet4_ntop ( obj->network, buf1), obj->plen, obj->metric);
-_vt_cmd_plobj_to_string_id (ip6_route,   NMPlatformIP6Route,   "%d: %s/%d %d", obj->ifindex, nm_utils_inet6_ntop (&obj->network, buf1), obj->plen, obj->metric);
+_vt_cmd_plobj_to_string_id (link,        NMPlatformLink,       "%d",            obj->ifindex);
+_vt_cmd_plobj_to_string_id (ip4_address, NMPlatformIP4Address, "%d: %s/%d%s%s", obj->ifindex, nm_utils_inet4_ntop ( obj->address, buf1), obj->plen,
+                                                               obj->peer_address && obj->peer_address != obj->address ? "," : "",
+                                                               obj->peer_address && obj->peer_address != obj->address ? nm_utils_inet4_ntop (nm_platform_ip4_address_get_peer_net (obj), buf2) : "");
+_vt_cmd_plobj_to_string_id (ip6_address, NMPlatformIP6Address, "%d: %s",        obj->ifindex, nm_utils_inet6_ntop (&obj->address, buf1));
+_vt_cmd_plobj_to_string_id (ip4_route,   NMPlatformIP4Route,   "%d: %s/%d %d",  obj->ifindex, nm_utils_inet4_ntop ( obj->network, buf1), obj->plen, obj->metric);
+_vt_cmd_plobj_to_string_id (ip6_route,   NMPlatformIP6Route,   "%d: %s/%d %d",  obj->ifindex, nm_utils_inet6_ntop (&obj->network, buf1), obj->plen, obj->metric);
 
 int
 nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2)
@@ -533,10 +538,10 @@ _vt_cmd_plobj_id_copy (ip4_address, NMPlatformIP4Address, {
 	dst->ifindex = src->ifindex;
 	dst->plen = src->plen;
 	dst->address = src->address;
+	dst->peer_address = src->peer_address;
 });
 _vt_cmd_plobj_id_copy (ip6_address, NMPlatformIP6Address, {
 	dst->ifindex = src->ifindex;
-	dst->plen = src->plen;
 	dst->address = src->address;
 });
 _vt_cmd_plobj_id_copy (ip4_route, NMPlatformIP4Route, {
@@ -619,10 +624,13 @@ _vt_cmd_plobj_id_equal (link, NMPlatformLink,
 _vt_cmd_plobj_id_equal (ip4_address, NMPlatformIP4Address,
                            obj1->ifindex == obj2->ifindex
                         && obj1->plen == obj2->plen
-                        && obj1->address == obj2->address);
+                        && obj1->address == obj2->address
+                        /* for IPv4 addresses, you can add the same local address with differing peer-adddress
+                         * (IFA_ADDRESS), provided that their net-part differs. */
+                        && nm_platform_ip4_address_equal_peer_net (obj1, obj2));
 _vt_cmd_plobj_id_equal (ip6_address, NMPlatformIP6Address,
                            obj1->ifindex == obj2->ifindex
-                        && obj1->plen == obj2->plen
+                        /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
                         && IN6_ARE_ADDR_EQUAL (&obj1->address, &obj2->address));
 _vt_cmd_plobj_id_equal (ip4_route, NMPlatformIP4Route,
                            obj1->ifindex == obj2->ifindex
@@ -655,34 +663,25 @@ _vt_cmd_plobj_id_hash_##type (const NMPlatformObject *_obj) \
 	return hash; \
 }
 _vt_cmd_plobj_id_hash (link, NMPlatformLink, {
-	/* libnl considers:
-	 *   .oo_id_attrs = LINK_ATTR_IFINDEX | LINK_ATTR_FAMILY,
-	 */
 	hash = (guint) 3982791431u;
 	hash = hash      + ((guint) obj->ifindex);
 })
 _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
-	/* libnl considers:
-	 *   .oo_id_attrs = (ADDR_ATTR_FAMILY | ADDR_ATTR_IFINDEX |
-	 *                   ADDR_ATTR_LOCAL | ADDR_ATTR_PREFIXLEN),
-	 */
 	hash = (guint) 3591309853u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + ((guint) obj->address);
+
+	/* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
+	hash = hash * 33 + ((guint) (nm_platform_ip4_address_get_peer_net (obj)));
 })
 _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
 	hash = (guint) 2907861637u;
 	hash = hash      + ((guint) obj->ifindex);
-	hash = hash * 33 + ((guint) obj->plen);
+	/* for IPv6 addresses, the prefix length is not part of the primary identifier. */
 	hash = hash * 33 + _id_hash_ip6_addr (&obj->address);
 })
 _vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
-	/* libnl considers:
-	 *   .oo_id_attrs = (ROUTE_ATTR_FAMILY | ROUTE_ATTR_TOS |
-	 *                   ROUTE_ATTR_TABLE | ROUTE_ATTR_DST |
-	 *                   ROUTE_ATTR_PRIO),
-	 */
 	hash = (guint) 2569857221u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);

@@ -176,9 +176,9 @@ nm_ip6_config_capture_resolv_conf (GArray *nameservers,
 }
 
 static gboolean
-addresses_are_duplicate (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b, gboolean consider_plen)
+addresses_are_duplicate (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
 {
-	return IN6_ARE_ADDR_EQUAL (&a->address, &b->address) && (!consider_plen || a->plen == b->plen);
+	return IN6_ARE_ADDR_EQUAL (&a->address, &b->address);
 }
 
 static gboolean
@@ -731,7 +731,7 @@ _addresses_get_index (const NMIP6Config *self, const NMPlatformIP6Address *addr)
 	for (i = 0; i < priv->addresses->len; i++) {
 		const NMPlatformIP6Address *a = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&addr->address, &a->address))
+		if (addresses_are_duplicate (a, addr))
 			return (int) i;
 	}
 	return -1;
@@ -1012,7 +1012,10 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			if (nm_platform_ip6_address_cmp (src_addr = nm_ip6_config_get_address (src, i),
 			                                 dst_addr = nm_ip6_config_get_address (dst, i))) {
 				are_equal = FALSE;
-				if (!addresses_are_duplicate (src_addr, dst_addr, TRUE)) {
+				if (   !addresses_are_duplicate (src_addr, dst_addr)
+				    || src_addr->plen != dst_addr->plen
+				    || !IN6_ARE_ADDR_EQUAL (nm_platform_ip6_address_get_peer (src_addr),
+				                            nm_platform_ip6_address_get_peer (dst_addr)))  {
 					has_relevant_changes = TRUE;
 					break;
 				}
@@ -1283,7 +1286,7 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 	for (i = 0; i < priv->addresses->len; i++ ) {
 		NMPlatformIP6Address *item = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
+		if (addresses_are_duplicate (item, new)) {
 			if (nm_platform_ip6_address_cmp (item, new) == 0)
 				return;
 
@@ -1350,17 +1353,7 @@ gboolean
 nm_ip6_config_address_exists (const NMIP6Config *config,
                               const NMPlatformIP6Address *needle)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	guint i;
-
-	for (i = 0; i < priv->addresses->len; i++) {
-		const NMPlatformIP6Address *haystack = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
-
-		if (   IN6_ARE_ADDR_EQUAL (&needle->address, &haystack->address)
-		    && needle->plen == haystack->plen)
-			return TRUE;
-	}
-	return FALSE;
+	return _addresses_get_index (config, needle) >= 0;
 }
 
 /******************************************************************/
@@ -1940,6 +1933,12 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "prefix",
 				                       g_variant_new_uint32 (address->plen));
+				if (   !IN6_IS_ADDR_UNSPECIFIED (&address->peer_address)
+				    && !IN6_ARE_ADDR_EQUAL (&address->peer_address, &address->address)) {
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       "peer",
+					                       g_variant_new_string (nm_utils_inet6_ntop (&address->peer_address, NULL)));
+				}
 
 				g_variant_builder_add (&array_builder, "a{sv}", &addr_builder);
 			}

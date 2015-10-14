@@ -377,8 +377,8 @@ setup_dev0_ip6 (int ifindex)
 	nm_platform_ip6_address_add (NM_PLATFORM_GET,
 	                             ifindex,
 	                             *nmtst_inet6_from_string ("2001:db8:8086::666"),
-	                             in6addr_any,
 	                             64,
+	                             in6addr_any,
 	                             3600,
 	                             3600,
 	                             0);
@@ -481,8 +481,8 @@ update_dev0_ip6 (int ifindex)
 	nm_platform_ip6_address_add (NM_PLATFORM_GET,
 	                             ifindex,
 	                             *nmtst_inet6_from_string ("2001:db8:8086::2"),
-	                             in6addr_any,
 	                             64,
+	                             in6addr_any,
 	                             3600,
 	                             3600,
 	                             0);

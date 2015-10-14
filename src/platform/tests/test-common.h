@@ -43,8 +43,8 @@ typedef struct {
 	const char *ifname;
 } SignalData;
 
-gboolean nmtst_platform_is_root_test (void);
-gboolean nmtst_platform_is_sysfs_writable (void);
+gboolean nmtstp_is_root_test (void);
+gboolean nmtstp_is_sysfs_writable (void);
 
 SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname);
 #define add_signal(name, change_type, callback) add_signal_full (name, change_type, (GCallback) callback, 0, NULL)
@@ -53,11 +53,13 @@ SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change
 void _accept_signal (const char *file, int line, const char *func, SignalData *data);
 void _accept_signals (const char *file, int line, const char *func, SignalData *data, int min, int max);
 void _wait_signal (const char *file, int line, const char *func, SignalData *data);
+void _accept_or_wait_signal (const char *file, int line, const char *func, SignalData *data);
 void _ensure_no_signal (const char *file, int line, const char *func, SignalData *data);
 void _free_signal (const char *file, int line, const char *func, SignalData *data);
 #define accept_signal(data) _accept_signal(__FILE__, __LINE__, G_STRFUNC, data)
 #define accept_signals(data, min, max) _accept_signals(__FILE__, __LINE__, G_STRFUNC, data, min, max)
 #define wait_signal(data) _wait_signal(__FILE__, __LINE__, G_STRFUNC, data)
+#define accept_or_wait_signal(data) _accept_or_wait_signal(__FILE__, __LINE__, G_STRFUNC, data)
 #define ensure_no_signal(data) _ensure_no_signal(__FILE__, __LINE__, G_STRFUNC, data)
 #define free_signal(data) _free_signal(__FILE__, __LINE__, G_STRFUNC, data)
 
@@ -68,7 +70,49 @@ void _assert_ip4_route_exists (const char *file, guint line, const char *func, g
 
 void link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data);
 
-void run_command (const char *format, ...);
+int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
+#define nmtstp_run_command_check(format, ...) do { g_assert_cmpint (nmtstp_run_command (format, __VA_ARGS__), ==, 0); } while (0)
+
+gboolean nmtstp_wait_for_signal (guint timeout_ms);
+gboolean nmtstp_wait_for_signal_until (gint64 until_ms);
+
+int nmtstp_run_command_check_external_global (void);
+gboolean nmtstp_run_command_check_external (int external_command);
+
+gboolean nmtstp_ip_address_check_lifetime (const NMPlatformIPAddress *addr,
+                                           gint64 now,
+                                           guint32 expected_lifetime,
+                                           guint32 expected_preferred);
+void nmtstp_ip_address_assert_lifetime (const NMPlatformIPAddress *addr,
+                                        gint64 now,
+                                        guint32 expected_lifetime,
+                                        guint32 expected_preferred);
+void nmtstp_ip4_address_add (gboolean external_command,
+                             int ifindex,
+                             in_addr_t address,
+                             int plen,
+                             in_addr_t peer_address,
+                             guint32 lifetime,
+                             guint32 preferred,
+                             const char *label);
+void nmtstp_ip6_address_add (gboolean external_command,
+                             int ifindex,
+                             struct in6_addr address,
+                             int plen,
+                             struct in6_addr peer_address,
+                             guint32 lifetime,
+                             guint32 preferred,
+                             guint flags);
+void nmtstp_ip4_address_del (gboolean external_command,
+                             int ifindex,
+                             in_addr_t address,
+                             int plen,
+                             in_addr_t peer_address);
+void nmtstp_ip6_address_del (gboolean external_command,
+                             int ifindex,
+                             struct in6_addr address,
+                             int plen);
+
 
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);
