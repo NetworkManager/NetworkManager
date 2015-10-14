@@ -1197,6 +1197,21 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT_ONLY));
 
+	/**
+	 * NMVpnServicePlugin:state:
+	 *
+	 * The state of the plugin.
+	 *
+	 * Since: 1.2
+	 */
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_enum (NM_VPN_SERVICE_PLUGIN_STATE, "", "",
+		                    NM_TYPE_VPN_SERVICE_STATE,
+		                    NM_VPN_SERVICE_STATE_INIT,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
+
 	/* signals */
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
