@@ -526,7 +526,7 @@ fi
 AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)
 
 # libnl support for the linux platform
-PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
+PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0)
 
 AC_CHECK_LIB([nl-route-3], [rtnl_link_inet6_get_addr_gen_mode],
 	ac_have_addr_gen_mode="1",
