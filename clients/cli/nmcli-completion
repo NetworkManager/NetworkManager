@@ -512,6 +512,7 @@ _nmcli_compl_ARGS()
             save| \
             hidden| \
             private)
+            show-password)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no"
                     return 0
@@ -1346,7 +1347,7 @@ _nmcli()
                                     ;;
                                 h|ho|hot|hots|hotsp|hotspo|hotspot)
                                     _nmcli_array_delete_at words 0 2
-                                    OPTIONS=(ifname con-name ssid band channel password)
+                                    OPTIONS=(ifname con-name ssid band channel password show-password)
                                     _nmcli_compl_ARGS
                                     ;;
                                 r|re|res|resc|resca|rescan)

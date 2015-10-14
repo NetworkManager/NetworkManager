@@ -854,7 +854,7 @@ Otherwise the SSID would not be found and the connection attempt would fail.
 .RE
 .TP
 .B wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]
-.B [password <password>]
+.B [password <password>] [--show-password]
 .br
 Create a Wi-Fi hotspot. The command creates a hotspot connection profile according to
 Wi-Fi device capabilities and activates it on the device. The hotspot is secured with WPA
@@ -864,20 +864,23 @@ Use \fIconnection down\fP or \fIdevice disconnect\fP to stop the hotspot.
 .RS
 .PP
 Parameters of the hotspot can be influenced by the optional parameters:
-.IP \fIifname\fP 10
+.IP \fIifname\fP 17
 \(en what Wi-Fi device is used
-.IP \fIcon-name\fP 10
+.IP \fIcon-name\fP 17
 \(en name of the created hotspot connection profile
-.IP \fIssid\fP 10
+.IP \fIssid\fP 17
 \(en SSID of the hotspot
-.IP \fIband\fP 10
+.IP \fIband\fP 17
 \(en Wi-Fi band to use
-.IP \fIchannel\fP 10
+.IP \fIchannel\fP 17
 \(en Wi-Fi channel to use
-.IP \fIpassword\fP 10
+.IP \fIpassword\fP 17
 \(en password to use for the created hotspot. If not provided,
 nmcli will generate a password. The password is either WPA
 pre-shared key or WEP key.
+.IP \fI--show-password\fP 17
+\(en tell nmcli to print the password to stdout. It is useful
+when the user did not provide his own password.
 .RE
 .TP
 .B wifi rescan [ifname <ifname>] [[ssid <SSID>] ...]

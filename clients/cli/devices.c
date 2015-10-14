@@ -268,7 +268,7 @@ usage (void)
 	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	              "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden yes|no]\n\n"
 	              "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]\n\n"
-	              "               [password <password>]\n\n"
+	              "               [password <password>] [--show-password]\n\n"
 	              "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
 	              ));
 }
@@ -375,6 +375,7 @@ usage_device_wifi (void)
 	              "\n"
 	              "ARGUMENTS := wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
 	              "                          [band a|bg] [channel <channel>] [password <password>]\n"
+	              "                          [--show-password]\n"
 	              "\n"
 	              "Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
 	              "to stop the hotspot.\n"
@@ -385,6 +386,7 @@ usage_device_wifi (void)
 	              "band - Wi-Fi band to use\n"
 	              "channel - Wi-Fi channel to use\n"
 	              "password - password to use for the hotspot\n"
+	              "--show-password - tell nmcli to print password to stdout\n"
 	              "\n"
 	              "ARGUMENTS := rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
 	              "\n"
@@ -2770,6 +2772,7 @@ set_wireless_security_for_hotspot (NMSettingWirelessSecurity *s_wsec,
                                    const char *wifi_mode,
                                    NMDeviceWifiCapabilities caps,
                                    const char *password,
+                                   gboolean show_password,
                                    GError **error)
 {
         char generated_key[11];
@@ -2828,6 +2831,9 @@ set_wireless_security_for_hotspot (NMSettingWirelessSecurity *s_wsec,
 		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_KEY,
 		              NULL);
 	}
+	if (show_password)
+		g_print (_("Hotspot password: %s\n"), key);
+
 	return TRUE;
 }
 
@@ -2844,6 +2850,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	const char *channel = NULL;
 	unsigned long channel_int;
 	const char *password = NULL;
+	gboolean show_password = FALSE;
 	NMDevice *device = NULL;
 	int devices_idx;
 	const GPtrArray *devices;
@@ -2914,6 +2921,8 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 			password = *argv;
+		} else if (nmc_arg_is_option (*argv, "show-password")) {
+			show_password = TRUE;
 		} else {
 			g_string_printf (nmc->return_text, _("Error: Unknown parameter %s."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -3000,7 +3009,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-	if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, &error)) {
+	if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, show_password, &error)) {
 		g_object_unref (connection);
 		g_string_printf (nmc->return_text, _("Error: Invalid 'password': %s."), error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
