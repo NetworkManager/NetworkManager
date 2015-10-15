@@ -129,6 +129,7 @@ libnm/nm-device-modem.c
 libnm/nm-device-olpc-mesh.c
 libnm/nm-device-team.c
 libnm/nm-device-vlan.c
+libnm/nm-device-vxlan.c
 libnm/nm-device-wifi.c
 libnm/nm-device-wimax.c
 libnm/nm-device.c
