@@ -950,7 +950,7 @@ nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE && HAVE_KERNEL_INET6_ADDR_GEN_MODE
 	{
 		const NMPlatformLink *pllink;
 
