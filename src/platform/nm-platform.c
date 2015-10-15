@@ -1406,6 +1406,12 @@ nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLin
 	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
 }
 
+const NMPlatformLnkInfiniband *
+nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_INFINIBAND, out_link);
+}
+
 const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1617,16 +1623,68 @@ nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, N
 gboolean
 nm_platform_infiniband_get_info (NMPlatform *self,
                                  int ifindex,
-                                 int *parent,
-                                 int *p_key,
-                                 const char **mode)
+                                 int *out_parent,
+                                 int *out_p_key,
+                                 const char **out_mode)
 {
+	const NMPlatformLnkInfiniband *plnk;
+	const NMPlatformLink *plink;
+	const char *iface;
+	char *path, *contents;
+	const char *mode;
+	int p_key = 0;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (klass->infiniband_get_info, FALSE);
 
-	return klass->infiniband_get_info (self, ifindex, parent, p_key, mode);
+	plnk = nm_platform_link_get_lnk_infiniband (self, ifindex, &plink);
+
+	if (   !plink
+	    || plink->type != NM_LINK_TYPE_INFINIBAND)
+		return FALSE;
+
+	if (plnk) {
+		NM_SET_OUT (out_parent, plink->parent);
+		NM_SET_OUT (out_p_key, plnk->p_key);
+		NM_SET_OUT (out_mode, plnk->mode);
+		return TRUE;
+	}
+
+	/* Could not get the link information via netlink. To support older kernels,
+	 * fallback to reading sysfs. */
+
+	iface = ASSERT_VALID_PATH_COMPONENT (plink->name);
+
+	/* Fall back to reading sysfs */
+	path = g_strdup_printf ("/sys/class/net/%s/mode", iface);
+	contents = nm_platform_sysctl_get (self, path);
+	g_free (path);
+	if (!contents)
+		return FALSE;
+
+	if (strstr (contents, "datagram"))
+		mode = "datagram";
+	else if (strstr (contents, "connected"))
+		mode = "connected";
+	else
+		mode = NULL;
+	g_free (contents);
+
+	path = g_strdup_printf ("/sys/class/net/%s/pkey", iface);
+	contents = nm_platform_sysctl_get (self, path);
+	g_free (path);
+	if (!contents)
+		return FALSE;
+	p_key = (int) _nm_utils_ascii_str_to_int64 (contents, 16, 0, 0xFFFF, -1);
+	g_free (contents);
+	if (p_key < 0)
+		return FALSE;
+
+	NM_SET_OUT (out_parent, plink->parent);
+	NM_SET_OUT (out_p_key, p_key);
+	NM_SET_OUT (out_mode, mode);
+	return TRUE;
 }
 
 gboolean
@@ -2596,6 +2654,25 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 }
 
 const char *
+nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len)
+{
+	char str_p_key[64];
+
+	if (!_to_string_buffer_init (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "infiniband"
+	            "%s" /* p_key */
+	            "%s%s" /* mode */
+	            "",
+	            lnk->p_key ? nm_sprintf_buf (str_p_key, " pkey %d", lnk->p_key) : "",
+	            lnk->mode ? " mode " : "",
+	            lnk->mode ?: "");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len)
 {
 	if (!_to_string_buffer_init (lnk, &buf, &len))
@@ -3084,6 +3161,15 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 	_CMP_FIELD (a, b, ttl);
 	_CMP_FIELD (a, b, tos);
 	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	return 0;
+}
+
+int
+nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, p_key);
+	_CMP_FIELD_STR_INTERNED (a, b, mode);
 	return 0;
 }
 

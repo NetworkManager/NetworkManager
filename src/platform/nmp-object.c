@@ -1905,6 +1905,14 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_gre_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_INFINIBAND,
+		.sizeof_data                        = sizeof (NMPObjectLnkInfiniband),
+		.sizeof_public                      = sizeof (NMPlatformLnkInfiniband),
+		.obj_type_name                      = "infiniband",
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_infiniband_to_string,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_infiniband_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_MACVLAN - 1] = {
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACVLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacvlan),

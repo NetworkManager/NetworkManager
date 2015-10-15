@@ -341,6 +341,11 @@ extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
 
 typedef struct {
+	int p_key;
+	const char *mode;
+} NMPlatformLnkInfiniband;
+
+typedef struct {
 	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
 	guint16 id;
 } NMPlatformLnkVlan;
@@ -498,11 +503,6 @@ typedef struct {
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
-	gboolean (*infiniband_get_info)      (NMPlatform *,
-	                                      int ifindex,
-	                                      int *parent,
-	                                      int *p_key,
-	                                      const char **mode);
 
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 
@@ -689,6 +689,7 @@ char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *o
 
 gconstpointer nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
@@ -768,6 +769,7 @@ extern char _nm_platform_to_string_buffer[1024];
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize len);
@@ -778,6 +780,7 @@ const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, ch
 
 int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);
+int nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b);
 int nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b);
 int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);
 int nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);

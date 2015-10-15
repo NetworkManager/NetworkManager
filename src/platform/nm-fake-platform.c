@@ -75,7 +75,7 @@ typedef struct {
 
 	char *udi;
 	NMPlatformLnkVlan lnk_vlan;
-	int ib_p_key;
+	NMPlatformLnkInfiniband lnk_infiniband;
 	struct in6_addr ip6_lladdr;
 } NMFakePlatformLink;
 
@@ -271,6 +271,8 @@ link_get_lnk (NMPlatform *platform,
 	switch (link_type) {
 	case NM_LINK_TYPE_VLAN:
 		return &device->lnk_vlan;
+	case NM_LINK_TYPE_INFINIBAND:
+		return &device->lnk_infiniband;
 	default:
 		return NULL;
 	}
@@ -692,27 +694,9 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
 	g_return_val_if_fail (device, FALSE);
 
-	device->ib_p_key = p_key;
+	device->lnk_infiniband.p_key = p_key;
+	device->lnk_infiniband.mode = "datagram";
 	device->link.parent = parent;
-
-	return TRUE;
-}
-
-static gboolean
-infiniband_get_info (NMPlatform *platform, int ifindex, int *parent, int *p_key, const char **mode)
-{
-	NMFakePlatformLink *device;
-
-	device = link_get (platform, ifindex);
-	g_return_val_if_fail (device, FALSE);
-	g_return_val_if_fail (device->link.type == NM_LINK_TYPE_INFINIBAND, FALSE);
-
-	if (parent)
-		*parent = device->link.parent;
-	if (p_key)
-		*p_key = device->ib_p_key;
-	if (mode)
-		*mode = "datagram";
 
 	return TRUE;
 }
@@ -1453,7 +1437,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
-	platform_class->infiniband_get_info = infiniband_get_info;
 
 	platform_class->veth_get_properties = veth_get_properties;
 
