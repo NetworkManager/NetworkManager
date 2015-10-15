@@ -4934,7 +4934,7 @@ cleanup_bt:
 		const char *mtu_c = NULL;
 		char *mtu = NULL;
 		guint32 mtu_int;
-		GByteArray *addr_array = NULL;
+		gboolean valid_mac = FALSE;
 		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,    !ask},
 		                         {"id",      TRUE, &vlan_id,   !ask},
 		                         {"flags",   TRUE, &flags_c,   FALSE},
@@ -4969,7 +4969,7 @@ cleanup_bt:
 			}
 		}
 
-		if (   !(addr_array = nm_utils_hwaddr_atoba (parent, ETH_ALEN))
+		if (   !(valid_mac = nm_utils_hwaddr_valid (parent, ETH_ALEN))
 		    && !nm_utils_is_uuid (parent)
 		    && !nm_utils_iface_valid_name (parent)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5000,18 +5000,18 @@ cleanup_bt:
 		nm_connection_add_setting (connection, NM_SETTING (s_vlan));
 
 		/* Add 'wired' setting if necessary */
-		if (mtu || addr_array) {
+		if (mtu || valid_mac) {
 			s_wired = (NMSettingWired *) nm_setting_wired_new ();
 			nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 			if (mtu)
 				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu_int, NULL);
-			if (addr_array)
-				g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, addr_array, NULL);
+			if (valid_mac)
+				g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, parent, NULL);
 		}
 
 		/* Set 'vlan' properties */
-		if (!addr_array)
+		if (!valid_mac)
 			g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
 
 		g_object_set (s_vlan, NM_SETTING_VLAN_ID, id, NULL);
@@ -5029,8 +5029,6 @@ cleanup_vlan:
 		g_free (flags);
 		g_free (ingress);
 		g_free (egress);
-		if (addr_array)
-			g_byte_array_free (addr_array, TRUE);
 		g_free (parent_ask);
 		g_free (vlan_id_ask);
 		g_strfreev (ingress_arr);
