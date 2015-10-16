@@ -3,9 +3,12 @@
 #include <stdlib.h>
 #include <syslog.h>
 
-#include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
+
+#include "nm-test-utils.h"
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
@@ -16,15 +19,16 @@ main (int argc, char **argv)
 	g_type_init ();
 #endif
 
-	loop = g_main_loop_new (NULL, FALSE);
-	nm_logging_setup ("debug", NULL, NULL, NULL);
-	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
+	if (!g_getenv ("G_MESSAGES_DEBUG"))
+		g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
 
-	g_assert (argc <= 2);
-	if (argc > 1 && !g_strcmp0 (argv[1], "--fake"))
-		nm_fake_platform_setup ();
-	else
-		nm_linux_platform_setup ();
+	nmtst_init_with_logging (&argc, &argv, "DEBUG", "ALL");
+
+	nm_log_info (LOGD_PLATFORM, "platform monitor start");
+
+	loop = g_main_loop_new (NULL, FALSE);
+
+	nm_linux_platform_setup ();
 
 	g_main_loop_run (loop);
 
