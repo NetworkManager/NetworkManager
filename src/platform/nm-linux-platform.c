@@ -945,18 +945,18 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean *c
 		gs_free char *anycast_mask = NULL;
 		gs_free char *devtype = NULL;
 
-		if (arptype == 256) {
-			/* Some s390 CTC-type devices report 256 for the encapsulation type
-			 * for some reason, but we need to call them Ethernet.
-			 */
-			if (!g_strcmp0 (driver, "ctcm"))
-				return NM_LINK_TYPE_ETHERNET;
-		}
-
 		/* Fallback OVS detection for kernel <= 3.16 */
 		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
 			if (!g_strcmp0 (driver, "openvswitch"))
 				return NM_LINK_TYPE_OPENVSWITCH;
+
+			if (arptype == 256) {
+				/* Some s390 CTC-type devices report 256 for the encapsulation type
+				 * for some reason, but we need to call them Ethernet.
+				 */
+				if (!g_strcmp0 (driver, "ctcm"))
+					return NM_LINK_TYPE_ETHERNET;
+			}
 		}
 
 		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
