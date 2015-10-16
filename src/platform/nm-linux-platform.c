@@ -538,15 +538,32 @@ _linktype_get_type (NMPlatform *platform,
 {
 	guint i;
 
-	if (!kind && completed_from_cache) {
+	if (completed_from_cache) {
 		const NMPObject *obj;
 
 		obj = _lookup_cached_link (cache, ifindex, completed_from_cache, link_cached);
-		if (obj && obj->link.kind)
-			kind = obj->link.kind;
+
+		/* If we detected the link type before, we stick to that
+		 * decision unless the "kind" changed.
+		 *
+		 * This way, we save edditional ethtool/sysctl lookups, but moreover,
+		 * we keep the linktype stable and don't change it as long as the link
+		 * exists.
+		 *
+		 * Note that kernel *can* reuse the ifindex (on integer overflow, and
+		 * when moving interfce to other netns). Thus here there is a tiny potential
+		 * of messing stuff up. */
+		if (   obj
+		    && !NM_IN_SET (obj->link.type, NM_LINK_TYPE_UNKNOWN, NM_LINK_TYPE_NONE)
+		    && (   !kind
+		        || !g_strcmp0 (kind, obj->link.kind))) {
+			nm_assert (obj->link.kind == g_intern_string (obj->link.kind));
+			*out_kind = obj->link.kind;
+			return obj->link.type;
+		}
 	}
 
-	*out_kind = kind;
+	*out_kind = g_intern_string (kind);
 
 	if (kind) {
 		for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
@@ -1246,7 +1263,6 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	int err;
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	NMPObject *obj_result = NULL;
-	const char *kind = NULL;
 	gboolean completed_from_cache_val = FALSE;
 	gboolean *completed_from_cache = cache ? &completed_from_cache_val : NULL;
 	const NMPObject *link_cached = NULL;
@@ -1295,10 +1311,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	                                     obj->link.arptype,
 	                                     completed_from_cache,
 	                                     &link_cached,
-	                                     &kind);
-
-	kind = g_intern_string (kind);
-	obj->link.kind = kind;
+	                                     &obj->link.kind);
 
 	if (tb[IFLA_MASTER])
 		obj->link.master = nla_get_u32 (tb[IFLA_MASTER]);
