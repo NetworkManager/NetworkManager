@@ -302,8 +302,8 @@ _nm_vpn_plugin_info_list_load_dir (const char *dirname,
 /**
  * nm_vpn_plugin_info_list_load:
  *
- * Returns: (tranfer full): list of plugins loaded from the default
- * directories rejecting duplicates.
+ * Returns: (element-type NMVpnPluginInfo) (transfer full): list of plugins
+ * loaded from the default directories rejecting duplicates.
  *
  * Since: 1.2
  */
@@ -393,7 +393,7 @@ _check_no_conflict (NMVpnPluginInfo *i1, NMVpnPluginInfo *i2, GError **error)
 
 /**
  * nm_vpn_plugin_info_list_add:
- * @list: list of plugins
+ * @list: (element-type NMVpnPluginInfo): list of plugins
  * @plugin_info: instance to add
  * @error: failure reason
  *
@@ -437,7 +437,7 @@ nm_vpn_plugin_info_list_add (GSList **list, NMVpnPluginInfo *plugin_info, GError
 
 /**
  * nm_vpn_plugin_info_list_remove:
- * @list: list of plugins
+ * @list: (element-type NMVpnPluginInfo): list of plugins
  * @plugin_info: instance
  *
  * Remove @plugin_info from @list.
@@ -462,7 +462,7 @@ nm_vpn_plugin_info_list_remove (GSList **list, NMVpnPluginInfo *plugin_info)
 
 /**
  * nm_vpn_plugin_info_list_find_by_name:
- * @list: list of plugins
+ * @list: (element-type NMVpnPluginInfo): list of plugins
  * @name: name to search
  *
  * Returns: (transfer none): the first plugin with a matching @name (or %NULL).
@@ -486,7 +486,7 @@ nm_vpn_plugin_info_list_find_by_name (GSList *list, const char *name)
 
 /**
  * nm_vpn_plugin_info_list_find_by_filename:
- * @list: list of plugins
+ * @list: (element-type NMVpnPluginInfo): list of plugins
  * @filename: filename to search
  *
  * Returns: (transfer none): the first plugin with a matching @filename (or %NULL).
@@ -510,7 +510,7 @@ nm_vpn_plugin_info_list_find_by_filename (GSList *list, const char *filename)
 
 /**
  * nm_vpn_plugin_info_list_find_by_service:
- * @list: list of plugins
+ * @list: (element-type NMVpnPluginInfo): list of plugins
  * @service: service to search
  *
  * Returns: (transfer none): the first plugin with a matching @service (or %NULL).

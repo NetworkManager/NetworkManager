@@ -2565,7 +2565,7 @@ nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char *name,
  * nm_lldp_neighbor_get_attr_uint_value:
  * @neighbor: the #NMLldpNeighbor
  * @name: the attribute name
- * @out_value: (out) (allow-none) on return, the attribute value
+ * @out_value: (out) (allow-none): on return, the attribute value
  *
  * Gets the uint value of attribute with name @name on @neighbor
  *

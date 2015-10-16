@@ -1184,9 +1184,9 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMVpnServicePlugin:service-name:
+	 * NMVpnServicePlugin:watch-peer:
 	 *
-	 * The D-Bus service name of this plugin.
+	 * Whether to watch for D-Bus peer's changes.
 	 *
 	 * Since: 1.2
 	 */
