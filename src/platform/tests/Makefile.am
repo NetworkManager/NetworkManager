@@ -31,7 +31,6 @@ PLATFORM_LDADD = \
 @GNOME_CODE_COVERAGE_RULES@
 
 noinst_PROGRAMS = \
-	dump \
 	monitor \
 	platform \
 	test-link-fake \
@@ -49,9 +48,6 @@ EXTRA_DIST = test-common.h
 
 monitor_SOURCES = monitor.c $(PLATFORM_SOURCES)
 monitor_LDADD = $(PLATFORM_LDADD)
-
-dump_SOURCES = dump.c $(PLATFORM_SOURCES)
-dump_LDADD = $(PLATFORM_LDADD)
 
 platform_SOURCES = platform.c $(PLATFORM_SOURCES)
 platform_LDADD = $(PLATFORM_LDADD)
