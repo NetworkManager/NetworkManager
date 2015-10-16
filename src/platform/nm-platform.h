@@ -341,28 +341,32 @@ extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
 
 typedef struct {
+	int parent_ifindex;
+	guint16 input_flags;
+	guint16 output_flags;
+	guint32 input_key;
+	guint32 output_key;
+	in_addr_t local;
+	in_addr_t remote;
+	guint8 ttl;
+	guint8 tos;
+	gboolean path_mtu_discovery;
+} NMPlatformLnkGre;
+
+typedef struct {
 	int p_key;
 	const char *mode;
 } NMPlatformLnkInfiniband;
 
 typedef struct {
-	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
-	guint16 id;
-} NMPlatformLnkVlan;
-
-typedef struct {
-	gint64 owner;
-	gint64 group;
-	const char *mode;
-	gboolean no_pi;
-	gboolean vnet_hdr;
-	gboolean multi_queue;
-} NMPlatformTunProperties;
-
-typedef struct {
 	const char *mode;
 	gboolean no_promisc;
 } NMPlatformLnkMacvlan;
+
+typedef struct {
+	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
+	guint16 id;
+} NMPlatformLnkVlan;
 
 typedef struct {
 	int parent_ifindex;
@@ -386,17 +390,13 @@ typedef struct {
 } NMPlatformLnkVxlan;
 
 typedef struct {
-	int parent_ifindex;
-	guint16 input_flags;
-	guint16 output_flags;
-	guint32 input_key;
-	guint32 output_key;
-	in_addr_t local;
-	in_addr_t remote;
-	guint8 ttl;
-	guint8 tos;
-	gboolean path_mtu_discovery;
-} NMPlatformLnkGre;
+	gint64 owner;
+	gint64 group;
+	const char *mode;
+	gboolean no_pi;
+	gboolean vnet_hdr;
+	gboolean multi_queue;
+} NMPlatformTunProperties;
 
 /******************************************************************/
 
