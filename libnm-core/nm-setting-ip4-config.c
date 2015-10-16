@@ -630,7 +630,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	/* ---ifcfg-rh---
 	 * property: dhcp-hostname
 	 * variable: DHCP_HOSTNAME
-	 * description: Hostname to send to the DHCP server.
+	 * description: Hostname to send to the DHCP server. When both DHCP_HOSTNAME and
+	 *    DHCP_FQDN are specified only the latter is used.
 	 * ---end---
 	 */
 
@@ -710,6 +711,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 * cannot be set at the same time.
 	 *
 	 * Since: 1.2
+	 */
+	/* ---ifcfg-rh---
+	 * property: dhcp-fqdn
+	 * variable: DHCP_FQDN
+	 * description: FQDN to send to the DHCP server. When both DHCP_HOSTNAME and
+	 *    DHCP_FQDN are specified only the latter is used.
+	 * example: DHCP_FQDN=foo.bar.com
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_FQDN,
