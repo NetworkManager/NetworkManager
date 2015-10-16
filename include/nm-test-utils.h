@@ -689,6 +689,37 @@ nmtst_inet6_from_string (const char *str)
 }
 
 inline static void
+_nmtst_assert_ip4_address (const char *file, int line, in_addr_t addr, const char *str_expected)
+{
+	if (nmtst_inet4_from_string (str_expected) != addr) {
+		char buf[100];
+
+		g_error ("%s:%d: Unexpected IPv4 address: expected %s, got %s",
+		         file, line, str_expected ? str_expected : "0.0.0.0",
+		         inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
+	}
+}
+#define nmtst_assert_ip4_address(addr, str_expected) _nmtst_assert_ip4_address (__FILE__, __LINE__, addr, str_expected)
+
+inline static void
+_nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *addr, const char *str_expected)
+{
+	struct in6_addr any = in6addr_any;
+
+	if (!addr)
+		addr = &any;
+
+	if (memcmp (nmtst_inet6_from_string (str_expected), addr, sizeof (*addr)) != 0) {
+		char buf[100];
+
+		g_error ("%s:%d: Unexpected IPv6 address: expected %s, got %s",
+		         file, line, str_expected ? str_expected : "::",
+		         inet_ntop (AF_INET6, &addr, buf, sizeof (buf)));
+	}
+}
+#define nmtst_assert_ip6_address(addr, str_expected) _nmtst_assert_ip6_address (__FILE__, __LINE__, addr, str_expected)
+
+inline static void
 FAIL(const char *test_name, const char *fmt, ...)
 {
 	va_list args;
