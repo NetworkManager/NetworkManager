@@ -6291,8 +6291,7 @@ test_write_wired_static (void)
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip4), ==, 204);
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip6), ==, 206);
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wired-static-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	route6file = utils_get_route6_path (testfile);
 	unlink (route6file);

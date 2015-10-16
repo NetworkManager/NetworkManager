@@ -278,6 +278,9 @@ nmp_utils_ethtool_set_wake_on_lan (const char *ifname,
 {
 	struct ethtool_wolinfo wol_info = { };
 
+	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
+		return TRUE;
+
 	nm_log_dbg (LOGD_PLATFORM, "setting Wake-on-LAN options 0x%x, password '%s'",
 	            (unsigned int) wol, wol_password);
 

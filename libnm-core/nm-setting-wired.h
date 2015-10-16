@@ -43,14 +43,19 @@ G_BEGIN_DECLS
 /**
  * NMSettingWiredWakeOnLan:
  * @NM_SETTING_WIRED_WAKE_ON_LAN_NONE: Wake-on-LAN disabled
- * @NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT: Use the default value
  * @NM_SETTING_WIRED_WAKE_ON_LAN_PHY: Wake on PHY activity
  * @NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST: Wake on unicast messages
  * @NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST: Wake on multicast messages
  * @NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST: Wake on broadcast messages
  * @NM_SETTING_WIRED_WAKE_ON_LAN_ARP: Wake on ARP
  * @NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC: Wake on magic packet
- * @NM_SETTING_WIRED_WAKE_ON_LAN_ALL: Wake on all events
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_ALL: Wake on all events. This does not
+ *   include the exclusive flags @NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT or
+ *   @NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE.
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT: Use the default value
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE: Don't change configured settings
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS: Mask of flags that are
+ *   incompatible with other flags
  *
  * Options for #NMSettingWired:wake-on-lan. Note that not all options
  * are supported by all devices.
@@ -59,15 +64,19 @@ G_BEGIN_DECLS
  */
 typedef enum { /*< flags >*/
 	NM_SETTING_WIRED_WAKE_ON_LAN_NONE      = 0, /*< skip >*/
-	NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT   = (1 << 0),
 	NM_SETTING_WIRED_WAKE_ON_LAN_PHY       = (1 << 1),
 	NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST   = (1 << 2),
 	NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST = (1 << 3),
 	NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST = (1 << 4),
 	NM_SETTING_WIRED_WAKE_ON_LAN_ARP       = (1 << 5),
 	NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC     = (1 << 6),
-	_NM_SETTING_WIRED_WAKE_ON_LAN_LAST,    /*< skip >*/
-	NM_SETTING_WIRED_WAKE_ON_LAN_ALL       = (((_NM_SETTING_WIRED_WAKE_ON_LAN_LAST - 1) << 1) - 1 - NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) /*< skip >*/
+
+	_NM_SETTING_WIRED_WAKE_ON_LAN_LAST_OPT, /*< skip >*/
+	NM_SETTING_WIRED_WAKE_ON_LAN_ALL       = (((_NM_SETTING_WIRED_WAKE_ON_LAN_LAST_OPT - 1) << 1) - 1) - (1 << 0 /*DEFAULT*/), /*< skip >*/
+
+	NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT   = (1 << 0),
+	NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE    = (1 << 15),
+	NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT | NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE, /*< skip >*/
 } NMSettingWiredWakeOnLan;
 
 #define NM_SETTING_WIRED_PORT "port"

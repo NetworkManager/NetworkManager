@@ -3558,21 +3558,49 @@ wireless_connection_from_ifcfg (const char *file,
 }
 
 static void
-parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, char *value)
+parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, char **out_password)
 {
-	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
-	gboolean use_password = FALSE;
-	char **words, **iter, *flag;
+	gs_strfreev char **words = NULL;
+	const char **iter = NULL, *flag;
+	gboolean has_flags = FALSE;
+	gboolean has_password = FALSE;
 
 	if (!value || !value[0])
 		return;
 
-	words = g_strsplit_set (value, " ", 0);
-	iter = words;
+	words = g_strsplit_set (value, "\t ", 0);
+	iter = (const char **) words;
 
 	while (iter[0]) {
-		if (g_str_equal (iter[0], "wol") && iter[1] && *iter[1]) {
-			for (flag = iter[1]; *flag; flag++) {
+		gboolean is_wol;
+
+		if (g_str_equal (iter[0], "wol"))
+			is_wol = TRUE;
+		else if (g_str_equal (iter[0], "sopass"))
+			is_wol = FALSE;
+		else {
+			/* Silently skip unknown options */
+			iter++;
+			continue;
+		}
+
+		iter++;
+
+		/* g_strsplit_set() returns empty tokens, meaning that we must skip over repeated
+		 * space characters like to parse "wol     d". */
+		while (iter[0] && !*iter[0])
+			iter++;
+
+		if (is_wol) {
+			NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+			has_flags = TRUE;
+
+			if (!iter[0]) {
+				PARSE_WARNING ("Wake-on-LAN options missing");
+				break;
+			}
+
+			for (flag = iter[0]; *flag; flag++) {
 				switch (*flag) {
 				case 'p':
 					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_PHY;
@@ -3593,42 +3621,65 @@ parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, char *value)
 					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC;
 					break;
 				case 's':
-					use_password = TRUE;
 					break;
 				case 'd':
 					wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
-					use_password = FALSE;
 					break;
 				default:
 					PARSE_WARNING ("unrecognized Wake-on-LAN option '%c'", *flag);
 				}
 			}
 
-			if (!NM_FLAGS_HAS (wol_flags, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
-				use_password = FALSE;
+			*out_flags = wol_flags;
+		} else {
+			has_password = TRUE;
 
-			g_object_set (s_wired, NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags, NULL);
-			iter += 2;
-			continue;
+			if (!iter[0]) {
+				PARSE_WARNING ("Wake-on-LAN password missing");
+				break;
+			}
+
+
+			g_clear_pointer (out_password, g_free);
+			if (nm_utils_hwaddr_valid (iter[0], ETH_ALEN))
+				*out_password = g_strdup (iter[0]);
+			else
+				PARSE_WARNING ("Wake-on-LAN password '%s' is invalid", iter[0]);
 		}
-
-		if (g_str_equal (iter[0], "sopass") && iter[1] && *iter[1]) {
-			if (use_password) {
-				if (nm_utils_hwaddr_valid (iter[1], ETH_ALEN))
-					g_object_set (s_wired, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, iter[1], NULL);
-				else
-					PARSE_WARNING ("Wake-on-LAN password '%s' is invalid", iter[1]);
-			} else
-				PARSE_WARNING ("Wake-on-LAN password not expected");
-			iter += 2;
-			continue;
-		}
-
-		/* Silently skip unknown options */
 		iter++;
 	}
+}
 
-	g_strfreev (words);
+static void
+parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, const char *value)
+{
+	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
+	gs_free char *wol_password = NULL;
+	gboolean ignore_wol_password = FALSE;
+
+	if (value) {
+		gs_strfreev char **opts = NULL;
+		const char **iter;
+
+		wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
+
+		opts = g_strsplit_set (value, ";", 0);
+		for (iter = (const char **) opts; iter[0]; iter++) {
+			/* in case of repeated wol_passwords, parse_ethtool_option()
+			 * will do the right thing and clear wol_password before resetting. */
+			parse_ethtool_option (iter[0], &wol_flags, &wol_password);
+		}
+	}
+
+	if (   wol_password
+	    && !NM_FLAGS_HAS (wol_flags, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC)) {
+		PARSE_WARNING ("Wake-on-LAN password not expected");
+		ignore_wol_password = TRUE;
+	}
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags,
+	              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, ignore_wol_password ? NULL : wol_password,
+	              NULL);
 }
 
 static NMSetting *
@@ -3766,7 +3817,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	value = svGetValue (ifcfg, "ETHTOOL_OPTS", FALSE);
+	value = svGetValueFull (ifcfg, "ETHTOOL_OPTS", FALSE);
 	parse_ethtool_options (ifcfg, s_wired, value);
 	g_free (value);
 
