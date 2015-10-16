@@ -519,13 +519,16 @@ test_internal (void)
 	free_signal (link_removed);
 }
 
+/*****************************************************************************/
+
 static void
 test_external (void)
 {
 	const NMPlatformLink *pllink;
-	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
-	SignalData *link_changed, *link_removed;
+	SignalData *link_added, *link_changed, *link_removed;
 	int ifindex;
+
+	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 
 	nmtstp_run_command_check ("ip link add %s type %s", DEVICE_NAME, "dummy");
 	wait_signal (link_added);
@@ -578,6 +581,184 @@ test_external (void)
 	free_signal (link_removed);
 }
 
+/*****************************************************************************/
+
+typedef struct {
+	NMLinkType link_type;
+	int test_mode;
+} TestAddSoftwareDetectData;
+
+static void
+test_software_detect (gconstpointer user_data)
+{
+	const TestAddSoftwareDetectData *test_data = user_data;
+	int ifindex, ifindex_parent;
+	const NMPlatformLink *plink;
+	gconstpointer plnk_void;
+	guint i_step;
+	int exit_code;
+
+	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
+	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+
+	switch (test_data->link_type) {
+	case NM_LINK_TYPE_GRE: {
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "gre0")) {
+			/* Seems that the ip_gre module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip_gre", NULL) != 0;
+		}
+		exit_code = nmtstp_run_command ("ip tunnel add %s mode gre remote 172.168.10.25 local 192.168.233.204 ttl 174", DEVICE_NAME);
+		if (exit_code != 0) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create gre tunnel because of missing ip_gre module (modprobe ip_gre)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding GRE tunnel: exit code %d", exit_code);
+		}
+		break;
+	}
+	case NM_LINK_TYPE_MACVLAN:
+		nmtstp_run_command_check ("ip link add name %s link %s type macvlan", DEVICE_NAME, PARENT_NAME);
+		break;
+	case NM_LINK_TYPE_VLAN:
+		nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1242", DEVICE_NAME, PARENT_NAME);
+		break;
+	case NM_LINK_TYPE_VXLAN:
+		switch (test_data->test_mode) {
+		case 0:
+			nmtstp_run_command_check ("ip link add %s type vxlan id 42 local 23.1.2.164 group 239.1.2.134 dev %s ageing 1245 dstport 4789", DEVICE_NAME, PARENT_NAME);
+			break;
+		case 1:
+			nmtstp_run_command_check ("ip link add %s type vxlan id 11214423 local 1:2:3:4:334:23::23 group ff0e::115 dev %s ageing 3245 dstport 57412", DEVICE_NAME, PARENT_NAME);
+			break;
+		}
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
+	ifindex = nmtstp_assert_wait_for_link (DEVICE_NAME, test_data->link_type, 100)->ifindex;
+
+	nmtstp_link_set_updown (-1, ifindex_parent, TRUE);
+
+	for (i_step = 0; i_step < 5; i_step++) {
+
+		_LOGD ("test-software-detect: step %u", i_step);
+		if (nmtst_is_debug ())
+			nmtstp_run_command_check ("ip -d link show %s", DEVICE_NAME);
+
+		if (i_step > 0) {
+			gboolean set_up = (i_step % 2) == 1;
+
+			if (   test_data->link_type == NM_LINK_TYPE_VXLAN
+			    && set_up) {
+				/* On RHEL-7, we need to add a tiny sleep here, otherwise,
+				 * upping the vxlan device fails with EADDRINUSE.
+				 * https://bugzilla.redhat.com/show_bug.cgi?id=1277131 */
+				g_usleep (1);
+			}
+			nmtstp_link_set_updown (-1, ifindex, set_up);
+		}
+
+		plnk_void = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, test_data->link_type, &plink);
+		g_assert (plink);
+		g_assert_cmpint (plink->ifindex, ==, ifindex);
+		g_assert (plnk_void);
+
+		switch (test_data->link_type) {
+		case NM_LINK_TYPE_GRE: {
+			const NMPlatformLnkGre *plnk = plnk_void;
+
+			g_assert_cmpint (plnk->parent_ifindex, ==, 0);
+			g_assert_cmpint (plnk->input_flags, ==, 0);
+			g_assert_cmpint (plnk->output_flags, ==, 0);
+			g_assert_cmpint (plnk->input_key, ==, 0);
+			g_assert_cmpint (plnk->output_key, ==, 0);
+			nmtst_assert_ip4_address (plnk->local, "192.168.233.204");
+			nmtst_assert_ip4_address (plnk->remote, "172.168.10.25");
+			g_assert_cmpint (plnk->ttl, ==, 174);
+			g_assert_cmpint (plnk->tos, ==, 0);
+			g_assert_cmpint (plnk->path_mtu_discovery, ==, TRUE);
+			break;
+		}
+		case NM_LINK_TYPE_MACVLAN: {
+			const NMPlatformLnkMacvlan *plnk = plnk_void;
+
+			g_assert_cmpint (plnk->no_promisc, ==, FALSE);
+			g_assert_cmpstr (plnk->mode, ==, "vepa");
+			break;
+		}
+		case NM_LINK_TYPE_VLAN: {
+			const NMPlatformLnkVlan *plnk = plnk_void;
+
+			g_assert_cmpint (plnk->id, ==, 1242);
+			break;
+		}
+		case NM_LINK_TYPE_VXLAN: {
+			const NMPlatformLnkVxlan *plnk = plnk_void;
+
+			g_assert_cmpint (plnk->parent_ifindex, !=, 0);
+			g_assert_cmpint (plnk->tos, ==, 0);
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->learning, ==, TRUE);
+			g_assert_cmpint (plnk->limit, ==, 0);
+			g_assert_cmpint (plnk->src_port_min, ==, 0);
+			g_assert_cmpint (plnk->src_port_max, ==, 0);
+			g_assert_cmpint (plnk->proxy, ==, FALSE);
+			g_assert_cmpint (plnk->rsc, ==, FALSE);
+			g_assert_cmpint (plnk->l2miss, ==, FALSE);
+			g_assert_cmpint (plnk->l3miss, ==, FALSE);
+
+			switch (test_data->test_mode) {
+			case 0:
+				g_assert_cmpint (plnk->id, ==, 42);
+				nmtst_assert_ip4_address (plnk->local, "23.1.2.164");
+				nmtst_assert_ip4_address (plnk->group, "239.1.2.134");
+				nmtst_assert_ip6_address (&plnk->group6, "::");
+				nmtst_assert_ip6_address (&plnk->local6, "::");
+				g_assert_cmpint (plnk->ageing, ==, 1245);
+				g_assert_cmpint (plnk->dst_port, ==, 4789);
+				break;
+			case 1:
+				g_assert_cmpint (plnk->id, ==, 11214423);
+				nmtst_assert_ip4_address (plnk->local, "0.0.0.0");
+				nmtst_assert_ip4_address (plnk->group, "0.0.0.0");
+				nmtst_assert_ip6_address (&plnk->group6, "ff0e::115");
+				nmtst_assert_ip6_address (&plnk->local6, "1:2:3:4:334:23::23");
+				g_assert_cmpint (plnk->ageing, ==, 3245);
+				g_assert_cmpint (plnk->dst_port, ==, 57412);
+				break;
+			}
+			break;
+		}
+		default:
+			g_assert_not_reached ();
+		}
+	}
+
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+out_delete_parent:
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));
+}
+
+static void
+test_software_detect_add (const char *testpath,
+                          NMLinkType link_type,
+                          int test_mode)
+{
+	TestAddSoftwareDetectData *test_data;
+
+	test_data = g_new0 (TestAddSoftwareDetectData, 1);
+	test_data->link_type = link_type;
+	test_data->test_mode = test_mode;
+
+	g_test_add_data_func_full (testpath, test_data, test_software_detect, g_free);
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -602,6 +783,13 @@ setup_tests (void)
 	g_test_add_func ("/link/software/team", test_team);
 	g_test_add_func ("/link/software/vlan", test_vlan);
 
-	if (strcmp (g_type_name (G_TYPE_FROM_INSTANCE (nm_platform_get ())), "NMFakePlatform"))
+	if (nmtstp_is_root_test ()) {
 		g_test_add_func ("/link/external", test_external);
+
+		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
+		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
+		test_software_detect_add ("/link/software/detect/vlan", NM_LINK_TYPE_VLAN, 0);
+		test_software_detect_add ("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
+		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
+	}
 }

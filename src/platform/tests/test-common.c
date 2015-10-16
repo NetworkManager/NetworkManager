@@ -366,6 +366,50 @@ nmtstp_wait_for_signal_until (gint64 until_ms)
 	}
 }
 
+const NMPlatformLink *
+nmtstp_wait_for_link (const char *ifname, guint timeout_ms)
+{
+	return nmtstp_wait_for_link_until (ifname, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+}
+
+const NMPlatformLink *
+nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms)
+{
+	const NMPlatformLink *plink;
+	gint64 now;
+
+	while (TRUE) {
+		now = nm_utils_get_monotonic_timestamp_ms ();
+
+		plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
+		if (plink)
+			return plink;
+
+		if (until_ms < now)
+			return NULL;
+
+		nmtstp_wait_for_signal (MAX (1, until_ms - now));
+	}
+}
+
+const NMPlatformLink *
+nmtstp_assert_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
+{
+	return nmtstp_assert_wait_for_link_until (ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+}
+
+const NMPlatformLink *
+nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
+{
+	const NMPlatformLink *plink;
+
+	plink = nmtstp_wait_for_link_until (ifname, until_ms);
+	g_assert (plink);
+	if (expected_link_type != NM_LINK_TYPE_NONE)
+		g_assert_cmpint (plink->type, ==, expected_link_type);
+	return plink;
+}
+
 int
 nmtstp_run_command_check_external_global (void)
 {
@@ -616,9 +660,6 @@ _ip_address_add (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		/* timeout? */
-		g_assert (nm_utils_get_monotonic_timestamp_ms () < end_time);
-
 		g_assert (nmtstp_wait_for_signal_until (end_time));
 	} while (TRUE);
 }
@@ -755,9 +796,6 @@ _ip_address_del (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		/* timeout? */
-		g_assert (nm_utils_get_monotonic_timestamp_ms () < end_time);
-
 		g_assert (nmtstp_wait_for_signal_until (end_time));
 	} while (TRUE);
 }
@@ -789,6 +827,52 @@ nmtstp_ip6_address_del (gboolean external_command,
 	                 (NMIPAddr *) &address,
 	                 plen,
 	                 NULL);
+}
+
+void
+nmtstp_link_set_updown (gboolean external_command,
+                        int ifindex,
+                        gboolean up)
+{
+	const NMPlatformLink *plink;
+	gint64 end_time;
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		const char *ifname;
+
+		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
+		g_assert (ifname);
+
+		nmtstp_run_command_check ("ip link set %s %s",
+		                          ifname,
+		                          up ? "up" : "down");
+	} else {
+		if (up)
+			g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL));
+		else
+			g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
+	}
+
+	/* Let's wait until we get the result */
+	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	do {
+		if (external_command)
+			nm_platform_process_events (NM_PLATFORM_GET);
+
+		/* let's wait until we see the address as we added it. */
+		plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		g_assert (plink);
+
+		if (NM_FLAGS_HAS (plink->flags, IFF_UP) == !!up)
+			break;
+
+		/* for internal command, we expect not to reach this line.*/
+		g_assert (external_command);
+
+		g_assert (nmtstp_wait_for_signal_until (end_time));
+	} while (TRUE);
 }
 
 /*****************************************************************************/
