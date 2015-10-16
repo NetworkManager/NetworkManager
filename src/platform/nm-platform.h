@@ -351,10 +351,6 @@ typedef struct {
 } NMPlatformLnkVlan;
 
 typedef struct {
-	int peer;
-} NMPlatformVethProperties;
-
-typedef struct {
 	gint64 owner;
 	gint64 group;
 	const char *mode;
@@ -503,8 +499,6 @@ typedef struct {
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
-
-	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 
 	gboolean    (*wifi_get_capabilities) (NMPlatform *, int ifindex, NMDeviceWifiCapabilities *caps);
 	gboolean    (*wifi_get_bssid)        (NMPlatform *, int ifindex, guint8 *bssid);
@@ -701,7 +695,7 @@ gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int fro
 NMPlatformError nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
 gboolean nm_platform_infiniband_get_info (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
 
-gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, NMPlatformVethProperties *properties);
+gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, int *out_peer_ifindex);
 gboolean nm_platform_tun_get_properties         (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);
 
 gboolean nm_platform_tun_get_properties_ifname  (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);

@@ -76,17 +76,18 @@ get_peer (NMDeviceVeth *self)
 {
 	NMDeviceVethPrivate *priv = NM_DEVICE_VETH_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self), *peer = NULL;
-	NMPlatformVethProperties props;
+	int peer_ifindex;
 
 	if (priv->ever_had_peer)
 		return priv->peer;
 
-	if (!nm_platform_veth_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_veth_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &peer_ifindex)) {
 		_LOGW (LOGD_HW, "could not read veth properties");
 		return NULL;
 	}
 
-	peer = nm_manager_get_device_by_ifindex (nm_manager_get (), props.peer);
+	if (peer_ifindex > 0)
+		peer = nm_manager_get_device_by_ifindex (nm_manager_get (), peer_ifindex);
 	if (peer && NM_IS_DEVICE_VETH (peer)) {
 		set_peer (self, peer);
 		set_peer (NM_DEVICE_VETH (peer), device);

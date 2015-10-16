@@ -357,20 +357,6 @@ do_vlan_set_egress_map (char **argv)
 }
 
 static gboolean
-do_veth_get_properties (char **argv)
-{
-	int ifindex = parse_ifindex (*argv++);
-	NMPlatformVethProperties props;
-
-	if (!nm_platform_veth_get_properties (NM_PLATFORM_GET, ifindex, &props))
-		return FALSE;
-
-	printf ("peer: %d\n", props.peer);
-
-	return TRUE;
-}
-
-static gboolean
 do_tun_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
@@ -825,8 +811,6 @@ static const command_t commands[] = {
 		"<ifname/ifindex> <from> <to>" },
 	{ "vlan-set-egress-map", "set vlan egress map", do_vlan_set_egress_map, 3,
 		"<ifname/ifindex> <from> <to>" },
-	{ "veth-get-properties", "get veth properties", do_veth_get_properties, 1,
-	  "<ifname/ifindex>" },
 	{ "tun-get-properties", "get tun/tap properties", do_tun_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "macvlan-get-properties", "get macvlan properties", do_macvlan_get_properties, 1,

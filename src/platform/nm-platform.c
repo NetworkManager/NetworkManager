@@ -1688,14 +1688,33 @@ nm_platform_infiniband_get_info (NMPlatform *self,
 }
 
 gboolean
-nm_platform_veth_get_properties (NMPlatform *self, int ifindex, NMPlatformVethProperties *props)
+nm_platform_veth_get_properties (NMPlatform *self, int ifindex, int *out_peer_ifindex)
 {
+	const NMPlatformLink *plink;
+	int peer_ifindex;
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props != NULL, FALSE);
+	plink = nm_platform_link_get (self, ifindex);
 
-	return klass->veth_get_properties (self, ifindex, props);
+	if (!plink)
+		return FALSE;
+	if (plink->type != NM_LINK_TYPE_VETH)
+		return FALSE;
+
+	if (plink->parent != 0) {
+		NM_SET_OUT (out_peer_ifindex, plink->parent);
+		return TRUE;
+	}
+
+	/* Pre-4.1 kernel did not expose the peer_ifindex as IFA_LINK. Lookup via ethtool. */
+	if (out_peer_ifindex) {
+		peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (plink->name);
+		if (peer_ifindex <= 0)
+			return FALSE;
+
+		*out_peer_ifindex = peer_ifindex;
+	}
+	return TRUE;
 }
 
 gboolean

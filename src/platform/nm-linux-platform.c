@@ -3976,26 +3976,6 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 
 /******************************************************************/
 
-static gboolean
-veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
-{
-	const char *ifname;
-	int peer_ifindex;
-
-	ifname = nm_platform_link_get_name (platform, ifindex);
-	if (!ifname)
-		return FALSE;
-
-	peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (ifname);
-	if (peer_ifindex <= 0)
-		return FALSE;
-
-	props->peer = peer_ifindex;
-	return TRUE;
-}
-
-/******************************************************************/
-
 static WifiData *
 wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 {
@@ -5222,8 +5202,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
-
-	platform_class->veth_get_properties = veth_get_properties;
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;

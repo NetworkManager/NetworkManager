@@ -702,12 +702,6 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 }
 
 static gboolean
-veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
-{
-	return FALSE;
-}
-
-static gboolean
 wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -1437,8 +1431,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
-
-	platform_class->veth_get_properties = veth_get_properties;
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;
