@@ -3779,12 +3779,12 @@ vxlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
 		props->ttl = nla_get_u8 (tb[IFLA_VXLAN_TTL]);
 
 	if (tb[IFLA_VXLAN_PORT])
-		props->dst_port = nla_get_u16 (tb[IFLA_VXLAN_PORT]);
+		props->dst_port = ntohs (nla_get_u16 (tb[IFLA_VXLAN_PORT]));
 
 	if (tb[IFLA_VXLAN_PORT_RANGE]) {
 		range = nla_data (tb[IFLA_VXLAN_PORT_RANGE]);
-		props->src_port_min = range->low;
-		props->src_port_max = range->high;
+		props->src_port_min = ntohs (range->low);
+		props->src_port_max = ntohs (range->high);
 	}
 
 	if (tb[IFLA_VXLAN_LEARNING])
