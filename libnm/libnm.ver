@@ -869,6 +869,7 @@ global:
 	nm_lldp_neighbor_get_attr_string_value;
 	nm_lldp_neighbor_get_attr_type;
 	nm_lldp_neighbor_get_attr_uint_value;
+	nm_lldp_neighbor_get_type;
 	nm_lldp_neighbor_new;
 	nm_lldp_neighbor_ref;
 	nm_lldp_neighbor_unref;

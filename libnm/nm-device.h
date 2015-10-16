@@ -170,6 +170,8 @@ gboolean             nm_device_connection_compatible (NMDevice *device,
 GType                nm_device_get_setting_type     (NMDevice *device);
 
 NM_AVAILABLE_IN_1_2
+GType nm_lldp_neighbor_get_type (void);
+NM_AVAILABLE_IN_1_2
 NMLldpNeighbor *nm_lldp_neighbor_new (void);
 NM_AVAILABLE_IN_1_2
 void nm_lldp_neighbor_ref (NMLldpNeighbor *neighbor);
@@ -183,7 +185,6 @@ gboolean nm_lldp_neighbor_get_attr_string_value (NMLldpNeighbor *neighbor, char 
 NM_AVAILABLE_IN_1_2
 gboolean nm_lldp_neighbor_get_attr_uint_value (NMLldpNeighbor *neighbor, char *name,
                                                guint *out_value);
-
 NM_AVAILABLE_IN_1_2
 const GVariantType *nm_lldp_neighbor_get_attr_type (NMLldpNeighbor *neighbor, char *name);
 

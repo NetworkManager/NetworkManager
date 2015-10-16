@@ -60,6 +60,7 @@
 
 static GType _nm_device_decide_type (GVariant *value);
 gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
+static NMLldpNeighbor *nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor);
 
 G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
                          _nm_object_register_type_func (g_define_type_id,
@@ -152,6 +153,8 @@ struct _NMLldpNeighbor {
 	guint refcount;
 	GHashTable *attrs;
 };
+
+G_DEFINE_BOXED_TYPE (NMLldpNeighbor, nm_lldp_neighbor, nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
 
 static void
 nm_device_init (NMDevice *device)
@@ -2440,7 +2443,7 @@ nm_device_get_setting_type (NMDevice *device)
 }
 
 /**
- * nm_lldp_neighbor_new
+ * nm_lldp_neighbor_new:
  *
  * Creates a new #NMLldpNeighbor object.
  *
@@ -2461,8 +2464,19 @@ nm_lldp_neighbor_new (void)
 	return neigh;
 }
 
+static NMLldpNeighbor *
+nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor)
+{
+	NMLldpNeighbor *copy;
+
+	copy = nm_lldp_neighbor_new ();
+	copy->attrs = g_hash_table_ref (neighbor->attrs);
+
+	return copy;
+}
+
 /**
- * nm_lldp_neighbor_ref
+ * nm_lldp_neighbor_ref:
  * @neighbor: the #NMLldpNeighbor
  *
  * Increases the reference count of the object.
