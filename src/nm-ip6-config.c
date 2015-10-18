@@ -1899,7 +1899,7 @@ nameservers_to_gvalue (GArray *array, GValue *value)
 		addr = &g_array_index (array, struct in6_addr, i++);
 		g_variant_builder_add (&builder, "@ay",
 		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                                  &addr, 16, 1));
+		                                                  addr, 16, 1));
 	}
 
 	g_value_take_variant (value, g_variant_builder_end (&builder));
