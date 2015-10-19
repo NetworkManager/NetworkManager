@@ -1341,9 +1341,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		link_disconnect_action_cancel (self);
 		klass->carrier_changed (self, TRUE);
 
-		if (priv->carrier_wait_id) {
-			g_source_remove (priv->carrier_wait_id);
-			priv->carrier_wait_id = 0;
+		if (nm_clear_g_source (&priv->carrier_wait_id)) {
 			nm_device_remove_pending_action (self, "carrier wait", TRUE);
 			_carrier_wait_check_queued_act_request (self);
 		}
@@ -7430,9 +7428,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * a timeout is reached.
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		if (priv->carrier_wait_id)
-			g_source_remove (priv->carrier_wait_id);
-		else
+		if (!nm_clear_g_source (&priv->carrier_wait_id))
 			nm_device_add_pending_action (self, "carrier wait", TRUE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
 	}
@@ -9746,10 +9742,7 @@ dispose (GObject *object)
 
 	g_hash_table_remove_all (priv->available_connections);
 
-	if (priv->carrier_wait_id) {
-		g_source_remove (priv->carrier_wait_id);
-		priv->carrier_wait_id = 0;
-	}
+	nm_clear_g_source (&priv->carrier_wait_id);
 
 	_clear_queued_act_request (priv);
 
