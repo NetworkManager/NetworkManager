@@ -629,7 +629,17 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 
 	hostname = nm_dhcp_client_get_hostname (client);
 	if (hostname) {
-		r = sd_dhcp_client_set_hostname (priv->client4, hostname);
+		char *prefix, *dot;
+
+		prefix = strdup (hostname);
+		dot = strchr (prefix, '.');
+		/* get rid of the domain */
+		if (dot)
+			*dot = '\0';
+
+		r = sd_dhcp_client_set_hostname (priv->client4, prefix);
+		free (prefix);
+
 		if (r < 0) {
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP hostname (%d)", iface, r);
 			goto error;
