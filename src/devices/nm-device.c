@@ -6646,6 +6646,8 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 		return FALSE;
 
 	connection = nm_act_request_get_applied_connection (req);
+	if (!connection_requires_carrier (connection))
+		return FALSE;
 
 	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL, NULL)) {
 		/* We passed all @flags we have, and no @specific_object.
