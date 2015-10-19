@@ -1341,9 +1341,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		link_disconnect_action_cancel (self);
 		klass->carrier_changed (self, TRUE);
 
-		if (priv->carrier_wait_id) {
-			g_source_remove (priv->carrier_wait_id);
-			priv->carrier_wait_id = 0;
+		if (nm_clear_g_source (&priv->carrier_wait_id)) {
 			nm_device_remove_pending_action (self, "carrier wait", TRUE);
 			_carrier_wait_check_queued_act_request (self);
 		}
@@ -6624,7 +6622,7 @@ _carrier_wait_check_queued_act_request (NMDevice *self)
 	priv->queued_act_request_is_waiting_for_carrier = FALSE;
 	if (!priv->carrier) {
 		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
-		g_clear_object (&priv->queued_act_request);
+		_clear_queued_act_request (priv);
 	} else {
 		_LOGD (LOGD_DEVICE, "Activate queued activation request as we now have carrier");
 		queued_req = priv->queued_act_request;
@@ -6648,6 +6646,8 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 		return FALSE;
 
 	connection = nm_act_request_get_applied_connection (req);
+	if (!connection_requires_carrier (connection))
+		return FALSE;
 
 	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL, NULL)) {
 		/* We passed all @flags we have, and no @specific_object.
@@ -7430,9 +7430,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * a timeout is reached.
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		if (priv->carrier_wait_id)
-			g_source_remove (priv->carrier_wait_id);
-		else
+		if (!nm_clear_g_source (&priv->carrier_wait_id))
 			nm_device_add_pending_action (self, "carrier wait", TRUE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
 	}
@@ -9746,10 +9744,7 @@ dispose (GObject *object)
 
 	g_hash_table_remove_all (priv->available_connections);
 
-	if (priv->carrier_wait_id) {
-		g_source_remove (priv->carrier_wait_id);
-		priv->carrier_wait_id = 0;
-	}
+	nm_clear_g_source (&priv->carrier_wait_id);
 
 	_clear_queued_act_request (priv);
 

@@ -2030,20 +2030,24 @@ nm_manager_get_connection_device (NMManager *self,
 
 static NMDevice *
 nm_manager_get_best_device_for_connection (NMManager *self,
-                                           NMConnection *connection)
+                                           NMConnection *connection,
+                                           gboolean for_user_request)
 {
 	const GSList *devices, *iter;
 	NMDevice *act_device = nm_manager_get_connection_device (self, connection);
+	NMDeviceCheckConAvailableFlags flags;
 
 	if (act_device)
 		return act_device;
+
+	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
 
 	/* Pick the first device that's compatible with the connection. */
 	devices = nm_manager_get_devices (self);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
 
-		if (nm_device_check_connection_available (device, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL))
+		if (nm_device_check_connection_available (device, connection, flags, NULL))
 			return device;
 	}
 
@@ -2530,7 +2534,7 @@ autoconnect_slaves (NMManager *manager,
 			nm_manager_activate_connection (manager,
 			                                slave_connection,
 			                                NULL,
-			                                nm_manager_get_best_device_for_connection (manager, NM_CONNECTION (slave_connection)),
+			                                nm_manager_get_best_device_for_connection (manager, NM_CONNECTION (slave_connection), FALSE),
 			                                subject,
 			                                &local_err);
 			if (local_err) {
@@ -3051,7 +3055,7 @@ validate_activation_request (NMManager *self,
 			goto error;
 		}
 	} else
-		device = nm_manager_get_best_device_for_connection (self, connection);
+		device = nm_manager_get_best_device_for_connection (self, connection, TRUE);
 
 	if (!device) {
 		gboolean is_software = nm_connection_is_virtual (connection);
