@@ -6622,7 +6622,7 @@ _carrier_wait_check_queued_act_request (NMDevice *self)
 	priv->queued_act_request_is_waiting_for_carrier = FALSE;
 	if (!priv->carrier) {
 		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
-		g_clear_object (&priv->queued_act_request);
+		_clear_queued_act_request (priv);
 	} else {
 		_LOGD (LOGD_DEVICE, "Activate queued activation request as we now have carrier");
 		queued_req = priv->queued_act_request;
