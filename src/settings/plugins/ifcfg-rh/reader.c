@@ -3563,7 +3563,6 @@ parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, cha
 	gs_strfreev char **words = NULL;
 	const char **iter = NULL, *flag;
 	gboolean has_flags = FALSE;
-	gboolean has_password = FALSE;
 
 	if (!value || !value[0])
 		return;
@@ -3632,13 +3631,10 @@ parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, cha
 
 			*out_flags = wol_flags;
 		} else {
-			has_password = TRUE;
-
 			if (!iter[0]) {
 				PARSE_WARNING ("Wake-on-LAN password missing");
 				break;
 			}
-
 
 			g_clear_pointer (out_password, g_free);
 			if (nm_utils_hwaddr_valid (iter[0], ETH_ALEN))
