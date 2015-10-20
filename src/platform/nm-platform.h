@@ -222,7 +222,6 @@ struct _NMPlatformIP4Address {
 	in_addr_t peer_address;  /* PTP peer address */
 	char label[IFNAMSIZ];
 };
-G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Address, address));
 
 /**
  * NMPlatformIP6Address:
@@ -234,7 +233,6 @@ struct _NMPlatformIP6Address {
 	struct in6_addr peer_address;
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 };
-G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
 
 typedef union {
 	NMPlatformIPAddress  ax;
@@ -291,14 +289,12 @@ struct _NMPlatformIP4Route {
 	 * no pref-src is set.  */
 	guint32 pref_src;
 };
-G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 
 struct _NMPlatformIP6Route {
 	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
 	struct in6_addr gateway;
 };
-G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
 
 typedef union {
 	NMPlatformIPRoute  rx;
