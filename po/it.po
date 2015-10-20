@@ -7546,14 +7546,6 @@ msgstr "richiede l'impostazione «%s» o «%s»"
 msgid "requires presence of '%s' setting in the connection"
 msgstr "richiede la presenza dell'impostazione «%s» nella connessione"
 
-#: ../libnm-util/nm-setting-connection.c:888
-msgid "Slave connections need a valid '"
-msgstr ""
-
-#: ../libnm-util/nm-setting-connection.c:897
-msgid "Cannot set '"
-msgstr ""
-
 #: ../libnm-util/nm-setting-ip4-config.c:940
 #, c-format
 msgid "%d. IPv4 address is invalid"
