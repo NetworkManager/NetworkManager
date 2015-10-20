@@ -828,14 +828,6 @@ _vt_cmd_obj_is_visible_ipx_route (const NMPObject *obj)
 
 /******************************************************************/
 
-struct nl_object *
-nmp_object_to_nl (NMPlatform *platform, const NMPObject *obj, gboolean id_only)
-{
-	return NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_nl (platform, &obj->object, id_only);
-}
-
-/******************************************************************/
-
 gboolean
 nmp_cache_id_equal (const NMPCacheId *a, const NMPCacheId *b)
 {
@@ -1809,7 +1801,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_link,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_link,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_link,
-		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_link,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_link,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_link,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_link,
@@ -1829,7 +1820,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_address,
-		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip4_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_address,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_address,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_address,
@@ -1849,7 +1839,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_address,
-		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip6_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_address,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_address,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_address,
@@ -1869,7 +1858,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_route,
-		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip4_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_route,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_route,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_route,
@@ -1889,7 +1877,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_ipx_route,
-		.cmd_plobj_to_nl                    = _nmp_vt_cmd_plobj_to_nl_ip6_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_route,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_route,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_route,

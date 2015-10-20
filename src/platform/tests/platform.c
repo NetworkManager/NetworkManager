@@ -593,7 +593,7 @@ do_ip6_address_add (char **argv)
 	if (ifindex && parse_ip6_address (*argv++, &address, &plen)) {
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
-		guint flags = (*argv) ? rtnl_addr_str2flags (*argv++) : 0;
+		guint flags = 0; /* don't support flags */
 
 		gboolean value = nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, address, plen, in6addr_any, lifetime, preferred, flags);
 		return value;

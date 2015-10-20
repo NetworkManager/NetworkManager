@@ -834,10 +834,8 @@ test_vlan_set_xgress (void)
 	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 0));
 	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 0));
 
-	/* FIXME: with libnl3 there is a bug that we cannot actually clear the ingress
-	 * map. See http://lists.infradead.org/pipermail/libnl/2015-October/001988.html */
-	//g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 0));
-	//g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 0));
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 0));
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 0));
 
 	if (nmtst_is_debug ())
 		nmtstp_run_command_check ("ip -d link show %s", DEVICE_NAME);

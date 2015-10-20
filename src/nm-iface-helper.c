@@ -137,14 +137,13 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 
 	if (system_support == -1) {
 		/*
-		 * Check, if both libnl and the kernel are recent enough,
-		 * to help user space handling RA. If it's not supported,
-		 * we have no ipv6-privacy and must add autoconf addresses
-		 * as /128. The reason for the /128 is to prevent the kernel
+		 * Check, whether kernel is recent enough, to help user space handling RA.
+		 * If it's not supported, we have no ipv6-privacy and must add autoconf
+		 * addresses as /128.
+		 * The reason for the /128 is to prevent the kernel
 		 * from adding a prefix route for this address.
 		 **/
-		system_support = nm_platform_check_support_libnl_extended_ifa_flags () &&
-		                 nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
+		system_support = nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
 	}
 
 	if (system_support)

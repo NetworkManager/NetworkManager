@@ -212,22 +212,6 @@ nm_platform_error_to_string (NMPlatformError error)
 
 /******************************************************************/
 
-#define IFA_F_MANAGETEMPADDR_STR "mngtmpaddr"
-#define IFA_F_NOPREFIXROUTE_STR "noprefixroute"
-gboolean
-nm_platform_check_support_libnl_extended_ifa_flags ()
-{
-	static int supported = -1;
-
-	/* support for extended ifa-flags was added together
-	 * with the IFA_F_MANAGETEMPADDR flag. So, check if libnl
-	 * is able to parse this flag. */
-	if (supported == -1)
-		supported = rtnl_addr_str2flags (IFA_F_MANAGETEMPADDR_STR) == IFA_F_MANAGETEMPADDR;
-
-	return supported;
-}
-
 gboolean
 nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
 {
@@ -897,22 +881,19 @@ nm_platform_link_uses_arp (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid)
 {
+	const NMPlatformLink *pllink;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (iid, FALSE);
 
-#if HAVE_LIBNL_INET6_TOKEN
-	{
-		const NMPlatformLink *pllink;
 
-		pllink = nm_platform_link_get (self, ifindex);
-		if (pllink && pllink->inet6_token.is_valid) {
-			*iid = pllink->inet6_token.iid;
-			return TRUE;
-		}
+	pllink = nm_platform_link_get (self, ifindex);
+	if (pllink && pllink->inet6_token.is_valid) {
+		*iid = pllink->inet6_token.iid;
+		return TRUE;
 	}
-#endif
 	return FALSE;
 }
 
