@@ -460,6 +460,9 @@ NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD (NM_SETTING_GSM_PIN),             /* 7 */
 	SETTING_FIELD (NM_SETTING_GSM_PIN_FLAGS),       /* 8 */
 	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY),       /* 9 */
+	SETTING_FIELD (NM_SETTING_GSM_DEVICE_ID),       /* 10 */
+	SETTING_FIELD (NM_SETTING_GSM_SIM_ID),          /* 11 */
+	SETTING_FIELD (NM_SETTING_GSM_SIM_OPERATOR_ID), /* 12 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_GSM_ALL     "name"","\
@@ -471,7 +474,10 @@ NmcOutputField nmc_fields_setting_gsm[] = {
                                        NM_SETTING_GSM_NETWORK_ID","\
                                        NM_SETTING_GSM_PIN","\
                                        NM_SETTING_GSM_PIN_FLAGS","\
-                                       NM_SETTING_GSM_HOME_ONLY
+                                       NM_SETTING_GSM_HOME_ONLY","\
+                                       NM_SETTING_GSM_DEVICE_ID","\
+                                       NM_SETTING_GSM_SIM_ID","\
+                                       NM_SETTING_GSM_SIM_OPERATOR_ID
 #define NMC_FIELDS_SETTING_GSM_COMMON  NMC_FIELDS_SETTING_GSM_ALL
 
 /* Available fields for NM_SETTING_CDMA_SETTING_NAME */
@@ -1268,6 +1274,9 @@ DEFINE_GETTER (nmc_property_gsm_get_network_id, NM_SETTING_GSM_NETWORK_ID)
 DEFINE_GETTER (nmc_property_gsm_get_pin, NM_SETTING_GSM_PIN)
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_pin_flags, NM_SETTING_GSM_PIN_FLAGS)
 DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
+DEFINE_GETTER (nmc_property_gsm_get_device_id, NM_SETTING_GSM_DEVICE_ID)
+DEFINE_GETTER (nmc_property_gsm_get_sim_id, NM_SETTING_GSM_SIM_ID)
+DEFINE_GETTER (nmc_property_gsm_get_sim_operator_id, NM_SETTING_GSM_SIM_OPERATOR_ID)
 
 /* --- NM_SETTING_INFINIBAND_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
@@ -5196,6 +5205,32 @@ nmc_property_dcb_set_app_fcoe_mode (NMSetting *setting, const char *prop, const 
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_dcb_allowed_app_fcoe_modes, _dcb_valid_fcoe_modes)
 
+static gboolean
+nmc_property_gsm_set_sim_operator_id (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	const char *p = val;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (strlen (val) != 5 && strlen (val) != 6) {
+		g_set_error_literal (error, 1, 0, _("SIM operator ID must be a 5 or 6 number MCCMNC code"));
+		return FALSE;
+	}
+
+	while (p && *p) {
+		if (!g_ascii_isdigit (*p++)) {
+			g_set_error_literal (error, 1, 0, _("SIM operator ID must be a 5 or 6 number MCCMNC code"));
+			return FALSE;
+		}
+	}
+
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_GSM_SIM_OPERATOR_ID,
+	              val,
+	              NULL);
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 
 static inline void
@@ -5940,6 +5975,27 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (GSM, HOME_ONLY),
 	                    nmc_property_gsm_get_home_only,
 	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, DEVICE_ID),
+	                    nmc_property_gsm_get_device_id,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, SIM_ID),
+	                    nmc_property_gsm_get_sim_id,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, SIM_OPERATOR_ID),
+	                    nmc_property_gsm_get_sim_operator_id,
+	                    nmc_property_gsm_set_sim_operator_id,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -7593,6 +7649,9 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 	set_val_str (arr, 7, GET_SECRET (secrets, setting, nmc_property_gsm_get_pin));
 	set_val_str (arr, 8, nmc_property_gsm_get_pin_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 9, nmc_property_gsm_get_home_only (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_gsm_get_device_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_gsm_get_sim_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_gsm_get_sim_operator_id (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
