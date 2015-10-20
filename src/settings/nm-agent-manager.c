@@ -767,6 +767,20 @@ request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs)
 
 		_LOGD (agent, "current agent removed from secrets request "LOG_REQ_FMT,
 		       LOG_REQ_ARG (req));
+
+		switch (req->request_type) {
+		case REQUEST_TYPE_CON_GET:
+		case REQUEST_TYPE_CON_SAVE:
+		case REQUEST_TYPE_CON_DEL:
+			if (req->con.chain) {
+				/* This cancels the pending authorization requests. */
+				nm_auth_chain_unref (req->con.chain);
+				req->con.chain = NULL;
+			}
+		default:
+			g_assert_not_reached ();
+		}
+
 		*pending_reqs = g_slist_prepend (*pending_reqs, req);
 	} else if (g_slist_find (req->pending, agent)) {
 		req->pending = g_slist_remove (req->pending, agent);
