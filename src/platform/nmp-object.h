@@ -286,9 +286,9 @@ gboolean nmp_object_is_visible (const NMPObject *obj);
 
 void _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev);
 
-#define auto_nmp_obj __attribute__((cleanup(_nmp_auto_obj_cleanup)))
+#define nm_auto_nmpobj __attribute__((cleanup(_nm_auto_nmpobj_cleanup)))
 static inline void
-_nmp_auto_obj_cleanup (NMPObject **pobj)
+_nm_auto_nmpobj_cleanup (NMPObject **pobj)
 {
 	nmp_object_unref (*pobj);
 }

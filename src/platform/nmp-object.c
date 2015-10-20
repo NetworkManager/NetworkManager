@@ -1380,7 +1380,7 @@ nmp_cache_remove_netlink (NMPCache *cache, const NMPObject *obj_needle, NMPObjec
 {
 	if (NMP_OBJECT_GET_TYPE (obj_needle) == NMP_OBJECT_TYPE_LINK) {
 		NMPObject *old;
-		auto_nmp_obj NMPObject *obj = NULL;
+		nm_auto_nmpobj NMPObject *obj = NULL;
 
 		/* For nmp_cache_remove_netlink() we have an incomplete @obj_needle instance to be
 		 * removed from netlink. Link objects are alive without being in netlink when they
@@ -1575,7 +1575,7 @@ NMPCacheOpsType
 nmp_cache_update_link_udev (NMPCache *cache, int ifindex, GUdevDevice *udev_device, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data)
 {
 	NMPObject *old;
-	auto_nmp_obj NMPObject *obj = NULL;
+	nm_auto_nmpobj NMPObject *obj = NULL;
 
 	old = (NMPObject *) nmp_cache_lookup_link (cache, ifindex);
 
@@ -1642,7 +1642,7 @@ NMPCacheOpsType
 nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data)
 {
 	NMPObject *old;
-	auto_nmp_obj NMPObject *obj = NULL;
+	nm_auto_nmpobj NMPObject *obj = NULL;
 
 	old = (NMPObject *) nmp_cache_lookup_link (cache, ifindex);
 

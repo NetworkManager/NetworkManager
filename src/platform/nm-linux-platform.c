@@ -1533,7 +1533,7 @@ static void
 delayed_action_handle_MASTER_CONNECTED (NMPlatform *platform, int master_ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nmp_obj NMPObject *obj_cache = NULL;
+	nm_auto_nmpobj NMPObject *obj_cache = NULL;
 	gboolean was_visible;
 	NMPCacheOpsType cache_op;
 
@@ -1780,7 +1780,7 @@ cache_prune_candidates_prune (NMPlatform *platform)
 
 	g_hash_table_iter_init (&iter, prune_candidates);
 	while (g_hash_table_iter_next (&iter, (gpointer *)&obj, NULL)) {
-		auto_nmp_obj NMPObject *obj_cache = NULL;
+		nm_auto_nmpobj NMPObject *obj_cache = NULL;
 
 		_LOGT ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 		cache_op = nmp_cache_remove (priv->cache, obj, TRUE, &obj_cache, &was_visible, cache_pre_hook, platform);
@@ -2373,7 +2373,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	NMPlatform *platform = NM_PLATFORM (user_data);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
 	auto_nl_object struct nl_object *nlo = NULL;
-	auto_nmp_obj NMPObject *obj = NULL;
+	nm_auto_nmpobj NMPObject *obj = NULL;
 	struct nlmsghdr *msghdr;
 	char buf_nlmsg_type[16];
 
@@ -2409,7 +2409,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	}
 
 	if (obj) {
-		auto_nmp_obj NMPObject *obj_cache = NULL;
+		nm_auto_nmpobj NMPObject *obj_cache = NULL;
 
 		switch (msghdr->nlmsg_type) {
 
@@ -4806,7 +4806,7 @@ static void
 cache_update_link_udev (NMPlatform *platform, int ifindex, GUdevDevice *udev_device)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nmp_obj NMPObject *obj_cache = NULL;
+	nm_auto_nmpobj NMPObject *obj_cache = NULL;
 	gboolean was_visible;
 	NMPCacheOpsType cache_op;
 
