@@ -3562,7 +3562,6 @@ parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, cha
 {
 	gs_strfreev char **words = NULL;
 	const char **iter = NULL, *flag;
-	gboolean has_flags = FALSE;
 
 	if (!value || !value[0])
 		return;
@@ -3592,7 +3591,6 @@ parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, cha
 
 		if (is_wol) {
 			NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
-			has_flags = TRUE;
 
 			if (!iter[0]) {
 				PARSE_WARNING ("Wake-on-LAN options missing");
