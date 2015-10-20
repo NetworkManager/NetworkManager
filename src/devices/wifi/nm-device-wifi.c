@@ -1353,6 +1353,9 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 static gboolean
 request_wireless_scan_periodic (gpointer user_data)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (user_data);
+
+	priv->pending_scan_id = 0;
 	request_wireless_scan (user_data, NULL);
 	return FALSE;
 }
