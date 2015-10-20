@@ -421,6 +421,8 @@ struct _Request {
 	 */
 	GSList *asked;
 
+	NMAuthChain *chain;
+
 	guint32 idle_id;
 
 	RequestAddAgentFunc add_agent_callback;
@@ -474,6 +476,9 @@ request_free (Request *req)
 
 	if (!req->completed && req->cancel_callback)
 		req->cancel_callback (req);
+
+	if (req->chain)
+		nm_auth_chain_unref (req->chain);
 
 	g_object_unref (req->subject);
 
@@ -640,6 +645,13 @@ request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs)
 	if (agent == req->current) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) current agent removed from secrets request %p/%s",
 		            nm_secret_agent_get_description (agent), req, req->detail);
+
+		if (req->chain) {
+			/* This cancels the pending authorization requests. */
+			nm_auth_chain_unref (req->chain);
+			req->chain = NULL;
+		}
+
 		*pending_reqs = g_slist_prepend (*pending_reqs, req);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent removed from secrets request %p/%s",
@@ -675,8 +687,6 @@ typedef struct {
 	gpointer other_data2;
 	gpointer other_data3;
 
-	NMAuthChain *chain;
-
 	/* Whether the agent currently being asked for secrets
 	 * has the system.modify privilege.
 	 */
@@ -693,8 +703,6 @@ connection_request_free (gpointer data)
 	g_strfreev (req->hints);
 	if (req->existing_secrets)
 		g_hash_table_unref (req->existing_secrets);
-	if (req->chain)
-		nm_auth_chain_unref (req->chain);
 }
 
 static gboolean
@@ -946,7 +954,7 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 	ConnectionRequest *req = user_data;
 	const char *perm;
 
-	req->chain = NULL;
+	parent->chain = NULL;
 
 	if (error) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent %p/%s/%s MODIFY check error: (%d) %s",
@@ -1041,11 +1049,11 @@ get_next_cb (Request *parent)
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s/%s) request has system secrets; checking agent %s for MODIFY",
 		            req, parent->detail, req->setting_name, agent_dbus_owner);
 
-		req->chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (parent->current),
-		                                        NULL,
-		                                        get_agent_modify_auth_cb,
-		                                        req);
-		g_assert (req->chain);
+		parent->chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (parent->current),
+		                                           NULL,
+		                                           get_agent_modify_auth_cb,
+		                                           req);
+		g_assert (parent->chain);
 
 		/* If the caller is the only user in the connection's permissions, then
 		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
@@ -1057,9 +1065,9 @@ get_next_cb (Request *parent)
 			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
 		else
 			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
-		nm_auth_chain_set_data (req->chain, "perm", (gpointer) perm, NULL);
+		nm_auth_chain_set_data (parent->chain, "perm", (gpointer) perm, NULL);
 
-		nm_auth_chain_add_call (req->chain, perm, TRUE);
+		nm_auth_chain_add_call (parent->chain, perm, TRUE);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s/%s) requesting user-owned secrets from agent %s",
 		            req, parent->detail, req->setting_name, agent_dbus_owner);
