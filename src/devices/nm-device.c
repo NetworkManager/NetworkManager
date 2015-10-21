@@ -3274,8 +3274,7 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	g_assert (config);
 
 	memset (&address, 0, sizeof (address));
-	address.address = lla;
-	address.plen = 16;
+	nm_platform_ip4_address_set_addr (&address, lla, 16);
 	address.source = NM_IP_CONFIG_SOURCE_IP4LL;
 	nm_ip4_config_add_address (config, &address);
 
@@ -4016,10 +4015,11 @@ reserve_shared_ip (NMDevice *self, NMSettingIPConfig *s_ip4, NMPlatformIP4Addres
 	if (s_ip4 && nm_setting_ip_config_get_num_addresses (s_ip4)) {
 		/* Use the first user-supplied address */
 		NMIPAddress *user = nm_setting_ip_config_get_address (s_ip4, 0);
+		in_addr_t a;
 
 		g_assert (user);
-		nm_ip_address_get_address_binary (user, &address->address);
-		address->plen = nm_ip_address_get_prefix (user);
+		nm_ip_address_get_address_binary (user, &a);
+		nm_platform_ip4_address_set_addr (address, a, nm_ip_address_get_prefix (user));
 	} else {
 		/* Find an unused address in the 10.42.x.x range */
 		guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
@@ -4032,8 +4032,7 @@ reserve_shared_ip (NMDevice *self, NMSettingIPConfig *s_ip4, NMPlatformIP4Addres
 				return FALSE;
 			}
 		}
-		address->address = start + count;
-		address->plen = 24;
+		nm_platform_ip4_address_set_addr (address, start + count, 24);
 
 		g_hash_table_insert (shared_ips,
 		                     GUINT_TO_POINTER (address->address),

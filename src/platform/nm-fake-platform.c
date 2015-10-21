@@ -100,6 +100,14 @@ static gboolean ip6_address_delete (NMPlatform *platform, int ifindex, struct in
 /******************************************************************/
 
 static gboolean
+_ip4_address_equal_peer_net (in_addr_t peer1, in_addr_t peer2, int plen)
+{
+	return ((peer1 ^ peer2) & nm_utils_ip4_prefix_to_netmask (plen)) == 0;
+}
+
+/******************************************************************/
+
+static gboolean
 sysctl_set (NMPlatform *platform, const char *path, const char *value)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -871,7 +879,7 @@ ip4_address_add (NMPlatform *platform,
 	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
-	address.peer_address = peer_addr && peer_addr != addr ? peer_addr : 0;
+	address.peer_address = peer_addr;
 	address.plen = plen;
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
@@ -881,18 +889,19 @@ ip4_address_add (NMPlatform *platform,
 
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *item = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+		gboolean changed;
 
-		if (item->ifindex != address.ifindex)
+		if (   item->ifindex != address.ifindex
+		    || item->address != address.address
+		    || item->plen != address.plen
+		    || !_ip4_address_equal_peer_net (item->peer_address, address.peer_address, address.plen))
 			continue;
-		if (item->address != address.address)
-			continue;
-		if (item->plen != address.plen)
-			continue;
-		if (!nm_platform_ip4_address_equal_peer_net (item, &address))
-			continue;
+
+		changed = !nm_platform_ip4_address_cmp (item, &address);
 
 		memcpy (item, &address, sizeof (address));
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
+		if (changed)
+			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 		return TRUE;
 	}
 
@@ -928,18 +937,17 @@ ip6_address_add (NMPlatform *platform,
 
 	for (i = 0; i < priv->ip6_addresses->len; i++) {
 		NMPlatformIP6Address *item = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
+		gboolean changed;
 
-		if (item->ifindex != address.ifindex)
-			continue;
-		if (!IN6_ARE_ADDR_EQUAL (&item->address, &address.address))
-			continue;
-		if (item->plen != address.plen)
+		if (   item->ifindex != address.ifindex
+		    || !IN6_ARE_ADDR_EQUAL (&item->address, &address.address))
 			continue;
 
-		if (nm_platform_ip6_address_cmp (item, &address) != 0) {
-			memcpy (item, &address, sizeof (address));
+		changed = !nm_platform_ip6_address_cmp (item, &address);
+
+		memcpy (item, &address, sizeof (address));
+		if (changed)
 			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
-		}
 		return TRUE;
 	}
 
@@ -958,8 +966,10 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen,
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
 
-		if (address->ifindex == ifindex && address->plen == plen && address->address == addr &&
-		    (!peer_address || address->peer_address == peer_address)) {
+		if (   address->ifindex == ifindex
+		    && address->plen == plen
+		    && address->address == addr
+		    && ((peer_address ^ address->peer_address) & nm_utils_ip4_prefix_to_netmask (plen)) == 0) {
 			NMPlatformIP4Address deleted_address;
 
 			memcpy (&deleted_address, address, sizeof (deleted_address));
@@ -981,8 +991,9 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	for (i = 0; i < priv->ip6_addresses->len; i++) {
 		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
 
-		if (address->ifindex == ifindex && address->plen == plen
-				&& IN6_ARE_ADDR_EQUAL (&address->address, &addr)) {
+		if (   address->ifindex == ifindex
+		    && address->plen == plen
+		    && IN6_ARE_ADDR_EQUAL (&address->address, &addr)) {
 			NMPlatformIP6Address deleted_address;
 
 			memcpy (&deleted_address, address, sizeof (deleted_address));
@@ -1000,12 +1011,6 @@ ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
-	NMPlatformIP4Address a = {
-		.ifindex = ifindex,
-		.address = addr,
-		.plen = plen,
-		.peer_address = peer_address,
-	};
 
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
@@ -1013,7 +1018,7 @@ ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in
 		if (   address->ifindex == ifindex
 		    && address->plen == plen
 		    && address->address == addr
-		    && nm_platform_ip4_address_equal_peer_net (address, &a))
+		    && _ip4_address_equal_peer_net (address->peer_address, peer_address, plen))
 			return address;
 	}
 

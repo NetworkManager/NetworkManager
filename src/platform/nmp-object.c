@@ -466,8 +466,8 @@ _vt_cmd_plobj_to_string_id_##type (const NMPlatformObject *_obj, char *buf, gsiz
 }
 _vt_cmd_plobj_to_string_id (link,        NMPlatformLink,       "%d",            obj->ifindex);
 _vt_cmd_plobj_to_string_id (ip4_address, NMPlatformIP4Address, "%d: %s/%d%s%s", obj->ifindex, nm_utils_inet4_ntop ( obj->address, buf1), obj->plen,
-                                                               obj->peer_address && obj->peer_address != obj->address ? "," : "",
-                                                               obj->peer_address && obj->peer_address != obj->address ? nm_utils_inet4_ntop (nm_platform_ip4_address_get_peer_net (obj), buf2) : "");
+                                                               obj->peer_address != obj->address ? "," : "",
+                                                               obj->peer_address != obj->address ? nm_utils_inet4_ntop (obj->peer_address & nm_utils_ip4_prefix_to_netmask (obj->plen), buf2) : "");
 _vt_cmd_plobj_to_string_id (ip6_address, NMPlatformIP6Address, "%d: %s",        obj->ifindex, nm_utils_inet6_ntop (&obj->address, buf1));
 _vt_cmd_plobj_to_string_id (ip4_route,   NMPlatformIP4Route,   "%d: %s/%d %d",  obj->ifindex, nm_utils_inet4_ntop ( obj->network, buf1), obj->plen, obj->metric);
 _vt_cmd_plobj_to_string_id (ip6_route,   NMPlatformIP6Route,   "%d: %s/%d %d",  obj->ifindex, nm_utils_inet6_ntop (&obj->network, buf1), obj->plen, obj->metric);
@@ -664,7 +664,7 @@ _vt_cmd_plobj_id_equal (ip4_address, NMPlatformIP4Address,
                         && obj1->address == obj2->address
                         /* for IPv4 addresses, you can add the same local address with differing peer-adddress
                          * (IFA_ADDRESS), provided that their net-part differs. */
-                        && nm_platform_ip4_address_equal_peer_net (obj1, obj2));
+                        && ((obj1->peer_address ^ obj2->peer_address) & nm_utils_ip4_prefix_to_netmask (obj1->plen)) == 0);
 _vt_cmd_plobj_id_equal (ip6_address, NMPlatformIP6Address,
                            obj1->ifindex == obj2->ifindex
                         /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
@@ -719,7 +719,7 @@ _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
 	hash = hash * 33 + ((guint) obj->address);
 
 	/* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
-	hash = hash * 33 + ((guint) (nm_platform_ip4_address_get_peer_net (obj)));
+	hash = hash * 33 + ((guint) (obj->peer_address & nm_utils_ip4_prefix_to_netmask (obj->plen)));
 })
 _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
 	hash = (guint) 2907861637u;

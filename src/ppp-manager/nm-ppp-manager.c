@@ -470,13 +470,14 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	memset (&address, 0, sizeof (address));
 	address.plen = 32;
 
+	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_ADDRESS, "u", &u32))
+		address.address = u32;
+
 	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_GATEWAY, "u", &u32)) {
 		nm_ip4_config_set_gateway (config, u32);
 		address.peer_address = u32;
-	}
-
-	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_ADDRESS, "u", &u32))
-		address.address = u32;
+	} else
+		address.peer_address = address.address;
 
 	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_PREFIX, "u", &u32))
 		address.plen = u32;

@@ -1442,23 +1442,32 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_address.ifindex = ifa->ifa_index;
 	obj->ip_address.plen = ifa->ifa_prefixlen;
 
-	if (_check_addr_or_errout (tb, IFA_LOCAL, addr_len))
-		memcpy (obj->ip_address.address_ptr, nla_data (tb[IFA_LOCAL]), addr_len);
-
-	if (_check_addr_or_errout (tb, IFA_ADDRESS, addr_len)) {
-		NMIPAddr *a = nla_data (tb[IFA_ADDRESS]);
-
-		/* IPv6 sends the local address as IFA_ADDRESS with
-		 * no IFA_LOCAL, IPv4 sends both IFA_LOCAL and IFA_ADDRESS
-		 * with IFA_ADDRESS being the peer address if they differ */
-		if (   !tb[IFA_LOCAL]
-		    || !memcmp (a, obj->ip_address.address_ptr, addr_len)) {
-			memcpy (obj->ip_address.address_ptr, a, addr_len);
-		} else {
-			if (is_v4)
-				obj->ip4_address.peer_address = a->addr4;
-			else
-				obj->ip6_address.peer_address = a->addr6;
+	_check_addr_or_errout (tb, IFA_ADDRESS, addr_len);
+	_check_addr_or_errout (tb, IFA_LOCAL, addr_len);
+	if (is_v4) {
+		/* For IPv4, kernel omits IFA_LOCAL/IFA_ADDRESS if (and only if) they
+		 * are effectively 0.0.0.0 (all-zero). */
+		if (tb[IFA_LOCAL])
+			memcpy (&obj->ip4_address.address, nla_data (tb[IFA_LOCAL]), addr_len);
+		if (tb[IFA_ADDRESS])
+			memcpy (&obj->ip4_address.peer_address, nla_data (tb[IFA_ADDRESS]), addr_len);
+	} else {
+		/* For IPv6, IFA_ADDRESS is always present.
+		 *
+		 * If IFA_LOCAL is missing, IFA_ADDRESS is @address and @peer_address
+		 * is :: (all-zero).
+		 *
+		 * If unexpectely IFA_ADDRESS is missing, make the best of it -- but it _should_
+		 * actually be there. */
+		if (tb[IFA_ADDRESS] || tb[IFA_LOCAL]) {
+			if (tb[IFA_LOCAL]) {
+				memcpy (&obj->ip6_address.address, nla_data (tb[IFA_LOCAL]), addr_len);
+				if (tb[IFA_ADDRESS])
+					memcpy (&obj->ip6_address.peer_address, nla_data (tb[IFA_ADDRESS]), addr_len);
+				else
+					obj->ip6_address.peer_address = obj->ip6_address.address;
+			} else
+				memcpy (&obj->ip6_address.address, nla_data (tb[IFA_ADDRESS]), addr_len);
 		}
 	}
 
@@ -4256,7 +4265,14 @@ build_rtnl_addr (NMPlatform *platform,
 	}
 
 	/* Peer/point-to-point address */
-	if (peer_addr) {
+	if (   peer_addr
+	    && family == AF_INET
+	    && (*((in_addr_t *) peer_addr)) == (*((in_addr_t *) addr))) {
+		/* For IPv4, a local address being equal the peer address means that
+		 * no explict peer is set.
+		 *
+		 * We don't have to set it explicitly. */
+	} else if (peer_addr) {
 		auto_nl_addr struct nl_addr *nlpeer = _nl_addr_build (family, peer_addr, addrlen);
 
 		nle = rtnl_addr_set_peer (rtnladdr, nlpeer);
@@ -4308,7 +4324,7 @@ _nmp_vt_cmd_plobj_to_nl_ip4_address (NMPlatform *platform, const NMPlatformObjec
 	                        AF_INET,
 	                        obj->ifindex,
 	                        &obj->address,
-	                        obj->peer_address ? &obj->peer_address : NULL,
+	                        &obj->peer_address,
 	                        obj->plen,
 	                        lifetime,
 	                        preferred,
@@ -4351,7 +4367,7 @@ ip4_address_add (NMPlatform *platform,
 	auto_nl_object struct nl_object *nlo = NULL;
 
 	nlo = build_rtnl_addr (platform, AF_INET, ifindex, &addr,
-	                       peer_addr ? &peer_addr : NULL,
+	                       &peer_addr,
 	                       plen, lifetime, preferred, 0,
 	                       label);
 	return do_add_addrroute (platform,

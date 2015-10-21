@@ -31,8 +31,7 @@ static NMPlatformIP4Address *
 _set_addr (NMPlatformIP4Address *addr, const char *address, int plen)
 {
 	memset (addr, 0, sizeof (*addr));
-	addr->address = nmtst_inet4_from_string (address);
-	addr->plen = plen;
+	nm_platform_ip4_address_set_addr (addr, nmtst_inet4_from_string (address), plen);
 	return addr;
 }
 

@@ -234,8 +234,21 @@ typedef struct {
  **/
 struct _NMPlatformIP4Address {
 	__NMPlatformIPAddress_COMMON;
+
+	/* The local address IFA_LOCAL. */
 	in_addr_t address;
+
+	/* The IFA_ADDRESS PTP peer address. This field is rather important, because
+	 * it constitutes the identifier for the IPv4 address (e.g. you can add two
+	 * addresses that only differ by their peer's network-part.
+	 *
+	 * Beware that for most cases, NetworkManager doesn't want to set an explicit
+	 * peer-address. Hoever, that corresponds to setting the peer address to @address
+	 * itself. Leaving peer-address unset/zero, means explicitly setting the peer
+	 * address to 0.0.0.0, which you probably don't want.
+	 * */
 	in_addr_t peer_address;  /* PTP peer address */
+
 	char label[IFNAMSIZ];
 };
 
@@ -715,10 +728,8 @@ guint32     nm_platform_mesh_get_channel      (NMPlatform *self, int ifindex);
 gboolean    nm_platform_mesh_set_channel      (NMPlatform *self, int ifindex, guint32 channel);
 gboolean    nm_platform_mesh_set_ssid         (NMPlatform *self, int ifindex, const guint8 *ssid, gsize len);
 
-in_addr_t              nm_platform_ip4_address_get_peer (const NMPlatformIP4Address *addr);
+void                   nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, int plen);
 const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr);
-in_addr_t              nm_platform_ip4_address_get_peer_net (const NMPlatformIP4Address *addr);
-gboolean               nm_platform_ip4_address_equal_peer_net (const NMPlatformIP4Address *addr1, const NMPlatformIP4Address *addr2);
 
 const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, int plen);

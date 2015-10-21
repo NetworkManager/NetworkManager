@@ -36,6 +36,8 @@ addr_init (NMPlatformIP4Address *a, const char *addr, const char *peer, guint pl
 	g_assert (inet_pton (AF_INET, addr, (void *) &a->address) == 1);
 	if (peer)
 		g_assert (inet_pton (AF_INET, peer, (void *) &a->peer_address) == 1);
+	else
+		a->peer_address = a->address;
 	a->plen = plen;
 }
 
@@ -152,7 +154,7 @@ test_subtract (void)
 	test_addr = nm_ip4_config_get_address (dst, 0);
 	g_assert (test_addr != NULL);
 	g_assert_cmpuint (test_addr->address, ==, addr_to_num (expected_addr));
-	g_assert_cmpuint (test_addr->peer_address, ==, 0);
+	g_assert_cmpuint (test_addr->peer_address, ==, test_addr->address);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
 	g_assert_cmpuint (nm_ip4_config_get_gateway (dst), ==, 0);

@@ -380,6 +380,7 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 {
 	NMIP4Config *ip4_config = NULL;
 	guint32 tmp_addr;
+	in_addr_t addr;
 	NMPlatformIP4Address address;
 	char *str = NULL;
 	guint32 gwaddr = 0, plen = 0;
@@ -391,10 +392,9 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 
 	str = g_hash_table_lookup (options, "ip_address");
-	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		address.address = tmp_addr;
+	if (str && (inet_pton (AF_INET, str, &addr) > 0))
 		nm_log_info (LOGD_DHCP4, "  address %s", str);
-	} else
+	else
 		goto error;
 
 	str = g_hash_table_lookup (options, "subnet_mask");
@@ -403,10 +403,10 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 		nm_log_info (LOGD_DHCP4, "  plen %d (%s)", plen, str);
 	} else {
 		/* Get default netmask for the IP according to appropriate class. */
-		plen = nm_utils_ip4_get_default_prefix (address.address);
+		plen = nm_utils_ip4_get_default_prefix (addr);
 		nm_log_info (LOGD_DHCP4, "  plen %d (default)", plen);
 	}
-	address.plen = plen;
+	nm_platform_ip4_address_set_addr (&address, addr, plen);
 
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.

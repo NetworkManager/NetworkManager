@@ -1409,6 +1409,8 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PTP, "u", &u32))
 		address.peer_address = u32;
+	else
+		address.peer_address = address.address;
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX, "u", &u32))
 		address.plen = u32;

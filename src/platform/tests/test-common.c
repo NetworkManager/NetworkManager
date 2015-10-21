@@ -560,9 +560,6 @@ _ip_address_add (gboolean external_command,
 		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
 		g_assert (ifname);
 
-		if (peer_address == address)
-			peer_address = 0;
-
 		if (lifetime != NM_PLATFORM_LIFETIME_PERMANENT)
 			s_valid = g_strdup_printf (" valid_lft %d", lifetime);
 		if (preferred != NM_PLATFORM_LIFETIME_PERMANENT)
@@ -571,11 +568,20 @@ _ip_address_add (gboolean external_command,
 			s_label = g_strdup_printf ("%s:%s", ifname, label);
 
 		if (is_v4) {
+			char s_peer[100];
+
 			g_assert (flags == 0);
-			nmtstp_run_command_check ("ip address change %s%s%s/%d dev %s%s%s%s",
+
+			if (   peer_address->addr4 != address->addr4
+			    || nmtst_get_rand_int () % 2) {
+				/* If the peer is the same as the local address, we can omit it. The result should be identical */
+				g_snprintf (s_peer, sizeof (s_peer), " peer %s", nm_utils_inet4_ntop (peer_address->addr4, b2));
+			} else
+				s_peer[0] = '\0';
+
+			nmtstp_run_command_check ("ip address change %s%s/%d dev %s%s%s%s",
 			                          nm_utils_inet4_ntop (address->addr4, b1),
-			                          peer_address->addr4 ? " peer " : "",
-			                          peer_address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
+			                          s_peer,
 			                          plen,
 			                          ifname,
 			                          s_valid ?: "",
@@ -637,7 +643,7 @@ _ip_address_add (gboolean external_command,
 			g_assert (flags == 0);
 			a = nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, address->addr4, plen, peer_address->addr4);
 			if (   a
-			    && nm_platform_ip4_address_get_peer (a) == (peer_address->addr4 ? peer_address->addr4 : address->addr4)
+			    && a->peer_address == peer_address->addr4
 			    && nmtstp_ip_address_check_lifetime ((NMPlatformIPAddress*) a, -1, lifetime, preferred)
 			    && strcmp (a->label, label ?: "") == 0)
 				break;
@@ -729,9 +735,6 @@ _ip_address_del (gboolean external_command,
 		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
 		g_assert (ifname);
 
-		if (peer_address == address)
-			peer_address = 0;
-
 		/* let's wait until we see the address as we added it. */
 		if (is_v4)
 			had_address = !!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, address->addr4, plen, peer_address->addr4);
@@ -741,8 +744,8 @@ _ip_address_del (gboolean external_command,
 		if (is_v4) {
 			success = nmtstp_run_command ("ip address delete %s%s%s/%d dev %s",
 			                              nm_utils_inet4_ntop (address->addr4, b1),
-			                              peer_address->addr4 ? " peer " : "",
-			                              peer_address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
+			                              peer_address->addr4 != address->addr4 ? " peer " : "",
+			                              peer_address->addr4 != address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
 			                              plen,
 			                              ifname);
 		} else {

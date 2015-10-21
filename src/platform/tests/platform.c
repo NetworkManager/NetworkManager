@@ -30,6 +30,7 @@
 #include "nm-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-fake-platform.h"
+#include "nm-utils.h"
 
 #define error(...) fprintf (stderr, __VA_ARGS__)
 
@@ -490,15 +491,17 @@ do_ip4_address_get_all (char **argv)
 	int ifindex = parse_ifindex (argv[0]);
 	GArray *addresses;
 	NMPlatformIP4Address *address;
-	char addrstr[INET_ADDRSTRLEN];
 	int i;
 
 	if (ifindex) {
 		addresses = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 		for (i = 0; i < addresses->len; i++) {
 			address = &g_array_index (addresses, NMPlatformIP4Address, i);
-			inet_ntop (AF_INET, &address->address, addrstr, sizeof (addrstr));
-			printf ("%s/%d\n", addrstr, address->plen);
+
+			printf ("%s", nm_utils_inet4_ntop (address->address, NULL));
+			if (address->address != address->peer_address)
+				printf (" peer %s", nm_utils_inet4_ntop (address->peer_address, NULL));
+			printf ("/%d\n", address->plen);
 		}
 		g_array_unref (addresses);
 	}
@@ -574,7 +577,7 @@ do_ip4_address_add (char **argv)
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
 
-		gboolean value = nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, address, plen, 0, lifetime, preferred, NULL);
+		gboolean value = nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, address, plen, address, lifetime, preferred, NULL);
 		return value;
 	} else
 		return FALSE;
@@ -615,11 +618,11 @@ do_ip6_address_add (char **argv)
 		} else \
 			return FALSE; \
 	}
-#define ADDR_CMD(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, FALSE, 0, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, FALSE)
+#define ADDR_CMD(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, FALSE, address, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, FALSE)
 #define ADDR_CMD_PRINT(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, TRUE, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, TRUE)
 
 ADDR_CMD (delete)
-ADDR_CMD_PRINT (get, 0)
+ADDR_CMD_PRINT (get, address)
 
 static gboolean
 do_ip4_route_get_all (char **argv)

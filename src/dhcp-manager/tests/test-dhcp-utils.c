@@ -95,7 +95,7 @@ test_generic_options (void)
 	address = nm_ip4_config_get_address (ip4_config, 0);
 	g_assert (inet_pton (AF_INET, expected_addr, &tmp) > 0);
 	g_assert (address->address == tmp);
-	g_assert (address->peer_address == 0);
+	g_assert (address->peer_address == tmp);
 	g_assert_cmpint (address->plen, ==, 24);
 
 	/* Gateway */
