@@ -306,8 +306,10 @@ def kinit_user():
     return _kinit_user
 
 class UploadFile:
-    def __init__(self, uri):
+    def __init__(self, uri, arch):
         self.uri = uri
+        self.arch = arch if arch is not None else 'x86_64'
+        self.arch_re = re.escape(self.arch)
     def url(self):
         raise NotImplementedError("not implemented")
     def init(self):
@@ -315,8 +317,8 @@ class UploadFile:
     def prepare(self, dry_run):
         raise NotImplementedError("not implemented")
 class UploadFileUrl(UploadFile):
-    def __init__(self, uri):
-        UploadFile.__init__(self, uri)
+    def __init__(self, uri, arch):
+        UploadFile.__init__(self, uri, arch)
     def url(self):
         return [self.uri]
     def prepare(self, dry_run):
@@ -324,8 +326,8 @@ class UploadFileUrl(UploadFile):
 class UploadFileSsh(UploadFile):
     user = kinit_user()
     host = 'file.brq.redhat.com'
-    def __init__(self, uri):
-        UploadFile.__init__(self, uri)
+    def __init__(self, uri, arch):
+        UploadFile.__init__(self, uri, arch)
         if uri.startswith('file://'):
             uri = uri[len('file://'):]
             self.files = [f for f in glob.glob(uri) if os.path.isfile(f)]
@@ -350,17 +352,16 @@ class UploadFileSsh(UploadFile):
         for l in out.splitlines():
             print('++ ' + l)
 class UploadFile_ParseWebsite(UploadFile):
-    def __init__(self, uri):
+    def __init__(self, uri, arch):
         self._pattern = None
         self._urls = None
-        UploadFile.__init__(self, uri)
+        UploadFile.__init__(self, uri, arch)
 
-    DefaultPattern = '^.*/NetworkManager(-adsl|-bluetooth|-config-connectivity-fedora|-debuginfo|-glib|-libnm|-team|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?-[^ /]*\.x86_64\.rpm$'
     @property
     def pattern(self):
         if self._pattern is not None:
             return self._pattern
-        return UploadFile_ParseWebsite.DefaultPattern
+        return '^.*/NetworkManager(-adsl|-bluetooth|-config-connectivity-fedora|-debuginfo|-glib|-libnm|-team|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?-[^ /]*\.%s\.rpm$' % (self.arch_re)
     def set_pattern(self, value):
         if not value:
             self._pattern = None
@@ -375,7 +376,8 @@ class UploadFile_ParseWebsite(UploadFile):
     def pattern_is_default(self):
         return self._pattern is None
     def is_matching_url(self, url):
-        if re.match('^.*/([^/]+\.(src|x86_64)\.rpm)$', url):
+        p = '^.*/([^/]+\.(src|%s)\.rpm)$' % (self.arch_re)
+        if re.match(p, url):
             if re.search(self.pattern, url):
                 return True
         return False
@@ -416,8 +418,8 @@ class UploadFile_ParseWebsite(UploadFile):
 
 class UploadFileJenkins(UploadFile_ParseWebsite):
     jenkins_base_url = 'http://10.34.130.105:8080/job/NetworkManager/'
-    def __init__(self, uri):
-        UploadFile_ParseWebsite.__init__(self, uri)
+    def __init__(self, uri, arch):
+        UploadFile_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
         m = re.match('^jenkins://([0-9]+)(/(.+)|/?)?$', self.uri)
         if not m:
@@ -435,8 +437,8 @@ class UploadFileJenkins(UploadFile_ParseWebsite):
 
 class UploadFileBrew(UploadFile_ParseWebsite):
     brew_base_url = 'https://brewweb.devel.redhat.com/'
-    def __init__(self, uri):
-        UploadFile_ParseWebsite.__init__(self, uri)
+    def __init__(self, uri, arch):
+        UploadFile_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
         if self.uri.startswith('brew://'):
             self._type = "brew"
@@ -473,7 +475,7 @@ class UploadFileBrew(UploadFile_ParseWebsite):
 
         if not found_anything and self._type == "brewtask":
             # when the task-id is the main-page, we have to repeat... search deeper.
-            p2 = '<a href="(taskinfo\?taskID=[0-9]+)" class="taskclosed" title="closed">buildArch \(.*.rpm, x86_64\)</a>'
+            p2 = '<a href="(taskinfo\?taskID=[0-9]+)" class="taskclosed" title="closed">buildArch \(.*.rpm, %s\)</a>' % (self.arch_re)
             for a in re.finditer(p2, page):
                 page = self.read_page('https://brewweb.devel.redhat.com/%s' % (a.group(1)))
                 for a in re.finditer(p, page):
@@ -490,8 +492,8 @@ class UploadFileBrew(UploadFile_ParseWebsite):
         raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\")" % (self.uri, self._mainpage))
 
 class UploadFileRepo(UploadFile_ParseWebsite):
-    def __init__(self, uri):
-        UploadFile_ParseWebsite.__init__(self, uri)
+    def __init__(self, uri, arch):
+        UploadFile_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
         m = re.match('^repo:(.+?)/?([^\/]+rpm)?$', self.uri)
         if not m:
@@ -572,7 +574,7 @@ class CmdSubmit(CmdBase):
                 ctor = UploadFileRepo
             else:
                 ctor = UploadFileSsh
-            uf = ctor(r)
+            uf = ctor(r, self._get_var ("ARCH"))
             uf.init()
             self.rpm.append((r, uf))
 
@@ -673,30 +675,30 @@ class CmdSubmit(CmdBase):
         if self.rpm is not None:
             for x in self.rpm:
                 for u in x[1].url():
-                    if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*\.git20140326\.4dba720\.el7\.x86_64\.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*\.git20140326\.4dba720\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.0' # stable rhel-7.0 release
-                    if re.match(r'^.*/NetworkManager-0.9.11.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-0.9.11.0-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.1' # upstream pre 1.0
-                    if re.match(r'^.*/NetworkManager-0.9[0-9][0-9]+.0.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-0.9[0-9][0-9]+.0.0-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.1' # upstream 1.0-beta
-                    if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.1' # 0.9.10
-                    if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.1' # 0.9.10-rc
-                    if re.match(r'^.*/NetworkManager-0\.9\.11\..*\.git20141022.e28ee14.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-0\.9\.11\..*\.git20141022.e28ee14.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.1' # rhel-7.1-rc
-                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20150121\.b4ea599c\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20150121\.b4ea599c\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.1' # rhel-7.1-rc
-                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7' # upstream 1.0
-                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20160622\.9c83d18d\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20160622\.9c83d18d\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7' # rhel-7.2-rc
-                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20160624\.f245b49a\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20160624\.f245b49a\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7' # rhel-7.2-rc
-                    if re.match(r'^.*/NetworkManager-1.0.4-[0-9]+\.el7.x86_64.rpm$', u) or \
-                       re.match(r'^.*/NetworkManager-1.0.6-[0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.0.4-[0-9]+\.el7\.[^.]+\.rpm$', u) or \
+                       re.match(r'^.*/NetworkManager-1.0.6-[0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7' # rhel-7.2
-                    if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'master' # upstream 1.1
         raise Exception("could not detect %s. Try setting as target branch GIT_TARGETBRANCH%s" % (key_name,
                     ((" or "+key_name) if key_name != 'GIT_TARGETBRANCH' else '')))
