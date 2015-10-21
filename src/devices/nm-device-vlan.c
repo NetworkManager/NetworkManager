@@ -698,6 +698,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	NMSettingVlan *s_vlan;
 	gs_free char *iface = NULL;
 	NMPlatformError plerr;
+	const NMPlatformLink *plink;
 
 	if (!NM_IS_DEVICE (parent)) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
@@ -728,9 +729,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 		             nm_platform_error_to_string (plerr));
 		return NULL;
 	}
+	plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, iface);
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
-	                                    NM_DEVICE_IFACE, iface,
+	                                    NM_DEVICE_PLATFORM_DEVICE, plink,
 	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
 	                                    NM_DEVICE_DRIVER, "8021q",
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",

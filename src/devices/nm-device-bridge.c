@@ -498,6 +498,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	const char *mac_address_str;
 	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
 	NMPlatformError plerr;
+	const NMPlatformLink *plink;
 
 	g_assert (iface);
 
@@ -523,9 +524,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 		             nm_platform_error_to_string (plerr));
 		return NULL;
 	}
+	plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, iface);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BRIDGE,
-	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
 	                                  NM_DEVICE_DRIVER, "bridge",
 	                                  NM_DEVICE_TYPE_DESC, "Bridge",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
