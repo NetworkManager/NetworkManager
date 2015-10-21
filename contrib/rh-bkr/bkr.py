@@ -755,6 +755,15 @@ class CmdSubmit(CmdBase):
             return ""
         return '<reservesys duration="86400"/>'
 
+    def _process_line_get_ARCH(self, key, replacement, index=None, none=None):
+        v = self._get_default('ARCH')
+        if v is not None:
+            return v
+        v = self._get_default('DISTRO_ARCH')
+        if v is not None:
+            return v
+        return 'x86_64'
+
     def _process_line_get_SELINUX_DISABLED(self, key, replacement, index=None, none=None):
         v = self._get_default('SELINUX_DISABLED')
         if v is not None:
@@ -770,6 +779,7 @@ class CmdSubmit(CmdBase):
             'DISTRO_NAME'       : _process_line_get_DISTRO_NAME,
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
+            'ARCH'              : _process_line_get_ARCH,
             'HOSTREQUIRES'      : _process_line_get_HOSTREQUIRES,
             'JOBTYPE'           : _process_line_get_JOBTYPE,
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',

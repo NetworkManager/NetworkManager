@@ -63,12 +63,12 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 					<distro_name op="=" value="$DISTRO_NAME"/>
 					<distro_variant op="=" value="$DISTRO_VARIANT"/>
 					<distro_method op="=" value="$DISTRO_METHOD"/>
-					<distro_arch op="=" value="$DISTRO_ARCH"/>
+					<distro_arch op="=" value="$ARCH"/>
 				</and>
 			</distroRequires>
 			<hostRequires>
 				<and>
-					<arch op="=" value="x86_64"/>
+					<arch op="=" value="$ARCH"/>
 					<!-- default -->    <!-- <group op="=" value="desktopqe-net"/> -->
 					<!-- veth -->       <!-- <group op="=" value="desktop"/> -->
 					<!-- dcb -->        <!-- <hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/> -->
