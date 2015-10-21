@@ -623,7 +623,7 @@ class CmdSubmit(CmdBase):
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
 
-    def _get_default(self, key_name):
+    def _get_var(self, key_name):
         if not hasattr(self, '_default_var'):
             # Lazily set self._default_var from the command line arguments
             # the first time we need it
@@ -636,7 +636,14 @@ class CmdSubmit(CmdBase):
                     self._default_var[v[0]] = v[1]
         if key_name in self._default_var:
             return self._default_var[key_name]
-        return os.environ.get(key_name)
+        v = os.environ.get(key_name)
+        if v is None and key_name in CmdSubmit.DefaultReplacements:
+            v = CmdSubmit.DefaultReplacements[key_name]
+            if not isinstance(v, basestring):
+                self._default_var[key_name] = None
+                v = v(self, key_name)
+        self._default_var[key_name] = v
+        return v
 
 
     def _get_nitrate_test_plan(self):
@@ -660,7 +667,7 @@ class CmdSubmit(CmdBase):
     def __process_line_get_GIT_TARGETBRANCH_detect(self, key_name):
         # we default to 'master', unless there is an RPM that looks like it's from
         # rhel-7.0.
-        v = self._get_default('GIT_TARGETBRANCH')
+        v = self._get_var('GIT_TARGETBRANCH')
         if v is not None:
             return v
         if self.rpm is not None:
@@ -697,8 +704,8 @@ class CmdSubmit(CmdBase):
     def _detect_hosttype(self):
         return 'default'
 
-    def _process_line_get_JOBTYPE(self, key, replacement, index=None, none=None):
-        v = self._get_default('JOBTYPE')
+    def _get_var_for_JOBTYPE(self, key):
+        v = self._get_var('JOBTYPE')
         if v is not None:
             return v;
         jobtype = self.options.jobtype
@@ -706,8 +713,8 @@ class CmdSubmit(CmdBase):
             return 'product="cpe:/o:redhat:enterprise_linux:7.0" retention_tag="active+1"'
         return 'retention_tag="scratch"'
 
-    def _process_line_get_HOSTREQUIRES(self, key, replacement, index=None, none=None):
-        v = self._get_default('HOSTREQUIRES')
+    def _get_var_for_HOSTREQUIRES(self, key):
+        v = self._get_var('HOSTREQUIRES')
         if v is not None:
             return v;
         hosttype = self.options.hosttype
@@ -731,11 +738,11 @@ class CmdSubmit(CmdBase):
         else:
             return '<group op="=" value="desktopqe-net"/>'
 
-    def _process_line_get_GIT_TARGETBRANCH(self, key, replacement, index=None, none=None):
+    def _get_var_for_GIT_TARGETBRANCH(self, key):
         return self.__process_line_get_GIT_TARGETBRANCH_detect("GIT_TARGETBRANCH")
 
-    def _process_line_get_DISTRO_NAME(self, key, replacement, index=None, none=None):
-        v = self._get_default('DISTO_NAME')
+    def _get_var_for_DISTRO_NAME(self, key):
+        v = self._get_var('DISTO_NAME')
         if v is not None:
             return v
         target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_NAME")
@@ -747,25 +754,25 @@ class CmdSubmit(CmdBase):
             pass
         return 'RHEL-7.2-20150907.n.0'
 
-    def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
-        v = self._get_default('RESERVESYS')
+    def _get_var_for_RESERVESYS(self, key):
+        v = self._get_var('RESERVESYS')
         if v is not None:
             return v
         if not self.options.reservesys:
             return ""
         return '<reservesys duration="86400"/>'
 
-    def _process_line_get_ARCH(self, key, replacement, index=None, none=None):
-        v = self._get_default('ARCH')
+    def _get_var_for_ARCH(self, key):
+        v = self._get_var('ARCH')
         if v is not None:
             return v
-        v = self._get_default('DISTRO_ARCH')
+        v = self._get_var('DISTRO_ARCH')
         if v is not None:
             return v
         return 'x86_64'
 
-    def _process_line_get_SELINUX_DISABLED(self, key, replacement, index=None, none=None):
-        v = self._get_default('SELINUX_DISABLED')
+    def _get_var_for_SELINUX_DISABLED(self, key):
+        v = self._get_var('SELINUX_DISABLED')
         if v is not None:
             return v
         if self.options.disable_selinux:
@@ -776,45 +783,37 @@ class CmdSubmit(CmdBase):
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
             'DISTRO_VARIANT'    : 'Workstation',
-            'DISTRO_NAME'       : _process_line_get_DISTRO_NAME,
+            'DISTRO_NAME'       : _get_var_for_DISTRO_NAME,
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
-            'ARCH'              : _process_line_get_ARCH,
-            'HOSTREQUIRES'      : _process_line_get_HOSTREQUIRES,
-            'JOBTYPE'           : _process_line_get_JOBTYPE,
+            'ARCH'              : _get_var_for_ARCH,
+            'HOSTREQUIRES'      : _get_var_for_HOSTREQUIRES,
+            'JOBTYPE'           : _get_var_for_JOBTYPE,
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
-            'GIT_TARGETBRANCH'  : _process_line_get_GIT_TARGETBRANCH,
+            'GIT_TARGETBRANCH'  : _get_var_for_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
-            'RESERVESYS'        : _process_line_get_RESERVESYS,
-            'SELINUX_DISABLED'  : _process_line_get_SELINUX_DISABLED,
+            'RESERVESYS'        : _get_var_for_RESERVESYS,
+            'SELINUX_DISABLED'  : _get_var_for_SELINUX_DISABLED,
             'CONF_LOGLEVEL'     : 'DEBUG',
             'CONF_DHCP'         : 'dhclient',
             'CONF_DEBUG'        : 'RLIMIT_CORE,fatal-warnings',
             'GIT_URL'           : 'http://code.engineering.redhat.com/gerrit/desktopqe/NetworkManager',
         }
-    def _process_line_get(self, key, replacement, index=None, none=None):
-        if key in replacement:
-            return replacement[key]
-        if not key in self.subs:
-            v = self._get_default(key)
-            if v is None:
-                if not key in CmdSubmit.DefaultReplacements:
-                    replacement[key] = None
-                    return none
-                v = CmdSubmit.DefaultReplacements[key]
-                if not isinstance(v, basestring):
-                    v = v(self, key, replacement, index, none)
+    def _process_line_get(self, key, replacements):
+        if key in replacements:
+            v = replacements[key]
         else:
-            v = self.subs[key];
-            if is_sequence(v):
-                if index is not None and index != '@':
-                    raise Exception("Using index %s is not implemented" % index)
-                v = " \\\n\t".join(v)
-        replacement[key] = v
-        return v
+            if key in self.subs:
+                v = self.subs[key];
+                if is_sequence(v):
+                    v = " \\\n\t".join(v)
+            else:
+                v = self._get_var(key)
+            replacements[key] = v
+        return v if v is not None else ''
 
     re_subs0 = re.compile('^(?P<prefix>[^$]*)(?P<rest>\$.*\n?)$')
-    re_subs1 = re.compile('^\$(?P<name>\$|(?P<name0>[a-zA-Z_]+)|{(?P<name1>[a-zA-Z_]+)(\[(?P<index1>[0-9]+|@)\])?})(?P<rest>.*\n?$)')
+    re_subs1 = re.compile('^\$(?P<var>\$|[a-zA-Z_]+)(?P<rest>.*\n?$)')
     def _process_line(self, l, replacements):
 
         r = ''
@@ -829,15 +828,13 @@ class CmdSubmit(CmdBase):
                 l = l[1:]
                 r = r + '$'
                 continue
-            name = m.group('name')
-            if name == '$':
+            var = m.group('var')
+            if var == '$':
                 r = r + '$'
-            elif m.group('name0'):
-                r = r + self._process_line_get(m.group('name0'), replacements, none='')
-            elif m.group('name1'):
-                r = r + self._process_line_get(m.group('name1'), replacements, index=m.group('index1'), none='')
+            elif var:
+                r = r + self._process_line_get(var, replacements)
             else:
-                r = r + '$' + name
+                r = r + '$' + var
             l = m.group('rest')
             if not l:
                 return r
@@ -870,9 +867,10 @@ class CmdSubmit(CmdBase):
             replacements = {}
             for l in job0:
                 job.append(self._process_line(l, replacements))
-            for (k,v) in [ (k,v) for (k,v) in replacements.iteritems() if v is not None ]:
+            replacements = sorted(replacements.iteritems(), key=lambda x: x[0])
+            for (k,v) in [ (k,v) for (k,v) in replacements if v is not None ]:
                 print("replace \'%s\' => '%s'" % (k, v))
-            for k in [ k for (k,v) in replacements.iteritems() if v is None ]:
+            for k in [ k for (k,v) in replacements if v is None ]:
                 print("replace \'%s\' %s" % (k, termcolor.colored("not found", 'yellow')))
             temp = tempfile.NamedTemporaryFile(prefix='bkr_job.xml.', delete=False)
             for l in job:
