@@ -759,6 +759,49 @@ test_software_detect_add (const char *testpath,
 
 /*****************************************************************************/
 
+static void
+test_vlan_set_xgress (void)
+{
+	int ifindex, ifindex_parent;
+
+	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
+	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+
+	nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1245", DEVICE_NAME, PARENT_NAME);
+	ifindex = nmtstp_assert_wait_for_link (DEVICE_NAME, NM_LINK_TYPE_VLAN, 100)->ifindex;
+
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 4, 5));
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 7));
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 8));
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 4));
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 3));
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 4));
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 4));
+
+	/* TODO: assert that the values are actually set. Currently only verified
+	 * by manual inspection.  */
+
+	if (nmtst_is_debug ())
+		nmtstp_run_command_check ("ip -d link show %s", DEVICE_NAME);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 0));
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 0));
+
+	/* FIXME: with libnl3 there is a bug that we cannot actually clear the ingress
+	 * map. See http://lists.infradead.org/pipermail/libnl/2015-October/001988.html */
+	//g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 0));
+	//g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 0));
+
+	if (nmtst_is_debug ())
+		nmtstp_run_command_check ("ip -d link show %s", DEVICE_NAME);
+
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -791,5 +834,7 @@ setup_tests (void)
 		test_software_detect_add ("/link/software/detect/vlan", NM_LINK_TYPE_VLAN, 0);
 		test_software_detect_add ("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
 		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
+
+		g_test_add_func ("/link/software/vlan/set-xgress", test_vlan_set_xgress);
 	}
 }
