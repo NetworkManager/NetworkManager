@@ -171,6 +171,7 @@ make_connection_setting (const char *file,
 		lldp = NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
 	else
 		lldp = svParseBoolean (value, NM_SETTING_CONNECTION_LLDP_DEFAULT);
+	g_free (value);
 
 	/* Missing ONBOOT is treated as "ONBOOT=true" by the old network service */
 	g_object_set (s_con,
