@@ -583,6 +583,47 @@ nmtst_get_rand_int (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+inline static void *
+nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
+{
+	gsize i, j;
+	char *p_, *pj;
+	char *bu;
+
+	g_assert (dst);
+	g_assert (elmt_size > 0);
+	g_assert (n_elmt < G_MAXINT32);
+
+	if (n_elmt == 0)
+		return dst;
+
+	if (src && dst != src)
+		memcpy (dst, src, elmt_size * n_elmt);
+
+	if (!rand)
+		rand = nmtst_get_rand ();
+
+	bu = g_slice_alloc (elmt_size);
+
+	p_ = dst;
+	for (i = n_elmt; i > 1; i--) {
+		j = g_rand_int_range (rand, 0, i);
+
+		if (j != 0) {
+			pj = &p_[j * elmt_size];
+
+			/* swap */
+			memcpy (bu, p_, elmt_size);
+			memcpy (p_, pj, elmt_size);
+			memcpy (pj, bu, elmt_size);
+		}
+		p_ += elmt_size;
+	}
+
+	g_slice_free1 (elmt_size, bu);
+	return dst;
+}
+
 inline static const char *
 nmtst_get_sudo_cmd (void)
 {
