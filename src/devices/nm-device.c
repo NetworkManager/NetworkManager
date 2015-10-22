@@ -2771,13 +2771,17 @@ recheck_available (gpointer user_data)
 		new_state = NM_DEVICE_STATE_UNAVAILABLE;
 		nm_device_queue_state (self, new_state, priv->recheck_available.unavailable_reason);
 	}
-	_LOGD (LOGD_DEVICE, "device is %savailable, %s %s",
-	       now_available ? "" : "not ",
-	       new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
-	       state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
 
-	priv->recheck_available.available_reason = NM_DEVICE_STATE_REASON_NONE;
-	priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
+	if (new_state > NM_DEVICE_STATE_UNKNOWN) {
+		_LOGD (LOGD_DEVICE, "device is %savailable, %s %s",
+			   now_available ? "" : "not ",
+			   new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
+			   state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+
+		priv->recheck_available.available_reason = NM_DEVICE_STATE_REASON_NONE;
+		priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
+	}
+
 	return G_SOURCE_REMOVE;
 }
 
