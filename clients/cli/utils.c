@@ -90,8 +90,8 @@ nmc_arg_is_option (const char *str, const char *opt_name)
  * Helper function to parse command-line arguments.
  * arg_arr: description of arguments to look for
  * last:    whether these are last expected arguments
- * argc:    command-line argument array
- * argv:    command-line argument array size
+ * argc:    command-line argument array size
+ * argv:    command-line argument array
  * error:   error set on a failure (when FALSE is returned)
  * Returns: TRUE on success, FALSE on an error and sets 'error'
  */
