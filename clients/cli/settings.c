@@ -190,21 +190,22 @@ NmcOutputField nmc_fields_setting_8021X[] = {
 
 /* Available fields for NM_SETTING_WIRELESS_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wireless[] = {
-	SETTING_FIELD ("name"),                                     /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SSID),                   /* 1 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MODE),                   /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_BAND),                   /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_CHANNEL),                /* 4 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_BSSID),                  /* 5 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_RATE),                   /* 6 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_TX_POWER),               /* 7 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS),            /* 8 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS),     /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST),  /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MTU),                    /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS),            /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN),                 /* 13 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_POWERSAVE),              /* 14 */
+	SETTING_FIELD ("name"),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SSID),                      /* 1 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MODE),                      /* 2 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_BAND),                      /* 3 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_CHANNEL),                   /* 4 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_BSSID),                     /* 5 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_RATE),                      /* 6 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_TX_POWER),                  /* 7 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS),               /* 8 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS),        /* 9 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST),     /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION), /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MTU),                       /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS),               /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN),                    /* 14 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_POWERSAVE),                 /* 15 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
@@ -218,6 +219,7 @@ NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_MAC_ADDRESS","\
                                             NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS","\
                                             NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST","\
+                                            NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION","\
                                             NM_SETTING_WIRELESS_MTU","\
                                             NM_SETTING_WIRELESS_SEEN_BSSIDS","\
                                             NM_SETTING_WIRELESS_HIDDEN"," \
@@ -1680,6 +1682,23 @@ nmc_property_wireless_get_powersave (NMSetting *setting, NmcPropertyGetType get_
 	else
 		return g_strdup_printf (_("yes (%u)"), powersave);
 }
+
+static char *
+nmc_property_wireless_get_mac_address_randomization (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingWireless *s_wifi = NM_SETTING_WIRELESS (setting);
+	NMSettingMacRandomization randomization = nm_setting_wireless_get_mac_address_randomization (s_wifi);
+
+	if (randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
+		return g_strdup (_("default"));
+	else if (randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER)
+		return g_strdup (_("never"));
+	else if (randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
+		return g_strdup_printf (_("always"));
+	else
+		return g_strdup_printf (_("unknown"));
+}
+
 
 /* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wifi_sec_get_key_mgmt, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT)
@@ -4626,6 +4645,39 @@ nmc_property_wireless_set_powersave (NMSetting *setting, const char *prop, const
 	return TRUE;
 }
 
+static gboolean
+nmc_property_wireless_set_mac_address_randomization (NMSetting *setting,
+                                                     const char *prop,
+                                                     const char *val,
+                                                     GError **error)
+{
+	NMSettingMacRandomization randomization;
+	gs_free char *err_token = NULL;
+	gboolean ret;
+	long int t;
+
+	if (nmc_string_to_int_base (val, 0, TRUE,
+	                            NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                            NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
+	                            &t))
+		randomization = (NMSettingMacRandomization) t;
+	else {
+		ret = nm_utils_enum_from_str (nm_setting_mac_randomization_get_type (),
+		                              val,
+		                              (int *) &randomization,
+		                              &err_token);
+
+		if (!ret) {
+			g_set_error (error, 1, 0, _("invalid option '%s', use 'default', 'never' or 'always'"),
+			             err_token);
+			return FALSE;
+		}
+	}
+
+	g_object_set (setting, prop, (guint) randomization, NULL);
+	return TRUE;
+}
+
 /* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property setter functions --- */
 /* 'key-mgmt' */
 static const char *wifi_sec_valid_key_mgmts[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
@@ -6688,6 +6740,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, MAC_ADDRESS_RANDOMIZATION),
+	                    nmc_property_wireless_get_mac_address_randomization,
+	                    nmc_property_wireless_set_mac_address_randomization,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, KEY_MGMT),
@@ -7269,10 +7328,11 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc,  const char *one_prop,
 	set_val_str (arr, 8, nmc_property_wireless_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 9, nmc_property_wireless_get_cloned_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 10, nmc_property_wireless_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_wireless_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_wireless_get_seen_bssids (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_wireless_get_hidden (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_wireless_get_powersave (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_wireless_get_mac_address_randomization (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_wireless_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_wireless_get_seen_bssids (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_wireless_get_hidden (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_wireless_get_powersave (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
