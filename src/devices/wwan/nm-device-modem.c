@@ -411,10 +411,7 @@ check_connection_available (NMDevice *device,
 		return FALSE;
 
 	if (state == NM_MODEM_STATE_LOCKED) {
-		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (connection);
-
-		/* Can't use a connection without a PIN if the modem is locked */
-		if (!s_gsm || !nm_setting_gsm_get_pin (s_gsm))
+		if (!nm_connection_get_setting_gsm (connection))
 			return FALSE;
 	}
 
