@@ -102,7 +102,6 @@ guint32 nm_ip4_config_get_num_routes (const NMIP4Config *config);
 const NMPlatformIP4Route *nm_ip4_config_get_route (const NMIP4Config *config, guint32 i);
 
 const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host);
-const NMPlatformIP4Address *nm_ip4_config_get_subnet_for_host (const NMIP4Config *config, guint32 host);
 
 /* Nameservers */
 void nm_ip4_config_reset_nameservers (NMIP4Config *config);

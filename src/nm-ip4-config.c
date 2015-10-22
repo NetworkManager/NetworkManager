@@ -100,13 +100,13 @@ nm_ip4_config_get_ifindex (const NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->ifindex;
 }
 
-static gboolean
-same_prefix (guint32 address1, guint32 address2, int plen)
-{
-	guint32 masked1 = ntohl (address1) >> (32 - plen);
-	guint32 masked2 = ntohl (address2) >> (32 - plen);
+/******************************************************************/
 
-	return masked1 == masked2;
+static gboolean
+_ipv4_is_zeronet (in_addr_t network)
+{
+	/* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
+	return (network & htonl(0xff000000)) == htonl(0x00000000);
 }
 
 /******************************************************************/
@@ -307,7 +307,16 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 
 				route.ifindex = ifindex;
 				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
-				route.network = nm_utils_ip4_address_clear_host_address (addr->address, addr->plen);
+
+				/* The destination network depends on the peer-address. */
+				route.network = nm_utils_ip4_address_clear_host_address (nm_platform_ip4_address_get_peer (addr), addr->plen);
+
+				if (_ipv4_is_zeronet (route.network)) {
+					/* Kernel doesn't add device-routes for destinations that
+					 * start with 0.x.y.z. Skip them. */
+					continue;
+				}
+
 				route.plen = addr->plen;
 				route.pref_src = addr->address;
 				route.metric = default_route_metric;
@@ -1256,12 +1265,22 @@ nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 network,
 {
 	guint naddresses = nm_ip4_config_get_num_addresses (config);
 	int i;
+	in_addr_t peer_network;
 
 	for (i = 0; i < naddresses; i++) {
 		const NMPlatformIP4Address *item = nm_ip4_config_get_address (config, i);
 
-		if (item->plen <= plen && same_prefix (item->address, network, item->plen))
-			return TRUE;
+		if (item->plen > plen)
+			continue;
+
+		peer_network = nm_utils_ip4_address_clear_host_address (nm_platform_ip4_address_get_peer (item), item->plen);
+		if (_ipv4_is_zeronet (peer_network))
+			continue;
+
+		if (peer_network != nm_utils_ip4_address_clear_host_address (network, item->plen))
+			continue;
+
+		return TRUE;
 	}
 
 	return FALSE;
@@ -1552,28 +1571,6 @@ nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host
 	}
 
 	return best_route;
-}
-
-const NMPlatformIP4Address *
-nm_ip4_config_get_subnet_for_host (const NMIP4Config *config, guint32 host)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	guint i;
-	NMPlatformIP4Address *subnet = NULL;
-
-	g_return_val_if_fail (host, NULL);
-
-	for (i = 0; i < priv->addresses->len; i++) {
-		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
-
-		if (subnet && subnet->plen >= item->plen)
-			continue;
-		if (nm_utils_ip4_address_clear_host_address (host, item->plen) != nm_utils_ip4_address_clear_host_address (item->address, item->plen))
-			continue;
-		subnet = item;
-	}
-
-	return subnet;
 }
 
 /******************************************************************/
