@@ -424,6 +424,7 @@ connect_timer_start (NMVpnServicePlugin *plugin)
 {
 	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 
+	nm_clear_g_source (&priv->connect_timer);
 	priv->connect_timer = g_timeout_add_seconds (60, connect_timer_expired, plugin);
 }
 
