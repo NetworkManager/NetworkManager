@@ -549,6 +549,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--nitrate-test-plan', '-P', help='Select the nitrate-test-plan for loading tests. Currently supported: \'devel\' (\'18716\'), \'rhel-7.1\' (\'6726\') or the numeric id of parent plan. The default depends on the target-branch. See for example https://tcms.engineering.redhat.com/plan/18716/networkmanager#treeview')
         self.parser.add_argument('--tests', '-c', action='append', help='Append argument to $TESTS')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
+        self.parser.add_argument('--job-default', '-J', action='store_true', help='Use default job file. Only has effect if --job is not specified')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
         self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
         self.parser.add_argument('--disable-selinux', action='store_true', help='add kernel option selinux=0 to disable AVC checks ($SELINUX_DISABLED)')
@@ -856,6 +857,9 @@ class CmdSubmit(CmdBase):
                 raise Exception("Unknown profile \"%s\". Valid values are %s" % (self.options.profile, argv_profiles.keys()))
             self.argv_profile = argv_profiles[self.options.profile]
             self.options = self.parser.parse_args(self.argv_profile + argv)
+
+        if not self.options.job and self.options.job_default:
+            self.options.job = os.path.dirname(os.path.abspath(__file__)) + '/job01.xml'
 
         if self.options.job:
             with open(self.options.job) as f:
