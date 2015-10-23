@@ -600,8 +600,10 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
 		return NULL;
 
 	device = (const char *) g_simple_async_result_get_op_res_gpointer (simple);
-	if (device && priv->bluez_version == 5)
+	if (device && priv->bluez_version == 5) {
 		priv->connected = TRUE;
+		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CONNECTED);
+	}
 
 	return device;
 }
