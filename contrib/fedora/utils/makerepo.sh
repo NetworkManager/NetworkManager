@@ -230,6 +230,7 @@ detect_build_type 'network-manager-applet-[0-9]*' network-manager-applet.spec
 detect_build_type 'libnl-[0-9]*' libnl3.spec
 detect_build_type 'NetworkManager-openvpn-[0-9]*' NetworkManager-openvpn.spec
 detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-openswan.spec
+detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-libreswan.spec
 detect_build_type 'NetworkManager-vpnc-[0-9]*' NetworkManager-vpnc.spec
 detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
@@ -368,6 +369,7 @@ c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libn
 
 # NetworkManager-libreswan, NetworkManager-openswan
 64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
+78555150e4df29eb39fa4a105f884f53b0f4523f  df9144805f37dc30dfaeab8da762f615 *NetworkManager-openswan-1.0.6.tar.xz
 
 # NetworkManager-vpnc
 89bdcd324f2e257eca59168a7d0be5608438aab0  abb26a6c3c8d6c1d91c78471aff86b3a *NetworkManager-vpnc-0.9.8.2.tar.xz
