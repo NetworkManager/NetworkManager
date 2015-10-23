@@ -558,6 +558,24 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+static GVariant *
+_override_flags_get (NMSetting *setting, const char *property)
+{
+	return g_variant_new_uint32 (nm_setting_vlan_get_flags ((NMSettingVlan *) setting));
+}
+
+static void
+_override_flags_not_set (NMSetting *setting,
+                          GVariant *connection_dict,
+                          const char *property)
+{
+	/* we changed the default value for FLAGS. When an older client
+	 * doesn't serialize the property, we assume it is the old default. */
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_VLAN_FLAGS, (NMVlanFlags) 0,
+	              NULL);
+}
+
 static GSList *
 priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 {
@@ -736,6 +754,11 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
 	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
 	 * master device's operating state).
+	 *
+	 * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,
+	 * but it used to be 0. To preserve backward compatibility, the default-value
+	 * in the D-Bus API continues to be 0 and a missing property on D-Bus
+	 * is still considered as 0.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: flags
@@ -753,6 +776,11 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     G_PARAM_CONSTRUCT |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_override_property (parent_class, NM_SETTING_VLAN_FLAGS,
+	                                     NULL,
+	                                     _override_flags_get,
+	                                     NULL,
+	                                     _override_flags_not_set);
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
