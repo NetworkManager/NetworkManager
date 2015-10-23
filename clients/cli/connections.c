@@ -6140,15 +6140,20 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	    || strcmp (type, NM_SETTING_VLAN_SETTING_NAME) == 0)
 		ifname_mandatory = FALSE;
 
-	if (!ifname && ifname_mandatory && nmc->ask) {
-		ifname = ifname_ask = nmc_readline (_("Interface name [*]: "));
-		if (!ifname)
-			ifname = ifname_ask = g_strdup ("*");
-	}
 	if (!ifname && ifname_mandatory) {
-		g_string_printf (nmc->return_text, _("Error: 'ifname' argument is required."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		if (nmc->ask) {
+			ifname = ifname_ask = nmc_readline (_("Interface name [*]: "));
+			if (!ifname)
+				ifname = ifname_ask = g_strdup ("*");
+		} else {
+			if (!*argv)
+				g_string_printf (nmc->return_text, _("Error: 'ifname' argument is required."));
+			else
+				g_string_printf (nmc->return_text, _("Error: mandatory 'ifname' not seen before '%s'."),
+				                 *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
 	}
 	if (ifname) {
 		if (!nm_utils_iface_valid_name (ifname) && strcmp (ifname, "*") != 0) {
