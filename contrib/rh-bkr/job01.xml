@@ -72,7 +72,7 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 					<!-- default -->    <!-- <group op="=" value="desktopqe-net"/> -->
 					<!-- veth -->       <!-- <group op="=" value="desktop"/> -->
 					<!-- dcb -->        <!-- <hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/> -->
-					<!-- infiniband --> <!-- <hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/> -->
+					<!-- infiniband --> <!-- <group op="=" value="RDMA - ib0"/> -->
 					<!-- wifi -->       <!-- <group op="=" value="wireless"/><hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/> -->
 					<!-- wifi -->       <!-- <hostname op="=" value="wlan-r2s26.wlan.rhts.eng.bos.redhat.com"/> -->
 					$HOSTREQUIRES

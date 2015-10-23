@@ -725,7 +725,7 @@ class CmdSubmit(CmdBase):
         elif hosttype == 'dcb':
             return '<hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/>'
         elif hosttype == 'infiniband':
-            return '<hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/>'
+            return '<group op="=" value="RDMA - ib0"/>'
         elif hosttype == 'wifi':
             return '''
                 <group op="=" value="wireless"/>
