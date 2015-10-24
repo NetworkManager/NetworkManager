@@ -10,14 +10,6 @@
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
 #define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
 
-typedef struct {
-	union {
-		guint8 addr_ptr[1];
-		in_addr_t addr4;
-		struct in6_addr addr6;
-	};
-} IPAddr;
-
 gboolean
 nmtstp_is_root_test (void)
 {
@@ -502,9 +494,9 @@ static void
 _ip_address_add (gboolean external_command,
                  gboolean is_v4,
                  int ifindex,
-                 const IPAddr *address,
+                 const NMIPAddr *address,
                  int plen,
-                 const IPAddr *peer_address,
+                 const NMIPAddr *peer_address,
                  guint32 lifetime,
                  guint32 preferred,
                  const char *label,
@@ -644,9 +636,9 @@ nmtstp_ip4_address_add (gboolean external_command,
 	_ip_address_add (external_command,
 	                 TRUE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
-	                 (IPAddr *) &peer_address,
+	                 (NMIPAddr *) &peer_address,
 	                 lifetime,
 	                 preferred,
 	                 label,
@@ -666,9 +658,9 @@ nmtstp_ip6_address_add (gboolean external_command,
 	_ip_address_add (external_command,
 	                 FALSE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
-	                 (IPAddr *) &peer_address,
+	                 (NMIPAddr *) &peer_address,
 	                 lifetime,
 	                 preferred,
 	                 NULL,
@@ -679,9 +671,9 @@ static void
 _ip_address_del (gboolean external_command,
                  gboolean is_v4,
                  int ifindex,
-                 const IPAddr *address,
+                 const NMIPAddr *address,
                  int plen,
-                 const IPAddr *peer_address)
+                 const NMIPAddr *peer_address)
 {
 	gint64 end_time;
 
@@ -780,9 +772,9 @@ nmtstp_ip4_address_del (gboolean external_command,
 	_ip_address_del (external_command,
 	                 TRUE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
-	                 (IPAddr *) &peer_address);
+	                 (NMIPAddr *) &peer_address);
 }
 
 void
@@ -794,7 +786,7 @@ nmtstp_ip6_address_del (gboolean external_command,
 	_ip_address_del (external_command,
 	                 FALSE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
 	                 NULL);
 }

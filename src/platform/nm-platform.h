@@ -85,6 +85,18 @@ typedef enum {
 	_NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL,
 } NMPlatformReason;
 
+
+typedef struct {
+	union {
+		guint8 addr_ptr[1];
+		in_addr_t addr4;
+		struct in6_addr addr6;
+	};
+} NMIPAddr;
+
+#define NMIPAddrInit { .addr6 = IN6ADDR_ANY_INIT }
+
+
 #define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
 
 #define __NMPlatformObject_COMMON \
