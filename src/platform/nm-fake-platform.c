@@ -299,6 +299,12 @@ link_add (NMPlatform *platform,
 
 	link_init (&device, priv->links->len, type, name);
 
+	if (address) {
+		g_return_val_if_fail (address_len > 0 && address_len <= sizeof (device.link.addr.data), FALSE);
+		memcpy (device.link.addr.data, address, address_len);
+		device.link.addr.len = address_len;
+	}
+
 	g_array_append_val (priv->links, device);
 
 	if (device.link.ifindex) {

@@ -438,6 +438,52 @@ test_vlan (void)
 	test_software (NM_LINK_TYPE_VLAN, "vlan");
 }
 
+/*****************************************************************************/
+
+static void
+test_bridge_addr (void)
+{
+	char addr[ETH_ALEN];
+	NMPlatformLink link;
+	const NMPlatformLink *plink;
+
+	nm_utils_hwaddr_aton ("de:ad:be:ef:00:11", addr, sizeof (addr));
+
+	g_assert_cmpint (nm_platform_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &link), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert_cmpstr (link.name, ==, DEVICE_NAME);
+
+	g_assert_cmpint (link.addr.len, ==, sizeof (addr));
+	g_assert (!memcmp (link.addr.data, addr, sizeof (addr)));
+
+	plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
+	g_assert (plink);
+
+	if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET)) {
+		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
+		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_EUI64);
+
+		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, TRUE));
+		g_assert (nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
+		plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
+		g_assert (plink);
+		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_NONE);
+
+		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, FALSE));
+		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
+		plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
+		g_assert (plink);
+		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_EUI64);
+	}
+
+	g_assert_cmpint (plink->addr.len, ==, sizeof (addr));
+	g_assert (!memcmp (plink->addr.data, addr, sizeof (addr)));
+
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, link.ifindex));
+	g_assert (!nm_platform_link_get (NM_PLATFORM_GET, link.ifindex));
+}
+
+/*****************************************************************************/
+
 static void
 test_internal (void)
 {
@@ -825,6 +871,7 @@ setup_tests (void)
 	g_test_add_func ("/link/software/bond", test_bond);
 	g_test_add_func ("/link/software/team", test_team);
 	g_test_add_func ("/link/software/vlan", test_vlan);
+	g_test_add_func ("/link/software/bridge/addr", test_bridge_addr);
 
 	if (nmtstp_is_root_test ()) {
 		g_test_add_func ("/link/external", test_external);
