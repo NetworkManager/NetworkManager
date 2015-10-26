@@ -103,6 +103,24 @@ dns_writer (KeyfileWriterInfo *info,
 }
 
 static void
+ip6_addr_gen_mode_writer (KeyfileWriterInfo *info,
+                          NMSetting *setting,
+                          const char *key,
+                          const GValue *value)
+{
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	const char *str;
+
+	addr_gen_mode = (NMSettingIP6ConfigAddrGenMode) g_value_get_int (value);
+	str = nm_utils_enum_to_str (nm_setting_ip6_config_addr_gen_mode_get_type (),
+	                            addr_gen_mode);
+	nm_keyfile_plugin_kf_set_string (info->keyfile,
+	                                 nm_setting_get_name (setting),
+	                                 key,
+	                                 str);
+}
+
+static void
 write_ip_values (GKeyFile *file,
                  const char *setting_name,
                  GPtrArray *array,
@@ -557,6 +575,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_DNS,
 	  dns_writer },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+	  ip6_addr_gen_mode_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
 	  ssid_writer },

@@ -560,6 +560,27 @@ ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 }
 
 static void
+ip6_addr_gen_mode_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
+	const char *setting_name = nm_setting_get_name (setting);
+	char *s;
+
+	s = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
+	if (s) {
+		if (!nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), s,
+					     (int *) &addr_gen_mode, NULL)) {
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+				     _("invalid option '%s', use one of [%s]"),
+				     s, "eui64,stable-privacy");
+		}
+		g_free (s);
+	}
+
+	g_object_set (G_OBJECT (setting), key, (gint) addr_gen_mode, NULL);
+}
+
+static void
 mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key, gsize enforce_length)
 {
 	const char *setting_name = nm_setting_get_name (setting);
@@ -1177,6 +1198,10 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_IP_CONFIG_DNS,
 	  FALSE,
 	  ip6_dns_parser },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+	  FALSE,
+	  ip6_addr_gen_mode_parser },
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_MAC_ADDRESS,
 	  TRUE,
