@@ -526,7 +526,7 @@ fi
 AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)
 
 # libnl support for the linux platform
-PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0)
+PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8)
 
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
