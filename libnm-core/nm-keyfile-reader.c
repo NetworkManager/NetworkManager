@@ -562,20 +562,21 @@ ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 static void
 ip6_addr_gen_mode_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	const char *setting_name = nm_setting_get_name (setting);
-	char *s;
+	gs_free char *s = NULL;
 
 	s = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
 	if (s) {
 		if (!nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), s,
-					     (int *) &addr_gen_mode, NULL)) {
+		                             (int *) &addr_gen_mode, NULL)) {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-				     _("invalid option '%s', use one of [%s]"),
-				     s, "eui64,stable-privacy");
+			             _("invalid option '%s', use one of [%s]"),
+			             s, "eui64,stable-privacy");
+			return;
 		}
-		g_free (s);
-	}
+	} else
+		addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
 
 	g_object_set (G_OBJECT (setting), key, (gint) addr_gen_mode, NULL);
 }

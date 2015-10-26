@@ -115,7 +115,7 @@ NMSettingIP6ConfigAddrGenMode
 nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting),
-	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64);
+	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
 
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->addr_gen_mode;
 }
@@ -618,7 +618,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		(object_class, PROP_ADDR_GEN_MODE,
 		 g_param_spec_int (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, "", "",
 		                   G_MININT, G_MAXINT,
-		                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+		                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));

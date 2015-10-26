@@ -1509,6 +1509,11 @@ make_ip6_setting (shvarFile *ifcfg,
 		else
 			PARSE_WARNING ("Invalid IPV6_ADDR_GEN_MODE");
 		g_free (tmp);
+	} else {
+		g_object_set (s_ip6,
+		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+		              NULL);
 	}
 
 	/* DNS servers
