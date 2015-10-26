@@ -152,7 +152,7 @@ static void do_request_link (NMPlatform *platform, int ifindex, const char *name
 static void do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean handle_delayed_action);
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 static gboolean event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks);
-static NMPCacheOpsType cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_needle, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason);
+static NMPCacheOpsType cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason);
 
 /******************************************************************
  * Support IFLA_INET6_ADDR_GEN_MODE
@@ -2546,14 +2546,14 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 }
 
 static NMPCacheOpsType
-cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_needle, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason)
+cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	NMPObject *obj_cache;
 	gboolean was_visible;
 	NMPCacheOpsType cache_op;
 
-	cache_op = nmp_cache_remove_netlink (priv->cache, obj_needle, &obj_cache, &was_visible, cache_pre_hook, platform);
+	cache_op = nmp_cache_remove_netlink (priv->cache, obj_id, &obj_cache, &was_visible, cache_pre_hook, platform);
 	do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
 
 	if (out_obj_cache)
@@ -3329,7 +3329,7 @@ _nmp_vt_cmd_plobj_to_nl_link (NMPlatform *platform, const NMPlatformObject *_obj
 static gboolean
 do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	int nle;
 
 	event_handler_read_netlink_all (platform, FALSE);
@@ -3341,8 +3341,8 @@ do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo
 	}
 	_LOGD ("do-add-link: success adding link '%s'", name);
 
-	nmp_object_stackinit_id_link (&obj_needle, 0);
-	g_strlcpy (obj_needle.link.name, name, sizeof (obj_needle.link.name));
+	nmp_object_stackinit_id_link (&obj_id, 0);
+	g_strlcpy (obj_id.link.name, name, sizeof (obj_id.link.name));
 
 	delayed_action_handle_all (platform, TRUE);
 
@@ -3350,9 +3350,9 @@ do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo
 	 * the notification is not yet ready via nlh_event, so we have to re-request the
 	 * link so that it is in the cache. A better solution would be to do everything
 	 * via one netlink socket. */
-	if (!nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, 0, obj_needle.link.name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
-		_LOGT ("do-add-link: reload: the added link is not yet ready. Request %s", obj_needle.link.name);
-		do_request_link (platform, 0, obj_needle.link.name, TRUE);
+	if (!nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, 0, obj_id.link.name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
+		_LOGT ("do-add-link: reload: the added link is not yet ready. Request %s", obj_id.link.name);
+		do_request_link (platform, 0, obj_id.link.name, TRUE);
 	}
 
 	/* Return true, because kernel_add_object() succeeded. This doesn't indicate that the
@@ -3534,15 +3534,15 @@ static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	const NMPObject *obj;
 
 	obj = nmp_cache_lookup_link (priv->cache, ifindex);
 	if (!obj || !obj->_link.netlink.is_in_netlink)
 		return FALSE;
 
-	nmp_object_stackinit_id_link (&obj_needle, ifindex);
-	return do_delete_object (platform, &obj_needle, NULL);
+	nmp_object_stackinit_id_link (&obj_id, ifindex);
+	return do_delete_object (platform, &obj_id, NULL);
 }
 
 static const char *
@@ -4363,7 +4363,7 @@ ip4_address_add (NMPlatform *platform,
                  guint32 preferred,
                  const char *label)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	auto_nl_object struct nl_object *nlo = NULL;
 
 	nlo = build_rtnl_addr (platform, AF_INET, ifindex, &addr,
@@ -4371,7 +4371,7 @@ ip4_address_add (NMPlatform *platform,
 	                       plen, lifetime, preferred, 0,
 	                       label);
 	return do_add_addrroute (platform,
-	                         nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen, peer_addr),
+	                         nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_addr),
 	                         nlo);
 }
 
@@ -4385,7 +4385,7 @@ ip6_address_add (NMPlatform *platform,
                  guint32 preferred,
                  guint flags)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	auto_nl_object struct nl_object *nlo = NULL;
 
 	nlo = build_rtnl_addr (platform, AF_INET6, ifindex, &addr,
@@ -4393,36 +4393,36 @@ ip6_address_add (NMPlatform *platform,
 	                       plen, lifetime, preferred, flags,
 	                       NULL);
 	return do_add_addrroute (platform,
-	                         nmp_object_stackinit_id_ip6_address (&obj_needle, ifindex, &addr, plen),
+	                         nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen),
 	                         nlo);
 }
 
 static gboolean
 ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 
-	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen, peer_address);
-	return do_delete_object (platform, &obj_needle, NULL);
+	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_address);
+	return do_delete_object (platform, &obj_id, NULL);
 }
 
 static gboolean
 ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 
-	nmp_object_stackinit_id_ip6_address (&obj_needle, ifindex, &addr, plen);
-	return do_delete_object (platform, &obj_needle, NULL);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen);
+	return do_delete_object (platform, &obj_id, NULL);
 }
 
 static const NMPlatformIP4Address *
 ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	const NMPObject *obj;
 
-	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen, peer_address);
-	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_address);
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_id);
 	if (nmp_object_is_visible (obj))
 		return &obj->ip4_address;
 	return NULL;
@@ -4431,11 +4431,11 @@ ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in
 static const NMPlatformIP6Address *
 ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	const NMPObject *obj;
 
-	nmp_object_stackinit_id_ip6_address (&obj_needle, ifindex, &addr, plen);
-	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen);
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_id);
 	if (nmp_object_is_visible (obj))
 		return &obj->ip6_address;
 	return NULL;
@@ -4576,12 +4576,12 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
                in_addr_t pref_src, guint32 metric, guint32 mss)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	auto_nl_object struct nl_object *nlo = NULL;
 
 	nlo = build_rtnl_route (AF_INET, ifindex, source, &network, plen, &gateway, pref_src ? &pref_src : NULL, metric, mss);
 	return do_add_addrroute (platform,
-	                         nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, network, plen, metric),
+	                         nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric),
 	                         nlo);
 }
 
@@ -4590,14 +4590,14 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
                guint32 metric, guint32 mss)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	auto_nl_object struct nl_object *nlo = NULL;
 
 	metric = nm_utils_ip6_route_metric_normalize (metric);
 
 	nlo = build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, NULL, metric, mss);
 	return do_add_addrroute (platform,
-	                         nmp_object_stackinit_id_ip6_route (&obj_needle, ifindex, &network, plen, metric),
+	                         nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric),
 	                         nlo);
 }
 
@@ -4609,11 +4609,11 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	auto_nl_object struct nl_object *nlo = build_rtnl_route (AF_INET, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN, &network, plen, &gateway, NULL, metric, 0);
 	uint8_t scope = RT_SCOPE_NOWHERE;
 	const NMPObject *obj;
-	NMPObject obj_needle;
+	NMPObject obj_id;
 
 	g_return_val_if_fail (nlo, FALSE);
 
-	nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, network, plen, metric);
+	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
 
 	if (metric == 0) {
 		/* Deleting an IPv4 route with metric 0 does not only delete an exectly matching route.
@@ -4625,7 +4625,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 		delayed_action_handle_all (platform, TRUE);
 	}
 
-	obj = nmp_cache_lookup_obj (priv->cache, &obj_needle);
+	obj = nmp_cache_lookup_obj (priv->cache, &obj_id);
 
 	if (metric == 0 && !obj) {
 		/* hmm... we are about to delete an IP4 route with metric 0. We must only
@@ -4642,7 +4642,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 		 * additional expensive cache-resync. */
 		do_request_one_type (platform, NMP_OBJECT_TYPE_IP4_ROUTE, TRUE);
 
-		obj = nmp_cache_lookup_obj (priv->cache, &obj_needle);
+		obj = nmp_cache_lookup_obj (priv->cache, &obj_id);
 		if (!obj)
 			return TRUE;
 	}
@@ -4684,7 +4684,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	 * pref_src: NULL
 	 */
 
-	return do_delete_object (platform, &obj_needle, nlo);
+	return do_delete_object (platform, &obj_id, nlo);
 }
 
 static gboolean
@@ -4692,25 +4692,25 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 	auto_nl_object struct nl_object *nlo = NULL;
-	NMPObject obj_needle;
+	NMPObject obj_id;
 
 	metric = nm_utils_ip6_route_metric_normalize (metric);
 
 	nlo = build_rtnl_route (AF_INET6, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN ,&network, plen, &gateway, NULL, metric, 0);
 
-	nmp_object_stackinit_id_ip6_route (&obj_needle, ifindex, &network, plen, metric);
+	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
 
-	return do_delete_object (platform, &obj_needle, nlo);
+	return do_delete_object (platform, &obj_id, nlo);
 }
 
 static const NMPlatformIP4Route *
 ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	const NMPObject *obj;
 
-	nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, network, plen, metric);
-	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_id);
 	if (nmp_object_is_visible (obj))
 		return &obj->ip4_route;
 	return NULL;
@@ -4719,13 +4719,13 @@ ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, g
 static const NMPlatformIP6Route *
 ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
-	NMPObject obj_needle;
+	NMPObject obj_id;
 	const NMPObject *obj;
 
 	metric = nm_utils_ip6_route_metric_normalize (metric);
 
-	nmp_object_stackinit_id_ip6_route (&obj_needle, ifindex, &network, plen, metric);
-	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_id);
 	if (nmp_object_is_visible (obj))
 		return &obj->ip6_route;
 	return NULL;
