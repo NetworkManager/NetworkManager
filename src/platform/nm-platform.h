@@ -796,7 +796,10 @@ gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
 
-void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
+const char *nm_platform_link_flags2str (unsigned flags, char *buf, gsize len);
+const char *nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len);
+const char *nm_platform_addr_flags2str (unsigned flags, char *buf, gsize len);
+const char *nm_platform_route_scope2str (int scope, char *buf, gsize len);
 
 int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
 

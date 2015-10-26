@@ -2514,7 +2514,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	if (link->flags) {
 		char str_flags_buf[64];
 
-		rtnl_link_flags2str (link->flags, str_flags_buf, sizeof (str_flags_buf));
+		nm_platform_link_flags2str (link->flags, str_flags_buf, sizeof (str_flags_buf));
 		g_string_append_printf (str_flags, ";%s", str_flags_buf);
 	}
 
@@ -2828,47 +2828,95 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	return buf;
 }
 
-/**
- * nm_platform_addr_flags2str: wrapper for rtnl_addr_flags2str(),
- * which might not yet support some recent address flags.
- **/
-void
-nm_platform_addr_flags2str (int flags, char *buf, size_t size)
+const char *
+nm_platform_link_flags2str (unsigned flags, char *buf, gsize len)
 {
-	if (   !NM_FLAGS_ANY (flags, IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE)
-	    || nm_platform_check_support_libnl_extended_ifa_flags ())
-		rtnl_addr_flags2str (flags, buf, size);
-	else {
-		/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
-		 * If libnl does not yet support them, add them by hand.
-		 * These two flags were introduced together with the extended ifa_flags
-		 * so check for nm_platform_check_support_libnl_extended_ifa_flags (). */
-		gboolean has_other_unknown_flags = FALSE;
-		size_t len;
+	static const NMUtilsFlags2StrDesc descs[] = {
+		NM_UTILS_FLAGS2STR (IFF_LOOPBACK, "loopback"),
+		NM_UTILS_FLAGS2STR (IFF_BROADCAST, "broadcast"),
+		NM_UTILS_FLAGS2STR (IFF_POINTOPOINT, "pointopoint"),
+		NM_UTILS_FLAGS2STR (IFF_MULTICAST, "multicast"),
+		NM_UTILS_FLAGS2STR (IFF_NOARP, "noarp"),
+		NM_UTILS_FLAGS2STR (IFF_ALLMULTI, "allmulti"),
+		NM_UTILS_FLAGS2STR (IFF_PROMISC, "promisc"),
+		NM_UTILS_FLAGS2STR (IFF_MASTER, "master"),
+		NM_UTILS_FLAGS2STR (IFF_SLAVE, "slave"),
+		NM_UTILS_FLAGS2STR (IFF_DEBUG, "debug"),
+		NM_UTILS_FLAGS2STR (IFF_DYNAMIC, "dynamic"),
+		NM_UTILS_FLAGS2STR (IFF_AUTOMEDIA, "automedia"),
+		NM_UTILS_FLAGS2STR (IFF_PORTSEL, "portsel"),
+		NM_UTILS_FLAGS2STR (IFF_NOTRAILERS, "notrailers"),
+		NM_UTILS_FLAGS2STR (IFF_UP, "up"),
+		NM_UTILS_FLAGS2STR (IFF_RUNNING, "running"),
+		NM_UTILS_FLAGS2STR (IFF_LOWER_UP, "lowerup"),
+		NM_UTILS_FLAGS2STR (IFF_DORMANT, "dormant"),
+		NM_UTILS_FLAGS2STR (IFF_ECHO, "echo"),
+	};
+	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len);
+};
 
-		/* if there are unknown flags to rtnl_addr_flags2str(), libnl appends ','
-		 * to indicate them. We want to keep this behavior, if there are other
-		 * unknown flags present. */
+const char *
+nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len)
+{
+	nm_utils_to_string_buffer_init (&buf, &len);
 
-		rtnl_addr_flags2str (flags & ~(IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE), buf, size);
-
-		len = strlen (buf);
-		if (len > 0) {
-			has_other_unknown_flags = (buf[len - 1] == ',');
-			if (!has_other_unknown_flags)
-				g_strlcat (buf, ",", size);
-		}
-
-		if (NM_FLAGS_ALL (flags, IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE))
-			g_strlcat (buf, IFA_F_MANAGETEMPADDR_STR","IFA_F_NOPREFIXROUTE_STR, size);
-		else if (NM_FLAGS_HAS (flags, IFA_F_MANAGETEMPADDR))
-			g_strlcat (buf, IFA_F_MANAGETEMPADDR_STR, size);
-		else
-			g_strlcat (buf, IFA_F_NOPREFIXROUTE_STR, size);
-
-		if (has_other_unknown_flags)
-			g_strlcat (buf, ",", size);
+	switch (mode) {
+	case NM_IN6_ADDR_GEN_MODE_NONE:
+		g_snprintf (buf, len, "none");
+		break;
+	case NM_IN6_ADDR_GEN_MODE_EUI64:
+		g_snprintf (buf, len, "eui64");
+		break;
+	case NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY:
+		g_snprintf (buf, len, "stable-privacy");
+		break;
+	default:
+		g_snprintf (buf, len, "%u", (unsigned) mode);
+		break;
 	}
+	return buf;
+}
+
+const char *
+nm_platform_addr_flags2str (unsigned flags, char *buf, gsize len)
+{
+	static const NMUtilsFlags2StrDesc descs[] = {
+		NM_UTILS_FLAGS2STR (IFA_F_SECONDARY, "secondary"),
+		NM_UTILS_FLAGS2STR (IFA_F_NODAD, "nodad"),
+		NM_UTILS_FLAGS2STR (IFA_F_OPTIMISTIC, "optimistic"),
+		NM_UTILS_FLAGS2STR (IFA_F_HOMEADDRESS, "homeaddress"),
+		NM_UTILS_FLAGS2STR (IFA_F_DEPRECATED, "deprecated"),
+		NM_UTILS_FLAGS2STR (IFA_F_TENTATIVE, "tentative"),
+		NM_UTILS_FLAGS2STR (IFA_F_PERMANENT, "permanent"),
+		NM_UTILS_FLAGS2STR (IFA_F_MANAGETEMPADDR, "mngtmpaddr"),
+		NM_UTILS_FLAGS2STR (IFA_F_NOPREFIXROUTE, "noprefixroute"),
+	};
+	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len);
+};
+
+const char *
+nm_platform_route_scope2str (int scope, char *buf, gsize len)
+{
+	nm_utils_to_string_buffer_init (&buf, &len);
+
+	switch (scope) {
+	case 255:
+		g_snprintf (buf, len, "nowhere");
+		break;
+	case 254:
+		g_snprintf (buf, len, "host");
+		break;
+	case 200:
+		g_snprintf (buf, len, "site");
+		break;
+	case 0:
+		g_snprintf (buf, len, "global");
+		break;
+	default:
+		g_snprintf (buf, len, "%d", scope);
+		break;
+	}
+	return buf;
 }
 
 /**
@@ -2980,7 +3028,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            route->mss,
 	            source_to_string (route->source),
 	            route->scope_inv ? " scope " : "",
-	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
+	            route->scope_inv ? (nm_platform_route_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
 	            route->pref_src ? inet_ntop (AF_INET, &route->pref_src, s_pref_src, sizeof(s_pref_src)) : "");
 	return buf;

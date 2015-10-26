@@ -3611,7 +3611,7 @@ link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboole
 
 	_LOGD ("link: change %d: flags %s '%s' (%d)", ifindex,
 	       value ? "set" : "unset",
-	       rtnl_link_flags2str (flags, buf, sizeof (buf)),
+	       nm_platform_link_flags2str (flags, buf, sizeof (buf)),
 	       flags);
 
 	return do_change_link (platform, change, FALSE);
@@ -3683,7 +3683,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 
 		rtnl_link_inet6_set_addr_gen_mode (nlo, mode);
 		_LOGD ("link: change %d: set IPv6 address generation mode to %s",
-		       ifindex, rtnl_link_inet6_addrgenmode2str (mode, buf, sizeof (buf)));
+		       ifindex, nm_platform_link_inet6_addrgenmode2str (mode, buf, sizeof (buf)));
 		return do_change_link (platform, nlo, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 	}
 #endif

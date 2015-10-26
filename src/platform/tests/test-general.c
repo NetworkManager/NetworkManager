@@ -53,37 +53,6 @@ test_link_get_all (void)
 
 /******************************************************************/
 
-static void
-test_nm_platform_ip6_address_to_string_flags (void)
-{
-	NMPlatformIP6Address addr = { 0 };
-
-	g_assert_cmpstr (strstr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags "), ==, NULL);
-
-	addr.flags = IFA_F_MANAGETEMPADDR;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags mngtmpaddr ");
-
-	addr.flags = IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags noprefixroute ");
-
-	addr.flags = IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags mngtmpaddr,noprefixroute ");
-
-	addr.flags = IFA_F_TENTATIVE | IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,noprefixroute ");
-
-	addr.flags = IFA_F_TENTATIVE | IFA_F_PERMANENT | IFA_F_MANAGETEMPADDR| IFA_F_NOPREFIXROUTE;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,permanent,mngtmpaddr,noprefixroute ");
-
-	addr.flags = IFA_F_TENTATIVE | IFA_F_PERMANENT | IFA_F_MANAGETEMPADDR| IFA_F_NOPREFIXROUTE | 0x8000;
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,permanent,mngtmpaddr,noprefixroute, ");
-
-	addr.flags = IFA_F_TENTATIVE | IFA_F_PERMANENT | IFA_F_MANAGETEMPADDR| IFA_F_NOPREFIXROUTE | ((G_MAXUINT - (G_MAXUINT >> 1)) >> 1);
-	nmtst_assert_str_has_substr (nm_platform_ip6_address_to_string (&addr, NULL, 0), " flags tentative,permanent,mngtmpaddr,noprefixroute, ");
-}
-
-/******************************************************************/
-
 NMTST_DEFINE ();
 
 int
@@ -93,7 +62,6 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/init_linux_platform", test_init_linux_platform);
 	g_test_add_func ("/general/link_get_all", test_link_get_all);
-	g_test_add_func ("/general/nm_platform_ip6_address_to_string/flags", test_nm_platform_ip6_address_to_string_flags);
 
 	return g_test_run ();
 }
