@@ -2477,22 +2477,6 @@ _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, g
 	return buf;
 }
 
-char _nm_platform_to_string_buffer[];
-
-static gboolean
-_to_string_buffer_init (gconstpointer obj, char **buf, gsize *len)
-{
-	if (!*buf) {
-		*buf = _nm_platform_to_string_buffer;
-		*len = sizeof (_nm_platform_to_string_buffer);
-	}
-	if (!obj) {
-		g_strlcpy (*buf, "(null)", *len);
-		return FALSE;
-	}
-	return TRUE;
-}
-
 /**
  * nm_platform_link_to_string:
  * @route: pointer to NMPlatformLink address structure
@@ -2514,7 +2498,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	gs_free char *str_inet6_token = NULL;
 	const char *str_link_type;
 
-	if (!_to_string_buffer_init (link, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (link, &buf, &len))
 		return buf;
 
 	str_flags = g_string_new (NULL);
@@ -2623,7 +2607,7 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 	char str_output_key[30];
 	char str_output_key1[NM_UTILS_INET_ADDRSTRLEN];
 
-	if (!_to_string_buffer_init (lnk, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
 	g_snprintf (buf, len,
@@ -2657,7 +2641,7 @@ nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *
 {
 	char str_p_key[64];
 
-	if (!_to_string_buffer_init (lnk, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
 	g_snprintf (buf, len,
@@ -2674,7 +2658,7 @@ nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *
 const char *
 nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len)
 {
-	if (!_to_string_buffer_init (lnk, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
 	g_snprintf (buf, len,
@@ -2688,7 +2672,7 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 const char *
 nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
-	if (!_to_string_buffer_init (lnk, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
 	g_snprintf (buf, len, "vlan %u", (guint) lnk->id);
@@ -2709,7 +2693,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 	char str_tos[25];
 	char str_ttl[25];
 
-	if (!_to_string_buffer_init (lnk, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
 	if (lnk->group == 0)
@@ -2806,7 +2790,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
-	if (!_to_string_buffer_init (address, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (address, &buf, &len))
 		return buf;
 
 	inet_ntop (AF_INET, &address->address, s_address, sizeof (s_address));
@@ -2912,7 +2896,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
-	if (!_to_string_buffer_init (address, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (address, &buf, &len))
 		return buf;
 
 	inet_ntop (AF_INET6, &address->address, s_address, sizeof (s_address));
@@ -2971,7 +2955,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_scope[30];
 
-	if (!_to_string_buffer_init (route, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
 
 	inet_ntop (AF_INET, &route->network, s_network, sizeof(s_network));
@@ -3020,7 +3004,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
-	if (!_to_string_buffer_init (route, &buf, &len))
+	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
 
 	inet_ntop (AF_INET6, &route->network, s_network, sizeof(s_network));

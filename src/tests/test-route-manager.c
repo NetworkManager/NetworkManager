@@ -797,7 +797,7 @@ _assert_route_check (const NMPlatformVTableRoute *vtable, gboolean has, const NM
 	if (!has) {
 		g_assert (!r);
 	} else {
-		char buf[sizeof (_nm_platform_to_string_buffer)];
+		char buf[sizeof (_nm_utils_to_string_buffer)];
 
 		if (!r || vtable->route_cmp (route, r) != 0)
 			g_error ("Invalid route. Expect %s, has %s",

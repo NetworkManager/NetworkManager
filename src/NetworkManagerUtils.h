@@ -191,6 +191,11 @@ NMMatchSpecMatchType nm_match_spec_match_config (const GSList *specs, guint nm_v
 GSList *nm_match_spec_split (const char *value);
 char *nm_match_spec_join (GSList *specs);
 
+extern char _nm_utils_to_string_buffer[2096];
+
+void     nm_utils_to_string_buffer_init (char **buf, gsize *len);
+gboolean nm_utils_to_string_buffer_init_null (gconstpointer obj, char **buf, gsize *len);
+
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
 const char *nm_utils_get_ip_config_method (NMConnection *connection,

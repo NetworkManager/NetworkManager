@@ -379,13 +379,13 @@ const char *
 nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
 {
 	const NMPClass *klass;
-	char buf2[sizeof (_nm_platform_to_string_buffer)];
-	char buf3[sizeof (_nm_platform_to_string_buffer)];
-	char buf4[sizeof (_nm_platform_to_string_buffer)];
+	char buf2[sizeof (_nm_utils_to_string_buffer)];
+	char buf3[sizeof (_nm_utils_to_string_buffer)];
+	char buf4[sizeof (_nm_utils_to_string_buffer)];
 
 	if (!buf) {
-		buf = _nm_platform_to_string_buffer;
-		buf_size = sizeof (_nm_platform_to_string_buffer);
+		buf = _nm_utils_to_string_buffer;
+		buf_size = sizeof (_nm_utils_to_string_buffer);
 	}
 
 	if (!obj) {
@@ -413,7 +413,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 			            obj->_link.netlink.is_in_netlink ? '+' : '-',
 			            obj->_link.udev.device);
 			if (obj->_link.netlink.lnk) {
-				char b[sizeof (_nm_platform_to_string_buffer)];
+				char b[sizeof (_nm_utils_to_string_buffer)];
 
 				g_snprintf (buf4, sizeof (buf4),
 				            ", link:%s, %s",

@@ -1725,6 +1725,32 @@ nm_match_spec_join (GSList *specs)
 	return g_string_free (str, FALSE);
 }
 
+/*****************************************************************************/
+
+char _nm_utils_to_string_buffer[];
+
+void
+nm_utils_to_string_buffer_init (char **buf, gsize *len)
+{
+	if (!*buf) {
+		*buf = _nm_utils_to_string_buffer;
+		*len = sizeof (_nm_utils_to_string_buffer);
+	}
+}
+
+gboolean
+nm_utils_to_string_buffer_init_null (gconstpointer obj, char **buf, gsize *len)
+{
+	nm_utils_to_string_buffer_init (buf, len);
+	if (!obj) {
+		g_strlcpy (*buf, "(null)", *len);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_get_shared_wifi_permission:
  * @connection: the NMConnection to lookup the permission.

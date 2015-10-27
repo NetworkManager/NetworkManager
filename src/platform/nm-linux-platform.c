@@ -2391,8 +2391,8 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 	NMPlatform *platform = NM_PLATFORM (user_data);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPClass *klass;
-	char str_buf[sizeof (_nm_platform_to_string_buffer)];
-	char str_buf2[sizeof (_nm_platform_to_string_buffer)];
+	char str_buf[sizeof (_nm_utils_to_string_buffer)];
+	char str_buf2[sizeof (_nm_utils_to_string_buffer)];
 
 	nm_assert (old || new);
 	nm_assert (NM_IN_SET (ops_type, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_REMOVED, NMP_CACHE_OPS_UPDATED));
