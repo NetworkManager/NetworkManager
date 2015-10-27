@@ -316,6 +316,13 @@ class UploadFile:
         pass
     def prepare(self, dry_run):
         raise NotImplementedError("not implemented")
+class UploadFileNone(UploadFile):
+    def __init__(self, uri, arch):
+        UploadFile.__init__(self, uri, arch)
+    def url(self):
+        return []
+    def prepare(self, dry_run):
+        pass
 class UploadFileUrl(UploadFile):
     def __init__(self, uri, arch):
         UploadFile.__init__(self, uri, arch)
@@ -573,6 +580,8 @@ class CmdSubmit(CmdBase):
                 ctor = UploadFileBrew
             elif r.startswith('repo:'):
                 ctor = UploadFileRepo
+            elif r == 'none':
+                ctor = UploadFileNone
             else:
                 ctor = UploadFileSsh
             uf = ctor(r, self._get_var ("ARCH"))
