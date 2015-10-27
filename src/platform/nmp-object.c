@@ -380,22 +380,16 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 {
 	const NMPClass *klass;
 	char buf2[sizeof (_nm_utils_to_string_buffer)];
-	char buf3[sizeof (_nm_utils_to_string_buffer)];
-	char buf4[sizeof (_nm_utils_to_string_buffer)];
 
-	if (!buf) {
-		buf = _nm_utils_to_string_buffer;
-		buf_size = sizeof (_nm_utils_to_string_buffer);
-	}
-
-	if (!obj) {
-		g_strlcpy (buf, "(null)", buf_size);
+	if (!nm_utils_to_string_buffer_init_null (obj, &buf, &buf_size))
 		return buf;
-	}
 
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), NULL);
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
+
+	if (klass->cmd_obj_to_string)
+		return klass->cmd_obj_to_string (obj, to_string_mode, buf, buf_size);
 
 	switch (to_string_mode) {
 	case NMP_OBJECT_TO_STRING_ID:
@@ -405,38 +399,45 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 		}
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
-		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
-
-		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
-			g_snprintf (buf3, sizeof (buf3),
-			            ",%cin-nl,%p",
-			            obj->_link.netlink.is_in_netlink ? '+' : '-',
-			            obj->_link.udev.device);
-			if (obj->_link.netlink.lnk) {
-				char b[sizeof (_nm_utils_to_string_buffer)];
-
-				g_snprintf (buf4, sizeof (buf4),
-				            ", link:%s, %s",
-				            NMP_OBJECT_GET_CLASS (obj->_link.netlink.lnk)->obj_type_name,
-				            nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, b, sizeof (b)));
-			} else
-				buf4[0] = '\0';
-		} else {
-			buf3[0] = '\0';
-			buf4[0] = '\0';
-		}
-
 		g_snprintf (buf, buf_size,
-		            "[%s,%p,%d,%ccache,%calive,%cvisible%s; %s%s]",
+		            "[%s,%p,%d,%ccache,%calive,%cvisible; %s]",
 		            klass->obj_type_name, obj, obj->_ref_count,
 		            obj->is_cached ? '+' : '-',
 		            nmp_object_is_alive (obj) ? '+' : '-',
 		            nmp_object_is_visible (obj) ? '+' : '-',
-		            buf3, buf2, buf4);
+		            NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2)));
 		return buf;
 	case NMP_OBJECT_TO_STRING_PUBLIC:
-		if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
-		    && obj->_link.netlink.lnk) {
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
+		return buf;
+	default:
+		g_return_val_if_reached ("ERROR");
+	}
+}
+
+static const char *
+_vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
+{
+	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
+	char buf2[sizeof (_nm_utils_to_string_buffer)];
+	char buf3[sizeof (_nm_utils_to_string_buffer)];
+
+	switch (to_string_mode) {
+	case NMP_OBJECT_TO_STRING_ID:
+		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
+	case NMP_OBJECT_TO_STRING_ALL:
+		g_snprintf (buf, buf_size,
+		            "[%s,%p,%d,%ccache,%calive,%cvisible,%cin-nl,%p; %s]",
+		            klass->obj_type_name, obj, obj->_ref_count,
+		            obj->is_cached ? '+' : '-',
+		            nmp_object_is_alive (obj) ? '+' : '-',
+		            nmp_object_is_visible (obj) ? '+' : '-',
+		            obj->_link.netlink.is_in_netlink ? '+' : '-',
+		            obj->_link.udev.device,
+		            nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof (buf2)));
+		return buf;
+	case NMP_OBJECT_TO_STRING_PUBLIC:
+		if (obj->_link.netlink.lnk) {
 			NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2));
 			nmp_object_to_string (obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, buf3, sizeof (buf3));
 			g_snprintf (buf, buf_size,
@@ -1801,6 +1802,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_link,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_link,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_link,
+		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_link,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_link,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_link,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_link,

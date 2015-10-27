@@ -129,6 +129,7 @@ typedef struct {
 	void (*cmd_obj_dispose) (NMPObject *obj);
 	gboolean (*cmd_obj_is_alive) (const NMPObject *obj);
 	gboolean (*cmd_obj_is_visible) (const NMPObject *obj);
+	const char *(*cmd_obj_to_string) (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size);
 
 	/* functions that operate on NMPlatformObject */
 	void (*cmd_plobj_id_copy) (NMPlatformObject *dst, const NMPlatformObject *src);
