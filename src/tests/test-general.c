@@ -971,12 +971,124 @@ test_nm_match_spec_match_config (void)
 
 /*******************************************/
 
+static void
+test_nm_utils_strbuf_append (void)
+{
+#define BUF_ORIG "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define STR_ORIG "abcdefghijklmnopqrstuvwxyz"
+	int buf_len;
+	int rep;
+	char buf[STRLEN (BUF_ORIG) + 1];
+	char str[STRLEN (BUF_ORIG) + 1];
+
+	for (buf_len = 0; buf_len < 10; buf_len++) {
+		for (rep = 0; rep < 50; rep++) {
+			const int s_len = nmtst_get_rand_int () % (sizeof (str) - 5);
+			char *t_buf;
+			gsize t_len;
+			int test_mode;
+
+			strcpy (str, STR_ORIG);
+			str[s_len] = '\0';
+
+			g_assert_cmpint (str[sizeof (str) - 1], ==, '\0');
+			g_assert_cmpint (strlen (str), ==, s_len);
+
+			strcpy (buf, BUF_ORIG);
+
+			t_buf = buf;
+			t_len = buf_len;
+
+			test_mode = nmtst_get_rand_int () % 4;
+
+			switch (test_mode) {
+			case 0:
+				if (s_len == 1) {
+					nm_utils_strbuf_append_c (&t_buf, &t_len, str[0]);
+					break;
+				}
+				/* fall-through */
+			case 1:
+				nm_utils_strbuf_append_str (&t_buf, &t_len, str);
+				break;
+			case 2:
+				if (s_len == 1) {
+					nm_utils_strbuf_append (&t_buf, &t_len, "%c", str[0]);
+					break;
+				}
+				/* fall-through */
+			case 3:
+				nm_utils_strbuf_append (&t_buf, &t_len, "%s", str);
+				break;
+			}
+
+			/* Assert that the source-buffer is unmodified. */
+			g_assert_cmpint (str[s_len], ==, '\0');
+			str[s_len] = STR_ORIG[s_len];
+			g_assert (!memcmp (str, STR_ORIG, sizeof (str)));
+			str[s_len] = '\0';
+
+			g_assert_cmpint (t_len, >=, 0);
+			g_assert_cmpint (t_len, <=, buf_len);
+			g_assert (t_buf >= buf);
+
+			/* Assert what was written to the destination buffer. */
+			switch (buf_len) {
+			case 0:
+				g_assert_cmpint (t_len, ==, 0);
+				g_assert (t_buf == buf);
+				g_assert (!memcmp (buf, BUF_ORIG, sizeof (buf)));
+				break;
+			case 1:
+				if (s_len == 0) {
+					g_assert_cmpint (t_len, ==, 1);
+					g_assert (t_buf == buf);
+					g_assert (buf[0] == '\0');
+					g_assert (!memcmp (&buf[1], &BUF_ORIG[1], sizeof (buf) - 1));
+				} else {
+					g_assert_cmpint (t_len, ==, 0);
+					g_assert (t_buf == &buf[1]);
+					g_assert (buf[0] == '\0');
+					g_assert (!memcmp (&buf[1], &BUF_ORIG[1], sizeof (buf) - 1));
+				}
+				break;
+			default:
+				if (s_len == 0) {
+					g_assert_cmpint (t_len, ==, buf_len);
+					g_assert (t_buf == buf);
+					g_assert (buf[0] == '\0');
+					g_assert (!memcmp (&buf[1], &BUF_ORIG[1], sizeof (buf) - 1));
+				} else if (buf_len <= s_len) {
+					g_assert_cmpint (t_len, ==, 0);
+					g_assert (t_buf == &buf[buf_len]);
+					g_assert (!memcmp (buf, STR_ORIG, buf_len - 1));
+					g_assert (buf[buf_len - 1] == '\0');
+					g_assert (!memcmp (&buf[buf_len], &BUF_ORIG[buf_len], sizeof (buf) - buf_len));
+				} else {
+					g_assert_cmpint (t_len, >, 0);
+					g_assert_cmpint (buf_len - t_len, ==, s_len);
+					g_assert_cmpint (strlen (buf), ==, s_len);
+					g_assert (t_buf == &buf[s_len]);
+					g_assert (!memcmp (buf, STR_ORIG, s_len));
+					g_assert (buf[s_len] == '\0');
+					g_assert (!memcmp (&buf[s_len + 1], &BUF_ORIG[s_len + 1], sizeof (buf) - s_len - 1));
+				}
+				break;
+			}
+		}
+	}
+}
+
+/*******************************************/
+
 NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
 {
 	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
+
+	g_test_add_func ("/general/nm_utils_strbuf_append", test_nm_utils_strbuf_append);
 
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
 	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);

@@ -196,6 +196,23 @@ extern char _nm_utils_to_string_buffer[2096];
 void     nm_utils_to_string_buffer_init (char **buf, gsize *len);
 gboolean nm_utils_to_string_buffer_init_null (gconstpointer obj, char **buf, gsize *len);
 
+typedef struct {
+	unsigned flag;
+	const char *name;
+} NMUtilsFlags2StrDesc;
+
+#define NM_UTILS_FLAGS2STR(f, n) { .flag = f, .name = ""n, }
+
+const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
+                                gsize n_descs,
+                                unsigned flags,
+                                char *buf,
+                                gsize len);
+
+void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) __attribute__((__format__ (__printf__, 3, 4)));
+void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
+void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
+
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
