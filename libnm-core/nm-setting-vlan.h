@@ -91,6 +91,9 @@ typedef enum { /*< flags >*/
 	NM_VLAN_FLAG_MVRP            = 0x8,
 
 	/* NOTE: if adding flags update nm-setting-vlan.c::verify() */
+
+	/* NOTE: these flags must correspond to the value from the kernel
+	 * header files. */
 } NMVlanFlags;
 
 #define NM_VLAN_FLAGS_ALL  (NM_VLAN_FLAG_REORDER_HEADERS | \

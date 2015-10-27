@@ -64,6 +64,8 @@
 /* This is only included for the translation of VLAN flags */
 #include "nm-setting-vlan.h"
 
+#define VLAN_FLAG_MVRP 0x8
+
 /*********************************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "platform-linux"
@@ -3222,16 +3224,12 @@ vlan_add (NMPlatform *platform,
 	unsigned int kernel_flags;
 	unsigned int all_flags = NM_VLAN_FLAGS_ALL;
 
-	kernel_flags = 0;
-	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
-		kernel_flags |= VLAN_FLAG_REORDER_HDR;
-	if (vlan_flags & NM_VLAN_FLAG_GVRP)
-		kernel_flags |= VLAN_FLAG_GVRP;
-	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
-		kernel_flags |= VLAN_FLAG_LOOSE_BINDING;
-#define VLAN_FLAG_MVRP 0x8
-	if (vlan_flags & NM_VLAN_FLAG_MVRP)
-		kernel_flags |= VLAN_FLAG_MVRP;
+	G_STATIC_ASSERT (NM_VLAN_FLAG_REORDER_HEADERS == VLAN_FLAG_REORDER_HDR);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_GVRP == VLAN_FLAG_GVRP);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_LOOSE_BINDING == VLAN_FLAG_LOOSE_BINDING);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_MVRP == VLAN_FLAG_MVRP);
+
+	kernel_flags = vlan_flags & ((guint32) NM_VLAN_FLAGS_ALL);
 
 	rtnl_link_set_link (rtnllink, parent);
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);
