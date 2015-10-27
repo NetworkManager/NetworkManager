@@ -64,6 +64,8 @@
 /* This is only included for the translation of VLAN flags */
 #include "nm-setting-vlan.h"
 
+#define VLAN_FLAG_MVRP 0x8
+
 /*********************************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "platform-linux"
@@ -3220,17 +3222,18 @@ vlan_add (NMPlatform *platform,
 {
 	auto_nl_object struct rtnl_link *rtnllink = (struct rtnl_link *) build_rtnl_link (0, name, NM_LINK_TYPE_VLAN);
 	unsigned int kernel_flags;
+	unsigned int all_flags = NM_VLAN_FLAGS_ALL;
 
-	kernel_flags = 0;
-	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
-		kernel_flags |= VLAN_FLAG_REORDER_HDR;
-	if (vlan_flags & NM_VLAN_FLAG_GVRP)
-		kernel_flags |= VLAN_FLAG_GVRP;
-	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
-		kernel_flags |= VLAN_FLAG_LOOSE_BINDING;
+	G_STATIC_ASSERT (NM_VLAN_FLAG_REORDER_HEADERS == VLAN_FLAG_REORDER_HDR);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_GVRP == VLAN_FLAG_GVRP);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_LOOSE_BINDING == VLAN_FLAG_LOOSE_BINDING);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_MVRP == VLAN_FLAG_MVRP);
+
+	kernel_flags = vlan_flags & ((guint32) NM_VLAN_FLAGS_ALL);
 
 	rtnl_link_set_link (rtnllink, parent);
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);
+	rtnl_link_vlan_unset_flags (rtnllink, all_flags);
 	rtnl_link_vlan_set_flags (rtnllink, kernel_flags);
 
 	_LOGD ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
@@ -3261,7 +3264,6 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 {
 	auto_nl_object struct rtnl_link *change = (struct rtnl_link *) build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_VLAN);
 
-	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_ingress_map (change, from, to);
 
 	_LOGD ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
@@ -3274,7 +3276,6 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 {
 	auto_nl_object struct rtnl_link *change = (struct rtnl_link *) build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_VLAN);
 
-	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_egress_map (change, from, to);
 
 	_LOGD ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);

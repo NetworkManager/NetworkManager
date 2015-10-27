@@ -181,9 +181,25 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 	return NULL;
 }
 
+static gint
+prio_map_compare (PriorityMap *a, PriorityMap *b)
+{
+	return a->from < b->from
+	       ? -1
+	       : (a->from > b->from
+	          ? 1
+	          : (a->to < b->to ? -1 : (a->to > b->to ? 1 : 0)));
+}
+
 static void
 set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 {
+	/* Sort the list.
+	 * First, it looks better. Second, it assures that comparing lists works
+	 * as expected.
+	 */
+	list = g_slist_sort (list, (GCompareFunc) prio_map_compare);
+
 	if (map == NM_VLAN_INGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map = list;
 		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
@@ -192,6 +208,22 @@ set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
 	} else
 		g_assert_not_reached ();
+}
+
+static gboolean
+check_replace_duplicate_priority (GSList *list, guint32 from, guint32 to)
+{
+	GSList *iter;
+	PriorityMap *p;
+
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		p = iter->data;
+		if (p->from == from) {
+			p->to = to;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**
@@ -212,7 +244,7 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
                                   NMVlanPriorityMap map,
                                   const char *str)
 {
-	GSList *list = NULL, *iter = NULL;
+	GSList *list = NULL;
 	PriorityMap *item = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
@@ -226,18 +258,13 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 		g_return_val_if_reached (FALSE);
 
 	/* Duplicates get replaced */
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PriorityMap *p = iter->data;
-
-		if (p->from == item->from) {
-			p->to = item->to;
-			g_free (item);
-			if (map == NM_VLAN_INGRESS_MAP)
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
-			else
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
-			return TRUE;
-		}
+	if (check_replace_duplicate_priority (list, item->from, item->to)) {
+		g_free (item);
+		if (map == NM_VLAN_INGRESS_MAP)
+			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+		else
+			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+		return TRUE;
 	}
 
 	set_map (setting, map, g_slist_append (list, item));
@@ -329,23 +356,19 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
                               guint32 from,
                               guint32 to)
 {
-	GSList *list = NULL, *iter = NULL;
+	GSList *list = NULL;
 	PriorityMap *item;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 
 	list = get_map (setting, map);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		item = iter->data;
-		if (item->from == from) {
-			item->to = to;
-			if (map == NM_VLAN_INGRESS_MAP)
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
-			else
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
-			return TRUE;
-		}
+	if (check_replace_duplicate_priority (list, from, to)) {
+		if (map == NM_VLAN_INGRESS_MAP)
+			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+		else
+			g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+		return TRUE;
 	}
 
 	item = g_malloc0 (sizeof (PriorityMap));
@@ -544,9 +567,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->flags & ~(NM_VLAN_FLAG_REORDER_HEADERS |
-	                    NM_VLAN_FLAG_GVRP |
-	                    NM_VLAN_FLAG_LOOSE_BINDING)) {
+	if (priv->flags & ~NM_VLAN_FLAGS_ALL) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -586,10 +607,12 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 		PriorityMap *item;
 
 		item = priority_map_new_from_str (map, strv[i]);
-		if (item)
-			list = g_slist_prepend (list, item);
+		if (item) {
+			if (!check_replace_duplicate_priority (list, item->from, item->to))
+				list = g_slist_prepend (list, item);
+		}
 	}
-	return g_slist_reverse (list);
+	return g_slist_sort (list, (GCompareFunc) prio_map_compare);
 }
 
 static void
@@ -753,7 +776,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
 	 * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
 	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
-	 * master device's operating state).
+	 * master device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
+	 * protocol).
 	 *
 	 * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,
 	 * but it used to be 0. To preserve backward compatibility, the default-value
@@ -762,8 +786,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: flags
-	 * variable: VLAN_FLAGS, REORDER_HDR
-	 * values: "GVRP", "LOOSE_BINDING" for VLAN_FLAGS; 0 or 1 for REORDER_HDR
+	 * variable: REORDER_HDR, GVRP, MVRP, VLAN_FLAGS
+	 * values: "yes or "no" for REORDER_HDR, GVRP and MVRP; "LOOSE_BINDING" for VLAN_FLAGS
 	 * description: VLAN flags.
 	 * ---end---
 	 */

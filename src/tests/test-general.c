@@ -541,6 +541,62 @@ test_connection_no_match_ip4_addr (void)
 	g_object_unref (copy);
 }
 
+static void
+test_connection_no_match_vlan (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan_orig, *s_vlan_copy;
+	char *uuid;
+
+	orig = nm_simple_connection_new ();
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (orig, (NMSetting *) s_con);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_ID, "vlan-test",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_VLAN_SETTING_NAME,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NULL);
+	g_free (uuid);
+	nm_connection_add_setting (orig, nm_setting_vlan_new ());
+
+	copy = nm_simple_connection_new_clone (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Check that the connections do not match if VLAN flags differ */
+	s_vlan_orig = nm_connection_get_setting_vlan (orig);
+	g_assert (s_vlan_orig);
+	g_object_set (G_OBJECT (s_vlan_orig),
+	              NM_SETTING_VLAN_FLAGS, NM_VLAN_FLAG_REORDER_HEADERS,
+	              NULL);
+
+	s_vlan_copy = nm_connection_get_setting_vlan (copy);
+	g_assert (s_vlan_copy);
+	g_object_set (G_OBJECT (s_vlan_copy),
+	              NM_SETTING_VLAN_FLAGS, 0,
+	              NULL);
+
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched != copy);
+
+	/* Check that the connections do not match if VLAN priorities differ */
+	g_object_set (G_OBJECT (s_vlan_orig), NM_SETTING_VLAN_FLAGS, 0, NULL);
+	nm_setting_vlan_add_priority_str (s_vlan_orig, NM_VLAN_INGRESS_MAP, "1:3");
+
+	g_object_set (G_OBJECT (s_vlan_copy), NM_SETTING_VLAN_FLAGS, 0, NULL);
+	nm_setting_vlan_add_priority_str (s_vlan_copy, NM_VLAN_INGRESS_MAP, "4:2");
+
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched != copy);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
 static NMConnection *
 _create_connection_autoconnect (const char *id, gboolean autoconnect, int autoconnect_priority)
 {
@@ -934,6 +990,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-match/wired", test_connection_match_wired);
 	g_test_add_func ("/general/connection-match/cloned_mac", test_connection_match_cloned_mac);
 	g_test_add_func ("/general/connection-match/no-match-ip4-addr", test_connection_no_match_ip4_addr);
+	g_test_add_func ("/general/connection-match/no-match-vlan", test_connection_no_match_vlan);
 
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 

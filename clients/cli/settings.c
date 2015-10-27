@@ -738,6 +738,8 @@ vlan_flags_to_string (guint32 flags)
 		g_string_append (flag_str, _("GVRP, "));
 	if (flags & NM_VLAN_FLAG_LOOSE_BINDING)
 		g_string_append (flag_str, _("LOOSE_BINDING, "));
+	if (flags & NM_VLAN_FLAG_MVRP)
+		g_string_append (flag_str, _("MVRP, "));
 
 	if (flag_str->str[flag_str->len-1] == '(')
 		g_string_append (flag_str, _("unknown"));

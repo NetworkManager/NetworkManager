@@ -11004,16 +11004,16 @@ test_read_vlan_interface (void)
 	g_assert_cmpint (nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP), ==, 3);
 
 	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 0, &from, &to));
+	g_assert_cmpint (from, ==, 3);
+	g_assert_cmpint (to, ==, 1);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1, &from, &to));
 	g_assert_cmpint (from, ==, 12);
 	g_assert_cmpint (to, ==, 3);
 
-	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1, &from, &to));
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 2, &from, &to));
 	g_assert_cmpint (from, ==, 14);
 	g_assert_cmpint (to, ==, 7);
-
-	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 2, &from, &to));
-	g_assert_cmpint (from, ==, 3);
-	g_assert_cmpint (to, ==, 1);
 
 	g_object_unref (connection);
 }
@@ -11131,6 +11131,62 @@ test_read_vlan_reorder_hdr_1 (void)
 }
 
 static void
+test_read_vlan_flags_1 (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-1",
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "super-vlan");
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 44);
+	/* reorder_hdr and loose_binding */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 5);
+
+	g_object_unref (connection);
+}
+
+static void
+test_read_vlan_flags_2 (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "super-vlan");
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 44);
+	/* gvrp and loose_binding */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 6);
+
+	g_object_unref (connection);
+}
+
+static void
 test_write_vlan (void)
 {
 	NMConnection *connection;
@@ -11155,6 +11211,54 @@ test_write_vlan (void)
 	g_free (written);
 
 	g_object_unref (connection);
+}
+
+static void
+test_write_vlan_flags (void)
+{
+	NMConnection *connection, *reread;
+	char *written = NULL;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
+	                                        NULL,
+	                                        TYPE_VLAN,
+	                                        NULL,
+	                                        &error);
+	g_assert (connection != NULL);
+
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &written,
+	                                 &error);
+	g_assert (success);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_connection_normalize (connection, NULL, NULL, NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file_test (written,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
+
+	unlink (written);
+	g_free (written);
+
+	g_assert_no_error (error);
+	g_assert (reread != NULL);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	g_object_unref (connection);
+	g_object_unref (reread);
 }
 
 static void
@@ -12964,6 +13068,8 @@ int main (int argc, char **argv)
 	test_read_wifi_wep_agent_keys ();
 	test_read_infiniband ();
 	test_read_vlan_interface ();
+	g_test_add_func (TPATH "vlan/read-flags-1", test_read_vlan_flags_1);
+	g_test_add_func (TPATH "vlan/read-flags-2", test_read_vlan_flags_2);
 	test_read_vlan_only_vlan_id ();
 	test_read_vlan_only_device ();
 	g_test_add_func (TPATH "vlan/physdev", test_read_vlan_physdev);
@@ -13046,6 +13152,7 @@ int main (int argc, char **argv)
 	test_write_wifi_wep_agent_keys ();
 	test_write_infiniband ();
 	test_write_vlan ();
+	g_test_add_func (TPATH "vlan/write-flags", test_write_vlan_flags);
 	test_write_vlan_only_vlanid ();
 	g_test_add_func (TPATH "vlan/write-vlan-reorder-hdr", test_write_vlan_reorder_hdr);
 	test_write_ethernet_missing_ipv6 ();
