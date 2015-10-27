@@ -25,9 +25,11 @@
 #include <linux/if.h>
 #include <linux/if_addr.h>
 
-#include <nm-dbus-interface.h>
+#include "nm-dbus-interface.h"
 #include "nm-default.h"
 #include "NetworkManagerUtils.h"
+#include "nm-setting-vlan.h"
+#include "nm-core-types-internal.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -104,7 +106,6 @@ typedef struct {
 extern const NMIPAddr nm_ip_addr_zero;
 
 #define NMIPAddrInit { .addr6 = IN6ADDR_ANY_INIT }
-
 
 #define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
 
@@ -381,6 +382,7 @@ typedef struct {
 typedef struct {
 	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
 	guint16 id;
+	NMVlanFlags flags;
 } NMPlatformLnkVlan;
 
 typedef struct {
@@ -510,8 +512,16 @@ typedef struct {
 	char * (*slave_get_option) (NMPlatform *, int ifindex, const char *option);
 
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
-	gboolean (*vlan_set_ingress_map) (NMPlatform *, int ifindex, int from, int to);
-	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
+	gboolean (*link_vlan_change) (NMPlatform *self,
+	                              int ifindex,
+	                              NMVlanFlags flags_mask,
+	                              NMVlanFlags flags_set,
+	                              gboolean ingress_reset_all,
+	                              const NMVlanQosMapping *ingress_map,
+	                              gsize n_ingress_map,
+	                              gboolean egress_reset_all,
+	                              const NMVlanQosMapping *egress_map,
+	                              gsize n_egress_map);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
 
@@ -706,6 +716,17 @@ const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int 
 NMPlatformError nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
 gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
+gboolean nm_platform_link_vlan_change (NMPlatform *self,
+                                       int ifindex,
+                                       NMVlanFlags flags_mask,
+                                       NMVlanFlags flags_set,
+                                       gboolean ingress_reset_all,
+                                       const NMVlanQosMapping *ingress_map,
+                                       gsize n_ingress_map,
+                                       gboolean egress_reset_all,
+                                       const NMVlanQosMapping *egress_map,
+                                       gsize n_egress_map);
+
 
 NMPlatformError nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
 gboolean nm_platform_infiniband_get_properties (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
@@ -782,6 +803,12 @@ const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *addre
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len);
 const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len);
+
+const char *nm_platform_vlan_qos_mapping_to_string (const char *name,
+                                                    const NMVlanQosMapping *map,
+                                                    gsize n_map,
+                                                    char *buf,
+                                                    gsize len);
 
 int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);

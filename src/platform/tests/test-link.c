@@ -812,6 +812,85 @@ test_software_detect_add (const char *testpath,
 /*****************************************************************************/
 
 static void
+_assert_xgress_qos_mappings_impl (int ifindex,
+                                  gboolean is_ingress_map ,
+                                  int n_entries,
+                                  int n,
+                                  ...)
+{
+	const NMPlatformLink *plink;
+	const NMPObject *lnk;
+	guint n_map;
+	const NMVlanQosMapping *map;
+	va_list ap;
+	guint i;
+
+	lnk = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, NM_LINK_TYPE_VLAN, &plink);
+
+	g_assert (plink);
+	g_assert_cmpint (plink->ifindex, ==, ifindex);
+	g_assert (lnk);
+	g_assert (&lnk->lnk_vlan == nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, NULL));
+
+	if (nmtst_is_debug ())
+		nmtstp_run_command_check ("ip -d link show %s", plink->name);
+
+	if (is_ingress_map) {
+		map = lnk->_lnk_vlan.ingress_qos_map;
+		n_map = lnk->_lnk_vlan.n_ingress_qos_map;
+	} else {
+		map = lnk->_lnk_vlan.egress_qos_map;
+		n_map = lnk->_lnk_vlan.n_egress_qos_map;
+	}
+
+	if (n_entries != -1)
+		g_assert_cmpint (n_map, ==, n_entries);
+
+	for (i = 0; i < n_map; i++) {
+		if (is_ingress_map) {
+			g_assert_cmpint (map[i].from, >=, 0);
+			g_assert_cmpint (map[i].from, <=, 7);
+		}
+		if (i > 0)
+			g_assert_cmpint (map[i - 1].from, <, map[i].from);
+	}
+
+	va_start (ap, n);
+	for (; n > 0; n--) {
+		gboolean found = FALSE;
+		guint from = va_arg (ap, guint);
+		guint to = va_arg (ap, guint);
+
+		for (i = 0; i < n_map; i++) {
+			if (map[i].from == from) {
+				g_assert (!found);
+				found = TRUE;
+
+				g_assert (map[i].to == to);
+			}
+		}
+		g_assert (found);
+	}
+	va_end (ap);
+}
+#define _assert_xgress_qos_mappings(ifindex, is_ingress_map, n_entries, ...) \
+	_assert_xgress_qos_mappings_impl ((ifindex), (is_ingress_map), (n_entries), \
+	                                  (G_STATIC_ASSERT_EXPR ((NM_NARG (__VA_ARGS__) % 2) == 0), NM_NARG (__VA_ARGS__) / 2), \
+	                                  __VA_ARGS__)
+#define _assert_ingress_qos_mappings(ifindex, n_entries, ...) _assert_xgress_qos_mappings (ifindex, TRUE, n_entries, __VA_ARGS__)
+#define _assert_egress_qos_mappings(ifindex, n_entries, ...)  _assert_xgress_qos_mappings (ifindex, FALSE, n_entries, __VA_ARGS__)
+
+static void
+_assert_vlan_flags (int ifindex, NMVlanFlags flags)
+{
+	const NMPlatformLnkVlan *plnk;
+
+	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, NULL);
+	g_assert (plnk);
+	g_assert_cmpint (plnk->flags, ==, flags);
+}
+
+static void
 test_vlan_set_xgress (void)
 {
 	int ifindex, ifindex_parent;
@@ -822,29 +901,452 @@ test_vlan_set_xgress (void)
 	nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1245", DEVICE_NAME, PARENT_NAME);
 	ifindex = nmtstp_assert_wait_for_link (DEVICE_NAME, NM_LINK_TYPE_VLAN, 100)->ifindex;
 
+	/* ingress-qos-map */
+
 	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 4, 5));
+	_assert_ingress_qos_mappings (ifindex, 1,
+	                              4, 5);
+
 	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 7));
+	_assert_ingress_qos_mappings (ifindex, 2,
+	                              3, 7,
+	                              4, 5);
+
 	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 8));
+	_assert_ingress_qos_mappings (ifindex, 2,
+	                              3, 8,
+	                              4, 5);
+
 	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 4));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, 4,
+	                              3, 8,
+	                              4, 5);
+
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, G_MAXUINT32));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, G_MAXUINT32,
+	                              3, 8,
+	                              4, 5);
+
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, G_MAXUINT32 - 1));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, G_MAXUINT32 - 1,
+	                              3, 8,
+	                              4, 5);
+
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 5));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, 5,
+	                              3, 8,
+	                              4, 5);
+
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 5));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, 5,
+	                              3, 8,
+	                              4, 5);
+
+	/* Set invalid values: */
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 8, 3));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, 5,
+	                              3, 8,
+	                              4, 5);
+
+	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 9, 4));
+	_assert_ingress_qos_mappings (ifindex, 3,
+	                              0, 5,
+	                              3, 8,
+	                              4, 5);
+
+	/* egress-qos-map */
 
 	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 3));
+	_assert_egress_qos_mappings (ifindex, 1,
+	                             7, 3);
+
 	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 4));
+	_assert_egress_qos_mappings (ifindex, 2,
+	                             7, 3,
+	                             8, 4);
+
 	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 4));
+	_assert_egress_qos_mappings (ifindex, 3,
+	                             0, 4,
+	                             7, 3,
+	                             8, 4);
 
-	/* TODO: assert that the values are actually set. Currently only verified
-	 * by manual inspection.  */
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 4));
+	_assert_egress_qos_mappings (ifindex, 4,
+	                             0, 4,
+	                             1, 4,
+	                             7, 3,
+	                             8, 4);
 
-	if (nmtst_is_debug ())
-		nmtstp_run_command_check ("ip -d link show %s", DEVICE_NAME);
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 5));
+	_assert_egress_qos_mappings (ifindex, 4,
+	                             0, 4,
+	                             1, 5,
+	                             7, 3,
+	                             8, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 0));
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 9, 5));
+	_assert_egress_qos_mappings (ifindex, 5,
+	                             0, 4,
+	                             1, 5,
+	                             7, 3,
+	                             8, 4,
+	                             9, 5);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 5));
+	_assert_egress_qos_mappings (ifindex, 5,
+	                             0, 4,
+	                             1, 5,
+	                             7, 3,
+	                             8, 5,
+	                             9, 5);
+
 	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 0));
+	_assert_egress_qos_mappings (ifindex, 4,
+	                             0, 4,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 0));
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 0));
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 0));
+	_assert_egress_qos_mappings (ifindex, 3,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5);
 
-	if (nmtst_is_debug ())
-		nmtstp_run_command_check ("ip -d link show %s", DEVICE_NAME);
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 100, 4));
+	_assert_egress_qos_mappings (ifindex, 4,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5,
+	                             100, 4);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 4));
+	_assert_egress_qos_mappings (ifindex, 5,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5,
+	                             100, 4,
+	                             G_MAXUINT32, 4);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 8));
+	_assert_egress_qos_mappings (ifindex, 5,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5,
+	                             100, 4,
+	                             G_MAXUINT32, 4);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 0));
+	_assert_egress_qos_mappings (ifindex, 4,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5,
+	                             100, 4);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 100, 0));
+	_assert_egress_qos_mappings (ifindex, 3,
+	                             1, 5,
+	                             7, 3,
+	                             9, 5);
+
+	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 0));
+	_assert_egress_qos_mappings (ifindex, 2,
+	                             7, 3,
+	                             9, 5);
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 1, .to = 5 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        TRUE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        FALSE,
+		                                        NULL,
+		                                        0));
+		_assert_ingress_qos_mappings (ifindex, 1,
+		                              1, 5);
+	}
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 3, .to = 5 },
+			{ .from = 7, .to = 1655 },
+			{ .from = 7, .to = 17655 },
+			{ .from = 5, .to = 754 },
+			{ .from = 4, .to = 12 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        TRUE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        FALSE,
+		                                        NULL,
+		                                        0));
+		_assert_ingress_qos_mappings (ifindex, 4,
+		                              3, 5,
+		                              4, 12,
+		                              7, 17655,
+		                              5, 754);
+	}
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 3, .to = 18 },
+			{ .from = 6, .to = 121 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        FALSE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        FALSE,
+		                                        NULL,
+		                                        0));
+		_assert_ingress_qos_mappings (ifindex, 5,
+		                              3, 18,
+		                              4, 12,
+		                              6, 121,
+		                              7, 17655,
+		                              5, 754);
+	}
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 3, .to = 0 },
+			{ .from = 6, .to = 7 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        TRUE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        FALSE,
+		                                        NULL,
+		                                        0));
+		_assert_ingress_qos_mappings (ifindex, 1,
+		                              6, 7);
+	}
+
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 1, .to = 5 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        TRUE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        FALSE,
+		                                        NULL,
+		                                        0));
+		_assert_ingress_qos_mappings (ifindex, 1,
+		                              1, 5);
+	}
+
+	{
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 5, .to = 1 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        FALSE,
+		                                        NULL,
+		                                        0,
+		                                        TRUE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_egress_qos_mappings (ifindex, 1,
+		                             5, 1);
+	}
+
+	{
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 5, .to = 3 },
+			{ .from = 1655, .to = 5 },
+			{ .from = 1655, .to = 7 },
+			{ .from = G_MAXUINT32, .to = 6 },
+			{ .from = G_MAXUINT32, .to = 8 },
+			{ .from = 754, .to = 4 },
+			{ .from = 3, .to = 2 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        FALSE,
+		                                        NULL,
+		                                        0,
+		                                        TRUE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_egress_qos_mappings (ifindex, 5,
+		                             3, 2,
+		                             5, 3,
+		                             754, 4,
+		                             1655, 7,
+		                             G_MAXUINT32, 6);
+	}
+
+	{
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 754, .to = 3 },
+			{ .from = 755, .to = 8 },
+			{ .from = 1655, .to = 0 },
+			{ .from = 6, .to = 1 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        FALSE,
+		                                        NULL,
+		                                        0,
+		                                        FALSE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_egress_qos_mappings (ifindex, 5,
+		                             3, 2,
+		                             5, 3,
+		                             6, 1,
+		                             754, 3,
+		                             G_MAXUINT32, 6);
+	}
+
+	{
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 6, .to = 0 },
+			{ .from = 3, .to = 4 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        FALSE,
+		                                        NULL,
+		                                        0,
+		                                        TRUE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_egress_qos_mappings (ifindex, 1,
+		                             3, 4);
+	}
+
+	{
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 1, .to = 5 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        0,
+		                                        0,
+		                                        FALSE,
+		                                        NULL,
+		                                        0,
+		                                        TRUE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_egress_qos_mappings (ifindex, 1,
+		                             1, 5);
+	}
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 6, .to = 145 },
+			{ .from = 4, .to = 1 },
+			{ .from = 6, .to = 12 },
+		};
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 1, .to = 5 },
+			{ .from = 3232, .to = 7 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP,
+		                                        NM_VLAN_FLAG_REORDER_HEADERS,
+		                                        TRUE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        TRUE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_ingress_qos_mappings (ifindex, 2,
+		                             4, 1,
+		                             6, 12);
+		_assert_egress_qos_mappings (ifindex, 2,
+		                             1, 5,
+		                             3232, 7);
+		_assert_vlan_flags (ifindex, NM_VLAN_FLAG_REORDER_HEADERS);
+	}
+
+	{
+		const NMVlanQosMapping ingress_map[] = {
+			{ .from = 6, .to = 145 },
+			{ .from = 4, .to = 1 },
+			{ .from = 6, .to = 12 },
+		};
+		const NMVlanQosMapping egress_map[] = {
+			{ .from = 1, .to = 7 },
+			{ .from = 64, .to = 10 },
+			{ .from = 64, .to = 10 },
+			{ .from = 64, .to = 10 },
+			{ .from = 64, .to = 10 },
+			{ .from = 3232, .to = 0 },
+			{ .from = 64, .to = 4 },
+		};
+
+		g_assert (nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		                                        ifindex,
+		                                        NM_VLAN_FLAG_GVRP,
+		                                        NM_VLAN_FLAG_GVRP,
+		                                        FALSE,
+		                                        ingress_map,
+		                                        G_N_ELEMENTS (ingress_map),
+		                                        FALSE,
+		                                        egress_map,
+		                                        G_N_ELEMENTS (egress_map)));
+		_assert_ingress_qos_mappings (ifindex, 2,
+		                             4, 1,
+		                             6, 12);
+		_assert_egress_qos_mappings (ifindex, 2,
+		                             1, 7,
+		                             64, 4);
+		_assert_vlan_flags (ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
+	}
 
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));

@@ -685,15 +685,18 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 }
 
 static gboolean
-vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
+link_vlan_change (NMPlatform *platform,
+                  int ifindex,
+                  NMVlanFlags flags_mask,
+                  NMVlanFlags flags_set,
+                  gboolean ingress_reset_all,
+                  const NMVlanQosMapping *ingress_map,
+                  gsize n_ingress_map,
+                  gboolean egress_reset_all,
+                  const NMVlanQosMapping *egress_map,
+                  gsize n_egress_map)
 {
-	return !!link_get (platform, ifindex);
-}
-
-static gboolean
-vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
-{
-	return !!link_get (platform, ifindex);
+	return FALSE;
 }
 
 static gboolean
@@ -1445,8 +1448,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
-	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
-	platform_class->vlan_set_egress_map = vlan_set_egress_map;
+	platform_class->link_vlan_change = link_vlan_change;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
 

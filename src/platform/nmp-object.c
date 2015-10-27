@@ -82,6 +82,40 @@ _id_hash_ip6_addr (const struct in6_addr *addr)
 	return hash;
 }
 
+static int
+_vlan_xgress_qos_mappings_cmp (guint n_map,
+                               const NMVlanQosMapping *map1,
+                               const NMVlanQosMapping *map2)
+{
+	guint i;
+
+	for (i = 0; i < n_map; i++) {
+		if (map1[i].from != map2[i].from)
+			return map1[i].from < map2[i].from ? -1 : 1;
+		if (map1[i].to != map2[i].to)
+			return map1[i].to < map2[i].to ? -1 : 1;
+	}
+	return 0;
+}
+
+static void
+_vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
+                               const NMVlanQosMapping **dst_map,
+                               guint src_n_map,
+                               const NMVlanQosMapping *src_map)
+{
+	if (src_n_map == 0) {
+		g_clear_pointer (dst_map, g_free);
+		*dst_n_map = 0;
+	} else if (   src_n_map != *dst_n_map
+	           || _vlan_xgress_qos_mappings_cmp (src_n_map, *dst_map, src_map) != 0) {
+		g_clear_pointer (dst_map, g_free);
+		*dst_n_map = src_n_map;
+		if (src_n_map > 0)
+			*dst_map = g_memdup (src_map, sizeof (*src_map) * src_n_map);
+	}
+}
+
 /******************************************************************/
 
 static const char *
@@ -210,6 +244,13 @@ _vt_cmd_obj_dispose_link (NMPObject *obj)
 {
 	g_clear_object (&obj->_link.udev.device);
 	nmp_object_unref (obj->_link.netlink.lnk);
+}
+
+static void
+_vt_cmd_obj_dispose_lnk_vlan (NMPObject *obj)
+{
+	g_free ((gpointer) obj->_lnk_vlan.ingress_qos_map);
+	g_free ((gpointer) obj->_lnk_vlan.egress_qos_map);
 }
 
 static NMPObject *
@@ -451,6 +492,65 @@ _vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_strin
 	}
 }
 
+static const char *
+_vt_cmd_obj_to_string_lnk_vlan (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
+{
+	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
+	char buf2[sizeof (_nm_utils_to_string_buffer)];
+	char *b;
+	gsize l;
+
+	klass = NMP_OBJECT_GET_CLASS (obj);
+
+	switch (to_string_mode) {
+	case NMP_OBJECT_TO_STRING_ID:
+		g_snprintf (buf, buf_size, "%p", obj);
+		return buf;
+	case NMP_OBJECT_TO_STRING_ALL:
+
+		g_snprintf (buf, buf_size,
+		            "[%s,%p,%d,%ccache,%calive,%cvisible; %s]",
+		            klass->obj_type_name, obj, obj->_ref_count,
+		            obj->is_cached ? '+' : '-',
+		            nmp_object_is_alive (obj) ? '+' : '-',
+		            nmp_object_is_visible (obj) ? '+' : '-',
+		            nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof (buf2)));
+		return buf;
+	case NMP_OBJECT_TO_STRING_PUBLIC:
+		NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf, buf_size);
+
+		b = buf;
+		l = strlen (b);
+		b += l;
+		buf_size -= l;
+
+		if (obj->_lnk_vlan.n_ingress_qos_map) {
+			nm_platform_vlan_qos_mapping_to_string (" ingress-qos-map",
+			                                        obj->_lnk_vlan.ingress_qos_map,
+			                                        obj->_lnk_vlan.n_ingress_qos_map,
+			                                        b,
+			                                        buf_size);
+			l = strlen (b);
+			b += l;
+			buf_size -= l;
+		}
+		if (obj->_lnk_vlan.n_egress_qos_map) {
+			nm_platform_vlan_qos_mapping_to_string (" egress-qos-map",
+			                                        obj->_lnk_vlan.egress_qos_map,
+			                                        obj->_lnk_vlan.n_egress_qos_map,
+			                                        b,
+			                                        buf_size);
+			l = strlen (b);
+			b += l;
+			buf_size -= l;
+		}
+
+		return buf;
+	default:
+		g_return_val_if_reached ("ERROR");
+	}
+}
+
 #define _vt_cmd_plobj_to_string_id(type, plat_type, ...) \
 static const char * \
 _vt_cmd_plobj_to_string_id_##type (const NMPlatformObject *_obj, char *buf, gsize buf_len) \
@@ -528,6 +628,28 @@ _vt_cmd_obj_cmp_link (const NMPObject *obj1, const NMPObject *obj2)
 	return 0;
 }
 
+static int
+_vt_cmd_obj_cmp_lnk_vlan (const NMPObject *obj1, const NMPObject *obj2)
+{
+	int c;
+
+	c = nm_platform_lnk_vlan_cmp (&obj1->lnk_vlan, &obj2->lnk_vlan);
+	if (c)
+		return c;
+
+	if (obj1->_lnk_vlan.n_ingress_qos_map != obj2->_lnk_vlan.n_ingress_qos_map)
+		return obj1->_lnk_vlan.n_ingress_qos_map < obj2->_lnk_vlan.n_ingress_qos_map ? -1 : 1;
+	if (obj1->_lnk_vlan.n_egress_qos_map != obj2->_lnk_vlan.n_egress_qos_map)
+		return obj1->_lnk_vlan.n_egress_qos_map < obj2->_lnk_vlan.n_egress_qos_map ? -1 : 1;
+
+	c = _vlan_xgress_qos_mappings_cmp (obj1->_lnk_vlan.n_ingress_qos_map, obj1->_lnk_vlan.ingress_qos_map, obj2->_lnk_vlan.ingress_qos_map);
+	if (c)
+		return c;
+	c = _vlan_xgress_qos_mappings_cmp (obj1->_lnk_vlan.n_egress_qos_map, obj1->_lnk_vlan.egress_qos_map, obj2->_lnk_vlan.egress_qos_map);
+
+	return c;
+}
+
 gboolean
 nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2)
 {
@@ -576,6 +698,20 @@ _vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
 			nmp_object_unref (dst->_link.netlink.lnk);
 	}
 	dst->_link = src->_link;
+}
+
+static void
+_vt_cmd_obj_copy_lnk_vlan (NMPObject *dst, const NMPObject *src)
+{
+	dst->lnk_vlan = src->lnk_vlan;
+	_vlan_xgress_qos_mappings_cpy (&dst->_lnk_vlan.n_ingress_qos_map,
+	                               &dst->_lnk_vlan.ingress_qos_map,
+	                               src->_lnk_vlan.n_ingress_qos_map,
+	                               src->_lnk_vlan.ingress_qos_map);
+	_vlan_xgress_qos_mappings_cpy (&dst->_lnk_vlan.n_egress_qos_map,
+	                               &dst->_lnk_vlan.egress_qos_map,
+	                               src->_lnk_vlan.n_egress_qos_map,
+	                               src->_lnk_vlan.egress_qos_map);
 }
 
 #define _vt_cmd_plobj_id_copy(type, plat_type, cmd) \
@@ -1919,6 +2055,10 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.sizeof_public                      = sizeof (NMPlatformLnkVlan),
 		.obj_type_name                      = "vlan",
 		.lnk_link_type                      = NM_LINK_TYPE_VLAN,
+		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_lnk_vlan,
+		.cmd_obj_copy                       = _vt_cmd_obj_copy_lnk_vlan,
+		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_lnk_vlan,
+		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_lnk_vlan,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vlan_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},

@@ -174,6 +174,11 @@ typedef struct {
 
 typedef struct {
 	NMPlatformLnkVlan _public;
+
+	guint n_ingress_qos_map;
+	guint n_egress_qos_map;
+	const NMVlanQosMapping *ingress_qos_map;
+	const NMVlanQosMapping *egress_qos_map;
 } NMPObjectLnkVlan;
 
 typedef struct {

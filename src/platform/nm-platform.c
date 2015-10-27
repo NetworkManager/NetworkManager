@@ -1582,25 +1582,91 @@ nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option)
 }
 
 gboolean
-nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to)
+nm_platform_link_vlan_change (NMPlatform *self,
+                              int ifindex,
+                              NMVlanFlags flags_mask,
+                              NMVlanFlags flags_set,
+                              gboolean ingress_reset_all,
+                              const NMVlanQosMapping *ingress_map,
+                              gsize n_ingress_map,
+                              gboolean egress_reset_all,
+                              const NMVlanQosMapping *egress_map,
+                              gsize n_egress_map)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (klass->vlan_set_ingress_map, FALSE);
+	nm_assert (klass->link_vlan_change);
 
-	_LOGD ("link: setting vlan ingress map for %d from %d to %d", ifindex, from, to);
-	return klass->vlan_set_ingress_map (self, ifindex, from, to);
+	g_return_val_if_fail (!n_ingress_map || ingress_map, FALSE);
+	g_return_val_if_fail (!n_egress_map || egress_map, FALSE);
+
+	flags_set &= flags_mask;
+
+	if (_LOGD_ENABLED ()) {
+		char buf[512];
+		char *b = buf;
+		gsize len, i;
+
+		b[0] = '\0';
+		len = sizeof (buf);
+
+		if (flags_mask)
+			nm_utils_strbuf_append (&b, &len, " flags 0x%x/0x%x", (unsigned) flags_set, (unsigned) flags_mask);
+
+		if (ingress_reset_all || n_ingress_map) {
+			nm_utils_strbuf_append_str (&b, &len, " ingress-qos-map");
+			nm_platform_vlan_qos_mapping_to_string ("", ingress_map, n_ingress_map, b, len);
+			i = strlen (b);
+			b += i;
+			len -= i;
+			if (ingress_reset_all)
+				nm_utils_strbuf_append_str (&b, &len, " (reset-all)");
+		}
+
+		if (egress_reset_all || n_egress_map) {
+			nm_utils_strbuf_append_str (&b, &len, " egress-qos-map");
+			nm_platform_vlan_qos_mapping_to_string ("", egress_map, n_egress_map, b, len);
+			i = strlen (b);
+			b += i;
+			len -= i;
+			if (egress_reset_all)
+				nm_utils_strbuf_append_str (&b, &len, " (reset-all)");
+		}
+
+		_LOGD ("link: change vlan %d:%s", ifindex, buf);
+	}
+	return klass->link_vlan_change (self,
+	                                ifindex,
+	                                flags_mask,
+	                                flags_set,
+	                                ingress_reset_all,
+	                                ingress_map,
+	                                n_ingress_map,
+	                                egress_reset_all,
+	                                egress_map,
+	                                n_egress_map);
+}
+
+gboolean
+nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to)
+{
+	NMVlanQosMapping map = {
+		.from = from,
+		.to = to,
+	};
+
+	return nm_platform_link_vlan_change (self, ifindex, 0, 0, FALSE, &map, 1, FALSE, NULL, 0);
 }
 
 gboolean
 nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	NMVlanQosMapping map = {
+		.from = from,
+		.to = to,
+	};
 
-	g_return_val_if_fail (klass->vlan_set_egress_map, FALSE);
-
-	_LOGD ("link: setting vlan egress map for %d from %d to %d", ifindex, from, to);
-	return klass->vlan_set_egress_map (self, ifindex, from, to);
+	return nm_platform_link_vlan_change (self, ifindex, 0, 0, FALSE, NULL, 0, FALSE, &map, 1);
 }
 
 NMPlatformError
@@ -2438,6 +2504,40 @@ nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr networ
 
 /******************************************************************/
 
+const char *
+nm_platform_vlan_qos_mapping_to_string (const char *name,
+                                        const NMVlanQosMapping *map,
+                                        gsize n_map,
+                                        char *buf,
+                                        gsize len)
+{
+	gsize i;
+	char *b;
+
+	nm_utils_to_string_buffer_init (&buf, &len);
+
+	if (!n_map) {
+		nm_utils_strbuf_append_str (&buf, &len, "");
+		return buf;
+	}
+
+	if (!map)
+		g_return_val_if_reached ("");
+
+	b = buf;
+
+	if (name) {
+		nm_utils_strbuf_append_str (&b, &len, name);
+		nm_utils_strbuf_append_str (&b, &len, " {");
+	} else
+		nm_utils_strbuf_append_c (&b, &len, '{');
+
+	for (i = 0; i < n_map; i++)
+		nm_utils_strbuf_append (&b, &len, " %u:%u", map[i].from, map[i].to);
+	nm_utils_strbuf_append_str (&b, &len, " }");
+	return buf;
+}
+
 static const char *
 source_to_string (NMIPConfigSource source)
 {
@@ -2685,10 +2785,16 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 const char *
 nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
+	char *b;
+
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
-	g_snprintf (buf, len, "vlan %u", (guint) lnk->id);
+	b = buf;
+
+	nm_utils_strbuf_append (&b, &len, "vlan %u", lnk->id);
+	if (lnk->flags)
+		nm_utils_strbuf_append (&b, &len, " flags 0x%x", lnk->flags);
 	return buf;
 }
 
@@ -3231,6 +3337,7 @@ nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, id);
+	_CMP_FIELD (a, b, flags);
 	return 0;
 }
 

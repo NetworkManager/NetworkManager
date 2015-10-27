@@ -255,6 +255,25 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 	}
 }
 
+static int
+_vlan_qos_mapping_cmp_from (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const NMVlanQosMapping *map_a = a;
+	const NMVlanQosMapping *map_b = b;
+
+	if (map_a->from != map_b->from)
+		return map_a->from < map_b->from ? -1 : 1;
+	return 0;
+}
+
+static int
+_vlan_qos_mapping_cmp_from_ptr (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return _vlan_qos_mapping_cmp_from (*((const NMVlanQosMapping **) a),
+	                                   *((const NMVlanQosMapping **) b),
+	                                   NULL);
+}
+
 /******************************************************************
  * NMLinkType functions
  ******************************************************************/
@@ -929,6 +948,65 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 
 /*****************************************************************************/
 
+static gboolean
+_vlan_qos_mapping_from_nla (struct nlattr *nlattr,
+                            const NMVlanQosMapping **out_map,
+                            guint *out_n_map)
+{
+	struct nlattr *nla;
+	int remaining;
+	gs_unref_ptrarray GPtrArray *array = NULL;
+
+	G_STATIC_ASSERT (sizeof (NMVlanQosMapping) == sizeof (struct ifla_vlan_qos_mapping));
+	G_STATIC_ASSERT (sizeof (((NMVlanQosMapping *) 0)->to) == sizeof (((struct ifla_vlan_qos_mapping *) 0)->to));
+	G_STATIC_ASSERT (sizeof (((NMVlanQosMapping *) 0)->from) == sizeof (((struct ifla_vlan_qos_mapping *) 0)->from));
+	G_STATIC_ASSERT (sizeof (NMVlanQosMapping) == sizeof (((NMVlanQosMapping *) 0)->from) + sizeof (((NMVlanQosMapping *) 0)->to));
+
+	nm_assert (out_map && !*out_map);
+	nm_assert (out_n_map && !*out_n_map);
+
+	if (!nlattr)
+		return TRUE;
+
+	array = g_ptr_array_new ();
+	nla_for_each_nested (nla, nlattr, remaining) {
+		if (nla_len (nla) < sizeof(NMVlanQosMapping))
+			return FALSE;
+		g_ptr_array_add (array, nla_data (nla));
+	}
+
+	if (array->len > 0) {
+		NMVlanQosMapping *list;
+		guint i, j;
+
+		/* The sorting is necessary, because for egress mapping, kernel
+		 * doesn't sent the items strictly sorted by the from field. */
+		g_ptr_array_sort_with_data (array, _vlan_qos_mapping_cmp_from_ptr, NULL);
+
+		list = g_new (NMVlanQosMapping,  array->len);
+
+		for (i = 0, j = 0; i < array->len; i++) {
+			NMVlanQosMapping *map;
+
+			map = array->pdata[i];
+
+			/* kernel doesn't really send us duplicates. Just be extra cautious
+			 * because we want strong guarantees about the sort order and uniqueness
+			 * of our mapping list (for simpler equality comparison). */
+			if (   j > 0
+			    && list[j - 1].from == map->from)
+				list[j - 1] = *map;
+			else
+				list[j++] = *map;
+		}
+
+		*out_n_map = j;
+		*out_map = list;
+	}
+
+	return TRUE;
+}
+
 /* Copied and heavily modified from libnl3's vlan_parse() */
 static NMPObject *
 _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
@@ -942,7 +1020,8 @@ _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 	};
 	struct nlattr *tb[IFLA_VLAN_MAX+1];
 	int err;
-	NMPObject *obj = NULL;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	NMPObject *obj_result;
 
 	if (!info_data || g_strcmp0 (kind, "vlan"))
 		return NULL;
@@ -954,9 +1033,30 @@ _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 		return NULL;
 
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
-	obj->lnk_vlan.id = nla_get_u16(tb[IFLA_VLAN_ID]);
+	obj->lnk_vlan.id = nla_get_u16 (tb[IFLA_VLAN_ID]);
 
-	return obj;
+	if (tb[IFLA_VLAN_FLAGS]) {
+		struct ifla_vlan_flags flags;
+
+		nla_memcpy (&flags, tb[IFLA_VLAN_FLAGS], sizeof(flags));
+
+		obj->lnk_vlan.flags = flags.flags;
+	}
+
+	if (!_vlan_qos_mapping_from_nla (tb[IFLA_VLAN_INGRESS_QOS],
+	                                 &obj->_lnk_vlan.ingress_qos_map,
+	                                 &obj->_lnk_vlan.n_ingress_qos_map))
+		return NULL;
+
+	if (!_vlan_qos_mapping_from_nla (tb[IFLA_VLAN_EGRESS_QOS],
+	                                 &obj->_lnk_vlan.egress_qos_map,
+	                                 &obj->_lnk_vlan.n_egress_qos_map))
+		return NULL;
+
+
+	obj_result = obj;
+	obj = NULL;
+	return obj_result;
 }
 
 /*****************************************************************************/
@@ -1676,16 +1776,45 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
                                     int vlan_id,
                                     guint32 flags_mask,
                                     guint32 flags_set,
-                                    const struct ifla_vlan_qos_mapping *ingress_qos,
+                                    const NMVlanQosMapping *ingress_qos,
                                     int ingress_qos_len,
-                                    const struct ifla_vlan_qos_mapping *egress_qos,
+                                    const NMVlanQosMapping *egress_qos,
                                     int egress_qos_len)
 {
 	struct nlattr *info;
 	struct nlattr *data;
 	guint i;
+	gboolean has_any_vlan_properties = FALSE;
+
+#define VLAN_XGRESS_PRIO_VALID(from) (((from) & ~(guint32) 0x07) == 0)
 
 	nm_assert (msg);
+
+	/* We must not create an empty IFLA_LINKINFO section. Otherwise, kernel
+	 * rejects the request as invalid. */
+	if (   flags_mask != 0
+	    || vlan_id >= 0)
+		has_any_vlan_properties = TRUE;
+	if (   !has_any_vlan_properties
+	    && ingress_qos && ingress_qos_len > 0) {
+		for (i = 0; i < ingress_qos_len; i++) {
+			if (VLAN_XGRESS_PRIO_VALID (ingress_qos[i].from)) {
+				has_any_vlan_properties = TRUE;
+				break;
+			}
+		}
+	}
+	if (   !has_any_vlan_properties
+	    && egress_qos && egress_qos_len > 0) {
+		for (i = 0; i < egress_qos_len; i++) {
+			if (VLAN_XGRESS_PRIO_VALID (egress_qos[i].to)) {
+				has_any_vlan_properties = TRUE;
+				break;
+			}
+		}
+	}
+	if (!has_any_vlan_properties)
+		return TRUE;
 
 	if (!(info = nla_nest_start (msg, IFLA_LINKINFO)))
 		goto nla_put_failure;
@@ -1708,27 +1837,39 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
 	}
 
 	if (ingress_qos && ingress_qos_len > 0) {
-		struct nlattr *qos;
+		struct nlattr *qos = NULL;
 
-		if (!(qos = nla_nest_start(msg, IFLA_VLAN_INGRESS_QOS)))
-			goto nla_put_failure;
+		for (i = 0; i < ingress_qos_len; i++) {
+			/* Silently ignore invalid mappings. Kernel would truncate
+			 * them and modify the wrong mapping. */
+			if (VLAN_XGRESS_PRIO_VALID (ingress_qos[i].from)) {
+				if (!qos) {
+					if (!(qos = nla_nest_start (msg, IFLA_VLAN_INGRESS_QOS)))
+						goto nla_put_failure;
+				}
+				NLA_PUT (msg, i, sizeof (ingress_qos[i]), &ingress_qos[i]);
+			}
+		}
 
-		for (i = 0; i < ingress_qos_len; i++)
-			NLA_PUT (msg, i, sizeof (ingress_qos[i]), &ingress_qos[i]);
-
-		nla_nest_end(msg, qos);
+		if (qos)
+			nla_nest_end (msg, qos);
 	}
 
 	if (egress_qos && egress_qos_len > 0) {
-		struct nlattr *qos;
+		struct nlattr *qos = NULL;
 
-		if (!(qos = nla_nest_start(msg, IFLA_VLAN_EGRESS_QOS)))
-			goto nla_put_failure;
+		for (i = 0; i < egress_qos_len; i++) {
+			if (VLAN_XGRESS_PRIO_VALID (egress_qos[i].to)) {
+				if (!qos) {
+					if (!(qos = nla_nest_start(msg, IFLA_VLAN_EGRESS_QOS)))
+						goto nla_put_failure;
+				}
+				NLA_PUT (msg, i, sizeof (egress_qos[i]), &egress_qos[i]);
+			}
+		}
 
-		for (i = 0; i < egress_qos_len; i++)
-			NLA_PUT (msg, i, sizeof (egress_qos[i]), &egress_qos[i]);
-
-		nla_nest_end(msg, qos);
+		if (qos)
+			nla_nest_end(msg, qos);
 	}
 
 	nla_nest_end (msg, data);
@@ -3950,54 +4091,155 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static gboolean
-vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
+static void
+_vlan_change_vlan_qos_mapping_create (gboolean is_ingress_map,
+                                      gboolean reset_all,
+                                      const NMVlanQosMapping *current_map,
+                                      guint current_n_map,
+                                      const NMVlanQosMapping *set_map,
+                                      guint set_n_map,
+                                      NMVlanQosMapping **out_map,
+                                      guint *out_n_map)
 {
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct ifla_vlan_qos_mapping ingress_qos = {
-		.from = from,
-		.to = to,
-	};
-	unsigned flags;
+	NMVlanQosMapping *map;
+	guint i, j, len;
+	const guint INGRESS_RANGE_LEN = 8;
 
-	if (!_lookup_cached_link_data (platform, ifindex, "vlan-ingress", &flags))
-		return FALSE;
+	nm_assert (out_map && !*out_map);
+	nm_assert (out_n_map && !*out_n_map);
 
-	_LOGD ("link: change %d: vlan-ingress: set %d -> %d", ifindex, from, to);
+	if (!reset_all)
+		current_n_map = 0;
+	else if (is_ingress_map)
+		current_n_map = INGRESS_RANGE_LEN;
 
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          0,
-	                          ifindex,
-	                          NULL,
-	                          flags);
-	if (   !nlmsg
-	    || !_nl_msg_new_link_set_linkinfo_vlan (nlmsg,
-	                                            -1,
-	                                            0,
-	                                            0,
-	                                            &ingress_qos,
-	                                            1,
-	                                            NULL,
-	                                            0))
-		return FALSE;
+	len = current_n_map + set_n_map;
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	if (len == 0)
+		return;
+
+	map = g_new (NMVlanQosMapping, len);
+
+	if (current_n_map) {
+		if (is_ingress_map) {
+			/* For the ingress-map, there are only 8 entries (0 to 7).
+			 * When the user requests to reset all entires, we don't actually
+			 * need the cached entries, we can just explicitly clear all possible
+			 * ones.
+			 *
+			 * That makes only a real difference in case our cache is out-of-date.
+			 *
+			 * For the egress map we cannot do that, because there are far too
+			 * many. There we can only clear the entries that we know about. */
+			for (i = 0; i < INGRESS_RANGE_LEN; i++) {
+				map[i].from = i;
+				map[i].to = 0;
+			}
+		} else {
+			for (i = 0; i < current_n_map; i++) {
+				map[i].from = current_map[i].from;
+				map[i].to = 0;
+			}
+		}
+	}
+	if (set_n_map)
+		memcpy (&map[current_n_map], set_map, sizeof (*set_map) * set_n_map);
+
+	g_qsort_with_data (map,
+	                   len,
+	                   sizeof (*map),
+	                   _vlan_qos_mapping_cmp_from,
+	                   NULL);
+
+	for (i = 0, j = 0; i < len; i++) {
+		if (   ( is_ingress_map && !VLAN_XGRESS_PRIO_VALID (map[i].from))
+		    || (!is_ingress_map && !VLAN_XGRESS_PRIO_VALID (map[i].to)))
+			continue;
+		if (   j > 0
+		    && map[j - 1].from == map[i].from)
+			map[j - 1] = map[i];
+		else
+			map[j++] = map[i];
+	}
+
+	*out_map = map;
+	*out_n_map = j;
 }
 
 static gboolean
-vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
+link_vlan_change (NMPlatform *platform,
+                  int ifindex,
+                  NMVlanFlags flags_mask,
+                  NMVlanFlags flags_set,
+                  gboolean ingress_reset_all,
+                  const NMVlanQosMapping *ingress_map,
+                  gsize n_ingress_map,
+                  gboolean egress_reset_all,
+                  const NMVlanQosMapping *egress_map,
+                  gsize n_egress_map)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	const NMPObject *obj_cache;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct ifla_vlan_qos_mapping egress_qos = {
-		.from = from,
-		.to = to,
-	};
 	unsigned flags;
+	const NMPObjectLnkVlan *lnk;
+	guint new_n_ingress_map = 0;
+	guint new_n_egress_map = 0;
+	gs_free NMVlanQosMapping *new_ingress_map = NULL;
+	gs_free NMVlanQosMapping *new_egress_map = NULL;
+	char s_flags[64];
+	char s_ingress[256];
+	char s_egress[256];
 
-	if (!_lookup_cached_link_data (platform, ifindex, "vlan-egress", &flags))
+	obj_cache = nmp_cache_lookup_link (priv->cache, ifindex);
+	if (   !obj_cache
+	    || !obj_cache->_link.netlink.is_in_netlink) {
+		_LOGD ("link: change %d: %s: link does not exist", ifindex, "vlan");
 		return FALSE;
+	}
 
-	_LOGD ("link: change %d: vlan-egress: set %d -> %d", ifindex, from, to);
+	lnk = obj_cache->_link.netlink.lnk ? &obj_cache->_link.netlink.lnk->_lnk_vlan : NULL;
+	flags = obj_cache->link.flags;
+
+	flags_set &= flags_mask;
+
+	_vlan_change_vlan_qos_mapping_create (TRUE,
+	                                      ingress_reset_all,
+	                                      lnk ? lnk->ingress_qos_map : NULL,
+	                                      lnk ? lnk->n_ingress_qos_map : 0,
+	                                      ingress_map,
+	                                      n_ingress_map,
+	                                      &new_ingress_map,
+	                                      &new_n_ingress_map);
+
+	_vlan_change_vlan_qos_mapping_create (FALSE,
+	                                      egress_reset_all,
+	                                      lnk ? lnk->egress_qos_map : NULL,
+	                                      lnk ? lnk->n_egress_qos_map : 0,
+	                                      egress_map,
+	                                      n_egress_map,
+	                                      &new_egress_map,
+	                                      &new_n_egress_map);
+
+	_LOGD ("link: change %d: vlan:%s%s%s",
+	       ifindex,
+	       flags_mask
+	           ? nm_sprintf_buf (s_flags, " flags 0x%x/0x%x", (unsigned) flags_set, (unsigned) flags_mask)
+	           : "",
+	       new_n_ingress_map
+	           ? nm_platform_vlan_qos_mapping_to_string (" ingress-qos-map",
+	                                                     new_ingress_map,
+	                                                     new_n_ingress_map,
+	                                                     s_ingress,
+	                                                     sizeof (s_ingress))
+	           : "",
+	       new_n_egress_map
+	           ? nm_platform_vlan_qos_mapping_to_string (" egress-qos-map",
+	                                                     new_egress_map,
+	                                                     new_n_egress_map,
+	                                                     s_egress,
+	                                                     sizeof (s_egress))
+	           : "");
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -4007,12 +4249,12 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_linkinfo_vlan (nlmsg,
 	                                            -1,
-	                                            0,
-	                                            0,
-	                                            NULL,
-	                                            0,
-	                                            &egress_qos,
-	                                            1))
+	                                            flags_mask,
+	                                            flags_set,
+	                                            new_ingress_map,
+	                                            new_n_ingress_map,
+	                                            new_egress_map,
+	                                            new_n_egress_map))
 		return FALSE;
 
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
@@ -5228,8 +5470,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
-	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
-	platform_class->vlan_set_egress_map = vlan_set_egress_map;
+	platform_class->link_vlan_change = link_vlan_change;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
 
