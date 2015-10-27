@@ -10,6 +10,7 @@
 *.typelib
 *.stamp
 *-enum-types.[ch]
+*-glue.h
 *.loT
 Makefile
 Makefile.in*
@@ -265,6 +266,5 @@ test-*.trs
 /src/tests/test-route-manager-fake
 /src/tests/test-route-manager-linux
 /src/tests/test-wired-defname
-/src/*-glue.h
 
 /vapi/*.vapi
