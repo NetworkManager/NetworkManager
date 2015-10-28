@@ -1359,6 +1359,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	const char *str;
 	GVariant *v;
 	gboolean b;
+	int ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1386,7 +1387,13 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		priv->has_ip6 = FALSE;
 	}
 
-	config = nm_ip4_config_new (priv->ip_ifindex);
+	if (priv->ip_ifindex > 0) {
+		ifindex = priv->ip_ifindex;
+	} else {
+		NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (self));
+		ifindex = nm_device_get_ip_ifindex (parent_dev);
+	}
+	config = nm_ip4_config_new (ifindex);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 24;
