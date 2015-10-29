@@ -1451,10 +1451,13 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
 		while (g_variant_iter_next (iter, "@au", &v)) {
-			NMPlatformIP4Route route;
+			NMPlatformIP4Route route = { 0, };
 
-			if (g_variant_n_children (v) == 4) {
-				memset (&route, 0, sizeof (route));
+			switch (g_variant_n_children (v)) {
+			case 5:
+				g_variant_get_child (v, 4, "u", &route.pref_src);
+				/* fallthrough */
+			case 4:
 				g_variant_get_child (v, 0, "u", &route.network);
 				g_variant_get_child (v, 1, "u", &route.plen);
 				g_variant_get_child (v, 2, "u", &route.gateway);
@@ -1469,6 +1472,8 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				 */
 				if (!(priv->ip4_external_gw && route.network == priv->ip4_external_gw && route.plen == 32))
 					nm_ip4_config_add_route (config, &route);
+			default:
+				_LOGW ("VPN connection: received invalid IPv4 route");
 			}
 			g_variant_unref (v);
 		}
