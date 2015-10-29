@@ -439,6 +439,38 @@ test_connection_match_wired (void)
 }
 
 static void
+test_connection_match_wired2 (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingWired *s_wired;
+	const char *mac = "52:54:00:ab:db:23";
+
+	orig = _match_connection_new ();
+	s_wired = nm_connection_get_setting_wired (orig);
+	g_assert (s_wired);
+	g_object_set (G_OBJECT (s_wired),
+	              NM_SETTING_WIRED_PORT, "tp",           /* port is not compared */
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,     /* we allow MAC address just in one connection */
+	              NULL);
+
+	copy = nm_simple_connection_new_clone (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Check that if the generated connection do not have wired setting
+	 * and s390 properties in the existing connection's setting are default,
+	 * the connections match. It can happen if assuming VLAN devices. */
+	nm_connection_remove_setting (orig, NM_TYPE_SETTING_WIRED);
+
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched == copy);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
+static void
 test_connection_match_cloned_mac (void)
 {
 	NMConnection *orig, *exact, *fuzzy, *matched;
@@ -1100,6 +1132,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-match/ip4-method", test_connection_match_ip4_method);
 	g_test_add_func ("/general/connection-match/con-interface-name", test_connection_match_interface_name);
 	g_test_add_func ("/general/connection-match/wired", test_connection_match_wired);
+	g_test_add_func ("/general/connection-match/wired2", test_connection_match_wired2);
 	g_test_add_func ("/general/connection-match/cloned_mac", test_connection_match_cloned_mac);
 	g_test_add_func ("/general/connection-match/no-match-ip4-addr", test_connection_no_match_ip4_addr);
 	g_test_add_func ("/general/connection-match/no-match-vlan", test_connection_no_match_vlan);
