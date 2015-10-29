@@ -79,6 +79,8 @@ typedef struct _NMPlatformIP6Address NMPlatformIP6Address;
 typedef struct _NMPlatformIP6Route   NMPlatformIP6Route;
 typedef struct _NMPlatformLink       NMPlatformLink;
 
+typedef struct _NMPObject            NMPObject;
+
 typedef enum {
 	/* Please don't interpret type numbers outside nm-platform and use functions
 	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().

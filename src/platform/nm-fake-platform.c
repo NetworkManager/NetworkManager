@@ -27,6 +27,7 @@
 #include <linux/rtnetlink.h>
 
 #include "nm-utils.h"
+#include "nmp-object.h"
 #include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
 #include "nm-default.h"
@@ -74,8 +75,7 @@ typedef struct {
 	NMPlatformLink link;
 
 	char *udi;
-	NMPlatformLnkVlan lnk_vlan;
-	NMPlatformLnkInfiniband lnk_infiniband;
+	NMPObject *lnk;
 	struct in6_addr ip6_lladdr;
 } NMFakePlatformLink;
 
@@ -260,7 +260,7 @@ _nm_platform_link_get_by_address (NMPlatform *platform,
 	return NULL;
 }
 
-static gconstpointer
+static const NMPObject *
 link_get_lnk (NMPlatform *platform,
               int ifindex,
               NMLinkType link_type,
@@ -273,17 +273,17 @@ link_get_lnk (NMPlatform *platform,
 
 	NM_SET_OUT (out_link, &device->link);
 
-	if (link_type != device->link.type)
+	if (!device->lnk)
 		return NULL;
 
-	switch (link_type) {
-	case NM_LINK_TYPE_VLAN:
-		return &device->lnk_vlan;
-	case NM_LINK_TYPE_INFINIBAND:
-		return &device->lnk_infiniband;
-	default:
+	if (link_type == NM_LINK_TYPE_NONE)
+		return device->lnk;
+
+	if (   link_type != device->link.type
+	    || link_type != NMP_OBJECT_GET_CLASS (device->lnk)->lnk_link_type)
 		return NULL;
-	}
+
+	return device->lnk;
 }
 
 static gboolean
@@ -331,6 +331,8 @@ link_delete (NMPlatform *platform, int ifindex)
 
 	memcpy (&deleted_device, &device->link, sizeof (deleted_device));
 	memset (&device->link, 0, sizeof (device->link));
+	g_clear_pointer (&device->lnk, nmp_object_unref);
+	g_clear_pointer (&device->udi, g_free);
 
 	/* Remove addresses and routes which belong to the deleted interface */
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
@@ -671,8 +673,10 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
 
 	g_return_val_if_fail (device, FALSE);
+	g_return_val_if_fail (!device->lnk, FALSE);
 
-	device->lnk_vlan.id = vlan_id;
+	device->lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
+	device->lnk->lnk_vlan.id = vlan_id;
 	device->link.parent = parent;
 
 	if (out_link)
@@ -707,9 +711,11 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
 	g_return_val_if_fail (device, FALSE);
+	g_return_val_if_fail (!device->lnk, FALSE);
 
-	device->lnk_infiniband.p_key = p_key;
-	device->lnk_infiniband.mode = "datagram";
+	device->lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
+	device->lnk->lnk_infiniband.p_key = p_key;
+	device->lnk->lnk_infiniband.mode = "datagram";
 	device->link.parent = parent;
 
 	return TRUE;
@@ -1381,6 +1387,7 @@ nm_fake_platform_finalize (GObject *object)
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
 		g_free (device->udi);
+		g_clear_pointer (&device->lnk, nmp_object_unref);
 	}
 	g_array_unref (priv->links);
 	g_array_unref (priv->ip4_addresses);

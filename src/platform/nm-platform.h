@@ -457,7 +457,7 @@ typedef struct {
 	const NMPlatformLink *(*link_get_by_ifname) (NMPlatform *platform, const char *ifname);
 	const NMPlatformLink *(*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length);
 
-	gconstpointer (*link_get_lnk) (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
+	const NMPObject *(*link_get_lnk) (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 
 	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *,
@@ -696,7 +696,7 @@ char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *
 gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
 char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option);
 
-gconstpointer nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
+const NMPObject *nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);

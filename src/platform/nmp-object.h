@@ -119,6 +119,9 @@ typedef struct {
 	const char *obj_type_name;
 	const char *signal_type;
 
+	/* Only for NMPObjectLnk* types. */
+	NMLinkType lnk_link_type;
+
 	/* returns %FALSE, if the obj type would never have an entry for index type @id_type. If @obj has an index,
 	 * initialize @id and set @out_id to it. Otherwise, @out_id is NULL. */
 	gboolean (*cmd_obj_init_cache_id) (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id);

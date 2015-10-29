@@ -36,6 +36,7 @@
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
+#include "nmp-object.h"
 #include "NetworkManagerUtils.h"
 #include "nm-default.h"
 #include "nm-enum-types.h"
@@ -1369,7 +1370,29 @@ nm_platform_link_get_master (NMPlatform *self, int slave)
 
 /*****************************************************************************/
 
-gconstpointer
+/**
+ * nm_platform_link_get_lnk:
+ * @self: the platform instance
+ * @ifindex: the link ifindex to lookup
+ * @link_type: filter by link-type.
+ * @out_link: (allow-none): returns the platform link instance
+ *
+ * If the function returns %NULL, that could mean that no such ifindex
+ * exists, of that the link has no lnk data. You can find that out
+ * by checking @out_link. @out_link will always be set if a link
+ * with @ifindex exists.
+ *
+ * If @link_type is %NM_LINK_TYPE_NONE, the function returns the lnk
+ * object if it is present. If you set link-type, you can be sure
+ * that only a link type of the matching type is returned (or %NULL).
+ *
+ * Returns: the internal link lnk object. The returned object
+ * is owned by the platform cache and must not be modified. Note
+ * however, that the object is guaranteed to be immutable, so
+ * you can savely take a reference and keep it for yourself
+ * (but don't modify it).
+ */
+const NMPObject *
 nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
 {
 	_CHECK_SELF (self, klass, FALSE);
@@ -1381,34 +1404,43 @@ nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, c
 	return klass->link_get_lnk (self, ifindex, link_type, out_link);
 }
 
+static gconstpointer
+_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
+{
+	const NMPObject *lnk;
+
+	lnk = nm_platform_link_get_lnk (self, ifindex, link_type, out_link);
+	return lnk ? &lnk->object : NULL;
+}
+
 const NMPlatformLnkGre *
 nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
-	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
 }
 
 const NMPlatformLnkInfiniband *
 nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
-	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_INFINIBAND, out_link);
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_INFINIBAND, out_link);
 }
 
 const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
-	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
 }
 
 const NMPlatformLnkVlan *
 nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
-	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_VLAN, out_link);
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_VLAN, out_link);
 }
 
 const NMPlatformLnkVxlan *
 nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
-	return nm_platform_link_get_lnk (self, ifindex, NM_LINK_TYPE_VXLAN, out_link);
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_VXLAN, out_link);
 }
 
 /*****************************************************************************/

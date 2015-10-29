@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include "nmp-object.h"
+
 #include "test-common.h"
 #include "nm-test-utils.h"
 
@@ -640,7 +642,7 @@ test_software_detect (gconstpointer user_data)
 	const TestAddSoftwareDetectData *test_data = user_data;
 	int ifindex, ifindex_parent;
 	const NMPlatformLink *plink;
-	gconstpointer plnk_void;
+	const NMPObject *lnk;
 	guint i_step;
 	int exit_code;
 
@@ -708,15 +710,16 @@ test_software_detect (gconstpointer user_data)
 			nmtstp_link_set_updown (-1, ifindex, set_up);
 		}
 
-		plnk_void = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, test_data->link_type, &plink);
+		lnk = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, test_data->link_type, &plink);
 		g_assert (plink);
 		g_assert_cmpint (plink->ifindex, ==, ifindex);
-		g_assert (plnk_void);
+		g_assert (lnk);
 
 		switch (test_data->link_type) {
 		case NM_LINK_TYPE_GRE: {
-			const NMPlatformLnkGre *plnk = plnk_void;
+			const NMPlatformLnkGre *plnk = &lnk->lnk_gre;
 
+			g_assert (plnk == nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->parent_ifindex, ==, 0);
 			g_assert_cmpint (plnk->input_flags, ==, 0);
 			g_assert_cmpint (plnk->output_flags, ==, 0);
@@ -730,21 +733,24 @@ test_software_detect (gconstpointer user_data)
 			break;
 		}
 		case NM_LINK_TYPE_MACVLAN: {
-			const NMPlatformLnkMacvlan *plnk = plnk_void;
+			const NMPlatformLnkMacvlan *plnk = &lnk->lnk_macvlan;
 
+			g_assert (plnk == nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->no_promisc, ==, FALSE);
 			g_assert_cmpstr (plnk->mode, ==, "vepa");
 			break;
 		}
 		case NM_LINK_TYPE_VLAN: {
-			const NMPlatformLnkVlan *plnk = plnk_void;
+			const NMPlatformLnkVlan *plnk = &lnk->lnk_vlan;
 
+			g_assert (plnk == nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->id, ==, 1242);
 			break;
 		}
 		case NM_LINK_TYPE_VXLAN: {
-			const NMPlatformLnkVxlan *plnk = plnk_void;
+			const NMPlatformLnkVxlan *plnk = &lnk->lnk_vxlan;
 
+			g_assert (plnk == nm_platform_link_get_lnk_vxlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->parent_ifindex, !=, 0);
 			g_assert_cmpint (plnk->tos, ==, 0);
 			g_assert_cmpint (plnk->ttl, ==, 0);

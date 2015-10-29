@@ -3252,7 +3252,7 @@ _nm_platform_link_get_by_address (NMPlatform *platform,
 
 /*****************************************************************************/
 
-static gconstpointer
+static const NMPObject *
 link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
 {
 	const NMPObject *obj = cache_lookup_link (platform, ifindex);
@@ -3262,34 +3262,14 @@ link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMP
 
 	NM_SET_OUT (out_link, &obj->link);
 
-	if (link_type != obj->link.type)
+	if (!obj->_link.netlink.lnk)
+		return NULL;
+	if (   link_type != NM_LINK_TYPE_NONE
+	    && (   link_type != obj->link.type
+	        || link_type != NMP_OBJECT_GET_CLASS (obj->_link.netlink.lnk)->lnk_link_type))
 		return NULL;
 
-	switch (link_type) {
-	case NM_LINK_TYPE_GRE:
-		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_GRE)
-			return &obj->_link.netlink.lnk->lnk_gre;
-		break;
-	case NM_LINK_TYPE_INFINIBAND:
-		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_INFINIBAND)
-			return &obj->_link.netlink.lnk->lnk_infiniband;
-		break;
-	case NM_LINK_TYPE_MACVLAN:
-		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_MACVLAN)
-			return &obj->_link.netlink.lnk->lnk_macvlan;
-		break;
-	case NM_LINK_TYPE_VLAN:
-		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_VLAN)
-			return &obj->_link.netlink.lnk->lnk_vlan;
-		break;
-	case NM_LINK_TYPE_VXLAN:
-		if (NMP_OBJECT_GET_TYPE (obj->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_VXLAN)
-			return &obj->_link.netlink.lnk->lnk_vxlan;
-		break;
-	default:
-		break;
-	}
-	return NULL;
+	return obj->_link.netlink.lnk;
 }
 
 /*****************************************************************************/
