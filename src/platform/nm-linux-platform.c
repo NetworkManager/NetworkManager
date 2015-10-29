@@ -4474,7 +4474,7 @@ _nmp_vt_cmd_plobj_to_nl_ip6_route (NMPlatform *platform, const NMPlatformObject 
 static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
-               guint32 pref_src, guint32 metric, guint32 mss)
+               in_addr_t pref_src, guint32 metric, guint32 mss)
 {
 	NMPObject obj_needle;
 	auto_nl_object struct nl_object *nlo = NULL;
