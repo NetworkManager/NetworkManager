@@ -1128,8 +1128,8 @@ demarshal_generic (NMObject *object,
 	HANDLE_TYPE(DOUBLE, double, double)
 	HANDLE_TYPE(INT, int, int)
 	HANDLE_TYPE(UINT, uint, uint)
-	HANDLE_TYPE(INT64, int, int)
-	HANDLE_TYPE(UINT64, uint, uint)
+	HANDLE_TYPE(INT64, int64, int64)
+	HANDLE_TYPE(UINT64, uint64, uint64)
 	HANDLE_TYPE(LONG, long, long)
 	HANDLE_TYPE(ULONG, ulong, ulong)
 	} else {
