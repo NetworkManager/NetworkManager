@@ -863,6 +863,7 @@ with hidden SSIDs. You can provide multiple \fIssid\fP parameters in order to
 scan more SSIDs.
 .br
 This command does not show the APs, use 'nmcli device wifi list' for that.
+.RE
 
 .TP
 .B agent \- run nmcli as a NetworkManager secret agent, or polkit agent
