@@ -328,6 +328,18 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 	*minor = (version & 0x0000FF00u) >>  8;
 	*micro = (version & 0x000000FFu);
 }
+/*****************************************************************************/
+
+#define nm_sprintf_buf(buf, format, ...) ({ \
+		char * _buf = (buf); \
+		\
+		/* some static assert trying to ensure that the buffer is statically allocated.
+		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
+		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *)); \
+		g_snprintf (_buf, sizeof (buf), \
+		            ""format"", __VA_ARGS__); \
+		_buf; \
+	})
 
 /*****************************************************************************/
 
