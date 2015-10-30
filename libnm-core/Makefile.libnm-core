@@ -51,6 +51,7 @@ libnm_core_private_headers =			\
 	$(core)/crypto.h			\
 	$(core)/nm-connection-private.h		\
 	$(core)/nm-core-internal.h		\
+	$(core)/nm-core-types-internal.h    \
 	$(core)/nm-keyfile-internal.h       \
 	$(core)/nm-keyfile-utils.h          \
 	$(core)/nm-property-compare.h		\

@@ -67,6 +67,7 @@
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
+#include "nm-core-types-internal.h"
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
