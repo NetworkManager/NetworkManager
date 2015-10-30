@@ -720,6 +720,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 
 		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
 		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
+		request->num_scripts_done = request->scripts->len;
 		request_free (request);
 		return TRUE;
 	}
