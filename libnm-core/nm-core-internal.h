@@ -251,4 +251,15 @@ NMUtilsStrStrDictKey *_nm_utils_strstrdictkey_create (const char *v1, const char
 
 /***********************************************************/
 
+gboolean _nm_setting_vlan_set_priorities (NMSettingVlan *setting,
+                                          NMVlanPriorityMap map,
+                                          const NMVlanQosMapping *qos_map,
+                                          guint n_qos_map);
+void     _nm_setting_vlan_get_priorities (NMSettingVlan *setting,
+                                          NMVlanPriorityMap map,
+                                          NMVlanQosMapping **out_qos_map,
+                                          guint *out_n_qos_map);
+
+/***********************************************************/
+
 #endif

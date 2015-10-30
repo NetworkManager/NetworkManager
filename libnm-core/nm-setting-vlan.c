@@ -396,6 +396,88 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
 	return TRUE;
 }
 
+gboolean
+_nm_setting_vlan_set_priorities (NMSettingVlan *setting,
+                                 NMVlanPriorityMap map,
+                                 const NMVlanQosMapping *qos_map,
+                                 guint n_qos_map)
+{
+	gboolean has_changes = FALSE;
+	GSList *map_prev, *map_new;
+	guint i;
+	gint64 from_last;
+
+	map_prev = get_map (setting, map);
+
+	if (n_qos_map != g_slist_length (map_prev))
+		has_changes = TRUE;
+	else {
+		const GSList *iter;
+
+		iter = map_prev;
+		for (i = 0; i < n_qos_map; i++, iter = iter->next) {
+			const NMVlanQosMapping *m = iter->data;
+
+			if (   m->from != qos_map[i].from
+			    || m->to != qos_map[i].to) {
+				has_changes = TRUE;
+				break;
+			}
+		}
+	}
+
+	if (!has_changes)
+		return FALSE;
+
+	map_new = NULL;
+	from_last = G_MAXINT64;
+	for (i = n_qos_map; i > 0;) {
+		const NMVlanQosMapping *m = &qos_map[--i];
+		NMVlanQosMapping *item;
+
+		/* We require the array to be presorted. */
+		if (m->from >= from_last)
+			g_return_val_if_reached (FALSE);
+		from_last = m->from;
+
+		item = g_malloc0 (sizeof (NMVlanQosMapping));
+		item->from = m->from;
+		item->to = m->to;
+		map_new = g_slist_prepend (map_new, item);
+	}
+
+	g_slist_free_full (map_prev, g_free);
+	set_map (setting, map, map_new);
+
+	return TRUE;
+}
+
+void
+_nm_setting_vlan_get_priorities (NMSettingVlan *setting,
+                                 NMVlanPriorityMap map,
+                                 NMVlanQosMapping **out_qos_map,
+                                 guint *out_n_qos_map)
+{
+	GSList *list;
+	NMVlanQosMapping *qos_map = NULL;
+	guint n_qos_map, i;
+
+	list = get_map (setting, map);
+
+	n_qos_map = g_slist_length (list);
+
+	if (n_qos_map > 0) {
+		qos_map = g_new (NMVlanQosMapping, n_qos_map);
+
+		for (i = 0; list; i++, list = list->next) {
+			nm_assert (i < n_qos_map);
+			qos_map[i] = *((const NMVlanQosMapping *) list->data);
+		}
+	}
+	*out_qos_map = qos_map;
+	*out_n_qos_map = n_qos_map;
+}
+
 /**
  * nm_setting_vlan_remove_priority:
  * @setting: the #NMSettingVlan
