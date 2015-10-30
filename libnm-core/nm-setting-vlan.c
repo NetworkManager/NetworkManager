@@ -26,6 +26,7 @@
 
 #include "nm-setting-vlan.h"
 #include "nm-utils.h"
+#include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 #include "nm-setting-wired.h"
@@ -65,11 +66,6 @@ enum {
 
 #define MAX_SKB_PRIO   G_MAXUINT32
 #define MAX_8021P_PRIO 7  /* Max 802.1p priority */
-
-typedef struct {
-	guint32 from;
-	guint32 to;
-} PriorityMap;
 
 /**
  * nm_setting_vlan_new:
@@ -133,10 +129,10 @@ get_max_prio (NMVlanPriorityMap map, gboolean from)
 	g_assert_not_reached ();
 }
 
-static PriorityMap *
+static NMVlanQosMapping *
 priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 {
-	PriorityMap *p = NULL;
+	NMVlanQosMapping *p = NULL;
 	gchar **t = NULL;
 	guint32 len;
 	guint64 from, to;
@@ -150,7 +146,7 @@ priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 		to = g_ascii_strtoull (t[1], NULL, 10);
 
 		if ((from <= get_max_prio (map, TRUE)) && (to <= get_max_prio (map, FALSE))) {
-			p = g_malloc0 (sizeof (PriorityMap));
+			p = g_malloc0 (sizeof (NMVlanQosMapping));
 			p->from = from;
 			p->to = to;
 		}
@@ -164,7 +160,7 @@ priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 }
 
 static void
-priority_map_free (PriorityMap *map)
+priority_map_free (NMVlanQosMapping *map)
 {
 	g_return_if_fail (map != NULL);
 	g_free (map);
@@ -182,7 +178,7 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 }
 
 static gint
-prio_map_compare (PriorityMap *a, PriorityMap *b)
+prio_map_compare (NMVlanQosMapping *a, NMVlanQosMapping *b)
 {
 	return a->from < b->from
 	       ? -1
@@ -214,7 +210,7 @@ static gboolean
 check_replace_duplicate_priority (GSList *list, guint32 from, guint32 to)
 {
 	GSList *iter;
-	PriorityMap *p;
+	NMVlanQosMapping *p;
 
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		p = iter->data;
@@ -245,7 +241,7 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
                                   const char *str)
 {
 	GSList *list = NULL;
-	PriorityMap *item = NULL;
+	NMVlanQosMapping *item = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
@@ -312,7 +308,7 @@ nm_setting_vlan_get_priority (NMSettingVlan *setting,
                               guint32 *out_to)
 {
 	GSList *list = NULL;
-	PriorityMap *item = NULL;
+	NMVlanQosMapping *item = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
@@ -357,7 +353,7 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
                               guint32 to)
 {
 	GSList *list = NULL;
-	PriorityMap *item;
+	NMVlanQosMapping *item;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
@@ -371,7 +367,7 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
 		return TRUE;
 	}
 
-	item = g_malloc0 (sizeof (PriorityMap));
+	item = g_malloc0 (sizeof (NMVlanQosMapping));
 	item->from = from;
 	item->to = to;
 	set_map (setting, map, g_slist_append (list, item));
@@ -403,7 +399,7 @@ nm_setting_vlan_remove_priority (NMSettingVlan *setting,
 	g_return_if_fail (idx < g_slist_length (list));
 
 	item = g_slist_nth (list, idx);
-	priority_map_free ((PriorityMap *) (item->data));
+	priority_map_free ((NMVlanQosMapping *) (item->data));
 	set_map (setting, map, g_slist_delete_link (list, item));
 }
 
@@ -427,7 +423,7 @@ nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
                                           guint32 to)
 {
 	GSList *list = NULL, *iter = NULL;
-	PriorityMap *item;
+	NMVlanQosMapping *item;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
@@ -436,7 +432,7 @@ nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		item = iter->data;
 		if (item->from == from && item->to == to) {
-			priority_map_free ((PriorityMap *) (iter->data));
+			priority_map_free ((NMVlanQosMapping *) (iter->data));
 			set_map (setting, map, g_slist_delete_link (list, iter));
 			return TRUE;
 		}
@@ -461,7 +457,7 @@ nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
                                               NMVlanPriorityMap map,
                                               const char *str)
 {
-	PriorityMap *item;
+	NMVlanQosMapping *item;
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
@@ -604,7 +600,7 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 	int i;
 
 	for (i = 0; strv && strv[i]; i++) {
-		PriorityMap *item;
+		NMVlanQosMapping *item;
 
 		item = priority_map_new_from_str (map, strv[i]);
 		if (item) {
@@ -658,7 +654,7 @@ priority_maplist_to_strv (GSList *list)
 	strv = g_ptr_array_new ();
 
 	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PriorityMap *item = iter->data;
+		NMVlanQosMapping *item = iter->data;
 
 		g_ptr_array_add (strv, g_strdup_printf ("%d:%d", item->from, item->to));
 	}
