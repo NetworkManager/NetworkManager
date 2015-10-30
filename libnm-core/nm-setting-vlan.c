@@ -25,6 +25,8 @@
 #include <string.h>
 
 #include "nm-setting-vlan.h"
+#include "nm-default.h"
+#include "nm-macros-internal.h"
 #include "nm-utils.h"
 #include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"
@@ -178,8 +180,11 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 }
 
 static gint
-prio_map_compare (NMVlanQosMapping *a, NMVlanQosMapping *b)
+prio_map_compare (gconstpointer p_a, gconstpointer p_b)
 {
+	const NMVlanQosMapping *a = p_a;
+	const NMVlanQosMapping *b = p_b;
+
 	return a->from < b->from
 	       ? -1
 	       : (a->from > b->from
@@ -190,11 +195,27 @@ prio_map_compare (NMVlanQosMapping *a, NMVlanQosMapping *b)
 static void
 set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 {
-	/* Sort the list.
-	 * First, it looks better. Second, it assures that comparing lists works
-	 * as expected.
-	 */
-	list = g_slist_sort (list, (GCompareFunc) prio_map_compare);
+	/* Assert that the list is sorted */
+#if NM_MORE_ASSERTS >= 2
+	{
+		GSList *iter, *last;
+
+		last = list;
+		iter = list ? list->next : NULL;
+		while (iter) {
+			const NMVlanQosMapping *l = last->data;
+			const NMVlanQosMapping *m = iter->data;
+
+			nm_assert (prio_map_compare (last->data, iter->data) < 0);
+
+			/* Also reject duplicates (based on "from") */
+			nm_assert (l->from < m->from);
+
+			last = iter;
+			iter = iter->next;
+		}
+	}
+#endif
 
 	if (map == NM_VLAN_INGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map = list;
@@ -263,7 +284,7 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 		return TRUE;
 	}
 
-	set_map (setting, map, g_slist_append (list, item));
+	set_map (setting, map, g_slist_insert_sorted (list, item, prio_map_compare));
 	return TRUE;
 }
 
@@ -370,7 +391,7 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
 	item = g_malloc0 (sizeof (NMVlanQosMapping));
 	item->from = from;
 	item->to = to;
-	set_map (setting, map, g_slist_append (list, item));
+	set_map (setting, map, g_slist_insert_sorted (list, item, prio_map_compare));
 
 	return TRUE;
 }
@@ -608,7 +629,7 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 				list = g_slist_prepend (list, item);
 		}
 	}
-	return g_slist_sort (list, (GCompareFunc) prio_map_compare);
+	return g_slist_sort (list, prio_map_compare);
 }
 
 static void
