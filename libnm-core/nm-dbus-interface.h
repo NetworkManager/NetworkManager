@@ -173,6 +173,7 @@ typedef enum {
 	NM_DEVICE_TYPE_GENERIC    = 14,
 	NM_DEVICE_TYPE_TEAM       = 15,
 	NM_DEVICE_TYPE_TUN        = 16,
+	NM_DEVICE_TYPE_IP_TUNNEL  = 17,
 } NMDeviceType;
 
 /**

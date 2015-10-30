@@ -262,7 +262,6 @@ nm_device_gre_class_init (NMDeviceGreClass *klass)
 }
 
 /*************************************************************/
-
 #define NM_TYPE_GRE_FACTORY (nm_gre_factory_get_type ())
 #define NM_GRE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_GRE_FACTORY, NMGreFactory))
 
