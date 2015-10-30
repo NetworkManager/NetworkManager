@@ -68,12 +68,6 @@
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
 
-#define NM_UTILS_CLEAR_CANCELLABLE(c) \
-	if (c) { \
-		g_cancellable_cancel (c); \
-		g_clear_object (&c); \
-	}
-
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE

@@ -229,6 +229,18 @@ nm_clear_g_variant (GVariant **variant)
 	return FALSE;
 }
 
+static inline gboolean
+nm_clear_g_cancellable (GCancellable **cancellable)
+{
+	if (cancellable && *cancellable) {
+		g_cancellable_cancel (*cancellable);
+		g_object_unref (*cancellable);
+		*cancellable = NULL;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 /* Determine whether @x is a power of two (@x being an integer type).
