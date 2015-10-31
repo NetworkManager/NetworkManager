@@ -4540,7 +4540,7 @@ static void
 test_g_hash_table_get_keys_as_array (void)
 {
 	GHashTable *table = g_hash_table_new (g_str_hash, g_str_equal);
-	guint length;
+	guint length = 0;
 	char **keys;
 
 	g_hash_table_insert (table, "one",   "1");
