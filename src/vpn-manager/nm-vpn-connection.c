@@ -1472,6 +1472,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				 */
 				if (!(priv->ip4_external_gw && route.network == priv->ip4_external_gw && route.plen == 32))
 					nm_ip4_config_add_route (config, &route);
+				break;
 			default:
 				_LOGW ("VPN connection: received invalid IPv4 route");
 			}
