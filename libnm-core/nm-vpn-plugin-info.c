@@ -526,7 +526,7 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 		g_return_val_if_reached (NULL);
 
 	for (iter = list; iter; iter = iter->next) {
-		if (strcmp (nm_vpn_plugin_info_get_service (iter->data), service) == 0)
+		if (strcmp (NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data)->service, service) == 0)
 			return iter->data;
 	}
 	return NULL;
@@ -564,22 +564,6 @@ nm_vpn_plugin_info_get_name (NMVpnPluginInfo *self)
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
 
 	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->name;
-}
-
-/**
- * nm_vpn_plugin_info_get_service:
- * @self: plugin info instance
- *
- * Returns: (transfer none): the service. Cannot be %NULL.
- *
- * Since: 1.2
- */
-const char *
-nm_vpn_plugin_info_get_service (NMVpnPluginInfo *self)
-{
-	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
-
-	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->service;
 }
 
 /**
@@ -760,7 +744,7 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 
 	priv->editor_plugin_loaded = TRUE;
 	priv->editor_plugin = nm_vpn_editor_plugin_load_from_file (plugin_filename,
-	                                                           nm_vpn_plugin_info_get_service (self),
+	                                                           priv->service,
 	                                                           getuid (),
 	                                                           NULL,
 	                                                           NULL,
