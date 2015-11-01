@@ -2216,7 +2216,7 @@ gboolean
 nm_platform_ip4_route_add (NMPlatform *self,
                            int ifindex, NMIPConfigSource source,
                            in_addr_t network, int plen,
-                           in_addr_t gateway, guint32 pref_src,
+                           in_addr_t gateway, in_addr_t pref_src,
                            guint32 metric, guint32 mss)
 {
 	_CHECK_SELF (self, klass, FALSE);

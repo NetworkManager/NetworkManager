@@ -287,7 +287,7 @@ struct _NMPlatformIP4Route {
 
 	/* RTA_PREFSRC/rtnl_route_get_pref_src(). A value of zero means that
 	 * no pref-src is set.  */
-	guint32 pref_src;
+	in_addr_t pref_src;
 };
 
 struct _NMPlatformIP6Route {
@@ -534,7 +534,7 @@ typedef struct {
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
-	                           guint32 pref_src, guint32 metric, guint32 mss);
+	                           in_addr_t pref_src, guint32 metric, guint32 mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, int plen, struct in6_addr gateway,
 	                           guint32 metric, guint32 mss);
@@ -738,7 +738,7 @@ GArray *nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatform
 GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 gboolean nm_platform_ip4_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
-                                    guint32 pref_src, guint32 metric, guint32 mss);
+                                    in_addr_t pref_src, guint32 metric, guint32 mss);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
                                     guint32 metric, guint32 mss);
