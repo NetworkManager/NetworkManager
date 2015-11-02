@@ -1,5 +1,3 @@
-if ENABLE_TESTS
-
 include $(GLIB_MAKEFILE)
 
 GLIB_GENERATED = nm-core-tests-enum-types.h nm-core-tests-enum-types.c
@@ -8,6 +6,8 @@ GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 BUILT_SOURCES = $(GLIB_GENERATED)
+
+if ENABLE_TESTS
 
 certsdir = $(srcdir)/certs
 
