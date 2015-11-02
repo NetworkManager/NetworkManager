@@ -1885,11 +1885,13 @@ _nl_msg_new_link (int nlmsg_type,
                   int nlmsg_flags,
                   int ifindex,
                   const char *ifname,
-                  unsigned flags)
+                  unsigned flags_mask,
+                  unsigned flags_set)
 {
 	struct nl_msg *msg;
 	struct ifinfomsg ifi = {
-		.ifi_flags = flags,
+		.ifi_change = flags_mask,
+		.ifi_flags = flags_set,
 		.ifi_index = ifindex,
 	};
 
@@ -2250,25 +2252,6 @@ process_events (NMPlatform *platform)
 	((const type *const*) nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE ((platform))->cache, \
 	                                              nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, (obj_type), (visible_only)), \
 	                                              NULL))
-
-static gboolean
-_lookup_cached_link_data (NMPlatform *platform,
-                          int ifindex,
-                          const char *logging_tag,
-                          unsigned *out_flags)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const NMPObject *obj_cache;
-
-	obj_cache = nmp_cache_lookup_link (priv->cache, ifindex);
-	if (   obj_cache
-	    && obj_cache->_link.netlink.is_in_netlink) {
-		*out_flags = obj_cache->link.flags;
-		return TRUE;
-	}
-	_LOGD ("link: change %d: %s: link does not exist", ifindex, logging_tag);
-	return FALSE;
-}
 
 /******************************************************************/
 
@@ -2922,6 +2905,7 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 	                          0,
 	                          ifindex,
 	                          name,
+	                          0,
 	                          0);
 	if (nlmsg) {
 		_nl_msg_set_seq (priv->nlh_event, nlmsg, &seq);
@@ -3705,6 +3689,7 @@ link_add (NMPlatform *platform,
 	                          NLM_F_CREATE,
 	                          0,
 	                          name,
+	                          0,
 	                          0);
 	if (!nlmsg)
 		return FALSE;
@@ -3736,6 +3721,7 @@ link_delete (NMPlatform *platform, int ifindex)
 	                          0,
 	                          ifindex,
 	                          NULL,
+	                          0,
 	                          0);
 
 	nmp_object_stackinit_id_link (&obj_id, ifindex);
@@ -3790,31 +3776,27 @@ link_refresh (NMPlatform *platform, int ifindex)
 }
 
 static NMPlatformError
-link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboolean value)
+link_change_flags (NMPlatform *platform,
+                   int ifindex,
+                   unsigned flags_mask,
+                   unsigned flags_set)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	unsigned f;
+	char s_flags[100];
 
-	if (!_lookup_cached_link_data (platform, ifindex, "flags", &f))
-		return NM_PLATFORM_ERROR_NOT_FOUND;
-
-	if (value)
-		f |= flags;
-	else
-		f &= ~flags;
-
-	_LOGD ("link: change %d: flags: %s '%s' (0x%x); new %s (0x%x)", ifindex,
-	       value ? "set" : "unset",
-	       nm_platform_link_flags2str (flags, NULL, 0),
-	       flags,
-	       nm_platform_link_flags2str (f, NULL, 0),
-	       f);
+	_LOGD ("link: change %d: flags: set 0x%x/0x%x ([%s] / [%s])",
+	       ifindex,
+	       flags_set,
+	       flags_mask,
+	       nm_platform_link_flags2str (flags_set, s_flags, sizeof (s_flags)),
+	       nm_platform_link_flags2str (flags_mask, NULL, 0));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
 	                          NULL,
-	                          f);
+	                          flags_mask,
+	                          flags_set);
 	if (!nlmsg)
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return do_change_link (platform, ifindex, nlmsg);
@@ -3825,7 +3807,7 @@ link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 {
 	NMPlatformError plerr;
 
-	plerr = link_change_flags (platform, ifindex, IFF_UP, TRUE);
+	plerr = link_change_flags (platform, ifindex, IFF_UP, IFF_UP);
 	if (out_no_firmware)
 		*out_no_firmware = plerr == NM_PLATFORM_ERROR_NO_FIRMWARE;
 	return plerr == NM_PLATFORM_ERROR_SUCCESS;
@@ -3834,19 +3816,19 @@ link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 static gboolean
 link_set_down (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_UP, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
+	return link_change_flags (platform, ifindex, IFF_UP, 0) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 link_set_arp (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_NOARP, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
+	return link_change_flags (platform, ifindex, IFF_NOARP, 0) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 link_set_noarp (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
+	return link_change_flags (platform, ifindex, IFF_NOARP, IFF_NOARP) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static const char *
@@ -3880,15 +3862,11 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	guint8 mode = enabled ? NM_IN6_ADDR_GEN_MODE_NONE : NM_IN6_ADDR_GEN_MODE_EUI64;
-	unsigned flags;
 
 	if (!_support_user_ipv6ll_get ()) {
 		_LOGD ("link: change %d: user-ipv6ll: not supported", ifindex);
 		return FALSE;
 	}
-
-	if (!_lookup_cached_link_data (platform, ifindex, "user-ipv6ll", &flags))
-		return FALSE;
 
 	_LOGD ("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
 	       ifindex,
@@ -3898,7 +3876,8 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	                          0,
 	                          ifindex,
 	                          NULL,
-	                          flags);
+	                          0,
+	                          0);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_afspec (nlmsg,
 	                                     mode))
@@ -3941,13 +3920,9 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	gs_free char *mac = NULL;
-	unsigned flags;
 
 	if (!address || !length)
 		g_return_val_if_reached (FALSE);
-
-	if (!_lookup_cached_link_data (platform, ifindex, "address", &flags))
-		return FALSE;
 
 	_LOGD ("link: change %d: address: %s (%lu bytes)", ifindex,
 	       (mac = nm_utils_hwaddr_ntoa (address, length)),
@@ -3957,7 +3932,8 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	                          0,
 	                          ifindex,
 	                          NULL,
-	                          flags);
+	                          0,
+	                          0);
 	if (!nlmsg)
 		return FALSE;
 
@@ -3981,10 +3957,6 @@ static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	unsigned flags;
-
-	if (!_lookup_cached_link_data (platform, ifindex, "mtu", &flags))
-		return FALSE;
 
 	_LOGD ("link: change %d: mtu: %u", ifindex, (unsigned) mtu);
 
@@ -3992,7 +3964,8 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	                          0,
 	                          ifindex,
 	                          NULL,
-	                          flags);
+	                          0,
+	                          0);
 	if (!nlmsg)
 		return FALSE;
 
@@ -4070,6 +4043,7 @@ vlan_add (NMPlatform *platform,
 	                          NLM_F_CREATE,
 	                          0,
 	                          name,
+	                          0,
 	                          0);
 	if (!nlmsg)
 		return FALSE;
@@ -4245,7 +4219,8 @@ link_vlan_change (NMPlatform *platform,
 	                          0,
 	                          ifindex,
 	                          NULL,
-	                          flags);
+	                          0,
+	                          0);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_linkinfo_vlan (nlmsg,
 	                                            -1,
@@ -4264,11 +4239,7 @@ static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	unsigned flags;
 	int ifindex = slave;
-
-	if (!_lookup_cached_link_data (platform, ifindex, "enslave", &flags))
-		return FALSE;
 
 	_LOGD ("link: change %d: enslave: master %d", slave, master);
 
@@ -4276,7 +4247,8 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	                          0,
 	                          ifindex,
 	                          NULL,
-	                          flags);
+	                          0,
+	                          0);
 	if (!nlmsg)
 		return FALSE;
 

@@ -30,10 +30,18 @@ test_bogus(void)
 	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	g_assert (!nm_platform_link_get_type_name (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure changing link: netlink error (No such device*");
 	g_assert (!nm_platform_link_set_up (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure changing link: netlink error (No such device*");
 	g_assert (!nm_platform_link_set_down (NM_PLATFORM_GET, BOGUS_IFINDEX));
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure changing link: netlink error (No such device*");
 	g_assert (!nm_platform_link_set_arp (NM_PLATFORM_GET, BOGUS_IFINDEX));
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure changing link: netlink error (No such device*");
 	g_assert (!nm_platform_link_set_noarp (NM_PLATFORM_GET, BOGUS_IFINDEX));
+
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	g_assert (!nm_platform_link_uses_arp (NM_PLATFORM_GET, BOGUS_IFINDEX));
@@ -41,7 +49,10 @@ test_bogus(void)
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, &addrlen));
 	g_assert (!addrlen);
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure changing link: netlink error (No such device*");
 	g_assert (!nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU));
+
 	g_assert (!nm_platform_link_get_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
 	g_assert (!nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, BOGUS_IFINDEX));

@@ -417,8 +417,10 @@ link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 	if (out_no_firmware)
 		*out_no_firmware = FALSE;
 
-	if (!device)
+	if (!device) {
+		_LOGE ("failure changing link: netlink error (No such device)");
 		return FALSE;
+	}
 
 	up = TRUE;
 	connected = TRUE;
@@ -451,8 +453,10 @@ link_set_down (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (!device)
+	if (!device) {
+		_LOGE ("failure changing link: netlink error (No such device)");
 		return FALSE;
+	}
 
 	if (NM_FLAGS_HAS (device->link.flags, IFF_UP) || device->link.connected) {
 		device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_UP);
@@ -469,8 +473,10 @@ link_set_arp (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (!device)
+	if (!device) {
+		_LOGE ("failure changing link: netlink error (No such device)");
 		return FALSE;
+	}
 
 	device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_NOARP);
 
@@ -484,8 +490,10 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (!device)
+	if (!device) {
+		_LOGE ("failure changing link: netlink error (No such device)");
 		return FALSE;
+	}
 
 	device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_NOARP);
 
@@ -523,7 +531,8 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	if (device) {
 		device->link.mtu = mtu;
 		link_changed (platform, device, TRUE);
-	}
+	} else
+		_LOGE ("failure changing link: netlink error (No such device)");
 
 	return !!device;
 }
