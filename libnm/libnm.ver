@@ -906,7 +906,6 @@ global:
 	nm_vpn_plugin_info_get_name;
 	nm_vpn_plugin_info_get_plugin;
 	nm_vpn_plugin_info_get_program;
-	nm_vpn_plugin_info_get_service;
 	nm_vpn_plugin_info_get_type;
 	nm_vpn_plugin_info_load_editor_plugin;
 	nm_vpn_plugin_info_lookup_property;

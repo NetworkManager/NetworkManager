@@ -48,6 +48,7 @@ typedef struct {
 	char *filename;
 	char *name;
 	char *service;
+	char **aliases;
 	GKeyFile *keyfile;
 
 	/* It is convenient for nm_vpn_plugin_info_lookup_property() to return a const char *,
@@ -426,7 +427,7 @@ nm_vpn_plugin_info_list_add (GSList **list, NMVpnPluginInfo *plugin_info, GError
 		}
 
 		/* the plugin must have unique values for certain properties. E.g. two different
-		 * plugins cannot share the same D-Bus service name. */
+		 * plugins cannot share the same service name. */
 		if (!_check_no_conflict (plugin_info, iter->data, error))
 			return FALSE;
 	}
@@ -525,8 +526,19 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 	if (!service)
 		g_return_val_if_reached (NULL);
 
+	/* First, consider the primary service name. */
 	for (iter = list; iter; iter = iter->next) {
-		if (strcmp (nm_vpn_plugin_info_get_service (iter->data), service) == 0)
+		if (strcmp (NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data)->service, service) == 0)
+			return iter->data;
+	}
+
+	/* Then look into the aliases. */
+	for (iter = list; iter; iter = iter->next) {
+		char **aliases = (NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data))->aliases;
+
+		if (!aliases)
+			continue;
+		if (_nm_utils_strv_find_first (aliases, -1, service) >= 0)
 			return iter->data;
 	}
 	return NULL;
@@ -564,22 +576,6 @@ nm_vpn_plugin_info_get_name (NMVpnPluginInfo *self)
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
 
 	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->name;
-}
-
-/**
- * nm_vpn_plugin_info_get_service:
- * @self: plugin info instance
- *
- * Returns: (transfer none): the service. Cannot be %NULL.
- *
- * Since: 1.2
- */
-const char *
-nm_vpn_plugin_info_get_service (NMVpnPluginInfo *self)
-{
-	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
-
-	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->service;
 }
 
 /**
@@ -760,7 +756,7 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 
 	priv->editor_plugin_loaded = TRUE;
 	priv->editor_plugin = nm_vpn_editor_plugin_load_from_file (plugin_filename,
-	                                                           nm_vpn_plugin_info_get_service (self),
+	                                                           priv->service,
 	                                                           getuid (),
 	                                                           NULL,
 	                                                           NULL,
@@ -871,6 +867,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 	}
 
+	priv->aliases = g_key_file_get_string_list (priv->keyfile, NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION, "aliases", NULL, NULL);
+
 	priv->keys = g_hash_table_new_full (_nm_utils_strstrdictkey_hash,
 	                                    _nm_utils_strstrdictkey_equal,
 	                                    g_free, g_free);
@@ -951,6 +949,7 @@ finalize (GObject *object)
 
 	g_free (priv->name);
 	g_free (priv->service);
+	g_strfreev (priv->aliases);
 	g_free (priv->filename);
 	g_key_file_unref (priv->keyfile);
 	g_hash_table_unref (priv->keys);

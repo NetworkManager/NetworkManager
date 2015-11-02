@@ -2046,7 +2046,6 @@ nm_vpn_connection_activate (NMVpnConnection *self,
 	g_return_if_fail (s_vpn);
 
 	service = nm_setting_vpn_get_service_type (s_vpn);
-	g_return_if_fail (!g_strcmp0 (service, nm_vpn_plugin_info_get_service (plugin_info)));
 
 	if (nm_vpn_plugin_info_supports_multiple (plugin_info)) {
 		const char *path;
