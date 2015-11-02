@@ -163,7 +163,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 		/* Address */
 		if (ndp_msg_opt_prefix_flag_auto_addr_conf (msg, offset)) {
-			if (route.plen == 64 && rdisc->iid.id) {
+			if (route.plen == 64) {
 				memset (&address, 0, sizeof (address));
 				address.address = route.network;
 				address.timestamp = now;
@@ -172,10 +172,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 				if (address.preferred > address.lifetime)
 					address.preferred = address.lifetime;
 
-				/* Add the Interface Identifier to the lower 64 bits */
-				nm_utils_ipv6_addr_set_interface_identfier (&address.address, rdisc->iid);
-
-				if (nm_rdisc_add_address (rdisc, &address))
+				if (nm_rdisc_complete_and_add_address (rdisc, &address))
 					changed |= NM_RDISC_CONFIG_ADDRESSES;
 			}
 		}
@@ -300,7 +297,7 @@ ipv6_sysctl_get (const char *ifname, const char *property, gint32 defval)
 }
 
 NMRDisc *
-nm_lndp_rdisc_new (int ifindex, const char *ifname)
+nm_lndp_rdisc_new (int ifindex, const char *ifname, const char *uuid, NMSettingIP6ConfigAddrGenMode addr_gen_mode)
 {
 	NMRDisc *rdisc;
 	NMLNDPRDiscPrivate *priv;
@@ -310,6 +307,8 @@ nm_lndp_rdisc_new (int ifindex, const char *ifname)
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
+	rdisc->uuid = g_strdup (uuid);
+	rdisc->addr_gen_mode = addr_gen_mode;
 
 	rdisc->max_addresses = ipv6_sysctl_get (ifname, "max_addresses",
 	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);

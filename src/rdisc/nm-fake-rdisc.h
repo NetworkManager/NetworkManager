@@ -59,20 +59,14 @@ void nm_fake_rdisc_add_gateway    (NMFakeRDisc *self,
                                    guint32 lifetime,
                                    NMRDiscPreference preference);
 
-void nm_fake_rdisc_add_address    (NMFakeRDisc *self,
-                                   guint ra_id,
-                                   const char *addr,
-                                   guint32 timestamp,
-                                   guint32 lifetime,
-                                   guint32 preferred);
-
-void nm_fake_rdisc_add_route      (NMFakeRDisc *self,
+void nm_fake_rdisc_add_prefix     (NMFakeRDisc *self,
                                    guint ra_id,
                                    const char *network,
                                    guint plen,
                                    const char *gateway,
                                    guint32 timestamp,
                                    guint32 lifetime,
+                                   guint32 preferred,
                                    NMRDiscPreference preference);
 
 void nm_fake_rdisc_add_dns_server (NMFakeRDisc *self,

@@ -27,11 +27,11 @@
 
 void nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed);
 
-gboolean nm_rdisc_add_gateway    (NMRDisc *rdisc, const NMRDiscGateway *new);
-gboolean nm_rdisc_add_address    (NMRDisc *rdisc, const NMRDiscAddress *new);
-gboolean nm_rdisc_add_route      (NMRDisc *rdisc, const NMRDiscRoute *new);
-gboolean nm_rdisc_add_dns_server (NMRDisc *rdisc, const NMRDiscDNSServer *new);
-gboolean nm_rdisc_add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new);
+gboolean nm_rdisc_add_gateway              (NMRDisc *rdisc, const NMRDiscGateway *new);
+gboolean nm_rdisc_complete_and_add_address (NMRDisc *rdisc, NMRDiscAddress *new);
+gboolean nm_rdisc_add_route                (NMRDisc *rdisc, const NMRDiscRoute *new);
+gboolean nm_rdisc_add_dns_server           (NMRDisc *rdisc, const NMRDiscDNSServer *new);
+gboolean nm_rdisc_add_dns_domain           (NMRDisc *rdisc, const NMRDiscDNSDomain *new);
 
 /*********************************************************************************************/
 

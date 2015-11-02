@@ -37,8 +37,11 @@ rdisc_new (void)
 	NMRDisc *rdisc;
 	const int ifindex = 1;
 	const char *ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
+	NMUtilsIPv6IfaceId iid;
 
 	rdisc = nm_fake_rdisc_new (ifindex, ifname);
+	iid.id_u8[7] = 1;
+	nm_rdisc_set_iid (rdisc, iid);
 	g_assert (rdisc);
 	return NM_FAKE_RDISC (rdisc);
 }
@@ -145,8 +148,7 @@ test_simple (void)
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_OTHERCONF, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_MEDIUM);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 10);
 	nm_fake_rdisc_add_dns_server (rdisc, id, "2001:db8:c:c::1", now, 10);
 	nm_fake_rdisc_add_dns_domain (rdisc, id, "foobar.com", now, 10);
 
@@ -198,7 +200,7 @@ test_everything_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *dat
 		g_assert_cmpint (rdisc->gateways->len, ==, 1);
 		match_gateway (rdisc->gateways, 0, "fe80::2", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
 		g_assert_cmpint (rdisc->addresses->len, ==, 1);
-		match_address (rdisc->addresses, 0, "2001:db8:a:a::2", data->timestamp1, 10, 10);
+		match_address (rdisc->addresses, 0, "2001:db8:a:b::1", data->timestamp1, 10, 10);
 		g_assert_cmpint (rdisc->routes->len, ==, 1);
 		match_route (rdisc->routes, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1, 10, 10);
 		g_assert_cmpint (rdisc->dns_servers->len, ==, 1);
@@ -225,8 +227,7 @@ test_everything (void)
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_MEDIUM);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 10);
 	nm_fake_rdisc_add_dns_server (rdisc, id, "2001:db8:c:c::1", now, 10);
 	nm_fake_rdisc_add_dns_domain (rdisc, id, "foobar.com", now, 10);
 
@@ -234,15 +235,13 @@ test_everything (void)
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 0, NM_RDISC_PREFERENCE_MEDIUM);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 0, 0);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 0, 0);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 0, 0, 0);
 	nm_fake_rdisc_add_dns_server (rdisc, id, "2001:db8:c:c::1", now, 0);
 	nm_fake_rdisc_add_dns_domain (rdisc, id, "foobar.com", now, 0);
 
 	/* and add some new stuff */
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::2", now, 10, NM_RDISC_PREFERENCE_MEDIUM);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::2", now, 10, 10);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10, 10);
 	nm_fake_rdisc_add_dns_server (rdisc, id, "2001:db8:c:c::2", now, 10);
 	nm_fake_rdisc_add_dns_domain (rdisc, id, "foobar2.com", now, 10);
 
@@ -276,7 +275,7 @@ test_preference_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *dat
 		match_gateway (rdisc->gateways, 1, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_LOW);
 		g_assert_cmpint (rdisc->addresses->len, ==, 2);
 		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
-		match_address (rdisc->addresses, 1, "2001:db8:a:a::2", data->timestamp1 + 1, 10, 10);
+		match_address (rdisc->addresses, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
 		g_assert_cmpint (rdisc->routes->len, ==, 2);
 		match_route (rdisc->routes, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
 		match_route (rdisc->routes, 1, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 5);
@@ -290,7 +289,7 @@ test_preference_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *dat
 		match_gateway (rdisc->gateways, 1, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
 		g_assert_cmpint (rdisc->addresses->len, ==, 2);
 		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1 + 2, 10, 10);
-		match_address (rdisc->addresses, 1, "2001:db8:a:a::2", data->timestamp1 + 1, 10, 10);
+		match_address (rdisc->addresses, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
 		g_assert_cmpint (rdisc->routes->len, ==, 2);
 		match_route (rdisc->routes, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1 + 2, 10, 15);
 		match_route (rdisc->routes, 1, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
@@ -318,20 +317,17 @@ test_preference (void)
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_LOW);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 5);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 5);
 
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::2", ++now, 10, NM_RDISC_PREFERENCE_MEDIUM);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::2", now, 10, 10);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10, 10);
 
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", ++now, 10, NM_RDISC_PREFERENCE_HIGH);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
-	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 15);
+	nm_fake_rdisc_add_prefix (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 15);
 
 	g_signal_connect (rdisc,
 	                  NM_RDISC_CONFIG_CHANGED,
@@ -380,7 +376,6 @@ test_dns_solicit_loop_rs_sent (NMFakeRDisc *rdisc, TestData *data)
 		id = nm_fake_rdisc_add_ra (rdisc, 0, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 		g_assert (id);
 		nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_MEDIUM);
-		nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
 
 		nm_fake_rdisc_emit_new_ras (rdisc);
 	} else if (data->rs_counter >= 6) {
@@ -410,7 +405,6 @@ test_dns_solicit_loop (void)
 	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
 	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_LOW);
-	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
 	nm_fake_rdisc_add_dns_server (rdisc, id, "2001:db8:c:c::1", now, 6);
 
 	g_signal_connect (rdisc,

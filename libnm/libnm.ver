@@ -882,6 +882,8 @@ global:
 	nm_setting_connection_get_metered;
 	nm_setting_connection_lldp_get_type;
 	nm_setting_ip4_config_get_dhcp_timeout;
+	nm_setting_ip6_config_addr_gen_mode_get_type;
+	nm_setting_ip6_config_get_addr_gen_mode;
 	nm_setting_ip_config_add_dns_option;
 	nm_setting_ip_config_clear_dns_options;
 	nm_setting_ip_config_get_dns_option;

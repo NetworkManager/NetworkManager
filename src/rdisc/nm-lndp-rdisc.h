@@ -44,6 +44,6 @@ typedef struct {
 
 GType nm_lndp_rdisc_get_type (void);
 
-NMRDisc *nm_lndp_rdisc_new (int ifindex, const char *ifname);
+NMRDisc *nm_lndp_rdisc_new (int ifindex, const char *ifname, const char *uuid, NMSettingIP6ConfigAddrGenMode addr_gen_mode);
 
 #endif /* __NETWORKMANAGER_LNDP_RDISC_H__ */

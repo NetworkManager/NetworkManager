@@ -26,6 +26,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
+#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-ip6-config
@@ -57,12 +58,14 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP6_CONFIG)
 
 typedef struct {
 	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 } NMSettingIP6ConfigPrivate;
 
 
 enum {
 	PROP_0,
 	PROP_IP6_PRIVACY,
+	PROP_ADDR_GEN_MODE,
 
 	LAST_PROP
 };
@@ -97,9 +100,30 @@ nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ip6_privacy;
 }
 
+/**
+ * nm_setting_ip6_config_get_addr_gen_mode:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:addr-gen-mode
+ * property.
+ *
+ * Returns: IPv6 Address Generation Mode.
+ *
+ * Since: 1.2
+ **/
+NMSettingIP6ConfigAddrGenMode
+nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting),
+	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->addr_gen_mode;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
+	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	NMSettingVerifyResult ret;
 	const char *method;
@@ -162,6 +186,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
+		return FALSE;
+	}
+
+	if (!NM_IN_SET (priv->addr_gen_mode,
+	                NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+	                NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                      _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
 		return FALSE;
 	}
@@ -330,6 +365,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IP6_PRIVACY:
 		priv->ip6_privacy = g_value_get_enum (value);
 		break;
+	case PROP_ADDR_GEN_MODE:
+		priv->addr_gen_mode = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -345,6 +383,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_IP6_PRIVACY:
 		g_value_set_enum (value, priv->ip6_privacy);
+		break;
+	case PROP_ADDR_GEN_MODE:
+		g_value_set_int (value, priv->addr_gen_mode);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -511,6 +552,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 *
 	 * If also global configuration is unspecified or set to "-1", fallback to read
 	 * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
+	 *
+	 * Note that this setting is distinct from the Stable Privacy addresses
+	 * that can be enabled with the "addr-gen-mode" property's "stable-privacy"
+	 * setting as another way of avoiding host tracking with IPv6 addresses.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: ip6-privacy
@@ -530,6 +575,53 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIP6Config:addr-gen-mode:
+	 *
+	 * Configure method for creating the address for use with RFC4862 IPv6
+	 * Stateless Address Autoconfiguration. The permitted values are: "eui64",
+	 * "stable-privacy" or unset.
+	 *
+	 * If the property is set to "eui64", the addresses will be generated
+	 * using the interface tokens derived from  hardware address. This makes
+	 * the host part of the address to stay constant, making it possible
+	 * to track host's presence when it changes networks. The address changes
+	 * when the interface hardware is replaced.
+	 *
+	 * The value of "stable-privacy" enables use of cryptographically
+	 * secure hash of a secret host-specific key along with the connection
+	 * identification and the network address as specified by RFC7217.
+	 * This makes it impossible to use the address track host's presence,
+	 * and makes the address stable when the network interface hardware is
+	 * replaced.
+	 *
+	 * Leaving this unset causes a default that could be subject to change
+	 * in future versions to be used.
+	 *
+	 * Note that this setting is distinct from the Privacy Extensions as
+	 * configured by "ip6-privacy" property and it does not affect the
+	 * temporary addresses configured with this option.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: addr-gen-mode
+	 * variable: IPV6_ADDR_GEN_MODE
+	 * values: IPV6_ADDR_GEN_MODE: eui64, stable-privacy
+	 * default: eui64
+	 * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
+	 * example: IPV6_ADDR_GEN_MODE=stable-privacy
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_ADDR_GEN_MODE,
+		 g_param_spec_int (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, "", "",
+		                   G_MININT, G_MAXINT,
+		                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/* IP6-specific property overrides */
 

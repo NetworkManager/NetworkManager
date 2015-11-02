@@ -32,6 +32,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netlink/route/addr.h>
+#include <linux/if_addr.h>
 
 #include "nm-default.h"
 #include "nm-device.h"
@@ -201,6 +202,7 @@ typedef struct {
 	guint queued_ip4_config_id;
 	guint queued_ip6_config_id;
 	GSList *pending_actions;
+	GSList *dad6_failed_addrs;
 
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
@@ -324,6 +326,7 @@ typedef struct {
 	NMIP6Config *  ac_ip6_config;
 
 	guint          linklocal6_timeout_id;
+	guint8         linklocal6_dad_counter;
 
 	GHashTable *   ip6_saved_properties;
 
@@ -4774,16 +4777,20 @@ linklocal6_cleanup (NMDevice *self)
 	}
 }
 
+static void
+linklocal6_failed (NMDevice *self)
+{
+	linklocal6_cleanup (self);
+	nm_device_activate_schedule_ip6_config_timeout (self);
+}
+
 static gboolean
 linklocal6_timeout_cb (gpointer user_data)
 {
 	NMDevice *self = user_data;
 
-	linklocal6_cleanup (self);
-
 	_LOGD (LOGD_DEVICE, "linklocal6: waiting for link-local addresses failed due to timeout");
-
-	nm_device_activate_schedule_ip6_config_timeout (self);
+	linklocal6_failed (self);
 	return G_SOURCE_REMOVE;
 }
 
@@ -4827,9 +4834,11 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ip_ifindex = nm_device_get_ip_ifindex (self);
-	NMUtilsIPv6IfaceId iid;
 	struct in6_addr lladdr;
 	guint i, n;
+	NMConnection *connection;
+	NMSettingIP6Config *s_ip6 = NULL;
+	GError *error = NULL;
 
 	if (priv->nm_ipv6ll == FALSE)
 		return;
@@ -4840,22 +4849,54 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 			const NMPlatformIP6Address *addr;
 
 			addr = nm_ip6_config_get_address (priv->ip6_config, i);
-			if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+			if (   IN6_IS_ADDR_LINKLOCAL (&addr->address)
+			    && !(addr->flags & IFA_F_DADFAILED)) {
 				/* Already have an LL address, nothing to do */
 				return;
 			}
 		}
 	}
 
-	if (!nm_device_get_ip_iface_identifier (self, &iid)) {
-		_LOGW (LOGD_IP6, "failed to get interface identifier; IPv6 may be broken");
-		return;
-	}
-
 	memset (&lladdr, 0, sizeof (lladdr));
 	lladdr.s6_addr16[0] = htons (0xfe80);
-	nm_utils_ipv6_addr_set_interface_identfier (&lladdr, iid);
-	_LOGD (LOGD_IP6, "adding IPv6LL address %s", nm_utils_inet6_ntop (&lladdr, NULL));
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
+
+	if (s_ip6 && nm_setting_ip6_config_get_addr_gen_mode (s_ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
+		if (!nm_utils_ipv6_addr_set_stable_privacy (&lladdr,
+		                                            nm_device_get_iface (self),
+			                                    nm_connection_get_uuid (connection),
+		                                            priv->linklocal6_dad_counter++,
+			                                    &error)) {
+			_LOGW (LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
+			g_clear_error (&error);
+			linklocal6_failed (self);
+			return;
+		}
+		_LOGD (LOGD_IP6, "linklocal6: using IPv6 stable-privacy addressing");
+	} else {
+		NMUtilsIPv6IfaceId iid;
+
+		if (priv->linklocal6_timeout_id) {
+			/* We already started and attempt to add a LL address. For the EUI-64
+			 * mode we can't pick a new one, we'll just fail. */
+			_LOGW (LOGD_IP6, "linklocal6: DAD failed for an EUI-64 address");
+			linklocal6_failed (self);
+			return;
+		}
+
+		if (!nm_device_get_ip_iface_identifier (self, &iid)) {
+			_LOGW (LOGD_IP6, "linklocal6: failed to get interface identifier; IPv6 cannot continue");
+			return;
+		}
+		_LOGD (LOGD_IP6, "linklocal6: using EUI-64 identifier to generate IPv6LL address");
+
+		nm_utils_ipv6_addr_set_interface_identfier (&lladdr, iid);
+	}
+
+	_LOGD (LOGD_IP6, "linklocal6: adding IPv6LL address %s", nm_utils_inet6_ntop (&lladdr, NULL));
 	if (!nm_platform_ip6_address_add (NM_PLATFORM_GET,
 	                                  ip_ifindex,
 	                                  lladdr,
@@ -5128,10 +5169,15 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	g_assert (priv->rdisc);
 
 	if (nm_platform_link_get_ipv6_token (NM_PLATFORM_GET, priv->ifindex, &iid)) {
-		_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
-	} else if (!nm_device_get_ip_iface_identifier (self, &iid)) {
-		_LOGW (LOGD_IP6, "failed to get interface identifier; IPv6 cannot continue");
-		return FALSE;
+		_LOGD (LOGD_IP6, "addrconf6: IPv6 tokenized identifier present");
+		nm_rdisc_set_iid (priv->rdisc, iid);
+	} else if (nm_device_get_ip_iface_identifier (self, &iid)) {
+		_LOGD (LOGD_IP6, "addrconf6: using the device EUI-64 identifier");
+		nm_rdisc_set_iid (priv->rdisc, iid);
+	} else {
+		/* Don't abort the addrconf at this point -- if rdisc needs the iid
+		 * it will notice this itself. */
+		_LOGI (LOGD_IP6, "addrconf6: no interface identifier; IPv6 adddress creation may fail");
 	}
 
 	/* Apply any manual configuration before starting RA */
@@ -5152,7 +5198,6 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	                                           G_CALLBACK (rdisc_ra_timeout),
 	                                           self);
 
-	nm_rdisc_set_iid (priv->rdisc, iid);
 	nm_rdisc_start (priv->rdisc);
 	return TRUE;
 }
@@ -5163,7 +5208,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMActStageReturn ret;
-	const char *ip_iface = nm_device_get_ip_iface (self);
+	NMSettingIP6Config *s_ip6 = NULL;
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -5174,9 +5219,15 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		priv->ac_ip6_config = NULL;
 	}
 
-	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface);
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
+	g_assert (s_ip6);
+
+	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self),
+	                                 nm_device_get_ip_iface (self),
+	                                 nm_connection_get_uuid (connection),
+	                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6));
 	if (!priv->rdisc) {
-		_LOGE (LOGD_IP6, "failed to start router discovery (%s)", ip_iface);
+		_LOGE (LOGD_IP6, "addrconf6: failed to start router discovery");
 		return FALSE;
 	}
 
@@ -7794,6 +7845,8 @@ queued_ip6_config_change (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GSList *iter;
+	gboolean need_ipv6ll = FALSE;
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
@@ -7803,12 +7856,32 @@ queued_ip6_config_change (gpointer user_data)
 	g_object_ref (self);
 	update_ip6_config (self, FALSE);
 
+	/* Handle DAD falures */
+	for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
+		NMPlatformIP6Address *addr = iter->data;
+
+		if (addr->source >= NM_IP_CONFIG_SOURCE_USER)
+			continue;
+
+		_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
+		       nm_platform_ip6_address_to_string (addr, NULL, 0));
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+			need_ipv6ll = TRUE;
+		else
+			nm_rdisc_dad_failed (priv->rdisc, &addr->address);
+	}
+	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+
 	/* If no IPv6 link-local address exists but other addresses do then we
 	 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
 	 * ("Addressing Model"): "All interfaces are required to have at least
 	 * one link-local unicast address".
 	 */
 	if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
+		need_ipv6ll = TRUE;
+
+	if (need_ipv6ll)
 		check_and_add_ipv6ll_addr (self);
 
 	g_object_unref (self);
@@ -7826,11 +7899,13 @@ device_ipx_changed (NMPlatform *platform,
                     NMDevice *self)
 {
 	NMDevicePrivate *priv;
+	NMPlatformIP6Address *addr;
 
 	if (nm_device_get_ip_ifindex (self) != ifindex)
 		return;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	switch (obj_type) {
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
@@ -7840,6 +7915,14 @@ device_ipx_changed (NMPlatform *platform,
 		}
 		break;
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+		addr = platform_object;
+
+		if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
+		    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE)) {
+			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
+			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
+		}
+		/* fallthrough */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		if (!priv->queued_ip6_config_id) {
 			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
@@ -8580,6 +8663,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
 
+	priv->linklocal6_dad_counter = 0;
+
 	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
 	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
 
@@ -8827,6 +8912,9 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			hex_iid = bin2hexstr ((const char *) iid.id_u8, sizeof (NMUtilsIPv6IfaceId));
 			g_ptr_array_add (argv, hex_iid);
 		}
+
+		g_ptr_array_add (argv, g_strdup ("--addr-gen-mode"));
+		g_ptr_array_add (argv, g_strdup_printf ("%d", nm_setting_ip6_config_get_addr_gen_mode (NM_SETTING_IP6_CONFIG (s_ip6))));
 
 		configured = TRUE;
 	}
@@ -9731,6 +9819,7 @@ finalize (GObject *object)
 	g_free (priv->perm_hw_addr);
 	g_free (priv->initial_hw_addr);
 	g_slist_free_full (priv->pending_actions, g_free);
+	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
 	g_free (priv->iface);

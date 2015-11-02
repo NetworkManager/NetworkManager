@@ -1317,8 +1317,9 @@ make_ip6_setting (shvarFile *ifcfg,
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
-	char *ip6_privacy_str;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	char *tmp;
 
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
@@ -1402,20 +1403,20 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* TODO - handle other methods */
 
 	/* Read IPv6 Privacy Extensions configuration */
-	ip6_privacy_str = svGetValue (ifcfg, "IPV6_PRIVACY", FALSE);
-	if (ip6_privacy_str) {
+	tmp = svGetValue (ifcfg, "IPV6_PRIVACY", FALSE);
+	if (tmp) {
 		ip6_privacy = svGetValueBoolean (ifcfg, "IPV6_PRIVACY", FALSE);
 		if (!ip6_privacy)
-			ip6_privacy = g_strcmp0 (ip6_privacy_str, "rfc4941") == 0 ||
-			              g_strcmp0 (ip6_privacy_str, "rfc3041") == 0;
+			ip6_privacy = g_strcmp0 (tmp, "rfc4941") == 0 ||
+			              g_strcmp0 (tmp, "rfc3041") == 0;
 	}
 	ip6_privacy_prefer_public_ip = svGetValueBoolean (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
-	ip6_privacy_val = ip6_privacy_str ?
+	ip6_privacy_val = tmp ?
 	                      (ip6_privacy ?
 	                          (ip6_privacy_prefer_public_ip ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) :
 	                          NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED) :
 	                      NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-	g_free (ip6_privacy_str);
+	g_free (tmp);
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
@@ -1497,6 +1498,22 @@ make_ip6_setting (shvarFile *ifcfg,
 			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, value, NULL);
 			g_free (value);
 		}
+	}
+
+	/* IPv6 addressing mode configuration */
+	tmp = svGetValue (ifcfg, "IPV6_ADDR_GEN_MODE", FALSE);
+	if (tmp) {
+		if (nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), tmp,
+		                            (int *) &addr_gen_mode, NULL))
+			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, addr_gen_mode, NULL);
+		else
+			PARSE_WARNING ("Invalid IPV6_ADDR_GEN_MODE");
+		g_free (tmp);
+	} else {
+		g_object_set (s_ip6,
+		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+		              NULL);
 	}
 
 	/* DNS servers

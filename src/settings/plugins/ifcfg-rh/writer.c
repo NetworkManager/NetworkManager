@@ -2391,6 +2391,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint64 route_metric;
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	char *route6_path;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
@@ -2403,6 +2404,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValue (ifcfg, "IPV6_PEERROUTES", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_FAILURE_FATAL", "no", FALSE);
 		svSetValue (ifcfg, "IPV6_ROUTE_METRIC", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", "stable-privacy", FALSE);
 		return TRUE;
 	}
 
@@ -2538,6 +2540,15 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	break;
 	default:
 	break;
+	}
+
+	/* IPv6 Address generation mode */
+	addr_gen_mode = nm_setting_ip6_config_get_addr_gen_mode (NM_SETTING_IP6_CONFIG (s_ip6));
+	if (addr_gen_mode != NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
+		tmp = nm_utils_enum_to_str (nm_setting_ip6_config_addr_gen_mode_get_type (),
+		                            addr_gen_mode);
+		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", tmp, FALSE);
+		g_free (tmp);
 	}
 
 	/* Static routes go to route6-<dev> file */

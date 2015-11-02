@@ -36,13 +36,22 @@ typedef struct {
 
 	NMRDiscDHCPLevel dhcp_level;
 	GArray *gateways;
-	GArray *addresses;
-	GArray *routes;
+	GArray *prefixes;
 	GArray *dns_servers;
 	GArray *dns_domains;
 	int hop_limit;
 	guint32 mtu;
 } FakeRa;
+
+typedef struct {
+        struct in6_addr network;
+        int plen;
+        struct in6_addr gateway;
+        guint32 timestamp;
+        guint32 lifetime;
+        guint32 preferred;
+        NMRDiscPreference preference;
+} FakePrefix;
 
 typedef struct {
 	guint receive_ra_id;
@@ -67,8 +76,7 @@ fake_ra_free (gpointer data)
 	FakeRa *ra = data;
 
 	g_array_free (ra->gateways, TRUE);
-	g_array_free (ra->addresses, TRUE);
-	g_array_free (ra->routes, TRUE);
+	g_array_free (ra->prefixes, TRUE);
 	g_array_free (ra->dns_servers, TRUE);
 	g_array_free (ra->dns_domains, TRUE);
 	g_free (ra);
@@ -110,8 +118,7 @@ nm_fake_rdisc_add_ra (NMFakeRDisc *self,
 	ra->hop_limit = hop_limit;
 	ra->mtu = mtu;
 	ra->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
-	ra->addresses = g_array_new (FALSE, FALSE, sizeof (NMRDiscAddress));
-	ra->routes = g_array_new (FALSE, FALSE, sizeof (NMRDiscRoute));
+	ra->prefixes = g_array_new (FALSE, FALSE, sizeof (FakePrefix));
 	ra->dns_servers = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSServer));
 	ra->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSDomain));
 	g_array_set_clear_func (ra->dns_domains, ra_dns_domain_free);
@@ -142,49 +149,31 @@ nm_fake_rdisc_add_gateway (NMFakeRDisc *self,
 }
 
 void
-nm_fake_rdisc_add_address (NMFakeRDisc *self,
-                           guint ra_id,
-                           const char *addr,
-                           guint32 timestamp,
-                           guint32 lifetime,
-                           guint32 preferred)
+nm_fake_rdisc_add_prefix (NMFakeRDisc *self,
+                          guint ra_id,
+                          const char *network,
+                          guint plen,
+                          const char *gateway,
+                          guint32 timestamp,
+                          guint32 lifetime,
+                          guint32 preferred,
+                          NMRDiscPreference preference)
 {
 	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
-	NMRDiscAddress *a;
+	FakePrefix *prefix;
 
 	g_assert (ra);
-	g_array_set_size (ra->addresses, ra->addresses->len + 1);
-	a = &g_array_index (ra->addresses, NMRDiscAddress, ra->addresses->len - 1);
-	g_assert (inet_pton (AF_INET6, addr, &a->address) == 1);
-	a->timestamp = timestamp;
-	a->lifetime = lifetime;
-	a->preferred = preferred;
-}
-
-void
-nm_fake_rdisc_add_route (NMFakeRDisc *self,
-                         guint ra_id,
-                         const char *network,
-                         guint plen,
-                         const char *gateway,
-                         guint32 timestamp,
-                         guint32 lifetime,
-                         NMRDiscPreference preference)
-{
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
-	FakeRa *ra = find_ra (priv->ras, ra_id);
-	NMRDiscRoute *route;
-
-	g_assert (ra);
-	g_array_set_size (ra->routes, ra->routes->len + 1);
-	route = &g_array_index (ra->routes, NMRDiscRoute, ra->routes->len - 1);
-	g_assert (inet_pton (AF_INET6, network, &route->network) == 1);
-	g_assert (inet_pton (AF_INET6, gateway, &route->gateway) == 1);
-	route->plen = plen;
-	route->timestamp = timestamp;
-	route->lifetime = lifetime;
-	route->preference = preference;
+	g_array_set_size (ra->prefixes, ra->prefixes->len + 1);
+	prefix = &g_array_index (ra->prefixes, FakePrefix, ra->prefixes->len - 1);
+	memset (prefix, 0, sizeof (*prefix));
+	g_assert (inet_pton (AF_INET6, network, &prefix->network) == 1);
+	g_assert (inet_pton (AF_INET6, gateway, &prefix->gateway) == 1);
+	prefix->plen = plen;
+	prefix->timestamp = timestamp;
+	prefix->lifetime = lifetime;
+	prefix->preferred = preferred;
+	prefix->preference = preference;
 }
 
 void
@@ -265,18 +254,32 @@ receive_ra (gpointer user_data)
 			changed |= NM_RDISC_CONFIG_GATEWAYS;
 	}
 
-	for (i = 0; i < ra->addresses->len; i++) {
-		NMRDiscAddress *item = &g_array_index (ra->addresses, NMRDiscAddress, i);
+	for (i = 0; i < ra->prefixes->len; i++) {
+		FakePrefix *item = &g_array_index (ra->prefixes, FakePrefix, i);
+		NMRDiscRoute route = {
+			.network = item->network,
+			.plen = item->plen,
+			.gateway = item->gateway,
+			.timestamp = item->timestamp,
+			.lifetime = item->lifetime,
+			.preference = item->preference,
+		};
 
-		if (nm_rdisc_add_address (rdisc, item))
-			changed |= NM_RDISC_CONFIG_ADDRESSES;
-	}
-
-	for (i = 0; i < ra->routes->len; i++) {
-		NMRDiscRoute *item = &g_array_index (ra->routes, NMRDiscRoute, i);
-
-		if (nm_rdisc_add_route (rdisc, item))
+		if (nm_rdisc_add_route (rdisc, &route))
 			changed |= NM_RDISC_CONFIG_ROUTES;
+
+		if (item->plen == 64) {
+			NMRDiscAddress address = {
+				.address = item->network,
+				.timestamp = item->timestamp,
+				.lifetime = item->lifetime,
+				.preferred = item->preferred,
+				.dad_counter = 0,
+			};
+
+			if (nm_rdisc_complete_and_add_address (rdisc, &address))
+				changed |= NM_RDISC_CONFIG_ADDRESSES;
+		}
 	}
 
 	for (i = 0; i < ra->dns_servers->len; i++) {
