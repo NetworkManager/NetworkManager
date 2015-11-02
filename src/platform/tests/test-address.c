@@ -73,13 +73,13 @@ test_ip4_address_general (void)
 	inet_pton (AF_INET, IP4_ADDRESS, &addr);
 
 	/* Add address */
-	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0));
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, 0, lifetime, preferred, NULL);
-	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0));
+	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
+	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, NULL);
+	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, 0, lifetime + 100, preferred + 50, NULL);
+	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime + 100, preferred + 50, NULL);
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
@@ -89,16 +89,17 @@ test_ip4_address_general (void)
 	address = &g_array_index (addresses, NMPlatformIP4Address, 0);
 	g_assert_cmpint (address->ifindex, ==, ifindex);
 	g_assert_cmphex (address->address, ==, addr);
+	g_assert_cmphex (address->peer_address, ==, addr);
 	g_assert_cmpint (address->plen, ==, IP4_PLEN);
 	g_array_unref (addresses);
 
 	/* Remove address */
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, 0);
-	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0));
+	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr);
+	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 	accept_signal (address_removed);
 
 	/* Remove address again */
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, 0);
+	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr);
 
 	free_signal (address_added);
 	free_signal (address_changed);
@@ -173,16 +174,16 @@ test_ip4_address_general_2 (void)
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, DEVICE_IFINDEX, NULL));
 
 	/* Add/delete notification */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, 0, lifetime, preferred, NULL);
+	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, NULL);
 	accept_signal (address_added);
-	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0));
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, 0);
+	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
+	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr);
 	accept_signal (address_removed);
-	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0));
+	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 
 	/* Add/delete conflict */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, 0, lifetime, preferred, NULL);
-	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, 0));
+	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, NULL);
+	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 	accept_signal (address_added);
 
 	free_signal (address_added);
@@ -275,6 +276,59 @@ test_ip4_address_peer (void)
 
 /*****************************************************************************/
 
+static void
+test_ip4_address_peer_zero (void)
+{
+	const int ifindex = DEVICE_IFINDEX;
+	in_addr_t addr, addr_peer;
+	guint32 lifetime = 2000;
+	guint32 preferred = 1000;
+	const int plen = 24;
+	const char *label = NULL;
+	in_addr_t peers[3], r_peers[3];
+	int i;
+	GArray *addrs;
+
+	g_assert (ifindex > 0);
+
+	inet_pton (AF_INET, "192.168.5.2", &addr);
+	inet_pton (AF_INET, "192.168.6.2", &addr_peer);
+	peers[0] = addr;
+	peers[1] = addr_peer;
+	peers[2] = 0;
+
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL));
+
+	nmtst_rand_perm (NULL, r_peers, peers, sizeof (peers[0]), G_N_ELEMENTS (peers));
+	for (i = 0; i < G_N_ELEMENTS (peers); i++) {
+		g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, plen, r_peers[i]));
+
+		nmtstp_ip4_address_add (EX, ifindex, addr, plen, r_peers[i], lifetime, preferred, label);
+
+		addrs = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+		g_assert (addrs);
+		g_assert_cmpint (addrs->len, ==, i + 1);
+		g_array_unref (addrs);
+	}
+
+	if (nmtst_is_debug ())
+		nmtstp_run_command_check ("ip address show dev %s", DEVICE_NAME);
+
+	nmtst_rand_perm (NULL, r_peers, peers, sizeof (peers[0]), G_N_ELEMENTS (peers));
+	for (i = 0; i < G_N_ELEMENTS (peers); i++) {
+		g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, plen, r_peers[i]));
+
+		nmtstp_ip4_address_del (EX, ifindex, addr, plen, r_peers[i]);
+
+		addrs = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+		g_assert (addrs);
+		g_assert_cmpint (addrs->len, ==, G_N_ELEMENTS (peers) - i - 1);
+		g_array_unref (addrs);
+	}
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -342,4 +396,5 @@ setup_tests (void)
 	_g_test_add_func ("/address/ipv6/general-2", test_ip6_address_general_2);
 
 	_g_test_add_func ("/address/ipv4/peer", test_ip4_address_peer);
+	_g_test_add_func ("/address/ipv4/peer/zero", test_ip4_address_peer_zero);
 }

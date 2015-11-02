@@ -30,6 +30,7 @@
 #include "nm-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-fake-platform.h"
+#include "nm-utils.h"
 
 #define error(...) fprintf (stderr, __VA_ARGS__)
 
@@ -324,13 +325,14 @@ static gboolean
 do_vlan_get_info (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	int parent;
-	int vlanid;
+	const NMPlatformLink *plink;
+	const NMPlatformLnkVlan *plnk;
 
-	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &parent, &vlanid))
+	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, &plink);
+	if (!plnk)
 		return FALSE;
 
-	printf ("%d %d\n", parent, vlanid);
+	printf ("%d %d\n", plink->parent, plnk->id);
 
 	return TRUE;
 }
@@ -353,20 +355,6 @@ do_vlan_set_egress_map (char **argv)
 	int to = strtol (*argv++, NULL, 10);
 
 	return nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, from, to);
-}
-
-static gboolean
-do_veth_get_properties (char **argv)
-{
-	int ifindex = parse_ifindex (*argv++);
-	NMPlatformVethProperties props;
-
-	if (!nm_platform_veth_get_properties (NM_PLATFORM_GET, ifindex, &props))
-		return FALSE;
-
-	printf ("peer: %d\n", props.peer);
-
-	return TRUE;
 }
 
 static gboolean
@@ -401,15 +389,17 @@ static gboolean
 do_macvlan_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	NMPlatformMacvlanProperties props;
+	const NMPlatformLink *plink;
+	const NMPlatformLnkMacvlan *props;
 
-	if (!nm_platform_macvlan_get_properties (NM_PLATFORM_GET, ifindex, &props))
+	props = nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, &plink);
+	if (!props)
 		return FALSE;
 
-	printf ("parent: %d\n", props.parent_ifindex);
-	printf ("mode: %s\n", props.mode);
+	printf ("parent: %d\n", plink->parent);
+	printf ("mode: %s\n", props->mode);
 	printf ("no-promisc: ");
-	print_boolean (props.no_promisc);
+	print_boolean (props->no_promisc);
 	return TRUE;
 }
 
@@ -417,45 +407,46 @@ static gboolean
 do_vxlan_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	NMPlatformVxlanProperties props;
+	const NMPlatformLnkVxlan *props;
 	char addrstr[INET6_ADDRSTRLEN];
 
-	if (!nm_platform_vxlan_get_properties (NM_PLATFORM_GET, ifindex, &props))
+	props = nm_platform_link_get_lnk_vxlan (NM_PLATFORM_GET, ifindex, NULL);
+	if (props)
 		return FALSE;
 
-	printf ("parent-ifindex: %u\n", props.parent_ifindex);
-	printf ("id: %u\n", props.id);
-	if (props.group)
-		inet_ntop (AF_INET, &props.group, addrstr, sizeof (addrstr));
-	else if (props.group6.s6_addr[0])
-		inet_ntop (AF_INET6, &props.group6, addrstr, sizeof (addrstr));
+	printf ("parent-ifindex: %u\n", props->parent_ifindex);
+	printf ("id: %u\n", props->id);
+	if (props->group)
+		inet_ntop (AF_INET, &props->group, addrstr, sizeof (addrstr));
+	else if (props->group6.s6_addr[0])
+		inet_ntop (AF_INET6, &props->group6, addrstr, sizeof (addrstr));
 	else
 		strcpy (addrstr, "-");
 	printf ("group: %s\n", addrstr);
-	if (props.local)
-		inet_ntop (AF_INET, &props.local, addrstr, sizeof (addrstr));
-	else if (props.local6.s6_addr[0])
-		inet_ntop (AF_INET6, &props.local6, addrstr, sizeof (addrstr));
+	if (props->local)
+		inet_ntop (AF_INET, &props->local, addrstr, sizeof (addrstr));
+	else if (props->local6.s6_addr[0])
+		inet_ntop (AF_INET6, &props->local6, addrstr, sizeof (addrstr));
 	else
 		strcpy (addrstr, "-");
 	printf ("local: %s\n", addrstr);
-	printf ("tos: %u\n", props.tos);
-	printf ("ttl: %u\n", props.ttl);
+	printf ("tos: %u\n", props->tos);
+	printf ("ttl: %u\n", props->ttl);
 	printf ("learning: ");
-	print_boolean (props.learning);
-	printf ("ageing: %u\n", props.ageing);
-	printf ("limit: %u\n", props.limit);
-	printf ("dst-port: %u\n", props.dst_port);
-	printf ("src-port-min: %u\n", props.src_port_min);
-	printf ("src-port-max: %u\n", props.src_port_max);
+	print_boolean (props->learning);
+	printf ("ageing: %u\n", props->ageing);
+	printf ("limit: %u\n", props->limit);
+	printf ("dst-port: %u\n", props->dst_port);
+	printf ("src-port-min: %u\n", props->src_port_min);
+	printf ("src-port-max: %u\n", props->src_port_max);
 	printf ("proxy: ");
-	print_boolean (props.proxy);
+	print_boolean (props->proxy);
 	printf ("rsc: ");
-	print_boolean (props.rsc);
+	print_boolean (props->rsc);
 	printf ("l2miss: ");
-	print_boolean (props.l2miss);
+	print_boolean (props->l2miss);
 	printf ("l3miss: ");
-	print_boolean (props.l3miss);
+	print_boolean (props->l3miss);
 
 	return TRUE;
 }
@@ -464,31 +455,32 @@ static gboolean
 do_gre_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
-	NMPlatformGreProperties props;
+	const NMPlatformLnkGre *props;
 	char addrstr[INET_ADDRSTRLEN];
 
-	if (!nm_platform_gre_get_properties (NM_PLATFORM_GET, ifindex, &props))
+	props = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL);
+	if (!props)
 		return FALSE;
 
-	printf ("parent-ifindex: %u\n", props.parent_ifindex);
-	printf ("input-flags: %u\n", props.input_flags);
-	printf ("output-flags: %u\n", props.input_flags);
-	printf ("input-key: %u\n", props.input_key);
-	printf ("output-key: %u\n", props.output_key);
-	if (props.local)
-		inet_ntop (AF_INET, &props.local, addrstr, sizeof (addrstr));
+	printf ("parent-ifindex: %u\n", props->parent_ifindex);
+	printf ("input-flags: %u\n", props->input_flags);
+	printf ("output-flags: %u\n", props->input_flags);
+	printf ("input-key: %u\n", props->input_key);
+	printf ("output-key: %u\n", props->output_key);
+	if (props->local)
+		inet_ntop (AF_INET, &props->local, addrstr, sizeof (addrstr));
 	else
 		strcpy (addrstr, "-");
 	printf ("local: %s\n", addrstr);
-	if (props.remote)
-		inet_ntop (AF_INET, &props.remote, addrstr, sizeof (addrstr));
+	if (props->remote)
+		inet_ntop (AF_INET, &props->remote, addrstr, sizeof (addrstr));
 	else
 		strcpy (addrstr, "-");
 	printf ("remote: %s\n", addrstr);
-	printf ("ttl: %u\n", props.ttl);
-	printf ("tos: %u\n", props.tos);
+	printf ("ttl: %u\n", props->ttl);
+	printf ("tos: %u\n", props->tos);
 	printf ("path-mtu-discovery: ");
-	print_boolean (props.path_mtu_discovery);
+	print_boolean (props->path_mtu_discovery);
 
 	return TRUE;
 }
@@ -499,15 +491,17 @@ do_ip4_address_get_all (char **argv)
 	int ifindex = parse_ifindex (argv[0]);
 	GArray *addresses;
 	NMPlatformIP4Address *address;
-	char addrstr[INET_ADDRSTRLEN];
 	int i;
 
 	if (ifindex) {
 		addresses = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 		for (i = 0; i < addresses->len; i++) {
 			address = &g_array_index (addresses, NMPlatformIP4Address, i);
-			inet_ntop (AF_INET, &address->address, addrstr, sizeof (addrstr));
-			printf ("%s/%d\n", addrstr, address->plen);
+
+			printf ("%s", nm_utils_inet4_ntop (address->address, NULL));
+			if (address->address != address->peer_address)
+				printf (" peer %s", nm_utils_inet4_ntop (address->peer_address, NULL));
+			printf ("/%d\n", address->plen);
 		}
 		g_array_unref (addresses);
 	}
@@ -583,7 +577,7 @@ do_ip4_address_add (char **argv)
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
 
-		gboolean value = nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, address, plen, 0, lifetime, preferred, NULL);
+		gboolean value = nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, address, plen, address, lifetime, preferred, NULL);
 		return value;
 	} else
 		return FALSE;
@@ -599,7 +593,7 @@ do_ip6_address_add (char **argv)
 	if (ifindex && parse_ip6_address (*argv++, &address, &plen)) {
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
-		guint flags = (*argv) ? rtnl_addr_str2flags (*argv++) : 0;
+		guint flags = 0; /* don't support flags */
 
 		gboolean value = nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, address, plen, in6addr_any, lifetime, preferred, flags);
 		return value;
@@ -624,11 +618,11 @@ do_ip6_address_add (char **argv)
 		} else \
 			return FALSE; \
 	}
-#define ADDR_CMD(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, FALSE, 0, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, FALSE)
+#define ADDR_CMD(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, FALSE, address, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, FALSE)
 #define ADDR_CMD_PRINT(cmdname, ...) ADDR_CMD_FULL (ip4, cmdname, TRUE, ##__VA_ARGS__) ADDR_CMD_FULL (ip6, cmdname, TRUE)
 
 ADDR_CMD (delete)
-ADDR_CMD_PRINT (get, 0)
+ADDR_CMD_PRINT (get, address)
 
 static gboolean
 do_ip4_route_get_all (char **argv)
@@ -820,8 +814,6 @@ static const command_t commands[] = {
 		"<ifname/ifindex> <from> <to>" },
 	{ "vlan-set-egress-map", "set vlan egress map", do_vlan_set_egress_map, 3,
 		"<ifname/ifindex> <from> <to>" },
-	{ "veth-get-properties", "get veth properties", do_veth_get_properties, 1,
-	  "<ifname/ifindex>" },
 	{ "tun-get-properties", "get tun/tap properties", do_tun_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "macvlan-get-properties", "get macvlan properties", do_macvlan_get_properties, 1,

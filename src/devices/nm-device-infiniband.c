@@ -226,7 +226,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	ifindex = nm_device_get_ifindex (device);
 	if (ifindex > 0) {
-		if (!nm_platform_infiniband_get_info (NM_PLATFORM_GET, ifindex, NULL, NULL, &transport_mode))
+		if (!nm_platform_infiniband_get_properties (NM_PLATFORM_GET, ifindex, NULL, NULL, &transport_mode))
 			transport_mode = "datagram";
 	}
 	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);

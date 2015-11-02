@@ -79,6 +79,8 @@ typedef struct _NMPlatformIP6Address NMPlatformIP6Address;
 typedef struct _NMPlatformIP6Route   NMPlatformIP6Route;
 typedef struct _NMPlatformLink       NMPlatformLink;
 
+typedef struct _NMPObject            NMPObject;
+
 typedef enum {
 	/* Please don't interpret type numbers outside nm-platform and use functions
 	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
@@ -130,6 +132,13 @@ typedef enum {
 	NMP_OBJECT_TYPE_IP6_ADDRESS,
 	NMP_OBJECT_TYPE_IP4_ROUTE,
 	NMP_OBJECT_TYPE_IP6_ROUTE,
+
+	NMP_OBJECT_TYPE_LNK_GRE,
+	NMP_OBJECT_TYPE_LNK_INFINIBAND,
+	NMP_OBJECT_TYPE_LNK_MACVLAN,
+	NMP_OBJECT_TYPE_LNK_VLAN,
+	NMP_OBJECT_TYPE_LNK_VXLAN,
+
 	__NMP_OBJECT_TYPE_LAST,
 	NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
 } NMPObjectType;

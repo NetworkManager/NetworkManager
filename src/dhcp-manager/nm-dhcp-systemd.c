@@ -232,6 +232,7 @@ lease_to_ip4_config (const char *iface,
 	sd_dhcp_lease_get_address (lease, &tmp_addr);
 	memset (&address, 0, sizeof (address));
 	address.address = tmp_addr.s_addr;
+	address.peer_address = tmp_addr.s_addr;
 	str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
 	LOG_LEASE (LOGD_DHCP4, "  address %s", str);
 	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, str);

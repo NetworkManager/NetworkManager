@@ -1725,6 +1725,147 @@ nm_match_spec_join (GSList *specs)
 	return g_string_free (str, FALSE);
 }
 
+/*****************************************************************************/
+
+char _nm_utils_to_string_buffer[];
+
+void
+nm_utils_to_string_buffer_init (char **buf, gsize *len)
+{
+	if (!*buf) {
+		*buf = _nm_utils_to_string_buffer;
+		*len = sizeof (_nm_utils_to_string_buffer);
+	}
+}
+
+gboolean
+nm_utils_to_string_buffer_init_null (gconstpointer obj, char **buf, gsize *len)
+{
+	nm_utils_to_string_buffer_init (buf, len);
+	if (!obj) {
+		g_strlcpy (*buf, "(null)", *len);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void
+nm_utils_strbuf_append_c (char **buf, gsize *len, char c)
+{
+	switch (*len) {
+	case 0:
+		return;
+	case 1:
+		(*buf)[0] = '\0';
+		*len = 0;
+		(*buf)++;
+		return;
+	default:
+		(*buf)[0] = c;
+		(*buf)[1] = '\0';
+		(*len)--;
+		(*buf)++;
+		return;
+	}
+}
+
+void
+nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str)
+{
+	gsize src_len;
+
+	switch (*len) {
+	case 0:
+		return;
+	case 1:
+		if (!str || !*str) {
+			(*buf)[0] = '\0';
+			return;
+		}
+		(*buf)[0] = '\0';
+		*len = 0;
+		(*buf)++;
+		return;
+	default:
+		if (!str || !*str) {
+			(*buf)[0] = '\0';
+			return;
+		}
+		src_len = g_strlcpy (*buf, str, *len);
+		if (src_len >= *len) {
+			*buf = &(*buf)[*len];
+			*len = 0;
+		} else {
+			*buf = &(*buf)[src_len];
+			*len -= src_len;
+		}
+		return;
+	}
+}
+
+void
+nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
+{
+	char *p = *buf;
+	va_list args;
+	gint retval;
+
+	if (*len == 0)
+		return;
+
+	va_start (args, format);
+	retval = g_vsnprintf (p, *len, format, args);
+	va_end (args);
+
+	if (retval >= *len) {
+		*buf = &p[*len];
+		*len = 0;
+	} else {
+		*buf = &p[retval];
+		*len -= retval;
+	}
+}
+
+const char *
+nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
+                    gsize n_descs,
+                    unsigned flags,
+                    char *buf,
+                    gsize len)
+{
+	gsize i;
+	char *p;
+
+	nm_utils_to_string_buffer_init (&buf, &len);
+
+	if (!len)
+		return buf;
+
+	buf[0] = '\0';
+	if (!flags) {
+		return buf;
+	}
+
+	p = buf;
+	for (i = 0; flags && i < n_descs; i++) {
+		if (NM_FLAGS_HAS (flags, descs[i].flag)) {
+			flags &= ~descs[i].flag;
+
+			if (buf[0] != '\0')
+				nm_utils_strbuf_append_c (&p, &len, ',');
+			nm_utils_strbuf_append_str (&p, &len, descs[i].name);
+		}
+	}
+	if (flags) {
+		if (buf[0] != '\0')
+			nm_utils_strbuf_append_c (&p, &len, ',');
+		nm_utils_strbuf_append (&p, &len, "0x%x", flags);
+	}
+	return buf;
+};
+
+/*****************************************************************************/
+
 /**
  * nm_utils_get_shared_wifi_permission:
  * @connection: the NMConnection to lookup the permission.

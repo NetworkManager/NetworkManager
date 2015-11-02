@@ -3274,8 +3274,7 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	g_assert (config);
 
 	memset (&address, 0, sizeof (address));
-	address.address = lla;
-	address.plen = 16;
+	nm_platform_ip4_address_set_addr (&address, lla, 16);
 	address.source = NM_IP_CONFIG_SOURCE_IP4LL;
 	nm_ip4_config_add_address (config, &address);
 
@@ -3711,7 +3710,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		goto END_ADD_DEFAULT_ROUTE;
 
 	has_direct_route = (   gateway == 0
-	                    || nm_ip4_config_get_subnet_for_host (composite, gateway)
+	                    || nm_ip4_config_destination_is_direct (composite, gateway, 32)
 	                    || nm_ip4_config_get_direct_route_for_host (composite, gateway));
 
 	priv->default_route.v4_has = TRUE;
@@ -4016,10 +4015,11 @@ reserve_shared_ip (NMDevice *self, NMSettingIPConfig *s_ip4, NMPlatformIP4Addres
 	if (s_ip4 && nm_setting_ip_config_get_num_addresses (s_ip4)) {
 		/* Use the first user-supplied address */
 		NMIPAddress *user = nm_setting_ip_config_get_address (s_ip4, 0);
+		in_addr_t a;
 
 		g_assert (user);
-		nm_ip_address_get_address_binary (user, &address->address);
-		address->plen = nm_ip_address_get_prefix (user);
+		nm_ip_address_get_address_binary (user, &a);
+		nm_platform_ip4_address_set_addr (address, a, nm_ip_address_get_prefix (user));
 	} else {
 		/* Find an unused address in the 10.42.x.x range */
 		guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
@@ -4032,8 +4032,7 @@ reserve_shared_ip (NMDevice *self, NMSettingIPConfig *s_ip4, NMPlatformIP4Addres
 				return FALSE;
 			}
 		}
-		address->address = start + count;
-		address->plen = 24;
+		nm_platform_ip4_address_set_addr (address, start + count, 24);
 
 		g_hash_table_insert (shared_ips,
 		                     GUINT_TO_POINTER (address->address),
@@ -4902,53 +4901,6 @@ linklocal6_start (NMDevice *self)
 
 /******************************************/
 
-static void
-print_support_extended_ifa_flags (NMSettingIP6ConfigPrivacy use_tempaddr)
-{
-	static gint8 warn = 0;
-	static gint8 s_libnl = -1, s_kernel;
-
-	if (warn >= 2)
-		return;
-
-	if (s_libnl == -1) {
-		s_libnl = !!nm_platform_check_support_libnl_extended_ifa_flags ();
-		s_kernel = !!nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
-
-		if (s_libnl && s_kernel) {
-			nm_log_dbg (LOGD_IP6, "kernel and libnl support extended IFA_FLAGS (needed by NM for IPv6 private addresses)");
-			warn = 2;
-			return;
-		}
-	}
-
-	if (   use_tempaddr != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
-	    && use_tempaddr != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR) {
-		if (warn == 0) {
-			nm_log_dbg (LOGD_IP6, "%s%s%s %s not support extended IFA_FLAGS (needed by NM for IPv6 private addresses)",
-			                      !s_kernel ? "kernel" : "",
-			                      !s_kernel && !s_libnl ? " and " : "",
-			                      !s_libnl ? "libnl" : "",
-			                      !s_kernel && !s_libnl ? "do" : "does");
-			warn = 1;
-		}
-		return;
-	}
-
-	if (!s_libnl && !s_kernel) {
-		nm_log_warn (LOGD_IP6, "libnl and the kernel do not support extended IFA_FLAGS needed by NM for "
-		                       "IPv6 private addresses. This feature is not available");
-	} else if (!s_libnl) {
-		nm_log_warn (LOGD_IP6, "libnl does not support extended IFA_FLAGS needed by NM for "
-		                       "IPv6 private addresses. This feature is not available");
-	} else if (!s_kernel) {
-		nm_log_warn (LOGD_IP6, "The kernel does not support extended IFA_FLAGS needed by NM for "
-		                       "IPv6 private addresses. This feature is not available");
-	}
-
-	warn = 2;
-}
-
 static void nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu);
 
 static void
@@ -5006,24 +4958,20 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int i;
-	static int system_support = -1;
+	int system_support;
 	guint ifa_flags = 0x00;
 
-	if (system_support == -1) {
-		/*
-		 * Check, if both libnl and the kernel are recent enough,
-		 * to help user space handling RA. If it's not supported,
-		 * we have no ipv6-privacy and must add autoconf addresses
-		 * as /128. The reason for the /128 is to prevent the kernel
-		 * from adding a prefix route for this address.
-		 **/
-		system_support = nm_platform_check_support_libnl_extended_ifa_flags () &&
-		                 nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
-	}
+	/*
+	 * Check, whether kernel is recent enough to help user space handling RA.
+	 * If it's not supported, we have no ipv6-privacy and must add autoconf
+	 * addresses as /128. The reason for the /128 is to prevent the kernel
+	 * from adding a prefix route for this address.
+	 **/
+	system_support = nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
 
 	if (system_support)
 		ifa_flags = IFA_F_NOPREFIXROUTE;
-	if (priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
+	if (   priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
 	    || priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
 	{
 		/* without system_support, this flag will be ignored. Still set it, doesn't seem to do any harm. */
@@ -5233,7 +5181,12 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 
 	priv->rdisc_use_tempaddr = use_tempaddr;
-	print_support_extended_ifa_flags (use_tempaddr);
+
+	if (   NM_IN_SET (use_tempaddr, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
+	    && !nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET)) {
+		_LOGW (LOGD_IP6, "The kernel does not support extended IFA_FLAGS needed by NM for "
+		                 "IPv6 private addresses. This feature is not available");
+	}
 
 	if (!nm_setting_ip_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
 		nm_device_add_pending_action (self, PENDING_ACTION_AUTOCONF6, TRUE);

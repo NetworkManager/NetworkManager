@@ -400,6 +400,8 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		*out_set_logging = TRUE;
 #endif
 		g_assert (success);
+		if (__nmtst_internal.no_expect_message)
+			g_log_set_always_fatal (G_LOG_FATAL_MASK);
 	} else if (__nmtst_internal.no_expect_message) {
 		/* We have a test that would be assert_logging, but the user specified no_expect_message.
 		 * This transforms g_test_expect_message() into a NOP, but we also have to relax
@@ -583,6 +585,47 @@ nmtst_get_rand_int (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+inline static void *
+nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
+{
+	gsize i, j;
+	char *p_, *pj;
+	char *bu;
+
+	g_assert (dst);
+	g_assert (elmt_size > 0);
+	g_assert (n_elmt < G_MAXINT32);
+
+	if (n_elmt == 0)
+		return dst;
+
+	if (src && dst != src)
+		memcpy (dst, src, elmt_size * n_elmt);
+
+	if (!rand)
+		rand = nmtst_get_rand ();
+
+	bu = g_slice_alloc (elmt_size);
+
+	p_ = dst;
+	for (i = n_elmt; i > 1; i--) {
+		j = g_rand_int_range (rand, 0, i);
+
+		if (j != 0) {
+			pj = &p_[j * elmt_size];
+
+			/* swap */
+			memcpy (bu, p_, elmt_size);
+			memcpy (p_, pj, elmt_size);
+			memcpy (pj, bu, elmt_size);
+		}
+		p_ += elmt_size;
+	}
+
+	g_slice_free1 (elmt_size, bu);
+	return dst;
+}
+
 inline static const char *
 nmtst_get_sudo_cmd (void)
 {
@@ -687,6 +730,37 @@ nmtst_inet6_from_string (const char *str)
 
 	return &addr;
 }
+
+inline static void
+_nmtst_assert_ip4_address (const char *file, int line, in_addr_t addr, const char *str_expected)
+{
+	if (nmtst_inet4_from_string (str_expected) != addr) {
+		char buf[100];
+
+		g_error ("%s:%d: Unexpected IPv4 address: expected %s, got %s",
+		         file, line, str_expected ? str_expected : "0.0.0.0",
+		         inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
+	}
+}
+#define nmtst_assert_ip4_address(addr, str_expected) _nmtst_assert_ip4_address (__FILE__, __LINE__, addr, str_expected)
+
+inline static void
+_nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *addr, const char *str_expected)
+{
+	struct in6_addr any = in6addr_any;
+
+	if (!addr)
+		addr = &any;
+
+	if (memcmp (nmtst_inet6_from_string (str_expected), addr, sizeof (*addr)) != 0) {
+		char buf[100];
+
+		g_error ("%s:%d: Unexpected IPv6 address: expected %s, got %s",
+		         file, line, str_expected ? str_expected : "::",
+		         inet_ntop (AF_INET6, &addr, buf, sizeof (buf)));
+	}
+}
+#define nmtst_assert_ip6_address(addr, str_expected) _nmtst_assert_ip6_address (__FILE__, __LINE__, addr, str_expected)
 
 inline static void
 FAIL(const char *test_name, const char *fmt, ...)
@@ -909,9 +983,11 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 
 	for (i = 0; i < len; i++) {
 		if (nm_platform_ip4_route_cmp (&a[i], &b[i]) != 0) {
+			char buf[sizeof (_nm_utils_to_string_buffer)];
+
 			g_error ("Error comparing IPv4 route[%lu]: %s vs %s", (long unsigned) i,
-			         nmtst_static_1024_01 (nm_platform_ip4_route_to_string (&a[i])),
-			         nmtst_static_1024_02 (nm_platform_ip4_route_to_string (&b[i])));
+			         nm_platform_ip4_route_to_string (&a[i], NULL, 0),
+			         nm_platform_ip4_route_to_string (&b[i], buf, sizeof (buf)));
 			g_assert_not_reached ();
 		}
 	}
@@ -941,9 +1017,11 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 
 	for (i = 0; i < len; i++) {
 		if (nm_platform_ip6_route_cmp (&a[i], &b[i]) != 0) {
+			char buf[sizeof (_nm_utils_to_string_buffer)];
+
 			g_error ("Error comparing IPv6 route[%lu]: %s vs %s", (long unsigned) i,
-			         nmtst_static_1024_01 (nm_platform_ip6_route_to_string (&a[i])),
-			         nmtst_static_1024_02 (nm_platform_ip6_route_to_string (&b[i])));
+			         nm_platform_ip6_route_to_string (&a[i], NULL, 0),
+			         nm_platform_ip6_route_to_string (&b[i], buf, sizeof (buf)));
 			g_assert_not_reached ();
 		}
 	}

@@ -34,6 +34,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
 
 #include "nmdbus-settings.h"
 
@@ -626,7 +627,7 @@ nm_running_changed (GObject *object,
 		GPtrArray *connections;
 		int i;
 
-		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+		nm_clear_g_cancellable (&priv->props_cancellable);
 
 		/* Clear connections */
 		connections = priv->all_connections;
@@ -651,7 +652,7 @@ nm_running_changed (GObject *object,
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (self), FALSE);
 
-		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+		nm_clear_g_cancellable (&priv->props_cancellable);
 		priv->props_cancellable = g_cancellable_new ();
 		_nm_object_reload_properties_async (NM_OBJECT (self), priv->props_cancellable, updated_properties, self);
 	}

@@ -526,37 +526,7 @@ fi
 AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)
 
 # libnl support for the linux platform
-PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
-
-AC_CHECK_LIB([nl-route-3], [rtnl_link_inet6_get_addr_gen_mode],
-	ac_have_addr_gen_mode="1",
-	ac_have_addr_gen_mode="0")
-AC_DEFINE_UNQUOTED(HAVE_LIBNL_INET6_ADDR_GEN_MODE,
-	$ac_have_addr_gen_mode, [Define if libnl has rtnl_link_inet6_get_addr_gen_mode()])
-
-AC_MSG_CHECKING([Linux kernel IN6_ADDR_GEN_MODE enum])
-AC_COMPILE_IFELSE(
-	[AC_LANG_PROGRAM(
-              [[#ifndef __user
-                #define __user
-                #endif
-                #include <linux/if_link.h>]],
-              [[int a = IN6_ADDR_GEN_MODE_EUI64; a++;]])],
-        [ac_have_kernel_gen_mode=yes],
-        [ac_have_kernel_gen_mode=no])
-AC_MSG_RESULT($ac_have_kernel_gen_mode)
-if test "$ac_have_kernel_gen_mode" = yes; then
-	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 1, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
-else
-	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 0, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
-fi
-
-# IPv6 tokenized identifiers support in libnl
-AC_CHECK_LIB([nl-route-3], [rtnl_link_inet6_get_token],
-	ac_have_ipv6_token="1",
-	ac_have_ipv6_token="0")
-AC_DEFINE_UNQUOTED(HAVE_LIBNL_INET6_TOKEN,
-	$ac_have_ipv6_token, [Define if libnl has rtnl_link_inet6_get_token()])
+PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8)
 
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)

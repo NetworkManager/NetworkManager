@@ -75,6 +75,11 @@ int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__pr
 
 gboolean nmtstp_wait_for_signal (guint timeout_ms);
 gboolean nmtstp_wait_for_signal_until (gint64 until_ms);
+const NMPlatformLink *nmtstp_wait_for_link (const char *ifname, guint timeout_ms);
+const NMPlatformLink *nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms);
+
+const NMPlatformLink *nmtstp_assert_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
+const NMPlatformLink *nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
 
 int nmtstp_run_command_check_external_global (void);
 gboolean nmtstp_run_command_check_external (int external_command);
@@ -113,6 +118,9 @@ void nmtstp_ip6_address_del (gboolean external_command,
                              struct in6_addr address,
                              int plen);
 
+void nmtstp_link_set_updown (gboolean external_command,
+                             int ifindex,
+                             gboolean up);
 
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);

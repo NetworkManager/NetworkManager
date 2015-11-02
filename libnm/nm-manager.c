@@ -35,6 +35,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-helpers.h"
+#include "nm-macros-internal.h"
 
 #include "nmdbus-manager.h"
 
@@ -1255,7 +1256,7 @@ nm_running_changed_cb (GObject *object,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (!nm_manager_get_nm_running (manager)) {
-		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+		nm_clear_g_cancellable (&priv->props_cancellable);
 
 		priv->state = NM_STATE_UNKNOWN;
 		priv->startup = FALSE;
@@ -1281,7 +1282,7 @@ nm_running_changed_cb (GObject *object,
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (manager), FALSE);
 
-		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+		nm_clear_g_cancellable (&priv->props_cancellable);
 		priv->props_cancellable = g_cancellable_new ();
 		_nm_object_reload_properties_async (NM_OBJECT (manager), priv->props_cancellable, updated_properties, manager);
 

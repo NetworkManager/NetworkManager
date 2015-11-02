@@ -281,7 +281,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 	}
 	if (!success) {
 		_LOGW (vtable->vt->addr_family, "failed to add default route %s with effective metric %u",
-		       vtable->vt->route_to_string (&entry->route), (guint) entry->effective_metric);
+		       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric);
 	}
 	return TRUE;
 }
@@ -553,23 +553,23 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			g_array_append_val (changed_metrics, expected_metric);
 			if (old_entry) {
 				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:update %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
-				       vtable->vt->route_to_string (&entry->route), (guint) old_entry->effective_metric,
+				       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) old_entry->effective_metric,
 				       (guint) expected_metric);
 			} else {
 				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:add    %s (%u)", LOG_ENTRY_ARGS (i, entry),
-				       vtable->vt->route_to_string (&entry->route), (guint) expected_metric);
+				       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) expected_metric);
 			}
 		} else if (entry->effective_metric != expected_metric) {
 			g_array_append_val (changed_metrics, entry->effective_metric);
 			g_array_append_val (changed_metrics, expected_metric);
 			_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:metric %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
-			       vtable->vt->route_to_string (&entry->route), (guint) entry->effective_metric,
+			       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric,
 			       (guint) expected_metric);
 		} else {
 			if (!_vt_routes_has_entry (vtable, routes, entry)) {
 				g_array_append_val (changed_metrics, entry->effective_metric);
 				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:re-add %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
-				       vtable->vt->route_to_string (&entry->route), (guint) entry->effective_metric,
+				       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric,
 				       (guint) entry->effective_metric);
 			}
 		}
@@ -636,7 +636,7 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": %s %s (%"G_GUINT32_FORMAT")",
 	       LOG_ENTRY_ARGS (entry_idx, entry),
 	       old_entry ? "record:update" : "record:add   ",
-	       vtable->vt->route_to_string (&entry->route),
+	       vtable->vt->route_to_string (&entry->route, NULL, 0),
 	       entry->effective_metric);
 
 	g_ptr_array_sort_with_data (entries, _sort_entries_cmp, NULL);
@@ -658,7 +658,7 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	entry = g_ptr_array_index (entries, entry_idx);
 
 	_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": record:remove %s (%u)", LOG_ENTRY_ARGS (entry_idx, entry),
-	       vtable->vt->route_to_string (&entry->route), (guint) entry->effective_metric);
+	       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric);
 
 	/* Remove the entry from the list (but don't free it yet) */
 	g_ptr_array_index (entries, entry_idx) = NULL;

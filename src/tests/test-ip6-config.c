@@ -264,8 +264,8 @@ test_nm_ip6_config_addresses_sort_check (NMIP6Config *config, NMSettingIP6Config
 		if (!nm_ip6_config_equal (copy, config)) {
 			g_message ("%s", "SORTING yields unexpected output:");
 			for (i = 0; i < addr_count; i++) {
-				g_message ("   >> [%d] = %s", i, nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i)));
-				g_message ("   << [%d] = %s", i, nm_platform_ip6_address_to_string (nm_ip6_config_get_address (copy, i)));
+				g_message ("   >> [%d] = %s", i, nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i), NULL, 0));
+				g_message ("   << [%d] = %s", i, nm_platform_ip6_address_to_string (nm_ip6_config_get_address (copy, i), NULL, 0));
 			}
 			g_assert_not_reached ();
 		}

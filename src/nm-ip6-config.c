@@ -1166,7 +1166,7 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 
 	/* addresses */
 	for (i = 0; i < nm_ip6_config_get_num_addresses (config); i++)
-		g_message ("      a: %s", nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i)));
+		g_message ("      a: %s", nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i), NULL, 0));
 
 	/* default gateway */
 	tmp = nm_ip6_config_get_gateway (config);
@@ -1181,7 +1181,7 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 
 	/* routes */
 	for (i = 0; i < nm_ip6_config_get_num_routes (config); i++)
-		g_message ("     rt: %s", nm_platform_ip6_route_to_string (nm_ip6_config_get_route (config, i)));
+		g_message ("     rt: %s", nm_platform_ip6_route_to_string (nm_ip6_config_get_route (config, i), NULL, 0));
 
 	/* domains */
 	for (i = 0; i < nm_ip6_config_get_num_domains (config); i++)

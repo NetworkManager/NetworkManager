@@ -666,6 +666,7 @@ test_read_lease_ip4_config_basic (void)
 	g_assert (inet_aton ("192.168.1.180", (struct in_addr *) &expected_addr));
 	addr = nm_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
+	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 24);
 
 	/* Gateway */
@@ -688,6 +689,7 @@ test_read_lease_ip4_config_basic (void)
 	g_assert (inet_aton ("10.77.52.141", (struct in_addr *) &expected_addr));
 	addr = nm_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
+	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 8);
 
 	/* Gateway */

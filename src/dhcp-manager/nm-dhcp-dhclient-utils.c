@@ -675,6 +675,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 			continue;
 		if (!inet_pton (AF_INET, value, &address.address))
 			continue;
+		address.peer_address = address.address;
 
 		/* Gateway */
 		value = g_hash_table_lookup (hash, "option routers");

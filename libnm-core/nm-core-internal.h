@@ -67,12 +67,7 @@
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
-
-#define NM_UTILS_CLEAR_CANCELLABLE(c) \
-	if (c) { \
-		g_cancellable_cancel (c); \
-		g_clear_object (&c); \
-	}
+#include "nm-core-types-internal.h"
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
@@ -253,6 +248,17 @@ NMUtilsStrStrDictKey *_nm_utils_strstrdictkey_create (const char *v1, const char
 
 #define _nm_utils_strstrdictkey_static(v1, v2) \
     ( (NMUtilsStrStrDictKey *) ("\03" v1 "\0" v2 "") )
+
+/***********************************************************/
+
+gboolean _nm_setting_vlan_set_priorities (NMSettingVlan *setting,
+                                          NMVlanPriorityMap map,
+                                          const NMVlanQosMapping *qos_map,
+                                          guint n_qos_map);
+void     _nm_setting_vlan_get_priorities (NMSettingVlan *setting,
+                                          NMVlanPriorityMap map,
+                                          NMVlanQosMapping **out_qos_map,
+                                          guint *out_n_qos_map);
 
 /***********************************************************/
 

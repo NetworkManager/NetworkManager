@@ -100,13 +100,13 @@ nm_ip4_config_get_ifindex (const NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->ifindex;
 }
 
-static gboolean
-same_prefix (guint32 address1, guint32 address2, int plen)
-{
-	guint32 masked1 = ntohl (address1) >> (32 - plen);
-	guint32 masked2 = ntohl (address2) >> (32 - plen);
+/******************************************************************/
 
-	return masked1 == masked2;
+static gboolean
+_ipv4_is_zeronet (in_addr_t network)
+{
+	/* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
+	return (network & htonl(0xff000000)) == htonl(0x00000000);
 }
 
 /******************************************************************/
@@ -180,7 +180,7 @@ addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Addre
 {
 	return    a->address == b->address
 	       && a->plen == b->plen
-	       && nm_platform_ip4_address_equal_peer_net (a, b);
+	       && ((a->peer_address ^ b->peer_address) & nm_utils_ip4_prefix_to_netmask (a->plen)) == 0;
 }
 
 static gboolean
@@ -307,7 +307,16 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 
 				route.ifindex = ifindex;
 				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
-				route.network = nm_utils_ip4_address_clear_host_address (addr->address, addr->plen);
+
+				/* The destination network depends on the peer-address. */
+				route.network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
+
+				if (_ipv4_is_zeronet (route.network)) {
+					/* Kernel doesn't add device-routes for destinations that
+					 * start with 0.x.y.z. Skip them. */
+					continue;
+				}
+
 				route.plen = addr->plen;
 				route.pref_src = addr->address;
 				route.metric = default_route_metric;
@@ -395,6 +404,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 
 		memset (&address, 0, sizeof (address));
 		nm_ip_address_get_address_binary (s_addr, &address.address);
+		address.peer_address = address.address;
 		address.plen = nm_ip_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
@@ -996,7 +1006,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                                 dst_addr = nm_ip4_config_get_address (dst, i))) {
 				are_equal = FALSE;
 				if (   !addresses_are_duplicate (src_addr, dst_addr)
-				    || (nm_platform_ip4_address_get_peer (src_addr) != nm_platform_ip4_address_get_peer (dst_addr))) {
+				    || src_addr->peer_address != dst_addr->peer_address) {
 					has_relevant_changes = TRUE;
 					break;
 				}
@@ -1199,7 +1209,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	/* addresses */
 	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++)
-		g_message ("      a: %s", nm_platform_ip4_address_to_string (nm_ip4_config_get_address (config, i)));
+		g_message ("      a: %s", nm_platform_ip4_address_to_string (nm_ip4_config_get_address (config, i), NULL, 0));
 
 	/* default gateway */
 	if (nm_ip4_config_has_gateway (config)) {
@@ -1215,7 +1225,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	/* routes */
 	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++)
-		g_message ("     rt: %s", nm_platform_ip4_route_to_string (nm_ip4_config_get_route (config, i)));
+		g_message ("     rt: %s", nm_platform_ip4_route_to_string (nm_ip4_config_get_route (config, i), NULL, 0));
 
 	/* domains */
 	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++)
@@ -1256,12 +1266,22 @@ nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 network,
 {
 	guint naddresses = nm_ip4_config_get_num_addresses (config);
 	int i;
+	in_addr_t peer_network;
 
 	for (i = 0; i < naddresses; i++) {
 		const NMPlatformIP4Address *item = nm_ip4_config_get_address (config, i);
 
-		if (item->plen <= plen && same_prefix (item->address, network, item->plen))
-			return TRUE;
+		if (item->plen > plen)
+			continue;
+
+		peer_network = nm_utils_ip4_address_clear_host_address (item->peer_address, item->plen);
+		if (_ipv4_is_zeronet (peer_network))
+			continue;
+
+		if (peer_network != nm_utils_ip4_address_clear_host_address (network, item->plen))
+			continue;
+
+		return TRUE;
 	}
 
 	return FALSE;
@@ -1552,28 +1572,6 @@ nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host
 	}
 
 	return best_route;
-}
-
-const NMPlatformIP4Address *
-nm_ip4_config_get_subnet_for_host (const NMIP4Config *config, guint32 host)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	guint i;
-	NMPlatformIP4Address *subnet = NULL;
-
-	g_return_val_if_fail (host, NULL);
-
-	for (i = 0; i < priv->addresses->len; i++) {
-		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
-
-		if (subnet && subnet->plen >= item->plen)
-			continue;
-		if (nm_utils_ip4_address_clear_host_address (host, item->plen) != nm_utils_ip4_address_clear_host_address (item->address, item->plen))
-			continue;
-		subnet = item;
-	}
-
-	return subnet;
 }
 
 /******************************************************************/
@@ -2016,7 +2014,7 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 			const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
 			hash_u32 (sum, address->address);
 			hash_u32 (sum, address->plen);
-			hash_u32 (sum, nm_platform_ip4_address_get_peer_net (address));
+			hash_u32 (sum, address->peer_address & nm_utils_ip4_prefix_to_netmask (address->plen));
 		}
 
 		for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
@@ -2163,8 +2161,7 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "prefix",
 				                       g_variant_new_uint32 (address->plen));
-				if (   address->peer_address
-				    && address->peer_address != address->address) {
+				if (address->peer_address != address->address) {
 					g_variant_builder_add (&addr_builder, "{sv}",
 					                       "peer",
 					                       g_variant_new_string (nm_utils_inet4_ntop (address->peer_address, NULL)));

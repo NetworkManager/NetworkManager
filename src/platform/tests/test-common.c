@@ -10,14 +10,6 @@
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
 #define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
 
-typedef struct {
-	union {
-		guint8 addr_ptr[1];
-		in_addr_t addr4;
-		struct in6_addr addr6;
-	};
-} IPAddr;
-
 gboolean
 nmtstp_is_root_test (void)
 {
@@ -374,6 +366,50 @@ nmtstp_wait_for_signal_until (gint64 until_ms)
 	}
 }
 
+const NMPlatformLink *
+nmtstp_wait_for_link (const char *ifname, guint timeout_ms)
+{
+	return nmtstp_wait_for_link_until (ifname, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+}
+
+const NMPlatformLink *
+nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms)
+{
+	const NMPlatformLink *plink;
+	gint64 now;
+
+	while (TRUE) {
+		now = nm_utils_get_monotonic_timestamp_ms ();
+
+		plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
+		if (plink)
+			return plink;
+
+		if (until_ms < now)
+			return NULL;
+
+		nmtstp_wait_for_signal (MAX (1, until_ms - now));
+	}
+}
+
+const NMPlatformLink *
+nmtstp_assert_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
+{
+	return nmtstp_assert_wait_for_link_until (ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+}
+
+const NMPlatformLink *
+nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
+{
+	const NMPlatformLink *plink;
+
+	plink = nmtstp_wait_for_link_until (ifname, until_ms);
+	g_assert (plink);
+	if (expected_link_type != NM_LINK_TYPE_NONE)
+		g_assert_cmpint (plink->type, ==, expected_link_type);
+	return plink;
+}
+
 int
 nmtstp_run_command_check_external_global (void)
 {
@@ -502,9 +538,9 @@ static void
 _ip_address_add (gboolean external_command,
                  gboolean is_v4,
                  int ifindex,
-                 const IPAddr *address,
+                 const NMIPAddr *address,
                  int plen,
-                 const IPAddr *peer_address,
+                 const NMIPAddr *peer_address,
                  guint32 lifetime,
                  guint32 preferred,
                  const char *label,
@@ -524,9 +560,6 @@ _ip_address_add (gboolean external_command,
 		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
 		g_assert (ifname);
 
-		if (peer_address == address)
-			peer_address = 0;
-
 		if (lifetime != NM_PLATFORM_LIFETIME_PERMANENT)
 			s_valid = g_strdup_printf (" valid_lft %d", lifetime);
 		if (preferred != NM_PLATFORM_LIFETIME_PERMANENT)
@@ -535,11 +568,20 @@ _ip_address_add (gboolean external_command,
 			s_label = g_strdup_printf ("%s:%s", ifname, label);
 
 		if (is_v4) {
+			char s_peer[100];
+
 			g_assert (flags == 0);
-			nmtstp_run_command_check ("ip address change %s%s%s/%d dev %s%s%s%s",
+
+			if (   peer_address->addr4 != address->addr4
+			    || nmtst_get_rand_int () % 2) {
+				/* If the peer is the same as the local address, we can omit it. The result should be identical */
+				g_snprintf (s_peer, sizeof (s_peer), " peer %s", nm_utils_inet4_ntop (peer_address->addr4, b2));
+			} else
+				s_peer[0] = '\0';
+
+			nmtstp_run_command_check ("ip address change %s%s/%d dev %s%s%s%s",
 			                          nm_utils_inet4_ntop (address->addr4, b1),
-			                          peer_address->addr4 ? " peer " : "",
-			                          peer_address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
+			                          s_peer,
 			                          plen,
 			                          ifname,
 			                          s_valid ?: "",
@@ -601,7 +643,7 @@ _ip_address_add (gboolean external_command,
 			g_assert (flags == 0);
 			a = nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, address->addr4, plen, peer_address->addr4);
 			if (   a
-			    && nm_platform_ip4_address_get_peer (a) == (peer_address->addr4 ? peer_address->addr4 : address->addr4)
+			    && a->peer_address == peer_address->addr4
 			    && nmtstp_ip_address_check_lifetime ((NMPlatformIPAddress*) a, -1, lifetime, preferred)
 			    && strcmp (a->label, label ?: "") == 0)
 				break;
@@ -624,9 +666,6 @@ _ip_address_add (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		/* timeout? */
-		g_assert (nm_utils_get_monotonic_timestamp_ms () < end_time);
-
 		g_assert (nmtstp_wait_for_signal_until (end_time));
 	} while (TRUE);
 }
@@ -644,9 +683,9 @@ nmtstp_ip4_address_add (gboolean external_command,
 	_ip_address_add (external_command,
 	                 TRUE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
-	                 (IPAddr *) &peer_address,
+	                 (NMIPAddr *) &peer_address,
 	                 lifetime,
 	                 preferred,
 	                 label,
@@ -666,9 +705,9 @@ nmtstp_ip6_address_add (gboolean external_command,
 	_ip_address_add (external_command,
 	                 FALSE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
-	                 (IPAddr *) &peer_address,
+	                 (NMIPAddr *) &peer_address,
 	                 lifetime,
 	                 preferred,
 	                 NULL,
@@ -679,9 +718,9 @@ static void
 _ip_address_del (gboolean external_command,
                  gboolean is_v4,
                  int ifindex,
-                 const IPAddr *address,
+                 const NMIPAddr *address,
                  int plen,
-                 const IPAddr *peer_address)
+                 const NMIPAddr *peer_address)
 {
 	gint64 end_time;
 
@@ -696,9 +735,6 @@ _ip_address_del (gboolean external_command,
 		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
 		g_assert (ifname);
 
-		if (peer_address == address)
-			peer_address = 0;
-
 		/* let's wait until we see the address as we added it. */
 		if (is_v4)
 			had_address = !!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, address->addr4, plen, peer_address->addr4);
@@ -708,8 +744,8 @@ _ip_address_del (gboolean external_command,
 		if (is_v4) {
 			success = nmtstp_run_command ("ip address delete %s%s%s/%d dev %s",
 			                              nm_utils_inet4_ntop (address->addr4, b1),
-			                              peer_address->addr4 ? " peer " : "",
-			                              peer_address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
+			                              peer_address->addr4 != address->addr4 ? " peer " : "",
+			                              peer_address->addr4 != address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
 			                              plen,
 			                              ifname);
 		} else {
@@ -763,9 +799,6 @@ _ip_address_del (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		/* timeout? */
-		g_assert (nm_utils_get_monotonic_timestamp_ms () < end_time);
-
 		g_assert (nmtstp_wait_for_signal_until (end_time));
 	} while (TRUE);
 }
@@ -780,9 +813,9 @@ nmtstp_ip4_address_del (gboolean external_command,
 	_ip_address_del (external_command,
 	                 TRUE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
-	                 (IPAddr *) &peer_address);
+	                 (NMIPAddr *) &peer_address);
 }
 
 void
@@ -794,9 +827,55 @@ nmtstp_ip6_address_del (gboolean external_command,
 	_ip_address_del (external_command,
 	                 FALSE,
 	                 ifindex,
-	                 (IPAddr *) &address,
+	                 (NMIPAddr *) &address,
 	                 plen,
 	                 NULL);
+}
+
+void
+nmtstp_link_set_updown (gboolean external_command,
+                        int ifindex,
+                        gboolean up)
+{
+	const NMPlatformLink *plink;
+	gint64 end_time;
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		const char *ifname;
+
+		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
+		g_assert (ifname);
+
+		nmtstp_run_command_check ("ip link set %s %s",
+		                          ifname,
+		                          up ? "up" : "down");
+	} else {
+		if (up)
+			g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL));
+		else
+			g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
+	}
+
+	/* Let's wait until we get the result */
+	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	do {
+		if (external_command)
+			nm_platform_process_events (NM_PLATFORM_GET);
+
+		/* let's wait until we see the address as we added it. */
+		plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		g_assert (plink);
+
+		if (NM_FLAGS_HAS (plink->flags, IFF_UP) == !!up)
+			break;
+
+		/* for internal command, we expect not to reach this line.*/
+		g_assert (external_command);
+
+		g_assert (nmtstp_wait_for_signal_until (end_time));
+	} while (TRUE);
 }
 
 /*****************************************************************************/
