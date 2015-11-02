@@ -762,7 +762,7 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 
 		g_error ("%s:%d: Unexpected IPv6 address: expected %s, got %s",
 		         file, line, str_expected ? str_expected : "::",
-		         inet_ntop (AF_INET6, &addr, buf, sizeof (buf)));
+		         inet_ntop (AF_INET6, addr, buf, sizeof (buf)));
 	}
 }
 #define nmtst_assert_ip6_address(addr, str_expected) _nmtst_assert_ip6_address (__FILE__, __LINE__, addr, str_expected)
