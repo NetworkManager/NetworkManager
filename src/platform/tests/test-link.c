@@ -687,10 +687,16 @@ test_software_detect (gconstpointer user_data)
 	case NM_LINK_TYPE_VXLAN:
 		switch (test_data->test_mode) {
 		case 0:
-			nmtstp_run_command_check ("ip link add %s type vxlan id 42 local 23.1.2.164 group 239.1.2.134 dev %s ageing 1245 dstport 4789", DEVICE_NAME, PARENT_NAME);
+			if (nmtstp_run_command ("ip link add %s type vxlan id 42 local 23.1.2.164 group 239.1.2.134 dev %s ageing 1245 dstport 4789", DEVICE_NAME, PARENT_NAME)) {
+				g_test_skip ("could not add a vxlan");
+				goto out_delete_parent;
+			}
 			break;
 		case 1:
-			nmtstp_run_command_check ("ip link add %s type vxlan id 11214423 local 1:2:3:4:334:23::23 group ff0e::115 dev %s ageing 3245 dstport 57412", DEVICE_NAME, PARENT_NAME);
+			if (nmtstp_run_command ("ip link add %s type vxlan id 11214423 local 1:2:3:4:334:23::23 group ff0e::115 dev %s ageing 3245 dstport 57412", DEVICE_NAME, PARENT_NAME)) {
+				g_test_skip ("could not add a vxlan");
+				goto out_delete_parent;
+			}
 			break;
 		}
 		break;
