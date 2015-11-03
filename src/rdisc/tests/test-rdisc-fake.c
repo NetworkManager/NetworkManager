@@ -37,7 +37,7 @@ rdisc_new (void)
 	NMRDisc *rdisc;
 	const int ifindex = 1;
 	const char *ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
-	NMUtilsIPv6IfaceId iid;
+	NMUtilsIPv6IfaceId iid = { };
 
 	rdisc = nm_fake_rdisc_new (ifindex, ifname);
 	iid.id_u8[7] = 1;

@@ -40,7 +40,7 @@ main (int argc, char **argv)
 	NMRDisc *rdisc;
 	int ifindex = 1;
 	const char *ifname;
-	NMUtilsIPv6IfaceId iid;
+	NMUtilsIPv6IfaceId iid = { };
 
 	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
