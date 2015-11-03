@@ -9268,6 +9268,14 @@ _set_state_full (NMDevice *self,
 		                    self, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
+		/* Usually upon failure the activation chain is interrupted in
+		 * one of the stages; but in some cases the device fails for
+		 * external events (as a failure of master connection) while
+		 * the activation sequence is running and so we need to ensure
+		 * that the chain is terminated here.
+		 */
+		_cancel_activation (self);
+
 		if (nm_device_uses_assumed_connection (self)) {
 			/* Avoid tearing down assumed connection, assume it's connected */
 			nm_device_queue_state (self,
