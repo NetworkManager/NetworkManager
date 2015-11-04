@@ -816,8 +816,10 @@ get_done_cb (NMSecretAgent *agent,
 			req_complete_error (parent, error);
 			g_error_free (error);
 		} else {
-			/* Tell the failed agent we're no longer interested. */
-			nm_secret_agent_cancel_secrets (parent->current, parent->current_call_id);
+			if (parent->current_call_id) {
+				/* Tell the failed agent we're no longer interested. */
+				nm_secret_agent_cancel_secrets (parent->current, parent->current_call_id);
+			}
 
 			/* Try the next agent */
 			request_next_agent (parent);
