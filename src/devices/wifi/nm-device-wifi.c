@@ -162,10 +162,10 @@ static void supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 
 static void request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options);
 
-static void emit_ap_added_removed (NMDeviceWifi *self,
-                                   guint signum,
-                                   NMAccessPoint *ap,
-                                   gboolean recheck_available_connections);
+static void ap_add_remove (NMDeviceWifi *self,
+                           guint signum,
+                           NMAccessPoint *ap,
+                           gboolean recheck_available_connections);
 
 static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
 
@@ -358,12 +358,8 @@ set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap, gboolean recheck_avai
 	if (old_ap) {
 		NM80211Mode mode = nm_ap_get_mode (old_ap);
 
-		if (force_remove_old_ap || mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_AP || nm_ap_get_fake (old_ap)) {
-			emit_ap_added_removed (self, ACCESS_POINT_REMOVED, old_ap, FALSE);
-			g_hash_table_remove (priv->aps, nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_ap)));
-			if (recheck_available_connections)
-				nm_device_recheck_available_connections (NM_DEVICE (self));
-		}
+		if (force_remove_old_ap || mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_AP || nm_ap_get_fake (old_ap))
+			ap_add_remove (self, ACCESS_POINT_REMOVED, old_ap, recheck_available_connections);
 		g_object_unref (old_ap);
 	}
 
@@ -442,13 +438,30 @@ bring_up (NMDevice *device, gboolean *no_firmware)
 }
 
 static void
-emit_ap_added_removed (NMDeviceWifi *self,
-                       guint signum,
-                       NMAccessPoint *ap,
-                       gboolean recheck_available_connections)
+ap_add_remove (NMDeviceWifi *self,
+               guint signum,
+               NMAccessPoint *ap,
+               gboolean recheck_available_connections)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_assert (NM_IN_SET (signum, ACCESS_POINT_ADDED, ACCESS_POINT_REMOVED));
+
+	if (signum == ACCESS_POINT_ADDED) {
+		g_hash_table_insert (priv->aps,
+		                     (gpointer) nm_exported_object_export ((NMExportedObject *) ap),
+		                     g_object_ref (ap));
+	}
+
 	g_signal_emit (self, signals[signum], 0, ap);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
+
+	if (signum == ACCESS_POINT_REMOVED) {
+		g_hash_table_steal (priv->aps, nm_exported_object_get_path ((NMExportedObject *) ap));
+		nm_exported_object_unexport ((NMExportedObject *) ap);
+		g_object_unref (ap);
+	}
+
 	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 	if (recheck_available_connections)
 		nm_device_recheck_available_connections (NM_DEVICE (self));
@@ -461,16 +474,19 @@ remove_all_aps (NMDeviceWifi *self)
 	GHashTableIter iter;
 	NMAccessPoint *ap;
 
-	if (g_hash_table_size (priv->aps)) {
-		set_current_ap (self, NULL, FALSE, FALSE);
+	if (!g_hash_table_size (priv->aps))
+		return;
 
-		g_hash_table_iter_init (&iter, priv->aps);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
-			emit_ap_added_removed (self, ACCESS_POINT_REMOVED, ap, FALSE);
-			g_hash_table_iter_remove (&iter);
-		}
-		nm_device_recheck_available_connections (NM_DEVICE (self));
+	set_current_ap (self, NULL, FALSE, FALSE);
+
+again:
+	g_hash_table_iter_init (&iter, priv->aps);
+	if (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
+		ap_add_remove (self, ACCESS_POINT_REMOVED, ap, FALSE);
+		goto again;
 	}
+
+	nm_device_recheck_available_connections (NM_DEVICE (self));
 }
 
 static void
@@ -1520,7 +1536,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	NMAccessPoint *ap;
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
-	const char *bssid, *ap_path;
+	const char *bssid;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (properties != NULL);
@@ -1564,9 +1580,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		nm_ap_update_from_properties (found_ap, object_path, properties);
 	} else {
 		nm_ap_dump (ap, "added   ", nm_device_get_iface (NM_DEVICE (self)));
-		ap_path = nm_exported_object_export (NM_EXPORTED_OBJECT (ap));
-		g_hash_table_insert (priv->aps, (gpointer) ap_path, g_object_ref (ap));
-		emit_ap_added_removed (self, ACCESS_POINT_ADDED, ap, TRUE);
+		ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
 	}
 
 	g_object_unref (ap);
@@ -1629,8 +1643,7 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 			nm_ap_set_fake (ap, TRUE);
 		} else {
 			nm_ap_dump (ap, "removed ", nm_device_get_iface (NM_DEVICE (self)));
-			emit_ap_added_removed (self, ACCESS_POINT_REMOVED, ap, TRUE);
-			g_hash_table_remove (priv->aps, nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
+			ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
 			schedule_ap_list_dump (self);
 		}
 	}
@@ -2343,13 +2356,12 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (nm_ap_is_hotspot (ap))
 		nm_ap_set_address (ap, nm_device_get_hw_address (device));
 
-	ap_path = nm_exported_object_export (NM_EXPORTED_OBJECT (ap));
-	g_hash_table_insert (priv->aps, (gpointer) ap_path, ap);
 	g_object_freeze_notify (G_OBJECT (self));
-	emit_ap_added_removed (self, ACCESS_POINT_ADDED, ap, TRUE);
+	ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
 	g_object_thaw_notify (G_OBJECT (self));
 	set_current_ap (self, ap, FALSE, FALSE);
-	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), ap_path);
+	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
+	                                          nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 
 done:

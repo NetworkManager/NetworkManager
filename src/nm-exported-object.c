@@ -496,7 +496,7 @@ nm_exported_object_export (NMExportedObject *self)
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
 	g_return_val_if_fail (!priv->path, priv->path);
-	g_return_val_if_fail (!priv->bus_mgr, NULL);
+	g_return_val_if_fail (!priv->bus_mgr, priv->path);
 
 #ifdef _ASSERT_NO_EARLY_EXPORT
 	nm_assert (priv->_constructed);
