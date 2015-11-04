@@ -25,6 +25,25 @@
 
 G_BEGIN_DECLS
 
+/*****************************************************************************/
+
+char *nm_exported_object_skeletonify_method_name (const char *dbus_method_name);
+
+typedef struct {
+	GType dbus_skeleton_type;
+	char *method_name;
+	GCallback impl;
+} NMExportedObjectDBusMethodImpl;
+
+GDBusInterfaceSkeleton *nm_exported_object_skeleton_create (GType dbus_skeleton_type,
+                                                            GObjectClass *object_class,
+                                                            const NMExportedObjectDBusMethodImpl *methods,
+                                                            guint methods_len,
+                                                            GObject *target);
+void nm_exported_object_skeleton_release (GDBusInterfaceSkeleton *interface);
+
+/*****************************************************************************/
+
 #define NM_TYPE_EXPORTED_OBJECT            (nm_exported_object_get_type ())
 #define NM_EXPORTED_OBJECT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_EXPORTED_OBJECT, NMExportedObject))
 #define NM_EXPORTED_OBJECT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_EXPORTED_OBJECT, NMExportedObjectClass))

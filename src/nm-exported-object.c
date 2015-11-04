@@ -56,12 +56,6 @@ typedef struct {
 #define NM_EXPORTED_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_EXPORTED_OBJECT, NMExportedObjectPrivate))
 
 typedef struct {
-	GType dbus_skeleton_type;
-	char *method_name;
-	GCallback impl;
-} NMExportedObjectDBusMethodImpl;
-
-typedef struct {
 	GHashTable *properties;
 	GSList *skeleton_types;
 	GArray *methods;
@@ -71,8 +65,8 @@ GQuark nm_exported_object_class_info_quark (void);
 G_DEFINE_QUARK (NMExportedObjectClassInfo, nm_exported_object_class_info)
 
 /* "AddConnectionUnsaved" -> "handle-add-connection-unsaved" */
-static char *
-skeletonify_method_name (const char *dbus_method_name)
+char *
+nm_exported_object_skeletonify_method_name (const char *dbus_method_name)
 {
 	GString *out;
 	const char *p;
@@ -265,7 +259,7 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 	va_start (ap, dbus_skeleton_type);
 	while ((method_name = va_arg (ap, const char *)) && (impl = va_arg (ap, GCallback))) {
 		method.dbus_skeleton_type = dbus_skeleton_type;
-		method.method_name = skeletonify_method_name (method_name);
+		method.method_name = nm_exported_object_skeletonify_method_name (method_name);
 		g_assert (g_signal_lookup (method.method_name, dbus_skeleton_type) != 0);
 		method.impl = impl;
 
@@ -371,79 +365,126 @@ typedef struct {
 	gulong *method_signals;
 } SkeletonData;
 
+GDBusInterfaceSkeleton *
+nm_exported_object_skeleton_create (GType dbus_skeleton_type,
+                                    GObjectClass *object_class,
+                                    const NMExportedObjectDBusMethodImpl *methods,
+                                    guint methods_len,
+                                    GObject *target)
+{
+	GDBusInterfaceSkeleton *interface;
+	gs_free GParamSpec **properties = NULL;
+	SkeletonData *skeleton_data;
+	guint n_properties;
+	guint i, j;
+
+	interface = G_DBUS_INTERFACE_SKELETON (g_object_new (dbus_skeleton_type, NULL));
+
+	skeleton_data = g_slice_new (SkeletonData);
+
+	/* Bind properties */
+	properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (interface), &n_properties);
+	skeleton_data->prop_bindings = g_new (GBinding *, n_properties + 1);
+	for (i = 0, j = 0; i < n_properties; i++) {
+		GParamSpec *nm_property;
+		GBindingFlags flags;
+		GBinding *prop_binding;
+
+		nm_property = g_object_class_find_property (object_class, properties[i]->name);
+		if (!nm_property)
+			continue;
+
+		flags = G_BINDING_SYNC_CREATE;
+		if (   (nm_property->flags & G_PARAM_WRITABLE)
+			&& !(nm_property->flags & G_PARAM_CONSTRUCT_ONLY))
+			flags |= G_BINDING_BIDIRECTIONAL;
+		prop_binding = g_object_bind_property (target, properties[i]->name,
+		                                       interface, properties[i]->name,
+		                                       flags);
+		if (prop_binding)
+			skeleton_data->prop_bindings[j++] = prop_binding;
+	}
+	skeleton_data->prop_bindings[j++] = NULL;
+
+	/* Bind methods */
+	skeleton_data->method_signals = g_new (gulong, methods_len + 1);
+	for (i = 0, j = 0; i < methods_len; i++) {
+		const NMExportedObjectDBusMethodImpl *method = &methods[i];
+		GClosure *closure;
+		gulong method_signal;
+
+		/* ignore methods that are for a different skeleton-type. */
+		if (   method->dbus_skeleton_type
+		    && method->dbus_skeleton_type != dbus_skeleton_type)
+			continue;
+
+		closure = g_cclosure_new_swap (method->impl, target, NULL);
+		g_closure_set_meta_marshal (closure, NULL, nm_exported_object_meta_marshal);
+		method_signal = g_signal_connect_closure (interface, method->method_name, closure, FALSE);
+
+		if (method_signal != 0)
+			skeleton_data->method_signals[j++] = method_signal;
+	}
+	skeleton_data->method_signals[j++] = 0;
+
+	g_object_set_qdata ((GObject *) interface, _skeleton_data_quark (), skeleton_data);
+
+	return interface;
+}
+
 static void
 nm_exported_object_create_skeletons (NMExportedObject *self,
                                      GType object_type)
 {
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-	GObjectClass *object_class = g_type_class_peek (object_type);
+	NMExportedObjectPrivate *priv;
+	GObjectClass *object_class;
 	NMExportedObjectClassInfo *classinfo;
 	GSList *iter;
 	GDBusInterfaceSkeleton *interface;
-	guint n_properties;
-	int i;
+	const NMExportedObjectDBusMethodImpl *methods;
+	guint methods_len;
 
 	classinfo = g_type_get_qdata (object_type, nm_exported_object_class_info_quark ());
 	if (!classinfo)
 		return;
 
-	for (iter = classinfo->skeleton_types; iter; iter = iter->next) {
-		GType dbus_skeleton_type = GPOINTER_TO_SIZE (iter->data);
-		gs_free GParamSpec **properties = NULL;
-		SkeletonData *skeleton_data;
-		guint j;
+	object_class = g_type_class_peek (object_type);
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
-		interface = G_DBUS_INTERFACE_SKELETON (g_object_new (dbus_skeleton_type, NULL));
+	methods = classinfo->methods->len ? &g_array_index (classinfo->methods, NMExportedObjectDBusMethodImpl, 0) : NULL;
+	methods_len = classinfo->methods->len;
+
+	for (iter = classinfo->skeleton_types; iter; iter = iter->next) {
+		interface = nm_exported_object_skeleton_create (GPOINTER_TO_SIZE (iter->data),
+		                                                object_class,
+		                                                methods,
+		                                                methods_len,
+		                                                (GObject *) self);
 
 		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
-
-		skeleton_data = g_slice_new (SkeletonData);
-
-		/* Bind properties */
-		properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (interface), &n_properties);
-		skeleton_data->prop_bindings = g_new (GBinding *, n_properties + 1);
-		for (i = 0, j = 0; i < n_properties; i++) {
-			GParamSpec *nm_property;
-			GBindingFlags flags;
-			GBinding *prop_binding;
-
-			nm_property = g_object_class_find_property (object_class, properties[i]->name);
-			if (!nm_property)
-				continue;
-
-			flags = G_BINDING_SYNC_CREATE;
-			if (   (nm_property->flags & G_PARAM_WRITABLE)
-			    && !(nm_property->flags & G_PARAM_CONSTRUCT_ONLY))
-				flags |= G_BINDING_BIDIRECTIONAL;
-			prop_binding = g_object_bind_property (self, properties[i]->name,
-			                                       interface, properties[i]->name,
-			                                       flags);
-			if (prop_binding)
-				skeleton_data->prop_bindings[j++] = prop_binding;
-		}
-		skeleton_data->prop_bindings[j++] = NULL;
-
-		/* Bind methods */
-		skeleton_data->method_signals = g_new (gulong, classinfo->methods->len + 1);
-		for (i = 0, j = 0; i < classinfo->methods->len; i++) {
-			NMExportedObjectDBusMethodImpl *method = &g_array_index (classinfo->methods, NMExportedObjectDBusMethodImpl, i);
-			GClosure *closure;
-			gulong method_signal;
-
-			if (method->dbus_skeleton_type != dbus_skeleton_type)
-				continue;
-
-			closure = g_cclosure_new_swap (method->impl, self, NULL);
-			g_closure_set_meta_marshal (closure, NULL, nm_exported_object_meta_marshal);
-			method_signal = g_signal_connect_closure (interface, method->method_name, closure, FALSE);
-
-			if (method_signal != 0)
-				skeleton_data->method_signals[j++] = method_signal;
-		}
-		skeleton_data->method_signals[j++] = 0;
-
-		g_object_set_qdata ((GObject *) interface, _skeleton_data_quark (), skeleton_data);
 	}
+}
+
+void
+nm_exported_object_skeleton_release (GDBusInterfaceSkeleton *interface)
+{
+	SkeletonData *skeleton_data;
+	guint j;
+
+	g_return_if_fail (G_IS_DBUS_INTERFACE_SKELETON (interface));
+
+	skeleton_data = g_object_steal_qdata ((GObject *) interface, _skeleton_data_quark ());
+
+	for (j = 0; skeleton_data->prop_bindings[j]; j++)
+		g_object_unref (skeleton_data->prop_bindings[j]);
+	for (j = 0; skeleton_data->method_signals[j]; j++)
+		g_signal_handler_disconnect (interface, skeleton_data->method_signals[j]);
+
+	g_free (skeleton_data->prop_bindings);
+	g_free (skeleton_data->method_signals);
+	g_slice_free (SkeletonData, skeleton_data);
+
+	g_object_unref (interface);
 }
 
 static void
@@ -454,22 +495,10 @@ nm_exported_object_destroy_skeletons (NMExportedObject *self)
 	g_return_if_fail (priv->interfaces);
 
 	while (priv->interfaces) {
-		gs_unref_object GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (priv->interfaces->data);
-		SkeletonData *skeleton_data;
-		guint j;
+		GDBusInterfaceSkeleton *interface = priv->interfaces->data;
 
-		priv->interfaces = g_slist_remove (priv->interfaces, interface);
-
-		skeleton_data = g_object_steal_qdata ((GObject *) interface, _skeleton_data_quark ());
-
-		for (j = 0; skeleton_data->prop_bindings[j]; j++)
-			g_object_unref (skeleton_data->prop_bindings[j]);
-		for (j = 0; skeleton_data->method_signals[j]; j++)
-			g_signal_handler_disconnect (interface, skeleton_data->method_signals[j]);
-
-		g_free (skeleton_data->prop_bindings);
-		g_free (skeleton_data->method_signals);
-		g_slice_free (SkeletonData, skeleton_data);
+		priv->interfaces = g_slist_delete_link (priv->interfaces, priv->interfaces);
+		nm_exported_object_skeleton_release (interface);
 	}
 }
 
