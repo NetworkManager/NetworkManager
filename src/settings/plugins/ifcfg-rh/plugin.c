@@ -50,6 +50,7 @@
 #include "writer.h"
 #include "utils.h"
 #include "nm-dbus-compat.h"
+#include "nm-exported-object.h"
 
 #include "nmdbus-ifcfg-rh.h"
 
@@ -78,14 +79,23 @@ static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
 
 static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
-G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_EXPORTED_OBJECT, 0,
-						G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-											   settings_plugin_interface_init))
+G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_interface_init))
 
 #define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgPrivate))
 
 
 typedef struct {
+	NMConfig *config;
+
+	struct {
+		GDBusConnection *connection;
+		GDBusInterfaceSkeleton *interface;
+		GCancellable *cancellable;
+		guint signal_id;
+	} dbus;
+
 	GHashTable *connections;  /* uuid::connection */
 	gboolean initialized;
 
@@ -725,7 +735,7 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		                                       "unable to get the UUID");
 		return;
 	}
-	
+
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	if (!path) {
 		g_dbus_method_invocation_return_error (context,
@@ -738,6 +748,202 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 	g_dbus_method_invocation_return_value (context,
 	                                       g_variant_new ("(so)", uuid, path));
 }
+
+/*****************************************************************************/
+
+static void
+_dbus_clear (SettingsPluginIfcfg *self)
+{
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+
+	nm_clear_g_signal_handler (priv->dbus.connection, &priv->dbus.signal_id);
+
+	nm_clear_g_cancellable (&priv->dbus.cancellable);
+
+	if (priv->dbus.interface) {
+		g_dbus_interface_skeleton_unexport (priv->dbus.interface);
+		nm_exported_object_skeleton_release (priv->dbus.interface);
+		priv->dbus.interface = NULL;
+	}
+
+	g_clear_object (&priv->dbus.connection);
+}
+
+static void
+_dbus_connection_closed (GDBusConnection *connection,
+                         gboolean         remote_peer_vanished,
+                         GError          *error,
+                         gpointer         user_data)
+{
+	_LOGW ("dbus: %s bus closed", IFCFGRH1_DBUS_SERVICE_NAME);
+	_dbus_clear (SETTINGS_PLUGIN_IFCFG (user_data));
+
+	/* Retry or recover? */
+}
+
+static void
+_dbus_request_name_done (GObject *source_object,
+                         GAsyncResult *res,
+                         gpointer user_data)
+{
+	GDBusConnection *connection = G_DBUS_CONNECTION (source_object);
+	SettingsPluginIfcfg *self;
+	SettingsPluginIfcfgPrivate *priv;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	guint32 result;
+
+	ret = g_dbus_connection_call_finish (connection, res, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = SETTINGS_PLUGIN_IFCFG (user_data);
+	priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+
+	g_clear_object (&priv->dbus.cancellable);
+
+	if (!ret) {
+		_LOGW ("dbus: couldn't acquire D-Bus service: %s", error->message);
+		_dbus_clear (self);
+		return;
+	}
+
+	g_variant_get (ret, "(u)", &result);
+
+	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+		_LOGW ("dbus: couldn't acquire ifcfgrh1 D-Bus service (already taken)");
+		_dbus_clear (self);
+		return;
+	}
+
+	{
+		GType skeleton_type = NMDBUS_TYPE_IFCFGRH1_SKELETON;
+		gs_free char *method_name_get_ifcfg_details = NULL;
+		NMExportedObjectDBusMethodImpl methods[] = {
+			{
+				.method_name = (method_name_get_ifcfg_details = nm_exported_object_skeletonify_method_name ("GetIfcfgDetails")),
+				.impl = G_CALLBACK (impl_ifcfgrh_get_ifcfg_details),
+			},
+		};
+
+		priv->dbus.interface = nm_exported_object_skeleton_create (skeleton_type,
+		                                                           g_type_class_peek (SETTINGS_TYPE_PLUGIN_IFCFG),
+		                                                           methods,
+		                                                           G_N_ELEMENTS (methods),
+		                                                           (GObject *) self);
+
+		if (!g_dbus_interface_skeleton_export (priv->dbus.interface,
+		                                       priv->dbus.connection,
+		                                       IFCFGRH1_DBUS_OBJECT_PATH,
+		                                       &error)) {
+			nm_exported_object_skeleton_release (priv->dbus.interface);
+			priv->dbus.interface = NULL;
+			_LOGW ("dbus: failed exporting interface: %s", error->message);
+			_dbus_clear (self);
+			return;
+		}
+	}
+
+	_LOGD ("dbus: aquired D-Bus service %s and exported %s object",
+	       IFCFGRH1_DBUS_SERVICE_NAME,
+	       IFCFGRH1_DBUS_OBJECT_PATH);
+}
+
+static void
+_dbus_create_done (GObject *source_object,
+                   GAsyncResult *res,
+                   gpointer user_data)
+{
+	SettingsPluginIfcfg *self;
+	SettingsPluginIfcfgPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusConnection *connection;
+
+	connection = g_dbus_connection_new_for_address_finish (res, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = SETTINGS_PLUGIN_IFCFG (user_data);
+	priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+
+	g_clear_object (&priv->dbus.cancellable);
+
+	if (!connection) {
+		_LOGW ("dbus: couldn't initialize system bus: %s", error->message);
+		return;
+	}
+
+	priv->dbus.connection = connection;
+	priv->dbus.cancellable = g_cancellable_new ();
+
+	priv->dbus.signal_id = g_signal_connect (priv->dbus.connection,
+	                                         "closed",
+	                                         G_CALLBACK (_dbus_connection_closed),
+	                                         self);
+
+	g_dbus_connection_call (priv->dbus.connection,
+	                        DBUS_SERVICE_DBUS,
+	                        DBUS_PATH_DBUS,
+	                        DBUS_INTERFACE_DBUS,
+	                        "RequestName",
+	                        g_variant_new ("(su)",
+	                                       IFCFGRH1_DBUS_SERVICE_NAME,
+	                                       DBUS_NAME_FLAG_DO_NOT_QUEUE),
+	                        G_VARIANT_TYPE ("(u)"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1,
+	                        priv->dbus.cancellable,
+	                        _dbus_request_name_done,
+	                        self);
+}
+
+static void
+_dbus_setup (SettingsPluginIfcfg *self)
+{
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	gs_free char *address = NULL;
+	gs_free_error GError *error = NULL;
+
+	g_return_if_fail (!priv->dbus.connection);
+
+	address = g_dbus_address_get_for_bus_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
+	if (address == NULL) {
+		_LOGW ("dbus: failed getting address for system bus: %s", error->message);
+		return;
+	}
+
+	priv->dbus.cancellable = g_cancellable_new ();
+
+	g_dbus_connection_new_for_address (address,
+	                                   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT
+	                                   | G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION,
+	                                   NULL,
+	                                   priv->dbus.cancellable,
+	                                   _dbus_create_done,
+	                                   self);
+}
+
+static void
+config_changed_cb (NMConfig *config,
+                   NMConfigData *config_data,
+                   NMConfigChangeFlags changes,
+                   NMConfigData *old_data,
+                   SettingsPluginIfcfg *self)
+{
+	/* If the dbus connection for some reason is borked the D-Bus service
+	 * won't be offered.
+	 *
+	 * On SIGHUP and SIGUSR1 try to re-connect to D-Bus. So in the unlikely
+	 * event that the D-Bus conneciton is broken, that allows for recovery
+	 * without need for restarting NetworkManager. */
+	if (   NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_SIGHUP)
+	    || NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_SIGUSR1)) {
+		if (!SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self)->dbus.connection)
+			_dbus_setup (self);
+	}
+}
+
+/*****************************************************************************/
 
 static void
 init (NMSettingsPlugin *config)
@@ -756,53 +962,33 @@ static void
 constructed (GObject *object)
 {
 	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (object);
-	GError *error = NULL;
-	GDBusConnection *bus;
-	GVariant *ret;
-	guint32 result;
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
 
 	G_OBJECT_CLASS (settings_plugin_ifcfg_parent_class)->constructed (object);
 
-	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
-	if (!bus) {
-		_LOGW ("Couldn't connect to D-Bus: %s", error->message);
-		g_clear_error (&error);
-		return;
-	}
+	priv->config = nm_config_get ();
+	g_object_add_weak_pointer ((GObject *) priv->config, (gpointer *) &priv->config);
+	g_signal_connect (priv->config,
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (config_changed_cb),
+	                  self);
 
-	ret = g_dbus_connection_call_sync (bus,
-	                                   DBUS_SERVICE_DBUS,
-	                                   DBUS_PATH_DBUS,
-	                                   DBUS_INTERFACE_DBUS,
-	                                   "RequestName",
-	                                   g_variant_new ("(su)",
-	                                                  IFCFGRH1_DBUS_SERVICE_NAME,
-	                                                  DBUS_NAME_FLAG_DO_NOT_QUEUE),
-	                                   G_VARIANT_TYPE ("(u)"),
-	                                   G_DBUS_CALL_FLAGS_NONE,
-	                                   -1,
-	                                   NULL, &error);
-	g_object_unref (bus);
-	if (ret) {
-		g_variant_get (ret, "(u)", &result);
-		g_variant_unref (ret);
-
-		if (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-			nm_exported_object_export (NM_EXPORTED_OBJECT (self));
-			_LOGD ("Acquired D-Bus service %s", IFCFGRH1_DBUS_SERVICE_NAME);
-		} else
-			_LOGW ("Couldn't acquire ifcfgrh1 D-Bus service (already taken)");
-	} else {
-		_LOGW ("Couldn't acquire D-Bus service: %s", error->message);
-		g_clear_error (&error);
-	}
+	_dbus_setup (self);
 }
 
 static void
 dispose (GObject *object)
 {
-	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (object);
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (object);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+
+	if (priv->config) {
+		g_object_remove_weak_pointer ((GObject *) priv->config, (gpointer *) &priv->config);
+		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
+		priv->config = NULL;
+	}
+
+	_dbus_clear (self);
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
@@ -855,11 +1041,8 @@ static void
 settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (req_class);
 
 	g_type_class_add_private (req_class, sizeof (SettingsPluginIfcfgPrivate));
-
-	exported_object_class->export_path = IFCFGRH1_DBUS_OBJECT_PATH;
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
@@ -877,11 +1060,6 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 	g_object_class_override_property (object_class,
 	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
 	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (req_class),
-	                                        NMDBUS_TYPE_IFCFGRH1_SKELETON,
-	                                        "GetIfcfgDetails", impl_ifcfgrh_get_ifcfg_details,
-	                                        NULL);
 }
 
 static void
