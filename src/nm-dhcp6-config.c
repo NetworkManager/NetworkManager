@@ -104,8 +104,6 @@ nm_dhcp6_config_init (NMDhcp6Config *self)
 {
 	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
 
-	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
-
 	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 	g_variant_ref_sink (priv->options);
 }
@@ -145,6 +143,7 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 	g_type_class_add_private (config_class, sizeof (NMDhcp6ConfigPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH "/DHCP6Config/%u";
+	exported_object_class->export_on_construction = TRUE;
 
 	/* virtual methods */
 	object_class->get_property = get_property;

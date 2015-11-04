@@ -29,6 +29,10 @@
 
 static GHashTable *prefix_counters;
 
+#if NM_MORE_ASSERTS >= 2
+#define _ASSERT_NO_EARLY_EXPORT
+#endif
+
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_OBJECT,
                                   prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
                                   )
@@ -41,6 +45,10 @@ typedef struct {
 
 	GVariantBuilder pending_notifies;
 	guint notify_idle_id;
+
+#ifdef _ASSERT_NO_EARLY_EXPORT
+	gboolean _constructed;
+#endif
 } NMExportedObjectPrivate;
 
 #define NM_EXPORTED_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_EXPORTED_OBJECT, NMExportedObjectPrivate))
@@ -490,6 +498,10 @@ nm_exported_object_export (NMExportedObject *self)
 	g_return_val_if_fail (!priv->path, priv->path);
 	g_return_val_if_fail (!priv->bus_mgr, NULL);
 
+#ifdef _ASSERT_NO_EARLY_EXPORT
+	nm_assert (priv->_constructed);
+#endif
+
 	class_export_path = NM_EXPORTED_OBJECT_GET_CLASS (self)->export_path;
 	p = strchr (class_export_path, '%');
 	if (p) {
@@ -732,6 +744,23 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMExportedObjectClass *klass;
+
+	G_OBJECT_CLASS (nm_exported_object_parent_class)->constructed (object);
+
+#ifdef _ASSERT_NO_EARLY_EXPORT
+	NM_EXPORTED_OBJECT_GET_PRIVATE (object)->_constructed = TRUE;
+#endif
+
+	klass = NM_EXPORTED_OBJECT_GET_CLASS (object);
+
+	if (klass->export_on_construction)
+		nm_exported_object_export ((NMExportedObject *) object);
+}
+
+static void
 nm_exported_object_dispose (GObject *object)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (object);
@@ -752,6 +781,7 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMExportedObjectPrivate));
 
+	object_class->constructed = constructed;
 	object_class->notify = nm_exported_object_notify;
 	object_class->dispose = nm_exported_object_dispose;
 }
