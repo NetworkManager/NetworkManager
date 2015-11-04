@@ -752,16 +752,20 @@ process_secondaries (NMPolicy *policy,
                      gboolean connected)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	GSList *iter, *iter2;
+	GSList *iter, *iter2, *next, *next2;
 
 	/* Loop through devices waiting for secondary connections to activate */
-	for (iter = priv->pending_secondaries; iter; iter = g_slist_next (iter)) {
+	for (iter = priv->pending_secondaries; iter; iter = next) {
 		PendingSecondaryData *secondary_data = (PendingSecondaryData *) iter->data;
 		NMDevice *item_device = secondary_data->device;
 
+		next = g_slist_next (iter);
+
 		/* Look for 'active' in each device's secondary connections list */
-		for (iter2 = secondary_data->secondaries; iter2; iter2 = g_slist_next (iter2)) {
+		for (iter2 = secondary_data->secondaries; iter2; iter2 = next2) {
 			NMActiveConnection *secondary_active = NM_ACTIVE_CONNECTION (iter2->data);
+
+			next2 = g_slist_next (iter2);
 
 			if (active != secondary_active)
 				continue;
