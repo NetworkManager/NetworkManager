@@ -761,6 +761,8 @@ constructed (GObject *object)
 	GVariant *ret;
 	guint32 result;
 
+	G_OBJECT_CLASS (settings_plugin_ifcfg_parent_class)->constructed (object);
+
 	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
 	if (!bus) {
 		_LOGW ("Couldn't connect to D-Bus: %s", error->message);
