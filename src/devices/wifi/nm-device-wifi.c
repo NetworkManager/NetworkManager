@@ -457,7 +457,7 @@ ap_add_remove (NMDeviceWifi *self,
 	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
 
 	if (signum == ACCESS_POINT_REMOVED) {
-		g_hash_table_steal (priv->aps, nm_exported_object_get_path ((NMExportedObject *) ap));
+		g_hash_table_remove (priv->aps, nm_exported_object_get_path ((NMExportedObject *) ap));
 		nm_exported_object_unexport ((NMExportedObject *) ap);
 		g_object_unref (ap);
 	}
@@ -2897,7 +2897,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	priv->mode = NM_802_11_MODE_INFRA;
-	priv->aps = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->aps = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
 static void
@@ -2924,7 +2924,12 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	g_clear_pointer (&NM_DEVICE_WIFI_GET_PRIVATE (object)->aps, g_hash_table_unref);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_assert (g_hash_table_size (priv->aps) == 0);
+
+	g_hash_table_unref (priv->aps);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }
