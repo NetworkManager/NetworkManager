@@ -7668,8 +7668,8 @@ _ip4_config_intersect (gpointer value, gpointer user_data)
 static void
 _ip4_config_subtract (gpointer value, gpointer user_data)
 {
-	NMIP4Config *dst = (NMIP4Config *) value;
-	NMIP4Config *src = (NMIP4Config *) user_data;
+	NMIP4Config *dst = (NMIP4Config *) user_data;
+	NMIP4Config *src = (NMIP4Config *) value;
 
 	nm_ip4_config_subtract (dst, src);
 }
@@ -7746,8 +7746,8 @@ _ip6_config_intersect (gpointer value, gpointer user_data)
 static void
 _ip6_config_subtract (gpointer value, gpointer user_data)
 {
-	NMIP6Config *dst = (NMIP6Config *) value;
-	NMIP6Config *src = (NMIP6Config *) user_data;
+	NMIP6Config *dst = (NMIP6Config *) user_data;
+	NMIP6Config *src = (NMIP6Config *) value;
 
 	nm_ip6_config_subtract (dst, src);
 }
