@@ -7877,7 +7877,7 @@ queued_ip6_config_change (gpointer user_data)
 
 		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
 			need_ipv6ll = TRUE;
-		else
+		else if (priv->rdisc)
 			nm_rdisc_dad_failed (priv->rdisc, &addr->address);
 	}
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
