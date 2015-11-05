@@ -251,6 +251,7 @@ usage (void)
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
+	              "  clone [--temporary] [id | uuid | path ] <ID> <new name>\n\n"
 	              "  edit [id | uuid | path] <ID>\n"
 	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	              "  delete [id | uuid | path] <ID>\n\n"
@@ -428,6 +429,18 @@ usage_connection_modify (void)
 }
 
 static void
+usage_connection_clone (void)
+{
+	g_printerr (_("Usage: nmcli connection clone { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [--temporary] [id | uuid | path] <ID> <new name>\n"
+	              "\n"
+	              "Clone an existing connection profile. The newly created connection will be\n"
+	              "the exact copy of the <ID>, except the uuid property (will be generated) and\n"
+	              "id (provided as <new name> argument).\n\n"));
+}
+
+static void
 usage_connection_edit (void)
 {
 	g_printerr (_("Usage: nmcli connection edit { ARGUMENTS | help }\n"
@@ -488,6 +501,8 @@ usage_connection_second_level (const char *cmd)
 		usage_connection_add ();
 	else if (matches (cmd, "modify") == 0)
 		usage_connection_modify ();
+	else if (matches (cmd, "clone") == 0)
+		usage_connection_clone ();
 	else if (matches (cmd, "edit") == 0)
 		usage_connection_edit ();
 	else if (matches (cmd, "delete") == 0)
@@ -9145,6 +9160,142 @@ finish:
 	return nmc->return_value;
 }
 
+typedef struct {
+	NmCli *nmc;
+	char *orig_id;
+	char *orig_uuid;
+	char *con_id;
+} CloneConnectionInfo;
+
+static void
+clone_connection_cb (GObject *client,
+                     GAsyncResult *result,
+                     gpointer user_data)
+{
+	CloneConnectionInfo *info = (CloneConnectionInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	NMRemoteConnection *connection;
+	GError *error = NULL;
+
+	connection = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
+	if (error) {
+		g_string_printf (nmc->return_text,
+		                 _("Error: Failed to add '%s' connection: %s"),
+		                 info->con_id, error->message);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+	} else {
+		g_print (_("%s (%s) cloned as %s (%s).\n"),
+		         info->orig_id,
+		         info->orig_uuid,
+		         nm_connection_get_id (NM_CONNECTION (connection)),
+		         nm_connection_get_uuid (NM_CONNECTION (connection)));
+		g_object_unref (connection);
+	}
+
+	g_free (info->con_id);
+	g_free (info->orig_id);
+	g_free (info->orig_uuid);
+	g_slice_free (CloneConnectionInfo, info);
+	quit ();
+}
+
+static NMCResultCode
+do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
+{
+	NMConnection *connection = NULL;
+	NMConnection *new_connection = NULL;
+	NMSettingConnection *s_con;
+	CloneConnectionInfo *info;
+	const char *name;
+	const char *new_name;
+	char *name_ask = NULL;
+	char *new_name_ask = NULL;
+	const char *selector = NULL;
+	char *uuid;
+
+	if (argc == 0) {
+		if (nmc->ask) {
+			name = name_ask = nmc_readline (PROMPT_CONNECTION);
+			new_name = new_name_ask = nmc_readline ("New connection name: ");
+		} else {
+			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+	} else {
+		if (   strcmp (*argv, "id") == 0
+		    || strcmp (*argv, "uuid") == 0
+		    || strcmp (*argv, "path") == 0) {
+
+			selector = *argv;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."),
+				                 selector);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto finish;
+			}
+			name = *argv;
+		}
+		name = *argv;
+		if (!name) {
+			g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		if (next_arg (&argc, &argv) != 0) {
+			g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		new_name = *argv;
+	}
+
+	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto finish;
+	}
+
+	/* Copy the connection */
+	new_connection = nm_simple_connection_new_clone (connection);
+
+	s_con = nm_connection_get_setting_connection (new_connection);
+	g_assert (s_con);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, new_name,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NULL);
+	g_free (uuid);
+
+	/* Merge secrets into the new connection */
+	update_secrets_in_connection (NM_REMOTE_CONNECTION (connection), new_connection);
+
+	info = g_slice_new0 (CloneConnectionInfo);
+	info->nmc = nmc;
+	info->orig_id = g_strdup (nm_connection_get_id (connection));
+	info->orig_uuid = g_strdup (nm_connection_get_uuid (connection));
+	info->con_id = g_strdup (nm_connection_get_id (new_connection));
+
+	/* Add the new cloned connection to NetworkManager */
+	add_new_connection (!temporary,
+	                    nmc->client,
+	                    new_connection,
+	                    clone_connection_cb,
+	                    info);
+
+	nmc->should_wait = TRUE;
+finish:
+	if (new_connection)
+		g_object_unref (new_connection);
+	g_free (name_ask);
+	g_free (new_name_ask);
+
+	return nmc->return_value;
+}
+
 static void
 delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 {
@@ -9604,6 +9755,15 @@ do_connections (NmCli *nmc, int argc, char **argv)
 				next_arg (&argc, &argv);
 			}
 			nmc->return_value = do_connection_modify (nmc, temporary, argc, argv);
+		} else if (matches (*argv, "clone") == 0) {
+			gboolean temporary = FALSE;
+
+			next_arg (&argc, &argv);
+			if (nmc_arg_is_option (*argv, "temporary")) {
+				temporary = TRUE;
+				next_arg (&argc, &argv);
+			}
+			nmc->return_value = do_connection_clone (nmc, temporary, argc, argv);
 		} else {
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);

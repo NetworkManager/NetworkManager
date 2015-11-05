@@ -739,6 +739,20 @@ The changes to the connection profile will be saved persistently by
 NetworkManager, unless \fI--temporary\fP option is provided, in which case the
 changes won't persist over NetworkManager restart.
 .TP
+.B clone [--temporary] [ id | uuid | path ] <ID> <new name>
+.br
+Clone a connection. The connection to be cloned is identified by its
+name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
+\fIuuid\fP or \fIpath\fP can be used. See \fBconnection show\fP above for
+the description of the <ID>-specifying keywords. \fI<new name>\fP is the name
+of the new cloned connection. The new connection will be the exact copy except
+the connection.id (\fI<new name>\fP) and connection.uuid (generated)
+properties.
+.br
+The new connection profile will be saved as persistent unless \fI--temporary\fP
+option is specified, in which case the new profile won't outlive NetworkManager
+restart.
+.TP
 .B delete [ id | uuid | path ] <ID> ...
 .br
 Delete a configured connection. The connection to be deleted is identified by

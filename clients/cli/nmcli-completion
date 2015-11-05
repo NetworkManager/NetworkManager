@@ -870,7 +870,7 @@ _nmcli()
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" show up down add modify edit delete reload load
+                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete reload load
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
@@ -1252,6 +1252,34 @@ _nmcli()
                             return 0
                         fi
                         ;;
+                    c|cl|clo|clon|clone)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" temporary
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help temporary)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+                            case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
+                            OPTIONS=(id uuid path)
+                            _nmcli_compl_ARGS_CONNECTION && return 0
+
+                            return 0
+                        fi
+                        ;;
+
                     de|del|dele|delet|delete)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
