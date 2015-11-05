@@ -7881,6 +7881,7 @@ queued_ip6_config_change (gpointer user_data)
 			nm_rdisc_dad_failed (priv->rdisc, &addr->address);
 	}
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+	priv->dad6_failed_addrs = NULL;
 
 	/* If no IPv6 link-local address exists but other addresses do then we
 	 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
