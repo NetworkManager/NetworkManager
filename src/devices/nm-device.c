@@ -8559,12 +8559,13 @@ gboolean
 nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean assert_is_pending)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GSList *iter;
+	GSList *iter, *next;
 	guint count = 0;
 
 	g_return_val_if_fail (action, FALSE);
 
-	for (iter = priv->pending_actions; iter; iter = iter->next) {
+	for (iter = priv->pending_actions; iter; iter = next) {
+		next = iter->next;
 		if (!strcmp (action, iter->data)) {
 			_LOGD (LOGD_DEVICE, "remove_pending_action (%d): '%s'",
 			       count + g_slist_length (iter->next), /* length excluding 'iter' */
