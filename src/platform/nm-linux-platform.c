@@ -1652,7 +1652,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 
 	if (is_v4) {
 		if (_check_addr_or_errout (tb, RTA_PREFSRC, addr_len))
-			memcpy (&obj->ip4_route.network, nla_data (tb[RTA_PREFSRC]), addr_len);
+			memcpy (&obj->ip4_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
 	}
 
 	obj->ip_route.mss = mss;
