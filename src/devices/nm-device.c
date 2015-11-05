@@ -2524,7 +2524,7 @@ nm_device_get_autoconnect (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->autoconnect;
 }
 
-static void
+void
 nm_device_set_autoconnect (NMDevice *self, gboolean autoconnect)
 {
 	NMDevicePrivate *priv;
