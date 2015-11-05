@@ -16,6 +16,7 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager-bluetooth"\" \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
 GLIB_GENERATED = nm-bt-enum-types.h nm-bt-enum-types.c
