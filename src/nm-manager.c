@@ -829,7 +829,7 @@ remove_device (NMManager *manager,
 			if (quitting)
 				nm_device_set_unmanaged_quitting (device);
 			else
-				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+				nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
 		} else if (quitting && nm_config_get_configure_and_quit (nm_config_get ())) {
 			nm_device_spawn_iface_helper (device);
 		}
@@ -1128,7 +1128,7 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	for (iter = priv->devices; iter; iter = g_slist_next (iter))
-		nm_device_set_unmanaged_by_device_spec (NM_DEVICE (iter->data), unmanaged_specs);
+		nm_device_set_unmanaged_flags_by_device_spec (NM_DEVICE (iter->data), unmanaged_specs);
 }
 
 static void
@@ -1623,7 +1623,7 @@ can_start_device (NMManager *self, NMDevice *device)
 {
 	return    nm_device_is_real (device)
 	       && !manager_sleeping (self)
-	       && !nm_device_get_unmanaged (device, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT);
+	       && !nm_device_get_unmanaged_flags (device, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT);
 }
 
 static gboolean
@@ -1665,7 +1665,7 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 			                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 
 			/* Return default-unmanaged devices to their original state */
-			if (nm_device_get_unmanaged (device, NM_UNMANAGED_DEFAULT)) {
+			if (nm_device_get_unmanaged_flags (device, NM_UNMANAGED_DEFAULT)) {
 				nm_device_state_changed (device,
 				                         NM_DEVICE_STATE_UNMANAGED,
 				                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -1832,12 +1832,12 @@ add_device (NMManager *self, NMDevice *device)
 	nm_log_info (LOGD_HW, "(%s): new %s device", iface, type_desc);
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
-	nm_device_set_unmanaged_initial (device,
-	                                 NM_UNMANAGED_USER,
-	                                 nm_device_spec_match_list (device, unmanaged_specs));
-	nm_device_set_unmanaged_initial (device,
-	                                 NM_UNMANAGED_INTERNAL,
-	                                 manager_sleeping (self));
+	nm_device_set_unmanaged_flags_initial (device,
+	                                       NM_UNMANAGED_USER,
+	                                       nm_device_spec_match_list (device, unmanaged_specs));
+	nm_device_set_unmanaged_flags_initial (device,
+	                                       NM_UNMANAGED_INTERNAL,
+	                                       manager_sleeping (self));
 
 	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
 	nm_log_dbg (LOGD_DEVICE, "(%s): exported as %s", nm_device_get_iface (device), dbus_path);
@@ -3746,7 +3746,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 			if (suspending && device_is_wake_on_lan (device))
 				continue;
 
-			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
+			nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 		}
 	} else {
 		nm_log_info (LOGD_SUSPEND, "%s...", waking_from_suspend ? "waking up" : "re-enabling");
@@ -3761,7 +3761,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 				if (nm_device_is_software (device))
 					continue;
 				if (device_is_wake_on_lan (device))
-					nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
+					nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 			}
 		}
 
@@ -3797,7 +3797,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 
 			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, TRUE, NULL);
 
-			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+			nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
 	}
 

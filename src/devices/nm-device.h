@@ -473,15 +473,15 @@ typedef enum { /*< skip >*/
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
-gboolean nm_device_get_unmanaged (NMDevice *device, NMUnmanagedFlags flag);
-void nm_device_set_unmanaged (NMDevice *device,
-                              NMUnmanagedFlags flag,
-                              gboolean unmanaged,
-                              NMDeviceStateReason reason);
-void nm_device_set_unmanaged_by_device_spec (NMDevice *self, const GSList *unmanaged_specs);
-void nm_device_set_unmanaged_initial (NMDevice *device,
-                                      NMUnmanagedFlags flag,
-                                      gboolean unmanaged);
+gboolean nm_device_get_unmanaged_flags (NMDevice *device, NMUnmanagedFlags flag);
+void nm_device_set_unmanaged_flags (NMDevice *device,
+                                    NMUnmanagedFlags flag,
+                                    gboolean unmanaged,
+                                    NMDeviceStateReason reason);
+void nm_device_set_unmanaged_flags_by_device_spec (NMDevice *self, const GSList *unmanaged_specs);
+void nm_device_set_unmanaged_flags_initial (NMDevice *device,
+                                            NMUnmanagedFlags flag,
+                                            gboolean unmanaged);
 void nm_device_set_unmanaged_quitting (NMDevice *device);
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
