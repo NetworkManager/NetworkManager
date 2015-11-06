@@ -71,80 +71,9 @@ static struct {
 	char *opt_log_level;
 	char *opt_log_domains;
 	char *pidfile;
-	char *state_file;
 } global_opt = {
 	.become_daemon = TRUE,
 };
-
-static gboolean
-parse_state_file (const char *filename,
-                  gboolean *net_enabled,
-                  gboolean *wifi_enabled,
-                  gboolean *wwan_enabled,
-                  GError **error)
-{
-	GKeyFile *state_file;
-	GError *tmp_error = NULL;
-	gboolean wifi, net, wwan;
-
-	g_return_val_if_fail (net_enabled != NULL, FALSE);
-	g_return_val_if_fail (wifi_enabled != NULL, FALSE);
-	g_return_val_if_fail (wwan_enabled != NULL, FALSE);
-
-	state_file = g_key_file_new ();
-	g_key_file_set_list_separator (state_file, ',');
-	if (!g_key_file_load_from_file (state_file, filename, G_KEY_FILE_KEEP_COMMENTS, &tmp_error)) {
-		gboolean ret = FALSE;
-
-		/* This is kinda ugly; create the file and directory if it doesn't
-		 * exist yet.  We can't rely on distros necessarily creating the
-		 * /var/lib/NetworkManager for us since we have to ensure that
-		 * users upgrading NM get this working too.
-		 */
-		if (g_error_matches (tmp_error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			char *data;
-			gsize len = 0;
-
-			g_clear_error (&tmp_error);
-
-			/* Write out the initial state to the state file */
-			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
-			g_key_file_set_boolean (state_file, "main", "WirelessEnabled", *wifi_enabled);
-			g_key_file_set_boolean (state_file, "main", "WWANEnabled", *wwan_enabled);
-
-			data = g_key_file_to_data (state_file, &len, NULL);
-			if (data)
-				ret = g_file_set_contents (filename, data, len, error);
-			g_free (data);
-		} else {
-			/* the error is not "No such file or directory" - propagate the error */
-			g_propagate_error (error, tmp_error);
-		}
-
-		return ret;
-	}
-
-	/* Reading state bits of NetworkManager; an error leaves the passed-in state
-	 * value unchanged.
-	 */
-	net = g_key_file_get_boolean (state_file, "main", "NetworkingEnabled", &tmp_error);
-	if (tmp_error == NULL)
-		*net_enabled = net;
-	g_clear_error (&tmp_error);
-
-	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", &tmp_error);
-	if (tmp_error == NULL)
-		*wifi_enabled = wifi;
-	g_clear_error (&tmp_error);
-
-	wwan = g_key_file_get_boolean (state_file, "main", "WWANEnabled", &tmp_error);
-	if (tmp_error == NULL)
-		*wwan_enabled = wwan;
-	g_clear_error (&tmp_error);
-
-	g_key_file_free (state_file);
-	return TRUE;
-}
 
 static void
 _set_g_fatal_warnings (void)
@@ -239,7 +168,6 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 		  "PLATFORM,RFKILL,WIFI" },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_(NM_DEFAULT_PID_FILE) },
-		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_(NM_DEFAULT_SYSTEM_STATE_FILE) },
 		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
 		{ "print-config", 0, 0, G_OPTION_ARG_NONE, &global_opt.print_config, N_("Print NetworkManager configuration and exit"), NULL },
 		{NULL}
@@ -255,7 +183,6 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 		exit (1);
 
 	global_opt.pidfile = global_opt.pidfile ? global_opt.pidfile : g_strdup (NM_DEFAULT_PID_FILE);
-	global_opt.state_file = global_opt.state_file ? global_opt.state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 }
 
 /*
@@ -265,7 +192,6 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 int
 main (int argc, char *argv[])
 {
-	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success = FALSE;
 	NMConfig *config;
 	GError *error = NULL;
@@ -406,17 +332,12 @@ main (int argc, char *argv[])
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 
-	/* Parse the state file */
-	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
-		nm_log_err (LOGD_CORE, "State file %s parsing failed: %s",
-		            global_opt.state_file,
-		            error->message);
-		/* Not a hard failure */
-	}
-	g_clear_error (&error);
-
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
+
+	/* the first access to RunState causes the file to be read (and possibly print a warning) */
+	nm_config_run_state_get (config);
+
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
 	             "enabled"
@@ -427,10 +348,7 @@ main (int argc, char *argv[])
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
-	nm_manager_setup (global_opt.state_file,
-	                  net_enabled,
-	                  wifi_enabled,
-	                  wwan_enabled);
+	nm_manager_setup ();
 
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
@@ -481,6 +399,8 @@ done:
 	nm_exported_object_class_set_quitting ();
 
 	nm_manager_stop (nm_manager_get ());
+
+	nm_config_run_state_set (config, TRUE, TRUE);
 
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);
