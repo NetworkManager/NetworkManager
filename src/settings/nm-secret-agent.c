@@ -118,7 +118,7 @@ request_new (NMSecretAgent *self,
 	r->callback = callback;
 	r->callback_data = callback_data;
 	r->cancellable = g_cancellable_new ();
-	_LOGT ("request "LOG_REQ_FMT": created", LOG_REQ_ARG (r));
+	_LOGt ("request "LOG_REQ_FMT": created", LOG_REQ_ARG (r));
 	return r;
 }
 #define request_new(self,dbus_command,path,setting_name,callback,callback_data) request_new(self,""dbus_command"",path,setting_name,callback,callback_data)
@@ -128,7 +128,7 @@ request_free (Request *r)
 {
 	NMSecretAgent *self = r->agent;
 
-	_LOGT ("request "LOG_REQ_FMT": destroyed", LOG_REQ_ARG (r));
+	_LOGt ("request "LOG_REQ_FMT": destroyed", LOG_REQ_ARG (r));
 	g_free (r->path);
 	g_free (r->setting_name);
 	if (r->cancellable)
@@ -602,7 +602,7 @@ _on_disconnected_private_connection (NMBusManager *mgr,
 	if (priv->connection != connection)
 		return;
 
-	_LOGT ("private connection disconnected");
+	_LOGt ("private connection disconnected");
 
 	_on_disconnected_cleanup (priv);
 	g_signal_emit (self, signals[DISCONNECTED], 0);
@@ -627,7 +627,7 @@ _on_disconnected_name_owner_changed (GDBusConnection *connection,
 	               &old_owner,
 	               &new_owner);
 
-	_LOGT ("name-owner-changed: %s%s%s => %s%s%s",
+	_LOGt ("name-owner-changed: %s%s%s => %s%s%s",
 	       NM_PRINT_FMT_QUOTE_STRING (old_owner),
 	       NM_PRINT_FMT_QUOTE_STRING (new_owner));
 
@@ -681,7 +681,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->connection = g_object_ref (connection);
 	priv->connection_is_private = nm_bus_manager_connection_is_private (priv->bus_mgr, connection);
 
-	_LOGT ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s",
+	_LOGt ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),
 	       NM_PRINT_FMT_QUOTE_STRING (owner_username),
 	       nm_auth_subject_to_string (subject, buf_subject, sizeof (buf_subject)),
@@ -772,7 +772,7 @@ finalize (GObject *object)
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->finalize (object);
 
-	_LOGT ("finalized");
+	_LOGt ("finalized");
 }
 
 static void

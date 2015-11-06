@@ -464,13 +464,13 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	ASSERT_route_index_valid (vtable, known_routes, known_routes_idx, FALSE);
 
 	_LOGD (vtable->vt->addr_family, "%3d: sync %u IPv%c routes", ifindex, known_routes_idx->len, vtable->vt->is_ip4 ? '4' : '6');
-	if (_LOGT_ENABLED (vtable->vt->addr_family)) {
+	if (_LOGt_ENABLED (vtable->vt->addr_family)) {
 		for (i = 0; i < known_routes_idx->len; i++) {
-			_LOGT (vtable->vt->addr_family, "%3d: sync new route #%u: %s",
+			_LOGt (vtable->vt->addr_family, "%3d: sync new route #%u: %s",
 			       ifindex, i, vtable->vt->route_to_string (VTABLE_ROUTE_INDEX (vtable, known_routes, i), NULL, 0));
 		}
 		for (i = 0; i < ipx_routes->index->len; i++)
-			_LOGT (vtable->vt->addr_family, "%3d: STATE: has     #%u - %s (%lld)",
+			_LOGt (vtable->vt->addr_family, "%3d: STATE: has     #%u - %s (%lld)",
 			       ifindex, i,
 			       vtable->vt->route_to_string (ipx_routes->index->entries[i], NULL, 0),
 			       (long long) g_array_index (ipx_routes->effective_metrics, gint64, i));
@@ -512,7 +512,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				cur_ipx_route->rx.ifindex = ifindex;
 				cur_ipx_route->rx.metric = vtable->vt->metric_normalize (cur_ipx_route->rx.metric);
 				ipx_routes_changed = TRUE;
-				_LOGT (vtable->vt->addr_family, "%3d: STATE: update  #%u - %s", ifindex, i_ipx_routes,
+				_LOGt (vtable->vt->addr_family, "%3d: STATE: update  #%u - %s", ifindex, i_ipx_routes,
 				       vtable->vt->route_to_string (cur_ipx_route, NULL, 0));
 			}
 		} else if (cur_known_route) {
@@ -571,7 +571,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			    && cur_plat_route->rx.metric == *p_effective_metric) {
 				/* we are about to delete cur_ipx_route and we have a matching route
 				 * in platform. Delete it. */
-				_LOGT (vtable->vt->addr_family, "%3d: platform rt-rm #%u - %s", ifindex, i_plat_routes,
+				_LOGt (vtable->vt->addr_family, "%3d: platform rt-rm #%u - %s", ifindex, i_plat_routes,
 				       vtable->vt->route_to_string (cur_plat_route, NULL, 0));
 				vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
 			}
@@ -584,7 +584,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			for (i = 0; i < to_delete_indexes->len; i++) {
 				guint idx = g_array_index (to_delete_indexes, guint, i);
 
-				_LOGT (vtable->vt->addr_family, "%3d: STATE: delete  #%u - %s", ifindex, idx,
+				_LOGt (vtable->vt->addr_family, "%3d: STATE: delete  #%u - %s", ifindex, idx,
 				       vtable->vt->route_to_string (ipx_routes->index->entries[idx], NULL, 0));
 				g_array_index (to_delete_indexes, guint, i) = _route_index_reverse_idx (vtable, ipx_routes->index, idx, ipx_routes->entries);
 			}
@@ -609,7 +609,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 
 				g_array_index (ipx_routes->effective_metrics_reverse, gint64, j++) = -1;
 
-				_LOGT (vtable->vt->addr_family, "%3d: STATE: added   #%u - %s", ifindex, ipx_routes->entries->len - 1,
+				_LOGt (vtable->vt->addr_family, "%3d: STATE: added   #%u - %s", ifindex, ipx_routes->entries->len - 1,
 				       vtable->vt->route_to_string (ipx_route, NULL, 0));
 			}
 			g_ptr_array_unref (to_add_routes);
@@ -695,7 +695,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				break;
 			}
 next:
-			_LOGT (vtable->vt->addr_family, "%3d: new metric     #%u - %s (%lld)",
+			_LOGt (vtable->vt->addr_family, "%3d: new metric     #%u - %s (%lld)",
 			       ifindex, i_ipx_routes,
 			       vtable->vt->route_to_string (cur_ipx_route, NULL, 0),
 			       (long long) *p_effective_metric);
@@ -720,7 +720,7 @@ next:
 
 			g_assert (cur_plat_route->rx.ifindex == ifindex);
 
-			_LOGT (vtable->vt->addr_family, "%3d: platform rt    #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route, NULL, 0));
+			_LOGt (vtable->vt->addr_family, "%3d: platform rt    #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route, NULL, 0));
 
 			/* skip over @cur_ipx_route that are ordered before @cur_plat_route */
 			while (   cur_ipx_route
@@ -990,7 +990,7 @@ _ip4_device_routes_idle_cb (IP4DeviceRoutePurgeEntry *entry)
 		return G_SOURCE_REMOVE;
 	}
 
-	_LOGT (vtable_v4.vt->addr_family, "device-route: delete %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	_LOGt (vtable_v4.vt->addr_family, "device-route: delete %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	nm_platform_ip4_route_delete (priv->platform,
 	                              entry->obj->ip4_route.ifindex,
@@ -1033,14 +1033,14 @@ _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
 		return;
 
 	if (_ip4_device_routes_entry_expired (entry, nm_utils_get_monotonic_timestamp_ns ())) {
-		_LOGT (vtable_v4.vt->addr_family, "device-route: cleanup-ch %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		_LOGt (vtable_v4.vt->addr_family, "device-route: cleanup-ch %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		g_hash_table_remove (priv->ip4_device_routes.entries, entry->obj);
 		_ip4_device_routes_cancel (self);
 		return;
 	}
 
 	if (entry->idle_id == 0) {
-		_LOGT (vtable_v4.vt->addr_family, "device-route: schedule %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		_LOGt (vtable_v4.vt->addr_family, "device-route: schedule %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		entry->idle_id = g_idle_add ((GSourceFunc) _ip4_device_routes_idle_cb, entry);
 	}
 }
@@ -1053,7 +1053,7 @@ _ip4_device_routes_cancel (NMRouteManager *self)
 	if (priv->ip4_device_routes.gc_id) {
 		if (g_hash_table_size (priv->ip4_device_routes.entries) > 0)
 			return G_SOURCE_CONTINUE;
-		_LOGT (vtable_v4.vt->addr_family, "device-route: cancel");
+		_LOGt (vtable_v4.vt->addr_family, "device-route: cancel");
 		if (priv->platform)
 			g_signal_handlers_disconnect_by_func (priv->platform, G_CALLBACK (_ip4_device_routes_ip4_route_changed), self);
 		nm_clear_g_source (&priv->ip4_device_routes.gc_id);
@@ -1074,7 +1074,7 @@ _ip4_device_routes_gc (NMRouteManager *self)
 	g_hash_table_iter_init (&iter, priv->ip4_device_routes.entries);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &entry)) {
 		if (_ip4_device_routes_entry_expired (entry, now)) {
-			_LOGT (vtable_v4.vt->addr_family, "device-route: cleanup-gc %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+			_LOGt (vtable_v4.vt->addr_family, "device-route: cleanup-gc %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 			g_hash_table_iter_remove (&iter);
 		}
 	}
@@ -1107,7 +1107,7 @@ nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *sel
 		IP4DeviceRoutePurgeEntry *entry;
 
 		entry = _ip4_device_routes_purge_entry_create (self, &g_array_index (device_route_purge_list, NMPlatformIP4Route, i), now_ns);
-		_LOGT (vtable_v4.vt->addr_family, "device-route: watch (%s) %s",
+		_LOGt (vtable_v4.vt->addr_family, "device-route: watch (%s) %s",
 		                                  g_hash_table_contains (priv->ip4_device_routes.entries, entry->obj)
 		                                      ? "update" : "new",
 		                                  nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));

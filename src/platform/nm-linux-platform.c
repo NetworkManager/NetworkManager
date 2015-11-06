@@ -2303,7 +2303,7 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
-	_LOGT ("emit signal %s %s: %s (%ld)",
+	_LOGt ("emit signal %s %s: %s (%ld)",
 	       klass->signal_type,
 	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0),
@@ -2360,8 +2360,8 @@ delayed_action_to_string (DelayedActionType action_type)
 	}
 }
 
-#define _LOGT_delayed_action(action_type, arg, operation) \
-    _LOGT ("delayed-action: %s %s (%d) [%p / %d]", ""operation, delayed_action_to_string (action_type), (int) action_type, arg, GPOINTER_TO_INT (arg))
+#define _LOGt_delayed_action(action_type, arg, operation) \
+    _LOGt ("delayed-action: %s %s (%d) [%p / %d]", ""operation, delayed_action_to_string (action_type), (int) action_type, arg, GPOINTER_TO_INT (arg))
 
 static void
 delayed_action_handle_MASTER_CONNECTED (NMPlatform *platform, int master_ifindex)
@@ -2416,7 +2416,7 @@ delayed_action_handle_one (NMPlatform *platform)
 			priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_MASTER_CONNECTED;
 		nm_assert (_nm_utils_ptrarray_find_first (priv->delayed_action.list_master_connected->pdata, priv->delayed_action.list_master_connected->len, user_data) < 0);
 
-		_LOGT_delayed_action (DELAYED_ACTION_TYPE_MASTER_CONNECTED, user_data, "handle");
+		_LOGt_delayed_action (DELAYED_ACTION_TYPE_MASTER_CONNECTED, user_data, "handle");
 		delayed_action_handle_MASTER_CONNECTED (platform, GPOINTER_TO_INT (user_data));
 		return TRUE;
 	}
@@ -2425,7 +2425,7 @@ delayed_action_handle_one (NMPlatform *platform)
 	/* Next we prefer read-netlink, because the buffer size is limited and we want to process events
 	 * from netlink early. */
 	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_READ_NETLINK)) {
-		_LOGT_delayed_action (DELAYED_ACTION_TYPE_READ_NETLINK, NULL, "handle");
+		_LOGt_delayed_action (DELAYED_ACTION_TYPE_READ_NETLINK, NULL, "handle");
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_READ_NETLINK;
 		delayed_action_handle_READ_NETLINK (platform);
 		return TRUE;
@@ -2438,10 +2438,10 @@ delayed_action_handle_one (NMPlatform *platform)
 
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_ALL;
 
-		if (_LOGT_ENABLED ()) {
+		if (_LOGt_ENABLED ()) {
 			for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
 				if (NM_FLAGS_HAS (flags, iflags))
-					_LOGT_delayed_action (iflags, NULL, "handle");
+					_LOGt_delayed_action (iflags, NULL, "handle");
 			}
 		}
 
@@ -2458,7 +2458,7 @@ delayed_action_handle_one (NMPlatform *platform)
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
 	nm_assert (_nm_utils_ptrarray_find_first (priv->delayed_action.list_refresh_link->pdata, priv->delayed_action.list_refresh_link->len, user_data) < 0);
 
-	_LOGT_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, user_data, "handle");
+	_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, user_data, "handle");
 
 	delayed_action_handle_REFRESH_LINK (platform, GPOINTER_TO_INT (user_data));
 
@@ -2509,7 +2509,7 @@ delayed_action_clear_REFRESH_LINK (NMPlatform *platform, int ifindex)
 	if (idx < 0)
 		return;
 
-	_LOGT_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, user_data, "clear");
+	_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, user_data, "clear");
 
 	g_ptr_array_remove_index_fast (priv->delayed_action.list_refresh_link, idx);
 	if (priv->delayed_action.list_refresh_link->len == 0)
@@ -2537,10 +2537,10 @@ delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gp
 
 	priv->delayed_action.flags |= action_type;
 
-	if (_LOGT_ENABLED ()) {
+	if (_LOGt_ENABLED ()) {
 		for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
 			if (NM_FLAGS_HAS (action_type, iflags))
-				_LOGT_delayed_action (iflags, user_data, "schedule");
+				_LOGt_delayed_action (iflags, user_data, "schedule");
 		}
 	}
 
@@ -2558,7 +2558,7 @@ cache_prune_candidates_record_all (NMPlatform *platform, NMPObjectType obj_type)
 	priv->prune_candidates = nmp_cache_lookup_all_to_hash (priv->cache,
 	                                                       nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, obj_type, FALSE),
 	                                                       priv->prune_candidates);
-	_LOGT ("cache-prune: record %s (now %u candidates)", nmp_class_from_type (obj_type)->obj_type_name,
+	_LOGt ("cache-prune: record %s (now %u candidates)", nmp_class_from_type (obj_type)->obj_type_name,
 	       priv->prune_candidates ? g_hash_table_size (priv->prune_candidates) : 0);
 }
 
@@ -2575,8 +2575,8 @@ cache_prune_candidates_record_one (NMPlatform *platform, NMPObject *obj)
 	if (!priv->prune_candidates)
 		priv->prune_candidates = g_hash_table_new_full (NULL, NULL, (GDestroyNotify) nmp_object_unref, NULL);
 
-	if (_LOGT_ENABLED () && !g_hash_table_contains (priv->prune_candidates, obj))
-		_LOGT ("cache-prune: record-one: %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+	if (_LOGt_ENABLED () && !g_hash_table_contains (priv->prune_candidates, obj))
+		_LOGt ("cache-prune: record-one: %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 	g_hash_table_add (priv->prune_candidates, nmp_object_ref (obj));
 }
 
@@ -2590,8 +2590,8 @@ cache_prune_candidates_drop (NMPlatform *platform, const NMPObject *obj)
 
 	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	if (priv->prune_candidates) {
-		if (_LOGT_ENABLED () && g_hash_table_contains (priv->prune_candidates, obj))
-			_LOGT ("cache-prune: drop-one: %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+		if (_LOGt_ENABLED () && g_hash_table_contains (priv->prune_candidates, obj))
+			_LOGt ("cache-prune: drop-one: %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 		g_hash_table_remove (priv->prune_candidates, obj);
 	}
 }
@@ -2616,7 +2616,7 @@ cache_prune_candidates_prune (NMPlatform *platform)
 	while (g_hash_table_iter_next (&iter, (gpointer *)&obj, NULL)) {
 		nm_auto_nmpobj NMPObject *obj_cache = NULL;
 
-		_LOGT ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+		_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 		cache_op = nmp_cache_remove (priv->cache, obj, TRUE, &obj_cache, &was_visible, cache_pre_hook, platform);
 		do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
 	}
@@ -2650,7 +2650,7 @@ cache_delayed_deletion_prune (NMPlatform *platform)
 	if (prune_list) {
 		for (i = 0; i < prune_list->len; i++) {
 			obj = prune_list->pdata[i];
-			_LOGT ("delayed-deletion: delete %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			_LOGt ("delayed-deletion: delete %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 			cache_remove_netlink (platform, obj, NULL, NULL, NM_PLATFORM_REASON_EXTERNAL);
 		}
 		g_ptr_array_unref (prune_list);
@@ -2677,7 +2677,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 
 	nm_assert (klass == (new ? NMP_OBJECT_GET_CLASS (new) : NMP_OBJECT_GET_CLASS (old)));
 
-	_LOGT ("update-cache-%s: %s: %s%s%s",
+	_LOGt ("update-cache-%s: %s: %s%s%s",
 	       klass->obj_type_name,
 	       (ops_type == NMP_CACHE_OPS_UPDATED
 	           ? "UPDATE"
@@ -2869,7 +2869,7 @@ _new_sequence_number (NMPlatform *platform, guint32 seq)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
-	_LOGT ("_new_sequence_number(): new sequence number %u", seq);
+	_LOGt ("_new_sequence_number(): new sequence number %u", seq);
 
 	priv->nlh_seq_expect = seq;
 }
@@ -2895,7 +2895,7 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 		cache_prune_candidates_record_one (platform,
 		                                   (NMPObject *) nmp_cache_lookup_link (priv->cache, ifindex));
 		obj = nmp_object_new_link (ifindex);
-		_LOGT ("delayed-deletion: protect object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+		_LOGt ("delayed-deletion: protect object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 		g_hash_table_insert (priv->delayed_deletion, obj, NULL);
 	}
 
@@ -2957,11 +2957,11 @@ do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean ha
 
 			/* clear any delayed action that request a refresh of this object type. */
 			priv->delayed_action.flags &= ~iflags;
-			_LOGT_delayed_action (iflags, NULL, "handle (do-request-all)");
+			_LOGt_delayed_action (iflags, NULL, "handle (do-request-all)");
 			if (obj_type == NMP_OBJECT_TYPE_LINK) {
 				priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
 				g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
-				_LOGT_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
+				_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
 			}
 
 			event_handler_read_netlink_all (platform, FALSE);
@@ -3010,13 +3010,13 @@ event_seq_check (struct nl_msg *msg, gpointer user_data)
 	priv->nlh_seq_last = hdr->nlmsg_seq;
 
 	if (priv->nlh_seq_expect == 0)
-		_LOGT ("event_seq_check(): seq %u received (not waited)", hdr->nlmsg_seq);
+		_LOGt ("event_seq_check(): seq %u received (not waited)", hdr->nlmsg_seq);
 	else if (hdr->nlmsg_seq == priv->nlh_seq_expect) {
-		_LOGT ("event_seq_check(): seq %u received", hdr->nlmsg_seq);
+		_LOGt ("event_seq_check(): seq %u received", hdr->nlmsg_seq);
 
 		priv->nlh_seq_expect = 0;
 	} else
-		_LOGT ("event_seq_check(): seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
+		_LOGt ("event_seq_check(): seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
 
 	return NL_OK;
 }
@@ -3024,7 +3024,7 @@ event_seq_check (struct nl_msg *msg, gpointer user_data)
 static int
 event_err (struct sockaddr_nl *nla, struct nlmsgerr *nlerr, gpointer platform)
 {
-	_LOGT ("event_err(): error from kernel: %s (%d) for request %d",
+	_LOGt ("event_err(): error from kernel: %s (%d) for request %d",
 	       strerror (nlerr ? -nlerr->error : 0),
 	       nlerr ? -nlerr->error : 0,
 	       NM_LINUX_PLATFORM_GET_PRIVATE (platform)->nlh_seq_last);
@@ -3061,13 +3061,13 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 
 	obj = nmp_object_new_from_nl (platform, priv->cache, msg, id_only);
 	if (!obj) {
-		_LOGt ("event-notification: %s, seq %u: ignore",
+		_LOGT ("event-notification: %s, seq %u: ignore",
 		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
 		       msghdr->nlmsg_seq);
 		return NL_OK;
 	}
 
-	_LOGt ("event-notification: %s, seq %u: %s",
+	_LOGT ("event-notification: %s, seq %u: %s",
 	       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
 	       msghdr->nlmsg_seq, nmp_object_to_string (obj,
 	           id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
@@ -3079,7 +3079,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			if (g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
 				/* the object is scheduled for delayed deletion. Replace that object
 				 * by clearing the value from priv->delayed_deletion. */
-				_LOGT ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+				_LOGt ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
 			}
 			delayed_action_clear_REFRESH_LINK (platform, obj->link.ifindex);
@@ -3095,7 +3095,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		    && g_hash_table_contains (priv->delayed_deletion, obj)) {
 			/* We sometimes receive spurious RTM_DELLINK events. In this case, we want to delay
 			 * the deletion of the object until later. */
-			_LOGT ("delayed-deletion: delay deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			_LOGt ("delayed-deletion: delay deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 			g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), nmp_object_ref (obj));
 			break;
 		}
@@ -3441,7 +3441,7 @@ do_add_link (NMPlatform *platform,
 	 * link so that it is in the cache. A better solution would be to do everything
 	 * via one netlink socket. */
 	if (!nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, 0, name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
-		_LOGT ("do-add-link[%s/%s]: the added link is not yet ready. Request anew",
+		_LOGt ("do-add-link[%s/%s]: the added link is not yet ready. Request anew",
 		       name,
 		       nm_link_type_to_string (link_type));
 		do_request_link (platform, 0, name, TRUE);
@@ -3518,7 +3518,7 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	/* FIXME: instead of re-requesting the added object, add it via nlh_event
 	 * so that the events are in sync. */
 	if (!nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id)) {
-		_LOGT ("do-add-%s[%s]: the added object is not yet ready. Request anew",
+		_LOGt ("do-add-%s[%s]: the added object is not yet ready. Request anew",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id), TRUE);
@@ -3595,14 +3595,14 @@ nle_failure:
 
 		obj = nmp_cache_lookup_link_full (priv->cache, obj_id->link.ifindex, obj_id->link.ifindex <= 0 && obj_id->link.name[0] ? obj_id->link.name : NULL, FALSE, NM_LINK_TYPE_NONE, NULL, NULL);
 		if (obj && obj->_link.netlink.is_in_netlink) {
-			_LOGT ("do-delete-%s[%s]: reload: the deleted object is not yet removed. Request anew",
+			_LOGt ("do-delete-%s[%s]: reload: the deleted object is not yet removed. Request anew",
 			       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 			       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 			do_request_link (platform, obj_id->link.ifindex, obj_id->link.name, TRUE);
 		}
 	} else {
 		if (nmp_cache_lookup_obj (priv->cache, obj_id)) {
-			_LOGT ("do-delete-%s[%s]: reload: the deleted object is not yet removed. Request anew",
+			_LOGt ("do-delete-%s[%s]: reload: the deleted object is not yet removed. Request anew",
 			       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 			       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id), TRUE);
@@ -5048,7 +5048,7 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 
 		if (!wait_for_acks || priv->nlh_seq_expect == 0) {
 			if (wait_for_seq)
-				_LOGT ("read-netlink-all: ACK for sequence number %u received", priv->nlh_seq_expect);
+				_LOGt ("read-netlink-all: ACK for sequence number %u received", priv->nlh_seq_expect);
 			return any;
 		}
 
@@ -5056,7 +5056,7 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 		if (wait_for_seq != priv->nlh_seq_expect) {
 			/* We are waiting for a new sequence number (or we will wait for the first time).
 			 * Reset/start counting the overall wait time. */
-			_LOGT ("read-netlink-all: wait for ACK for sequence number %u...", priv->nlh_seq_expect);
+			_LOGt ("read-netlink-all: wait for ACK for sequence number %u...", priv->nlh_seq_expect);
 			wait_for_seq = priv->nlh_seq_expect;
 			timestamp = now;
 			timeout = TIMEOUT;

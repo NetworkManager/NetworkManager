@@ -350,7 +350,7 @@ _g_test_run (gconstpointer user_data)
 	const TestSetup *s = user_data;
 	int ifindex;
 
-	_LOGt ("TEST: start %s", s->testpath);
+	_LOGT ("TEST: start %s", s->testpath);
 
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
@@ -370,7 +370,7 @@ _g_test_run (gconstpointer user_data)
 
 	g_assert_cmpint (ifindex, ==, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	_LOGt ("TEST: finished %s", s->testpath);
+	_LOGT ("TEST: finished %s", s->testpath);
 }
 
 static void

@@ -177,27 +177,27 @@ void     nm_logging_syslog_openlog (const char *logging_backend);
  * might want to undef this and redefine it. */
 #define _NMLOG_ENABLED(level) ( nm_logging_enabled ((level), (_NMLOG_DOMAIN)) )
 
-#define _LOGt(...)          _NMLOG (LOGL_TRACE, __VA_ARGS__)
+#define _LOGT(...)          _NMLOG (LOGL_TRACE, __VA_ARGS__)
 #define _LOGD(...)          _NMLOG (LOGL_DEBUG, __VA_ARGS__)
 #define _LOGI(...)          _NMLOG (LOGL_INFO , __VA_ARGS__)
 #define _LOGW(...)          _NMLOG (LOGL_WARN , __VA_ARGS__)
 #define _LOGE(...)          _NMLOG (LOGL_ERR  , __VA_ARGS__)
 
-#define _LOGt_ENABLED(...)  _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOGT_ENABLED(...)  _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
 #define _LOGD_ENABLED(...)  _NMLOG_ENABLED (LOGL_DEBUG, ##__VA_ARGS__)
 #define _LOGI_ENABLED(...)  _NMLOG_ENABLED (LOGL_INFO , ##__VA_ARGS__)
 #define _LOGW_ENABLED(...)  _NMLOG_ENABLED (LOGL_WARN , ##__VA_ARGS__)
 #define _LOGE_ENABLED(...)  _NMLOG_ENABLED (LOGL_ERR  , ##__VA_ARGS__)
 
-/* _LOGt() and _LOGT() both log with level TRACE, but the latter is disabled by default,
+/* _LOGT() and _LOGt() both log with level TRACE, but the latter is disabled by default,
  * unless building with --with-more-logging. */
 #ifdef NM_MORE_LOGGING
-#define _LOGT_ENABLED(...)  _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
-#define _LOGT(...)          _NMLOG (LOGL_TRACE, __VA_ARGS__)
+#define _LOGt_ENABLED(...)  _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOGt(...)          _NMLOG (LOGL_TRACE, __VA_ARGS__)
 #else
 /* still call the logging macros to get compile time checks, but they will be optimized out. */
-#define _LOGT_ENABLED(...)  ( FALSE && (_NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
-#define _LOGT(...)          G_STMT_START { if (FALSE) { _NMLOG (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#define _LOGt_ENABLED(...)  ( FALSE && (_NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
+#define _LOGt(...)          G_STMT_START { if (FALSE) { _NMLOG (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
 /*****************************************************************************/

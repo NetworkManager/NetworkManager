@@ -1406,7 +1406,7 @@ nm_dns_manager_init (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	_LOGt ("creating...");
+	_LOGT ("creating...");
 
 	priv->config = g_object_ref (nm_config_get ());
 	/* Set the initial hash */
@@ -1428,7 +1428,7 @@ dispose (GObject *object)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	_LOGt ("disposing");
+	_LOGT ("disposing");
 
 	if (priv->plugin) {
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
