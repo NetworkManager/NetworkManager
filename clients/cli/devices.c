@@ -2022,7 +2022,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	if (values[DEV_SET_AUTOCONNECT].idx >= 0)
 		nm_device_set_autoconnect (device, values[DEV_SET_AUTOCONNECT].value);
 	if (values[DEV_SET_MANAGED].idx >= 0)
-		nm_device_set_autoconnect (device, values[DEV_SET_MANAGED].value);
+		nm_device_set_managed (device, values[DEV_SET_MANAGED].value);
 
 error:
 	quit ();
