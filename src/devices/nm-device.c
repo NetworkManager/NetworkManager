@@ -2128,9 +2128,10 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 	if (activating) {
 		priv->ip4_state = IP_DONE;
 		priv->ip6_state = IP_DONE;
-		nm_device_queue_state (self,
-		                       success ? NM_DEVICE_STATE_SECONDARIES : NM_DEVICE_STATE_FAILED,
-		                       NM_DEVICE_STATE_REASON_NONE);
+		if (success)
+			nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+		else
+			nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 	} else
 		nm_device_queue_recheck_assume (self);
 }
