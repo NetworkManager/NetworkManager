@@ -427,7 +427,7 @@ nm_platform_link_get_all (NMPlatform *self)
 	for (i = 0; i < links->len; i++) {
 		item = &g_array_index (links, NMPlatformLink, i);
 
-		_LOGT ("link-get: %3d: %s", i, nm_platform_link_to_string (item));
+		_LOGt ("link-get: %3d: %s", i, nm_platform_link_to_string (item));
 
 		nm_assert (item->ifindex > 0 && !g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
 
@@ -483,7 +483,7 @@ nm_platform_link_get_all (NMPlatform *self)
 			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
 				continue;
 
-			_LOGT ("link-get: add %3d -> %3d: %s", i, j, nm_platform_link_to_string (item));
+			_LOGt ("link-get: add %3d -> %3d: %s", i, j, nm_platform_link_to_string (item));
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
@@ -496,7 +496,7 @@ nm_platform_link_get_all (NMPlatform *self)
 			 * This can happen for veth pairs where each peer is parent of the other end. */
 			item = &g_array_index (links, NMPlatformLink, first_idx);
 
-			_LOGT ("link-get: add (loop) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item));
+			_LOGt ("link-get: add (loop) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item));
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
