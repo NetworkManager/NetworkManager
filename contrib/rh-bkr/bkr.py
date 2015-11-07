@@ -548,6 +548,7 @@ class CmdSubmit(CmdBase):
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
         self.parser.add_argument('--rpm', '-r', action='append', help='Filenames of RPMs. Supports (local) files, file://, jenkins://, brew://, brewtask:// and repo: URI schemes')
+        self.parser.add_argument('--build-id', '-b', help='Set to a git commit id or branch name of the upstream git repository of NM. If present, the script will build NM from source')
         self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Query nitrate for tests having this tag. Output is appended to $TESTS. Specifying more then once combines them as AND')
         self.parser.add_argument('--nitrate-all', '-a', action='store_true', help='Query all nitrate tests')
         self.parser.add_argument('--nitrate-exclude-tag', '-T', action='append', help='Query nitrate for tests not having this tag. Output is appended to $TESTS. In combination with --nitrate-tag this blacklists cases (after selecting then)')
@@ -718,6 +719,8 @@ class CmdSubmit(CmdBase):
                         return 'rhel-7' # rhel-7.2
                     if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'master' # upstream 1.1
+        if self.options.build_id:
+            return 'master'
         raise Exception("could not detect %s. Try setting as target branch GIT_TARGETBRANCH%s" % (key_name,
                     ((" or "+key_name) if key_name != 'GIT_TARGETBRANCH' else '')))
 
@@ -826,6 +829,23 @@ class CmdSubmit(CmdBase):
             return 'selinux=0'
         return ''
 
+    def _get_var_for_BUILD_ID(self, key):
+        v = self._get_var('BUILD_ID')
+        if v is not None:
+            return v
+        if self.options.build_id:
+            return self.options.build_id
+        return ''
+
+    def _get_var_for_RPM_LIST(self, key):
+        # RPM_LIST is provided by subs. If it is not,
+        # we want to fail gracefully if BUILD_ID is set.
+        # This avoids a warning.
+        v = self._get_var_for_BUILD_ID (key)
+        if v:
+            return ''
+        return None
+
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
@@ -843,10 +863,14 @@ class CmdSubmit(CmdBase):
             'UUID'              : str(uuid.uuid4()),
             'RESERVESYS'        : _get_var_for_RESERVESYS,
             'SELINUX_DISABLED'  : _get_var_for_SELINUX_DISABLED,
+            'BUILD_ID'          : _get_var_for_BUILD_ID,
+            'BUILD_TEST'        : 'true',
+            'BUILD_REPO'        : 'git://anongit.freedesktop.org/NetworkManager/NetworkManager',
             'CONF_LOGLEVEL'     : 'DEBUG',
             'CONF_DHCP'         : 'dhclient',
             'CONF_DEBUG'        : 'RLIMIT_CORE,fatal-warnings',
             'GIT_URL'           : 'http://code.engineering.redhat.com/gerrit/desktopqe/NetworkManager',
+            'RPM_LIST'          : _get_var_for_RPM_LIST,
         }
     def _process_line_get(self, key, replacements):
         if key in replacements:

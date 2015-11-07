@@ -17,7 +17,7 @@ abrt-addon-ccpp
 libreport-rhel-bugzilla
 %end
 
-%post --log=/dev/console
+%post --log=/dev/console --erroronfail
 set -x
 set -e
 
@@ -42,16 +42,81 @@ level=$CONF_LOGLEVEL
 domains=ALL
 EOF
 
-# Drop whatever NetworkManager is there. It could be that the distibution
-# ships older one than we're testing and the following yum install won't
-# update it.
-rpm -qa |grep NetworkManager |xargs rpm -e --nodeps
-
-yum install -y yum $RPM_LIST
-
 #A workaround for rdma machine post-deploy script woes, suggested by honli
 sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
 rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
+
+for r in $RPM_LIST; do
+    yum downgrade -y $$r || yum install -y $$r
+done
+
+if [[ -n "$BUILD_ID" ]]; then
+
+    yum install -y git rpm-build valgrind dbus-devel dbus-glib-devel wireless-tools-devel glib2-devel gobject-introspection-devel gettext-devel pkgconfig libnl3-devel 'perl(XML::Parser)' 'perl(YAML)' automake ppp-devel nss-devel dhclient readline-devel audit-libs-devel gtk-doc libudev-devel libuuid-devel libgudev1-devel vala-tools iptables bluez-libs-devel systemd libsoup-devel libndp-devel ModemManager-glib-devel newt-devel /usr/bin/dbus-launch pygobject3-base dbus-python libselinux-devel polkit-devel teamd-devel
+
+    mkdir /tmp/nm-build
+    cd /tmp/nm-build
+
+    git clone "$BUILD_REPO"
+    cd "./NetworkManager/"
+    git checkout "$BUILD_ID"
+
+    # for the tests, let's load some modules:
+    modprobe ip_gre
+
+    if [[ "$BUILD_TEST" != "" ]]; then
+        NOCONFIGURE=yes ./autogen.sh
+
+        ./configure \
+            --enable-maintainer-mode \
+            --enable-more-warnings=error \
+            --prefix=/opt/test \
+            --sysconfdir=/etc \
+            --enable-gtk-doc \
+            --enable-more-asserts \
+            --with-more-asserts=100 \
+            --enable-more-logging \
+            --enable-compile-warnings=yes\
+            --with-valgrind=no \
+            --enable-concheck \
+            --enable-wimax \
+            --enable-ifcfg-rh \
+            --enable-ifcfg-suse \
+            --enable-ifupdown \
+            --enable-ifnet \
+            --enable-vala=yes \
+            --enable-polkit=yes \
+            --with-nmtui=yes \
+            --with-modem-manager-1 \
+            --with-suspend-resume=systemd \
+            --enable-teamdctl=yes \
+            --enable-tests=root \
+            --with-netconfig=yes \
+            --with-crypto=nss \
+            --with-session-tracking=systemd \
+            --with-consolekit=yes \
+            --with-systemd-logind=yes \
+            --with-consolekit=yes
+
+        make -j4
+        make check -k
+    fi
+
+    ./contrib/fedora/rpm/build_clean.sh -c
+
+    pushd "./contrib/fedora/rpm/latest/RPMS/$ARCH/"
+        for p in $$(ls -1 ./*.rpm | sed 's#.*\(NetworkManager.*\)-1\.[0-9]\..*#\1#'); do
+            rpm -e --nodeps $$p || true
+        done
+        yum install -y ./*.rpm
+    popd
+
+    # ensure that the expected NM is installed.
+    COMMIT_ID="$$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/')"
+    yum list installed NetworkManager | grep -q -e "\.$$COMMIT_ID\."
+
+    echo "BUILD '$BUILD_ID' COMPLETE"
+fi
 %end
 ]]>
 				</ks_append>
