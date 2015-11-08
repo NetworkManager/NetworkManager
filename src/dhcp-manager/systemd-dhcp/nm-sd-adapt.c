@@ -166,21 +166,14 @@ sd_event_add_io (sd_event *e, sd_event_source **s, int fd, uint32_t events, sd_e
 static gboolean
 time_ready (struct sd_event_source *source)
 {
-	int r;
-	gboolean result;
-
 	source->refcount++;
 
-	r = source->time.cb (source, source->time.usec, source->user_data);
-	if (r < 0 || source->refcount <= 1) {
-		source->id = 0;
-		result = G_SOURCE_REMOVE;
-	} else
-		result = G_SOURCE_CONTINUE;
+	source->time.cb (source, source->time.usec, source->user_data);
+	source->id = 0;
 
 	sd_event_source_unref (source);
 
-	return result;
+	return G_SOURCE_REMOVE;
 }
 
 int
