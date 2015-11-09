@@ -5697,11 +5697,13 @@ activate_stage3_ip_config_start (NMDevice *self)
 	}
 
 	/* IPv4 */
-	if (!nm_device_activate_stage3_ip4_start (self))
+	if (   nm_device_activate_ip4_state_in_wait (self)
+	    && !nm_device_activate_stage3_ip4_start (self))
 		return;
 
 	/* IPv6 */
-	if (!nm_device_activate_stage3_ip6_start (self))
+	if (   nm_device_activate_ip6_state_in_wait (self)
+	    && !nm_device_activate_stage3_ip6_start (self))
 		return;
 
 	nm_device_check_ip_failed (self, TRUE);
