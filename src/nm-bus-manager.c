@@ -35,9 +35,6 @@
 #include "nm-exported-object.h"
 #include "NetworkManagerUtils.h"
 
-#define PRIV_SOCK_PATH NMRUNDIR "/private"
-#define PRIV_SOCK_TAG  "private"
-
 enum {
 	DBUS_CONNECTION_CHANGED = 0,
 	PRIVATE_CONNECTION_NEW,
@@ -61,7 +58,6 @@ typedef struct {
 	gboolean started;
 
 	GSList *private_servers;
-	PrivateServer *priv_server;
 
 	GDBusProxy *proxy;
 
@@ -566,69 +562,11 @@ nm_bus_manager_get_unix_user (NMBusManager *self,
 /**************************************************************/
 
 static void
-private_connection_new (NMBusManager *self, GDBusConnection *connection)
-{
-	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMExportedObject *object;
-	const char *path;
-	GError *error = NULL;
-
-	/* Register all exported objects on this private connection */
-	g_hash_table_iter_init (&iter, priv->exported);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &path, (gpointer *) &object)) {
-		GSList *interfaces = nm_exported_object_get_interfaces (object);
-
-		nm_assert_exported (self, path, object);
-
-		for (; interfaces; interfaces = interfaces->next) {
-			GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (interfaces->data);
-
-			if (g_dbus_interface_skeleton_export (interface, connection, path, &error)) {
-				nm_log_trace (LOGD_CORE, "(%s) registered %p (%s) at '%s' on private socket.",
-				              PRIV_SOCK_TAG, object, G_OBJECT_TYPE_NAME (interface), path);
-			} else {
-				nm_log_warn (LOGD_CORE, "(%s) could not register %p (%s) at '%s' on private socket: %s.",
-				             PRIV_SOCK_TAG, object, G_OBJECT_TYPE_NAME (interface), path,
-				             error->message);
-				g_clear_error (&error);
-			}
-		}
-	}
-}
-
-static void
-private_server_setup (NMBusManager *self)
-{
-	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-
-	/* Skip this step if this is just a test program */
-	if (nm_utils_get_testing ())
-		return;
-
-	/* Set up our main private DBus socket */
-	if (mkdir (NMRUNDIR, 0755) == -1) {
-		if (errno != EEXIST)
-			nm_log_warn (LOGD_CORE, "Error creating directory \"%s\": %d (%s)", NMRUNDIR, errno, g_strerror (errno));
-	}
-	priv->priv_server = private_server_new (PRIV_SOCK_PATH, PRIV_SOCK_TAG, self);
-	if (priv->priv_server) {
-		priv->private_servers = g_slist_append (priv->private_servers, priv->priv_server);
-		g_signal_connect (self,
-		                  NM_BUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
-		                  (GCallback) private_connection_new,
-		                  NULL);
-	}
-}
-
-static void
 nm_bus_manager_init (NMBusManager *self)
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 
 	priv->exported = g_hash_table_new (g_str_hash, g_str_equal);
-
-	private_server_setup (self);
 }
 
 static void
@@ -650,7 +588,6 @@ nm_bus_manager_dispose (GObject *object)
 
 	g_slist_free_full (priv->private_servers, private_server_free);
 	priv->private_servers = NULL;
-	priv->priv_server = NULL;
 
 	nm_bus_manager_cleanup (self);
 
@@ -879,8 +816,6 @@ nm_bus_manager_register_object (NMBusManager *self,
                                 NMExportedObject *object)
 {
 	NMBusManagerPrivate *priv;
-	GDBusConnection *connection;
-	GHashTableIter iter;
 	const char *path;
 	GSList *interfaces, *ifs;
 
@@ -913,16 +848,6 @@ nm_bus_manager_register_object (NMBusManager *self,
 		for (ifs = interfaces; ifs; ifs = ifs->next) {
 			g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (ifs->data),
 			                                  priv->connection, path, NULL);
-		}
-	}
-
-	if (priv->priv_server) {
-		g_hash_table_iter_init (&iter, priv->priv_server->connections);
-		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL)) {
-			for (ifs = interfaces; ifs; ifs = ifs->next) {
-				g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (ifs->data),
-				                                  connection, path, NULL);
-			}
 		}
 	}
 }
