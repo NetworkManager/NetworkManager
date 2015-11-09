@@ -2675,6 +2675,11 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			              NM_SETTING_WIRELESS_HIDDEN, hidden,
 			              NULL);
 			g_bytes_unref (ssid);
+
+			/* Warn when the provided AP identifier looks like BSSID instead of SSID */
+			if (bssid1_arr)
+				g_printerr (_("Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"),
+				               param_user);
 		}
 	}
 
