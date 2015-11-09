@@ -59,8 +59,7 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 			<repos/>
 			<distroRequires>
 				<and>
-					<!--<distro_family op="=" value="$DISTRO_FAMILY"/>-->
-					<distro_name op="=" value="$DISTRO_NAME"/>
+					$DISTROREQUIRES
 					<distro_variant op="=" value="$DISTRO_VARIANT"/>
 					<distro_method op="=" value="$DISTRO_METHOD"/>
 					<distro_arch op="=" value="$ARCH"/>

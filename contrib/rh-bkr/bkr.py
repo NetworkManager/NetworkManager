@@ -635,26 +635,34 @@ class CmdSubmit(CmdBase):
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
 
-    def _get_var(self, key_name):
-        if not hasattr(self, '_default_var'):
-            # Lazily set self._default_var from the command line arguments
+    def _get_var(self, key_name, default_fallback=True):
+        if not hasattr(self, '_var'):
+            # Lazily set self._var from the command line arguments
             # the first time we need it
-            self._default_var = {}
+            self._var = {}
+            self._var_opts = {}
             if self.options.var is not None:
                 for v0 in self.options.var:
                     v = v0.split('=', 1)
                     if len(v) != 2:
                         raise Exception("Invalid --var option %s. Should be NAME=VALUE" % (v0))
-                    self._default_var[v[0]] = v[1]
-        if key_name in self._default_var:
-            return self._default_var[key_name]
+                    self._var[v[0]] = v[1]
+                    self._var_opts[v[0]] = v[1]
+        if not default_fallback:
+            if key_name in self._var_opts:
+                return self._var_opts[key_name]
+        else:
+            if key_name in self._var:
+                return self._var[key_name]
         v = os.environ.get(key_name)
+        if not default_fallback:
+            return v
         if v is None and key_name in CmdSubmit.DefaultReplacements:
             v = CmdSubmit.DefaultReplacements[key_name]
             if not isinstance(v, basestring):
-                self._default_var[key_name] = None
+                self._var[key_name] = None
                 v = v(self, key_name)
-        self._default_var[key_name] = v
+        self._var[key_name] = v
         return v
 
 
@@ -766,6 +774,33 @@ class CmdSubmit(CmdBase):
             pass
         return 'RHEL-7.2-20150907.n.0'
 
+    def _get_var_for_DISTRO_TAG(self, key):
+        v = self._get_var('DISTRO_TAG')
+        if v is not None:
+            return v
+        target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_TAG")
+        if target_branch == 'rhel-7.0':
+            return 'RHEL-7_0-Z-branch'
+        if target_branch == 'rhel-7.1':
+            return 'RHEL-7_1-Z-branch'
+        if target_branch == 'rhel-7':
+            pass
+        return 'RTT_ACCEPTED'
+
+    def _get_var_for_DISTROREQUIRES(self, key):
+        v = self._get_var('DISTROREQUIRES')
+        if v is not None:
+            return v
+        v = self._get_var('DISTRO_TAG', False)
+        if v is None:
+            v = self._get_var('DISTRO_NAME', False)
+            if v is not None:
+                return '<distro_name op="=" value="%s"/>' % (v)
+        v = self._get_var ('DISTRO_TAG')
+        if v is not None:
+            return '<distro_family op="=" value="%s"/><distro_tag op="=" value="%s"/>' % (self._get_var('DISTRO_FAMILY'), v)
+        return None
+
     def _get_var_for_RESERVESYS(self, key):
         v = self._get_var('RESERVESYS')
         if v is not None:
@@ -796,11 +831,13 @@ class CmdSubmit(CmdBase):
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
             'DISTRO_VARIANT'    : 'Workstation',
             'DISTRO_NAME'       : _get_var_for_DISTRO_NAME,
+            'DISTRO_TAG'        : _get_var_for_DISTRO_TAG,
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'ARCH'              : _get_var_for_ARCH,
             'HOSTREQUIRES'      : _get_var_for_HOSTREQUIRES,
             'JOBTYPE'           : _get_var_for_JOBTYPE,
+            'DISTROREQUIRES'    : _get_var_for_DISTROREQUIRES,
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
             'GIT_TARGETBRANCH'  : _get_var_for_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
