@@ -348,10 +348,10 @@ When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show'.
 .RE
 .TP
-.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [passwd <file with passwords>]
+.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]
 .RE
 .RS
-.B up ifname <ifname> [ap <BSSID>] [passwd <file with passwords>]
+.B up ifname <ifname> [ap <BSSID>] [passwd-file <file with passwords>]
 .RS
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
