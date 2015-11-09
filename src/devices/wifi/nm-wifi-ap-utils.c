@@ -548,11 +548,11 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 
 	/* Fill in missing SSID */
-	ap_ssid_bytes = g_bytes_new (ap_ssid->data, ap_ssid->len);
+	ap_ssid_bytes = ap_ssid ? g_bytes_new (ap_ssid->data, ap_ssid->len) : NULL;
 	ssid = nm_setting_wireless_get_ssid (s_wifi);
 	if (!ssid)
 		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_SSID, ap_ssid_bytes, NULL);
-	else if (!g_bytes_equal (ssid, ap_ssid_bytes)) {
+	else if (!ap_ssid_bytes || !g_bytes_equal (ssid, ap_ssid_bytes)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
