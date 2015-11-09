@@ -5400,11 +5400,13 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	}
 
 	/* IPv4 */
-	if (!nm_device_activate_stage3_ip4_start (self))
+	if (   nm_device_activate_ip4_state_in_wait (self)
+	    && !nm_device_activate_stage3_ip4_start (self))
 		goto out;
 
 	/* IPv6 */
-	if (!nm_device_activate_stage3_ip6_start (self))
+	if (   nm_device_activate_ip6_state_in_wait (self)
+	    && !nm_device_activate_stage3_ip6_start (self))
 		goto out;
 
 	nm_device_check_ip_failed (self, TRUE);
