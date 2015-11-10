@@ -26,6 +26,7 @@ SUBDIRS += \
 	dhcp-manager/tests \
 	dnsmasq-manager/tests \
 	platform \
+	devices \
 	rdisc \
 	supplicant-manager/tests \
 	tests

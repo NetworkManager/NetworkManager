@@ -1189,6 +1189,8 @@ update_dynamic_ip_setup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	GError *error;
+	gconstpointer addr;
+	size_t addr_length;
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
@@ -1217,8 +1219,10 @@ update_dynamic_ip_setup (NMDevice *self)
 
 	if (priv->lldp_listener && nm_lldp_listener_is_running (priv->lldp_listener)) {
 		nm_lldp_listener_stop (priv->lldp_listener);
+		addr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &addr_length);
+
 		if (!nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self),
-		                             nm_device_get_iface (self), &error)) {
+		                             nm_device_get_iface (self), addr, addr_length, &error)) {
 			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be restarted: %s",
 			       priv->lldp_listener, error->message);
 			g_clear_error (&error);
@@ -3146,6 +3150,8 @@ activate_stage2_device_config (NMDevice *self)
 
 	if (lldp_rx_enabled (self)) {
 		gs_free_error GError *error = NULL;
+		gconstpointer addr;
+		size_t addr_length;
 
 		if (priv->lldp_listener)
 			nm_lldp_listener_stop (priv->lldp_listener);
@@ -3157,8 +3163,10 @@ activate_stage2_device_config (NMDevice *self)
 			                  self);
 		}
 
+		addr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &addr_length);
+
 		if (nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self),
-		                            nm_device_get_iface (self), &error))
+		                            nm_device_get_iface (self), addr, addr_length, &error))
 			_LOGD (LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
 		else {
 			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be started: %s",
