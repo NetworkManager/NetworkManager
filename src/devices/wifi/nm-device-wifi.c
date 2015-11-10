@@ -1875,7 +1875,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		merge_scanned_ap (self, ap);
 		g_object_unref (ap);
 	} else
-		_LOGW (LOGD_WIFI_SCAN, "invalid AP properties received");
+		_LOGD (LOGD_WIFI_SCAN, "invalid AP properties received for %s", object_path);
 
 	/* Remove outdated access points */
 	schedule_scanlist_cull (self);
