@@ -897,6 +897,34 @@ EXIT:
 }
 
 /**
+ * nm_connection_verify_secrets:
+ * @connection: the #NMConnection to verify in
+ * @error: location to store error, or %NULL
+ *
+ * Verifies the secrets in the connection.
+ *
+ * Returns: %TRUE if the secrets are valid, %FALSE if they are not
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_connection_verify_secrets (NMConnection *connection, GError **error)
+{
+	GHashTableIter iter;
+	NMSetting *setting;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
+		if (!nm_setting_verify_secrets (setting, connection, error))
+			return FALSE;
+	}
+	return TRUE;
+}
+
+/**
  * nm_connection_normalize:
  * @connection: the #NMConnection to normalize
  * @parameters: (allow-none) (element-type utf8 gpointer): a #GHashTable with

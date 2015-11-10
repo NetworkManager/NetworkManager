@@ -145,6 +145,8 @@ gboolean      nm_connection_diff          (NMConnection *a,
                                            GHashTable **out_settings);
 
 gboolean      nm_connection_verify        (NMConnection *connection, GError **error);
+NM_AVAILABLE_IN_1_2
+gboolean      nm_connection_verify_secrets (NMConnection *connection, GError **error);
 gboolean      nm_connection_normalize     (NMConnection *connection,
                                            GHashTable *parameters,
                                            gboolean *modified,

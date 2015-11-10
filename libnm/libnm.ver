@@ -858,6 +858,7 @@ libnm_1_0_6 {
 libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
+	nm_connection_verify_secrets;
 	nm_device_ethernet_get_s390_subchannels;
 	nm_device_get_lldp_neighbors;
 	nm_device_get_metered;
@@ -895,6 +896,7 @@ global:
 	nm_setting_ip_config_remove_dns_option;
 	nm_setting_ip_config_remove_dns_option_by_value;
 	nm_setting_mac_randomization_get_type;
+	nm_setting_verify_secrets;
 	nm_setting_vpn_get_timeout;
 	nm_setting_wired_get_wake_on_lan;
 	nm_setting_wired_get_wake_on_lan_password;

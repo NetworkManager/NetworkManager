@@ -1017,6 +1017,63 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static gboolean
+_verify_wep_key (const char *wep_key,
+                 NMWepKeyType wep_key_type,
+                 const char *property,
+                 GError **error)
+{
+	if (wep_key && !nm_utils_wep_key_valid (wep_key, wep_key_type)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, property);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+verify_secrets (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
+
+	/* LEAP */
+	if (   priv->auth_alg
+	    && !strcmp (priv->auth_alg, "leap")
+	    && !strcmp (priv->key_mgmt, "ieee8021x")) {
+		if (!_nm_setting_verify_secret_string (priv->leap_password,
+		                                       NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+		                                       NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
+		                                       error))
+			return FALSE;
+	}
+
+	/* WEP */
+	if (!_verify_wep_key (priv->wep_key0, priv->wep_key_type, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, error))
+		return FALSE;
+	if (!_verify_wep_key (priv->wep_key1, priv->wep_key_type, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, error))
+		return FALSE;
+	if (!_verify_wep_key (priv->wep_key2, priv->wep_key_type, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, error))
+		return FALSE;
+	if (!_verify_wep_key (priv->wep_key3, priv->wep_key_type, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, error))
+		return FALSE;
+
+	/* WPA-PSK */
+	if (priv->psk && !nm_utils_wpa_psk_valid (priv->psk)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_PSK);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
                   gboolean verify_secret,
@@ -1266,6 +1323,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	object_class->finalize     = finalize;
 
 	parent_class->verify           = verify;
+	parent_class->verify_secrets   = verify_secrets;
 	parent_class->need_secrets     = need_secrets;
 	parent_class->get_secret_flags = get_secret_flags;
 	parent_class->set_secret_flags = set_secret_flags;

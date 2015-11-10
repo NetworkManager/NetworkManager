@@ -226,6 +226,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+static gboolean
+verify_secrets (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	return _nm_setting_verify_secret_string (NM_SETTING_ADSL_GET_PRIVATE (setting)->password,
+	                                         NM_SETTING_ADSL_SETTING_NAME,
+	                                         NM_SETTING_ADSL_PASSWORD,
+	                                         error);
+}
+
 static GPtrArray *
 need_secrets (NMSetting *setting)
 {
@@ -349,6 +358,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->verify_secrets = verify_secrets;
 	parent_class->need_secrets = need_secrets;
 
 	/* Properties */

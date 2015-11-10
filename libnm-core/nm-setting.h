@@ -180,6 +180,10 @@ typedef struct {
 	                                  NMConnection  *connection,
 	                                  GError       **error);
 
+	gboolean    (*verify_secrets)    (NMSetting     *setting,
+	                                  NMConnection  *connection,
+	                                  GError       **error);
+
 	GPtrArray  *(*need_secrets)      (NMSetting  *setting);
 
 	int         (*update_one_secret) (NMSetting  *setting,
@@ -211,7 +215,7 @@ typedef struct {
 	                                  NMSettingCompareFlags flags);
 
 	/*< private >*/
-	gpointer padding[8];
+	gpointer padding[7];
 } NMSettingClass;
 
 /**
@@ -241,6 +245,11 @@ const char *nm_setting_get_name      (NMSetting *setting);
 gboolean    nm_setting_verify        (NMSetting     *setting,
                                       NMConnection  *connection,
                                       GError       **error);
+
+NM_AVAILABLE_IN_1_2
+gboolean    nm_setting_verify_secrets (NMSetting     *setting,
+                                       NMConnection  *connection,
+                                       GError       **error);
 
 gboolean    nm_setting_compare       (NMSetting *a,
                                       NMSetting *b,

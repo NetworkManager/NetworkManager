@@ -1010,6 +1010,53 @@ _nm_setting_verify (NMSetting *setting, NMConnection *connection, GError **error
 	return NM_SETTING_VERIFY_SUCCESS;
 }
 
+/**
+ * nm_setting_verify_secrets:
+ * @setting: the #NMSetting to verify secrets in
+ * @connection: (allow-none): the #NMConnection that @setting came from, or
+ *   %NULL if @setting is being verified in isolation.
+ * @error: location to store error, or %NULL
+ *
+ * Verifies the secrets in the setting.
+ * The returned #GError contains information about which secret of the setting
+ * failed validation, and in what way that secret failed validation.
+ * The secret validation is done separately from main setting validation, because
+ * in some cases connection failure is not desired just for the secrets.
+ *
+ * Returns: %TRUE if the setting secrets are valid, %FALSE if they are not
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_setting_verify_secrets (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	g_return_val_if_fail (NM_IS_SETTING (setting), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!connection || NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!error || *error == NULL, NM_SETTING_VERIFY_ERROR);
+
+	if (NM_SETTING_GET_CLASS (setting)->verify_secrets)
+		return NM_SETTING_GET_CLASS (setting)->verify_secrets (setting, connection, error);
+
+	return NM_SETTING_VERIFY_SUCCESS;
+}
+
+gboolean
+_nm_setting_verify_secret_string (const char *str,
+                                  const char *setting_name,
+                                  const char *property,
+                                  GError **error)
+{
+	if (str && !*str) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s.%s: ", setting_name, property);
+		return FALSE;
+	}
+	return TRUE;
+}
+
 static gboolean
 compare_property (NMSetting *setting,
                   NMSetting *other,
