@@ -769,7 +769,7 @@ of its latest state.
 .B device - show and manage network interfaces
 .br
 .TP
-.SS \fICOMMAND\fP := { status | show | set | connect | disconnect | delete | wifi }
+.SS \fICOMMAND\fP := { status | show | set | connect | disconnect | delete | wifi | lldp }
 .sp
 .RS
 .TP
@@ -893,6 +893,13 @@ with hidden SSIDs. You can provide multiple \fIssid\fP parameters in order to
 scan more SSIDs.
 .br
 This command does not show the APs, use 'nmcli device wifi list' for that.
+.TP
+.B lldp [list [ifname <ifname>]]
+.br
+Display information about neighboring devices learned through the Link
+Layer Discovery Protocol (LLDP). The \fIifname\fP option can be used to
+list neighbors only for a given interface. The protocol must be
+enabled in the connection settings.
 .RE
 
 .TP

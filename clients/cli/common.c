@@ -1200,3 +1200,46 @@ nmc_rl_set_deftext (void)
 	return 0;
 }
 
+/**
+ * nmc_parse_lldp_capabilities:
+ * @value: the capabilities value
+ *
+ * Parses LLDP capabilities flags
+ *
+ * Returns: a newly allocated string containing capabilities names separated by commas.
+ */
+char *
+nmc_parse_lldp_capabilities (guint value)
+{
+	/* IEEE Std 802.1AB-2009 - Table 8.4 */
+	const char *names[] = { "other", "repeater", "mac-bridge", "wlan-access-point",
+	                        "router", "telephone", "docsis-cable-device", "station-only",
+	                        "c-vlan-component", "s-vlan-component", "tpmr" };
+	gboolean first = TRUE;
+	GString *str;
+	int i;
+
+	if (!value)
+		return g_strdup ("none");
+
+	str = g_string_new ("");
+
+	for (i = 0; i < G_N_ELEMENTS (names); i++) {
+		if (value & (1 << i)) {
+			if (!first)
+				g_string_append_c (str, ',');
+
+			first = FALSE;
+			value &= ~(1 << i);
+			g_string_append (str, names[i]);
+		}
+	}
+
+	if (value) {
+		if (!first)
+			g_string_append_c (str, ',');
+		g_string_append (str, "reserved");
+	}
+
+	return g_string_free (str, FALSE);
+}

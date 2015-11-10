@@ -70,4 +70,6 @@ void nmc_set_in_readline (gboolean in_readline);
 extern char *nmc_rl_pre_input_deftext;
 int nmc_rl_set_deftext (void);
 
+char *nmc_parse_lldp_capabilities (guint value);
+
 #endif /* NMC_COMMON_H */

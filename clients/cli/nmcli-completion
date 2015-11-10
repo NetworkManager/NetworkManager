@@ -1291,7 +1291,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi set
+                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi set lldp
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1359,7 +1359,19 @@ _nmcli()
                             esac
                         fi
                         ;;
-
+                    l|ll|lld|lldp)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND "${words[2]}" list
+                        else
+                            case "${words[2]}" in
+                                l|li|lis|list)
+                                    _nmcli_array_delete_at words 0 2
+                                    OPTIONS=(ifname)
+                                    _nmcli_compl_ARGS
+                                    ;;
+                            esac
+                        fi
+                        ;;
                 esac
             fi
             ;;

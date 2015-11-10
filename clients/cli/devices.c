@@ -247,6 +247,31 @@ static NmcOutputField nmc_fields_dev_show_sections[] = {
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
                                              "GENERAL.CONNECTION,GENERAL.CON-PATH,WIRED-PROPERTIES,IP4,IP6"
 
+/* Available fields for 'device lldp' */
+static NmcOutputField nmc_fields_dev_lldp_list[] = {
+	{"NAME",                    N_("NAME")},                     /* 0 */
+	{"DEVICE",                  N_("DEVICE")},                   /* 1 */
+	{"CHASSIS-ID",              N_("CHASSIS-ID")},               /* 2 */
+	{"PORT-ID",                 N_("PORT-ID")},                  /* 3 */
+	{"PORT-DESCRIPTION",        N_("PORT-DESCRIPTION")},         /* 4 */
+	{"SYSTEM-NAME",             N_("SYSTEM-NAME")},              /* 5 */
+	{"SYSTEM-DESCRIPTION",      N_("SYSTEM-DESCRIPTION")},       /* 6 */
+	{"SYSTEM-CAPABILITIES",     N_("SYSTEM-CAPABILITIES")},      /* 7 */
+	{"IEEE-802-1-PVID",         N_("IEEE-802-1-PVID")},          /* 8 */
+	{"IEEE-802-1-PPVID",        N_("IEEE-802-1-PPVID")},         /* 9 */
+	{"IEEE-802-1-PPVID-FLAGS",  N_("IEEE-802-1-PPVID-FLAGS")},   /* 10 */
+	{"IEEE-802-1-VID",          N_("IEEE-802-1-VID")},           /* 11 */
+	{"IEEE-802-1-VLAN-NAME",    N_("IEEE-802-1-VLAN-NAME")},     /* 12 */
+	{"DESTINATION",             N_("DESTINATION")},              /* 13 */
+	{"CHASSIS-ID-TYPE",         N_("CHASSIS-ID-TYPE")},          /* 14 */
+	{"PORT-ID-TYPE",            N_("PORT-ID-TYPE")},             /* 15 */
+	{NULL, NULL}
+};
+#define NMC_FIELDS_DEV_LLDP_LIST_ALL     "DEVICE,CHASSIS-ID,PORT-ID,PORT-DESCRIPTION,SYSTEM-NAME,SYSTEM-DESCRIPTION," \
+                                         "SYSTEM-CAPABILITIES,IEEE-802-1-PVID,IEEE-802-1-PPVID,IEEE-802-1-PPVID-FLAGS," \
+                                         "IEEE-802-1-VID,IEEE-802-1-VLAN-NAME,DESTINATION,CHASSIS-ID-TYPE,PORT-ID-TYPE"
+#define NMC_FIELDS_DEV_LLDP_LIST_COMMON  "DEVICE,CHASSIS-ID,PORT-ID,PORT-DESCRIPTION,SYSTEM-NAME,SYSTEM-DESCRIPTION," \
+                                         "SYSTEM-CAPABILITIES"
 
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
@@ -257,7 +282,7 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli device { COMMAND | help }\n\n"
-	              "COMMAND := { status | show | connect | disconnect | delete | wifi }\n\n"
+	              "COMMAND := { status | show | connect | disconnect | delete | wifi | lldp }\n\n"
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
 	              "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
@@ -270,6 +295,7 @@ usage (void)
 	              "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]\n\n"
 	              "               [password <password>] [--show-password]\n\n"
 	              "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
+	              "  lldp [list [ifname <ifname>]]\n\n"
 	              ));
 }
 
@@ -396,6 +422,17 @@ usage_device_wifi (void)
 	              "SSID, which is useful for APs with hidden SSIDs. More 'ssid' parameters can be\n"
 	              "given. Note that this command does not show the APs,\n"
 	              "use 'nmcli device wifi list' for that.\n\n"));
+}
+
+static void
+usage_device_lldp (void)
+{
+	g_printerr (_("Usage: nmcli device lldp { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [list [ifname <ifname>]]\n"
+	              "\n"
+	              "List neighboring devices discovered through LLDP. The 'ifname' option can be\n"
+	              "used to list neighbors for a particular interface.\n\n"));
 }
 
 /* quit main loop */
@@ -3171,6 +3208,187 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static int
+show_device_lldp_list (NMDevice *device, NmCli *nmc, char *fields_str, int *counter)
+{
+	NmcOutputField *tmpl, *arr;
+	GPtrArray *neighbors;
+	size_t tmpl_len;
+	const char *str;
+	int i;
+
+	neighbors = nm_device_get_lldp_neighbors (device);
+
+	if (!neighbors || !neighbors->len)
+		return 0;
+
+	tmpl = nmc_fields_dev_lldp_list;
+	tmpl_len = sizeof (nmc_fields_dev_lldp_list);
+
+	/* Main header name */
+	nmc->print_fields.header_name = (char *) construct_header_name (_("Device LLDP neighbors"),
+	                                                                nm_device_get_iface (device));
+	nmc->print_fields.indices = parse_output_fields (fields_str, nmc_fields_dev_lldp_list, FALSE, NULL, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	for (i = 0; i < neighbors->len; i++) {
+		NMLldpNeighbor *neighbor = neighbors->pdata[i];
+		guint value;
+
+		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+		set_val_str (arr, 0, g_strdup_printf ("NEIGHBOR[%d]", (*counter)++));
+
+		set_val_strc (arr, 1, nm_device_get_iface (device));
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_CHASSIS_ID, &str))
+			set_val_strc (arr, 2, str);
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_PORT_ID, &str))
+			set_val_strc (arr, 3, str);
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_PORT_DESCRIPTION, &str))
+			set_val_strc (arr, 4, str);
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_SYSTEM_NAME, &str))
+			set_val_strc (arr, 5, str);
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, &str))
+			set_val_strc (arr, 6, str);
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, &value))
+			set_val_str (arr, 7, g_strdup_printf ("%u (%s)", value, nmc_parse_lldp_capabilities (value)));
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PVID, &value))
+			set_val_str (arr, 8, g_strdup_printf ("%u", value));
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID, &value))
+			set_val_str (arr, 9, g_strdup_printf ("%u", value));
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS, &value))
+			set_val_str (arr, 10, g_strdup_printf ("%u", value));
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_VID, &value))
+			set_val_str (arr, 11, g_strdup_printf ("%u", value));
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME, &str))
+			set_val_strc (arr, 12, str);
+
+		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_DESTINATION, &str))
+			set_val_strc (arr, 13, str);
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_CHASSIS_ID_TYPE, &value))
+			set_val_strc (arr, 14, g_strdup_printf ("%u", value));
+
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_PORT_ID_TYPE, &value))
+			set_val_strc (arr, 15, g_strdup_printf ("%u", value));
+
+		g_ptr_array_add (nmc->output_data, arr);
+	}
+
+	print_data (nmc);
+	nmc_empty_output_fields (nmc);
+
+	return neighbors->len;
+}
+
+static gboolean
+do_device_lldp_list (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice *device = NULL, **devices = NULL;
+	GError *error = NULL;
+	const char *ifname = NULL;
+	char *fields_str;
+	int i, counter = 0;
+
+	while (argc > 0) {
+		if (strcmp (*argv, "ifname") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			ifname = *argv;
+		} else {
+			g_string_printf (nmc->return_text, _("Error: unknown parameter: %s"), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+
+		argc--;
+		argv++;
+	}
+
+	if (argc > 0) {
+		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+		fields_str = NMC_FIELDS_DEV_LLDP_LIST_COMMON;
+	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+		fields_str = NMC_FIELDS_DEV_LLDP_LIST_ALL;
+	else
+		fields_str = nmc->required_fields;
+
+	nmc->print_fields.indices = parse_output_fields (fields_str, nmc_fields_dev_lldp_list, FALSE, NULL, &error);
+
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: 'device lldp list': %s"), error->message);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return nmc->return_value;
+	}
+
+	devices = get_devices_sorted (nmc->client);
+
+	if (ifname) {
+		for (i = 0; devices[i]; i++) {
+			NMDevice *candidate = devices[i];
+			const char *dev_iface = nm_device_get_iface (candidate);
+
+			if (!g_strcmp0 (dev_iface, ifname)) {
+				device = candidate;
+				break;
+			}
+		}
+
+		if (!device) {
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+			goto error;
+		}
+
+		nmc_empty_output_fields (nmc);
+		show_device_lldp_list (device, nmc, fields_str, &counter);
+	} else {
+		for (i = 0; devices[i]; i++) {
+			nmc_empty_output_fields (nmc);
+			show_device_lldp_list (devices[i], nmc, fields_str, &counter);
+		}
+	}
+
+error:
+	g_free (devices);
+	return nmc->return_value;
+}
+
+static NMCResultCode
+do_device_lldp (NmCli *nmc, int argc, char **argv)
+{
+	if (argc == 0)
+		nmc->return_value = do_device_lldp_list (nmc, argc, argv);
+	else if (matches (*argv, "list") == 0)
+		nmc->return_value = do_device_lldp_list (nmc, argc-1, argv+1);
+	else {
+		g_string_printf (nmc->return_text, _("Error: 'device lldp' command '%s' is not valid."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	return nmc->return_value;
+}
+
 static gboolean
 is_single_word (const char* line)
 {
@@ -3331,6 +3549,17 @@ do_devices (NmCli *nmc, int argc, char **argv)
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = do_device_wifi (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "lldp") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_lldp ();
+				goto usage_exit;
+			}
+			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
+				goto opt_error;
+			if (!nmc->mode_specified)
+				nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
+			nmc->return_value = do_device_lldp (nmc, argc-1, argv+1);
 		}
 		else {
 			usage ();
