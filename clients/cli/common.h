@@ -57,6 +57,9 @@ void nmc_secrets_requested (NMSecretAgentSimple *agent,
                             GPtrArray           *secrets,
                             gpointer             user_data);
 
+char *nmc_unique_connection_name (const GPtrArray *connections,
+                                  const char *try_name);
+
 void nmc_cleanup_readline (void);
 char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);
 char *nmc_rl_gen_func_basic (const char *text, int state, const char **words);
