@@ -1407,7 +1407,11 @@ impl_settings_add_connection_helper (NMSettings *self,
 	GError *error = NULL;
 
 	connection = nm_simple_connection_new_from_dbus (settings, &error);
+
 	if (connection) {
+		if (!nm_connection_verify_secrets (connection, &error))
+			goto failure;
+
 		nm_settings_add_connection_dbus (self,
 		                                 connection,
 		                                 save_to_disk,
@@ -1415,10 +1419,12 @@ impl_settings_add_connection_helper (NMSettings *self,
 		                                 impl_settings_add_connection_add_cb,
 		                                 NULL);
 		g_object_unref (connection);
-	} else {
-		g_assert (error);
-		g_dbus_method_invocation_take_error (context, error);
+		return;
 	}
+
+failure:
+	g_assert (error);
+	g_dbus_method_invocation_take_error (context, error);
 }
 
 static void
