@@ -3305,7 +3305,7 @@ _set_stable_privacy (struct in6_addr *addr,
 		return FALSE;
 	}
 
-	key_len = CLAMP (key_len, 0, G_MAXUINT32);
+	key_len = MIN (key_len, G_MAXUINT32);
 
 	g_checksum_update (sum, addr->s6_addr, 8);
 	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
