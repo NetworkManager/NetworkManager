@@ -334,7 +334,7 @@ update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 }
 
 static void
-set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap, gboolean recheck_available_connections, gboolean force_remove_old_ap)
+set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap, gboolean recheck_available_connections)
 {
 	NMDeviceWifiPrivate *priv;
 	NMAccessPoint *old_ap;
@@ -358,7 +358,8 @@ set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap, gboolean recheck_avai
 	if (old_ap) {
 		NM80211Mode mode = nm_ap_get_mode (old_ap);
 
-		if (force_remove_old_ap || mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_AP || nm_ap_get_fake (old_ap))
+		/* Remove any AP from the internal list if it was created by NM or isn't known to the supplicant */
+		if (mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_AP || nm_ap_get_fake (old_ap))
 			ap_add_remove (self, ACCESS_POINT_REMOVED, old_ap, recheck_available_connections);
 		g_object_unref (old_ap);
 	}
@@ -477,7 +478,7 @@ remove_all_aps (NMDeviceWifi *self)
 	if (!g_hash_table_size (priv->aps))
 		return;
 
-	set_current_ap (self, NULL, FALSE, FALSE);
+	set_current_ap (self, NULL, FALSE);
 
 again:
 	g_hash_table_iter_init (&iter, priv->aps);
@@ -506,12 +507,7 @@ deactivate (NMDevice *device)
 
 	priv->rate = 0;
 
-	/* If the AP is 'fake', i.e. it wasn't actually found from
-	 * a scan but the user tried to connect to it manually (maybe it
-	 * was non-broadcasting or something) get rid of it, because 'fake'
-	 * APs should only live for as long as we're connected to them.
-	 **/
-	set_current_ap (self, NULL, TRUE, FALSE);
+	set_current_ap (self, NULL, TRUE);
 
 	/* Clear any critical protocol notification in the Wi-Fi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
@@ -1719,13 +1715,7 @@ link_timeout_cb (gpointer user_data)
 	if (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
 		return FALSE;
 
-	/* If the access point failed, and wasn't found by the supplicant when it
-	 * attempted to reconnect, then it's probably out of range or turned off.
-	 * Remove it from the list and if it's actually still present, it'll be
-	 * found in the next scan.
-	 */
-	if (priv->ssid_found == FALSE && priv->current_ap)
-		set_current_ap (self, NULL, TRUE, TRUE);
+	set_current_ap (self, NULL, TRUE);
 
 	nm_device_state_changed (device,
 	                         NM_DEVICE_STATE_FAILED,
@@ -2073,7 +2063,7 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 		       new_bssid ? new_bssid : "(none)",
 		       new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
 
-		set_current_ap (self, new_ap, TRUE, FALSE);
+		set_current_ap (self, new_ap, TRUE);
 	}
 }
 
@@ -2353,13 +2343,13 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	g_object_freeze_notify (G_OBJECT (self));
 	ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
 	g_object_thaw_notify (G_OBJECT (self));
-	set_current_ap (self, ap, FALSE, FALSE);
+	set_current_ap (self, ap, FALSE);
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
 	                                          nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 
 done:
-	set_current_ap (self, ap, TRUE, FALSE);
+	set_current_ap (self, ap, TRUE);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
