@@ -491,9 +491,10 @@ nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 	ap = (NMAccessPoint *) g_object_new (NM_TYPE_AP, NULL);
 	nm_ap_update_from_properties (ap, supplicant_path, properties);
 
-	/* ignore APs with invalid BSSIDs */
+	/* ignore APs with invalid or missing BSSIDs */
 	addr = nm_ap_get_address (ap);
-	if (   nm_utils_hwaddr_matches (addr, -1, bad_bssid1, ETH_ALEN)
+	if (   !addr
+	    || nm_utils_hwaddr_matches (addr, -1, bad_bssid1, ETH_ALEN)
 	    || nm_utils_hwaddr_matches (addr, -1, bad_bssid2, ETH_ALEN)) {
 		g_object_unref (ap);
 		return NULL;

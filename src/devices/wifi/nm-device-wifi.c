@@ -1551,7 +1551,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 
 	ap = nm_ap_new_from_properties (object_path, properties);
 	if (!ap) {
-		_LOGW (LOGD_WIFI_SCAN, "invalid AP properties received");
+		_LOGD (LOGD_WIFI_SCAN, "invalid AP properties received for %s", object_path);
 		return;
 	}
 
