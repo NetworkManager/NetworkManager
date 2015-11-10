@@ -392,11 +392,9 @@ lldp_event_handler (sd_lldp *lldp, int event, void *userdata)
 
 gboolean
 nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
-                        GError **error)
+                        const guint8 *mac, guint mac_len, GError **error)
 {
 	NMLldpListenerPrivate *priv;
-	const struct ether_addr *addr;
-	size_t addr_len;
 	int ret;
 
 	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), FALSE);
@@ -412,14 +410,13 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
 		return FALSE;
 	}
 
-	addr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &addr_len);
-	if (!addr || addr_len != ETH_ALEN) {
+	if (!mac || mac_len != ETH_ALEN) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "unsupported device");
 		return FALSE;
 	}
 
-	ret = sd_lldp_new (ifindex, iface, addr, &priv->lldp_handle);
+	ret = sd_lldp_new (ifindex, iface, (struct ether_addr *) mac, &priv->lldp_handle);
 	if (ret) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "initialization failed");
