@@ -225,7 +225,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		else
 			connection = NULL;
 
-		g_object_unref (active);
+		nm_exported_object_clear_and_unexport (&active);
 
 		if (   connection
 		    && nm_settings_has_connection (priv->settings, connection)) {
@@ -801,8 +801,7 @@ remove_device (NMManager *manager,
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_DEVICES);
 	nm_device_removed (device);
 
-	nm_exported_object_unexport (NM_EXPORTED_OBJECT (device));
-	g_object_unref (device);
+	nm_exported_object_clear_and_unexport (&device);
 
 	check_if_startup_complete (manager);
 }

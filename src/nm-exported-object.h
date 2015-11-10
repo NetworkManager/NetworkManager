@@ -25,6 +25,25 @@
 
 G_BEGIN_DECLS
 
+/*****************************************************************************/
+
+char *nm_exported_object_skeletonify_method_name (const char *dbus_method_name);
+
+typedef struct {
+	GType dbus_skeleton_type;
+	char *method_name;
+	GCallback impl;
+} NMExportedObjectDBusMethodImpl;
+
+GDBusInterfaceSkeleton *nm_exported_object_skeleton_create (GType dbus_skeleton_type,
+                                                            GObjectClass *object_class,
+                                                            const NMExportedObjectDBusMethodImpl *methods,
+                                                            guint methods_len,
+                                                            GObject *target);
+void nm_exported_object_skeleton_release (GDBusInterfaceSkeleton *interface);
+
+/*****************************************************************************/
+
 #define NM_TYPE_EXPORTED_OBJECT            (nm_exported_object_get_type ())
 #define NM_EXPORTED_OBJECT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_EXPORTED_OBJECT, NMExportedObject))
 #define NM_EXPORTED_OBJECT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_EXPORTED_OBJECT, NMExportedObjectClass))
@@ -40,9 +59,12 @@ typedef struct {
 	GObjectClass parent;
 
 	const char *export_path;
+	char export_on_construction;
 } NMExportedObjectClass;
 
 GType nm_exported_object_get_type (void);
+
+void nm_exported_object_class_set_quitting  (void);
 
 void nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
                                              GType                  dbus_skeleton_type,
@@ -54,6 +76,9 @@ gboolean    nm_exported_object_is_exported (NMExportedObject *self);
 void        nm_exported_object_unexport    (NMExportedObject *self);
 GSList *    nm_exported_object_get_interfaces (NMExportedObject *self);
 GDBusInterfaceSkeleton *nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type);
+
+void        _nm_exported_object_clear_and_unexport (NMExportedObject **location);
+#define nm_exported_object_clear_and_unexport(location) _nm_exported_object_clear_and_unexport ((NMExportedObject **) (location))
 
 G_END_DECLS
 

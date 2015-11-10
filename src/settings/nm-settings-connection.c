@@ -2053,14 +2053,7 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 	if (priv->removed)
 		g_return_if_reached ();
 	priv->removed = TRUE;
-
-	/* Emit removed first */
 	g_signal_emit_by_name (self, NM_SETTINGS_CONNECTION_REMOVED);
-
-	/* And unregister last to ensure the removed signal goes out before
-	 * we take the connection off the bus.
-	 */
-	nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
 }
 
 gboolean

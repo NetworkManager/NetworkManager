@@ -104,8 +104,6 @@ nm_dhcp4_config_init (NMDhcp4Config *self)
 {
 	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
 
-	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
-
 	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 	g_variant_ref_sink (priv->options);
 }
@@ -145,6 +143,7 @@ nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH "/DHCP4Config/%u";
+	exported_object_class->export_on_construction = TRUE;
 
 	/* virtual methods */
 	object_class->get_property = get_property;

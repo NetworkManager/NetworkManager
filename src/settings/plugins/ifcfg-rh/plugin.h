@@ -37,11 +37,11 @@ typedef struct _SettingsPluginIfcfg SettingsPluginIfcfg;
 typedef struct _SettingsPluginIfcfgClass SettingsPluginIfcfgClass;
 
 struct _SettingsPluginIfcfg {
-	NMExportedObject parent;
+	GObject parent;
 };
 
 struct _SettingsPluginIfcfgClass {
-	NMExportedObjectClass parent;
+	GObjectClass parent;
 };
 
 GType settings_plugin_ifcfg_get_type (void);

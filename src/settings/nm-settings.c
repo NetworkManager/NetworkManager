@@ -905,6 +905,8 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
+	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (connection)))
+		nm_exported_object_unexport (NM_EXPORTED_OBJECT (connection));
 
 	check_startup_complete (self);
 

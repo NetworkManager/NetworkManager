@@ -1117,8 +1117,8 @@ _cleanup_failed_config (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	g_clear_object (&priv->ip4_config);
-	g_clear_object (&priv->ip6_config);
+	nm_exported_object_clear_and_unexport (&priv->ip4_config);
+	nm_exported_object_clear_and_unexport (&priv->ip6_config);
 
 	_LOGW ("VPN connection: did not receive valid IP config information");
 	_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
@@ -1316,12 +1316,12 @@ nm_vpn_connection_config_get (NMVpnConnection *self, GVariant *dict)
 	priv->has_ip4 = FALSE;
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_HAS_IP4, "b", &b))
 		priv->has_ip4 = b;
-	g_clear_object (&priv->ip4_config);
+	nm_exported_object_clear_and_unexport (&priv->ip4_config);
 
 	priv->has_ip6 = FALSE;
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &b))
 		priv->has_ip6 = b;
-	g_clear_object (&priv->ip6_config);
+	nm_exported_object_clear_and_unexport (&priv->ip6_config);
 }
 
 guint32
@@ -1491,7 +1491,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	                             nm_connection_get_setting_ip4_config (_get_applied_connection (self)),
 	                             route_metric);
 
-	g_clear_object (&priv->ip4_config);
+	nm_exported_object_clear_and_unexport (&priv->ip4_config);
 	priv->ip4_config = config;
 	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
@@ -1626,7 +1626,7 @@ next:
 	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
 	                             route_metric);
 
-	g_clear_object (&priv->ip6_config);
+	nm_exported_object_clear_and_unexport (&priv->ip6_config);
 	priv->ip6_config = config;
 	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
@@ -2444,8 +2444,8 @@ dispose (GObject *object)
 		g_cancellable_cancel (priv->cancellable);
 		g_clear_object (&priv->cancellable);
 	}
-	g_clear_object (&priv->ip4_config);
-	g_clear_object (&priv->ip6_config);
+	nm_exported_object_clear_and_unexport (&priv->ip4_config);
+	nm_exported_object_clear_and_unexport (&priv->ip6_config);
 	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->plugin_info);
 

@@ -3581,7 +3581,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	}
 
 	if (priv->dhcp4_config) {
-		g_clear_object (&priv->dhcp4_config);
+		nm_exported_object_clear_and_unexport (&priv->dhcp4_config);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
 	}
 }
@@ -3938,8 +3938,7 @@ dhcp4_start (NMDevice *self,
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 
 	/* Clear old exported DHCP options */
-	if (priv->dhcp4_config)
-		g_object_unref (priv->dhcp4_config);
+	nm_exported_object_clear_and_unexport (&priv->dhcp4_config);
 	priv->dhcp4_config = nm_dhcp4_config_new ();
 
 	hw_addr = nm_platform_link_get_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), &hw_addr_len);
@@ -4275,7 +4274,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 
 	if (priv->dhcp6_config) {
-		g_clear_object (&priv->dhcp6_config);
+		nm_exported_object_clear_and_unexport (&priv->dhcp6_config);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
 	}
 }
@@ -4700,7 +4699,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip6;
 
-	g_clear_object (&priv->dhcp6_config);
+	nm_exported_object_clear_and_unexport (&priv->dhcp6_config);
 	priv->dhcp6_config = nm_dhcp6_config_new ();
 
 	g_warn_if_fail (priv->dhcp6_ip6_config == NULL);
@@ -6864,8 +6863,8 @@ nm_device_set_ip4_config (NMDevice *self,
 			g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
 		g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
 
-		if (old_config != priv->ip4_config && old_config)
-			g_object_unref (old_config);
+		if (old_config != priv->ip4_config)
+			nm_exported_object_clear_and_unexport (&old_config);
 
 		if (nm_device_uses_generated_assumed_connection (self)) {
 			NMConnection *connection = nm_device_get_applied_connection (self);
@@ -7031,8 +7030,8 @@ nm_device_set_ip6_config (NMDevice *self,
 			g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
 		g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
 
-		if (old_config != priv->ip6_config && old_config)
-			g_object_unref (old_config);
+		if (old_config != priv->ip6_config)
+			nm_exported_object_clear_and_unexport (&old_config);
 
 		if (nm_device_uses_generated_assumed_connection (self)) {
 			NMConnection *connection = nm_device_get_applied_connection (self);
