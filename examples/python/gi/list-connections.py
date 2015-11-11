@@ -20,6 +20,8 @@
 # Copyright 2012 - 2014 Red Hat, Inc.
 #
 
+import gi
+gi.require_version('NM', '1.0')
 from gi.repository import NM
 
 # This example asks settings service for all configured connections.
