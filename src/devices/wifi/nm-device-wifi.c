@@ -1691,11 +1691,9 @@ merge_scanned_ap (NMDeviceWifi *self,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
-	const char *bssid;
 	gboolean strict_match = TRUE;
 
 	/* Let the manager try to fill in the SSID from seen-bssids lists */
-	bssid = nm_ap_get_address (merge_ap);
 	ssid = nm_ap_get_ssid (merge_ap);
 	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
 		/* Try to fill the SSID from the AP database */
@@ -1705,12 +1703,12 @@ merge_scanned_ap (NMDeviceWifi *self,
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
 			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
-			       str_if_set (bssid, "(none)"), nm_utils_escape_ssid (ssid->data, ssid->len));
+			       nm_ap_get_address (merge_ap), nm_utils_escape_ssid (ssid->data, ssid->len));
 			nm_ap_set_broadcast (merge_ap, FALSE);
 		} else {
 			/* Didn't have an entry for this AP in the database */
 			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
-			       str_if_set (bssid, "(none)"));
+			       nm_ap_get_address (merge_ap));
 		}
 	}
 
@@ -1729,7 +1727,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (found_ap) {
 		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' %s (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            str_if_set (bssid, "(none)"),
+		            nm_ap_get_address (merge_ap),
 		            merge_ap,
 		            found_ap);
 
@@ -1752,7 +1750,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		/* New entry in the list */
 		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' %s (%p)",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		       str_if_set (bssid, "(none)"), merge_ap);
+		       nm_ap_get_address (merge_ap), merge_ap);
 
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
