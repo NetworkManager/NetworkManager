@@ -18,6 +18,8 @@
 
 from __future__ import print_function
 
+import gi
+gi.require_version('NM', '1.0')
 from gi.repository import NM, GObject
 import argparse, datetime, re, sys
 import xml.etree.ElementTree as ET

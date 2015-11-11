@@ -21,6 +21,8 @@
 #
 
 import sys, socket
+import gi
+gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
 
 #
