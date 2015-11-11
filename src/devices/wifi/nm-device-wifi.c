@@ -1532,7 +1532,6 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	NMAccessPoint *ap;
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
-	const char *bssid;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (properties != NULL);
@@ -1552,7 +1551,6 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	}
 
 	/* Let the manager try to fill in the SSID from seen-bssids lists */
-	bssid = nm_ap_get_address (ap);
 	ssid = nm_ap_get_ssid (ap);
 	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
 		/* Try to fill the SSID from the AP database */
@@ -1562,11 +1560,11 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
 			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
-			       str_if_set (bssid, "(none)"), nm_utils_escape_ssid (ssid->data, ssid->len));
+			       nm_ap_get_address (ap), nm_utils_escape_ssid (ssid->data, ssid->len));
 		} else {
 			/* Didn't have an entry for this AP in the database */
 			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
-			       str_if_set (bssid, "(none)"));
+			       nm_ap_get_address (ap));
 		}
 	}
 
