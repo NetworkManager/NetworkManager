@@ -65,6 +65,14 @@
 #include "nm-test-utils.h"
 #include "test-general-enums.h"
 
+/* When passing a "bool" typed argument to a variadic function that
+ * expects a gboolean, the compiler will promote the integer type
+ * to have at least size (int). That way:
+ *   g_object_set (obj, PROP_BOOL, bool_val, NULL);
+ * will just work correctly. */
+G_STATIC_ASSERT (sizeof (gboolean) == sizeof (int));
+G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
+
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)
 {
