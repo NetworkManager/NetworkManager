@@ -3017,7 +3017,7 @@ done:
 		set_current_ap (self, NULL, TRUE);
 	}
 
-	/* No need to update seen BSSIDs cache, that is done by set_current_ap() already */
+	update_seen_bssids_cache (self, priv->current_ap);
 
 	/* Reset scan interval to something reasonable */
 	priv->scan_interval = SCAN_INTERVAL_MIN + (SCAN_INTERVAL_STEP * 2);
