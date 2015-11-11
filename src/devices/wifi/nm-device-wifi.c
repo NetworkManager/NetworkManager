@@ -2742,6 +2742,8 @@ activation_success_handler (NMDevice *device)
 
 	periodic_update (self);
 
+	update_seen_bssids_cache (self, priv->current_ap);
+
 	/* Reset scan interval to something reasonable */
 	priv->scan_interval = SCAN_INTERVAL_MIN + (SCAN_INTERVAL_STEP * 2);
 }
