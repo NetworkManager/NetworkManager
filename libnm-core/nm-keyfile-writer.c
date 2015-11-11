@@ -109,7 +109,7 @@ ip6_addr_gen_mode_writer (KeyfileWriterInfo *info,
                           const GValue *value)
 {
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-	const char *str;
+	gs_free char *str = NULL;
 
 	addr_gen_mode = (NMSettingIP6ConfigAddrGenMode) g_value_get_int (value);
 	str = nm_utils_enum_to_str (nm_setting_ip6_config_addr_gen_mode_get_type (),
