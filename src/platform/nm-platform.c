@@ -1435,6 +1435,12 @@ nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatfor
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
 }
 
+const NMPlatformLnkSit *
+nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_SIT, out_link);
+}
+
 const NMPlatformLnkVlan *
 nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1845,6 +1851,45 @@ nm_platform_infiniband_get_properties (NMPlatform *self,
 	NM_SET_OUT (out_p_key, p_key);
 	NM_SET_OUT (out_mode, mode);
 	return TRUE;
+}
+
+/**
+ * nm_platform_sit_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create a software SIT device.
+ */
+NMPlatformError
+nm_platform_link_sit_add (NMPlatform *self,
+                          const char *name,
+                          NMPlatformLnkSit *props,
+                          NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+	char buffer[INET_ADDRSTRLEN];
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_SIT, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "sit",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	if (!klass->link_sit_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 gboolean
@@ -2861,6 +2906,44 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 }
 
 const char *
+nm_platform_lnk_sit_to_string (const NMPlatformLnkSit *lnk, char *buf, gsize len)
+{
+	char str_local[30];
+	char str_local1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_remote[30];
+	char str_remote1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_ttl[30];
+	char str_tos[30];
+	char str_flags[30];
+	char str_proto[30];
+	char str_parent_ifindex[30];
+
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "sit"
+	            "%s" /* remote */
+	            "%s" /* local */
+	            "%s" /* parent_ifindex */
+	            "%s" /* ttl */
+	            "%s" /* tos */
+	            "%s" /* path_mtu_discovery */
+	            "%s" /* flags */
+	            "%s" /* proto */
+	            "",
+	            lnk->remote ? nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet4_ntop (lnk->remote, str_remote1)) : "",
+	            lnk->local ? nm_sprintf_buf (str_local, " local %s", nm_utils_inet4_ntop (lnk->local, str_local1)) : "",
+	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
+	            lnk->ttl ? nm_sprintf_buf (str_ttl, " ttl %u", lnk->ttl) : " ttl inherit",
+	            lnk->tos ? (lnk->tos == 1 ? " tos inherit" : nm_sprintf_buf (str_tos, " tos 0x%x", lnk->tos)) : "",
+	            lnk->path_mtu_discovery ? "" : " nopmtudisc",
+	            lnk->flags ? nm_sprintf_buf (str_flags, " flags 0x%x", lnk->flags) : "",
+	            lnk->proto ? nm_sprintf_buf (str_proto, " proto 0x%x", lnk->proto) : "");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
 	char *b;
@@ -3407,6 +3490,21 @@ nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkM
 	_CMP_SELF (a, b);
 	_CMP_FIELD_STR_INTERNED (a, b, mode);
 	_CMP_FIELD_BOOL (a, b, no_promisc);
+	return 0;
+}
+
+int
+nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, parent_ifindex);
+	_CMP_FIELD (a, b, local);
+	_CMP_FIELD (a, b, remote);
+	_CMP_FIELD (a, b, ttl);
+	_CMP_FIELD (a, b, tos);
+	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	_CMP_FIELD (a, b, flags);
+	_CMP_FIELD (a, b, proto);
 	return 0;
 }
 

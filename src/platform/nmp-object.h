@@ -174,6 +174,10 @@ typedef struct {
 } NMPObjectLnkMacvlan;
 
 typedef struct {
+	NMPlatformLnkSit _public;
+} NMPObjectLnkSit;
+
+typedef struct {
 	NMPlatformLnkVlan _public;
 
 	guint n_ingress_qos_map;
@@ -220,6 +224,9 @@ struct _NMPObject {
 
 		NMPlatformLnkMacvlan    lnk_macvlan;
 		NMPObjectLnkMacvlan     _lnk_macvlan;
+
+		NMPlatformLnkSit        lnk_sit;
+		NMPObjectLnkSit         _lnk_sit;
 
 		NMPlatformLnkVlan       lnk_vlan;
 		NMPObjectLnkVlan        _lnk_vlan;
