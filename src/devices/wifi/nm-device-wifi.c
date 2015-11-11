@@ -1649,11 +1649,7 @@ try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
 	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
 
 	bssid = nm_ap_get_address (ap);
-	if (!bssid) {
-		nm_log_dbg (LOGD_WIFI, "failed to get BSSID for hidden AP %s",
-		            str_if_set (nm_ap_get_supplicant_path (ap), "(none)"));
-		return;
-	}
+	g_return_if_fail (bssid);
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
