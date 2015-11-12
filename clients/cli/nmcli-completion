@@ -511,7 +511,7 @@ _nmcli_compl_ARGS()
             hairpin| \
             save| \
             hidden| \
-            private)
+            private| \
             show-password)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no"
