@@ -52,8 +52,8 @@ if [[ -n "$BUILD_ID" ]]; then
 
     yum install -y git rpm-build valgrind dbus-devel dbus-glib-devel wireless-tools-devel glib2-devel gobject-introspection-devel gettext-devel pkgconfig libnl3-devel 'perl(XML::Parser)' 'perl(YAML)' automake ppp-devel nss-devel dhclient readline-devel audit-libs-devel gtk-doc libudev-devel libuuid-devel libgudev1-devel vala-tools iptables bluez-libs-devel systemd libsoup-devel libndp-devel ModemManager-glib-devel newt-devel /usr/bin/dbus-launch pygobject3-base dbus-python libselinux-devel polkit-devel teamd-devel
 
-    mkdir /tmp/nm-build
-    cd /tmp/nm-build
+    mkdir /root/nm-build
+    cd /root/nm-build
 
     git clone "$BUILD_REPO"
     cd "./NetworkManager/"
