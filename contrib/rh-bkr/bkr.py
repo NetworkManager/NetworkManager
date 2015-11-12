@@ -23,6 +23,27 @@ import sets
 devnull = open(os.devnull, 'w')
 timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S');
 
+def _check_output(*popenargs, **kwargs):
+    if "check_output" in dir(subprocess):
+        return subprocess.check_output(*popenargs, **kwargs)
+
+    # check_output is Python 2.7, reimplement it for older version.
+    # See https://hg.python.org/cpython/file/d37f963394aa/Lib/subprocess.py#l544
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        error = subprocess.CalledProcessError(retcode, cmd)
+        error.output = output
+        raise error
+    return output
+
 def id_generator(size=6, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
@@ -280,7 +301,7 @@ def _call(args, stderr=None, reason=None, dry_run=False, verbose=False):
         if dry_run:
             output = ''
         else:
-            output = subprocess.check_output(args, stderr=stderr)
+            output = _check_output(args, stderr=stderr)
     except subprocess.CalledProcessError, e:
         print "Error invoking command for %s: %s" % (reason, ' '.join(args))
         print ''.join(['++ ' + x + '\n' for x in e.output.splitlines()])
@@ -295,7 +316,7 @@ def kinit_user():
         out = _call(['klist'], stderr=subprocess.STDOUT, reason='check kerberos user')
         o = out.splitlines()
         if len(o) >= 2:
-            m = re.match(r'^.*: ([a-zA-Z_0-9-]+)@.*$', o[1])
+            m = re.match(r'^.*: (\S+)@.*$', o[1])
             if m:
                 user = m.group(1)
         if user is None:
