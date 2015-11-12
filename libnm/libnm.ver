@@ -863,6 +863,18 @@ global:
 	nm_device_ethernet_get_s390_subchannels;
 	nm_device_get_lldp_neighbors;
 	nm_device_get_metered;
+	nm_device_ip_tunnel_get_encapsulation_limit;
+	nm_device_ip_tunnel_get_flow_label;
+	nm_device_ip_tunnel_get_input_key;
+	nm_device_ip_tunnel_get_local;
+	nm_device_ip_tunnel_get_mode;
+	nm_device_ip_tunnel_get_output_key;
+	nm_device_ip_tunnel_get_parent;
+	nm_device_ip_tunnel_get_path_mtu_discovery;
+	nm_device_ip_tunnel_get_remote;
+	nm_device_ip_tunnel_get_tos;
+	nm_device_ip_tunnel_get_ttl;
+	nm_device_ip_tunnel_get_type;
 	nm_device_get_nm_plugin_missing;
 	nm_device_set_managed;
 	nm_device_tun_get_group;
