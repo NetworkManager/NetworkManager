@@ -326,6 +326,18 @@ def kinit_user():
         _kinit_user = user
     return _kinit_user
 
+def bkr_wait_completion(job_id):
+    import pexpect
+    print(">> bkr-wait-completion: job %s : wait for job completion..." % (job_id))
+    command = "bkr job-watch J:%s" % job_id
+    process = pexpect.spawn(command)
+    r = process.expect(['--> Reserved', pexpect.EOF], timeout=None)
+    if r == 0:
+        print(">> bkr-wait-completion: job %s : completed and system is now reserved" % (job_id))
+        process.terminate()
+    if r == 1:
+        print(">> bkr-wait-completion: job %s : completed" % (job_id))
+
 class UploadFile:
     def __init__(self, uri, arch):
         self.uri = uri
@@ -586,6 +598,9 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--hosttype', help='The host type. Known values are \'veth\', \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
         self.parser.add_argument('--jobtype', help='The job type. Known values are \'rhel70\'. Anything else uses the default to create a retention=scratch job. This determines the $JOBTYPE template')
         self.parser.add_argument('--profile', '-p', help='A predefined set of arguments. Known values are \'default\', \'veth\', \'wifi\', \'infiniband\', \'dcb\'.')
+        self.parser.add_argument('--bkr-write-job-id', help='If specified, write the job ID to the specified file.')
+        self.parser.add_argument('--bkr-wait-completion', action='store_true', help='Whether to wait for completion of the beaker job')
+        self.parser.add_argument('--bkr-job-results', help='If specified, write the job results to the specified file. Implies --bkr-wait-completion.')
 
 
     def _prepare_rpms(self):
@@ -988,9 +1003,25 @@ class CmdSubmit(CmdBase):
                 out = _call(args, dry_run=False, verbose=True)
                 print("Job successfully submitted: " + out)
                 m = re.match('.*J:([0-9]+).*', out)
-                if m:
-                    print("URL: https://beaker.engineering.redhat.com/jobs/%s" % (m.group(1)))
-                    print("     https://beaker.engineering.redhat.com/jobs/mine");
+                if not m:
+                    raise Exception("Failed to submit job. Command did't return a job-id")
+                job_id = m.group(1)
+                print("URL: https://beaker.engineering.redhat.com/jobs/%s" % (job_id))
+                print("     https://beaker.engineering.redhat.com/jobs/mine");
+
+                if self.options.bkr_write_job_id:
+                    with open(self.options.bkr_write_job_id, "w") as text_file:
+                        text_file.write("J:%s\n" % (job_id))
+
+                if self.options.bkr_wait_completion or self.options.bkr_job_results:
+                    bkr_wait_completion(job_id)
+                if self.options.bkr_job_results:
+                    print(">> bkr-job-results: job %s : retrieve job results in file %s" % (job_id, self.options.bkr_job_results))
+                    with open(self.options.bkr_job_results, "w") as text_file:
+                        r = subprocess.call(["bkr", "job-results", "--prettyxml", "J:%s" % (job_id)], stdout=text_file)
+                        if r != 0:
+                            raise Exception("getting job results failed")
+
 
 class CmdHelp(CmdBase):
 
