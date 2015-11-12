@@ -7866,34 +7866,37 @@ queued_ip6_config_change (gpointer user_data)
 	g_object_ref (self);
 	update_ip6_config (self, FALSE);
 
-	/* Handle DAD falures */
-	for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
-		NMPlatformIP6Address *addr = iter->data;
+	if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
+		/* Handle DAD falures */
+		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
+			NMPlatformIP6Address *addr = iter->data;
 
-		if (addr->source >= NM_IP_CONFIG_SOURCE_USER)
-			continue;
+			if (addr->source >= NM_IP_CONFIG_SOURCE_USER)
+				continue;
 
-		_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
-		       nm_platform_ip6_address_to_string (addr, NULL, 0));
+			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
+			       nm_platform_ip6_address_to_string (addr, NULL, 0));
 
-		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+			if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+				need_ipv6ll = TRUE;
+			else if (priv->rdisc)
+				nm_rdisc_dad_failed (priv->rdisc, &addr->address);
+		}
+
+		/* If no IPv6 link-local address exists but other addresses do then we
+		 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
+		 * ("Addressing Model"): "All interfaces are required to have at least
+		 * one link-local unicast address".
+		 */
+		if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
 			need_ipv6ll = TRUE;
-		else if (priv->rdisc)
-			nm_rdisc_dad_failed (priv->rdisc, &addr->address);
+
+		if (need_ipv6ll)
+			check_and_add_ipv6ll_addr (self);
 	}
+
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	priv->dad6_failed_addrs = NULL;
-
-	/* If no IPv6 link-local address exists but other addresses do then we
-	 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
-	 * ("Addressing Model"): "All interfaces are required to have at least
-	 * one link-local unicast address".
-	 */
-	if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
-		need_ipv6ll = TRUE;
-
-	if (need_ipv6ll)
-		check_and_add_ipv6ll_addr (self);
 
 	g_object_unref (self);
 
@@ -7928,8 +7931,9 @@ device_ipx_changed (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		addr = platform_object;
 
-		if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
-		    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE)) {
+		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
+                    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
+		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE))) {
 			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
 			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
 		}
