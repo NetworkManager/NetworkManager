@@ -307,24 +307,6 @@ def _call(args, stderr=None, reason=None, dry_run=False, verbose=False):
         sys.exit("invoking command failed");
     return output
 
-_kinit_user = None
-def kinit_user():
-    global _kinit_user
-    if _kinit_user is None:
-        user = None
-        out = _call(['klist'], stderr=subprocess.STDOUT, reason='check kerberos user')
-        o = out.splitlines()
-        if len(o) >= 2:
-            m = re.match(r'^.*: (\S+)@.*$', o[1])
-            if m:
-                user = m.group(1)
-        if user is None:
-            print("klist did not show a valid kerberos ticket:")
-            print ''.join(['>> ' + x + '\n' for x in o])
-            sys.exit("No kerberos ticket")
-        _kinit_user = user
-    return _kinit_user
-
 def bkr_wait_completion(job_id):
     import pexpect
     print(">> bkr-wait-completion: job %s : wait for job completion..." % (job_id))
@@ -337,64 +319,37 @@ def bkr_wait_completion(job_id):
     if r == 1:
         print(">> bkr-wait-completion: job %s : completed" % (job_id))
 
-class UploadFile:
+class RpmScheme:
     def __init__(self, uri, arch):
         self.uri = uri
         self.arch = arch if arch is not None else 'x86_64'
         self.arch_re = re.escape(self.arch)
-    def url(self):
+    def urls(self):
         raise NotImplementedError("not implemented")
-    def init(self):
-        pass
-    def prepare(self, dry_run):
-        raise NotImplementedError("not implemented")
-class UploadFileNone(UploadFile):
+class RpmSchemeNone(RpmScheme):
     def __init__(self, uri, arch):
-        UploadFile.__init__(self, uri, arch)
-    def url(self):
+        RpmScheme.__init__(self, uri, arch)
+    def urls(self):
         return []
-    def prepare(self, dry_run):
-        pass
-class UploadFileUrl(UploadFile):
+class RpmSchemeUrl(RpmScheme):
     def __init__(self, uri, arch):
-        UploadFile.__init__(self, uri, arch)
-    def url(self):
+        RpmScheme.__init__(self, uri, arch)
+    def urls(self):
         return [self.uri]
-    def prepare(self, dry_run):
-        pass
-class UploadFileSsh(UploadFile):
-    user = kinit_user()
-    host = 'file.brq.redhat.com'
+class RpmSchemeRpm(RpmScheme):
     def __init__(self, uri, arch):
-        UploadFile.__init__(self, uri, arch)
-        if uri.startswith('file://'):
-            uri = uri[len('file://'):]
-            self.files = [f for f in glob.glob(uri) if os.path.isfile(f)]
-        else:
-            if not os.path.isfile(uri):
-                raise Exception("RPM '%s' is not a valid file" % uri)
-            self.files = [uri]
-        if len(self.files) <= 0:
-            raise Exception("The pattern '%s' did not match any files" % self.uri)
-
-        self.tag = id_generator()
-        self.directory = 'bkr-%s-%s' % (timestamp, self.tag)
-        self.dst = "%s@%s:~/public_html/%s/" % (self.user, UploadFileSsh.host, self.directory)
-        self.urls = ['http://%s/~%s/%s/%s' % (UploadFileSsh.host, self.user, self.directory, os.path.basename(f)) for f in self.files]
-    def url(self):
-        return self.urls
-    def prepare(self, dry_run):
-        for i in range(0, len(self.files)-1):
-           print("Uploading file '%s' to %s ( %s )" % (self.files[i], UploadFileSsh.host, self.urls[i]))
-        args = ['rsync', '-va'] + self.files + [ self.dst]
-        out = _call(args, stderr=subprocess.STDOUT, reason='upload file', dry_run=dry_run, verbose=True);
-        for l in out.splitlines():
-            print('++ ' + l)
-class UploadFile_ParseWebsite(UploadFile):
+        RpmScheme.__init__(self, uri, arch)
+    def urls(self):
+        if not hasattr(self, '_urls'):
+            u = self.uri
+            if u.startswith("rpm://"):
+                u = u[len("rpm://"):]
+            self._urls = u.replace(',',' ').split(' ')
+        return self._urls
+class RpmScheme_ParseWebsite(RpmScheme):
     def __init__(self, uri, arch):
         self._pattern = None
-        self._urls = None
-        UploadFile.__init__(self, uri, arch)
+        RpmScheme.__init__(self, uri, arch)
 
     @property
     def pattern(self):
@@ -435,49 +390,41 @@ class UploadFile_ParseWebsite(UploadFile):
             p.close()
         return page
 
-    def init(self):
-        if self._urls is not None:
-            return
-        self.parse_uri()
+    def urls(self):
+        if not hasattr(self, '_urls'):
+            self.parse_uri()
 
-        page = self.read_page()
+            page = self.read_page()
 
-        urls = list(self.parse_urls(page))
-        if not urls:
-            self.raise_no_urls()
-        self._urls = urls
-
-    def url(self):
-        self.init()
+            urls = list(self.parse_urls(page))
+            if not urls:
+                self.raise_no_urls()
+            self._urls = urls
         return self._urls
 
-    def prepare(self, dry_run):
-        self.init()
-        pass
-
-class UploadFileJenkins(UploadFile_ParseWebsite):
+class RpmSchemeJenkins(RpmScheme_ParseWebsite):
     jenkins_base_url = 'http://10.34.130.105:8080/job/NetworkManager/'
     def __init__(self, uri, arch):
-        UploadFile_ParseWebsite.__init__(self, uri, arch)
+        RpmScheme_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
         m = re.match('^jenkins://([0-9]+)(/(.+)|/?)?$', self.uri)
         if not m:
             raise Exception("Error detecting uri scheme jenkins:// from '%s'. Expected is 'jenkins://[ID]/[regex-wildcard]" % (self.uri))
         self._id = int(m.group(1))
         self.set_pattern(m.group(3))
-        self._mainpage = '%s%d/' % (UploadFileJenkins.jenkins_base_url, self._id)
+        self._mainpage = '%s%d/' % (RpmSchemeJenkins.jenkins_base_url, self._id)
     def parse_urls(self, page):
         for a in re.finditer('href=[\'"](artifact/[^\'"]*\.rpm)[\'"]', page):
             url = self._mainpage + a.group(1)
             if self.is_matching_url(url):
                 yield url
     def raise_no_urls(self):
-        raise Exception("Could not detect any URLs on jenkins for '%s' (see %s%s/)" % (self.uri, UploadFileJenkins.jenkins_base_url, self._id))
+        raise Exception("Could not detect any URLs on jenkins for '%s' (see %s%s/)" % (self.uri, RpmSchemeJenkins.jenkins_base_url, self._id))
 
-class UploadFileBrew(UploadFile_ParseWebsite):
+class RpmSchemeBrew(RpmScheme_ParseWebsite):
     brew_base_url = 'https://brewweb.devel.redhat.com/'
     def __init__(self, uri, arch):
-        UploadFile_ParseWebsite.__init__(self, uri, arch)
+        RpmScheme_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
         if self.uri.startswith('brew://'):
             self._type = "brew"
@@ -495,9 +442,9 @@ class UploadFileBrew(UploadFile_ParseWebsite):
         self._id = int(m.group(1))
         self.set_pattern(m.group(3))
         if self._type == "brew":
-            self._mainpage = '%sbuildinfo?buildID=%s' % (UploadFileBrew.brew_base_url, self._id)
+            self._mainpage = '%sbuildinfo?buildID=%s' % (RpmSchemeBrew.brew_base_url, self._id)
         elif self._type == "brewtask":
-            self._mainpage = '%staskinfo?taskID=%s' % (UploadFileBrew.brew_base_url, self._id)
+            self._mainpage = '%staskinfo?taskID=%s' % (RpmSchemeBrew.brew_base_url, self._id)
 
     def parse_urls(self, page):
         found_anything = False
@@ -530,9 +477,9 @@ class UploadFileBrew(UploadFile_ParseWebsite):
             raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\"). Try giving a pattern \"%s://%s/.*\"" % (self.uri, self._mainpage, self._type, self._id))
         raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\")" % (self.uri, self._mainpage))
 
-class UploadFileRepo(UploadFile_ParseWebsite):
+class RpmSchemeRepo(RpmScheme_ParseWebsite):
     def __init__(self, uri, arch):
-        UploadFile_ParseWebsite.__init__(self, uri, arch)
+        RpmScheme_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
         m = re.match('^repo:(.+?)/?([^\/]+rpm)?$', self.uri)
         if not m:
@@ -579,7 +526,7 @@ class CmdSubmit(CmdBase):
 
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
-        self.parser.add_argument('--rpm', '-r', action='append', help='Filenames of RPMs. Supports (local) files, file://, jenkins://, brew://, brewtask:// and repo: URI schemes')
+        self.parser.add_argument('--rpm', '-r', action='append', help='Filenames of RPMs. Supports (local) files, rpm://, jenkins://, brew://, brewtask:// and repo: URI schemes')
         self.parser.add_argument('--build-id', '-b', help='Set to a git commit id or branch name of the upstream git repository of NM. If present, the script will build NM from source')
         self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Query nitrate for tests having this tag. Output is appended to $TESTS. Specifying more then once combines them as AND')
         self.parser.add_argument('--nitrate-all', '-a', action='store_true', help='Query all nitrate tests')
@@ -610,19 +557,18 @@ class CmdSubmit(CmdBase):
         self.rpm = []
         for r in self.options.rpm:
             if r.startswith('http://') or r.startswith('https://'):
-                ctor = UploadFileUrl
+                ctor = RpmSchemeUrl
             elif r.startswith('jenkins://'):
-                ctor = UploadFileJenkins
+                ctor = RpmSchemeJenkins
             elif r.startswith('brew://') or r.startswith('brewtask://'):
-                ctor = UploadFileBrew
+                ctor = RpmSchemeBrew
             elif r.startswith('repo:'):
-                ctor = UploadFileRepo
+                ctor = RpmSchemeRepo
             elif r == 'none':
-                ctor = UploadFileNone
+                ctor = RpmSchemeNone
             else:
-                ctor = UploadFileSsh
+                ctor = RpmSchemeRpm
             uf = ctor(r, self._get_var ("ARCH"))
-            uf.init()
             self.rpm.append((r, uf))
 
     def _print_substitution(self, k, v):
@@ -636,7 +582,7 @@ class CmdSubmit(CmdBase):
     def _prepare_substitutions(self):
         self.subs = {}
         if self.rpm is not None:
-            self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].url() ]
+            self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].urls() ]
 
         tests = []
         if self.options.tests:
@@ -729,7 +675,7 @@ class CmdSubmit(CmdBase):
             return v
         if self.rpm is not None:
             for x in self.rpm:
-                for u in x[1].url():
+                for u in x[1].urls():
                     if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*\.git20140326\.4dba720\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7.0' # stable rhel-7.0 release
                     if re.match(r'^.*/NetworkManager-0.9.11.0-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
@@ -995,10 +941,6 @@ class CmdSubmit(CmdBase):
             temp.close()
 
             print("Write job '%s' to file '%s'" % (self.options.job, temp.name));
-
-        if self.rpm:
-            for r in self.rpm:
-                r[1].prepare(dry_run=not self.options.no_test)
 
         if self.options.job:
             args = ['bkr', 'job-submit', temp.name]
