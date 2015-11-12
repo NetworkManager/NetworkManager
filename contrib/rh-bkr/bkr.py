@@ -17,7 +17,6 @@ import urllib
 import glob
 import uuid
 import nitrate
-import sets
 
 
 devnull = open(os.devnull, 'w')
@@ -53,7 +52,7 @@ def is_sequence(arg):
             hasattr(arg, "__iter__"))
 
 def seq_unique(seq):
-    s = sets.Set()
+    s = set()
     for i in seq:
         if i not in s:
             s.add(i)
@@ -592,7 +591,8 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--job-default', '-J', action='store_true', help='Use default job file. Only has effect if --job is not specified')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
-        self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
+        self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys (same as --reservesys-time=86400')
+        self.parser.add_argument('--reservesys-time', help='add task /distribution/reservesys with a duration in second')
         self.parser.add_argument('--disable-selinux', action='store_true', help='add kernel option selinux=0 to disable AVC checks ($SELINUX_DISABLED)')
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
         self.parser.add_argument('--hosttype', help='The host type. Known values are \'veth\', \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
@@ -844,13 +844,18 @@ class CmdSubmit(CmdBase):
         v = self._get_var('RESERVESYS')
         if v is not None:
             return v
-        if not self.options.reservesys:
+        duration = self._get_var('RESERVE')
+        if self.options.reservesys:
+            duration = '86400'
+        if self.options.reservesys_time:
+            duration = self.options.reservesys_time
+        if not duration:
             return ""
-        return '<reservesys duration="86400"/>'
+        return '<reservesys duration="%s"/>' % (duration)
 
     def _get_var_for_ARCH(self, key):
         v = self._get_var('ARCH')
-        if v is not None:
+        if v:
             return v
         v = self._get_var('DISTRO_ARCH')
         if v is not None:
@@ -861,7 +866,7 @@ class CmdSubmit(CmdBase):
         v = self._get_var('SELINUX_DISABLED')
         if v is not None:
             return v
-        if self.options.disable_selinux:
+        if self.options.disable_selinux or self._get_var('SELINUX') == 'false':
             return 'selinux=0'
         return ''
 
