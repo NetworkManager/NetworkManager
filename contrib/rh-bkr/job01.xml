@@ -46,9 +46,7 @@ EOF
 sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
 rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 
-for r in $RPM_LIST; do
-    yum downgrade -y $$r || yum install -y $$r
-done
+yum downgrade -y $RPM_LIST || yum install -y $RPM_LIST
 
 if [[ -n "$BUILD_ID" ]]; then
 
