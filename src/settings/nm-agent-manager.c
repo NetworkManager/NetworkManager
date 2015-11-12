@@ -777,6 +777,7 @@ request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs)
 				nm_auth_chain_unref (req->con.chain);
 				req->con.chain = NULL;
 			}
+			break;
 		default:
 			g_assert_not_reached ();
 		}
