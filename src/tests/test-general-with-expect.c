@@ -23,6 +23,7 @@
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include <netinet/ether.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -32,6 +33,10 @@
 #include "nm-multi-index.h"
 
 #include "nm-test-utils.h"
+
+#ifndef CLOCK_BOOTTIME
+#define CLOCK_BOOTTIME 7
+#endif
 
 /*******************************************/
 

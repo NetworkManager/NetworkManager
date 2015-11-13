@@ -35,6 +35,7 @@
 #endif
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <time.h>
 
 #include "nm-logging.h"
 
@@ -42,6 +43,12 @@
 #ifndef BPF_XOR
 #define BPF_XOR 0xa0
 #endif
+
+#ifndef CLOCK_BOOTTIME
+#define CLOCK_BOOTTIME 7
+#endif
+
+/*****************************************************************************/
 
 static inline guint32
 _slog_level_to_nm (int slevel)
