@@ -82,7 +82,7 @@
  * It's not that bad however, because gcc and clang often have the
  * same name for the same warning. */
 
-#if defined (__GNUC__)
+#if defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define NM_PRAGMA_WARNING_DISABLE(warning) \
         _Pragma("GCC diagnostic push"); \
         _Pragma(_NM_PRAGMA_WARNING_DO(warning))
@@ -94,7 +94,7 @@
 #define NM_PRAGMA_WARNING_DISABLE(warning)
 #endif
 
-#if defined (__GNUC__)
+#if defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define NM_PRAGMA_WARNING_REENABLE \
     _Pragma("GCC diagnostic pop")
 #elif defined (__clang__)
