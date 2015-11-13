@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-09-09 20:00+0200\n"
-"PO-Revision-Date: 2015-09-09 20:02+0200\n"
+"POT-Creation-Date: 2015-11-13 18:41+0100\n"
+"PO-Revision-Date: 2015-11-13 18:42+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
 "Language: pl\n"
@@ -111,9 +111,9 @@ msgstr "Błąd: zainicjowanie agenta polkit się nie powiodło: %s"
 msgid "nmcli successfully registered as a polkit agent.\n"
 msgstr "Pomyślnie zarejestrowano program nmcli jako agenta polkit.\n"
 
-#: ../clients/cli/agent.c:209 ../clients/cli/connections.c:8928
-#: ../clients/cli/connections.c:8954 ../clients/cli/connections.c:9095
-#: ../clients/cli/devices.c:3055 ../clients/cli/general.c:325
+#: ../clients/cli/agent.c:209 ../clients/cli/connections.c:9091
+#: ../clients/cli/connections.c:9117 ../clients/cli/connections.c:9258
+#: ../clients/cli/devices.c:3060 ../clients/cli/general.c:325
 #: ../clients/cli/general.c:463
 #, c-format
 msgid "Error: NetworkManager is not running."
@@ -240,33 +240,33 @@ msgstr "łączenie (uruchamianie drugorzędnych połączeń)"
 msgid "connected"
 msgstr "połączono"
 
-#: ../clients/cli/common.c:516 ../clients/cli/connections.c:540
+#: ../clients/cli/common.c:516 ../clients/cli/connections.c:544
 msgid "deactivating"
-msgstr "deaktywowanie"
+msgstr "dezaktywowanie"
 
 #: ../clients/cli/common.c:518
 msgid "connection failed"
 msgstr "połączenie się nie powiodło"
 
 #: ../clients/cli/common.c:520 ../clients/cli/common.c:537
-#: ../clients/cli/connections.c:545 ../clients/cli/connections.c:568
-#: ../clients/cli/connections.c:1708 ../clients/cli/devices.c:891
+#: ../clients/cli/connections.c:549 ../clients/cli/connections.c:572
+#: ../clients/cli/connections.c:1712 ../clients/cli/devices.c:891
 #: ../clients/cli/devices.c:932 ../clients/cli/devices.c:934
 #: ../clients/cli/general.c:263 ../clients/cli/general.c:281
 #: ../clients/cli/general.c:411 ../clients/cli/general.c:427
 #: ../clients/cli/settings.c:732 ../clients/cli/settings.c:817
-#: ../clients/cli/settings.c:1118 ../clients/cli/settings.c:2818
+#: ../clients/cli/settings.c:1118 ../clients/cli/settings.c:2839
 #: ../clients/cli/utils.c:1200 ../src/main.c:362 ../src/main.c:412
 msgid "unknown"
 msgstr "nieznane"
 
 #. "CAPABILITIES"
-#: ../clients/cli/common.c:529 ../clients/cli/connections.c:815
-#: ../clients/cli/connections.c:817 ../clients/cli/connections.c:819
-#: ../clients/cli/connections.c:851 ../clients/cli/connections.c:918
-#: ../clients/cli/connections.c:919 ../clients/cli/connections.c:921
-#: ../clients/cli/connections.c:3127 ../clients/cli/connections.c:7084
-#: ../clients/cli/connections.c:7085 ../clients/cli/devices.c:598
+#: ../clients/cli/common.c:529 ../clients/cli/connections.c:819
+#: ../clients/cli/connections.c:821 ../clients/cli/connections.c:823
+#: ../clients/cli/connections.c:855 ../clients/cli/connections.c:922
+#: ../clients/cli/connections.c:923 ../clients/cli/connections.c:925
+#: ../clients/cli/connections.c:3158 ../clients/cli/connections.c:7239
+#: ../clients/cli/connections.c:7240 ../clients/cli/devices.c:598
 #: ../clients/cli/devices.c:648 ../clients/cli/devices.c:856
 #: ../clients/cli/devices.c:857 ../clients/cli/devices.c:858
 #: ../clients/cli/devices.c:859 ../clients/cli/devices.c:895
@@ -275,15 +275,15 @@ msgstr "nieznane"
 #: ../clients/cli/devices.c:928 ../clients/cli/devices.c:929
 #: ../clients/cli/devices.c:930 ../clients/cli/devices.c:931
 #: ../clients/cli/devices.c:933 ../clients/cli/devices.c:935
-#: ../clients/cli/general.c:421 ../clients/cli/settings.c:2813
+#: ../clients/cli/general.c:421 ../clients/cli/settings.c:2834
 msgid "yes"
 msgstr "tak"
 
-#: ../clients/cli/common.c:531 ../clients/cli/connections.c:815
-#: ../clients/cli/connections.c:817 ../clients/cli/connections.c:819
-#: ../clients/cli/connections.c:918 ../clients/cli/connections.c:919
-#: ../clients/cli/connections.c:921 ../clients/cli/connections.c:3128
-#: ../clients/cli/connections.c:7084 ../clients/cli/connections.c:7085
+#: ../clients/cli/common.c:531 ../clients/cli/connections.c:819
+#: ../clients/cli/connections.c:821 ../clients/cli/connections.c:823
+#: ../clients/cli/connections.c:922 ../clients/cli/connections.c:923
+#: ../clients/cli/connections.c:925 ../clients/cli/connections.c:3159
+#: ../clients/cli/connections.c:7239 ../clients/cli/connections.c:7240
 #: ../clients/cli/devices.c:598 ../clients/cli/devices.c:648
 #: ../clients/cli/devices.c:856 ../clients/cli/devices.c:857
 #: ../clients/cli/devices.c:858 ../clients/cli/devices.c:859
@@ -293,7 +293,7 @@ msgstr "tak"
 #: ../clients/cli/devices.c:929 ../clients/cli/devices.c:930
 #: ../clients/cli/devices.c:931 ../clients/cli/devices.c:933
 #: ../clients/cli/devices.c:935 ../clients/cli/general.c:423
-#: ../clients/cli/settings.c:2815
+#: ../clients/cli/settings.c:2836
 msgid "no"
 msgstr "nie"
 
@@ -309,7 +309,7 @@ msgstr "nie (prawdopodobnie)"
 msgid "No reason given"
 msgstr "Nie podano przyczyny"
 
-#: ../clients/cli/common.c:549 ../clients/cli/connections.c:2721
+#: ../clients/cli/common.c:549 ../clients/cli/connections.c:2729
 #, c-format
 msgid "Unknown error"
 msgstr "Nieznany błąd"
@@ -756,7 +756,7 @@ msgstr "KONKRETNY-OBIEKT"
 #. 4
 #. Ask for optional 'vpn' arguments.
 #: ../clients/cli/connections.c:181 ../clients/cli/connections.c:219
-#: ../clients/cli/connections.c:3832 ../clients/tui/nm-editor-utils.c:234
+#: ../clients/cli/connections.c:3863 ../clients/tui/nm-editor-utils.c:234
 #: ../clients/tui/nmt-connect-connection-list.c:406
 msgid "VPN"
 msgstr "VPN"
@@ -972,7 +972,8 @@ msgstr ""
 "automatycznie przez usługę NetworkManager.\n"
 "\n"
 "ifname      - podaje urządzenie, na którym aktywować połączenie\n"
-"ap          - podaje AP, z którym połączyć (prawidłowe tylko dla Wi-Fi)\n"
+"ap          - podaje punkt dostępowy, z którym połączyć (prawidłowe\n"
+"              tylko dla Wi-Fi)\n"
 "nsp         - podaje NSP, z którym połączyć (prawidłowe tylko dla WiMAX)\n"
 "passwd-file - plik z hasłami wymaganymi do aktywowania połączenia\n"
 "\n"
@@ -994,9 +995,9 @@ msgstr ""
 "\n"
 "PARAMETRY := [id | uuid | path | apath] <identyfikator> ...\n"
 "\n"
-"Deaktywuje połączenie z urządzenia (bez uniemożliwienia urządzeniu ponownej\n"
-"automatycznej aktywacji). Profil do deaktywowania jest identyfikowany po\n"
-"swojej nazwie, UUID lub ścieżce D-Bus.\n"
+"Dezaktywuje połączenie z urządzenia (bez uniemożliwienia urządzeniu\n"
+"ponownej automatycznej aktywacji). Profil do dezaktywowania jest\n"
+"identyfikowany po swojej nazwie, UUID lub ścieżce D-Bus.\n"
 "\n"
 
 #: ../clients/cli/connections.c:328
@@ -1096,6 +1097,11 @@ msgid ""
 "    olpc-mesh:    ssid <SSID>\n"
 "                  [channel <1-13>]\n"
 "                  [dhcp-anycast <MAC address>]\n"
+"\n"
+"    adsl:         username <username>\n"
+"                  protocol pppoa|pppoe|ipoatm\n"
+"                  [password <password>]\n"
+"                  [encapsulation vcmux|llc]\n"
 "\n"
 "  IP_OPTIONS:\n"
 "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
@@ -1199,11 +1205,16 @@ msgstr ""
 "                  [channel <1-13>]\n"
 "                  [dhcp-anycast <adres MAC>]\n"
 "\n"
+"    adsl:         username <nazwa użytkownika>\n"
+"                  protocol pppoa|pppoe|ipoatm\n"
+"                  [password <hasło>]\n"
+"                  [encapsulation vcmux|llc]\n"
+"\n"
 "  OPCJE_IP:\n"
 "                  [ip4 <adres IPv4>] [gw4 <brama IPv4>]\n"
 "                  [ip6 <adres IPv6>] [gw6 <brama IPv6>]\n"
 
-#: ../clients/cli/connections.c:408
+#: ../clients/cli/connections.c:412
 #, c-format
 msgid ""
 "Usage: nmcli connection modify { ARGUMENTS | help }\n"
@@ -1250,7 +1261,7 @@ msgstr ""
 "nmcli con mod bond0 -bond.options downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:431
+#: ../clients/cli/connections.c:435
 #, c-format
 msgid ""
 "Usage: nmcli connection edit { ARGUMENTS | help }\n"
@@ -1278,7 +1289,7 @@ msgstr ""
 "Dodaje nowy profil połączenia w interaktywnym edytorze.\n"
 "\n"
 
-#: ../clients/cli/connections.c:446
+#: ../clients/cli/connections.c:450
 #, c-format
 msgid ""
 "Usage: nmcli connection delete { ARGUMENTS | help }\n"
@@ -1297,7 +1308,7 @@ msgstr ""
 "Profil jest identyfikowany po swojej nazwie, UUID lub ścieżce D-Bus.\n"
 "\n"
 
-#: ../clients/cli/connections.c:457
+#: ../clients/cli/connections.c:461
 #, c-format
 msgid ""
 "Usage: nmcli connection reload { help }\n"
@@ -1310,7 +1321,7 @@ msgstr ""
 "Wczytuje ponownie wszystkie pliki połączeń z dysku.\n"
 "\n"
 
-#: ../clients/cli/connections.c:465
+#: ../clients/cli/connections.c:469
 #, c-format
 msgid ""
 "Usage: nmcli connection load { ARGUMENTS | help }\n"
@@ -1332,110 +1343,110 @@ msgstr ""
 "usługa NetworkManager zna jego najnowszy stan.\n"
 "\n"
 
-#: ../clients/cli/connections.c:536
+#: ../clients/cli/connections.c:540
 msgid "activating"
 msgstr "aktywowanie"
 
-#: ../clients/cli/connections.c:538
+#: ../clients/cli/connections.c:542
 msgid "activated"
 msgstr "aktywowano"
 
-#: ../clients/cli/connections.c:542
+#: ../clients/cli/connections.c:546
 msgid "deactivated"
-msgstr "deaktywowano"
+msgstr "dezaktywowano"
 
-#: ../clients/cli/connections.c:554
+#: ../clients/cli/connections.c:558
 msgid "VPN connecting (prepare)"
 msgstr "Łączenie z VPN (przygotowanie)"
 
-#: ../clients/cli/connections.c:556
+#: ../clients/cli/connections.c:560
 msgid "VPN connecting (need authentication)"
 msgstr "Łączenie z VPN (wymaga uwierzytelnienia)"
 
-#: ../clients/cli/connections.c:558
+#: ../clients/cli/connections.c:562
 msgid "VPN connecting"
 msgstr "Łączenie z VPN"
 
-#: ../clients/cli/connections.c:560
+#: ../clients/cli/connections.c:564
 msgid "VPN connecting (getting IP configuration)"
 msgstr "Łączenie z VPN (pobieranie konfiguracji adresu IP)"
 
-#: ../clients/cli/connections.c:562
+#: ../clients/cli/connections.c:566
 msgid "VPN connected"
 msgstr "Połączono z VPN"
 
-#: ../clients/cli/connections.c:564
+#: ../clients/cli/connections.c:568
 msgid "VPN connection failed"
 msgstr "Połączenie z VPN się nie powiodło"
 
-#: ../clients/cli/connections.c:566
+#: ../clients/cli/connections.c:570
 msgid "VPN disconnected"
 msgstr "Rozłączono z VPN"
 
-#: ../clients/cli/connections.c:636
+#: ../clients/cli/connections.c:640
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
 msgstr "Błąd podczas aktualizowania haseł dla %s: %s\n"
 
-#: ../clients/cli/connections.c:656
+#: ../clients/cli/connections.c:660
 msgid "Connection profile details"
 msgstr "Szczegóły profilu połączenia"
 
-#: ../clients/cli/connections.c:668 ../clients/cli/connections.c:1077
+#: ../clients/cli/connections.c:672 ../clients/cli/connections.c:1081
 #, c-format
 msgid "Error: 'connection show': %s"
 msgstr "Błąd: \"connection show\": %s"
 
-#: ../clients/cli/connections.c:814
+#: ../clients/cli/connections.c:818
 msgid "never"
 msgstr "nigdy"
 
-#: ../clients/cli/connections.c:1065
+#: ../clients/cli/connections.c:1069
 msgid "Activate connection details"
 msgstr "Szczegóły aktywowania połączenia"
 
-#: ../clients/cli/connections.c:1301
+#: ../clients/cli/connections.c:1305
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
 msgstr "nieprawidłowe pole \"%s\"; dozwolone pola: %s i %s, albo %s,%s"
 
-#: ../clients/cli/connections.c:1316 ../clients/cli/connections.c:1324
+#: ../clients/cli/connections.c:1320 ../clients/cli/connections.c:1328
 #, c-format
 msgid "'%s' has to be alone"
 msgstr "\"%s\" musi być same"
 
 #. Add headers
-#: ../clients/cli/connections.c:1379
+#: ../clients/cli/connections.c:1383
 msgid "NetworkManager active profiles"
 msgstr "Aktywne profile usługi NetworkManager"
 
-#: ../clients/cli/connections.c:1380
+#: ../clients/cli/connections.c:1384
 msgid "NetworkManager connection profiles"
 msgstr "Profile połączeń usługi NetworkManager"
 
-#: ../clients/cli/connections.c:1420 ../clients/cli/connections.c:2148
-#: ../clients/cli/connections.c:2170 ../clients/cli/connections.c:2179
-#: ../clients/cli/connections.c:2189 ../clients/cli/connections.c:2199
-#: ../clients/cli/connections.c:2361 ../clients/cli/connections.c:8652
-#: ../clients/cli/connections.c:8857 ../clients/cli/devices.c:2028
+#: ../clients/cli/connections.c:1424 ../clients/cli/connections.c:2152
+#: ../clients/cli/connections.c:2174 ../clients/cli/connections.c:2183
+#: ../clients/cli/connections.c:2193 ../clients/cli/connections.c:2203
+#: ../clients/cli/connections.c:2365 ../clients/cli/connections.c:8815
+#: ../clients/cli/connections.c:9020 ../clients/cli/devices.c:2028
 #: ../clients/cli/devices.c:2036 ../clients/cli/devices.c:2359
 #: ../clients/cli/devices.c:2366 ../clients/cli/devices.c:2380
 #: ../clients/cli/devices.c:2387 ../clients/cli/devices.c:2404
 #: ../clients/cli/devices.c:2412 ../clients/cli/devices.c:2425
-#: ../clients/cli/devices.c:2664 ../clients/cli/devices.c:2671
-#: ../clients/cli/devices.c:2790 ../clients/cli/devices.c:2797
+#: ../clients/cli/devices.c:2669 ../clients/cli/devices.c:2676
+#: ../clients/cli/devices.c:2795 ../clients/cli/devices.c:2802
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Błąd: brak parametru %s."
 
-#: ../clients/cli/connections.c:1435
+#: ../clients/cli/connections.c:1439
 #, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "Błąd: %s - nie ma takiego profilu połączenia."
 
-#: ../clients/cli/connections.c:1494 ../clients/cli/connections.c:2222
-#: ../clients/cli/connections.c:9168 ../clients/cli/devices.c:2631
-#: ../clients/cli/devices.c:3144 ../clients/cli/general.c:518
+#: ../clients/cli/connections.c:1498 ../clients/cli/connections.c:2226
+#: ../clients/cli/connections.c:9331 ../clients/cli/devices.c:2636
+#: ../clients/cli/devices.c:3149 ../clients/cli/general.c:518
 #: ../clients/cli/general.c:567 ../clients/cli/general.c:584
 #: ../clients/cli/general.c:623 ../clients/cli/general.c:637
 #: ../clients/cli/general.c:755 ../clients/cli/general.c:802
@@ -1444,81 +1455,81 @@ msgstr "Błąd: %s - nie ma takiego profilu połączenia."
 msgid "Error: %s."
 msgstr "Błąd: %s."
 
-#: ../clients/cli/connections.c:1590
+#: ../clients/cli/connections.c:1594
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "brak aktywnych połączeń na urządzeniu \"%s\""
 
-#: ../clients/cli/connections.c:1598
+#: ../clients/cli/connections.c:1602
 msgid "no active connection or device"
 msgstr "brak aktywnych połączeń na urządzeń"
 
-#: ../clients/cli/connections.c:1669
+#: ../clients/cli/connections.c:1673
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "urządzenie \"%s\" nie jest zgodne z połączeniem \"%s\""
 
-#: ../clients/cli/connections.c:1672
+#: ../clients/cli/connections.c:1676
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "nie odnaleziono urządzenia dla połączenia \"%s\""
 
-#: ../clients/cli/connections.c:1684
+#: ../clients/cli/connections.c:1688
 msgid "unknown reason"
 msgstr "nieznany powód"
 
-#: ../clients/cli/connections.c:1686 ../clients/cli/general.c:272
+#: ../clients/cli/connections.c:1690 ../clients/cli/general.c:272
 msgid "none"
 msgstr "brak"
 
-#: ../clients/cli/connections.c:1688
+#: ../clients/cli/connections.c:1692
 msgid "the user was disconnected"
 msgstr "użytkownik został rozłączony"
 
-#: ../clients/cli/connections.c:1690
+#: ../clients/cli/connections.c:1694
 msgid "the base network connection was interrupted"
 msgstr "podstawowe połączenie sieciowe zostało przerwane"
 
-#: ../clients/cli/connections.c:1692
+#: ../clients/cli/connections.c:1696
 msgid "the VPN service stopped unexpectedly"
 msgstr "usługa VPN została nieoczekiwanie zatrzymana"
 
-#: ../clients/cli/connections.c:1694
+#: ../clients/cli/connections.c:1698
 msgid "the VPN service returned invalid configuration"
 msgstr "usługa VPN zwróciła nieprawidłową konfigurację"
 
-#: ../clients/cli/connections.c:1696
+#: ../clients/cli/connections.c:1700
 msgid "the connection attempt timed out"
 msgstr "próba połączenia przekroczyła czas oczekiwania"
 
-#: ../clients/cli/connections.c:1698
+#: ../clients/cli/connections.c:1702
 msgid "the VPN service did not start in time"
 msgstr "usługa VPN nie została uruchomiona w czasie"
 
-#: ../clients/cli/connections.c:1700
+#: ../clients/cli/connections.c:1704
 msgid "the VPN service failed to start"
 msgstr "uruchomienie usługi VPN się nie powiodło"
 
-#: ../clients/cli/connections.c:1702
+#: ../clients/cli/connections.c:1706
 msgid "no valid VPN secrets"
 msgstr "brak prawidłowych haseł VPN"
 
-#: ../clients/cli/connections.c:1704
+#: ../clients/cli/connections.c:1708
 msgid "invalid VPN secrets"
 msgstr "nieprawidłowe hasła VPN"
 
-#: ../clients/cli/connections.c:1706
+#: ../clients/cli/connections.c:1710
 msgid "the connection was removed"
 msgstr "połączenie zostało usunięte"
 
-#: ../clients/cli/connections.c:1728 ../clients/cli/connections.c:1756
-#: ../clients/cli/connections.c:1917 ../clients/cli/connections.c:6975
+#: ../clients/cli/connections.c:1732 ../clients/cli/connections.c:1760
+#: ../clients/cli/connections.c:1921 ../clients/cli/connections.c:7130
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr ""
 "Połączenie zostało pomyślnie aktywowane (ścieżka aktywacji D-Bus: %s)\n"
 
-#: ../clients/cli/connections.c:1735
+#: ../clients/cli/connections.c:1739
 #, c-format
 msgid ""
 "Connection successfully activated (master waiting for slaves) (D-Bus active "
@@ -1527,181 +1538,189 @@ msgstr ""
 "Połączenie zostało pomyślnie aktywowane (główne oczekujące na podrzędne) "
 "(ścieżka aktywacji D-Bus: %s)\n"
 
-#: ../clients/cli/connections.c:1739 ../clients/cli/connections.c:1761
+#: ../clients/cli/connections.c:1743 ../clients/cli/connections.c:1765
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Błąd: aktywacja połączenia się nie powiodła."
 
-#: ../clients/cli/connections.c:1812
+#: ../clients/cli/connections.c:1816
 #, c-format
 msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
 msgstr ""
 "Połączenie VPN zostało pomyślnie aktywowane (ścieżka aktywacji D-Bus: %s)\n"
 
-#: ../clients/cli/connections.c:1820
+#: ../clients/cli/connections.c:1824
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Błąd: aktywacja połączenia się nie powiodła: %s."
 
-#: ../clients/cli/connections.c:1839 ../clients/cli/devices.c:1339
+#: ../clients/cli/connections.c:1843 ../clients/cli/devices.c:1339
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Błąd: przekroczono czas oczekiwania o %d sekund."
 
-#: ../clients/cli/connections.c:1899
+#: ../clients/cli/connections.c:1903
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Błąd: aktywacja połączenia się nie powiodła: %s"
 
-#: ../clients/cli/connections.c:1984
+#: ../clients/cli/connections.c:1988
 #, c-format
 msgid "failed to read passwd-file '%s': %s"
 msgstr "odczytanie passwd-file \"%s\" się nie powiodło: %s"
 
-#: ../clients/cli/connections.c:1996
+#: ../clients/cli/connections.c:2000
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
 msgstr "brak dwukropka we wpisie \"password\" \"%s\""
 
-#: ../clients/cli/connections.c:2004
+#: ../clients/cli/connections.c:2008
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
 msgstr "brak kropki we wpisie \"password\" \"%s\""
 
-#: ../clients/cli/connections.c:2017
+#: ../clients/cli/connections.c:2021
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
 msgstr "nieprawidłowa nazwa ustawienia we wpisie \"password\" \"%s\""
 
-#: ../clients/cli/connections.c:2064 ../clients/cli/connections.c:2223
+#: ../clients/cli/connections.c:2068 ../clients/cli/connections.c:2227
 msgid "unknown error"
 msgstr "nieznany błąd"
 
-#: ../clients/cli/connections.c:2073
+#: ../clients/cli/connections.c:2077
 #, c-format
 msgid "unknown device '%s'."
 msgstr "nieznane urządzenie \"%s\"."
 
-#: ../clients/cli/connections.c:2078
+#: ../clients/cli/connections.c:2082
 msgid "neither a valid connection nor device given"
 msgstr "nie podano prawidłowego połączenia ani urządzenia"
 
-#: ../clients/cli/connections.c:2161
+#: ../clients/cli/connections.c:2165
 #, c-format
 msgid "Error: Connection '%s' does not exist."
 msgstr "Błąd: połączenie \"%s\" nie istnieje."
 
-#: ../clients/cli/connections.c:2207 ../clients/cli/devices.c:1238
+#: ../clients/cli/connections.c:2211 ../clients/cli/devices.c:1238
 #: ../clients/cli/devices.c:2042 ../clients/cli/devices.c:2436
-#: ../clients/cli/devices.c:2677 ../clients/cli/devices.c:2803
+#: ../clients/cli/devices.c:2682 ../clients/cli/devices.c:2808
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Nieznany parametr: %s\n"
 
-#: ../clients/cli/connections.c:2231
+#: ../clients/cli/connections.c:2235
 msgid "preparing"
 msgstr "przygotowywanie"
 
-#: ../clients/cli/connections.c:2255
+#: ../clients/cli/connections.c:2259
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "Pomyślnie usunięto połączenie \"%s\" (%s).\n"
 
-#: ../clients/cli/connections.c:2271
+#: ../clients/cli/connections.c:2275
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr ""
-"Połączenie \"%s\" zostało pomyślnie deaktywowane (ścieżka aktywacji D-Bus: "
+"Połączenie \"%s\" zostało pomyślnie dezaktywowane (ścieżka aktywacji D-Bus: "
 "%s)\n"
 
-#: ../clients/cli/connections.c:2343 ../clients/cli/connections.c:8843
-#: ../clients/cli/connections.c:8960
+#: ../clients/cli/connections.c:2347 ../clients/cli/connections.c:9006
+#: ../clients/cli/connections.c:9123
 #, c-format
 msgid "Error: No connection specified."
 msgstr "Błąd: nie podano połączenia."
 
-#: ../clients/cli/connections.c:2375
+#: ../clients/cli/connections.c:2379
 #, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "Błąd: \"%s\" nie jest aktywnym połączeniem.\n"
 
-#: ../clients/cli/connections.c:2376 ../clients/cli/connections.c:8872
+#: ../clients/cli/connections.c:2380 ../clients/cli/connections.c:9035
 #, c-format
 msgid "Error: not all active connections found."
 msgstr "Błąd: nie odnaleziono wszystkich aktywnych połączeń."
 
-#: ../clients/cli/connections.c:2385
+#: ../clients/cli/connections.c:2389
 #, c-format
 msgid "Error: no active connection provided."
 msgstr "Błąd: nie podano aktywnego połączenia."
 
-#: ../clients/cli/connections.c:2700 ../clients/cli/utils.c:569
+#: ../clients/cli/connections.c:2708 ../clients/cli/utils.c:569
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "\"%s\" nie jest w [%s]"
 
-#: ../clients/cli/connections.c:2779
+#: ../clients/cli/connections.c:2787
 #, c-format
 msgid "Error: '%s': '%s' is not a valid %s MAC address."
 msgstr "Błąd: \"%s\": \"%s\" nie jest prawidłowym adresem MAC %s."
 
 #. Ask for optional arguments
-#: ../clients/cli/connections.c:2780 ../clients/cli/connections.c:3242
+#: ../clients/cli/connections.c:2788 ../clients/cli/connections.c:3273
 #: ../clients/tui/nm-editor-utils.c:164 ../libnm-core/nm-connection.c:1614
 #: ../libnm-glib/nm-device.c:1801 ../libnm/nm-device.c:1646
 msgid "InfiniBand"
 msgstr "InfiniBand"
 
-#: ../clients/cli/connections.c:2780 ../clients/tui/nm-editor-utils.c:147
+#: ../clients/cli/connections.c:2788 ../clients/tui/nm-editor-utils.c:147
 #: ../libnm-glib/nm-device.c:1789 ../libnm/nm-device.c:1634
 msgid "Ethernet"
 msgstr "Ethernet"
 
-#: ../clients/cli/connections.c:2800
+#: ../clients/cli/connections.c:2808
 #, c-format
 msgid "Error: 'mtu': '%s' is not a valid MTU."
 msgstr "Błąd: \"mtu\": \"%s\" nie jest prawidłowym MTU."
 
-#: ../clients/cli/connections.c:2816
+#: ../clients/cli/connections.c:2824
 #, c-format
 msgid "Error: 'parent': '%s' is not a valid interface name."
 msgstr "Błąd: \"parent\": \"%s\" nie jest prawidłową nazwą interfejsu."
 
-#: ../clients/cli/connections.c:2837
+#: ../clients/cli/connections.c:2845
 #, c-format
 msgid "Error: 'p-key': '%s' is not a valid InfiniBand P_KEY."
 msgstr "Błąd: \"p-key\": \"%s\" nie jest prawidłowym P_KEY InfiniBand."
 
-#: ../clients/cli/connections.c:2882
+#: ../clients/cli/connections.c:2890
 #, c-format
 msgid "Error: '%s': '%s' is not a valid %s %s."
 msgstr "Błąd: \"%s\": \"%s\" nie jest prawidłowym %s %s."
 
-#: ../clients/cli/connections.c:2895
+#: ../clients/cli/connections.c:2903
 msgid "Wi-Fi mode"
 msgstr "Tryb Wi-Fi"
 
-#: ../clients/cli/connections.c:2904
+#: ../clients/cli/connections.c:2912
 msgid "InfiniBand transport mode"
 msgstr "Tryb przesyłania InfiniBand"
 
-#: ../clients/cli/connections.c:2917
+#: ../clients/cli/connections.c:2924
+msgid "ADSL protocol"
+msgstr "Protokół ADSL"
+
+#: ../clients/cli/connections.c:2935
+msgid "ADSL encapsulation"
+msgstr "Kapsułkowanie ADSL"
+
+#: ../clients/cli/connections.c:2948
 #, c-format
 msgid "Error: 'flags': '%s' is not valid; use <0-7>."
 msgstr "Błąd: \"flags\": \"%s\" jest nieprawidłowe; należy użyć <0-7>."
 
-#: ../clients/cli/connections.c:2939
+#: ../clients/cli/connections.c:2970
 #, c-format
 msgid "Error: '%s': '%s' is not valid; %s "
 msgstr "Błąd: \"%s\": \"%s\" jest nieprawidłowe; %s "
 
-#: ../clients/cli/connections.c:3118
+#: ../clients/cli/connections.c:3149
 #, c-format
 msgid "Error: '%s': '%s' is not valid; use <%u-%u>."
 msgstr "Błąd: \"%s\": \"%s\" jest nieprawidłowe; należy użyć <%u-%u>."
 
 #. Ask for optional arguments.
-#: ../clients/cli/connections.c:3174
+#: ../clients/cli/connections.c:3205
 #, c-format
 msgid "There is %d optional argument for '%s' connection type.\n"
 msgid_plural "There are %d optional arguments for '%s' connection type.\n"
@@ -1709,7 +1728,7 @@ msgstr[0] "Istnieje %d opcjonalny parametr dla typu połączenia \"%s\".\n"
 msgstr[1] "Istnieją %d opcjonalne parametry dla typu połączenia \"%s\".\n"
 msgstr[2] "Istnieje %d opcjonalnych parametrów dla typu połączenia \"%s\".\n"
 
-#: ../clients/cli/connections.c:3177
+#: ../clients/cli/connections.c:3208
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
@@ -1718,468 +1737,480 @@ msgstr[1] "Podać je? %s"
 msgstr[2] "Podać je? %s"
 
 #. Ask for optional arguments
-#: ../clients/cli/connections.c:3194
+#: ../clients/cli/connections.c:3225
 msgid "ethernet"
 msgstr "ethernet"
 
-#: ../clients/cli/connections.c:3199 ../clients/cli/connections.c:3247
-#: ../clients/cli/connections.c:3381 ../clients/cli/connections.c:3460
+#: ../clients/cli/connections.c:3230 ../clients/cli/connections.c:3278
+#: ../clients/cli/connections.c:3412 ../clients/cli/connections.c:3491
 msgid "MTU [auto]: "
 msgstr "MTU [auto]: "
 
-#: ../clients/cli/connections.c:3210 ../clients/cli/connections.c:3258
-#: ../clients/cli/connections.c:3353 ../clients/cli/connections.c:3392
-#: ../clients/cli/connections.c:3764
+#: ../clients/cli/connections.c:3241 ../clients/cli/connections.c:3289
+#: ../clients/cli/connections.c:3384 ../clients/cli/connections.c:3423
+#: ../clients/cli/connections.c:3795
 msgid "MAC [none]: "
 msgstr "MAC [none]: "
 
-#: ../clients/cli/connections.c:3221
+#: ../clients/cli/connections.c:3252
 msgid "Cloned MAC [none]: "
 msgstr "Sklonowany MAC [none]: "
 
-#: ../clients/cli/connections.c:3269
+#: ../clients/cli/connections.c:3300
 #, c-format
 msgid "Transport mode %s"
 msgstr "Tryb przesyłania %s"
 
-#: ../clients/cli/connections.c:3282
+#: ../clients/cli/connections.c:3313
 msgid "Parent interface [none]: "
 msgstr "Interfejs nadrzędny [none]: "
 
-#: ../clients/cli/connections.c:3293
+#: ../clients/cli/connections.c:3324
 msgid "P_KEY [none]: "
 msgstr "P_KEY [none]: "
 
-#: ../clients/cli/connections.c:3303
+#: ../clients/cli/connections.c:3334
 #, c-format
 msgid "Error: 'p-key' is mandatory when 'parent' is specified.\n"
 msgstr "Błąd: \"p-key\" jest wymagane, kiedy podano \"parent\".\n"
 
 #. Ask for optional arguments
-#: ../clients/cli/connections.c:3320 ../clients/tui/nm-editor-utils.c:155
+#: ../clients/cli/connections.c:3351 ../clients/tui/nm-editor-utils.c:155
 #: ../libnm-glib/nm-device.c:1791 ../libnm/nm-device.c:1636
 msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
-#: ../clients/cli/connections.c:3328
+#: ../clients/cli/connections.c:3359
 #, c-format
 msgid "Mode %s"
 msgstr "Tryb %s"
 
 #. Ask for optional 'wimax' arguments.
-#: ../clients/cli/connections.c:3348 ../libnm-glib/nm-device.c:1797
+#: ../clients/cli/connections.c:3379 ../libnm-glib/nm-device.c:1797
 #: ../libnm/nm-device.c:1642
 msgid "WiMAX"
 msgstr "WiMAX"
 
 #. Ask for optional 'pppoe' arguments.
-#: ../clients/cli/connections.c:3371
+#: ../clients/cli/connections.c:3402
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/cli/connections.c:3375 ../clients/cli/connections.c:3413
+#: ../clients/cli/connections.c:3406 ../clients/cli/connections.c:3444
+#: ../clients/cli/connections.c:3917
 msgid "Password [none]: "
 msgstr "Hasło [none]: "
 
-#: ../clients/cli/connections.c:3377
+#: ../clients/cli/connections.c:3408
 msgid "Service [none]: "
 msgstr "Usługa [none]: "
 
 #. Ask for optional 'gsm' or 'cdma' arguments.
-#: ../clients/cli/connections.c:3407
+#: ../clients/cli/connections.c:3438
 msgid "mobile broadband"
 msgstr "komórkowe"
 
-#: ../clients/cli/connections.c:3411 ../clients/cli/connections.c:3836
+#: ../clients/cli/connections.c:3442 ../clients/cli/connections.c:3867
 msgid "Username [none]: "
 msgstr "Nazwa użytkownika [none]: "
 
 #. Ask for optional 'bluetooth' arguments.
-#: ../clients/cli/connections.c:3426
+#: ../clients/cli/connections.c:3457
 msgid "bluetooth"
 msgstr "bluetooth"
 
-#: ../clients/cli/connections.c:3433
+#: ../clients/cli/connections.c:3464
 #, c-format
 msgid "Bluetooth type %s"
 msgstr "Typ Bluetooth %s"
 
-#: ../clients/cli/connections.c:3439
+#: ../clients/cli/connections.c:3470
 #, c-format
 msgid "Error: 'bt-type': '%s' is not a valid bluetooth type.\n"
 msgstr "Błąd: \"bt-type\": \"%s\" nie jest prawidłowym typem Bluetooth.\n"
 
 #. Ask for optional 'vlan' arguments.
 #. 13
-#: ../clients/cli/connections.c:3455 ../clients/cli/devices.c:240
+#: ../clients/cli/connections.c:3486 ../clients/cli/devices.c:240
 #: ../clients/tui/nm-editor-utils.c:218 ../clients/tui/nmt-page-vlan.c:97
 #: ../libnm-core/nm-connection.c:1612 ../libnm-glib/nm-device.c:1809
 #: ../libnm-util/nm-connection.c:1614 ../libnm/nm-device.c:1654
 msgid "VLAN"
 msgstr "VLAN"
 
-#: ../clients/cli/connections.c:3471
+#: ../clients/cli/connections.c:3502
 msgid "VLAN flags (<0-7>) [none]: "
 msgstr "Flagi VLAN= (<0-7>) [none]: "
 
-#: ../clients/cli/connections.c:3482
+#: ../clients/cli/connections.c:3513
 msgid "Ingress priority maps [none]: "
 msgstr "Wejściowe mapy priorytetów [none]: "
 
-#: ../clients/cli/connections.c:3493
+#: ../clients/cli/connections.c:3524
 msgid "Egress priority maps [none]: "
 msgstr "Wyjściowe mapy priorytetów [none]: "
 
-#: ../clients/cli/connections.c:3504
+#: ../clients/cli/connections.c:3535
 msgid "Bonding mode [balance-rr]: "
 msgstr "Tryb wiązania [balance-rr]: "
 
 #. Ask for optional 'bond' arguments.
-#: ../clients/cli/connections.c:3520
+#: ../clients/cli/connections.c:3551
 msgid "bond"
 msgstr "wiązanie"
 
-#: ../clients/cli/connections.c:3542
+#: ../clients/cli/connections.c:3573
 msgid "Bonding primary interface [none]: "
 msgstr "Interfejs nadrzędny wiązania [none]: "
 
-#: ../clients/cli/connections.c:3545
+#: ../clients/cli/connections.c:3576
 #, c-format
 msgid "Error: 'primary': '%s' is not a valid interface name.\n"
 msgstr "Błąd: \"primary\": \"%s\" nie jest prawidłową nazwą interfejsu.\n"
 
-#: ../clients/cli/connections.c:3553
+#: ../clients/cli/connections.c:3584
 #, c-format
 msgid "Bonding monitoring mode %s"
 msgstr "Tryb monitorowania wiązania %s"
 
-#: ../clients/cli/connections.c:3559
+#: ../clients/cli/connections.c:3590
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "Błąd: \"%s\" nie jest prawidłowym trybem monitorowania; należy użyć \"%s\" "
 "lub \"%s\".\n"
 
-#: ../clients/cli/connections.c:3568
+#: ../clients/cli/connections.c:3599
 msgid "Bonding miimon [100]: "
 msgstr "miimon wiązania [100]: "
 
-#: ../clients/cli/connections.c:3571
+#: ../clients/cli/connections.c:3602
 #, c-format
 msgid "Error: 'miimon': '%s' is not a valid number <0-%u>.\n"
 msgstr "Błąd: \"miimon\": \"%s\" nie jest prawidłową liczbą <0-%u>.\n"
 
-#: ../clients/cli/connections.c:3579
+#: ../clients/cli/connections.c:3610
 msgid "Bonding downdelay [0]: "
 msgstr "downdelay wiązania [0]: "
 
-#: ../clients/cli/connections.c:3582
+#: ../clients/cli/connections.c:3613
 #, c-format
 msgid "Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"
 msgstr "Błąd: \"downdelay\": \"%s\" nie jest prawidłową liczbą <0-%u>.\n"
 
-#: ../clients/cli/connections.c:3590
+#: ../clients/cli/connections.c:3621
 msgid "Bonding updelay [0]: "
 msgstr "updelay wiązania [0]: "
 
-#: ../clients/cli/connections.c:3593
+#: ../clients/cli/connections.c:3624
 #, c-format
 msgid "Error: 'updelay': '%s' is not a valid number <0-%u>.\n"
 msgstr "Błąd: \"updelay\": \"%s\" nie jest prawidłową liczbą <0-%u>.\n"
 
-#: ../clients/cli/connections.c:3602
+#: ../clients/cli/connections.c:3633
 msgid "Bonding arp-interval [0]: "
 msgstr "arp-interval wiązania [0]: "
 
-#: ../clients/cli/connections.c:3605
+#: ../clients/cli/connections.c:3636
 #, c-format
 msgid "Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"
 msgstr "Błąd: \"arp-interval\": \"%s\" nie jest prawidłową liczbą <0-%u>.\n"
 
 #. FIXME: verify the string
-#: ../clients/cli/connections.c:3613
+#: ../clients/cli/connections.c:3644
 msgid "Bonding arp-ip-target [none]: "
 msgstr "arp-ip-target wiązania [none]: "
 
-#: ../clients/cli/connections.c:3620
+#: ../clients/cli/connections.c:3651
 msgid "LACP rate ('slow' or 'fast') [slow]: "
 msgstr "Prędkość LACP (\"slow\" lub \"fast\") [slow]: "
 
-#: ../clients/cli/connections.c:3626
+#: ../clients/cli/connections.c:3657
 #, c-format
 msgid "Error: 'lacp_rate': '%s' is invalid ('slow' or 'fast').\n"
 msgstr ""
 "Błąd: \"lacp_rate\": \"%s\" jest nieprawidłowe (\"slow\" lub \"fast\").\n"
 
-#: ../clients/cli/connections.c:3649
+#: ../clients/cli/connections.c:3680
 msgid "Team JSON configuration [none]: "
 msgstr "Konfiguracja JSON zespołu [none]: "
 
-#: ../clients/cli/connections.c:3666
+#: ../clients/cli/connections.c:3697
 msgid "team"
 msgstr "zespół"
 
-#: ../clients/cli/connections.c:3672
+#: ../clients/cli/connections.c:3703
 msgid "team-slave"
 msgstr "podrzędny-zespołu"
 
 #. Ask for optional 'bridge' arguments.
-#: ../clients/cli/connections.c:3684
+#: ../clients/cli/connections.c:3715
 msgid "bridge"
 msgstr "mostek"
 
-#: ../clients/cli/connections.c:3690
+#: ../clients/cli/connections.c:3721
 #, c-format
 msgid "Enable STP %s"
 msgstr "Włączenie STP %s"
 
-#: ../clients/cli/connections.c:3695
+#: ../clients/cli/connections.c:3726
 #, c-format
 msgid "Error: 'stp': %s.\n"
 msgstr "Błąd: \"stp\": %s.\n"
 
-#: ../clients/cli/connections.c:3703
+#: ../clients/cli/connections.c:3734
 msgid "STP priority [32768]: "
 msgstr "Priorytet STP [32768]: "
 
-#: ../clients/cli/connections.c:3707
+#: ../clients/cli/connections.c:3738
 #, c-format
 msgid "Error: 'priority': '%s' is not a valid number <0-%d>.\n"
 msgstr "Błąd: \"priority\": \"%s\" nie jest prawidłową liczbą <0-%d>.\n"
 
-#: ../clients/cli/connections.c:3715
+#: ../clients/cli/connections.c:3746
 msgid "Forward delay [15]: "
 msgstr "Forward-delay [15]: "
 
-#: ../clients/cli/connections.c:3719
+#: ../clients/cli/connections.c:3750
 #, c-format
 msgid "Error: 'forward-delay': '%s' is not a valid number <2-30>.\n"
 msgstr "Błąd: \"forward-delay\": \"%s\" nie jest prawidłową liczbą <2-30>.\n"
 
-#: ../clients/cli/connections.c:3728
+#: ../clients/cli/connections.c:3759
 msgid "Hello time [2]: "
 msgstr "Hello-time [2]: "
 
-#: ../clients/cli/connections.c:3732
+#: ../clients/cli/connections.c:3763
 #, c-format
 msgid "Error: 'hello-time': '%s' is not a valid number <1-10>.\n"
 msgstr "Błąd: \"hello-time\": \"%s\" nie jest prawidłową liczbą <1-10>.\n"
 
-#: ../clients/cli/connections.c:3740
+#: ../clients/cli/connections.c:3771
 msgid "Max age [20]: "
 msgstr "Max-age [20]: "
 
-#: ../clients/cli/connections.c:3744
+#: ../clients/cli/connections.c:3775
 #, c-format
 msgid "Error: 'max-age': '%s' is not a valid number <6-40>.\n"
 msgstr "Błąd: \"max-age\": \"%s\" nie jest prawidłową liczbą <6-40>.\n"
 
-#: ../clients/cli/connections.c:3752
+#: ../clients/cli/connections.c:3783
 msgid "MAC address ageing time [300]: "
 msgstr "Czas starzenia adresu MAC [300]: "
 
-#: ../clients/cli/connections.c:3756
+#: ../clients/cli/connections.c:3787
 #, c-format
 msgid "Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"
 msgstr ""
 "Błąd: \"ageing-time\": \"%s\" nie jest prawidłową liczbą <0-1000000>.\n"
 
 #. Ask for optional 'bridge-slave' arguments.
-#: ../clients/cli/connections.c:3783
+#: ../clients/cli/connections.c:3814
 msgid "bridge-slave"
 msgstr "podrzędny-mostku"
 
-#: ../clients/cli/connections.c:3788
+#: ../clients/cli/connections.c:3819
 msgid "Bridge port priority [32]: "
 msgstr "Priorytet portu mostku [32]: "
 
-#: ../clients/cli/connections.c:3801
+#: ../clients/cli/connections.c:3832
 msgid "Bridge port STP path cost [100]: "
 msgstr "Koszt ścieżki STP portu mostku [100]: "
 
-#: ../clients/cli/connections.c:3815
+#: ../clients/cli/connections.c:3846
 #, c-format
 msgid "Hairpin %s"
 msgstr "Hairpin %s"
 
-#: ../clients/cli/connections.c:3820
+#: ../clients/cli/connections.c:3851
 #, c-format
 msgid "Error: 'hairpin': %s.\n"
 msgstr "Błąd: \"hairpin\": %s.\n"
 
 #. Ask for optional 'olpc' arguments.
-#: ../clients/cli/connections.c:3847 ../libnm-glib/nm-device.c:1795
+#: ../clients/cli/connections.c:3878 ../libnm-glib/nm-device.c:1795
 #: ../libnm/nm-device.c:1640
 msgid "OLPC Mesh"
 msgstr "Kratowe OLPC"
 
-#: ../clients/cli/connections.c:3852
+#: ../clients/cli/connections.c:3883
 msgid "OLPC Mesh channel [1]: "
 msgstr "Kanał sieci kratowej OLPC [1]: "
 
-#: ../clients/cli/connections.c:3855
+#: ../clients/cli/connections.c:3886
 #, c-format
 msgid "Error: 'channel': '%s' is not a valid number <1-13>.\n"
 msgstr "Błąd: \"channel\": \"%s\" nie jest prawidłową liczbą <1-13>.\n"
 
-#: ../clients/cli/connections.c:3863
+#: ../clients/cli/connections.c:3894
 msgid "DHCP anycast MAC address [none]: "
 msgstr "Adres MAC \"anycast\" DHCP [none]: "
 
-#: ../clients/cli/connections.c:3905
+#. Ask for optional 'adsl' arguments.
+#: ../clients/cli/connections.c:3913 ../libnm-glib/nm-device.c:1811
+#: ../libnm/nm-device.c:1656
+msgid "ADSL"
+msgstr "ADSL"
+
+#: ../clients/cli/connections.c:3921
+#, c-format
+msgid "ADSL encapsulation %s"
+msgstr "Kapsułkowanie ADSL %s"
+
+#: ../clients/cli/connections.c:3963
 msgid "IPv4 address (IP[/plen]) [none]: "
 msgstr "Adres IPv4 (IP[/plen]) [none]: "
 
-#: ../clients/cli/connections.c:3907
+#: ../clients/cli/connections.c:3965
 msgid "IPv6 address (IP[/plen]) [none]: "
 msgstr "Adres IPv6 (IP[/plen]) [none]: "
 
-#: ../clients/cli/connections.c:3921
+#: ../clients/cli/connections.c:3979
 #, c-format
 msgid "  Address successfully added: %s\n"
 msgstr "  Pomyślnie dodano adres: %s\n"
 
-#: ../clients/cli/connections.c:3923
+#: ../clients/cli/connections.c:3981
 #, c-format
 msgid "  Warning: address already present: %s\n"
 msgstr "  Ostrzeżenie: adres jest już obecny: %s\n"
 
-#: ../clients/cli/connections.c:3925
+#: ../clients/cli/connections.c:3983
 #, c-format
 msgid "  Warning: ignoring garbage at the end: '%s'\n"
 msgstr "  Ostrzeżenie: ignorowanie śmieci na końcu: \"%s\"\n"
 
-#: ../clients/cli/connections.c:3927 ../clients/cli/connections.c:4807
-#: ../clients/cli/connections.c:4868 ../clients/cli/connections.c:5269
-#: ../clients/cli/connections.c:5302
+#: ../clients/cli/connections.c:3985 ../clients/cli/connections.c:4867
+#: ../clients/cli/connections.c:4928 ../clients/cli/connections.c:5401
+#: ../clients/cli/connections.c:5434
 msgid "Error: "
 msgstr "Błąd: "
 
-#: ../clients/cli/connections.c:3947
+#: ../clients/cli/connections.c:4005
 msgid "IPv4 gateway [none]: "
 msgstr "Brama IPv4 [none]: "
 
-#: ../clients/cli/connections.c:3950
+#: ../clients/cli/connections.c:4008
 msgid "IPv6 gateway [none]: "
 msgstr "Brama IPv6 [none]: "
 
-#: ../clients/cli/connections.c:3970
+#: ../clients/cli/connections.c:4028
 #, c-format
 msgid "Error: invalid gateway address '%s'\n"
 msgstr "Błąd: nieprawidłowy adres bramy \"%s\"\n"
 
 #. Ask for IP addresses
-#: ../clients/cli/connections.c:3983
+#: ../clients/cli/connections.c:4041
 #, c-format
 msgid "Do you want to add IP addresses? %s"
 msgstr "Dodać adresy IP? %s"
 
-#: ../clients/cli/connections.c:3991
+#: ../clients/cli/connections.c:4049
 #, c-format
 msgid "Press <Enter> to finish adding addresses.\n"
 msgstr "Naciśnięcie klawisza <Enter> zakończy dodawanie adresów.\n"
 
-#: ../clients/cli/connections.c:4129
+#: ../clients/cli/connections.c:4189
 #, c-format
 msgid "Error: 'parent': not valid without 'p-key'."
 msgstr "Błąd: \"parent\": nieprawidłowe bez \"p-key\"."
 
-#: ../clients/cli/connections.c:4184 ../clients/cli/connections.c:5189
+#: ../clients/cli/connections.c:4244 ../clients/cli/connections.c:5249
 msgid "SSID: "
 msgstr "SSID: "
 
-#: ../clients/cli/connections.c:4187 ../clients/cli/connections.c:5192
+#: ../clients/cli/connections.c:4247 ../clients/cli/connections.c:5252
 msgid "Error: 'ssid' is required."
 msgstr "Błąd: \"ssid\" jest wymagane."
 
-#: ../clients/cli/connections.c:4251
+#: ../clients/cli/connections.c:4311
 msgid "WiMAX NSP name: "
 msgstr "Nazwa NSP sieci WiMAX: "
 
-#: ../clients/cli/connections.c:4254
+#: ../clients/cli/connections.c:4314
 msgid "Error: 'nsp' is required."
 msgstr "Błąd: \"nsp\" jest wymagane."
 
-#: ../clients/cli/connections.c:4306
+#: ../clients/cli/connections.c:4366
 msgid "PPPoE username: "
 msgstr "Nazwa użytkownika PPPoE: "
 
-#: ../clients/cli/connections.c:4309
+#: ../clients/cli/connections.c:4369 ../clients/cli/connections.c:5319
 msgid "Error: 'username' is required."
 msgstr "Błąd: \"username\" jest wymagane."
 
-#: ../clients/cli/connections.c:4378
+#: ../clients/cli/connections.c:4438
 msgid "APN: "
 msgstr "APN: "
 
-#: ../clients/cli/connections.c:4381
+#: ../clients/cli/connections.c:4441
 msgid "Error: 'apn' is required."
 msgstr "Błąd: \"apn\" jest wymagane."
 
-#: ../clients/cli/connections.c:4439
+#: ../clients/cli/connections.c:4499
 msgid "Bluetooth device address: "
 msgstr "Adres urządzenia Bluetooth: "
 
-#: ../clients/cli/connections.c:4442
+#: ../clients/cli/connections.c:4502
 msgid "Error: 'addr' is required."
 msgstr "Błąd: \"addr\" jest wymagane."
 
-#: ../clients/cli/connections.c:4483
+#: ../clients/cli/connections.c:4543
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
 msgstr ""
 "Błąd: \"bt-type\": \"%s\" jest nieprawidłowe; należy użyć [%s, %s (%s), %s]."
 
-#: ../clients/cli/connections.c:4527
+#: ../clients/cli/connections.c:4587
 msgid "VLAN parent device or connection UUID: "
 msgstr "Urządzenie nadrzędne VLAN lub UUID połączenia: "
 
-#: ../clients/cli/connections.c:4530
+#: ../clients/cli/connections.c:4590
 msgid "Error: 'dev' is required."
 msgstr "Błąd: \"dev\" jest wymagane."
 
-#: ../clients/cli/connections.c:4534
+#: ../clients/cli/connections.c:4594
 msgid "VLAN ID <0-4095>: "
 msgstr "Identyfikator VLAN <0-4095>: "
 
-#: ../clients/cli/connections.c:4537
+#: ../clients/cli/connections.c:4597
 msgid "Error: 'id' is required."
 msgstr "Błąd: \"id\" jest wymagane."
 
-#: ../clients/cli/connections.c:4543
+#: ../clients/cli/connections.c:4603
 #, c-format
 msgid "Error: 'id': '%s' is not valid; use <0-4095>."
 msgstr "Błąd: \"id\": \"%s\" jest nieprawidłowe; należy użyć <0-4095>."
 
-#: ../clients/cli/connections.c:4553
+#: ../clients/cli/connections.c:4613
 #, c-format
 msgid "Error: 'dev': '%s' is neither UUID, interface name, nor MAC."
 msgstr "Błąd: \"dev\": \"%s\" nie jest UUID, nazwą interfejsu ani MAC."
 
-#: ../clients/cli/connections.c:4687
+#: ../clients/cli/connections.c:4747
 #, c-format
 msgid "Error: 'mode': %s."
 msgstr "Błąd: \"mode\": %s."
 
-#: ../clients/cli/connections.c:4696
+#: ../clients/cli/connections.c:4756
 #, c-format
 msgid "Error: 'primary': '%s' is not a valid interface name."
 msgstr "Błąd: \"primary\": \"%s\" nie jest prawidłową nazwą interfejsu."
 
-#: ../clients/cli/connections.c:4748 ../clients/cli/connections.c:4846
-#: ../clients/cli/connections.c:5048
+#: ../clients/cli/connections.c:4808 ../clients/cli/connections.c:4906
+#: ../clients/cli/connections.c:5108
 msgid "Error: 'master' is required."
 msgstr "Błąd: \"master\" jest wymagane."
 
-#: ../clients/cli/connections.c:4754 ../clients/cli/connections.c:4852
-#: ../clients/cli/connections.c:5054
+#: ../clients/cli/connections.c:4814 ../clients/cli/connections.c:4912
+#: ../clients/cli/connections.c:5114
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 "Ostrzeżenie: master=\"%s\" nie odnosi się do żadnego istniejącego profilu.\n"
 
-#: ../clients/cli/connections.c:4757 ../clients/cli/connections.c:4860
-#: ../clients/cli/connections.c:5057
+#: ../clients/cli/connections.c:4817 ../clients/cli/connections.c:4920
+#: ../clients/cli/connections.c:5117
 #, c-format
 msgid ""
 "Warning: 'type' is currently ignored. We only support ethernet slaves for "
@@ -2188,110 +2219,128 @@ msgstr ""
 "Ostrzeżenie: \"type\" jest obecnie ignorowane. W tej chwili obsługiwane są "
 "tylko podrzędne Ethernet.\n"
 
-#: ../clients/cli/connections.c:4954
+#: ../clients/cli/connections.c:5014
 #, c-format
 msgid "Error: 'stp': %s."
 msgstr "Błąd: \"stp\": %s."
 
-#: ../clients/cli/connections.c:5084
+#: ../clients/cli/connections.c:5144
 #, c-format
 msgid "Error: 'hairpin': %s."
 msgstr "Błąd: \"hairpin\": %s."
 
-#: ../clients/cli/connections.c:5137
+#: ../clients/cli/connections.c:5197
 msgid "Error: 'vpn-type' is required."
 msgstr "Błąd: \"vpn-type\" jest wymagane."
 
-#: ../clients/cli/connections.c:5144
+#: ../clients/cli/connections.c:5204
 #, c-format
 msgid "Warning: 'vpn-type': %s not known.\n"
 msgstr "Błąd: \"vpn-type\": nieznane %s.\n"
 
-#: ../clients/cli/connections.c:5205
+#: ../clients/cli/connections.c:5265
 #, c-format
 msgid "Error: 'channel': '%s' is not valid; use <1-13>."
 msgstr "Błąd: \"channel\": \"%s\" jest nieprawidłowe; należy użyć <1-13>."
 
-#: ../clients/cli/connections.c:5237
+#: ../clients/cli/connections.c:5316
+msgid "Username: "
+msgstr "Nazwa użytkownika: "
+
+#: ../clients/cli/connections.c:5325
+#, c-format
+msgid "Protocol %s"
+msgstr "Protokół %s"
+
+#: ../clients/cli/connections.c:5328
+msgid "Error: 'protocol' is required."
+msgstr "Błąd: \"protocol\" jest wymagane."
+
+#: ../clients/cli/connections.c:5369
 #, c-format
 msgid "Error: '%s' is not a valid connection type."
 msgstr "Błąd: \"%s\" nie jest prawidłowym typem połączenia."
 
-#: ../clients/cli/connections.c:5281
+#: ../clients/cli/connections.c:5413
 #, c-format
 msgid "Error: IPv4 gateway specified without IPv4 addresses"
 msgstr "Błąd: podano bramę IPv4 bez adresów IPv4"
 
-#: ../clients/cli/connections.c:5285
+#: ../clients/cli/connections.c:5417
 #, c-format
 msgid "Error: multiple IPv4 gateways specified"
 msgstr "Błąd: podano wiele bram IPv4"
 
-#: ../clients/cli/connections.c:5289
+#: ../clients/cli/connections.c:5421
 #, c-format
 msgid "Error: Invalid IPv4 gateway '%s'"
 msgstr "Błąd: nieprawidłowa brama IPv4 \"%s\""
 
-#: ../clients/cli/connections.c:5314
+#: ../clients/cli/connections.c:5446
 #, c-format
 msgid "Error: IPv6 gateway specified without IPv6 addresses"
 msgstr "Błąd: podano bramę IPv6 bez adresów IPv6"
 
-#: ../clients/cli/connections.c:5318
+#: ../clients/cli/connections.c:5450
 #, c-format
 msgid "Error: multiple IPv6 gateways specified"
 msgstr "Błąd: podano wiele bram IPv6"
 
-#: ../clients/cli/connections.c:5322
+#: ../clients/cli/connections.c:5454
 #, c-format
 msgid "Error: Invalid IPv6 gateway '%s'"
 msgstr "Błąd: nieprawidłowa brama IPv6 \"%s\""
 
-#: ../clients/cli/connections.c:5382
+#: ../clients/cli/connections.c:5514
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Błąd: dodanie połączenia \"%s\" się nie powiodło: %s"
 
-#: ../clients/cli/connections.c:5387
+#: ../clients/cli/connections.c:5519
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "Pomyślnie dodano połączenie \"%s\" (%s).\n"
 
-#: ../clients/cli/connections.c:5607
+#: ../clients/cli/connections.c:5757
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "Błąd: parametr \"type\" jest wymagany."
 
-#: ../clients/cli/connections.c:5615
+#: ../clients/cli/connections.c:5765
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "Błąd: nieznany typ połączenia; %s."
 
-#: ../clients/cli/connections.c:5624
+#: ../clients/cli/connections.c:5774
 #, c-format
 msgid "Error: 'autoconnect': %s."
 msgstr "Błąd: \"autoconnect\": %s."
 
-#: ../clients/cli/connections.c:5634
+#: ../clients/cli/connections.c:5784
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "Błąd: \"save\": %s."
 
-#: ../clients/cli/connections.c:5650
+#: ../clients/cli/connections.c:5801
 msgid "Interface name [*]: "
 msgstr "Nazwa interfejsu [*]: "
 
-#: ../clients/cli/connections.c:5655
+#: ../clients/cli/connections.c:5806
 #, c-format
 msgid "Error: 'ifname' argument is required."
 msgstr "Błąd: parametr \"ifname\" jest wymagany."
 
-#: ../clients/cli/connections.c:5662
+#: ../clients/cli/connections.c:5808
+#, c-format
+msgid "Error: mandatory 'ifname' not seen before '%s'."
+msgstr "Błąd: wymagane \"ifname\" nie występuje przed \"%s\"."
+
+#: ../clients/cli/connections.c:5817
 #, c-format
 msgid "Error: 'ifname': '%s' is not a valid interface nor '*'."
 msgstr "Błąd: \"ifname\": \"%s\" nie jest prawidłowym interfejsem ani \"*\"."
 
-#: ../clients/cli/connections.c:6557
+#: ../clients/cli/connections.c:6712
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "[wartości ustawienia \"%s\"]\n"
@@ -2299,7 +2348,7 @@ msgstr "[wartości ustawienia \"%s\"]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6639
+#: ../clients/cli/connections.c:6794
 #, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -2336,7 +2385,7 @@ msgstr ""
 "nmcli    <opcja-konfiguracji> <wartość>        :: konfiguracja nmcli\n"
 "quit                                           :: kończy działanie nmcli\n"
 
-#: ../clients/cli/connections.c:6666
+#: ../clients/cli/connections.c:6821
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -2357,7 +2406,7 @@ msgstr ""
 "           nmcli connection> goto secondaries\n"
 "           nmcli> goto ipv4.addresses\n"
 
-#: ../clients/cli/connections.c:6673
+#: ../clients/cli/connections.c:6828
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -2378,7 +2427,7 @@ msgstr ""
 "Przykłady: nmcli> remove wifi-sec\n"
 "           nmcli> remove eth.mtu\n"
 
-#: ../clients/cli/connections.c:6680
+#: ../clients/cli/connections.c:6835
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -2393,7 +2442,7 @@ msgstr ""
 "\n"
 "Przykład: nmcli> set con.id Moje połączenie\n"
 
-#: ../clients/cli/connections.c:6685
+#: ../clients/cli/connections.c:6840
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -2406,7 +2455,7 @@ msgstr ""
 "Wyświetla opis właściwości. Wszystkie ustawienia i właściwości usługi NM\n"
 "można znaleźć na stronie podręcznika nm-settings(5).\n"
 
-#: ../clients/cli/connections.c:6690
+#: ../clients/cli/connections.c:6845
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -2421,7 +2470,7 @@ msgstr ""
 "\n"
 "Przykład: nmcli ipv4> print all\n"
 
-#: ../clients/cli/connections.c:6695
+#: ../clients/cli/connections.c:6850
 #, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -2446,7 +2495,7 @@ msgstr ""
 "           nmcli> verify fix\n"
 "           nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:6704
+#: ../clients/cli/connections.c:6859
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -2472,7 +2521,7 @@ msgstr ""
 "między ponownymi uruchomieniami. Aby w pełni usunąć trwałe połączenie,\n"
 "należy usunąć profil połączenia.\n"
 
-#: ../clients/cli/connections.c:6715
+#: ../clients/cli/connections.c:6870
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -2490,10 +2539,11 @@ msgstr ""
 "\n"
 "Dostępne opcje:\n"
 "<nazwa-interfejsu> - urządzenie, na którym aktywowane będzie połączenie\n"
-"/<ap>|<nsp>        - AP (Wi-Fi) lub NSP (WiMAX) (należy poprzedzić\n"
-"                     znakiem /, kiedy nie podano <nazwy-interfejsu>)\n"
+"/<ap>|<nsp>        - punkt dostępowy (Wi-Fi) lub NSP (WiMAX) (należy\n"
+"                     poprzedzić znakiem /, kiedy nie podano\n"
+"                     <nazwy-interfejsu>)\n"
 
-#: ../clients/cli/connections.c:6722 ../clients/cli/connections.c:6880
+#: ../clients/cli/connections.c:6877 ../clients/cli/connections.c:7035
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -2502,7 +2552,7 @@ msgstr ""
 "back  :: przechodzi do menu wyższego poziomu\n"
 "\n"
 
-#: ../clients/cli/connections.c:6725
+#: ../clients/cli/connections.c:6880
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -2511,7 +2561,7 @@ msgstr ""
 "help/? [<polecenie>]  :: pomoc dla poleceń nmcli\n"
 "\n"
 
-#: ../clients/cli/connections.c:6728
+#: ../clients/cli/connections.c:6883
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -2556,7 +2606,7 @@ msgstr ""
 "           nmcli> nmcli save-confirmation no\n"
 "           nmcli> nmcli prompt-color 3\n"
 
-#: ../clients/cli/connections.c:6749 ../clients/cli/connections.c:6886
+#: ../clients/cli/connections.c:6904 ../clients/cli/connections.c:7041
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -2569,8 +2619,8 @@ msgstr ""
 "To polecenie kończy działanie nmcli. Jeśli modyfikowane połączenie nie jest "
 "zapisane, użytkownik zostanie poproszony o potwierdzenie działania.\n"
 
-#: ../clients/cli/connections.c:6754 ../clients/cli/connections.c:6891
-#: ../clients/cli/connections.c:7314 ../clients/cli/connections.c:8236
+#: ../clients/cli/connections.c:6909 ../clients/cli/connections.c:7046
+#: ../clients/cli/connections.c:7469 ../clients/cli/connections.c:8391
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Nieznane polecenie: \"%s\"\n"
@@ -2578,7 +2628,7 @@ msgstr "Nieznane polecenie: \"%s\"\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6820
+#: ../clients/cli/connections.c:6975
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -2605,7 +2655,7 @@ msgstr ""
 "help/?   [<polecenie>]           :: wyświetla tę pomoc lub opis polecenia\n"
 "quit                             :: kończy działanie nmcli\n"
 
-#: ../clients/cli/connections.c:6845
+#: ../clients/cli/connections.c:7000
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -2616,7 +2666,7 @@ msgstr ""
 "\n"
 "To polecenie ustawia podaną <wartość> tej właściwości\n"
 
-#: ../clients/cli/connections.c:6849
+#: ../clients/cli/connections.c:7004
 #, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -2631,7 +2681,7 @@ msgstr ""
 "jest typu kontener. W przypadku właściwości zawierających jedną wartość "
 "zastępuje tę wartość (podobnie jak \"set\").\n"
 
-#: ../clients/cli/connections.c:6855
+#: ../clients/cli/connections.c:7010
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -2642,7 +2692,7 @@ msgstr ""
 "\n"
 "Wyświetla bieżącą wartość i umożliwia jej modyfikację.\n"
 
-#: ../clients/cli/connections.c:6859
+#: ../clients/cli/connections.c:7014
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -2675,7 +2725,7 @@ msgstr ""
 "           nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:6870
+#: ../clients/cli/connections.c:7025
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -2688,7 +2738,7 @@ msgstr ""
 "Wyświetla opis właściwości. Wszystkie ustawienia i właściwości usługi NM "
 "można znaleźć na stronie podręcznika nm-settings(5).\n"
 
-#: ../clients/cli/connections.c:6875
+#: ../clients/cli/connections.c:7030
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -2703,7 +2753,7 @@ msgstr ""
 "Wyświetla wartość właściwości. Podając parametr można także wyświetlić "
 "wartości dla całego ustawienia lub połączenia.\n"
 
-#: ../clients/cli/connections.c:6883
+#: ../clients/cli/connections.c:7038
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -2712,28 +2762,28 @@ msgstr ""
 "help/? [<polecenie>]  :: pomoc dla poleceń nmcli\n"
 "\n"
 
-#: ../clients/cli/connections.c:6981
+#: ../clients/cli/connections.c:7136
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "Błąd: aktywacja połączenia się nie powiodła.\n"
 
-#: ../clients/cli/connections.c:7064
+#: ../clients/cli/connections.c:7219
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr "Błąd: ustawienie \"%s\" jest wymagane i nie może być usuwane.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../clients/cli/connections.c:7082
+#: ../clients/cli/connections.c:7237
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ Typ: %s | nazwa: %s | UUID: %s | dirty: %s | tymczasowe: %s ]\n"
 
-#: ../clients/cli/connections.c:7118
+#: ../clients/cli/connections.c:7273
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "Połączenie nie jest zapisane. Na pewno zakończyć? %s"
 
-#: ../clients/cli/connections.c:7166
+#: ../clients/cli/connections.c:7321
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2742,66 +2792,66 @@ msgstr ""
 "Profil połączenia został usunięty z innego klienta. Można wpisać \"save\" w "
 "głównym oknie, aby go przywrócić.\n"
 
-#: ../clients/cli/connections.c:7191 ../clients/cli/connections.c:7617
-#: ../clients/cli/connections.c:7675
+#: ../clients/cli/connections.c:7346 ../clients/cli/connections.c:7772
+#: ../clients/cli/connections.c:7830
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Dozwolone wartości dla właściwości \"%s\": %s\n"
 
-#: ../clients/cli/connections.c:7195 ../clients/cli/connections.c:7621
-#: ../clients/cli/connections.c:7679
+#: ../clients/cli/connections.c:7350 ../clients/cli/connections.c:7776
+#: ../clients/cli/connections.c:7834
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Proszę podać wartość \"%s\": "
 
-#: ../clients/cli/connections.c:7210 ../clients/cli/connections.c:7232
-#: ../clients/cli/connections.c:7625 ../clients/cli/connections.c:7684
+#: ../clients/cli/connections.c:7365 ../clients/cli/connections.c:7387
+#: ../clients/cli/connections.c:7780 ../clients/cli/connections.c:7839
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Błąd: ustawienie właściwości \"%s\" się nie powiodło: %s\n"
 
-#: ../clients/cli/connections.c:7226
+#: ../clients/cli/connections.c:7381
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Modyfikacja wartości \"%s\": "
 
-#: ../clients/cli/connections.c:7255
+#: ../clients/cli/connections.c:7410
 #, c-format
 msgid "Error: %s\n"
 msgstr "Błąd: %s\n"
 
-#: ../clients/cli/connections.c:7261 ../clients/cli/connections.c:7763
-#: ../clients/cli/connections.c:7804
+#: ../clients/cli/connections.c:7416 ../clients/cli/connections.c:7918
+#: ../clients/cli/connections.c:7959
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Błąd: usunięcie wartości \"%s\" się nie powiodło: %s\n"
 
-#: ../clients/cli/connections.c:7282
+#: ../clients/cli/connections.c:7437
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Nieznany parametr polecenia: \"%s\"\n"
 
-#: ../clients/cli/connections.c:7410
+#: ../clients/cli/connections.c:7565
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Dostępne ustawienia: %s\n"
 
-#: ../clients/cli/connections.c:7419
+#: ../clients/cli/connections.c:7574
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Błąd: nieprawidłowa nazwa ustawienia; %s\n"
 
-#: ../clients/cli/connections.c:7436
+#: ../clients/cli/connections.c:7591
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Dostępne właściwości: %s\n"
 
-#: ../clients/cli/connections.c:7444
+#: ../clients/cli/connections.c:7599
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Błąd: właściwość %s\n"
 
-#: ../clients/cli/connections.c:7485
+#: ../clients/cli/connections.c:7640
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -2812,12 +2862,12 @@ msgstr ""
 "natychmiastową aktywację połączenia.\n"
 "Na pewno zapisać? %s"
 
-#: ../clients/cli/connections.c:7560
+#: ../clients/cli/connections.c:7715
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Można modyfikować następujące ustawienia: %s\n"
 
-#: ../clients/cli/connections.c:7587
+#: ../clients/cli/connections.c:7742
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2826,220 +2876,220 @@ msgstr ""
 "Profil połączenia został usunięty z innego klienta. Można wpisać \"save\", "
 "aby go przywrócić.\n"
 
-#: ../clients/cli/connections.c:7629 ../clients/cli/connections.c:7846
+#: ../clients/cli/connections.c:7784 ../clients/cli/connections.c:8001
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "Błąd: nie wybrano ustawienia; prawidłowe to [%s]\n"
 
-#: ../clients/cli/connections.c:7630
+#: ../clients/cli/connections.c:7785
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "należy najpierw użyć \"goto <ustawienie>\" lub \"set <ustawienie>."
 "<właściwość>\"\n"
 
-#: ../clients/cli/connections.c:7644 ../clients/cli/connections.c:7783
-#: ../clients/cli/connections.c:7863
+#: ../clients/cli/connections.c:7799 ../clients/cli/connections.c:7938
+#: ../clients/cli/connections.c:8018
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "Błąd: nieprawidłowy parametr ustawienia \"%s\"; prawidłowe to [%s]\n"
 
-#: ../clients/cli/connections.c:7654
+#: ../clients/cli/connections.c:7809
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Błąd: brak ustawienia dla właściwości \"%s\"\n"
 
-#: ../clients/cli/connections.c:7661
+#: ../clients/cli/connections.c:7816
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Błąd: nieprawidłowa właściwość: %s\n"
 
-#: ../clients/cli/connections.c:7711
+#: ../clients/cli/connections.c:7866
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Błąd: nieznane ustawienie \"%s\"\n"
 
-#: ../clients/cli/connections.c:7724
+#: ../clients/cli/connections.c:7879
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Można modyfikować następujące właściwości: %s\n"
 
-#: ../clients/cli/connections.c:7768
+#: ../clients/cli/connections.c:7923
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Błąd: nie podano żadnego parametru; prawidłowe to [%s]\n"
 
-#: ../clients/cli/connections.c:7781
+#: ../clients/cli/connections.c:7936
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "Ustawienie \"%s\" nie jest obecne w połączeniu.\n"
 
-#: ../clients/cli/connections.c:7822
+#: ../clients/cli/connections.c:7977
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Błąd: właściwości %s, ani nie jest nazwą ustawiania.\n"
 
-#: ../clients/cli/connections.c:7847
+#: ../clients/cli/connections.c:8002
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "należy najpierw użyć \"goto <ustawienie>\" lub \"describe <ustawienie>."
 "<właściwość>\"\n"
 
-#: ../clients/cli/connections.c:7888
+#: ../clients/cli/connections.c:8043
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr "Błąd: nieprawidłowa właściwość: %s: ani prawidłową nazwą ustawienia.\n"
 
-#: ../clients/cli/connections.c:7917
+#: ../clients/cli/connections.c:8072
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Błąd: nieznane ustawienie: \"%s\"\n"
 
-#: ../clients/cli/connections.c:7922
+#: ../clients/cli/connections.c:8077
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Błąd: ustawienie \"%s\" nie jest obecne w połączeniu\n"
 
-#: ../clients/cli/connections.c:7947
+#: ../clients/cli/connections.c:8102
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "Błąd: nieprawidłowa właściwość: %s%s\n"
 
-#: ../clients/cli/connections.c:7949
+#: ../clients/cli/connections.c:8104
 msgid ", neither a valid setting name"
 msgstr ", ani prawidłową nazwą ustawienia"
 
-#: ../clients/cli/connections.c:7966
+#: ../clients/cli/connections.c:8121
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "Nieprawidłowa opcja sprawdzania: %s\n"
 
-#: ../clients/cli/connections.c:7974
+#: ../clients/cli/connections.c:8129
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Sprawdzenie ustawienia \"%s\": %s\n"
 
-#: ../clients/cli/connections.c:7989
+#: ../clients/cli/connections.c:8144
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Sprawdzenie połączenia: %s\n"
 
-#: ../clients/cli/connections.c:7992
+#: ../clients/cli/connections.c:8147
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr "Nie można automatycznie naprawić błędu.\n"
 
-#: ../clients/cli/connections.c:8009
+#: ../clients/cli/connections.c:8164
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "Błąd: nieprawidłowy parametr \"%s\"\n"
 
-#: ../clients/cli/connections.c:8042
+#: ../clients/cli/connections.c:8197
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Błąd: zapisanie połączenia \"%s\" (%s) się nie powiodło: %s\n"
 
-#: ../clients/cli/connections.c:8049
+#: ../clients/cli/connections.c:8204
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Pomyślnie zapisano połączenie \"%s\" (%s).\n"
 
-#: ../clients/cli/connections.c:8050
+#: ../clients/cli/connections.c:8205
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "Pomyślnie zaktualizowano połączenie \"%s\" (%s).\n"
 
-#: ../clients/cli/connections.c:8083
+#: ../clients/cli/connections.c:8238
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Błąd: sprawdzenie połączenia się nie powiodło: %s\n"
 
-#: ../clients/cli/connections.c:8084
+#: ../clients/cli/connections.c:8239
 msgid "(unknown error)"
 msgstr "(nieznany błąd)"
 
-#: ../clients/cli/connections.c:8085
+#: ../clients/cli/connections.c:8240
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "Można spróbować wykonać \"verify fix\", aby naprawić błędy.\n"
 
-#: ../clients/cli/connections.c:8107
+#: ../clients/cli/connections.c:8262
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "Błąd: połączenie nie jest zapisane. Należy najpierw wpisać \"save\".\n"
 
-#: ../clients/cli/connections.c:8111
+#: ../clients/cli/connections.c:8266
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "Błąd: połączenie jest nieprawidłowe: %s\n"
 
-#: ../clients/cli/connections.c:8121
+#: ../clients/cli/connections.c:8276
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Błąd: nie można aktywować połączenia: %s.\n"
 
-#: ../clients/cli/connections.c:8131
+#: ../clients/cli/connections.c:8286
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "Błąd: aktywowanie połączenia \"%s\" (%s) się nie powiodło: %s\n"
 
-#: ../clients/cli/connections.c:8137
+#: ../clients/cli/connections.c:8292
 #, c-format
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
 "Aktywacja monitorowania połączenia (naciśnięcie dowolnego klawisza "
 "kontynuuje)\n"
 
-#: ../clients/cli/connections.c:8175
+#: ../clients/cli/connections.c:8330
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Błąd: status-line: %s\n"
 
-#: ../clients/cli/connections.c:8183
+#: ../clients/cli/connections.c:8338
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Błąd: save-confirmation: %s\n"
 
-#: ../clients/cli/connections.c:8191
+#: ../clients/cli/connections.c:8346
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "Błąd: show-secrets: %s\n"
 
-#: ../clients/cli/connections.c:8199
+#: ../clients/cli/connections.c:8354
 #, c-format
 msgid "Error: bad color number: '%s'; use <0-8>\n"
 msgstr "Błąd: błędny numer koloru: \"%s\"; należy użyć <0-8>\n"
 
-#: ../clients/cli/connections.c:8211
+#: ../clients/cli/connections.c:8366
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "Obecna konfiguracja nmcli:\n"
 
-#: ../clients/cli/connections.c:8221
+#: ../clients/cli/connections.c:8376
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "Nieprawidłowa opcja konfiguracji \"%s\"; dozwolone [%s]\n"
 
-#: ../clients/cli/connections.c:8468
+#: ../clients/cli/connections.c:8631
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "Błąd: tylko jedno z \"id\", UUID lub \"path\" może być podane."
 
-#: ../clients/cli/connections.c:8480 ../clients/cli/connections.c:8667
-#: ../clients/cli/connections.c:8674
+#: ../clients/cli/connections.c:8643 ../clients/cli/connections.c:8830
+#: ../clients/cli/connections.c:8837
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Błąd: nieznane połączenie \"%s\"."
 
-#: ../clients/cli/connections.c:8498
+#: ../clients/cli/connections.c:8661
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Ostrzeżenie: modyfikowanie istniejącego połączenia \"%s\"; parametr \"type\" "
 "jest ignorowany\n"
 
-#: ../clients/cli/connections.c:8501
+#: ../clients/cli/connections.c:8664
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -3047,140 +3097,140 @@ msgstr ""
 "Ostrzeżenie: modyfikowanie istniejącego połączenia \"%s\"; parametr \"con-"
 "name\" jest ignorowany\n"
 
-#: ../clients/cli/connections.c:8515
+#: ../clients/cli/connections.c:8678
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Prawidłowe typy połączeń: %s\n"
 
-#: ../clients/cli/connections.c:8517
+#: ../clients/cli/connections.c:8680
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Błąd: nieznany typ połączenia; %s\n"
 
-#: ../clients/cli/connections.c:8556
+#: ../clients/cli/connections.c:8719
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| interaktywny edytor połączeń nmcli |==="
 
-#: ../clients/cli/connections.c:8559
+#: ../clients/cli/connections.c:8722
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Modyfikowanie istniejącego połączenia \"%s\": \"%s\""
 
-#: ../clients/cli/connections.c:8561
+#: ../clients/cli/connections.c:8724
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Dodawanie nowego połączenia \"%s\""
 
-#: ../clients/cli/connections.c:8563
+#: ../clients/cli/connections.c:8726
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "Wpisanie \"help\" lub \"?\" wyświetla dostępne polecenia."
 
-#: ../clients/cli/connections.c:8565
+#: ../clients/cli/connections.c:8728
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "Wpisanie \"describe [<ustawienie>.<właściwość>]\" wyświetla szczegółowy opis "
 "właściwości."
 
-#: ../clients/cli/connections.c:8603
+#: ../clients/cli/connections.c:8766
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "Błąd: zmodyfikowanie połączenia \"%s\" się nie powiodło: %s"
 
-#: ../clients/cli/connections.c:8610
+#: ../clients/cli/connections.c:8773
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "Pomyślnie zmodyfikowano połączenie \"%s\" (%s).\n"
 
-#: ../clients/cli/connections.c:8642
+#: ../clients/cli/connections.c:8805
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "Błąd: nie podano żadnych parametrów."
 
-#: ../clients/cli/connections.c:8661
+#: ../clients/cli/connections.c:8824
 #, c-format
 msgid "Error: connection ID is missing."
 msgstr "Błąd: brak identyfikatora połączenia."
 
-#: ../clients/cli/connections.c:8683 ../clients/cli/connections.c:8696
+#: ../clients/cli/connections.c:8846 ../clients/cli/connections.c:8859
 #, c-format
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "Błąd: brak parametru <ustawienie>.<właściwość>."
 
-#: ../clients/cli/connections.c:8701
+#: ../clients/cli/connections.c:8864
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "Błąd: brak wartości dla \"%s\"."
 
-#: ../clients/cli/connections.c:8719
+#: ../clients/cli/connections.c:8882
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Błąd: nieprawidłowe <ustawienie>.<właściwość> \"%s\"."
 
-#: ../clients/cli/connections.c:8727
+#: ../clients/cli/connections.c:8890
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Błąd: nieprawidłowe lub niedozwolone ustawienie \"%s\": %s."
 
-#: ../clients/cli/connections.c:8748
+#: ../clients/cli/connections.c:8911
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Błąd: nieprawidłowa właściwość \"%s\": %s."
 
-#: ../clients/cli/connections.c:8759
+#: ../clients/cli/connections.c:8922
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "Błąd: zmodyfikowanie %s.%s się nie powiodło: %s."
 
-#: ../clients/cli/connections.c:8777
+#: ../clients/cli/connections.c:8940
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Błąd: usunięcie wartości z %s.%s się nie powiodło: %s."
 
-#: ../clients/cli/connections.c:8808
+#: ../clients/cli/connections.c:8971
 #, c-format
 msgid "Error: not all connections deleted."
 msgstr "Błąd: nie usunięto wszystkich połączeń."
 
-#: ../clients/cli/connections.c:8809
+#: ../clients/cli/connections.c:8972
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "Błąd: usunięcie połączenia się nie powiodło: %s"
 
-#: ../clients/cli/connections.c:8871
+#: ../clients/cli/connections.c:9034
 #, c-format
 msgid "Error: unknown connection '%s'\n"
 msgstr "Błąd: nieznane połączenie \"%s\"\n"
 
-#: ../clients/cli/connections.c:8885
+#: ../clients/cli/connections.c:9048
 #, c-format
 msgid "Error: no connection provided."
 msgstr "Błąd: nie podano połączenia."
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8910
+#: ../clients/cli/connections.c:9073
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Błąd: nie można usunąć nieznanych połączeń: %s."
 
-#: ../clients/cli/connections.c:8934
+#: ../clients/cli/connections.c:9097
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Błąd: ponowne wczytanie połączeń się nie powiodło: %s."
 
-#: ../clients/cli/connections.c:8973
+#: ../clients/cli/connections.c:9136
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Błąd: wczytanie połączeń się nie powiodło: %s."
 
-#: ../clients/cli/connections.c:8981
+#: ../clients/cli/connections.c:9144
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Nie można wczytać pliku \"%s\"\n"
 
-#: ../clients/cli/connections.c:9160
+#: ../clients/cli/connections.c:9323
 #, c-format
 msgid "Error: '%s' is not valid 'connection' command."
 msgstr "Błąd: \"%s\" nie jest prawidłowym poleceniem \"connection\"."
@@ -3881,7 +3931,7 @@ msgid "Error: invalid extra argument '%s'."
 msgstr "Błąd: nieprawidłowy dodatkowy parametr \"%s\"."
 
 #: ../clients/cli/devices.c:1310 ../clients/cli/devices.c:1608
-#: ../clients/cli/devices.c:2080 ../clients/cli/devices.c:2842
+#: ../clients/cli/devices.c:2080 ../clients/cli/devices.c:2847
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Błąd: nie odnaleziono urządzenia \"%s\"."
@@ -4026,7 +4076,7 @@ msgstr ""
 "sprawdzić poprawność instalacji wtyczki Wi-Fi usługi NetworkManager."
 
 #: ../clients/cli/devices.c:2132 ../clients/cli/devices.c:2464
-#: ../clients/cli/devices.c:2690
+#: ../clients/cli/devices.c:2695
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "Błąd: urządzenie \"%s\" nie jest urządzeniem WiFi."
@@ -4068,7 +4118,7 @@ msgstr "Błąd: BSSID do połączenia (%s) różni się od parametru BSSID (%s).
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "Błąd: parametr \"%s\" nie wynosi SSID ani BSSID."
 
-#: ../clients/cli/devices.c:2466 ../clients/cli/devices.c:2692
+#: ../clients/cli/devices.c:2466 ../clients/cli/devices.c:2697
 #, c-format
 msgid "Error: No Wi-Fi device found."
 msgstr "Błąd: nie odnaleziono urządzenia WiFi."
@@ -4088,50 +4138,58 @@ msgstr "Błąd: nie odnaleziono sieci z SSID \"%s\"."
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "Błąd: nie odnaleziono punktu dostępowego z BSSID \"%s\"."
 
-#: ../clients/cli/devices.c:2564
+#: ../clients/cli/devices.c:2555
+#, c-format
+msgid ""
+"Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
+msgstr ""
+"Ostrzeżenie: \"%s\" powinno być SSID dla ukrytych punktów dostępowych, ale "
+"wygląda jak BSSID.\n"
+
+#: ../clients/cli/devices.c:2569
 msgid "Password: "
 msgstr "Hasło: "
 
-#: ../clients/cli/devices.c:2659
+#: ../clients/cli/devices.c:2664
 #, c-format
 msgid "Error: '%s' cannot repeat."
 msgstr "Błąd: \"%s\" nie może się powtarzać."
 
-#: ../clients/cli/devices.c:2738
+#: ../clients/cli/devices.c:2743
 #, c-format
 msgid "Error: 'device wifi' command '%s' is not valid."
 msgstr "Błąd: polecenie \"device wifi\" \"%s\" jest nieprawidłowe."
 
-#: ../clients/cli/devices.c:2785
+#: ../clients/cli/devices.c:2790
 msgid "WiMAX NSP list"
 msgstr "Lista NSP sieci WiMAX"
 
-#: ../clients/cli/devices.c:2822
+#: ../clients/cli/devices.c:2827
 #, c-format
 msgid "Error: 'device wimax': %s"
 msgstr "Błąd: \"device wimax\": %s"
 
-#: ../clients/cli/devices.c:2865
+#: ../clients/cli/devices.c:2870
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "Błąd: nie odnaleziono NSP o nazwie \"%s\"."
 
-#: ../clients/cli/devices.c:2878
+#: ../clients/cli/devices.c:2883
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "Błąd: urządzenie \"%s\" nie jest urządzeniem WiMAX."
 
-#: ../clients/cli/devices.c:2922
+#: ../clients/cli/devices.c:2927
 #, c-format
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "Błąd: nie odnaleziono punktu dostępowego z NSP \"%s\"."
 
-#: ../clients/cli/devices.c:2959
+#: ../clients/cli/devices.c:2964
 #, c-format
 msgid "Error: 'device wimax' command '%s' is not valid."
 msgstr "Błąd: polecenie \"device wimax\" \"%s\" jest nieprawidłowe."
 
-#: ../clients/cli/devices.c:3135
+#: ../clients/cli/devices.c:3140
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "Błąd: polecenie \"dev\" \"%s\" jest nieprawidłowe."
@@ -4895,7 +4953,7 @@ msgid "-1 (unset)"
 msgstr "-1 (usunięcie ustawienia)"
 
 #: ../clients/cli/settings.c:1240 ../clients/cli/settings.c:1517
-#: ../clients/cli/settings.c:1598
+#: ../clients/cli/settings.c:1619
 msgid "auto"
 msgstr "automatyczne"
 
@@ -4903,26 +4961,30 @@ msgstr "automatyczne"
 msgid "default"
 msgstr "domyślne"
 
-#: ../clients/cli/settings.c:1544
+#: ../clients/cli/settings.c:1563
 #, c-format
-msgid "invalid option '%s', use  a combination of %s or 'default'"
-msgstr "nieprawidłowa opcja \"%s\", należy użyć połączenia %s lub \"default\""
+msgid ""
+"invalid option '%s', use  a combination of [%s] or 'ignore', 'default' or "
+"'none'"
+msgstr ""
+"nieprawidłowa opcja \"%s\", należy użyć połączenia [%s] albo \"ignore\", "
+"\"default\" lub \"none\""
 
-#: ../clients/cli/settings.c:1553
-msgid "'default' is incompatible with other flags"
-msgstr "\"default\" jest niezgodne z innymi flagami"
+#: ../clients/cli/settings.c:1574
+msgid "'default' and 'ignore' are incompatible with other flags"
+msgstr "\"default\" i \"ignore\" są niezgodne z innymi flagami"
 
-#: ../clients/cli/settings.c:1729
+#: ../clients/cli/settings.c:1750
 #, c-format
 msgid "Do you also want to set '%s' to '%s'? [yes]: "
 msgstr "Ustawić \"%s\" na \"%s\"? [yes]: "
 
-#: ../clients/cli/settings.c:1731
+#: ../clients/cli/settings.c:1752
 #, c-format
 msgid "Do you also want to clear '%s'? [yes]: "
 msgstr "Wyczyścić \"%s\"? [yes]: "
 
-#: ../clients/cli/settings.c:1892
+#: ../clients/cli/settings.c:1913
 #, c-format
 msgid ""
 "Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"
@@ -4930,86 +4992,86 @@ msgstr ""
 "Ostrzeżenie: ustawiono %s.%s na \"%s\", ale może zostać zignorowane w trybie "
 "infrastruktury\n"
 
-#: ../clients/cli/settings.c:1911
+#: ../clients/cli/settings.c:1932
 #, c-format
 msgid "Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"
 msgstr "Ostrzeżenie: ustawienie %s.%s wymaga usunięcia ustawień IPv4 i IPv6\n"
 
-#: ../clients/cli/settings.c:1913
+#: ../clients/cli/settings.c:1934
 msgid "Do you want to remove them? [yes] "
 msgstr "Usunąć je? [yes] "
 
-#: ../clients/cli/settings.c:2009 ../clients/cli/settings.c:2404
-#: ../clients/cli/settings.c:4527
+#: ../clients/cli/settings.c:2030 ../clients/cli/settings.c:2425
+#: ../clients/cli/settings.c:4548
 #, c-format
 msgid "'%s' is not valid"
 msgstr "\"%s\" jest nieprawidłowe"
 
-#: ../clients/cli/settings.c:2032
+#: ../clients/cli/settings.c:2053
 #, c-format
 msgid "'%d' is not valid; use <%d-%d>"
 msgstr "\"%d\" jest nieprawidłowe; należy użyć <%d-%d>"
 
-#: ../clients/cli/settings.c:2054
+#: ../clients/cli/settings.c:2075
 #, c-format
 msgid "'%lld' is not valid; use <%lld-%lld>"
 msgstr "\"%lld\" jest nieprawidłowe; należy użyć <%lld-%lld>"
 
-#: ../clients/cli/settings.c:2076
+#: ../clients/cli/settings.c:2097
 #, c-format
 msgid "'%u' is not valid; use <%u-%u>"
 msgstr "\"%u\" jest nieprawidłowe; należy użyć <%u-%u>"
 
-#: ../clients/cli/settings.c:2115
+#: ../clients/cli/settings.c:2136
 #, c-format
 msgid "'%u' flags are not valid; use combination of %s"
 msgstr "flagi \"%u\" są nieprawidłowe; należy użyć połączenia %s"
 
-#: ../clients/cli/settings.c:2182
+#: ../clients/cli/settings.c:2203
 #, c-format
 msgid "'%s' is not valid; use <option>=<value>"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć <opcja>=<wartość>"
 
-#: ../clients/cli/settings.c:2216
+#: ../clients/cli/settings.c:2237
 #, c-format
 msgid "index '%s' is not valid"
 msgstr "indeks \"%s\" jest nieprawidłowy"
 
-#: ../clients/cli/settings.c:2221 ../clients/cli/settings.c:2246
+#: ../clients/cli/settings.c:2242 ../clients/cli/settings.c:2267
 msgid "no item to remove"
 msgstr "brak elementu do usunięcia"
 
-#: ../clients/cli/settings.c:2225 ../clients/cli/settings.c:2250
+#: ../clients/cli/settings.c:2246 ../clients/cli/settings.c:2271
 #, c-format
 msgid "index '%d' is not in range <0-%d>"
 msgstr "indeks \"%d\" jest poza zakresem <0-%d>"
 
-#: ../clients/cli/settings.c:2265
+#: ../clients/cli/settings.c:2286
 #, c-format
 msgid "invalid option '%s'"
 msgstr "nieprawidłowa opcja \"%s\""
 
-#: ../clients/cli/settings.c:2267
+#: ../clients/cli/settings.c:2288
 msgid "missing option"
 msgstr "brak opcji"
 
-#: ../clients/cli/settings.c:2294 ../clients/cli/settings.c:2314
-#: ../clients/cli/settings.c:2334 ../clients/cli/settings.c:2354
+#: ../clients/cli/settings.c:2315 ../clients/cli/settings.c:2335
+#: ../clients/cli/settings.c:2355 ../clients/cli/settings.c:2375
 #, c-format
 msgid "'%s' is not a valid number (or out of range)"
 msgstr "\"%s\" nie jest prawidłową liczbą (lub jest poza zakresem)"
 
-#: ../clients/cli/settings.c:2388
+#: ../clients/cli/settings.c:2409
 #, c-format
 msgid "'%s' is not a valid value; use -1, 0 or 1"
 msgstr "\"%s\" nie jest prawidłową wartością; należy użyć -1, 0 lub 1"
 
-#: ../clients/cli/settings.c:2420
+#: ../clients/cli/settings.c:2441
 #, c-format
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC Ethernetu"
 
-#: ../clients/cli/settings.c:2445 ../libnm-core/nm-setting-connection.c:836
+#: ../clients/cli/settings.c:2466 ../libnm-core/nm-setting-connection.c:836
 #: ../libnm-core/nm-setting-infiniband.c:256
 #: ../libnm-util/nm-setting-connection.c:835
 #: ../libnm-util/nm-setting-infiniband.c:270
@@ -5017,40 +5079,40 @@ msgstr "\"%s\" nie jest prawidłowym adresem MAC Ethernetu"
 msgid "'%s' is not a valid interface name"
 msgstr "\"%s\" nie jest prawidłową nazwą interfejsu"
 
-#: ../clients/cli/settings.c:2469
+#: ../clients/cli/settings.c:2490
 #, c-format
 msgid "'%s' is not a valid flag number; use <0-%d>"
 msgstr "\"%s\" nie jest prawidłowym numerem flagi; należy użyć <0-%d>"
 
-#: ../clients/cli/settings.c:2481
+#: ../clients/cli/settings.c:2502
 #, c-format
 msgid "Warning: '%s' sum is higher than all flags => all flags set\n"
 msgstr ""
 "Ostrzeżenie: suma \"%s\" jest wyższa niż wszystkie flagi => wszystkie "
 "ustawione flagi\n"
 
-#: ../clients/cli/settings.c:2522
+#: ../clients/cli/settings.c:2543
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr "\"%s\" nie jest prawidłowym znakiem szesnastkowym"
 
-#: ../clients/cli/settings.c:2552
+#: ../clients/cli/settings.c:2573
 #, c-format
 msgid "'%s' is not a valid MAC"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC"
 
-#: ../clients/cli/settings.c:2578 ../libnm-core/nm-setting-connection.c:825
+#: ../clients/cli/settings.c:2599 ../libnm-core/nm-setting-connection.c:825
 #: ../libnm-util/nm-setting-connection.c:792
 #, c-format
 msgid "'%s' is not a valid UUID"
 msgstr "\"%s\" nie jest prawidłowym UUID"
 
-#: ../clients/cli/settings.c:2645
+#: ../clients/cli/settings.c:2666
 #, c-format
 msgid "the property doesn't contain permission '%s'"
 msgstr "właściwość nie zawiera uprawnienia \"%s\""
 
-#: ../clients/cli/settings.c:2657
+#: ../clients/cli/settings.c:2678
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -5067,40 +5129,40 @@ msgstr ""
 "\n"
 "Przykład: alice bob charlie\n"
 
-#: ../clients/cli/settings.c:2676
+#: ../clients/cli/settings.c:2697
 #, c-format
 msgid "'%s' is not valid master; use ifname or connection UUID"
 msgstr ""
 "\"%s\" nie jest prawidłowym \"master\"; należy użyć nazwy interfejsu lub "
 "UUID połączenia"
 
-#: ../clients/cli/settings.c:2720
+#: ../clients/cli/settings.c:2741
 #, c-format
 msgid "Warning: %s is not an UUID of any existing connection profile\n"
 msgstr ""
 "Ostrzeżenie: %s nie jest UUID żadnego istniejącego profilu połączenia\n"
 
-#: ../clients/cli/settings.c:2724 ../clients/cli/settings.c:2740
+#: ../clients/cli/settings.c:2745 ../clients/cli/settings.c:2761
 #, c-format
 msgid "'%s' is not a VPN connection profile"
 msgstr "\"%s\" nie jest profilem połączenia VPN"
 
-#: ../clients/cli/settings.c:2733
+#: ../clients/cli/settings.c:2754
 #, c-format
 msgid "'%s' is not a name of any exiting profile"
 msgstr "\"%s\" nie jest nazwą żadnego istniejącego profilu"
 
-#: ../clients/cli/settings.c:2767
+#: ../clients/cli/settings.c:2788
 #, c-format
 msgid "the value '%s' is not a valid UUID"
 msgstr "wartość \"%s\" nie jest prawidłowym UUID"
 
-#: ../clients/cli/settings.c:2774
+#: ../clients/cli/settings.c:2795
 #, c-format
 msgid "the property doesn't contain UUID '%s'"
 msgstr "właściwość nie zawiera UUID \"%s\""
 
-#: ../clients/cli/settings.c:2786
+#: ../clients/cli/settings.c:2807
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -5121,7 +5183,7 @@ msgstr ""
 "\n"
 "Przykład: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 
-#: ../clients/cli/settings.c:2853
+#: ../clients/cli/settings.c:2874
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -5136,16 +5198,16 @@ msgstr ""
 "\"unknown\" umożliwia usłudze NetworkManager wybranie wartości używając "
 "heurystyki\n"
 
-#: ../clients/cli/settings.c:2927
+#: ../clients/cli/settings.c:2948
 msgid "private key password not provided"
 msgstr "nie podano hasła klucza prywatnego"
 
-#: ../clients/cli/settings.c:2955
+#: ../clients/cli/settings.c:2976
 #, c-format
 msgid "the property doesn't contain EAP method '%s'"
 msgstr "właściwość nie zawiera metody EAP \"%s\""
 
-#: ../clients/cli/settings.c:2972
+#: ../clients/cli/settings.c:2993
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5159,12 +5221,12 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/cacert.crt\n"
 
-#: ../clients/cli/settings.c:2991
+#: ../clients/cli/settings.c:3012
 #, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
 msgstr "właściwość nie zawiera alternatywnego dopasowania tematu \"%s\""
 
-#: ../clients/cli/settings.c:3007
+#: ../clients/cli/settings.c:3028
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5178,7 +5240,7 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/jara.crt\n"
 
-#: ../clients/cli/settings.c:3019
+#: ../clients/cli/settings.c:3040
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5194,13 +5256,13 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: ../clients/cli/settings.c:3039
+#: ../clients/cli/settings.c:3060
 #, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
 msgstr ""
 "właściwość nie zawiera alternatywnego dopasowania tematu \"phase2\" \"%s\""
 
-#: ../clients/cli/settings.c:3055
+#: ../clients/cli/settings.c:3076
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5216,7 +5278,7 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/jara-zweite-phase.crt\n"
 
-#: ../clients/cli/settings.c:3075
+#: ../clients/cli/settings.c:3096
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5230,7 +5292,7 @@ msgstr ""
 "surowych danych typu blob.\n"
 "Przykład: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: ../clients/cli/settings.c:3146
+#: ../clients/cli/settings.c:3167
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5251,7 +5313,7 @@ msgstr ""
 "Przykłady: ab0455a6ea3a74C2\n"
 "           ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../clients/cli/settings.c:3249
+#: ../clients/cli/settings.c:3270
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -5282,33 +5344,33 @@ msgstr ""
 "\n"
 "Przykład: mode=2,miimon=120\n"
 
-#: ../clients/cli/settings.c:3280
+#: ../clients/cli/settings.c:3301
 #, c-format
 msgid "'%s' is not a valid InfiniBand MAC"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC InfiniBand"
 
-#: ../clients/cli/settings.c:3317
+#: ../clients/cli/settings.c:3338
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "\"%s\" nie jest prawidłowym P_Key IBoIP"
 
-#: ../clients/cli/settings.c:3348
+#: ../clients/cli/settings.c:3369
 #, c-format
 msgid "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"
 msgstr ""
 "\"%s\" jest nieprawidłowe (format: ip[/przedrostek] [next-hop] [parametry])"
 
-#: ../clients/cli/settings.c:3396 ../clients/cli/settings.c:3415
+#: ../clients/cli/settings.c:3417 ../clients/cli/settings.c:3436
 #, c-format
 msgid "invalid IPv4 address '%s'"
 msgstr "nieprawidłowy adres IPv4 \"%s\""
 
-#: ../clients/cli/settings.c:3421 ../clients/cli/settings.c:3691
+#: ../clients/cli/settings.c:3442 ../clients/cli/settings.c:3712
 #, c-format
 msgid "the property doesn't contain DNS server '%s'"
 msgstr "właściwość nie zawiera serwera DNS \"%s\""
 
-#: ../clients/cli/settings.c:3433
+#: ../clients/cli/settings.c:3454
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5318,17 +5380,17 @@ msgstr ""
 "\n"
 "Przykład: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/cli/settings.c:3469 ../clients/cli/settings.c:3745
+#: ../clients/cli/settings.c:3490 ../clients/cli/settings.c:3766
 #, c-format
 msgid "the property doesn't contain DNS search domain '%s'"
 msgstr "właściwość nie zawiera domeny wyszukiwania DNS \"%s\""
 
-#: ../clients/cli/settings.c:3523 ../clients/cli/settings.c:3798
+#: ../clients/cli/settings.c:3544 ../clients/cli/settings.c:3819
 #, c-format
 msgid "the property doesn't contain IP address '%s'"
 msgstr "właściwość nie zawiera adresu IP \"%s\""
 
-#: ../clients/cli/settings.c:3536
+#: ../clients/cli/settings.c:3557
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5342,17 +5404,17 @@ msgstr ""
 "\n"
 "Przykład: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/cli/settings.c:3552 ../clients/cli/settings.c:3827
+#: ../clients/cli/settings.c:3573 ../clients/cli/settings.c:3848
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "nieprawidłowy adres bramy \"%s\""
 
-#: ../clients/cli/settings.c:3607 ../clients/cli/settings.c:3882
+#: ../clients/cli/settings.c:3628 ../clients/cli/settings.c:3903
 #, c-format
 msgid "the property doesn't contain route '%s'"
 msgstr "właściwość nie zawiera trasy \"%s\""
 
-#: ../clients/cli/settings.c:3620
+#: ../clients/cli/settings.c:3641
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5375,12 +5437,12 @@ msgstr ""
 "Przykłady: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "           10.1.2.0/24\n"
 
-#: ../clients/cli/settings.c:3666 ../clients/cli/settings.c:3685
+#: ../clients/cli/settings.c:3687 ../clients/cli/settings.c:3706
 #, c-format
 msgid "invalid IPv6 address '%s'"
 msgstr "nieprawidłowy adres IPv6 \"%s\""
 
-#: ../clients/cli/settings.c:3703
+#: ../clients/cli/settings.c:3724
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5401,7 +5463,7 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/cli/settings.c:3811
+#: ../clients/cli/settings.c:3832
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5415,7 +5477,7 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/cli/settings.c:3895
+#: ../clients/cli/settings.c:3916
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5440,28 +5502,28 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../clients/cli/settings.c:3912 ../libnm-core/nm-setting-gsm.c:308
+#: ../clients/cli/settings.c:3933 ../libnm-core/nm-setting-gsm.c:308
 #: ../libnm-util/nm-setting-gsm.c:365
 #, c-format
 msgid "'%s' is not a number"
 msgstr "\"%s\" nie jest liczbą"
 
-#: ../clients/cli/settings.c:3919
+#: ../clients/cli/settings.c:3940
 #, c-format
 msgid "'%s' is not valid; use 0, 1, or 2"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć 0, 1 lub 2"
 
-#: ../clients/cli/settings.c:3936
+#: ../clients/cli/settings.c:3957
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "\"%s\" nie jest prawidłowym kanałem; należy użyć <1-13>"
 
-#: ../clients/cli/settings.c:3973
+#: ../clients/cli/settings.c:3994
 #, c-format
 msgid "'%s' is not valid; use [e, o, n]"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć [e, o, n]"
 
-#: ../clients/cli/settings.c:4001
+#: ../clients/cli/settings.c:4022
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -5479,16 +5541,16 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/mój-zespół.conf\n"
 
-#: ../clients/cli/settings.c:4041
+#: ../clients/cli/settings.c:4062
 msgid "no priority to remove"
 msgstr "brak priorytetu do usunięcia"
 
-#: ../clients/cli/settings.c:4045
+#: ../clients/cli/settings.c:4066
 #, c-format
 msgid "index '%d' is not in the range of <0-%d>"
 msgstr "indeks \"%d\" jest poza zakresem <0-%d>"
 
-#: ../clients/cli/settings.c:4084
+#: ../clients/cli/settings.c:4105
 #, c-format
 msgid ""
 "Warning: only one mapping at a time is supported; taking the first one (%s)\n"
@@ -5496,31 +5558,31 @@ msgstr ""
 "Ostrzeżenie: obsługiwane jest tylko jedno mapowanie na raz; przyjmowanie "
 "pierwszego (%s)\n"
 
-#: ../clients/cli/settings.c:4091
+#: ../clients/cli/settings.c:4112
 #, c-format
 msgid "the property doesn't contain mapping '%s'"
 msgstr "właściwość nie zawiera mapowania \"%s\""
 
-#: ../clients/cli/settings.c:4200 ../clients/cli/settings.c:4356
-#: ../libnm-core/nm-setting-wired.c:646 ../libnm-core/nm-setting-wireless.c:785
-#: ../libnm-core/nm-setting-wireless.c:797 ../libnm-util/nm-setting-wired.c:647
+#: ../clients/cli/settings.c:4221 ../clients/cli/settings.c:4377
+#: ../libnm-core/nm-setting-wired.c:646 ../libnm-core/nm-setting-wireless.c:784
+#: ../libnm-core/nm-setting-wireless.c:796 ../libnm-util/nm-setting-wired.c:647
 #: ../libnm-util/nm-setting-wireless.c:842
 #: ../libnm-util/nm-setting-wireless.c:856
 #, c-format
 msgid "'%s' is not a valid MAC address"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC"
 
-#: ../clients/cli/settings.c:4206 ../clients/cli/settings.c:4362
+#: ../clients/cli/settings.c:4227 ../clients/cli/settings.c:4383
 #, c-format
 msgid "the property doesn't contain MAC address '%s'"
 msgstr "właściwość nie zawiera adresu MAC \"%s\""
 
-#: ../clients/cli/settings.c:4225
+#: ../clients/cli/settings.c:4246
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "\"%s\" jest nieprawidłowe; powinny zostać podane dwa lub trzy ciągi"
 
-#: ../clients/cli/settings.c:4239
+#: ../clients/cli/settings.c:4260
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5530,7 +5592,7 @@ msgstr ""
 "\n"
 "Przykład: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/cli/settings.c:4282
+#: ../clients/cli/settings.c:4303
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -5541,23 +5603,23 @@ msgstr ""
 "  opcja = <wartość>, opcja = <wartość>,...\n"
 "Prawidłowe opcje: %s\n"
 
-#: ../clients/cli/settings.c:4328
+#: ../clients/cli/settings.c:4349
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "\"%s\" nie jest prawidłowym kanałem"
 
-#: ../clients/cli/settings.c:4334
+#: ../clients/cli/settings.c:4355
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "\"%ld\" nie jest prawidłowym kanałem"
 
-#: ../clients/cli/settings.c:4421 ../clients/cli/settings.c:4459
-#: ../clients/cli/settings.c:4497
+#: ../clients/cli/settings.c:4442 ../clients/cli/settings.c:4480
+#: ../clients/cli/settings.c:4518
 #, c-format
 msgid "the property doesn't contain protocol '%s'"
 msgstr "właściwość nie zawiera protokołu \"%s\""
 
-#: ../clients/cli/settings.c:4536
+#: ../clients/cli/settings.c:4557
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -5566,23 +5628,23 @@ msgstr ""
 "\"%s\" nie jest zgodne z %s \"%s\", proszę zmienić klucz lub ustawić "
 "najpierw właściwe %s."
 
-#: ../clients/cli/settings.c:4544
+#: ../clients/cli/settings.c:4565
 #, c-format
 msgid "WEP key is guessed to be of '%s'\n"
 msgstr "Klucz WEP jest prawdopodobnie typu \"%s\"\n"
 
-#: ../clients/cli/settings.c:4546
+#: ../clients/cli/settings.c:4567
 #, c-format
 msgid "WEP key index set to '%d'\n"
 msgstr "Ustawiono indeks klucza WEP na \"%d\"\n"
 
-#: ../clients/cli/settings.c:4569
+#: ../clients/cli/settings.c:4590
 #, c-format
 msgid "'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"
 msgstr "\"%s\" nie jest jednym z [0 (unknown), 1 (key), 2 (passphrase)]"
 
-#: ../clients/cli/settings.c:4585 ../clients/cli/settings.c:4588
-#: ../clients/cli/settings.c:4591 ../clients/cli/settings.c:4594
+#: ../clients/cli/settings.c:4606 ../clients/cli/settings.c:4609
+#: ../clients/cli/settings.c:4612 ../clients/cli/settings.c:4615
 #, c-format
 msgid ""
 "Warning: '%s' is not compatible with '%s' type, please change or delete the "
@@ -5591,7 +5653,7 @@ msgstr ""
 "Ostrzeżenie: \"%s\" nie jest zgodne z typem \"%s\", proszę zmienić lub "
 "usunąć klucz.\n"
 
-#: ../clients/cli/settings.c:4607
+#: ../clients/cli/settings.c:4628
 #, c-format
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
@@ -5600,36 +5662,36 @@ msgstr ""
 "Proszę podać typ kluczy WEP. Możliwe wartości: 0 lub \"unknown\", 1 lub \"key"
 "\" i 2 lub \"passphrase\".\n"
 
-#: ../clients/cli/settings.c:4620
+#: ../clients/cli/settings.c:4641
 #, c-format
 msgid "'%s' is not a valid PSK"
 msgstr "\"%s\" nie jest prawidłowym PSK"
 
-#: ../clients/cli/settings.c:4664
+#: ../clients/cli/settings.c:4685
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "\"%s\" nie jest prawidłową flagą DCB"
 
-#: ../clients/cli/settings.c:4687
+#: ../clients/cli/settings.c:4708
 #, c-format
 msgid "'%s' is not a DCB app priority"
 msgstr "\"%s\" nie jest prawidłowym priorytetem aplikacji DCB"
 
-#: ../clients/cli/settings.c:4713
+#: ../clients/cli/settings.c:4734
 msgid "must contain 8 comma-separated numbers"
 msgstr "musi zawierać osiem liczb oddzielonych przecinkami"
 
-#: ../clients/cli/settings.c:4730
+#: ../clients/cli/settings.c:4751
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "\"%s\" nie jest liczbą między 0 a %u (włącznie) lub %u"
 
-#: ../clients/cli/settings.c:4733
+#: ../clients/cli/settings.c:4754
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "\"%s\" nie jest liczbą między 0 a %u (włącznie)"
 
-#: ../clients/cli/settings.c:4755
+#: ../clients/cli/settings.c:4776
 #, c-format
 msgid ""
 "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
@@ -5639,33 +5701,33 @@ msgstr ""
 "(włączone)\n"
 "\n"
 
-#: ../clients/cli/settings.c:4808
+#: ../clients/cli/settings.c:4829
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "procenty szerokości pasma muszą razem wynosić 100%%"
 
-#: ../clients/cli/settings.c:6530
+#: ../clients/cli/settings.c:6551
 msgid "don't know how to get the property value"
 msgstr "nie wiadomo, jak uzyskać wartość właściwości"
 
-#: ../clients/cli/settings.c:6583 ../clients/cli/settings.c:6623
+#: ../clients/cli/settings.c:6604 ../clients/cli/settings.c:6644
 msgid "the property can't be changed"
 msgstr "nie można zmieniać tej właściwości"
 
-#: ../clients/cli/settings.c:6707
+#: ../clients/cli/settings.c:6728
 msgid "(not available)"
 msgstr "(niedostępne)"
 
-#: ../clients/cli/settings.c:6732
+#: ../clients/cli/settings.c:6753
 msgid "[NM property description]"
 msgstr "[opis właściwości NM]"
 
-#: ../clients/cli/settings.c:6737
+#: ../clients/cli/settings.c:6758
 msgid "[nmcli specific description]"
 msgstr "[konkretny opis nmcli]"
 
 #. ----------------------------------------------------------------------------
-#: ../clients/cli/settings.c:6786
+#: ../clients/cli/settings.c:6807
 msgid "<hidden>"
 msgstr "<ukryte>"
 
@@ -5962,7 +6024,7 @@ msgstr "Połączenie DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1606
 #: ../libnm-glib/nm-device.c:1803 ../libnm-util/nm-connection.c:1608
-#: ../libnm/nm-device.c:1648 ../src/settings/plugins/ifcfg-rh/reader.c:4009
+#: ../libnm/nm-device.c:1648 ../src/settings/plugins/ifcfg-rh/reader.c:4059
 msgid "Bond"
 msgstr "Wiązane"
 
@@ -5973,7 +6035,7 @@ msgstr "Połączenie wiązane %d"
 
 #: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1610
 #: ../libnm-glib/nm-device.c:1807 ../libnm-util/nm-connection.c:1612
-#: ../libnm/nm-device.c:1652 ../src/settings/plugins/ifcfg-rh/reader.c:4300
+#: ../libnm/nm-device.c:1652 ../src/settings/plugins/ifcfg-rh/reader.c:4350
 msgid "Bridge"
 msgstr "Mostek"
 
@@ -5984,7 +6046,7 @@ msgstr "Połączenie mostkowane %d"
 
 #: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1608
 #: ../libnm-glib/nm-device.c:1805 ../libnm-util/nm-connection.c:1610
-#: ../libnm/nm-device.c:1650 ../src/settings/plugins/ifcfg-rh/reader.c:4115
+#: ../libnm/nm-device.c:1650 ../src/settings/plugins/ifcfg-rh/reader.c:4165
 msgid "Team"
 msgstr "Zespół"
 
@@ -6291,7 +6353,11 @@ msgstr "Trasowanie"
 msgid "Never use this network for default route"
 msgstr "Bez używania tej sieci jako domyślnej trasy"
 
-#: ../clients/tui/nmt-page-ip4.c:184
+#: ../clients/tui/nmt-page-ip4.c:182 ../clients/tui/nmt-page-ip6.c:180
+msgid "Ignore automatically obtained routes"
+msgstr "Ignorowanie automatycznie uzyskanych tras"
+
+#: ../clients/tui/nmt-page-ip4.c:190
 msgid "Require IPv4 addressing for this connection"
 msgstr "Wymaganie adresowania IPv4 dla tego połączenia"
 
@@ -6307,7 +6373,7 @@ msgstr "Automatyczne (tylko DHCP)"
 msgid "IPv6 CONFIGURATION"
 msgstr "KONFIGURACJA IPv6"
 
-#: ../clients/tui/nmt-page-ip6.c:182
+#: ../clients/tui/nmt-page-ip6.c:188
 msgid "Require IPv6 addressing for this connection"
 msgstr "Wymaganie adresowania IPv6 dla tego połączenia"
 
@@ -6540,38 +6606,38 @@ msgstr "Dodaj..."
 msgid "Remove"
 msgstr "Usuń"
 
-#: ../clients/tui/nmtui-connect.c:90
+#: ../clients/tui/nmtui-connect.c:92
 msgid "Activation failed"
 msgstr "Aktywacja się nie powiodła"
 
-#: ../clients/tui/nmtui-connect.c:145
+#: ../clients/tui/nmtui-connect.c:147
 msgid "Connecting..."
 msgstr "Łączenie..."
 
-#: ../clients/tui/nmtui-connect.c:180 ../clients/tui/nmtui-connect.c:211
+#: ../clients/tui/nmtui-connect.c:182 ../clients/tui/nmtui-connect.c:213
 #, c-format
 msgid "Could not activate connection: %s"
 msgstr "Nie można aktywować połączenia: %s"
 
-#: ../clients/tui/nmtui-connect.c:271 ../clients/tui/nmtui-connect.c:320
+#: ../clients/tui/nmtui-connect.c:273 ../clients/tui/nmtui-connect.c:322
 msgid "Activate"
 msgstr "Aktywuj"
 
-#: ../clients/tui/nmtui-connect.c:273
+#: ../clients/tui/nmtui-connect.c:275
 msgid "Deactivate"
-msgstr "Deaktywuj"
+msgstr "Dezaktywuj"
 
-#: ../clients/tui/nmtui-connect.c:325 ../clients/tui/nmtui-edit.c:121
+#: ../clients/tui/nmtui-connect.c:327 ../clients/tui/nmtui-edit.c:121
 #: ../clients/tui/nmtui.c:111
 msgid "Quit"
 msgstr "Zakończ"
 
-#: ../clients/tui/nmtui-connect.c:348
+#: ../clients/tui/nmtui-connect.c:350
 #, c-format
 msgid "No such connection '%s'"
 msgstr "Brak połączenia \"%s\""
 
-#: ../clients/tui/nmtui-connect.c:350
+#: ../clients/tui/nmtui-connect.c:352
 msgid "Connection is already active"
 msgstr "Połączenie jest już aktywne"
 
@@ -7026,11 +7092,11 @@ msgstr "Znormalizowanie połączenia niespodziewanie się nie powiodło"
 #: ../libnm-core/nm-setting-connection.c:848
 #: ../libnm-core/nm-setting-connection.c:961
 #: ../libnm-core/nm-setting-ip-config.c:1844
-#: ../libnm-core/nm-setting-olpc-mesh.c:113
+#: ../libnm-core/nm-setting-olpc-mesh.c:112
 #: ../libnm-core/nm-setting-pppoe.c:143 ../libnm-core/nm-setting-vpn.c:400
 #: ../libnm-core/nm-setting-wimax.c:117
 #: ../libnm-core/nm-setting-wireless-security.c:862
-#: ../libnm-core/nm-setting-wireless.c:694 ../libnm-util/nm-setting.c:1372
+#: ../libnm-core/nm-setting-wireless.c:693 ../libnm-util/nm-setting.c:1372
 #: ../libnm-util/nm-setting.c:1391 ../libnm-util/nm-setting.c:1409
 #: ../libnm-util/nm-setting-8021x.c:2326 ../libnm-util/nm-setting-8021x.c:2343
 #: ../libnm-util/nm-setting-8021x.c:2384 ../libnm-util/nm-setting-8021x.c:2401
@@ -7044,7 +7110,7 @@ msgstr "Znormalizowanie połączenia niespodziewanie się nie powiodło"
 #: ../libnm-util/nm-setting-connection.c:846
 #: ../libnm-util/nm-setting-ip4-config.c:852
 #: ../libnm-util/nm-setting-ip6-config.c:835
-#: ../libnm-util/nm-setting-ip6-config.c:899
+#: ../libnm-util/nm-setting-ip6-config.c:898
 #: ../libnm-util/nm-setting-olpc-mesh.c:124
 #: ../libnm-util/nm-setting-pppoe.c:164 ../libnm-util/nm-setting-vpn.c:424
 #: ../libnm-util/nm-setting-wimax.c:139
@@ -7125,7 +7191,7 @@ msgid "ignoring invalid DNS server IPv6 address '%s'"
 msgstr "ignorowanie nieprawidłowego adresu IPv6 serwera DNS \"%s\""
 
 #: ../libnm-core/nm-keyfile-reader.c:611 ../libnm-core/nm-keyfile-reader.c:752
-#: ../libnm-core/nm-keyfile-reader.c:1411
+#: ../libnm-core/nm-keyfile-reader.c:1423
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
@@ -7180,37 +7246,37 @@ msgstr "nieprawidłowa wartość klucz/certyfikat"
 msgid "invalid parity value '%s'"
 msgstr "nieprawidłowa wartość parzystości \"%s\""
 
-#: ../libnm-core/nm-keyfile-reader.c:1315
+#: ../libnm-core/nm-keyfile-reader.c:1324
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "błąd podczas wczytywania wartości ustawienia: %s"
 
-#: ../libnm-core/nm-keyfile-reader.c:1344
+#: ../libnm-core/nm-keyfile-reader.c:1356
 #, c-format
 msgid "invalid negative value (%i)"
 msgstr "nieprawidłowa wartość ujemna (%i)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1365
+#: ../libnm-core/nm-keyfile-reader.c:1377
 #, c-format
 msgid "invalid char value (%i)"
 msgstr "nieprawidłowa wartość znaku (%i)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1388
+#: ../libnm-core/nm-keyfile-reader.c:1400
 #, c-format
 msgid "invalid int64 value (%s)"
 msgstr "nieprawidłowa wartość int64 (%s)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1447
+#: ../libnm-core/nm-keyfile-reader.c:1459
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
 msgstr "za duża właściwość FLAGS \"%s\" (%llu)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1460
+#: ../libnm-core/nm-keyfile-reader.c:1472
 #, c-format
 msgid "unhandled setting property type '%s'"
 msgstr "nieobsłużony typ właściwości ustawienia \"%s\""
 
-#: ../libnm-core/nm-keyfile-reader.c:1491
+#: ../libnm-core/nm-keyfile-reader.c:1503
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "nieprawidłowa nazwa ustawienia \"%s\""
@@ -7303,8 +7369,8 @@ msgstr "certyfikat jest nieprawidłowy: %s"
 #: ../libnm-core/nm-setting-infiniband.c:193
 #: ../libnm-core/nm-setting-infiniband.c:208
 #: ../libnm-core/nm-setting-ip4-config.c:169
-#: ../libnm-core/nm-setting-ip6-config.c:166
-#: ../libnm-core/nm-setting-olpc-mesh.c:142
+#: ../libnm-core/nm-setting-ip6-config.c:165
+#: ../libnm-core/nm-setting-olpc-mesh.c:141
 #: ../libnm-core/nm-setting-wimax.c:135 ../libnm-core/nm-setting-wired.c:660
 #: ../libnm-core/nm-setting-wired.c:670
 #: ../libnm-core/nm-setting-wireless-security.c:935
@@ -7312,16 +7378,16 @@ msgstr "certyfikat jest nieprawidłowy: %s"
 #: ../libnm-core/nm-setting-wireless-security.c:953
 #: ../libnm-core/nm-setting-wireless-security.c:989
 #: ../libnm-core/nm-setting-wireless-security.c:999
-#: ../libnm-core/nm-setting-wireless.c:755
-#: ../libnm-core/nm-setting-wireless.c:764
-#: ../libnm-core/nm-setting-wireless.c:773 ../libnm-util/nm-setting.c:1382
+#: ../libnm-core/nm-setting-wireless.c:754
+#: ../libnm-core/nm-setting-wireless.c:763
+#: ../libnm-core/nm-setting-wireless.c:772 ../libnm-util/nm-setting.c:1382
 #: ../libnm-util/nm-setting.c:1400 ../libnm-util/nm-setting.c:1419
 #: ../libnm-util/nm-setting-8021x.c:2656 ../libnm-util/nm-setting-8021x.c:2690
 #: ../libnm-util/nm-setting-bluetooth.c:152
 #: ../libnm-util/nm-setting-infiniband.c:206
 #: ../libnm-util/nm-setting-infiniband.c:222
 #: ../libnm-util/nm-setting-ip4-config.c:908
-#: ../libnm-util/nm-setting-ip6-config.c:890
+#: ../libnm-util/nm-setting-ip6-config.c:889
 #: ../libnm-util/nm-setting-olpc-mesh.c:152
 #: ../libnm-util/nm-setting-wimax.c:157 ../libnm-util/nm-setting-wired.c:659
 #: ../libnm-util/nm-setting-wired.c:668
@@ -7676,34 +7742,28 @@ msgstr "ta właściwość nie może być pusta dla \"%s=%s\""
 #: ../libnm-core/nm-setting-ip4-config.c:135
 #: ../libnm-core/nm-setting-ip4-config.c:145
 #: ../libnm-core/nm-setting-ip4-config.c:157
-#: ../libnm-core/nm-setting-ip6-config.c:134
-#: ../libnm-core/nm-setting-ip6-config.c:144
-#: ../libnm-core/nm-setting-ip6-config.c:154
+#: ../libnm-core/nm-setting-ip6-config.c:133
+#: ../libnm-core/nm-setting-ip6-config.c:143
+#: ../libnm-core/nm-setting-ip6-config.c:153
 #: ../libnm-util/nm-setting-ip4-config.c:874
 #: ../libnm-util/nm-setting-ip4-config.c:884
 #: ../libnm-util/nm-setting-ip4-config.c:896
-#: ../libnm-util/nm-setting-ip6-config.c:858
-#: ../libnm-util/nm-setting-ip6-config.c:868
-#: ../libnm-util/nm-setting-ip6-config.c:878
+#: ../libnm-util/nm-setting-ip6-config.c:857
+#: ../libnm-util/nm-setting-ip6-config.c:867
+#: ../libnm-util/nm-setting-ip6-config.c:877
 #, c-format
 msgid "this property is not allowed for '%s=%s'"
 msgstr "ta właściwość nie jest dozwolona dla \"%s=%s\""
 
-#: ../libnm-core/nm-setting-ip6-config.c:133
-#: ../libnm-util/nm-setting-ip6-config.c:857
-#, c-format
-msgid "'%s' not allowed for %s=%s"
-msgstr "\"%s\" nie jest dozwolone dla %s=%s"
-
-#: ../libnm-core/nm-setting-olpc-mesh.c:123
-#: ../libnm-core/nm-setting-wireless.c:704
+#: ../libnm-core/nm-setting-olpc-mesh.c:122
+#: ../libnm-core/nm-setting-wireless.c:703
 #: ../libnm-util/nm-setting-olpc-mesh.c:133
 #: ../libnm-util/nm-setting-wireless.c:761
 msgid "SSID length is out of range <1-32> bytes"
 msgstr "długość SSID jest poza zakresem <1-32> bajtów"
 
-#: ../libnm-core/nm-setting-olpc-mesh.c:132
-#: ../libnm-core/nm-setting-wireless.c:744
+#: ../libnm-core/nm-setting-olpc-mesh.c:131
+#: ../libnm-core/nm-setting-wireless.c:743
 #: ../libnm-util/nm-setting-olpc-mesh.c:142
 #: ../libnm-util/nm-setting-wireless.c:801
 #, c-format
@@ -7786,8 +7846,10 @@ msgid "invalid '%s' or its value '%s'"
 msgstr "nieprawidłowe \"%s\" lub jego wartość \"%s\""
 
 #: ../libnm-core/nm-setting-wired.c:704
-msgid "Wake-on-LAN mode 'default' is incompatible with other flags"
-msgstr "Tryb \"Wake-on-LAN\" \"default\" jest niezgodny z innymi flagami"
+msgid "Wake-on-LAN mode 'default' and 'ignore' are exclusive flags"
+msgstr ""
+"Tryby \"Wake-on-LAN\" \"default\" i \"ignore\" są wzajemnie się "
+"wykluczającymi flagami"
 
 #: ../libnm-core/nm-setting-wired.c:713
 msgid "Wake-on-LAN password can only be used with magic packet mode"
@@ -7825,19 +7887,19 @@ msgstr "połączenia \"%s\" wymagają \"%s\" w tej właściwości"
 msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "\"%s\" może być używane tylko z \"%s=%s\" (WEP)"
 
-#: ../libnm-core/nm-setting-wireless.c:713
+#: ../libnm-core/nm-setting-wireless.c:712
 #: ../libnm-util/nm-setting-wireless.c:770
 #, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
 msgstr "\"%s\" nie jest prawidłowym trybem Wi-Fi"
 
-#: ../libnm-core/nm-setting-wireless.c:723
+#: ../libnm-core/nm-setting-wireless.c:722
 #: ../libnm-util/nm-setting-wireless.c:780
 #, c-format
 msgid "'%s' is not a valid band"
 msgstr "\"%s\" nie jest prawidłowym pasmem"
 
-#: ../libnm-core/nm-setting-wireless.c:733
+#: ../libnm-core/nm-setting-wireless.c:732
 #, c-format
 msgid "'%s' requires setting '%s' property"
 msgstr "\"%s\" wymaga ustawienia właściwości \"%s\""
@@ -7863,10 +7925,6 @@ msgstr "Nie można odnaleźć pliku binarnego \"%s\""
 #: ../libnm-glib/nm-device.c:1793 ../libnm/nm-device.c:1638
 msgid "Bluetooth"
 msgstr "Bluetooth"
-
-#: ../libnm-glib/nm-device.c:1811 ../libnm/nm-device.c:1656
-msgid "ADSL"
-msgstr "ADSL"
 
 #: ../libnm-glib/nm-device.c:1839 ../libnm/nm-device.c:1684
 msgid "Wired"
@@ -7933,17 +7991,17 @@ msgid "%d. IPv4 address has invalid prefix"
 msgstr "%d. adres IPv4 posiada nieprawidłowy przedrostek"
 
 #: ../libnm-util/nm-setting-ip4-config.c:966
-#: ../libnm-util/nm-setting-ip6-config.c:939
+#: ../libnm-util/nm-setting-ip6-config.c:938
 #, c-format
 msgid "%d. route has invalid prefix"
 msgstr "%d. trasa posiada nieprawidłowy przedrostek"
 
-#: ../libnm-util/nm-setting-ip6-config.c:913
+#: ../libnm-util/nm-setting-ip6-config.c:912
 #, c-format
 msgid "%d. IPv6 address is invalid"
 msgstr "%d. adres IPv6 jest nieprawidłowy"
 
-#: ../libnm-util/nm-setting-ip6-config.c:923
+#: ../libnm-util/nm-setting-ip6-config.c:922
 #, c-format
 msgid "%d. IPv6 address has invalid prefix"
 msgstr "%d. adres IPv6 posiada nieprawidłowy przedrostek"
@@ -8400,9 +8458,9 @@ msgid "Unknown/unhandled Bluetooth connection type"
 msgstr "Nieznany/nieobsługiwany typ połączenia Bluetooth"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:337
-#: ../src/devices/nm-device-ethernet.c:1436
+#: ../src/devices/nm-device-ethernet.c:1446
 #: ../src/devices/nm-device-infiniband.c:204
-#: ../src/devices/wifi/nm-device-wifi.c:1116
+#: ../src/devices/wifi/nm-device-wifi.c:1112
 #: ../src/devices/wimax/nm-device-wimax.c:454
 msgid "connection does not match device"
 msgstr "połączenie nie pasuje do urządzenia"
@@ -8415,11 +8473,11 @@ msgstr "Połączenie wiązane"
 msgid "Bridge connection"
 msgstr "Połączenie mostkowane"
 
-#: ../src/devices/nm-device-ethernet.c:1417
+#: ../src/devices/nm-device-ethernet.c:1427
 msgid "PPPoE connection"
 msgstr "Połączenie PPPoE"
 
-#: ../src/devices/nm-device-ethernet.c:1417
+#: ../src/devices/nm-device-ethernet.c:1427
 msgid "Wired connection"
 msgstr "Połączenie przewodowe"
 
@@ -8432,7 +8490,7 @@ msgstr "Połączenie przewodowe %d"
 msgid "InfiniBand connection"
 msgstr "Połączenie InfiniBand"
 
-#: ../src/devices/nm-device-vlan.c:307
+#: ../src/devices/nm-device-vlan.c:339
 msgid "VLAN connection"
 msgstr "Połączenie VLAN"
 
@@ -8444,7 +8502,7 @@ msgstr "Połączenie zespołowe"
 msgid "Mesh"
 msgstr "Sieć kratowa"
 
-#: ../src/devices/wifi/nm-device-wifi.c:1084
+#: ../src/devices/wifi/nm-device-wifi.c:1080
 msgid "WPA Ad-Hoc disabled due to kernel bugs"
 msgstr "Wyłączono WPA Ad-Hoc z powodu błędów jądra"
 
@@ -8522,7 +8580,7 @@ msgstr "WPA-PSK wymaga uwierzytelnienia \"open\""
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:336
 msgid "WPA Ad-Hoc authentication requires an Ad-Hoc mode AP"
-msgstr "Uwierzytelnianie WPA Ad-Hoc wymaga AP w trybie Ad-Hoc"
+msgstr "Uwierzytelnianie WPA Ad-Hoc wymaga punktu dostępowego w trybie Ad-Hoc"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:349
 msgid "WPA Ad-Hoc authentication requires 'wpa' protocol"
@@ -8609,7 +8667,8 @@ msgstr ""
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:760
 msgid "Failed to determine AP security information"
-msgstr "Ustalenie informacji o zabezpieczeniach AP się nie powiodło"
+msgstr ""
+"Ustalenie informacji o zabezpieczeniach punktu dostępowego się nie powiodło"
 
 #: ../src/devices/wwan/nm-modem-broadband.c:527
 msgid "GSM mobile broadband connection requires a 'gsm' setting"
@@ -8750,7 +8809,7 @@ msgstr "Nieznany poziom dziennika \"%s\""
 msgid "Unknown log domain '%s'"
 msgstr "Nieznana domena dziennika \"%s\""
 
-#: ../src/nm-manager.c:3404
+#: ../src/nm-manager.c:3423
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
