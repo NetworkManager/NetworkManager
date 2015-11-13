@@ -56,6 +56,11 @@ else
 	GIT_TARGETBRANCH=()
 fi
 
+if [ "$ARCH" == "<random>" ]; then
+	ARCH=(x86_64 ppc64 ppc64le s390x aarch64)
+	ARCH=${ARCH[$(($RANDOM % ${#ARCH[@]}))]}
+fi
+
 export WHITEBOARD="$BUILD_URL"
 
 python -u \
