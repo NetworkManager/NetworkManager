@@ -16,6 +16,11 @@ DIR="$(dirname "$(readlink -f "$0")")"
 # HOSTYPE=
 # TESTS=
 # ARGS=
+# GIT_TARGETBRANCH=
+
+# Trigger from remote:
+# TOKEN_NAME= // secret
+# URL="https://desktopqe-jenkins.rhev-ci-vms.eng.rdu2.redhat.com/job/NetworkManager-upstream/buildWithParameters?token=$TOKEN_NAME&cause=$CAUSE&ARGS=..."
 
 RPM=()
 for r in $RPM_URLS; do
@@ -45,6 +50,12 @@ for r in $ARGS; do
 	_ARGS+=("$r")
 done
 
+if [ -n "$GIT_TARGETBRANCH" -a "$GIT_TARGETBRANCH" != "--" ]; then
+	GIT_TARGETBRANCH=(--var "GIT_TARGETBRANCH=$GIT_TARGETBRANCH")
+else
+	GIT_TARGETBRANCH=()
+fi
+
 export WHITEBOARD="$BUILD_URL"
 
 python -u \
@@ -59,9 +70,11 @@ python -u \
     "${PROFILE[@]}" \
     "${HOSTTYPE[@]}" \
     --var "TESTS=$TESTS" \
+    "${GIT_TARGETBRANCH[@]}" \
+    --var "GIT_URL=$GIT_TEST_REPOSITORY" \
     --bkr-write-job-id 'beaker_job_id' \
     --bkr-wait-completion \
-    --bkr-job-results 'results.txt' \
+    --bkr-job-results 'results.xml' \
     --no-test \
     "${_ARGS[@]}"
 

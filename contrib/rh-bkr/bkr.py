@@ -585,6 +585,9 @@ class CmdSubmit(CmdBase):
             self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].urls() ]
 
         tests = []
+        t = self._get_var("TESTS")
+        if t:
+            tests.extend([t])
         if self.options.tests:
             tests.extend(self.options.tests)
         if self.options.nitrate_all or self.options.nitrate_tag or self.options.nitrate_exclude_tag:
@@ -607,11 +610,11 @@ class CmdSubmit(CmdBase):
                 else:
                     print("Selected %d cases..." % (len(cases)))
                 nitrate_print_cases(cases, prefix="  + ")
-            tests.extend([nitrate_get_script_name_for_case(case) for case_id, case in cases.iteritems()])
+            tests.extend(sorted(set([nitrate_get_script_name_for_case(case) for case_id, case in cases.iteritems()])))
         elif self.options.nitrate_status or self.options.nitrate_exclude_status:
             raise Exception("--nitrate-status or --nitrate-exclude-status makes only sense with selecting nitrate tags")
 
-        self.subs['TESTS'] = ','.join(sorted(set(tests)))
+        self.subs['TESTS'] = ','.join(tests)
         self.subs['ARGV'] = ("\"" + "\" \"".join(sys.argv) + "\"").replace('"', '&quot;') if sys.argv else ''
         self.subs['ARGV_PROFILE'] = ("\"" + "\" \"".join(self.argv_profile) + "\"").replace('"', '&quot;') if hasattr(self, 'argv_profile') else ''
 
