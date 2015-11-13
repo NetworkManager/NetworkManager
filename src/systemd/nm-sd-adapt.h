@@ -24,10 +24,15 @@
 #include <stdbool.h>
 #include <syslog.h>
 #include <sys/resource.h>
+#include <time.h>
 
 #include "nm-default.h"
 
 #define noreturn G_GNUC_NORETURN
+
+#ifndef CLOCK_BOOTTIME
+#define CLOCK_BOOTTIME 7
+#endif
 
 /*****************************************************************************/
 
