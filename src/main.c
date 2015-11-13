@@ -455,11 +455,11 @@ main (int argc, char *argv[])
 	if (configure_and_quit == FALSE)
 		g_main_loop_run (main_loop);
 
+done:
 	nm_exported_object_class_set_quitting ();
 
 	nm_manager_stop (nm_manager_get ());
 
-done:
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);
 
