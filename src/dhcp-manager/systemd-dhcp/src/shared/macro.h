@@ -46,6 +46,7 @@
 #define _alignas_(x) __attribute__((aligned(__alignof(x))))
 #define _cleanup_(x) __attribute__((cleanup(x)))
 
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))) || defined (__clang__)
 /* Temporarily disable some warnings */
 #define DISABLE_WARNING_DECLARATION_AFTER_STATEMENT                     \
         _Pragma("GCC diagnostic push");                                 \
@@ -69,6 +70,14 @@
 
 #define REENABLE_WARNING                                                \
         _Pragma("GCC diagnostic pop")
+#else
+#define DISABLE_WARNING_DECLARATION_AFTER_STATEMENT
+#define DISABLE_WARNING_FORMAT_NONLITERAL
+#define DISABLE_WARNING_MISSING_PROTOTYPES
+#define DISABLE_WARNING_NONNULL
+#define DISABLE_WARNING_SHADOW
+#define REENABLE_WARNING
+#endif
 
 /* automake test harness */
 #define EXIT_TEST_SKIP 77
