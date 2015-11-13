@@ -492,10 +492,6 @@ _dispatcher_call (DispatcherAction action,
 		                : (callback ? " (with callback)" : ""));
 	}
 
-	/* VPN actions require at least an IPv4 config (for now) */
-	if (action == DISPATCHER_ACTION_VPN_UP)
-		g_return_val_if_fail (vpn_ip4_config != NULL, FALSE);
-
 	if (!_get_monitor_by_action(action)->has_scripts) {
 		if (blocking == FALSE && (out_call_id || callback)) {
 			info = g_malloc0 (sizeof (*info));
