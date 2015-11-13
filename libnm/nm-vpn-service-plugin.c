@@ -410,7 +410,7 @@ nm_vpn_service_plugin_set_ip6_config (NMVpnServicePlugin *plugin,
 
 	priv->got_ip6 = TRUE;
 	g_signal_emit (plugin, signals[IP6_CONFIG], 0, ip6_config);
-	g_signal_emit (priv->dbus_vpn_service_plugin, signals[IP6_CONFIG], 0, ip6_config);
+	nmdbus_vpn_plugin_emit_ip6_config (priv->dbus_vpn_service_plugin, ip6_config);
 
 	g_variant_unref (ip6_config);
 
