@@ -277,12 +277,12 @@ nm_clear_g_signal_handler (gpointer self, guint *id)
 #define nm_utils_is_power_of_two(x) ({ \
 		const typeof(x) __x = (x); \
 		\
-		((__x & (__x - 1)) == 0) && \
-			/* Check if the value is negative. In that case, return FALSE.
-			 * The first expression is a compile time constant, depending on whether
-			 * the type is signed. The second expression is a clumsy way for (__x >= 0),
-			 * which causes a compiler warning for unsigned types. */ \
-			( ( ((typeof(__x)) -1) > ((typeof(__x)) 0) ) || (__x > 0) || (__x == 0) ); \
+		/* Check if the value is negative. In that case, return FALSE.
+		 * The first expression is a compile time constant, depending on whether
+		 * the type is signed. The second expression is a clumsy way for (__x >= 0),
+		 * which causes a compiler warning for unsigned types. */ \
+		    ( ( ((typeof(__x)) -1) > ((typeof(__x)) 0) ) || (__x > 0) || (__x == 0) ) \
+		 && ((__x & (__x - 1)) == 0); \
 	})
 
 /*****************************************************************************/
