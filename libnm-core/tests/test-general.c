@@ -4284,7 +4284,7 @@ again:
 			 * by randomly setting bits. */
 			numbits = g_rand_int_range (rand, 1, 65);
 			while (xno != ~((guint64) 0) && numbits > 0) {
-				guint64 v = (1LL << g_rand_int_range (rand, 0, 65));
+				guint64 v = (1LL << g_rand_int_range (rand, 0, 64));
 
 				if ((xno | v) != xno) {
 					xno |= v;
