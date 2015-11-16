@@ -293,10 +293,11 @@
    fun:g_thread_new_internal
    ...
    fun:g_thread_pool_push
-   fun:g_task_start_task_thread
+   ...
    fun:g_task_run_in_thread
    fun:g_async_initable_real_init_async
    fun:g_bus_get
+   ...
 }
 
 {
