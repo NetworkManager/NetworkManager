@@ -5346,10 +5346,6 @@ msgstr ""
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "La valeur « %d » est hors de portée <%d-%d>"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "la propriété est vide"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

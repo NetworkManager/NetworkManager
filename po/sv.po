@@ -6728,10 +6728,6 @@ msgstr "värdet ”%d” är utanför intervallet <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "är inte en giltigt MAC-adress"
 
-#: ../libnm-core/nm-setting-cdma.c:147 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "egenskap är tom'"
-
 #: ../libnm-core/nm-setting-connection.c:741
 #, c-format
 msgid "setting required for connection of type '%s'"

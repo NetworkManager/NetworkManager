@@ -5192,10 +5192,6 @@ msgstr "ਗੁਣ ਲਈ '%d' ਇੱਕ ਢੁਕਵਾਂ ਮੁੱਲ ਨਹ�
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "ਮੁੱਲ '%d' ਹੱਦ <%d-%d> ਤੋਂ ਬਾਹਰ ਹੈ"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "ਗੁਣ ਖਾਲੀ ਹੈ'"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

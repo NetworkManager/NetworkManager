@@ -5225,10 +5225,6 @@ msgstr "'%d' ଟି ଗୁଣଧର୍ମ ପାଇଁ ଏକ ବୈଧ ମୂ�
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "ମୂଲ୍ୟ '%d' ସୀମା ବାହାରେ <%d-%d>"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "ଗୁଣଧର୍ମ ଖାଲି ଅଛି'"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

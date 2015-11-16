@@ -7026,10 +7026,6 @@ msgstr "'%d' ಮೌಲ್ಯವು <%d-%d> ವ್ಯಾಪ್ತಿಯ ಹೊರ
 msgid "is not a valid MAC address"
 msgstr "ಒಂದು ಮಾನ್ಯವಾದ MAC ವಿಳಾಸವಲ್ಲ"
 
-#: ../libnm-core/nm-setting-cdma.c:164 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "ಗುಣವು ಖಾಲಿ ಇದೆ'"
-
 #: ../libnm-core/nm-setting-connection.c:740
 #: ../libnm-util/nm-setting-connection.c:861
 #, c-format

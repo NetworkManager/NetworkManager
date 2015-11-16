@@ -6693,10 +6693,6 @@ msgstr "Wert »%d« ist außerhalb des Bereichs <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "ist keine gültige MAC-Adresse"
 
-#: ../libnm-core/nm-setting-cdma.c:167 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "Eigenschaft ist leer"
-
 #: ../libnm-core/nm-setting-connection.c:844
 #: ../libnm-util/nm-setting-connection.c:861
 #, c-format

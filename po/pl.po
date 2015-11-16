@@ -4964,7 +4964,7 @@ msgstr "domyślne"
 #: ../clients/cli/settings.c:1563
 #, c-format
 msgid ""
-"invalid option '%s', use  a combination of [%s] or 'ignore', 'default' or "
+"invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
 "'none'"
 msgstr ""
 "nieprawidłowa opcja \"%s\", należy użyć połączenia [%s] albo \"ignore\", "
@@ -7526,10 +7526,6 @@ msgstr "wartość \"%d\" jest poza zakresem <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "nie jest prawidłowym adresem MAC"
 
-#: ../libnm-core/nm-setting-cdma.c:149 ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "właściwość jest pusta\""
-
 #: ../libnm-core/nm-setting-connection.c:788
 #, c-format
 msgid "setting required for connection of type '%s'"
@@ -7665,8 +7661,8 @@ msgstr "Brak adresu IPv4"
 
 #: ../libnm-core/nm-setting-ip-config.c:77
 #, c-format
-msgid "Missing IPv6 address'"
-msgstr "Brak adresu IPv6\""
+msgid "Missing IPv6 address"
+msgstr "Brak adresu IPv6"
 
 #: ../libnm-core/nm-setting-ip-config.c:82
 #, c-format

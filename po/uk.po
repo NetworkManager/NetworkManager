@@ -7440,10 +7440,6 @@ msgstr "значення «%d» лежить поза діапазоном <%d-%
 msgid "is not a valid MAC address"
 msgstr "не є коректною MAC-адресою"
 
-#: ../libnm-core/nm-setting-cdma.c:149 ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "властивість є порожньою"
-
 #: ../libnm-core/nm-setting-connection.c:747
 #, c-format
 #| msgid "'%s' setting is required for the connection when the property is set"

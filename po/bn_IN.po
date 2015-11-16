@@ -6970,10 +6970,6 @@ msgstr "মান '%d' রেঞ্জের বাইরে <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "একটি বৈধ MAC ঠিকানা নয়"
 
-#: ../libnm-core/nm-setting-cdma.c:164 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "বিশিষ্টতা খালি'"
-
 #: ../libnm-core/nm-setting-connection.c:740
 #: ../libnm-util/nm-setting-connection.c:861
 #, c-format

@@ -7250,10 +7250,6 @@ msgstr "'%d' değeri aralığın dışında <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "geçerli bir MAC adresi değildir"
 
-#: ../libnm-core/nm-setting-cdma.c:147 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "özellik boş'"
-
 #: ../libnm-core/nm-setting-connection.c:745
 #, c-format
 #| msgid "no device found for connection '%s'"

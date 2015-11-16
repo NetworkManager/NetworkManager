@@ -7457,10 +7457,6 @@ msgstr "மதிப்பு '%d' ஆனது வரம்பிற்கு �
 msgid "is not a valid MAC address"
 msgstr "என்பது செல்லுபடியான MAC முகவரியல்ல"
 
-#: ../libnm-core/nm-setting-cdma.c:149 ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "பண்பு காலியாக உள்ளது'"
-
 #: ../libnm-core/nm-setting-connection.c:747
 #, c-format
 #| msgid "'%s' setting is required for the connection when the property is set"

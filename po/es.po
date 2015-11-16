@@ -5175,7 +5175,7 @@ msgstr "Falta propiedad"
 #: ../libnm-util/nm-setting-wireless-security.c:833
 #: ../libnm-util/nm-setting-wireless-security.c:857
 msgid "property is empty"
-msgstr "propiedad está vacía'"
+msgstr "propiedad está vacía"
 
 #: ../libnm-util/nm-setting-8021x.c:2205 ../libnm-util/nm-setting-8021x.c:2217
 #: ../libnm-util/nm-setting-8021x.c:2263 ../libnm-util/nm-setting-8021x.c:2275
@@ -5290,10 +5290,6 @@ msgstr "'%d' no es un valor válido para la propiedad (debe ser <= %d)"
 #, c-format
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "El valor '%d' está fuera del rango <%d-%d>"
-
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "propiedad está vacía'"
 
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format

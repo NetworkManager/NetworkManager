@@ -5490,10 +5490,6 @@ msgstr "'%d' એ એક ગુણધર્મ માટે યોગ્ય ક�
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "કિંમત '%d' એ સીમા <%d-%d> ની બહાર છે"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "ગુણધર્મ ખાલી છે'"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

@@ -5138,10 +5138,6 @@ msgstr "'%d' 不是该属性有效值（应为 <= %d）"
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "值 '%d' 在 <%d-%d> 范围之外 "
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "属性为空"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"
