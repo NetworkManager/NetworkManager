@@ -5773,8 +5773,8 @@ msgstr "브리지 "
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\r연결하는 중 "
+msgid "Connecting"
+msgstr "연결하는 중 "
 
 #: ../test/nm-online.c:104
 msgid ""

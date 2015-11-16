@@ -5343,8 +5343,8 @@ msgstr ""
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rসংযোগ কৰা হৈছে"
+msgid "Connecting"
+msgstr "সংযোগ কৰা হৈছে"
 
 #: ../clients/nm-online.c:149
 msgid ""

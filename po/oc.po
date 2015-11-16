@@ -5598,7 +5598,7 @@ msgstr "Sistèma"
 
 #: ../test/nm-online.c:86
 #, c-format
-msgid "\rConnecting"
+msgid "Connecting"
 msgstr ""
 
 #: ../test/nm-online.c:118

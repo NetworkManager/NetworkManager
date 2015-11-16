@@ -5445,8 +5445,8 @@ msgstr ""
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rजुड़ रहा है"
+msgid "Connecting"
+msgstr "जुड़ रहा है"
 
 #: ../clients/nm-online.c:149
 msgid ""

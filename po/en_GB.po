@@ -2714,8 +2714,8 @@ msgstr "Bond"
 
 #: ../test/nm-online.c:112
 #, c-format
-msgid "\rConnecting"
-msgstr "\rConnecting"
+msgid "Connecting"
+msgstr "Connecting"
 
 #: ../test/nm-online.c:143
 msgid "Time to wait for a connection, in seconds (default is 30)"

@@ -5467,8 +5467,8 @@ msgstr ""
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rఅనుసంధానమౌచున్నది"
+msgid "Connecting"
+msgstr "అనుసంధానమౌచున్నది"
 
 #: ../clients/nm-online.c:149
 msgid ""

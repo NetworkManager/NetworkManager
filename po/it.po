@@ -6089,8 +6089,8 @@ msgstr "Bridge"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\rConnessione in corso"
+msgid "Connecting"
+msgstr "Connessione in corso"
 
 #: ../test/nm-online.c:104
 msgid ""

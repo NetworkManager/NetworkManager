@@ -5731,8 +5731,8 @@ msgstr "Ett lösenord krävs för att ansluta till ”%s”."
 
 #: ../clients/nm-online.c:97
 #, c-format
-msgid "\rConnecting"
-msgstr "\rAnsluter"
+msgid "Connecting"
+msgstr "Ansluter"
 
 #: ../clients/nm-online.c:150
 msgid ""

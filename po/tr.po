@@ -5666,8 +5666,8 @@ msgstr "'%s' ağına bağlanmak için parola gerekiyor."
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rBağlanıyor"
+msgid "Connecting"
+msgstr "Bağlanıyor"
 
 #: ../clients/nm-online.c:149
 msgid ""

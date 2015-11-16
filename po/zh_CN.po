@@ -5785,7 +5785,7 @@ msgstr "桥接"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
+msgid "Connecting"
 msgstr "连接中"
 
 #: ../test/nm-online.c:104

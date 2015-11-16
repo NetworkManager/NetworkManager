@@ -5904,8 +5904,8 @@ msgstr "Ponte"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\rConectando"
+msgid "Connecting"
+msgstr "Conectando"
 
 #: ../test/nm-online.c:104
 msgid ""

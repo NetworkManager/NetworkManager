@@ -5848,8 +5848,8 @@ msgstr "ਬਰਿੱਜ"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\rਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
+msgid "Connecting"
+msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 
 #: ../test/nm-online.c:104
 msgid ""
