@@ -714,15 +714,19 @@ write_wireless_security_setting (NMConnection *connection,
 						ascii_key = g_strdup_printf ("s:%s", key);
 						key = ascii_key;
 					}
-				} else
-					key = NULL;
+				} else {
+					nm_log_warn (LOGD_SETTINGS, "    invalid WEP key '%s'", key);
+					tmp = NULL;
+				}
 
-				set_secret (ifcfg,
-				            tmp,
-				            key,
-				            "WEP_KEY_FLAGS",
-				            nm_setting_wireless_security_get_wep_key_flags (s_wsec),
-				            FALSE);
+				if (tmp) {
+					set_secret (ifcfg,
+					            tmp,
+					            key,
+					            "WEP_KEY_FLAGS",
+					            nm_setting_wireless_security_get_wep_key_flags (s_wsec),
+					            FALSE);
+				}
 				g_free (tmp);
 				g_free (ascii_key);
 			}
