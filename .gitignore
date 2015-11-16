@@ -266,6 +266,7 @@ test-*.trs
 /src/tests/test-resolvconf-capture
 /src/tests/test-route-manager-fake
 /src/tests/test-route-manager-linux
+/src/tests/test-utils
 /src/tests/test-wired-defname
 
 /vapi/*.vapi
