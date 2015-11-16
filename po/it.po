@@ -5933,8 +5933,8 @@ msgstr "È richiesta una password per collegarsi a \"%s\"."
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rConnessione in corso"
+msgid "Connecting"
+msgstr "Connessione in corso"
 
 #: ../clients/nm-online.c:149
 msgid ""

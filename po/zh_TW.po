@@ -5774,7 +5774,7 @@ msgstr "橋接"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
+msgid "Connecting"
 msgstr "正在連線"
 
 #: ../test/nm-online.c:104

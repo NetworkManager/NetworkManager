@@ -5762,8 +5762,8 @@ msgstr "ブリッジ"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\r接続中"
+msgid "Connecting"
+msgstr "接続中"
 
 #: ../test/nm-online.c:104
 msgid ""

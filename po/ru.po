@@ -5958,7 +5958,7 @@ msgstr "Для подключения к «%s» требуется пароль.
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
+msgid "Connecting"
 msgstr "Подключение..."
 
 #: ../clients/nm-online.c:149

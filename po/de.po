@@ -5259,8 +5259,8 @@ msgstr ""
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rWird verbunden"
+msgid "Connecting"
+msgstr "Wird verbunden"
 
 #: ../clients/nm-online.c:149
 msgid ""

@@ -5956,8 +5956,8 @@ msgstr "ബ്രിഡ്ജ്"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\rകണക്ട് ചെയ്യുന്നു"
+msgid "Connecting"
+msgstr "കണക്ട് ചെയ്യുന്നു"
 
 #: ../test/nm-online.c:104
 msgid ""

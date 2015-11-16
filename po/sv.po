@@ -5220,8 +5220,8 @@ msgstr ""
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rAnsluter"
+msgid "Connecting"
+msgstr "Ansluter"
 
 #: ../clients/nm-online.c:149
 msgid ""

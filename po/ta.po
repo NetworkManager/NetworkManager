@@ -6016,8 +6016,8 @@ msgstr "'%s'ஐ இணைப்பதற்கு ஒரு கடவுச்�
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rஇணைக்கிறது"
+msgid "Connecting"
+msgstr "இணைக்கிறது"
 
 #: ../clients/nm-online.c:149
 msgid ""

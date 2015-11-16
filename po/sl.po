@@ -2838,8 +2838,8 @@ msgstr "Vez"
 
 #: ../test/nm-online.c:111
 #, c-format
-msgid "\rConnecting"
-msgstr "\rPonovno vzpostavljanje povezave"
+msgid "Connecting"
+msgstr "Ponovno vzpostavljanje povezave"
 
 #: ../test/nm-online.c:142
 msgid "Time to wait for a connection, in seconds (default is 30)"

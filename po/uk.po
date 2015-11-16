@@ -5986,8 +5986,8 @@ msgstr "Для встановлення з’єднання з «%s» слід �
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rВстановлюється з’єднання"
+msgid "Connecting"
+msgstr "Встановлюється з’єднання"
 
 #: ../clients/nm-online.c:149
 msgid ""

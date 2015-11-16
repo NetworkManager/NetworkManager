@@ -93,7 +93,7 @@ handle_timeout (gpointer data)
 		progress_next_step_i = (elapsed_ms / timeout->progress_step_duration) + 1;
 		progress_next_step_i = MIN (progress_next_step_i, PROGRESS_STEPS);
 
-		g_print (_("\rConnecting"));
+		g_print ("\r%s", _("Connecting"));
 		for (i = 0; i < PROGRESS_STEPS; i++)
 			putchar (i < progress_next_step_i ? '.' : ' ');
 		g_print (" %4lds", (long) (MAX (0, remaining_ms) / 1000));

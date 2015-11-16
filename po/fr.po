@@ -6039,8 +6039,8 @@ msgstr "Pont"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\rConnexion"
+msgid "Connecting"
+msgstr "Connexion"
 
 #: ../test/nm-online.c:104
 msgid ""

@@ -5198,8 +5198,8 @@ msgstr ""
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rजोडणी करत आहे"
+msgid "Connecting"
+msgstr "जोडणी करत आहे"
 
 #: ../clients/nm-online.c:149
 msgid ""

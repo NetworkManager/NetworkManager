@@ -6147,8 +6147,8 @@ msgstr "સિસ્ટમ"
 
 #: ../test/nm-online.c:73
 #, c-format
-msgid "\rConnecting"
-msgstr "\rજોડાઇ રહ્યા છે"
+msgid "Connecting"
+msgstr "જોડાઇ રહ્યા છે"
 
 #: ../test/nm-online.c:104
 msgid ""

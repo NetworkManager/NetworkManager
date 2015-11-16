@@ -5919,8 +5919,8 @@ msgstr "Wymagane jest hasło, aby połączyć z \"%s\"."
 
 #: ../clients/nm-online.c:96
 #, c-format
-msgid "\rConnecting"
-msgstr "\rŁączenie"
+msgid "Connecting"
+msgstr "Łączenie"
 
 #: ../clients/nm-online.c:149
 msgid ""
