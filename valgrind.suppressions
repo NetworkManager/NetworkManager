@@ -413,4 +413,30 @@
    fun:g_dbus_proxy_finalize
    ...
 }
-
+{
+   _gdbus_f23_1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_type_create_instance
+   fun:g_object_new_internal
+   fun:g_object_newv
+   fun:g_object_new
+   fun:g_task_new
+   fun:_g_socket_read_with_control_messages
+   fun:_g_dbus_worker_do_read_unlocked
+   fun:_g_dbus_worker_do_read_cb
+   fun:g_task_return_now
+   ...
+   fun:g_main_dispatch
+   fun:g_main_context_dispatch
+   fun:g_main_context_iterate.isra.29
+   fun:g_main_loop_run
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
