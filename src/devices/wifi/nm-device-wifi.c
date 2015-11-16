@@ -2881,7 +2881,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	priv->mode = NM_802_11_MODE_INFRA;
-	priv->aps = g_hash_table_new (g_direct_hash, g_direct_equal);
+	priv->aps = g_hash_table_new (g_str_hash, g_str_equal);
 }
 
 static void
