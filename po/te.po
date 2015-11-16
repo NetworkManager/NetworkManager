@@ -6974,10 +6974,6 @@ msgstr "విలువ '%d' విస్తృతి <%d-%d> బయట వు�
 msgid "is not a valid MAC address"
 msgstr "చెల్లునటువంటి MAC చిరునామా కాదు"
 
-#: ../libnm-core/nm-setting-cdma.c:164 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "లక్షణం ఖాళీ'"
-
 #: ../libnm-core/nm-setting-connection.c:740
 #: ../libnm-util/nm-setting-connection.c:861
 #, c-format

@@ -145,7 +145,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty'"));
+		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
 		return FALSE;
 	}

@@ -7410,10 +7410,6 @@ msgstr "значение «%d» выходит за пределы допуст�
 msgid "is not a valid MAC address"
 msgstr "недопустимый MAC-адрес"
 
-#: ../libnm-core/nm-setting-cdma.c:149 ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "пустое свойство"
-
 #: ../libnm-core/nm-setting-connection.c:747
 #, fuzzy, c-format
 #| msgid "Could not create editor for connection '%s' of type '%s'."

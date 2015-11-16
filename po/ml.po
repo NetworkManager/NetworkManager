@@ -5258,10 +5258,6 @@ msgstr "വിശേഷതയ്ക്കുള്ള ശരിയായ മൂ�
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "'%d' മൂല്ല്യം പരിധിയ്ക്കു് പുറത്താകുന്നു <%d-%d>"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "വിശേഷത കാലിയാണു്"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

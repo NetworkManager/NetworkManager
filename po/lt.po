@@ -4591,10 +4591,6 @@ msgstr "„%d“ yra netinkama vertė savybei (turi būti <= %d)"
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "vertė „%d“ yra už ribų <%d-%d>"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "savybė yra tuščia"
-
 #: ../libnm-util/nm-setting-connection.c:742
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

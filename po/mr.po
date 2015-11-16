@@ -6686,10 +6686,6 @@ msgstr "मूल्य '%d' व्याप्ति <%d-%d> च्या ब�
 msgid "is not a valid MAC address"
 msgstr "वैध MAC पत्ता नाही"
 
-#: ../libnm-core/nm-setting-cdma.c:164 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "गुणधर्म रिकामे आहे"
-
 #: ../libnm-core/nm-setting-connection.c:740
 #: ../libnm-util/nm-setting-connection.c:861
 #, c-format

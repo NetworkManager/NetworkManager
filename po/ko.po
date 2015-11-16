@@ -5125,10 +5125,6 @@ msgstr "'%d'는 속성의 올바른 값이 아닙니다 (<= %d이어야 함)"
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "값 '%d'이 범위 <%d-%d> 밖에 있습니다 "
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "속성이 비어 있습니다 "
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

@@ -5435,7 +5435,7 @@ msgstr "типовий"
 #: ../clients/cli/settings.c:1609
 #, c-format
 msgid ""
-"invalid option '%s', use  a combination of [%s] or 'ignore', 'default' or "
+"invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
 "'none'"
 msgstr ""
 "некоректний параметр «%s», скористайтеся комбінацією [%s] або «ignore», "
@@ -8014,10 +8014,6 @@ msgstr "значення «%d» лежить поза діапазоном <%d-%
 msgid "is not a valid MAC address"
 msgstr "не є коректною MAC-адресою"
 
-#: ../libnm-core/nm-setting-cdma.c:148 ../libnm-util/nm-setting-cdma.c:169
-msgid "property is empty'"
-msgstr "властивість є порожньою"
-
 #: ../libnm-core/nm-setting-connection.c:816
 #, c-format
 msgid "setting required for connection of type '%s'"
@@ -8154,7 +8150,7 @@ msgstr "Не вказано адреси IPv4"
 
 #: ../libnm-core/nm-setting-ip-config.c:94
 #, c-format
-msgid "Missing IPv6 address'"
+msgid "Missing IPv6 address"
 msgstr "Не вказано адреси IPv6"
 
 #: ../libnm-core/nm-setting-ip-config.c:99

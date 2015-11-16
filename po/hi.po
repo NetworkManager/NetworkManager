@@ -6940,10 +6940,6 @@ msgstr "मान '%d' परिसर के बाहर है <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "एक वैध MAC पता नहीं है"
 
-#: ../libnm-core/nm-setting-cdma.c:164 ../libnm-util/nm-setting-cdma.c:168
-msgid "property is empty'"
-msgstr "गुण रिक्त है'"
-
 #: ../libnm-core/nm-setting-connection.c:740
 #: ../libnm-util/nm-setting-connection.c:861
 #, c-format

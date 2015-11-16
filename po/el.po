@@ -6043,10 +6043,6 @@ msgstr "η τιμή '%d' είναι εκτός εμβέλειας <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "δεν είναι μια έγκυρη διεύθυνση MAC"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "η ιδιότητα είναι κενή"
-
 #: ../libnm-util/nm-setting-connection.c:812
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

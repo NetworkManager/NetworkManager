@@ -2558,10 +2558,6 @@ msgstr "„%d” érték kívül esik a tartományon: <%d-%d>"
 msgid "'%s' is not a valid interface name"
 msgstr "a(z) „%s” nem érvényes csatolónév"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "a tulajdonság üres"
-
 #: ../libnm-util/nm-setting-connection.c:697
 #, c-format
 msgid "'%s' is not a valid UUID"

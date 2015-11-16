@@ -5405,10 +5405,6 @@ msgstr "«%d» non è un valore valido per la proprietà (dovrebbe essere <= %d)
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "il valore «%d» non è nell'intervallo <%d-%d>"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "la proprietà è vuota"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

@@ -4989,10 +4989,6 @@ msgstr ""
 msgid "is not a valid MAC address"
 msgstr ""
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr ""
-
 #: ../libnm-util/nm-setting-connection.c:812
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

@@ -5127,10 +5127,6 @@ msgstr "'%d' 不是屬性合於規定的值（應該 <= %d）"
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "'%d' 值落在範圍之外 <%d-%d>"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "屬性為空"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"

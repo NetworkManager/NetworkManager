@@ -5091,7 +5091,7 @@ msgstr "Vorgabe"
 #, fuzzy, c-format
 #| msgid "invalid option '%s' or its value '%s'"
 msgid ""
-"invalid option '%s', use  a combination of [%s] or 'ignore', 'default' or "
+"invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
 "'none'"
 msgstr "ungültige Option »%s« oder deren Wert »%s«"
 
@@ -7662,10 +7662,6 @@ msgstr "Wert »%d« ist außerhalb des Bereichs <%d-%d>"
 msgid "is not a valid MAC address"
 msgstr "ist keine gültige MAC-Adresse"
 
-#: ../libnm-core/nm-setting-cdma.c:148 ../libnm-util/nm-setting-cdma.c:169
-msgid "property is empty'"
-msgstr "Eigenschaft ist leer"
-
 #: ../libnm-core/nm-setting-connection.c:816
 #, fuzzy, c-format
 #| msgid "'%s' setting is required for the connection when the property is set"
@@ -7807,7 +7803,7 @@ msgstr "Fehlende IPv4-Adresse"
 
 #: ../libnm-core/nm-setting-ip-config.c:94
 #, c-format
-msgid "Missing IPv6 address'"
+msgid "Missing IPv6 address"
 msgstr "Fehlende IPv6-Adresse"
 
 #: ../libnm-core/nm-setting-ip-config.c:99

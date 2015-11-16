@@ -5114,10 +5114,6 @@ msgstr "'%d' はプロパティの有効な値ではありません (%d 以下�
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "値 '%d' は <%d-%d> の範囲外です"
 
-#: ../libnm-util/nm-setting-cdma.c:170
-msgid "property is empty'"
-msgstr "プロパティが空です"
-
 #: ../libnm-util/nm-setting-connection.c:734
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"
