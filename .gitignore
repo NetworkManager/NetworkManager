@@ -239,6 +239,7 @@ test-*.trs
 /policy/org.freedesktop.NetworkManager.policy.in
 
 /src/NetworkManager
+/src/devices/tests/test-lldp
 /src/devices/wifi/tests/test-wifi-ap-utils
 /src/dhcp-manager/nm-dhcp-helper
 /src/dhcp-manager/tests/test-dhcp-dhclient
