@@ -311,7 +311,7 @@ test_ip4_address_peer_zero (void)
 		g_array_unref (addrs);
 	}
 
-	if (nmtst_is_debug ())
+	if (nmtst_is_debug () && nmtstp_is_root_test ())
 		nmtstp_run_command_check ("ip address show dev %s", DEVICE_NAME);
 
 	nmtst_rand_perm (NULL, r_peers, peers, sizeof (peers[0]), G_N_ELEMENTS (peers));
