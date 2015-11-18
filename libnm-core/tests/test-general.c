@@ -756,6 +756,35 @@ test_setting_gsm_without_number (void)
 	                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
 }
 
+static void
+test_setting_gsm_sim_operator_id (void)
+{
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
+
+	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+	g_assert (s_gsm);
+
+	/* Valid */
+	g_object_set (s_gsm, NM_SETTING_GSM_SIM_OPERATOR_ID, "12345", NULL);
+	nmtst_assert_setting_verifies (NM_SETTING (s_gsm));
+
+	g_object_set (s_gsm, NM_SETTING_GSM_SIM_OPERATOR_ID, "123456", NULL);
+	nmtst_assert_setting_verifies (NM_SETTING (s_gsm));
+
+	/* Invalid */
+	g_object_set (s_gsm, NM_SETTING_GSM_SIM_OPERATOR_ID, "", NULL);
+	nmtst_assert_setting_verify_fails (NM_SETTING (s_gsm), NM_CONNECTION_ERROR,
+	                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	g_object_set (s_gsm, NM_SETTING_GSM_SIM_OPERATOR_ID, "     ", NULL);
+	nmtst_assert_setting_verify_fails (NM_SETTING (s_gsm), NM_CONNECTION_ERROR,
+	                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	g_object_set (s_gsm, NM_SETTING_GSM_SIM_OPERATOR_ID, "abcdef", NULL);
+	nmtst_assert_setting_verify_fails (NM_SETTING (s_gsm), NM_CONNECTION_ERROR,
+	                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
+}
+
 static NMSettingWirelessSecurity *
 make_test_wsec_setting (const char *detail)
 {
@@ -4861,6 +4890,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);
 	g_test_add_func ("/core/general/test_setting_gsm_without_number", test_setting_gsm_without_number);
+	g_test_add_func ("/core/general/test_setting_gsm_sim_operator_id", test_setting_gsm_sim_operator_id);
 	g_test_add_func ("/core/general/test_setting_to_dbus_all", test_setting_to_dbus_all);
 	g_test_add_func ("/core/general/test_setting_to_dbus_no_secrets", test_setting_to_dbus_no_secrets);
 	g_test_add_func ("/core/general/test_setting_to_dbus_only_secrets", test_setting_to_dbus_only_secrets);

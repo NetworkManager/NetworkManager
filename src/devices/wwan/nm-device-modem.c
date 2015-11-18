@@ -254,6 +254,12 @@ data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
+ids_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	nm_device_recheck_available_connections (NM_DEVICE (user_data));
+}
+
+static void
 modem_state_cb (NMModem *modem,
                 NMModemState new_state,
                 NMModemState old_state,
@@ -409,10 +415,7 @@ check_connection_available (NMDevice *device,
 		return FALSE;
 
 	if (state == NM_MODEM_STATE_LOCKED) {
-		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (connection);
-
-		/* Can't use a connection without a PIN if the modem is locked */
-		if (!s_gsm || !nm_setting_gsm_get_pin (s_gsm))
+		if (!nm_connection_get_setting_gsm (connection))
 			return FALSE;
 	}
 
@@ -677,6 +680,10 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	 * while in the new ModemManager the data port is set afterwards when the bearer gets
 	 * created */
 	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
+
+	g_signal_connect (modem, "notify::" NM_MODEM_DEVICE_ID, G_CALLBACK (ids_changed_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_SIM_ID, G_CALLBACK (ids_changed_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_SIM_OPERATOR_ID, G_CALLBACK (ids_changed_cb), self);
 }
 
 static void

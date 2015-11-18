@@ -40,15 +40,18 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
-#define NM_SETTING_GSM_NUMBER         "number"
-#define NM_SETTING_GSM_USERNAME       "username"
-#define NM_SETTING_GSM_PASSWORD       "password"
-#define NM_SETTING_GSM_PASSWORD_FLAGS "password-flags"
-#define NM_SETTING_GSM_APN            "apn"
-#define NM_SETTING_GSM_NETWORK_ID     "network-id"
-#define NM_SETTING_GSM_PIN            "pin"
-#define NM_SETTING_GSM_PIN_FLAGS      "pin-flags"
-#define NM_SETTING_GSM_HOME_ONLY      "home-only"
+#define NM_SETTING_GSM_NUMBER          "number"
+#define NM_SETTING_GSM_USERNAME        "username"
+#define NM_SETTING_GSM_PASSWORD        "password"
+#define NM_SETTING_GSM_PASSWORD_FLAGS  "password-flags"
+#define NM_SETTING_GSM_APN             "apn"
+#define NM_SETTING_GSM_NETWORK_ID      "network-id"
+#define NM_SETTING_GSM_PIN             "pin"
+#define NM_SETTING_GSM_PIN_FLAGS       "pin-flags"
+#define NM_SETTING_GSM_HOME_ONLY       "home-only"
+#define NM_SETTING_GSM_DEVICE_ID       "device-id"
+#define NM_SETTING_GSM_SIM_ID          "sim-id"
+#define NM_SETTING_GSM_SIM_OPERATOR_ID "sim-operator-id"
 
 struct _NMSettingGsm {
 	NMSetting parent;
@@ -63,14 +66,21 @@ typedef struct {
 
 GType nm_setting_gsm_get_type (void);
 
-NMSetting *nm_setting_gsm_new                (void);
-const char *nm_setting_gsm_get_number        (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_username      (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_password      (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_apn           (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_network_id    (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_pin           (NMSettingGsm *setting);
-gboolean    nm_setting_gsm_get_home_only     (NMSettingGsm *setting);
+NMSetting *nm_setting_gsm_new                  (void);
+const char *nm_setting_gsm_get_number          (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_username        (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_password        (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_apn             (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_network_id      (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_pin             (NMSettingGsm *setting);
+gboolean    nm_setting_gsm_get_home_only       (NMSettingGsm *setting);
+
+NM_AVAILABLE_IN_1_2
+const char *nm_setting_gsm_get_device_id       (NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_2
+const char *nm_setting_gsm_get_sim_id          (NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_2
+const char *nm_setting_gsm_get_sim_operator_id (NMSettingGsm *setting);
 
 NMSettingSecretFlags nm_setting_gsm_get_pin_flags      (NMSettingGsm *setting);
 NMSettingSecretFlags nm_setting_gsm_get_password_flags (NMSettingGsm *setting);
