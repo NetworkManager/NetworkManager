@@ -3314,6 +3314,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	NMSettingWireless *s_wireless;
 	char *value = NULL;
 	gint64 chan = 0;
+	NMSettingMacRandomization mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
@@ -3494,6 +3495,27 @@ make_wireless_setting (shvarFile *ifcfg,
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_POWERSAVE,
 	              svGetValueBoolean (ifcfg, "POWERSAVE", FALSE) ? 1 : 0,
+	              NULL);
+
+	value = svGetValueFull (ifcfg, "MAC_ADDRESS_RANDOMIZATION", FALSE);
+	if (value) {
+		if (strcmp (value, "default") == 0)
+			mac_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
+		else if (strcmp (value, "never") == 0)
+			mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+		else if (strcmp (value, "always") == 0)
+			mac_randomization = NM_SETTING_MAC_RANDOMIZATION_ALWAYS;
+		else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid MAC_ADDRESS_RANDOMIZATION value '%s'", value);
+			goto error;
+		}
+	} else
+		mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+
+	g_object_set (s_wireless,
+	              NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
+	              mac_randomization,
 	              NULL);
 
 	return NM_SETTING (s_wireless);

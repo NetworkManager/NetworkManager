@@ -55,6 +55,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_HIDDEN      "hidden"
 #define NM_SETTING_WIRELESS_POWERSAVE   "powersave"
+#define NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION   "mac-address-randomization"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -120,6 +121,9 @@ guint32           nm_setting_wireless_get_mtu                (NMSettingWireless 
 gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);
 NM_AVAILABLE_IN_1_2
 guint32           nm_setting_wireless_get_powersave          (NMSettingWireless *setting);
+
+NM_AVAILABLE_IN_1_2
+NMSettingMacRandomization nm_setting_wireless_get_mac_address_randomization (NMSettingWireless *setting);
 
 gboolean          nm_setting_wireless_add_seen_bssid         (NMSettingWireless *setting,
                                                               const char *bssid);

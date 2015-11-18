@@ -158,7 +158,11 @@ test_wifi_open (void)
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*added 'freq_list' value *");
-	g_assert (nm_supplicant_config_add_setting_wireless (config, s_wifi, 0));
+	g_assert (nm_supplicant_config_add_setting_wireless (config,
+	                                                     s_wifi,
+	                                                     0,
+	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
@@ -256,7 +260,11 @@ test_wifi_wep_key (const char *detail,
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*added 'freq_list' value *");
-	g_assert (nm_supplicant_config_add_setting_wireless (config, s_wifi, 0));
+	g_assert (nm_supplicant_config_add_setting_wireless (config,
+	                                                     s_wifi,
+	                                                     0,
+	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
@@ -393,7 +401,11 @@ test_wifi_wpa_psk (const char *detail,
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*added 'freq_list' value *");
-	g_assert (nm_supplicant_config_add_setting_wireless (config, s_wifi, 0));
+	g_assert (nm_supplicant_config_add_setting_wireless (config,
+	                                                     s_wifi,
+	                                                     0,
+	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
@@ -532,7 +544,11 @@ test_wifi_eap (void)
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*added 'freq_list' value *");
-	g_assert (nm_supplicant_config_add_setting_wireless (config, s_wifi, 0));
+	g_assert (nm_supplicant_config_add_setting_wireless (config,
+	                                                     s_wifi,
+	                                                     0,
+	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,

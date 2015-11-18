@@ -967,7 +967,7 @@ write_wireless_setting (NMConnection *connection,
 			tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
 			set_secret (ifcfg, tmp, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
 			g_free (tmp);
-	
+
 			tmp = g_strdup_printf ("KEY%d", i + 1);
 			set_secret (ifcfg, tmp, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
 			g_free (tmp);
@@ -988,6 +988,20 @@ write_wireless_setting (NMConnection *connection,
 
 	svSetValue (ifcfg, "SSID_HIDDEN", nm_setting_wireless_get_hidden (s_wireless) ? "yes" : NULL, TRUE);
 	svSetValue (ifcfg, "POWERSAVE", nm_setting_wireless_get_powersave (s_wireless) ? "yes" : NULL, TRUE);
+
+	svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", NULL, TRUE);
+	switch (nm_setting_wireless_get_mac_address_randomization (s_wireless)) {
+	case NM_SETTING_MAC_RANDOMIZATION_DEFAULT:
+		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "default", TRUE);
+		break;
+	case NM_SETTING_MAC_RANDOMIZATION_ALWAYS:
+		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "always", TRUE);
+		break;
+	default:
+	case NM_SETTING_MAC_RANDOMIZATION_NEVER:
+		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "never", TRUE);
+		break;
+	}
 
 	svSetValue (ifcfg, "TYPE", TYPE_WIRELESS, FALSE);
 

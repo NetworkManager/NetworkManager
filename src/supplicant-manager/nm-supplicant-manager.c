@@ -39,11 +39,11 @@ typedef struct {
 	GCancellable *   cancellable;
 	gboolean         running;
 
-	GHashTable *    ifaces;
-	gboolean        fast_supported;
-	ApSupport       ap_support;
-	guint           die_count_reset_id;
-	guint           die_count;
+	GHashTable *      ifaces;
+	gboolean          fast_supported;
+	NMSupplicantFeature ap_support;
+	guint             die_count_reset_id;
+	guint             die_count;
 } NMSupplicantManagerPrivate;
 
 /********************************************************************/
@@ -146,15 +146,15 @@ update_capabilities (NMSupplicantManager *self)
 	 *
 	 * dbus: Add global capabilities property
 	 */
-	priv->ap_support = AP_SUPPORT_UNKNOWN;
+	priv->ap_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
 
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "Capabilities");
 	if (value) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
 			array = g_variant_get_strv (value, NULL);
-			priv->ap_support = AP_SUPPORT_NO;
+			priv->ap_support = NM_SUPPLICANT_FEATURE_NO;
 			if (_nm_utils_string_in_list ("ap", array))
-				priv->ap_support = AP_SUPPORT_YES;
+				priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
 			g_free (array);
 		}
 		g_variant_unref (value);
@@ -166,8 +166,8 @@ update_capabilities (NMSupplicantManager *self)
 		nm_supplicant_interface_set_ap_support (iface, priv->ap_support);
 
 	nm_log_dbg (LOGD_SUPPLICANT, "AP mode is %ssupported",
-	            (priv->ap_support == AP_SUPPORT_YES) ? "" :
-	                (priv->ap_support == AP_SUPPORT_NO) ? "not " : "possibly ");
+	            (priv->ap_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
+	                (priv->ap_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
 
 	/* EAP-FAST */
 	priv->fast_supported = FALSE;

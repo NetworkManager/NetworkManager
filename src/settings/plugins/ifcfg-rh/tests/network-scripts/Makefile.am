@@ -67,6 +67,10 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-band-a \
 	ifcfg-test-wifi-band-a-channel-mismatch \
 	ifcfg-test-wifi-band-bg-channel-mismatch \
+	ifcfg-test-wifi-mac-random-always \
+	ifcfg-test-wifi-mac-random-never \
+	ifcfg-test-wifi-mac-random-default \
+	ifcfg-test-wifi-mac-random-missing \
 	test_ca_cert.pem \
 	test1_key_and_cert.pem \
 	ifcfg-test-ibft \

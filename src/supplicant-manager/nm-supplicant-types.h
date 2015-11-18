@@ -29,4 +29,10 @@ typedef struct _NMSupplicantManager NMSupplicantManager;
 typedef struct _NMSupplicantInterface NMSupplicantInterface;
 typedef struct _NMSupplicantConfig NMSupplicantConfig;
 
+typedef enum {
+	NM_SUPPLICANT_FEATURE_UNKNOWN = 0,  /* Can't detect whether supported or not */
+	NM_SUPPLICANT_FEATURE_NO = 1,       /* Feature definitely not supported */
+	NM_SUPPLICANT_FEATURE_YES = 2,      /* Feature definitely supported */
+} NMSupplicantFeature;
+
 #endif  /* NM_SUPPLICANT_TYPES_H */

@@ -132,6 +132,22 @@ typedef enum {
 
 
 /**
+ * NMSettingMacRandomization:
+ * @NM_SETTING_MAC_RANDOMIZATION_DEFAULT: the default value, which unless
+ * overridden by user-controlled defaults configuration, is "never".
+ * @NM_SETTING_MAC_RANDOMIZATION_NEVER: the device's MAC address is always used.
+ * @NM_SETTING_MAC_RANDOMIZATION_ALWAYS: a random MAC address is used.
+ *
+ * Controls if and how the MAC address of a device is randomzied.
+ **/
+typedef enum {
+	NM_SETTING_MAC_RANDOMIZATION_DEFAULT = 0,
+	NM_SETTING_MAC_RANDOMIZATION_NEVER,
+	NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
+} NMSettingMacRandomization;
+
+
+/**
  * NMSetting:
  *
  * The NMSetting struct contains only private data.
