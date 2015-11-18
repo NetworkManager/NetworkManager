@@ -612,7 +612,7 @@ ipv6.ip6-privacy=1
       </varlistentry>
       <varlistentry>
         <term><varname>wifi.mac-address-randomization</varname></term>
-        <listitem><para>If left unspecified, MAC address randomization is disabled.</para></listitem>
+        <listitem><para>If left unspecified, MAC address randomization is used supported.</para></listitem>
       </varlistentry>
     </para>
   </refsect1>
