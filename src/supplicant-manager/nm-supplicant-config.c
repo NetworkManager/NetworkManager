@@ -465,10 +465,9 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	if (priv->mac_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
 		priv->mac_randomization = mac_randomization_fallback;
 		if (priv->mac_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
-			/* use randomization if supported. */
-			priv->mac_randomization = (mac_randomization_support == NM_SUPPLICANT_FEATURE_YES)
-			                          ? NM_SETTING_MAC_RANDOMIZATION_ALWAYS
-			                          : NM_SETTING_MAC_RANDOMIZATION_NEVER;
+			/* Don't use randomization, unless explicitly enabled.
+			 * Randomization can work badly with captive portals. */
+			priv->mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
 		}
 	}
 
