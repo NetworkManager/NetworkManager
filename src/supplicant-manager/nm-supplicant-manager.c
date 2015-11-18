@@ -26,6 +26,7 @@
 #include "nm-default.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
+#include "nm-supplicant-types.h"
 #include "nm-core-internal.h"
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -45,6 +46,10 @@ typedef struct {
 	guint             die_count_reset_id;
 	guint             die_count;
 } NMSupplicantManagerPrivate;
+
+/********************************************************************/
+
+G_DEFINE_QUARK (nm-supplicant-error-quark, nm_supplicant_error);
 
 /********************************************************************/
 

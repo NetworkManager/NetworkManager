@@ -1250,7 +1250,8 @@ set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 gboolean
 nm_supplicant_interface_set_config (NMSupplicantInterface *self,
-                                    NMSupplicantConfig *cfg)
+                                    NMSupplicantConfig *cfg,
+                                    GError **error)
 {
 	NMSupplicantInterfacePrivate *priv;
 
@@ -1264,7 +1265,8 @@ nm_supplicant_interface_set_config (NMSupplicantInterface *self,
 	 * it an EAP-FAST configuration.
 	 */
 	if (nm_supplicant_config_fast_required (cfg) && !priv->fast_supported) {
-		nm_log_warn (LOGD_SUPPLICANT, "EAP-FAST is not supported by the supplicant");
+		g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
+		             "EAP-FAST is not supported by the supplicant");
 		return FALSE;
 	}
 

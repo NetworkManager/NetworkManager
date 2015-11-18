@@ -2196,7 +2196,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceWifi *self,
                          NMConnection *connection,
-                         guint32 fixed_freq)
+                         guint32 fixed_freq,
+                         GError **error)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSupplicantConfig *config = NULL;
@@ -2212,8 +2213,6 @@ build_supplicant_config (NMDeviceWifi *self,
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
 	config = nm_supplicant_config_new ();
-	if (!config)
-		return NULL;
 
 	/* Warn if AP mode may not be supported */
 	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
@@ -2234,8 +2233,9 @@ build_supplicant_config (NMDeviceWifi *self,
 	                                                s_wireless,
 	                                                fixed_freq,
 	                                                mac_randomization_support,
-	                                                mac_randomization_fallback)) {
-		_LOGE (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
+	                                                mac_randomization_fallback,
+	                                                error)) {
+		g_prefix_error (error, "802-11-wireless: ");
 		goto error;
 	}
 
@@ -2252,13 +2252,14 @@ build_supplicant_config (NMDeviceWifi *self,
 		                                                         s_wireless_sec,
 		                                                         s_8021x,
 		                                                         con_uuid,
-		                                                         mtu)) {
-			_LOGE (LOGD_WIFI, "Couldn't add 802-11-wireless-security setting to supplicant config.");
+		                                                         mtu,
+		                                                         error)) {
+			g_prefix_error (error, "802-11-wireless-security: ");
 			goto error;
 		}
 	} else {
-		if (!nm_supplicant_config_add_no_security (config)) {
-			_LOGE (LOGD_WIFI, "Couldn't add unsecured option to supplicant config.");
+		if (!nm_supplicant_config_add_no_security (config, error)) {
+			g_prefix_error (error, "unsecured-option: ");
 			goto error;
 		}
 	}
@@ -2406,6 +2407,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMConnection *connection;
 	const char *setting_name;
 	NMSettingWireless *s_wireless;
+	GError *error = NULL;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2466,10 +2468,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	/* Build up the supplicant configuration */
-	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap));
+	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap), &error);
 	if (config == NULL) {
 		_LOGE (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) couldn't build wireless configuration.");
+		       "Activation: (wifi) couldn't build wireless configuration: %s",
+		       error ? error->message : "<BUG>");
+		g_clear_error (&error);
 		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
 	}
@@ -2480,9 +2484,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	                  G_CALLBACK (supplicant_iface_connection_error_cb),
 	                  self);
 
-	if (!nm_supplicant_interface_set_config (priv->sup_iface, config)) {
+	if (!nm_supplicant_interface_set_config (priv->sup_iface, config, &error)) {
 		_LOGE (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) couldn't send wireless configuration to the supplicant.");
+		       "Activation: (wifi) couldn't send wireless configuration to the supplicant: %s",
+		       error ? error->message : "<BUG>");
+		g_clear_error (&error);
 		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
 	}

@@ -35,4 +35,18 @@ typedef enum {
 	NM_SUPPLICANT_FEATURE_YES = 2,      /* Feature definitely supported */
 } NMSupplicantFeature;
 
+/**
+ * NMSupplicantError:
+ * @NM_SUPPLICANT_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SUPPLICANT_ERROR_CONFIG: a failure constructing the
+ *   wpa-supplicant configuration.
+ */
+typedef enum {
+	NM_SUPPLICANT_ERROR_UNKNOWN = 0,                    /*< nick=Unknown >*/
+	NM_SUPPLICANT_ERROR_CONFIG = 1,                     /*< nick=Config >*/
+} NMSupplicantError;
+
+#define NM_SUPPLICANT_ERROR (nm_supplicant_error_quark ())
+GQuark nm_supplicant_error_quark (void);
+
 #endif  /* NM_SUPPLICANT_TYPES_H */

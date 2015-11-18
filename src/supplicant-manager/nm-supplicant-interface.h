@@ -126,7 +126,8 @@ void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *se
                                                        gboolean available);
 
 gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
-                                             NMSupplicantConfig * cfg);
+                                             NMSupplicantConfig * cfg,
+                                             GError **error);
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 

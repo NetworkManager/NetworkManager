@@ -162,12 +162,15 @@ test_wifi_open (void)
 	                                                     s_wifi,
 	                                                     0,
 	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                                                     &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*added 'key_mgmt' value 'NONE'");
-	g_assert (nm_supplicant_config_add_no_security (config));
+	g_assert (nm_supplicant_config_add_no_security (config, &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	config_dict = nm_supplicant_config_to_variant (config);
@@ -264,7 +267,9 @@ test_wifi_wep_key (const char *detail,
 	                                                     s_wifi,
 	                                                     0,
 	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                                                     &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
@@ -277,7 +282,9 @@ test_wifi_wep_key (const char *detail,
 	                                                              s_wsec,
 	                                                              NULL,
 	                                                              "376aced7-b28c-46be-9a62-fcdf072571da",
-	                                                              1500));
+	                                                              1500,
+	                                                              &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	config_dict = nm_supplicant_config_to_variant (config);
@@ -405,7 +412,9 @@ test_wifi_wpa_psk (const char *detail,
 	                                                     s_wifi,
 	                                                     0,
 	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                                                     &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
@@ -422,7 +431,9 @@ test_wifi_wpa_psk (const char *detail,
 	                                                              s_wsec,
 	                                                              NULL,
 	                                                              "376aced7-b28c-46be-9a62-fcdf072571da",
-	                                                              1500));
+	                                                              1500,
+	                                                              &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	config_dict = nm_supplicant_config_to_variant (config);
@@ -548,7 +559,9 @@ test_wifi_eap (void)
 	                                                     s_wifi,
 	                                                     0,
 	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
+	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                                                     &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
@@ -575,7 +588,9 @@ test_wifi_eap (void)
 	                                                              s_wsec,
 	                                                              s_8021x,
 	                                                              "d5b488af-9cab-41ed-bad4-97709c58430f",
-	                                                              mtu));
+	                                                              mtu,
+	                                                              &error));
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
 	config_dict = nm_supplicant_config_to_variant (config);

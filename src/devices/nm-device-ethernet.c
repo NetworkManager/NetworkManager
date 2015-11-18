@@ -586,7 +586,8 @@ time_out:
 }
 
 static NMSupplicantConfig *
-build_supplicant_config (NMDeviceEthernet *self)
+build_supplicant_config (NMDeviceEthernet *self,
+                         GError **error)
 {
 	const char *con_uuid;
 	NMSupplicantConfig *config = NULL;
@@ -603,10 +604,9 @@ build_supplicant_config (NMDeviceEthernet *self)
 	config = nm_supplicant_config_new ();
 
 	security = nm_connection_get_setting_802_1x (connection);
-	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, mtu, TRUE)) {
-		_LOGW (LOGD_DEVICE, "Couldn't add 802.1X security setting to supplicant config.");
-		g_object_unref (config);
-		config = NULL;
+	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, mtu, TRUE, error)) {
+		g_prefix_error (error, "802-1x-setting: ");
+		g_clear_object (&config);
 	}
 
 	return config;
@@ -625,6 +625,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	NMSupplicantConfig *config;
 	gboolean success = FALSE;
 	NMDeviceState devstate;
+	GError *error = NULL;
 
 	if (new_state == old_state)
 		return;
@@ -637,18 +638,22 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 
 	switch (new_state) {
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
-		config = build_supplicant_config (self);
+		config = build_supplicant_config (self, &error);
 		if (config) {
-			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config);
+			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config, &error);
 			g_object_unref (config);
 
 			if (!success) {
 				_LOGE (LOGD_DEVICE | LOGD_ETHER,
-				       "Activation: (ethernet) couldn't send security configuration to the supplicant.");
+				       "Activation: (ethernet) couldn't send security configuration to the supplicant: %s",
+				       error ? error->message : "<BUG>");
+				g_clear_error (&error);
 			}
 		} else {
-			_LOGW (LOGD_DEVICE | LOGD_ETHER,
-			       "Activation: (ethernet) couldn't build security configuration.");
+			_LOGE (LOGD_DEVICE | LOGD_ETHER,
+			       "Activation: (ethernet) couldn't build security configuration: %s",
+			       error ? error->message : "<BUG>");
+			g_clear_error (&error);
 		}
 
 		if (!success) {
