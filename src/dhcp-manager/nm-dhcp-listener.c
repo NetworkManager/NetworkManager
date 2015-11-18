@@ -148,6 +148,7 @@ out:
 static void
 new_connection_cb (NMBusManager *mgr,
                    GDBusConnection *connection,
+                   GDBusObjectManager *manager,
                    NMDhcpListener *self)
 {
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (self);

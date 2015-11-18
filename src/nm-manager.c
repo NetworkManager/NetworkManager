@@ -4461,7 +4461,7 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	GDBusMessage *reply = NULL;
 	const char *error_message;
-	NMExportedObject *object;
+	gs_unref_object NMExportedObject *object = NULL;
 	const NMGlobalDnsConfig *global_dns;
 	gs_unref_variant GVariant *value = NULL;
 	GVariant *args;
@@ -4477,8 +4477,8 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	object = nm_bus_manager_get_registered_object (priv->dbus_mgr,
-	                                               g_dbus_message_get_path (pfd->message));
+	object = NM_EXPORTED_OBJECT (nm_bus_manager_get_registered_object (priv->dbus_mgr,
+	                                                                   g_dbus_message_get_path (pfd->message)));
 	if (!object) {
 		reply = g_dbus_message_new_method_error (pfd->message,
 		                                         "org.freedesktop.DBus.Error.UnknownObject",

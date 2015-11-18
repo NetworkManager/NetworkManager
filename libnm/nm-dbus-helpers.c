@@ -43,79 +43,9 @@ _nm_dbus_bus_type (void)
 	return nm_bus;
 }
 
-static struct {
-	GMutex mutex;
-	GWeakRef weak_ref;
-} private_connection;
-
-static void
-_private_dbus_connection_closed_cb (GDBusConnection *connection,
-                                    gboolean         remote_peer_vanished,
-                                    GError          *error,
-                                    gpointer         user_data)
-{
-	GDBusConnection *p;
-
-	g_mutex_lock (&private_connection.mutex);
-	p = g_weak_ref_get (&private_connection.weak_ref);
-	if (connection == p) {
-		g_signal_handlers_disconnect_by_func (G_OBJECT (connection), G_CALLBACK (_private_dbus_connection_closed_cb), NULL);
-		g_weak_ref_set (&private_connection.weak_ref, NULL);
-	}
-	if (p)
-		g_object_unref (p);
-	g_mutex_unlock (&private_connection.mutex);
-}
-
-static GDBusConnection *
-_private_dbus_connection_internalize (GDBusConnection *connection)
-{
-	GDBusConnection *p;
-
-	g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (!g_dbus_connection_is_closed (connection), NULL);
-
-	g_mutex_lock (&private_connection.mutex);
-	p = g_weak_ref_get (&private_connection.weak_ref);
-	if (p) {
-		g_object_unref (connection);
-		connection = p;
-	} else {
-		g_weak_ref_set (&private_connection.weak_ref, connection);
-		g_signal_connect (connection, "closed", G_CALLBACK (_private_dbus_connection_closed_cb), NULL);
-	}
-	g_mutex_unlock (&private_connection.mutex);
-	return connection;
-}
-
 GDBusConnection *
 _nm_dbus_new_connection (GCancellable *cancellable, GError **error)
 {
-	GDBusConnection *connection = NULL;
-
-	/* If running as root try the private bus first */
-	if (0 == geteuid () && !g_test_initialized ()) {
-
-		GError *local = NULL;
-		GDBusConnection *p;
-
-		p = g_weak_ref_get (&private_connection.weak_ref);
-		if (p)
-			return p;
-
-		connection = g_dbus_connection_new_for_address_sync ("unix:path=" NMRUNDIR "/private",
-		                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
-		                                                     NULL, cancellable, &local);
-		if (connection)
-			return _private_dbus_connection_internalize (connection);
-
-		if (g_error_matches (local, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			g_propagate_error (error, local);
-			return NULL;
-		}
-		g_error_free (local);
-	}
-
 	return g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
 }
 
@@ -136,65 +66,6 @@ new_connection_async_got_system (GObject *source, GAsyncResult *result, gpointer
 	g_object_unref (simple);
 }
 
-static void
-new_connection_async_got_private (GObject *source, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GDBusConnection *connection;
-	GError *error = NULL;
-
-	connection = g_dbus_connection_new_for_address_finish (result, &error);
-	if (connection) {
-		connection = _private_dbus_connection_internalize (connection);
-		g_simple_async_result_set_op_res_gpointer (simple, connection, g_object_unref);
-		g_simple_async_result_complete (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	g_clear_error (&error);
-	g_bus_get (_nm_dbus_bus_type (),
-	           g_object_get_data (G_OBJECT (simple), "cancellable"),
-	           new_connection_async_got_system, simple);
-}
-
-static void
-_nm_dbus_new_connection_async_do (GSimpleAsyncResult *simple, GCancellable *cancellable)
-{
-	g_dbus_connection_new_for_address ("unix:path=" NMRUNDIR "/private",
-	                                   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
-	                                   NULL,
-	                                   cancellable,
-	                                   new_connection_async_got_private, simple);
-}
-
-static gboolean
-_nm_dbus_new_connection_async_get_private (gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GDBusConnection *p;
-
-	p = g_weak_ref_get (&private_connection.weak_ref);
-	if (!p) {
-		/* The connection is gone. Create a new one async... */
-		_nm_dbus_new_connection_async_do (simple,
-		                                  g_object_get_data (G_OBJECT (simple), "cancellable"));
-	} else {
-		g_simple_async_result_set_op_res_gpointer (simple, p, g_object_unref);
-		g_simple_async_result_complete (simple);
-		g_object_unref (simple);
-	}
-
-	return G_SOURCE_REMOVE;
-}
-
 void
 _nm_dbus_new_connection_async (GCancellable *cancellable,
                                GAsyncReadyCallback callback,
@@ -204,25 +75,9 @@ _nm_dbus_new_connection_async (GCancellable *cancellable,
 
 	simple = g_simple_async_result_new (NULL, callback, user_data, _nm_dbus_new_connection_async);
 
-	/* If running as root try the private bus first */
-	if (0 == geteuid () && !g_test_initialized ()) {
-		GDBusConnection *p;
-
-		if (cancellable) {
-			g_object_set_data_full (G_OBJECT (simple), "cancellable",
-			                        g_object_ref (cancellable), g_object_unref);
-		}
-		p = g_weak_ref_get (&private_connection.weak_ref);
-		if (p) {
-			g_object_unref (p);
-			g_idle_add (_nm_dbus_new_connection_async_get_private, simple);
-		} else
-			_nm_dbus_new_connection_async_do (simple, cancellable);
-	} else {
-		g_bus_get (_nm_dbus_bus_type (),
-		           cancellable,
-		           new_connection_async_got_system, simple);
-	}
+	g_bus_get (_nm_dbus_bus_type (),
+	           cancellable,
+	           new_connection_async_got_system, simple);
 }
 
 GDBusConnection *
