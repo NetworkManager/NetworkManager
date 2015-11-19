@@ -659,26 +659,34 @@ test_software_detect (gconstpointer user_data)
 	const NMPlatformLink *plink;
 	const NMPObject *lnk;
 	guint i_step;
-	int exit_code;
+	const gint EX = -1;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
 	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	switch (test_data->link_type) {
 	case NM_LINK_TYPE_GRE: {
+		NMPlatformLnkGre lnk_gre = { };
 		gboolean gracefully_skip = FALSE;
+
+		inet_pton (AF_INET, "192.168.233.204", &lnk_gre.local);
+		inet_pton (AF_INET, "172.168.10.25", &lnk_gre.remote);
+		lnk_gre.parent_ifindex = ifindex_parent;
+		lnk_gre.ttl = 174;
+		lnk_gre.tos = 37;
+		lnk_gre.path_mtu_discovery = TRUE;
 
 		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "gre0")) {
 			/* Seems that the ip_gre module is not loaded... try to load it. */
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip_gre", NULL) != 0;
 		}
-		exit_code = nmtstp_run_command ("ip tunnel add %s mode gre remote 172.168.10.25 local 192.168.233.204 ttl 174", DEVICE_NAME);
-		if (exit_code != 0) {
+
+		if (!nmtstp_link_gre_add (EX, DEVICE_NAME, &lnk_gre)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create gre tunnel because of missing ip_gre module (modprobe ip_gre)");
 				goto out_delete_parent;
 			}
-			g_error ("Failed adding GRE tunnel: exit code %d", exit_code);
+			g_error ("Failed adding GRE tunnel");
 		}
 		break;
 	}
@@ -741,7 +749,7 @@ test_software_detect (gconstpointer user_data)
 			const NMPlatformLnkGre *plnk = &lnk->lnk_gre;
 
 			g_assert (plnk == nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL));
-			g_assert_cmpint (plnk->parent_ifindex, ==, 0);
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
 			g_assert_cmpint (plnk->input_flags, ==, 0);
 			g_assert_cmpint (plnk->output_flags, ==, 0);
 			g_assert_cmpint (plnk->input_key, ==, 0);
@@ -749,7 +757,7 @@ test_software_detect (gconstpointer user_data)
 			nmtst_assert_ip4_address (plnk->local, "192.168.233.204");
 			nmtst_assert_ip4_address (plnk->remote, "172.168.10.25");
 			g_assert_cmpint (plnk->ttl, ==, 174);
-			g_assert_cmpint (plnk->tos, ==, 0);
+			g_assert_cmpint (plnk->tos, ==, 37);
 			g_assert_cmpint (plnk->path_mtu_discovery, ==, TRUE);
 			break;
 		}
