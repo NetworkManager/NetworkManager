@@ -240,6 +240,8 @@ libNetworkManager_la_SOURCES = \
 	devices/nm-device.h \
 	devices/nm-lldp-listener.c \
 	devices/nm-lldp-listener.h \
+	devices/nm-arping-manager.c \
+	devices/nm-arping-manager.h \
 	devices/nm-device-ethernet-utils.c \
 	devices/nm-device-ethernet-utils.h \
 	devices/nm-device-factory.c \
