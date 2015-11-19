@@ -58,7 +58,7 @@ typedef struct {
 	const char *signal_prefix;
 } PropertyInfo;
 
-static void reload_complete (NMObject *object);
+static void reload_complete (NMObject *object, gboolean emit_now);
 
 typedef struct {
 	DBusGConnection *connection;
@@ -72,7 +72,7 @@ typedef struct {
 	NMObject *parent;
 	gboolean suppress_property_updates;
 
-	GSList *notify_props;
+	GSList *notify_items;
 	guint32 notify_id;
 	gboolean inited;
 
@@ -112,6 +112,27 @@ nm_object_error_quark (void)
 	if (G_UNLIKELY (!quark))
 		quark = g_quark_from_static_string ("nm-object-error-quark");
 	return quark;
+}
+
+typedef enum {
+	NOTIFY_SIGNAL_PENDING_NONE,
+	NOTIFY_SIGNAL_PENDING_ADDED,
+	NOTIFY_SIGNAL_PENDING_REMOVED,
+	NOTIFY_SIGNAL_PENDING_ADDED_REMOVED,
+} NotifySignalPending;
+
+typedef struct {
+	const char *property;
+	const char *signal_prefix;
+	NotifySignalPending pending;
+	NMObject *changed;
+} NotifyItem;
+
+static void
+notify_item_free (NotifyItem *item)
+{
+	g_clear_object (&item->changed);
+	g_slice_free (NotifyItem, item);
 }
 
 static void
@@ -297,8 +318,8 @@ dispose (GObject *object)
 		priv->notify_id = 0;
 	}
 
-	g_slist_free_full (priv->notify_props, g_free);
-	priv->notify_props = NULL;
+	g_slist_free_full (priv->notify_items, (GDestroyNotify) notify_item_free);
+	priv->notify_items = NULL;
 
 	g_slist_free_full (priv->property_interfaces, g_free);
 	priv->property_interfaces = NULL;
@@ -484,52 +505,155 @@ deferred_notify_cb (gpointer data)
 {
 	NMObject *object = NM_OBJECT (data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMObjectClass *object_class = NM_OBJECT_GET_CLASS (object);
 	GSList *props, *iter;
 
 	priv->notify_id = 0;
 
-	/* Clear priv->notify_props early so that an NMObject subclass that
+	/* Wait until all reloads are done before notifying */
+	if (priv->reload_remaining)
+		return G_SOURCE_REMOVE;
+
+	/* Clear priv->notify_items early so that an NMObject subclass that
 	 * listens to property changes can queue up other property changes
 	 * during the g_object_notify() call separately from the property
 	 * list we're iterating.
 	 */
-	props = g_slist_reverse (priv->notify_props);
-	priv->notify_props = NULL;
+	props = g_slist_reverse (priv->notify_items);
+	priv->notify_items = NULL;
 
 	g_object_ref (object);
+
+	/* Emit property change notifications first */
 	for (iter = props; iter; iter = g_slist_next (iter)) {
-		g_object_notify (G_OBJECT (object), (const char *) iter->data);
-		g_free (iter->data);
+		NotifyItem *item = iter->data;
+
+		if (item->property)
+			g_object_notify (G_OBJECT (object), item->property);
+	}
+
+	/* And added/removed signals second */
+	for (iter = props; iter; iter = g_slist_next (iter)) {
+		NotifyItem *item = iter->data;
+		char buf[50];
+		gint ret = 0;
+
+		switch (item->pending) {
+		case NOTIFY_SIGNAL_PENDING_ADDED:
+			ret = g_snprintf (buf, sizeof (buf), "%s-added", item->signal_prefix);
+			break;
+		case NOTIFY_SIGNAL_PENDING_REMOVED:
+			ret = g_snprintf (buf, sizeof (buf), "%s-removed", item->signal_prefix);
+			break;
+		case NOTIFY_SIGNAL_PENDING_ADDED_REMOVED:
+			// XXX
+			if (object_class->object_creation_failed)
+				object_class->object_creation_failed (object, NULL, g_strdup (nm_object_get_path (item->changed)));
+			break;
+		case NOTIFY_SIGNAL_PENDING_NONE:
+		default:
+			break;
+		}
+		if (ret > 0) {
+			g_assert (ret < sizeof (buf));
+			g_signal_emit_by_name (object, buf, item->changed);
+		}
 	}
 	g_object_unref (object);
 
-	g_slist_free (props);
-	return FALSE;
+	g_slist_free_full (props, (GDestroyNotify) notify_item_free);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_nm_object_defer_notify (NMObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	if (!priv->notify_id)
+		priv->notify_id = g_idle_add_full (G_PRIORITY_LOW, deferred_notify_cb, object, NULL);
+}
+
+static void
+_nm_object_queue_notify_full (NMObject *object,
+                              const char *property,
+                              const char *signal_prefix,
+                              gboolean added,
+                              NMObject *changed)
+{
+	NMObjectPrivate *priv;
+	NotifyItem *item;
+	GSList *iter;
+
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (!signal_prefix != !property);
+	g_return_if_fail (!signal_prefix == !changed);
+
+	priv = NM_OBJECT_GET_PRIVATE (object);
+	_nm_object_defer_notify (object);
+
+	property = g_intern_string (property);
+	signal_prefix = g_intern_string (signal_prefix);
+	for (iter = priv->notify_items; iter; iter = g_slist_next (iter)) {
+		item = iter->data;
+
+		if (property && (property == item->property))
+			return;
+
+		/* Collapse signals for the same object (such as "added->removed") to
+		 * ensure we don't emit signals when their sum should have no effect.
+		 * The "added->removed->removed" sequence requires special handling,
+		 * hence the addition of the ADDED_REMOVED state to ensure that no
+		 * signal is emitted in this case:
+		 *
+		 * Without the ADDED_REMOVED state:
+		 *     NONE          + added   -> ADDED
+		 *     ADDED         + removed -> NONE
+		 *     NONE          + removed -> REMOVED (would emit 'removed' signal)
+		 *
+		 * With the ADDED_REMOVED state:
+		 *     NONE | ADDED_REMOVED  + added   -> ADDED
+		 *     ADDED                 + removed -> ADDED_REMOVED
+		 *     ADDED_REMOVED         + removed -> ADDED_REMOVED (emits no signal)
+		 */
+		if (signal_prefix && (changed == item->changed) && (item->signal_prefix == signal_prefix)) {
+			switch (item->pending) {
+			case NOTIFY_SIGNAL_PENDING_ADDED:
+				if (!added)
+					item->pending = NOTIFY_SIGNAL_PENDING_ADDED_REMOVED;
+				break;
+			case NOTIFY_SIGNAL_PENDING_REMOVED:
+				if (added)
+					item->pending = NOTIFY_SIGNAL_PENDING_NONE;
+				break;
+			case NOTIFY_SIGNAL_PENDING_ADDED_REMOVED:
+				if (added)
+					item->pending = NOTIFY_SIGNAL_PENDING_ADDED;
+				break;
+			case NOTIFY_SIGNAL_PENDING_NONE:
+				item->pending = added ? NOTIFY_SIGNAL_PENDING_ADDED : NOTIFY_SIGNAL_PENDING_REMOVED;
+				break;
+			default:
+				g_assert_not_reached ();
+			}
+			return;
+		}
+	}
+
+	item = g_slice_new0 (NotifyItem);
+	item->property = property;
+	if (signal_prefix) {
+		item->signal_prefix = signal_prefix;
+		item->pending = added ? NOTIFY_SIGNAL_PENDING_ADDED : NOTIFY_SIGNAL_PENDING_REMOVED;
+		item->changed = changed ? g_object_ref (changed) : NULL;
+	}
+	priv->notify_items = g_slist_prepend (priv->notify_items, item);
 }
 
 void
 _nm_object_queue_notify (NMObject *object, const char *property)
 {
-	NMObjectPrivate *priv;
-	gboolean found = FALSE;
-	GSList *iter;
-
-	g_return_if_fail (NM_IS_OBJECT (object));
-	g_return_if_fail (property != NULL);
-
-	priv = NM_OBJECT_GET_PRIVATE (object);
-	if (!priv->notify_id)
-		priv->notify_id = g_idle_add_full (G_PRIORITY_LOW, deferred_notify_cb, object, NULL);
-
-	for (iter = priv->notify_props; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((char *) iter->data, property)) {
-			found = TRUE;
-			break;
-		}
-	}
-
-	if (!found)
-		priv->notify_props = g_slist_prepend (priv->notify_props, g_strdup (property));
+	_nm_object_queue_notify_full (object, property, NULL, FALSE, NULL);
 }
 
 void
@@ -759,17 +883,12 @@ array_diff (GPtrArray *needles, GPtrArray *haystack, GPtrArray *diff)
 }
 
 static void
-emit_added_removed_signal (NMObject *self,
-                           const char *signal_prefix,
-                           NMObject *changed,
-                           gboolean added)
+queue_added_removed_signal (NMObject *self,
+                            const char *signal_prefix,
+                            NMObject *changed,
+                            gboolean added)
 {
-	char buf[50];
-	int ret;
-
-	ret = g_snprintf (buf, sizeof (buf), "%s-%s", signal_prefix, added ? "added" : "removed");
-	g_assert (ret < sizeof (buf));
-	g_signal_emit_by_name (self, buf, changed);
+	_nm_object_queue_notify_full (self, NULL, signal_prefix, added, changed);
 }
 
 static void
@@ -809,17 +928,17 @@ object_property_complete (ObjectCreatedData *odata)
 
 			/* Emit added & removed */
 			for (i = 0; i < removed->len; i++) {
-				emit_added_removed_signal (self,
-				                           pi->signal_prefix,
-				                           g_ptr_array_index (removed, i),
-				                           FALSE);
+				queue_added_removed_signal (self,
+				                            pi->signal_prefix,
+				                            g_ptr_array_index (removed, i),
+				                            FALSE);
 			}
 
 			for (i = 0; i < added->len; i++) {
-				emit_added_removed_signal (self,
-				                           pi->signal_prefix,
-				                           g_ptr_array_index (added, i),
-				                           TRUE);
+				queue_added_removed_signal (self,
+				                            pi->signal_prefix,
+				                            g_ptr_array_index (added, i),
+				                            TRUE);
 			}
 
 			different = removed->len || added->len;
@@ -850,8 +969,8 @@ object_property_complete (ObjectCreatedData *odata)
 	if (different && odata->property_name)
 		_nm_object_queue_notify (self, odata->property_name);
 
-	if (priv->reload_results && --priv->reload_remaining == 0)
-		reload_complete (self);
+	if (--priv->reload_remaining == 0)
+		reload_complete (self, FALSE);
 
 	g_object_unref (self);
 	g_free (odata->objects);
@@ -898,8 +1017,7 @@ handle_object_property (NMObject *self, const char *property_name, GValue *value
 	odata->array = FALSE;
 	odata->property_name = property_name;
 
-	if (priv->reload_results)
-		priv->reload_remaining++;
+	priv->reload_remaining++;
 
 	path = g_value_get_boxed (value);
 
@@ -946,8 +1064,7 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 	odata->array = TRUE;
 	odata->property_name = property_name;
 
-	if (priv->reload_results)
-		priv->reload_remaining++;
+	priv->reload_remaining++;
 
 	if (paths->len == 0) {
 		object_property_complete (odata);
@@ -1214,6 +1331,8 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 	if (!priv->property_interfaces || !priv->nm_running)
 		return TRUE;
 
+	priv->reload_remaining++;
+
 	for (p = priv->property_interfaces; p; p = p->next) {
 		if (!dbus_g_proxy_call (priv->properties_proxy, "GetAll", error,
 		                        G_TYPE_STRING, p->data,
@@ -1225,6 +1344,9 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 		process_properties_changed (object, props, TRUE);
 		g_hash_table_destroy (props);
 	}
+
+	if (--priv->reload_remaining == 0)
+		reload_complete (object, TRUE);
 
 	return TRUE;
 }
@@ -1322,12 +1444,21 @@ _nm_object_set_property (NMObject *object,
 }
 
 static void
-reload_complete (NMObject *object)
+reload_complete (NMObject *object, gboolean emit_now)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GSimpleAsyncResult *simple;
 	GSList *results, *iter;
 	GError *error;
+
+	if (emit_now) {
+		if (priv->notify_id) {
+			g_source_remove (priv->notify_id);
+			priv->notify_id = 0;
+		}
+		deferred_notify_cb (object);
+	} else
+		_nm_object_defer_notify (object);
 
 	results = priv->reload_results;
 	priv->reload_results = NULL;
@@ -1371,7 +1502,7 @@ reload_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
 	}
 
 	if (--priv->reload_remaining == 0)
-		reload_complete (object);
+		reload_complete (object, FALSE);
 }
 
 void
