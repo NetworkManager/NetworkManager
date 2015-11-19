@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2013 - 2014 Red Hat, Inc.
+ * Copyright 2013 - 2015 Red Hat, Inc.
  */
 
 #ifndef __NM_SECRET_AGENT_SIMPLE_H__
@@ -43,6 +43,7 @@ typedef struct {
 
 typedef struct {
 	char *name, *prop_name, *value;
+	char *vpn_property;
 	gboolean password;
 } NMSecretAgentSimpleSecret;
 
