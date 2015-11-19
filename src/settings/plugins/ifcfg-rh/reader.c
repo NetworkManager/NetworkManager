@@ -3510,6 +3510,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			             "Invalid MAC_ADDRESS_RANDOMIZATION value '%s'", value);
 			goto error;
 		}
+		g_free (value);
 	} else
 		mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
 
