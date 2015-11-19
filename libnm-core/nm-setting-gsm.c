@@ -449,6 +449,9 @@ finalize (GObject *object)
 	g_free (priv->apn);
 	g_free (priv->network_id);
 	g_free (priv->pin);
+	g_free (priv->device_id);
+	g_free (priv->sim_id);
+	g_free (priv->sim_operator_id);
 
 	G_OBJECT_CLASS (nm_setting_gsm_parent_class)->finalize (object);
 }
