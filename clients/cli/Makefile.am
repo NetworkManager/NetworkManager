@@ -1,3 +1,5 @@
+if BUILD_NMCLI
+
 bin_PROGRAMS = \
 	nmcli
 
@@ -71,3 +73,5 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(completiondir)/nmcli
 
 EXTRA_DIST += nmcli-completion
+
+endif

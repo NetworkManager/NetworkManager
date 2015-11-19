@@ -531,9 +531,6 @@ PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8)
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
 
-dnl Checks for readline library - used by nmcli
-AX_LIB_READLINE
-
 # Teamd control checks
 PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl >= 1.9], [have_teamdctl=yes],[have_teamdctl=no])
 AC_ARG_ENABLE(teamdctl, AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
@@ -860,6 +857,15 @@ AM_CONDITIONAL(WITH_CONCHECK, test "${enable_concheck}" = "yes")
 
 PKG_CHECK_MODULES(LIBNDP, [libndp])
 
+AC_ARG_WITH(nmcli, AS_HELP_STRING([--with-nmcli=yes|no], [Build nmcli]))
+if test "$with_nmcli" != no; then
+    AX_LIB_READLINE
+    build_nmcli=yes
+else
+    build_nmcli=no
+fi
+AM_CONDITIONAL(BUILD_NMCLI, test "$build_nmcli" = yes)
+
 AC_ARG_WITH(nmtui, AS_HELP_STRING([--with-nmtui=yes|no], [Build nmtui]))
 if test "$with_nmtui" != no; then
     PKG_CHECK_MODULES(NEWT, [libnewt >= 0.52.15], [build_nmtui=yes], [build_nmtui=no])
@@ -1145,6 +1151,7 @@ echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
 echo "  libteamdctl: $enable_teamdctl"
 echo "  libnm-glib: $with_libnm_glib"
+echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
 echo
 
