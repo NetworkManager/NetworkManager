@@ -700,6 +700,36 @@ nmtstp_link_gre_add (gboolean external_command, const char *name, NMPlatformLnkG
 	return success;
 }
 
+gboolean
+nmtstp_link_sit_add (gboolean external_command, const char *name, NMPlatformLnkSit *lnk)
+{
+	gboolean success;
+	char buffer[INET_ADDRSTRLEN];
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		gs_free char *dev = NULL;
+
+		if (lnk->parent_ifindex)
+			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (NM_PLATFORM_GET, lnk->parent_ifindex));
+
+		success = !nmtstp_run_command ("ip tunnel add %s mode sit %s local %s remote %s ttl %u tos %02x %s",
+		                                name,
+		                                dev,
+		                                nm_utils_inet4_ntop (lnk->local, NULL),
+		                                nm_utils_inet4_ntop (lnk->remote, buffer),
+		                                lnk->ttl,
+		                                lnk->tos,
+		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
+		if (success)
+			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_SIT, 100);
+	} else
+		success = nm_platform_link_sit_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+
+	return success;
+}
+
 void
 nmtstp_ip4_address_add (gboolean external_command,
                         int ifindex,

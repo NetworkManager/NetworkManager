@@ -138,6 +138,9 @@ void nmtstp_link_set_updown (gboolean external_command,
 gboolean nmtstp_link_gre_add (gboolean external_command,
                               const char *name,
                               NMPlatformLnkGre *lnk);
+gboolean nmtstp_link_sit_add (gboolean external_command,
+                              const char *name,
+                              NMPlatformLnkSit *lnk);
 
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);

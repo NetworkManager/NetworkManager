@@ -693,6 +693,31 @@ test_software_detect (gconstpointer user_data)
 	case NM_LINK_TYPE_MACVLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type macvlan", DEVICE_NAME, PARENT_NAME);
 		break;
+	case NM_LINK_TYPE_SIT: {
+		NMPlatformLnkSit lnk_sit = { };
+		gboolean gracefully_skip = FALSE;
+
+		inet_pton (AF_INET, "192.168.200.1", &lnk_sit.local);
+		inet_pton (AF_INET, "172.25.100.14", &lnk_sit.remote);
+		lnk_sit.parent_ifindex = ifindex_parent;
+		lnk_sit.ttl = 0;
+		lnk_sit.tos = 31;
+		lnk_sit.path_mtu_discovery = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "sit0")) {
+			/* Seems that the sit module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "sit", NULL) != 0;
+		}
+
+		if (!nmtstp_link_sit_add (EX, DEVICE_NAME, &lnk_sit)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create sit tunnel because of missing sit module (modprobe sit)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding SIT tunnel");
+		}
+		break;
+	}
 	case NM_LINK_TYPE_VLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1242", DEVICE_NAME, PARENT_NAME);
 		break;
@@ -767,6 +792,18 @@ test_software_detect (gconstpointer user_data)
 			g_assert (plnk == nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->no_promisc, ==, FALSE);
 			g_assert_cmpstr (plnk->mode, ==, "vepa");
+			break;
+		}
+		case NM_LINK_TYPE_SIT: {
+			const NMPlatformLnkSit *plnk = &lnk->lnk_sit;
+
+			g_assert (plnk == nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip4_address (plnk->local, "192.168.200.1");
+			nmtst_assert_ip4_address (plnk->remote, "172.25.100.14");
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->tos, ==, 31);
+			g_assert_cmpint (plnk->path_mtu_discovery, ==, FALSE);
 			break;
 		}
 		case NM_LINK_TYPE_VLAN: {
@@ -1588,6 +1625,7 @@ setup_tests (void)
 
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
+		test_software_detect_add ("/link/software/detect/sit", NM_LINK_TYPE_SIT, 0);
 		test_software_detect_add ("/link/software/detect/vlan", NM_LINK_TYPE_VLAN, 0);
 		test_software_detect_add ("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
 		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
