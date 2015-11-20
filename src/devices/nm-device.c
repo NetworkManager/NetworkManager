@@ -8081,15 +8081,22 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 	priv->default_route.v4_has = FALSE;
-	priv->default_route.v4_is_assumed = TRUE;
 	priv->default_route.v6_has = FALSE;
+
+	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
+		priv->default_route.v4_is_assumed = FALSE;
+		priv->default_route.v6_is_assumed = FALSE;
+		nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
+		nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
+	}
+
+	priv->default_route.v4_is_assumed = TRUE;
 	priv->default_route.v6_is_assumed = TRUE;
+	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
+	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
 
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
-
-	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
-	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
 
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface; the caller must flush routes and addresses explicitly.
