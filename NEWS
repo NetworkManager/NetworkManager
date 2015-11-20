@@ -1,4 +1,74 @@
 ===============================================
+NetworkManager-1.0.8
+Overview of changes since NetworkManager-1.0.6
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* MTU indicated by a VPN gateway is now properly applied.
+
+* Fixed MSS setting when MTU changes.
+
+* The default route is properly restored on device disconnect.
+
+* Build with older toolchains has been fixed.
+
+* The team devices can now properly be enslaved to bridges.
+
+* Failed DHCP attempts for assumed connections are now retried after
+  a timeout.
+
+* Default wired connection is now created after udev registers the device.
+
+* Support for Bluetooth DUN devices with Bluez 5 has been fixed.
+
+* The ipv6.ignore-auto-dns property is now properly honored making it
+  possible to override automatically obtained name servers.
+
+* Invalid permanent MAC adddresses as reported by some devices are now
+  ignored.
+
+* Device links reported by more recent versions of Linux kernel that reside
+  in different network namespaces are no longer confused with links in
+  the namespace NetworkManager runs in.
+
+* MAC address changes of VLANs enslaved to a bond are now properly
+  propagated to the master device.
+
+* Fixed error handling for teaming devices with invalid configuration.
+
+* Wi-Fi AP list is now updated correctly after AP mode has been used.
+
+* Management of a device is not attempted until the device has been
+  registered with udev.
+
+* The error handling for VPN secret agents is now significantly more robust.
+
+* Detection of s390 CTC devices now works properly.
+
+* A GATEWAY property in /etc/sysconfig/network now no longer affects
+  non-static connections.
+
+* Added support for IPv6-only VPN connections.
+
+* The systemd service now uses HUP signal to reload configuration.
+
+* Change VLAN default flags to set REORDER_HDR for new connections.
+
+* nmtui is now able to ignore automatically configured routes.
+
+* Numerous bash shell autocompletion fixes for nmcli.
+
+* Allow setting IPv6 and PPP settings for GDM and CDMA connections via
+  nmcli.
+
+* Added support for adding ADSL connections in nmcli.
+
+* Numerous crash fixes.
+
+* Updates to Swedish, Italian and Polish translations.
+
+===============================================
 NetworkManager-1.0.6
 Overview of changes since NetworkManager-1.0.4
 ===============================================
