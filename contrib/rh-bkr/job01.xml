@@ -32,7 +32,7 @@ sed -i -e 's/^ *\(Storage\|SystemMaxUse\|RateLimitBurst\|RateLimitInterval\)=.*/
 	/etc/systemd/journald.conf ;
 
 mkdir -p /etc/NetworkManager/conf.d/
-cat >/etc/NetworkManager/conf.d/99-test.conf <<EOF
+cat >/etc/NetworkManager/conf.d/85-beaker-test-setup.conf <<EOF
 [main]
 debug=$CONF_DEBUG
 dhcp=$CONF_DHCP
