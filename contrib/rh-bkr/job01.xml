@@ -77,7 +77,6 @@ if [[ -n "$BUILD_ID" ]]; then
             --enable-compile-warnings=yes\
             --with-valgrind=no \
             --enable-concheck \
-            --enable-wimax \
             --enable-ifcfg-rh \
             --enable-ifcfg-suse \
             --enable-ifupdown \
