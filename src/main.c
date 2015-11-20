@@ -64,6 +64,7 @@ static gboolean configure_and_quit = FALSE;
 
 static struct {
 	gboolean show_version;
+	gboolean print_config;
 	gboolean become_daemon;
 	gboolean g_fatal_warnings;
 	gboolean run_from_build_dir;
@@ -211,6 +212,28 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 	configure_and_quit = TRUE;
 }
 
+static int
+print_config (NMConfigCmdLineOptions *config_cli)
+{
+	gs_unref_object NMConfig *config = NULL;
+	gs_free_error GError *error = NULL;
+	NMConfigData *config_data;
+
+	nm_logging_setup ("OFF", "ALL", NULL, NULL);
+
+	config = nm_config_new (config_cli, NULL, &error);
+	if (config == NULL) {
+		fprintf (stderr, _("Failed to read configuration: %s\n"),
+		         (error && error->message) ? error->message : _("unknown"));
+		return 7;
+	}
+
+	config_data = nm_config_get_data (config);
+	fprintf (stdout, "# NetworkManager configuration: %s\n", nm_config_data_get_config_description (config_data));
+	nm_config_data_log (config_data, "", "", stdout);
+	return 0;
+}
+
 static void
 do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 {
@@ -225,6 +248,7 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_(NM_DEFAULT_PID_FILE) },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_(NM_DEFAULT_SYSTEM_STATE_FILE) },
 		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
+		{ "print-config", 0, 0, G_OPTION_ARG_NONE, &global_opt.print_config, N_("Print NetworkManager configuration and exit"), NULL },
 		{NULL}
 	};
 
@@ -277,6 +301,14 @@ main (int argc, char *argv[])
 	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
 		exit (0);
+	}
+
+	if (global_opt.print_config) {
+		int result;
+
+		result = print_config (config_cli);
+		nm_config_cmd_line_options_free (config_cli);
+		exit (result);
 	}
 
 	nm_main_utils_ensure_root ();
@@ -397,7 +429,7 @@ main (int argc, char *argv[])
 	g_clear_error (&error);
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
-	nm_config_data_log (nm_config_get_data (config), "CONFIG: ");
+	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
 	             "enabled"
