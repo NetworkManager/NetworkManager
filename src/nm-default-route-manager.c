@@ -78,27 +78,51 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
         const NMLogDomain __domain = __addr_family == AF_INET ? LOGD_IP4 : (__addr_family == AF_INET6 ? LOGD_IP6 : LOGD_IP); \
         \
         if (nm_logging_enabled (__level, __domain)) { \
-            char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
-            char __prefix[30] = _NMLOG_PREFIX_NAME; \
+            char __prefix_buf[100]; \
             \
-            if ((self) != singleton_instance) \
-                g_snprintf (__prefix, sizeof (__prefix), ""_NMLOG_PREFIX_NAME"%c[%p]", __ch, (self)); \
-            else \
-                __prefix[STRLEN (_NMLOG_PREFIX_NAME)] = __ch; \
             _nm_log (__level, __domain, 0, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+                     self != singleton_instance \
+                        ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \
+                                          _NMLOG2_PREFIX_NAME, \
+                                          __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'), \
+                                          self) \
+                        : _NMLOG2_PREFIX_NAME \
+                     _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
 
-#define LOG_ENTRY_FMT  "entry[%u/%s:%p:%s:%c:%csync]"
-#define LOG_ENTRY_ARGS(entry_idx, entry) \
-		(entry_idx), \
-		NM_IS_DEVICE ((entry)->source.pointer) ? "dev" : "vpn", \
-		(entry)->source.pointer, \
-		NM_IS_DEVICE ((entry)->source.pointer) ? nm_device_get_iface ((entry)->source.device) : nm_active_connection_get_settings_connection_id (NM_ACTIVE_CONNECTION ((entry)->source.vpn)), \
-		((entry)->never_default ? '0' : '1'), \
-		((entry)->synced ? '+' : '-')
+#define _NMLOG2_PREFIX_NAME   _NMLOG_PREFIX_NAME
+#undef  _NMLOG2_ENABLED
+#define _NMLOG2_ENABLED       _NMLOG_ENABLED
+#define _NMLOG2(level, vtable, entry_idx, entry, ...) \
+    G_STMT_START { \
+        const int __addr_family = (vtable)->vt->addr_family; \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = __addr_family == AF_INET ? LOGD_IP4 : (__addr_family == AF_INET6 ? LOGD_IP6 : LOGD_IP); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            char __prefix_buf[100]; \
+            guint __entry_idx = (entry_idx); \
+            const Entry *const __entry = (entry); \
+            \
+            _nm_log (__level, __domain, 0, \
+                     "%s: entry[%u/%s:%p:%s:%c:%csync]: "_NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     self != singleton_instance \
+                        ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \
+                                          _NMLOG2_PREFIX_NAME, \
+                                          __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'), \
+                                          self) \
+                        : _NMLOG2_PREFIX_NAME, \
+                     __entry_idx, \
+                     NM_IS_DEVICE (__entry->source.pointer) ? "dev" : "vpn", \
+                     __entry->source.pointer, \
+                     NM_IS_DEVICE (__entry->source.pointer) ? nm_device_get_iface (__entry->source.device) : nm_active_connection_get_settings_connection_id (NM_ACTIVE_CONNECTION (__entry->source.vpn)), \
+                     (__entry->never_default ? '0' : '1'), \
+                     (__entry->synced ? '+' : '-') \
+                     _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
 
 /***********************************************************************************/
 
@@ -552,25 +576,25 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			 * or none. Hence, we only have to remember what is going to change. */
 			g_array_append_val (changed_metrics, expected_metric);
 			if (old_entry) {
-				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:update %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
-				       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) old_entry->effective_metric,
-				       (guint) expected_metric);
+				_LOG2D (vtable, i, entry, "sync:update %s (%u -> %u)",
+				        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) old_entry->effective_metric,
+				        (guint) expected_metric);
 			} else {
-				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:add    %s (%u)", LOG_ENTRY_ARGS (i, entry),
-				       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) expected_metric);
+				_LOG2D (vtable, i, entry, "sync:add    %s (%u)",
+				        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) expected_metric);
 			}
 		} else if (entry->effective_metric != expected_metric) {
 			g_array_append_val (changed_metrics, entry->effective_metric);
 			g_array_append_val (changed_metrics, expected_metric);
-			_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:metric %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
-			       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric,
-			       (guint) expected_metric);
+			_LOG2D (vtable, i, entry, "sync:metric %s (%u -> %u)",
+			        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric,
+			        (guint) expected_metric);
 		} else {
 			if (!_vt_routes_has_entry (vtable, routes, entry)) {
 				g_array_append_val (changed_metrics, entry->effective_metric);
-				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": sync:re-add %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
-				       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric,
-				       (guint) entry->effective_metric);
+				_LOG2D (vtable, i, entry, "sync:re-add %s (%u -> %u)",
+				        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric,
+				        (guint) entry->effective_metric);
 			}
 		}
 
@@ -633,11 +657,10 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	if (!entry->synced && !entry->never_default)
 		entry->effective_metric = entry->route.rx.metric;
 
-	_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": %s %s (%"G_GUINT32_FORMAT")",
-	       LOG_ENTRY_ARGS (entry_idx, entry),
-	       old_entry ? "record:update" : "record:add   ",
-	       vtable->vt->route_to_string (&entry->route, NULL, 0),
-	       entry->effective_metric);
+	_LOG2D (vtable, entry_idx, entry, "%s %s (%"G_GUINT32_FORMAT")",
+	        old_entry ? "record:update" : "record:add   ",
+	        vtable->vt->route_to_string (&entry->route, NULL, 0),
+	        entry->effective_metric);
 
 	g_ptr_array_sort_with_data (entries, _sort_entries_cmp, NULL);
 
@@ -657,7 +680,7 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 
 	entry = g_ptr_array_index (entries, entry_idx);
 
-	_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": record:remove %s (%u)", LOG_ENTRY_ARGS (entry_idx, entry),
+	_LOG2D (vtable, entry_idx, entry, "record:remove %s (%u)",
 	       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric);
 
 	/* Remove the entry from the list (but don't free it yet) */
@@ -718,9 +741,8 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	if (   entry
 	    && entry->route.rx.ifindex != ip_ifindex) {
 		/* Strange... the ifindex changed... Remove the device and start again. */
-		_LOGD (vtable->vt->addr_family, "ifindex of "LOG_ENTRY_FMT" changed: %d -> %d",
-		       LOG_ENTRY_ARGS (entry_idx, entry),
-		       entry->route.rx.ifindex, ip_ifindex);
+		_LOG2D (vtable, entry_idx, entry, "ifindex changed: %d -> %d",
+		        entry->route.rx.ifindex, ip_ifindex);
 
 		g_object_freeze_notify (G_OBJECT (self));
 		_entry_at_idx_remove (vtable, self, entry_idx);
