@@ -149,7 +149,7 @@ typedef struct {
 	NMPlatformLink _public;
 
 	struct {
-		guint8 is_in_netlink;
+		bool is_in_netlink;
 
 		/* Additional data that depends on the link-type (IFLA_INFO_DATA) */
 		NMPObject *lnk;
@@ -204,7 +204,7 @@ typedef struct {
 struct _NMPObject {
 	const NMPClass *_class;
 	int _ref_count;
-	guint8 is_cached;
+	bool is_cached;
 	union {
 		NMPlatformObject        object;
 
