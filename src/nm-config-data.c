@@ -292,22 +292,34 @@ _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 }
 
 void
-nm_config_data_log (const NMConfigData *self, const char *prefix)
+nm_config_data_log (const NMConfigData *self,
+                    const char *prefix,
+                    const char *key_prefix,
+                    /* FILE* */ gpointer print_stream)
 {
 	NMConfigDataPrivate *priv;
 	gs_strfreev char **groups = NULL;
 	gsize ngroups;
 	guint g, k;
+	FILE *stream = print_stream;
 
 	g_return_if_fail (NM_IS_CONFIG_DATA (self));
 
-	if (!nm_logging_enabled (LOGL_DEBUG, LOGD_CORE))
+	if (!stream && !nm_logging_enabled (LOGL_DEBUG, LOGD_CORE))
 		return;
 
 	if (!prefix)
 		prefix = "";
+	if (!key_prefix)
+		key_prefix = "";
 
-#define _LOG(...) _nm_log (LOGL_DEBUG, LOGD_CORE, 0, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__), prefix _NM_UTILS_MACRO_REST (__VA_ARGS__))
+#define _LOG(stream, prefix, ...) \
+	G_STMT_START { \
+		if (!stream) \
+			_nm_log (LOGL_DEBUG, LOGD_CORE, 0, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__)"%s", prefix _NM_UTILS_MACRO_REST (__VA_ARGS__), ""); \
+		else \
+			fprintf (stream, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__)"%s", prefix _NM_UTILS_MACRO_REST (__VA_ARGS__), "\n"); \
+	} G_STMT_END
 
 	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
 
@@ -322,14 +334,15 @@ nm_config_data_log (const NMConfigData *self, const char *prefix)
 		                   NULL);
 	}
 
-	_LOG ("config-data[%p]: %lu groups", self, (unsigned long) ngroups);
+	if (!stream)
+		_LOG (stream, prefix, "config-data[%p]: %lu groups", self, (unsigned long) ngroups);
 
 	for (g = 0; g < ngroups; g++) {
 		const char *group = groups[g];
 		gs_strfreev char **keys = NULL;
 
-		_LOG ("");
-		_LOG ("[%s]", group);
+		_LOG (stream, prefix, "");
+		_LOG (stream, prefix, "[%s]", group);
 
 		keys = g_key_file_get_keys (priv->keyfile, group, NULL, NULL);
 		for (k = 0; keys && keys[k]; k++) {
@@ -337,7 +350,7 @@ nm_config_data_log (const NMConfigData *self, const char *prefix)
 			gs_free char *value = NULL;
 
 			value = g_key_file_get_value (priv->keyfile, group, key, NULL);
-			_LOG ("  %s=%s", key, value);
+			_LOG (stream, prefix, "%s%s=%s", key_prefix, key, value);
 		}
 	}
 

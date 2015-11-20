@@ -380,7 +380,7 @@ test_config_confdir (void)
 	g_assert_cmpstr (value, ==, "VAL5");
 	g_free (value);
 
-	nm_config_data_log (nm_config_get_data_orig (config), ">>> TEST: ");
+	nm_config_data_log (nm_config_get_data_orig (config), ">>> TEST: ", " ", NULL);
 
 	g_object_unref (config);
 }
