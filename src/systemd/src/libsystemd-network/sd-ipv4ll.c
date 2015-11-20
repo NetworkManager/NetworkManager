@@ -211,8 +211,10 @@ int sd_ipv4ll_set_address_seed(sd_ipv4ll *ll, unsigned seed) {
                 return -ENOMEM;
 
         random_data_state = new0(char, 128);
-        if (!random_data_state)
+        if (!random_data_state) {
+        	free(random_data);
                 return -ENOMEM;
+	}
 
         r = initstate_r(seed, random_data_state, 128, random_data);
         if (r < 0)
