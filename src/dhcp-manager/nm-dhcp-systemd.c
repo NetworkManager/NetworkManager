@@ -691,6 +691,7 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
+           const struct in6_addr *ll_addr,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)

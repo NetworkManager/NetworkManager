@@ -4660,6 +4660,9 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	GByteArray *tmp = NULL;
 	const guint8 *hw_addr;
 	size_t hw_addr_len = 0;
+	const struct in6_addr *ll_addr = NULL;
+	NMIP6Config *ip6_config;
+	int i;
 
 	g_assert (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -4671,10 +4674,22 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
+	ip6_config = priv->ext_ip6_config;
+	for (i = 0; ip6_config && i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
+		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+			ll_addr = &addr->address;
+			break;
+		}
+	}
+	g_return_val_if_fail (ll_addr, FALSE);
+
 	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
 	                                                nm_device_get_ip_iface (self),
 	                                                nm_device_get_ip_ifindex (self),
 	                                                tmp,
+	                                                ll_addr,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_ip6_route_metric (self),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),

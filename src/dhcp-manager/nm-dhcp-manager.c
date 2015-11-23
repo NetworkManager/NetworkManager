@@ -216,6 +216,7 @@ client_start (NMDhcpManager *self,
               const char *uuid,
               guint32 priority,
               gboolean ipv6,
+              const struct in6_addr *ipv6_ll_addr,
               const char *dhcp_client_id,
               guint32 timeout,
               const char *dhcp_anycast_addr,
@@ -261,7 +262,7 @@ client_start (NMDhcpManager *self,
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only, privacy);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, info_only, privacy);
 	else
 		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, last_ip4_address);
 
@@ -303,7 +304,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 
 	if (send_hostname)
 		hostname = get_send_hostname (self, dhcp_hostname);
-	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE,
+	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE, NULL,
 	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
 	                     FALSE, 0, last_ip_address);
 }
@@ -314,6 +315,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            const char *iface,
                            int ifindex,
                            const GByteArray *hwaddr,
+                           const struct in6_addr *ll_addr,
                            const char *uuid,
                            guint32 priority,
                            gboolean send_hostname,
@@ -330,7 +332,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 	if (send_hostname)
 		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
-	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only,
+	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, info_only,
 	                     privacy, NULL);
 }
 

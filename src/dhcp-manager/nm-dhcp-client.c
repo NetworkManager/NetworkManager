@@ -545,6 +545,7 @@ get_duid (NMDhcpClient *self)
 gboolean
 nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           const char *dhcp_anycast_addr,
+                          const struct in6_addr *ll_addr,
                           const char *hostname,
                           gboolean info_only,
                           NMSettingIP6ConfigPrivacy privacy)
@@ -581,6 +582,7 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
+	                                                   ll_addr,
 	                                                   info_only,
 	                                                   privacy,
 	                                                   priv->duid);
