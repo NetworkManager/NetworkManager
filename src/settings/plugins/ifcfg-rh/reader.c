@@ -1021,8 +1021,17 @@ make_ip4_setting (shvarFile *ifcfg,
 	/* Handle DHCP settings */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
-		if (value && strlen (value))
+		if (value && *value)
 			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
+		g_free (value);
+
+		value = svGetValue (ifcfg, "DHCP_FQDN", FALSE);
+		if (value && *value) {
+			g_object_set (s_ip4,
+			              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, NULL,
+			              NM_SETTING_IP4_CONFIG_DHCP_FQDN, value,
+			              NULL);
+		}
 		g_free (value);
 
 		g_object_set (s_ip4,

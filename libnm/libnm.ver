@@ -885,6 +885,7 @@ global:
 	nm_setting_gsm_get_device_id;
 	nm_setting_gsm_get_sim_id;
 	nm_setting_gsm_get_sim_operator_id;
+	nm_setting_ip4_config_get_dhcp_fqdn;
 	nm_setting_ip4_config_get_dhcp_timeout;
 	nm_setting_ip6_config_addr_gen_mode_get_type;
 	nm_setting_ip6_config_get_addr_gen_mode;

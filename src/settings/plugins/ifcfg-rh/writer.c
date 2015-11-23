@@ -2141,6 +2141,10 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (value)
 			svSetValue (ifcfg, "DHCP_HOSTNAME", value, FALSE);
 
+		value = nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4));
+		if (value)
+			svSetValue (ifcfg, "DHCP_FQDN", value, FALSE);
+
 		/* Missing DHCP_SEND_HOSTNAME means TRUE, and we prefer not write it explicitly
 		 * in that case, because it is NM-specific variable
 		 */
@@ -2784,6 +2788,7 @@ write_connection (NMConnection *connection,
 
 	if (!utils_ignore_ip_config (connection)) {
 		svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
+		svSetValue (ifcfg, "DHCP_FQDN", NULL, FALSE);
 
 		if (!write_ip4_setting (connection, ifcfg, error))
 			goto out;

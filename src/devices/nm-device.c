@@ -3961,6 +3961,7 @@ dhcp4_start (NMDevice *self,
 	                                                nm_device_get_ip4_route_metric (self),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
+	                                                nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                dhcp4_get_timeout (self, NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                priv->dhcp_anycast_address,
@@ -8908,7 +8909,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			g_ptr_array_add (argv, g_strdup ("--dhcp4-required"));
 
 		if (priv->dhcp4_client) {
-			const char *hostname;
+			const char *hostname, *fqdn;
 			GBytes *client_id;
 
 			client_id = nm_dhcp_client_get_client_id (priv->dhcp4_client);
@@ -8923,6 +8924,12 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			if (hostname) {
 				g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
 				g_ptr_array_add (argv, g_strdup (hostname));
+			}
+
+			fqdn = nm_dhcp_client_get_fqdn (priv->dhcp4_client);
+			if (fqdn) {
+				g_ptr_array_add (argv, g_strdup ("--dhcp4-fqdn"));
+				g_ptr_array_add (argv, g_strdup (fqdn));
 			}
 		}
 

@@ -69,6 +69,7 @@ static struct {
 	char *dhcp4_address;
 	char *dhcp4_clientid;
 	char *dhcp4_hostname;
+	char *dhcp4_fqdn;
 	char *iid_str;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *logging_backend;
@@ -291,6 +292,7 @@ do_early_setup (int *argc, char **argv[])
 		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &global_opt.dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
 		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
 		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
+		{ "dhcp4-fqdn",     'F', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_fqdn, N_("FQDN to send to DHCP server"), N_("host.domain.org") },
 		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
 		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
 		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &global_opt.iid_str, N_("Hex-encoded Interface Identifier"), "" },
@@ -459,6 +461,7 @@ main (int argc, char *argv[])
 		                                          global_opt.priority_v4,
 		                                          !!global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_hostname,
+		                                          global_opt.dhcp4_fqdn,
 		                                          global_opt.dhcp4_clientid,
 		                                          45,
 		                                          NULL,
