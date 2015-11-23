@@ -142,6 +142,7 @@ struct __nmtst_internal
 	gboolean assert_logging;
 	gboolean no_expect_message;
 	gboolean test_quick;
+	gboolean test_tap_log;
 	char *sudo_cmd;
 	char **orig_argv;
 };
@@ -347,6 +348,8 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			                                    || !strcmp (*(a+1), "slow")
 			                                    || !strcmp (*(a+1), "thorough"))))
 				test_quick_argv = TRUE;
+			else if (strcmp (*a, "--tap") == 0)
+				__nmtst_internal.test_tap_log = TRUE;
 		}
 	}
 
