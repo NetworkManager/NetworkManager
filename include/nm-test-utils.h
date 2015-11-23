@@ -286,17 +286,6 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	if (argc)
 		__nmtst_internal.orig_argv = g_strdupv (*argv);
 
-	if (argc && !g_test_initialized ()) {
-		/* g_test_init() is a variadic function, so we cannot pass it
-		 * (variadic) arguments. If you need to pass additional parameters,
-		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
-
-		/* g_test_init() sets g_log_set_always_fatal() for G_LOG_LEVEL_WARNING
-		 * and G_LOG_LEVEL_CRITICAL. So, beware that the test will fail if you
-		 * have any WARN or ERR log messages -- unless you g_test_expect_message(). */
-		g_test_init (argc, argv, NULL);
-	}
-
 	__nmtst_internal.assert_logging = !!assert_logging;
 
 	nm_g_type_init ();
@@ -368,6 +357,17 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			                                    || !strcmp (*(a+1), "thorough"))))
 				test_quick_argv = TRUE;
 		}
+	}
+
+	if (argc && !g_test_initialized ()) {
+		/* g_test_init() is a variadic function, so we cannot pass it
+		 * (variadic) arguments. If you need to pass additional parameters,
+		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
+
+		/* g_test_init() sets g_log_set_always_fatal() for G_LOG_LEVEL_WARNING
+		 * and G_LOG_LEVEL_CRITICAL. So, beware that the test will fail if you
+		 * have any WARN or ERR log messages -- unless you g_test_expect_message(). */
+		g_test_init (argc, argv, NULL);
 	}
 
 	if (test_quick_set)
