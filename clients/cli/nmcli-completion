@@ -282,6 +282,7 @@ _nmcli_compl_OPTIONS()
 # expects several options with parameters. This function can parse them and remove them from the words array.
 _nmcli_compl_ARGS()
 {
+    local aliases=${@}
     local OPTIONS_ALL N_REMOVE_WORDS REMOVE_OPTIONS OPTIONS_HAS_MANDATORY i
     OPTIONS_ALL=("${OPTIONS[@]}")
     OPTIONS_UNKNOWN_OPTION=
@@ -317,7 +318,17 @@ _nmcli_compl_ARGS()
 
         N_REMOVE_WORDS=2
         REMOVE_OPTIONS=("${words[0]}")
-        case "${words[0]}" in
+
+        # change option name to alias
+        WORD0="${words[0]}"
+        for alias in "${aliases[@]}" ; do
+            if [[ "${WORD0}" == ${alias%%:*} ]]; then
+                WORD0=${alias#*:}
+                break
+            fi
+        done
+
+        case "${WORD0}" in
             level)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "OFF ERR WARN INFO DEBUG TRACE"
@@ -560,7 +571,8 @@ _nmcli_compl_ARGS()
             username| \
             service| \
             password| \
-            passwd-file)
+            passwd-file| \
+            file)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     return 0
                 fi
@@ -870,7 +882,7 @@ _nmcli()
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete monitor reload load
+                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete monitor reload load import
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
@@ -1315,6 +1327,35 @@ _nmcli()
                             COMPREPLY=()
                         fi
                         ;;
+                    i|im|imp|impo|impor|import)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND "${words[2]}" type file --temporary
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help temporary)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+                            case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND "${words[2]}" type file
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
+                            OPTIONS=(type file)
+                            OPTIONS_MANDATORY=(type file)
+                            ALIASES=("type:vpn-type")
+                            _nmcli_compl_ARGS ${ALIASES[@]}
+                            return 0
+                        fi
+                        ;;
+
                 esac
             fi
             ;;

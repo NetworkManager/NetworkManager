@@ -816,6 +816,21 @@ then \fINetworkManager\fP will reload connection files any time they change
 Load/reload one or more connection files from disk. Use this after manually
 editing a connection file to ensure that \fBNetworkManager\fP is aware
 of its latest state.
+.TP
+.B import [--temporary] type <type> file <file to import>
+.br
+Import an external/foreign configuration as a NetworkManager connection profile.
+The type of the input file is specified by \fItype\fP option.
+.br
+Only VPN configurations are supported at the moment. The configuration
+is imported by NetworkManager VPN plugins. \fItype\fP values are the same as for
+\fIvpn-type\fP option in \fBnmcli connection add\fP. VPN configurations are
+imported by VPN plugins. Therefore the proper VPN plugin has to be installed
+so that nmcli could import the data.
+.br
+The imported connection profile will be saved as persistent unless \fI--temporary\fP
+option is specified, in which case the new profile won't exist after NetworkManager
+restart.
 .RE
 
 .TP
@@ -1186,6 +1201,10 @@ appends a Google public DNS server to DNS servers in ABC profile.
 .IP "\fB\f(CWnmcli con modify ABC -ipv4.addresses \(dq\&192.168.100.25/24 192.168.1.1\(dq\&\fP\fP"
 .IP
 removes the specified IP address from (static) profile ABC.
+
+.IP "\fB\f(CWnmcli con import type openvpn file ~/Downloads/frootvpn.ovpn\fP\fP"
+.IP
+imports an OpenVPN configuration to NetworkManager.
 
 .SH NOTES
 \fInmcli\fP accepts abbreviations, as long as they are a unique prefix in the set
