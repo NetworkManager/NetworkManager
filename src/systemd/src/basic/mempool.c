@@ -22,8 +22,8 @@
 
 #include "nm-sd-adapt.h"
 
-#include "mempool.h"
 #include "macro.h"
+#include "mempool.h"
 #include "util.h"
 
 struct pool {

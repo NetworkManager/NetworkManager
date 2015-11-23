@@ -21,26 +21,27 @@
 
 #include "nm-sd-adapt.h"
 
-#include <netinet/ether.h>
-#include <linux/if.h>
 #include <arpa/inet.h>
+#include <linux/if.h>
+#include <netinet/ether.h>
 
+#include "sd-ndisc.h"
+
+#include "alloc-util.h"
 #if 0 /* NM_IGNORED */
-#include "strv.h"
-#include "siphash24.h"
+#include "condition.h"
+#include "conf-parser.h"
 #endif /* NM_IGNORED */
 #include "dhcp-lease-internal.h"
-#if 0 /* NM_IGNORED */
+#include "hexdecoct.h"
 #include "log.h"
-#include "utf8.h"
-#endif /* NM_IGNORED */
-#include "util.h"
-#if 0 /* NM_IGNORED */
-#include "conf-parser.h"
-#include "condition.h"
-#endif /* NM_IGNORED */
 #include "network-internal.h"
-#include "sd-icmp6-nd.h"
+#include "parse-util.h"
+#include "siphash24.h"
+#include "string-util.h"
+#include "strv.h"
+#include "utf8.h"
+#include "util.h"
 
 #if 0 /* NM_IGNORED */
 const char *net_get_name(struct udev_device *device) {
@@ -60,7 +61,7 @@ const char *net_get_name(struct udev_device *device) {
 
 #define HASH_KEY SD_ID128_MAKE(d3,1e,48,fa,90,fe,4b,4c,9d,af,d5,d7,a1,b1,2e,8a)
 
-int net_get_unique_predictable_data(struct udev_device *device, uint8_t result[8]) {
+int net_get_unique_predictable_data(struct udev_device *device, uint64_t *result) {
         size_t l, sz = 0;
         const char *name = NULL;
         int r;
@@ -85,7 +86,7 @@ int net_get_unique_predictable_data(struct udev_device *device, uint8_t result[8
         /* Let's hash the machine ID plus the device name. We
         * use a fixed, but originally randomly created hash
         * key here. */
-        siphash24(result, v, sz, HASH_KEY.bytes);
+        *result = htole64(siphash24(v, sz, HASH_KEY.bytes));
 
         return 0;
 }
@@ -400,8 +401,8 @@ void serialize_in6_addrs(FILE *f, const struct in6_addr *addresses,
         assert(size);
 
         for (i = 0; i < size; i++)
-                fprintf(f, SD_ICMP6_ND_ADDRESS_FORMAT_STR"%s",
-                        SD_ICMP6_ND_ADDRESS_FORMAT_VAL(addresses[i]),
+                fprintf(f, SD_NDISC_ADDRESS_FORMAT_STR"%s",
+                        SD_NDISC_ADDRESS_FORMAT_VAL(addresses[i]),
                         (i < (size - 1)) ? " ": "");
 }
 

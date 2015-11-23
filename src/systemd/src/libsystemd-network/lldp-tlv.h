@@ -26,18 +26,18 @@
 
 #include <net/ethernet.h>
 
-#include "util.h"
-#include "lldp.h"
-#include "list.h"
-
 #include "sd-lldp.h"
 
-typedef struct tlv_packet tlv_packet;
-typedef struct tlv_section tlv_section;
+#include "list.h"
+#include "lldp.h"
+#include "util.h"
+
+typedef struct sd_lldp_packet tlv_packet;
+typedef struct sd_lldp_section tlv_section;
 
 #define LLDP_OUI_LEN 3
 
-struct tlv_section {
+struct sd_lldp_section {
         uint16_t type;
         uint16_t length;
         uint8_t *oui;
@@ -56,7 +56,7 @@ struct tlv_section {
 int tlv_section_new(tlv_section **ret);
 void tlv_section_free(tlv_section *ret);
 
-struct tlv_packet {
+struct sd_lldp_packet {
         unsigned n_ref;
 
         uint16_t type;

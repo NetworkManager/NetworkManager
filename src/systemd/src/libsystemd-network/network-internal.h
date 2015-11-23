@@ -26,8 +26,8 @@
 #include <stdbool.h>
 
 #if 0 /* NM_IGNORED */
-#include "udev.h"
 #include "condition.h"
+#include "udev.h"
 
 bool net_match_config(const struct ether_addr *match_mac,
                       char * const *match_path,
@@ -65,7 +65,7 @@ int config_parse_ifalias(const char *unit, const char *filename, unsigned line,
                          const char *section, unsigned section_line, const char *lvalue,
                          int ltype, const char *rvalue, void *data, void *userdata);
 
-int net_get_unique_predictable_data(struct udev_device *device, uint8_t result[8]);
+int net_get_unique_predictable_data(struct udev_device *device, uint64_t *result);
 const char *net_get_name(struct udev_device *device);
 #endif /* NM_IGNORED */
 

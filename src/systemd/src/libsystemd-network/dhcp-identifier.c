@@ -21,27 +21,29 @@
 
 #include "nm-sd-adapt.h"
 
-#include "sd-id128.h"
 #if 0 /* NM_IGNORED */
 #include "libudev.h"
-#include "udev-util.h"
+#endif /* NM_IGNORED */
+#include "sd-id128.h"
 
-#include "virt.h"
+#include "dhcp-identifier.h"
+#include "dhcp6-protocol.h"
+#include "network-internal.h"
+#include "siphash24.h"
 #include "sparse-endian.h"
+#if 0 /* NM_IGNORED */
+#include "udev-util.h"
+#include "virt.h"
 #else /* NM_IGNORED */
 #include <net/if.h>
 #endif /* NM_IGNORED */
-#include "siphash24.h"
-
-#include "dhcp6-protocol.h"
-#include "dhcp-identifier.h"
-#include "network-internal.h"
 
 #define SYSTEMD_PEN 43793
 #define HASH_KEY SD_ID128_MAKE(80,11,8c,c2,fe,4a,03,ee,3e,d6,0c,6f,36,39,14,09)
 
 int dhcp_identifier_set_duid_en(struct duid *duid, size_t *len) {
         sd_id128_t machine_id;
+        uint64_t hash;
         int r;
 
         assert(duid);
@@ -57,12 +59,12 @@ int dhcp_identifier_set_duid_en(struct duid *duid, size_t *len) {
         *len = sizeof(duid->type) + sizeof(duid->en);
 
         /* a bit of snake-oil perhaps, but no need to expose the machine-id
-           directly */
-        siphash24(duid->en.id, &machine_id, sizeof(machine_id), HASH_KEY.bytes);
+           directly; duid->en.id might not be aligned, so we need to copy */
+        hash = htole64(siphash24(&machine_id, sizeof(machine_id), HASH_KEY.bytes));
+        memcpy(duid->en.id, &hash, sizeof(duid->en.id));
 
         return 0;
 }
-
 
 int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, void *_id) {
 #if 0 /* NM_IGNORED */
@@ -100,10 +102,12 @@ int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, void *_i
 #endif /* NM_IGNORED */
 
         if (name)
-                siphash24((uint8_t*)&id, name, strlen(name), HASH_KEY.bytes);
+                id = siphash24(name, strlen(name), HASH_KEY.bytes);
         else
                 /* fall back to MAC address if no predictable name available */
-                siphash24((uint8_t*)&id, mac, mac_len, HASH_KEY.bytes);
+                id = siphash24(mac, mac_len, HASH_KEY.bytes);
+
+        id = htole64(id);
 
         /* fold into 32 bits */
         unaligned_write_be32(_id, (id & 0xffffffff) ^ (id >> 32));

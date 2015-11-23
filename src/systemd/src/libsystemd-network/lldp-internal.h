@@ -24,11 +24,12 @@
 
 #include "nm-sd-adapt.h"
 
-#include "log.h"
+#include "sd-event.h"
+
 #include "list.h"
 #include "lldp-tlv.h"
+#include "log.h"
 #include "prioq.h"
-#include "sd-event.h"
 
 typedef struct lldp_neighbour_port lldp_neighbour_port;
 typedef struct lldp_chassis lldp_chassis;

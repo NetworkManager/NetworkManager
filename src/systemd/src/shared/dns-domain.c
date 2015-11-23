@@ -26,7 +26,11 @@
 #include <stringprep.h>
 #endif
 
+#include "alloc-util.h"
 #include "dns-domain.h"
+#include "hexdecoct.h"
+#include "parse-util.h"
+#include "string-util.h"
 
 int dns_label_unescape(const char **name, char *dest, size_t sz) {
         const char *n;
@@ -695,6 +699,7 @@ int dns_name_root(const char *name) {
 
         return r == 0 && *name == 0;
 }
+#endif /* NM_IGNORED */
 
 int dns_name_single_label(const char *name) {
         char label[DNS_LABEL_MAX+1];
@@ -714,4 +719,37 @@ int dns_name_single_label(const char *name) {
 
         return r == 0 && *name == 0;
 }
-#endif /* NM_IGNORED */
+
+/* Encode a domain name according to RFC 1035 Section 3.1 */
+int dns_name_to_wire_format(const char *domain, uint8_t *buffer, size_t len) {
+        uint8_t *label_length;
+        uint8_t *out;
+        int r;
+
+        assert_return(buffer, -EINVAL);
+        assert_return(domain, -EINVAL);
+        assert_return(domain[0], -EINVAL);
+
+        out = buffer;
+
+        do {
+                /* reserve a byte for label length */
+                if (len == 0)
+                        return -ENOBUFS;
+                len--;
+                label_length = out;
+                out++;
+
+                /* convert and copy a single label */
+                r = dns_label_unescape(&domain, (char *) out, len);
+                if (r < 0)
+                        return r;
+
+                /* fill label length, move forward */
+                *label_length = r;
+                out += r;
+                len -= r;
+        } while (r != 0);
+
+        return out - buffer;
+}

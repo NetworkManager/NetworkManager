@@ -31,8 +31,9 @@
 
 #include "nm-sd-adapt.h"
 
-#include "util.h"
+#include "alloc-util.h"
 #include "prioq.h"
+#include "util.h"
 
 struct prioq_item {
         void *data;

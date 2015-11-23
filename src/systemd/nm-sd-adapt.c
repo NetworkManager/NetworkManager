@@ -23,6 +23,7 @@
 #include <errno.h>
 
 #include "sd-event.h"
+#include "fd-util.h"
 #include "time-util.h"
 
 struct sd_event_source {

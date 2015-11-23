@@ -24,11 +24,11 @@
 
 #include "nm-sd-adapt.h"
 
-#include <sys/types.h>
-#include <sys/signalfd.h>
-#include <sys/epoll.h>
 #include <inttypes.h>
 #include <signal.h>
+#include <sys/epoll.h>
+#include <sys/signalfd.h>
+#include <sys/types.h>
 
 #include "_sd-common.h"
 
@@ -58,7 +58,8 @@ enum {
         SD_EVENT_PENDING,
         SD_EVENT_RUNNING,
         SD_EVENT_EXITING,
-        SD_EVENT_FINISHED
+        SD_EVENT_FINISHED,
+        SD_EVENT_PREPARING,
 };
 
 enum {
@@ -89,9 +90,9 @@ int sd_event_add_post(sd_event *e, sd_event_source **s, sd_event_handler_t callb
 int sd_event_add_exit(sd_event *e, sd_event_source **s, sd_event_handler_t callback, void *userdata);
 
 int sd_event_prepare(sd_event *e);
-int sd_event_wait(sd_event *e, uint64_t timeout);
+int sd_event_wait(sd_event *e, uint64_t usec);
 int sd_event_dispatch(sd_event *e);
-int sd_event_run(sd_event *e, uint64_t timeout);
+int sd_event_run(sd_event *e, uint64_t usec);
 int sd_event_loop(sd_event *e);
 int sd_event_exit(sd_event *e, int code);
 

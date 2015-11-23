@@ -70,6 +70,8 @@ int dns_name_reverse(int family, const union in_addr_union *a, char **ret);
 int dns_name_address(const char *p, int *family, union in_addr_union *a);
 
 int dns_name_root(const char *name);
+#endif /* NM_IGNORED */
+
 int dns_name_single_label(const char *name);
 
-#endif /* NM_IGNORED */
+int dns_name_to_wire_format(const char *domain, uint8_t *buffer, size_t len);

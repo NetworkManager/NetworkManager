@@ -22,8 +22,10 @@
 
 #include "nm-sd-adapt.h"
 
-#include "lldp-internal.h"
 #include "sd-lldp.h"
+
+#include "alloc-util.h"
+#include "lldp-internal.h"
 
 /* We store maximum 1K chassis entries */
 #define LLDP_MIB_MAX_CHASSIS 1024

@@ -21,13 +21,16 @@
 
 #include "nm-sd-adapt.h"
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 #include <errno.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "util.h"
+#include "alloc-util.h"
+#include "escape.h"
+#include "string-util.h"
 #include "strv.h"
+#include "util.h"
 
 char *strv_find(char **l, const char *name) {
         char **i;
@@ -86,6 +89,15 @@ char **strv_free(char **l) {
         strv_clear(l);
         free(l);
         return NULL;
+}
+
+char **strv_free_erase(char **l) {
+        char **i;
+
+        STRV_FOREACH(i, l)
+                string_erase(*i);
+
+        return strv_free(l);
 }
 
 char **strv_copy(char * const *l) {
@@ -190,17 +202,48 @@ char **strv_new(const char *x, ...) {
         return r;
 }
 
-int strv_extend_strv(char ***a, char **b) {
-        int r;
-        char **s;
+int strv_extend_strv(char ***a, char **b, bool filter_duplicates) {
+        char **s, **t;
+        size_t p, q, i = 0, j;
+
+        assert(a);
+
+        if (strv_isempty(b))
+                return 0;
+
+        p = strv_length(*a);
+        q = strv_length(b);
+
+        t = realloc(*a, sizeof(char*) * (p + q + 1));
+        if (!t)
+                return -ENOMEM;
+
+        t[p] = NULL;
+        *a = t;
 
         STRV_FOREACH(s, b) {
-                r = strv_extend(a, *s);
-                if (r < 0)
-                        return r;
+
+                if (filter_duplicates && strv_contains(t, *s))
+                        continue;
+
+                t[p+i] = strdup(*s);
+                if (!t[p+i])
+                        goto rollback;
+
+                i++;
+                t[p+i] = NULL;
         }
 
-        return 0;
+        assert(i <= q);
+
+        return (int) i;
+
+rollback:
+        for (j = 0; j < i; j++)
+                free(t[p + j]);
+
+        t[p] = NULL;
+        return -ENOMEM;
 }
 
 int strv_extend_strv_concat(char ***a, char **b, const char *suffix) {
@@ -622,6 +665,41 @@ char **strv_split_nulstr(const char *s) {
         return r;
 }
 
+int strv_make_nulstr(char **l, char **p, size_t *q) {
+        size_t n_allocated = 0, n = 0;
+        _cleanup_free_ char *m = NULL;
+        char **i;
+
+        assert(p);
+        assert(q);
+
+        STRV_FOREACH(i, l) {
+                size_t z;
+
+                z = strlen(*i);
+
+                if (!GREEDY_REALLOC(m, n_allocated, n + z + 1))
+                        return -ENOMEM;
+
+                memcpy(m + n, *i, z + 1);
+                n += z + 1;
+        }
+
+        if (!m) {
+                m = new0(char, 1);
+                if (!m)
+                        return -ENOMEM;
+                n = 0;
+        }
+
+        *p = m;
+        *q = n;
+
+        m = NULL;
+
+        return 0;
+}
+
 bool strv_overlap(char **a, char **b) {
         char **i;
 
@@ -648,8 +726,12 @@ char **strv_sort(char **l) {
 }
 
 bool strv_equal(char **a, char **b) {
-        if (!a || !b)
-                return a == b;
+
+        if (strv_isempty(a))
+                return strv_isempty(b);
+
+        if (strv_isempty(b))
+                return false;
 
         for ( ; *a || *b; ++a, ++b)
                 if (!streq_ptr(*a, *b))
@@ -784,7 +866,7 @@ int strv_extend_n(char ***l, const char *value, size_t n) {
         return 0;
 
 rollback:
-        for (j = k; j < i; i++)
+        for (j = k; j < i; j++)
                 free(nl[j]);
 
         nl[k] = NULL;

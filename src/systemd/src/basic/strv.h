@@ -23,10 +23,13 @@
 
 #include "nm-sd-adapt.h"
 
+#include <fnmatch.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <fnmatch.h>
 
+#if 0 /* NM_IGNORED */
+#include "extract-word.h"
+#endif /* NM_IGNORED */
 #include "util.h"
 
 char *strv_find(char **l, const char *name) _pure_;
@@ -37,12 +40,16 @@ char **strv_free(char **l);
 DEFINE_TRIVIAL_CLEANUP_FUNC(char**, strv_free);
 #define _cleanup_strv_free_ _cleanup_(strv_freep)
 
+char **strv_free_erase(char **l);
+DEFINE_TRIVIAL_CLEANUP_FUNC(char**, strv_free_erase);
+#define _cleanup_strv_free_erase_ _cleanup_(strv_free_erasep)
+
 void strv_clear(char **l);
 
 char **strv_copy(char * const *l);
 unsigned strv_length(char * const *l) _pure_;
 
-int strv_extend_strv(char ***a, char **b);
+int strv_extend_strv(char ***a, char **b, bool filter_duplicates);
 int strv_extend_strv_concat(char ***a, char **b, const char *suffix);
 int strv_extend(char ***l, const char *value);
 int strv_extendf(char ***l, const char *format, ...) _printf_(2,0);
@@ -75,13 +82,16 @@ static inline bool strv_isempty(char * const *l) {
 char **strv_split(const char *s, const char *separator);
 char **strv_split_newlines(const char *s);
 
+#if 0 /* NM_IGNORED */
 int strv_split_extract(char ***t, const char *s, const char *separators, ExtractFlags flags);
+#endif /* NM_IGNORED */
 
 char *strv_join(char **l, const char *separator);
 char *strv_join_quoted(char **l);
 
 char **strv_parse_nulstr(const char *s, size_t l);
 char **strv_split_nulstr(const char *s);
+int strv_make_nulstr(char **l, char **p, size_t *n);
 
 bool strv_overlap(char **a, char **b) _pure_;
 

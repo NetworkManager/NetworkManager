@@ -1,5 +1,8 @@
 /*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
 
+#ifndef foosdlldphfoo
+#define foosdlldphfoo
+
 /***
   This file is part of systemd.
 
@@ -20,11 +23,16 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#pragma once
-
 #include "nm-sd-adapt.h"
 
+#include <inttypes.h>
+#include <net/ethernet.h>
+
 #include "sd-event.h"
+
+#include "_sd-common.h"
+
+_SD_BEGIN_DECLARATIONS;
 
 enum {
         SD_LLDP_EVENT_UPDATE_INFO       = 0,
@@ -37,7 +45,7 @@ enum {
 };
 
 typedef struct sd_lldp sd_lldp;
-typedef struct tlv_packet sd_lldp_packet;
+typedef struct sd_lldp_packet sd_lldp_packet;
 
 typedef void (*sd_lldp_cb_t)(sd_lldp *lldp, int event, void *userdata);
 
@@ -74,3 +82,7 @@ sd_lldp_packet *sd_lldp_packet_unref(sd_lldp_packet *tlv);
 int sd_lldp_packet_get_destination_type(sd_lldp_packet *tlv, int *dest);
 
 int sd_lldp_get_packets(sd_lldp *lldp, sd_lldp_packet ***tlvs);
+
+_SD_END_DECLARATIONS;
+
+#endif

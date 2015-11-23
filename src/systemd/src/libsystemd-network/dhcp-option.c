@@ -21,10 +21,10 @@
 
 #include "nm-sd-adapt.h"
 
-#include <stdint.h>
-#include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dhcp-internal.h"
 

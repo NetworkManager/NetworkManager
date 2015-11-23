@@ -67,20 +67,34 @@ SYSTEMD_NM_CFLAGS_PATHS = \
 libsystemd_nm_la_SOURCES = \
 	systemd/nm-sd-adapt.c \
 	systemd/nm-sd-adapt.h \
+	systemd/src/basic/alloc-util.c \
+	systemd/src/basic/alloc-util.h \
 	systemd/src/basic/async.h \
+	systemd/src/basic/escape.c \
+	systemd/src/basic/escape.h \
+	systemd/src/basic/fd-util.c \
+	systemd/src/basic/fd-util.h \
 	systemd/src/basic/fileio.c \
 	systemd/src/basic/fileio.h \
+	systemd/src/basic/fs-util.c \
+	systemd/src/basic/fs-util.h \
 	systemd/src/basic/hashmap.c \
 	systemd/src/basic/hashmap.h \
+	systemd/src/basic/hexdecoct.c \
+	systemd/src/basic/hexdecoct.h \
 	systemd/src/basic/hostname-util.c \
 	systemd/src/basic/hostname-util.h \
 	systemd/src/basic/in-addr-util.c \
 	systemd/src/basic/in-addr-util.h \
+	systemd/src/basic/io-util.c \
+	systemd/src/basic/io-util.h \
 	systemd/src/basic/list.h \
 	systemd/src/basic/log.h \
 	systemd/src/basic/macro.h \
 	systemd/src/basic/mempool.c \
 	systemd/src/basic/mempool.h \
+	systemd/src/basic/parse-util.c \
+	systemd/src/basic/parse-util.h \
 	systemd/src/basic/path-util.c \
 	systemd/src/basic/path-util.h \
 	systemd/src/basic/prioq.c \
@@ -93,10 +107,15 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/basic/set.h \
 	systemd/src/basic/socket-util.h \
 	systemd/src/basic/sparse-endian.h \
+	systemd/src/basic/string-table.c \
+	systemd/src/basic/string-table.h \
+	systemd/src/basic/string-util.c \
+	systemd/src/basic/string-util.h \
 	systemd/src/basic/strv.c \
 	systemd/src/basic/strv.h \
 	systemd/src/basic/time-util.c \
 	systemd/src/basic/time-util.h \
+	systemd/src/basic/umask-util.h \
 	systemd/src/basic/unaligned.h \
 	systemd/src/basic/utf8.c \
 	systemd/src/basic/utf8.h \

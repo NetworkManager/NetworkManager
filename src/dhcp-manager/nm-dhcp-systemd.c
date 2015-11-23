@@ -762,6 +762,12 @@ ip6_start (NMDhcpClient *client,
 			sd_dhcp6_client_set_request_option (priv->client6, dhcp6_requests[i].num);
 	}
 
+	r = sd_dhcp6_client_set_local_address (priv->client6, ll_addr);
+	if (r < 0) {
+		nm_log_warn (LOGD_DHCP6, "(%s): failed to set local address (%d)", iface, r);
+		goto error;
+	}
+
 	r = sd_dhcp6_client_start (priv->client6);
 	if (r < 0) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to start DHCP (%d)", iface, r);

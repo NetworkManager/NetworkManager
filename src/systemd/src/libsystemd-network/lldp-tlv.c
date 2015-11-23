@@ -22,11 +22,12 @@
 
 #include "nm-sd-adapt.h"
 
-#include <net/ethernet.h>
 #include <arpa/inet.h>
+#include <net/ethernet.h>
 
-#include "macro.h"
+#include "alloc-util.h"
 #include "lldp-tlv.h"
+#include "macro.h"
 
 int tlv_section_new(tlv_section **ret) {
         tlv_section *s;
@@ -279,7 +280,7 @@ int tlv_packet_parse_pdu(tlv_packet *m, uint16_t size) {
 
         p = m->pdu;
 
-        /* extract ethernet header */
+        /* extract Ethernet header */
         memcpy(&m->mac, p, ETH_ALEN);
         p += sizeof(struct ether_header);
 
