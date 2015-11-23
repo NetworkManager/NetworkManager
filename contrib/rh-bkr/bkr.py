@@ -839,7 +839,7 @@ class CmdSubmit(CmdBase):
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
-            'DISTRO_VARIANT'    : 'Workstation',
+            'DISTRO_VARIANT'    : 'Server',
             'DISTRO_NAME'       : _get_var_for_DISTRO_NAME,
             'DISTRO_TAG'        : _get_var_for_DISTRO_TAG,
             'DISTRO_METHOD'     : 'nfs',
