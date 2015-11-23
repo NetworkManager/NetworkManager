@@ -32,20 +32,20 @@
 #include "nm-default.h"
 #include "nm-editor-utils.h"
 #if 0
-#include "vpn-helpers.h"
+#include "nm-vpn-helpers.h"
 
 static GSList *vpn_plugins;
 
 static gint
 sort_vpn_plugins (gconstpointer a, gconstpointer b)
 {
-	NMVpnPluginUiInterface *aa = NM_VPN_PLUGIN_UI_INTERFACE (a);
-	NMVpnPluginUiInterface *bb = NM_VPN_PLUGIN_UI_INTERFACE (b);
+	NMVpnEditorPlugin *aa = NM_VPN_EDITOR_PLUGIN (a);
+	NMVpnEditorPlugin *bb = NM_VPN_EDITOR_PLUGIN (b);
 	char *aa_desc = NULL, *bb_desc = NULL;
 	int ret;
 
-	g_object_get (aa, NM_VPN_PLUGIN_UI_INTERFACE_NAME, &aa_desc, NULL);
-	g_object_get (bb, NM_VPN_PLUGIN_UI_INTERFACE_NAME, &bb_desc, NULL);
+	g_object_get (aa, NM_VPN_EDITOR_PLUGIN_NAME, &aa_desc, NULL);
+	g_object_get (bb, NM_VPN_EDITOR_PLUGIN_NAME, &bb_desc, NULL);
 
 	ret = g_strcmp0 (aa_desc, bb_desc);
 
@@ -224,7 +224,7 @@ nm_editor_utils_get_connection_type_list (void)
 
 #if 0
 	/* Add "VPN" only if there are plugins */
-	vpn_plugins_hash = vpn_get_plugins (NULL);
+	vpn_plugins_hash = nm_vpn_get_plugins ();
 	have_vpn_plugins  = vpn_plugins_hash && g_hash_table_size (vpn_plugins_hash);
 	if (have_vpn_plugins) {
 		GHashTableIter iter;

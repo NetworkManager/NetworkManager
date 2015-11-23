@@ -1,4 +1,3 @@
-clients/tui/vpn-helpers.c
 examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c
 policy/org.freedesktop.NetworkManager.policy.in

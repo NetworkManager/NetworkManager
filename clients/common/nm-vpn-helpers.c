@@ -13,19 +13,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright 2013 - 2015 Red Hat, Inc.
  */
 
 /**
- * SECTION:vpn-helpers
+ * SECTION:nm-vpn-helpers
  * @short_description: VPN-related utilities
  *
- * This is copied directly from libnm-gtk and should probably
- * eventually move into libnm.
- *
- * It is also currently unused in nmtui.
- *
- * FIXME.
+ * Some functions should probably eventually move into libnm.
  */
 
 #include "config.h"
@@ -34,7 +29,7 @@
 #include <gmodule.h>
 
 #include "nm-default.h"
-#include "vpn-helpers.h"
+#include "nm-vpn-helpers.h"
 
 #include "nm-macros-internal.h"
 
@@ -42,7 +37,7 @@ static gboolean plugins_loaded;
 static GSList *plugins = NULL;
 
 NMVpnEditorPlugin *
-vpn_get_plugin_by_service (const char *service)
+nm_vpn_get_plugin_by_service (const char *service)
 {
 	NMVpnEditorPlugin *plugin = NULL;
 	NMVpnPluginInfo *plugin_info;
@@ -50,7 +45,7 @@ vpn_get_plugin_by_service (const char *service)
 	g_return_val_if_fail (service != NULL, NULL);
 
 	if (G_UNLIKELY (!plugins_loaded))
-		vpn_get_plugins ();
+		nm_vpn_get_plugins ();
 
 	plugin_info = nm_vpn_plugin_info_list_find_by_service (plugins, service);
 	if (plugin_info) {
@@ -62,7 +57,7 @@ vpn_get_plugin_by_service (const char *service)
 }
 
 GSList *
-vpn_get_plugins ()
+nm_vpn_get_plugins (void)
 {
 	if (G_LIKELY (plugins_loaded))
 		return plugins;
@@ -303,7 +298,7 @@ vpn_export (NMConnection *connection)
 #endif
 
 gboolean
-vpn_supports_ipv6 (NMConnection *connection)
+nm_vpn_supports_ipv6 (NMConnection *connection)
 {
 	NMSettingVpn *s_vpn;
 	const char *service_type;
@@ -316,7 +311,7 @@ vpn_supports_ipv6 (NMConnection *connection)
 	service_type = nm_setting_vpn_get_service_type (s_vpn);
 	g_return_val_if_fail (service_type != NULL, FALSE);
 
-	plugin = vpn_get_plugin_by_service (service_type);
+	plugin = nm_vpn_get_plugin_by_service (service_type);
 	g_return_val_if_fail (plugin != NULL, FALSE);
 
 	capabilities = nm_vpn_editor_plugin_get_capabilities (plugin);

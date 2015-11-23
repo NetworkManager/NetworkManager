@@ -13,25 +13,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright 2013 - 2015 Red Hat, Inc.
  */
 
-#ifndef _VPN_HELPERS_H_
-#define _VPN_HELPERS_H_
+#ifndef __NM_VPN_HELPERS_H__
+#define __NM_VPN_HELPERS_H__
 
 #include <NetworkManager.h>
 
 #include "nm-default.h"
 
-GSList *vpn_get_plugins (void);
+GSList *nm_vpn_get_plugins (void);
 
-NMVpnEditorPlugin *vpn_get_plugin_by_service (const char *service);
+NMVpnEditorPlugin *nm_vpn_get_plugin_by_service (const char *service);
 
 typedef void (*VpnImportSuccessCallback) (NMConnection *connection, gpointer user_data);
-void vpn_import (VpnImportSuccessCallback callback, gpointer user_data);
+void nm_vpn_import (VpnImportSuccessCallback callback, gpointer user_data);
 
-void vpn_export (NMConnection *connection);
+void nm_vpn_export (NMConnection *connection);
 
-gboolean vpn_supports_ipv6 (NMConnection *connection);
+gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
 
-#endif  /* _VPN_HELPERS_H_ */
+#endif  /* __NM_VPN_HELPERS_H__ */
