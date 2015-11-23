@@ -88,4 +88,10 @@
 # define NM_AVAILABLE_IN_1_0_6
 #endif
 
+#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_0_8
+# define NM_AVAILABLE_IN_1_0_8          G_UNAVAILABLE(1,0.8)
+#else
+# define NM_AVAILABLE_IN_1_0_8
+#endif
+
 #endif  /* NM_VERSION_H */
