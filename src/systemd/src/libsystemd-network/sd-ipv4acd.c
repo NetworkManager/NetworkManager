@@ -24,16 +24,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sd-ipv4acd.h"
+
+#include "alloc-util.h"
+#include "arp-util.h"
 #include "event-util.h"
+#include "fd-util.h"
 #include "in-addr-util.h"
 #include "list.h"
-#include "refcnt.h"
 #include "random-util.h"
+#include "refcnt.h"
 #include "siphash24.h"
 #include "util.h"
-
-#include "arp-util.h"
-#include "sd-ipv4acd.h"
 
 /* Constants from the RFC */
 #define PROBE_WAIT 1
@@ -468,7 +470,7 @@ int sd_ipv4acd_set_address(sd_ipv4acd *ll, const struct in_addr *address){
         return 0;
 }
 
-bool sd_ipv4acd_is_running(sd_ipv4acd *ll) {
+int sd_ipv4acd_is_running(sd_ipv4acd *ll) {
         assert_return(ll, false);
 
         return ll->state != IPV4ACD_STATE_INIT;

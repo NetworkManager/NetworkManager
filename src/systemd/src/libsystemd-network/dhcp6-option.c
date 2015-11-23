@@ -19,18 +19,18 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include <netinet/in.h>
 #include <errno.h>
+#include <netinet/in.h>
 #include <string.h>
 
-#include "sparse-endian.h"
-#include "unaligned.h"
-#include "util.h"
-#include "strv.h"
-
+#include "alloc-util.h"
 #include "dhcp6-internal.h"
 #include "dhcp6-protocol.h"
 #include "dns-domain.h"
+#include "sparse-endian.h"
+#include "strv.h"
+#include "unaligned.h"
+#include "util.h"
 
 #define DHCP6_OPTION_IA_NA_LEN                  12
 #define DHCP6_OPTION_IA_TA_LEN                  4
@@ -344,7 +344,7 @@ int dhcp6_option_parse_domainname(const uint8_t *optval, uint16_t optlen, char *
         int r;
 
         assert_return(optlen > 1, -ENODATA);
-        assert_return(optval[optlen] == '\0', -EINVAL);
+        assert_return(optval[optlen - 1] == '\0', -EINVAL);
 
         while (pos < optlen) {
                 _cleanup_free_ char *ret = NULL;

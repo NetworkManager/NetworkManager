@@ -24,17 +24,19 @@
 #include <sys/ioctl.h>
 #include <linux/if_infiniband.h>
 
-#include "udev.h"
-#include "udev-util.h"
-#include "util.h"
-#include "random-util.h"
-
-#include "network-internal.h"
 #include "sd-dhcp6-client.h"
-#include "dhcp6-protocol.h"
+
+#include "alloc-util.h"
+#include "dhcp-identifier.h"
 #include "dhcp6-internal.h"
 #include "dhcp6-lease-internal.h"
-#include "dhcp-identifier.h"
+#include "dhcp6-protocol.h"
+#include "fd-util.h"
+#include "in-addr-util.h"
+#include "network-internal.h"
+#include "random-util.h"
+#include "string-table.h"
+#include "util.h"
 
 #define MAX_MAC_ADDR_LEN INFINIBAND_ALEN
 
@@ -45,6 +47,7 @@ struct sd_dhcp6_client {
         sd_event *event;
         int event_priority;
         int index;
+        struct in6_addr local_address;
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
@@ -132,6 +135,18 @@ int sd_dhcp6_client_set_index(sd_dhcp6_client *client, int interface_index) {
         return 0;
 }
 
+int sd_dhcp6_client_set_local_address(sd_dhcp6_client *client, const struct in6_addr *local_address) {
+        assert_return(client, -EINVAL);
+        assert_return(local_address, -EINVAL);
+        assert_return(in_addr_is_link_local(AF_INET6, (const union in_addr_union *) local_address) > 0, -EINVAL);
+
+        assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
+
+        client->local_address = *local_address;
+
+        return 0;
+}
+
 int sd_dhcp6_client_set_mac(
                 sd_dhcp6_client *client,
                 const uint8_t *addr, size_t addr_len,
@@ -208,9 +223,8 @@ int sd_dhcp6_client_set_duid(
         return 0;
 }
 
-int sd_dhcp6_client_set_information_request(sd_dhcp6_client *client, bool enabled) {
+int sd_dhcp6_client_set_information_request(sd_dhcp6_client *client, int enabled) {
         assert_return(client, -EINVAL);
-
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
 
         client->information_request = enabled;
@@ -218,7 +232,7 @@ int sd_dhcp6_client_set_information_request(sd_dhcp6_client *client, bool enable
         return 0;
 }
 
-int sd_dhcp6_client_get_information_request(sd_dhcp6_client *client, bool *enabled) {
+int sd_dhcp6_client_get_information_request(sd_dhcp6_client *client, int *enabled) {
         assert_return(client, -EINVAL);
         assert_return(enabled, -EINVAL);
 
@@ -259,12 +273,12 @@ int sd_dhcp6_client_set_request_option(sd_dhcp6_client *client, uint16_t option)
 
 int sd_dhcp6_client_get_lease(sd_dhcp6_client *client, sd_dhcp6_lease **ret) {
         assert_return(client, -EINVAL);
-        assert_return(ret, -EINVAL);
 
         if (!client->lease)
                 return -ENOMSG;
 
-        *ret = client->lease;
+        if (ret)
+                *ret = client->lease;
 
         return 0;
 }
@@ -595,8 +609,7 @@ static int client_timeout_resend(sd_event_source *s, uint64_t usec,
         }
 
         log_dhcp6_client(client, "Next retransmission in %s",
-                         format_timespan(time_string, FORMAT_TIMESPAN_MAX,
-                                         client->retransmit_time, 0));
+                         format_timespan(time_string, FORMAT_TIMESPAN_MAX, client->retransmit_time, USEC_PER_SEC));
 
         r = sd_event_add_time(client->event, &client->timeout_resend,
                               clock_boottime_or_monotonic(),
@@ -1048,9 +1061,7 @@ static int client_start(sd_dhcp6_client *client, enum DHCP6State state) {
                 timeout = client_timeout_compute_random(be32toh(client->lease->ia.lifetime_t1) * USEC_PER_SEC);
 
                 log_dhcp6_client(client, "T1 expires in %s",
-                                 format_timespan(time_string,
-                                                 FORMAT_TIMESPAN_MAX,
-                                                 timeout, 0));
+                                 format_timespan(time_string, FORMAT_TIMESPAN_MAX, timeout, USEC_PER_SEC));
 
                 r = sd_event_add_time(client->event,
                                       &client->lease->ia.timeout_t1,
@@ -1072,9 +1083,7 @@ static int client_start(sd_dhcp6_client *client, enum DHCP6State state) {
                 timeout = client_timeout_compute_random(be32toh(client->lease->ia.lifetime_t2) * USEC_PER_SEC);
 
                 log_dhcp6_client(client, "T2 expires in %s",
-                                 format_timespan(time_string,
-                                                 FORMAT_TIMESPAN_MAX,
-                                                 timeout, 0));
+                                 format_timespan(time_string, FORMAT_TIMESPAN_MAX, timeout, USEC_PER_SEC));
 
                 r = sd_event_add_time(client->event,
                                       &client->lease->ia.timeout_t2,
@@ -1120,9 +1129,17 @@ static int client_start(sd_dhcp6_client *client, enum DHCP6State state) {
 }
 
 int sd_dhcp6_client_stop(sd_dhcp6_client *client) {
+        assert_return(client, -EINVAL);
+
         client_stop(client, SD_DHCP6_CLIENT_EVENT_STOP);
 
         return 0;
+}
+
+int sd_dhcp6_client_is_running(sd_dhcp6_client *client) {
+        assert_return(client, -EINVAL);
+
+        return client->state != DHCP6_STATE_STOPPED;
 }
 
 int sd_dhcp6_client_start(sd_dhcp6_client *client) {
@@ -1132,9 +1149,10 @@ int sd_dhcp6_client_start(sd_dhcp6_client *client) {
         assert_return(client, -EINVAL);
         assert_return(client->event, -EINVAL);
         assert_return(client->index > 0, -EINVAL);
+        assert_return(in_addr_is_link_local(AF_INET6, (const union in_addr_union *) &client->local_address) > 0, -EINVAL);
 
         if (!IN_SET(client->state, DHCP6_STATE_STOPPED))
-                return -EALREADY;
+                return -EBUSY;
 
         r = client_reset(client);
         if (r < 0)
@@ -1148,7 +1166,7 @@ int sd_dhcp6_client_start(sd_dhcp6_client *client) {
         if (r < 0)
                 return r;
 
-        r = dhcp6_network_bind_udp_socket(client->index, NULL);
+        r = dhcp6_network_bind_udp_socket(client->index, &client->local_address);
         if (r < 0)
                 return r;
 
