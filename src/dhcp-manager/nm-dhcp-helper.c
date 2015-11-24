@@ -160,6 +160,10 @@ main (int argc, char *argv[])
 	GDBusConnection *connection;
 	GError *error = NULL;
 
+#if !GLIB_CHECK_VERSION (2, 36, 0)
+	g_type_init ();
+#endif
+
 	connection = g_dbus_connection_new_for_address_sync ("unix:path=" NMRUNDIR "/private-dhcp",
 	                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
 	                                                     NULL, NULL, &error);
