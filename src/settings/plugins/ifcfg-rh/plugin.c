@@ -31,10 +31,6 @@
 
 #include <gmodule.h>
 
-#if HAVE_SELINUX
-#include <selinux/selinux.h>
-#endif
-
 #include "nm-setting-connection.h"
 
 #include "nm-default.h"
