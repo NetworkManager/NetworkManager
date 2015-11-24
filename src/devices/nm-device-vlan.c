@@ -290,36 +290,28 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->is_available (device, flags);
 }
 
-static gboolean
-component_added (NMDevice *device, GObject *component)
+static void
+notify_new_device_added (NMDevice *device, NMDevice *new_device)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	NMDevice *added_device;
 	const NMPlatformLink *plink;
 	const NMPlatformLnkVlan *plnk;
 
 	if (priv->parent)
-		return FALSE;
-
-	if (!NM_IS_DEVICE (component))
-		return FALSE;
-	added_device = NM_DEVICE (component);
+		return;
 
 	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
 	if (!plnk) {
 		_LOGW (LOGD_VLAN, "failed to get VLAN interface info while checking added component.");
-		return FALSE;
+		return;
 	}
 
 	if (   plink->parent <= 0
-	    || nm_device_get_ifindex (added_device) != plink->parent)
-		return FALSE;
+	    || nm_device_get_ifindex (new_device) != plink->parent)
+		return;
 
-	nm_device_vlan_set_parent (self, added_device);
-
-	/* Don't claim parent exclusively */
-	return FALSE;
+	nm_device_vlan_set_parent (self, new_device);
 }
 
 /******************************************************************/
@@ -677,7 +669,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->deactivate = deactivate;
 	parent_class->is_available = is_available;
-	parent_class->component_added = component_added;
+	parent_class->notify_new_device_added = notify_new_device_added;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;

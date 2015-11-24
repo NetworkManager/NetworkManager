@@ -1671,18 +1671,6 @@ device_ip_iface_changed (NMDevice *device,
 	}
 }
 
-static gboolean
-notify_component_added (NMManager *self, GObject *component)
-{
-	GSList *iter;
-
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
-		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
-			return TRUE;
-	}
-	return FALSE;
-}
-
 /**
  * add_device:
  * @self: the #NMManager
@@ -1814,7 +1802,12 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	g_object_notify (G_OBJECT (self), NM_MANAGER_DEVICES);
 
-	notify_component_added (self, G_OBJECT (device));
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *d = iter->data;
+
+		if (d != device)
+			nm_device_notify_new_device_added (d, device);
+	}
 
 	/* New devices might be master interfaces for virtual interfaces; so we may
 	 * need to create new virtual interfaces now.
@@ -1845,7 +1838,15 @@ factory_component_added_cb (NMDeviceFactory *factory,
                             GObject *component,
                             gpointer user_data)
 {
-	return notify_component_added (NM_MANAGER (user_data), component);
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (user_data), FALSE);
+
+	for (iter = NM_MANAGER_GET_PRIVATE (user_data)->devices; iter; iter = iter->next) {
+		if (nm_device_notify_component_added ((NMDevice *) iter->data, component))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 static void
