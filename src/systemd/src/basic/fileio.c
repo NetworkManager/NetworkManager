@@ -1066,7 +1066,7 @@ int fflush_and_check(FILE *f) {
 
 /* This is much like like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern, int flags) {
-        _cleanup_umask_ mode_t u;
+        _cleanup_umask_ mode_t u = 0;
         int fd;
 
         assert(pattern);
