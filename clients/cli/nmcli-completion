@@ -882,7 +882,7 @@ _nmcli()
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete monitor reload load import
+                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete monitor reload load import export
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
@@ -1352,6 +1352,32 @@ _nmcli()
                             OPTIONS_MANDATORY=(type file)
                             ALIASES=("type:vpn-type")
                             _nmcli_compl_ARGS ${ALIASES[@]}
+                            return 0
+                        fi
+                        ;;
+                    e|ex|exp|expo|expor|export)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+                            case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
+                            OPTIONS=(id uuid path)
+                            _nmcli_compl_ARGS_CONNECTION && return 0
                             return 0
                         fi
                         ;;

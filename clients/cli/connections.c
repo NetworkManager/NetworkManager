@@ -48,6 +48,7 @@
 #define PROMPT_VPN_TYPE    _("VPN type: ")
 #define PROMPT_MASTER      _("Master: ")
 #define PROMPT_CONNECTION  _("Connection (name, UUID, or path): ")
+#define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path): ")
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
 #define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
 
@@ -276,7 +277,8 @@ usage (void)
 	              "  monitor [id | uuid | path] <ID> ...\n\n"
 	              "  reload\n\n"
 	              "  load <filename> [ <filename>... ]\n\n"
-	              "  import [--temporary] type <type> file <file to import>\n\n"));
+	              "  import [--temporary] type <type> file <file to import>\n\n"
+	              "  export [id | uuid | path] <ID> [<output file>]\n\n"));
 }
 
 static void
@@ -537,6 +539,17 @@ usage_connection_import (void)
 	              "is imported by NetworkManager VPN plugins.\n\n"));
 }
 
+static void
+usage_connection_export (void)
+{
+	g_printerr (_("Usage: nmcli connection export { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> [<output file>]\n"
+	              "\n"
+	              "Export a connection. Only VPN connections are supported at the moment.\n"
+	              "The data are directed to standard output or to a file if a name is given.\n\n"));
+}
+
 static gboolean
 usage_connection_second_level (const char *cmd)
 {
@@ -566,6 +579,8 @@ usage_connection_second_level (const char *cmd)
 		usage_connection_load ();
 	else if (matches (cmd, "import") == 0)
 		usage_connection_import ();
+	else if (matches (cmd, "export") == 0)
+		usage_connection_export ();
 	else
 		ret = FALSE;
 	return ret;
@@ -6885,30 +6900,56 @@ gen_compat_devices (const char *text, int state)
 	return ret;
 }
 
+static const char **
+_create_vpn_array (const GPtrArray *connections, gboolean uuid)
+{
+	int c, idx = 0;
+	const char **array;
+
+	if (connections->len < 1)
+		return NULL;
+
+	array = g_new (const char *, connections->len + 1);
+	for (c = 0; c < connections->len; c++) {
+		NMConnection *connection = NM_CONNECTION (connections->pdata[c]);
+		const char *type = nm_connection_get_connection_type (connection);
+
+		if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) == 0)
+			array[idx++] = uuid ? nm_connection_get_uuid (connection) : nm_connection_get_id (connection);
+	}
+	array[idx] = NULL;
+	return array;
+}
+
 static char *
 gen_vpn_uuids (const char *text, int state)
 {
-	const GPtrArray *connections = nmc_tab_completion.nmc->connections;
-	int c, u = 0;
+	const GPtrArray *connections = nm_cli.connections;
 	const char **uuids;
 	char *ret;
 
 	if (connections->len < 1)
 		return NULL;
 
-	uuids = g_new (const char *, connections->len + 1);
-	for (c = 0; c < connections->len; c++) {
-		NMConnection *connection = NM_CONNECTION (connections->pdata[c]);
-		const char *type = nm_connection_get_connection_type (connection);
-
-		if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) == 0)
-			uuids[u++] = nm_connection_get_uuid (connection);
-	}
-	uuids[u] = NULL;
-
+	uuids = _create_vpn_array (connections, TRUE);
 	ret = nmc_rl_gen_func_basic (text, state, uuids);
-
 	g_free (uuids);
+	return ret;
+}
+
+static char *
+gen_vpn_ids (const char *text, int state)
+{
+	const GPtrArray *connections = nm_cli.connections;
+	const char **ids;
+	char *ret;
+
+	if (connections->len < 1)
+		return NULL;
+
+	ids = _create_vpn_array (connections, FALSE);
+	ret = nmc_rl_gen_func_basic (text, state, ids);
+	g_free (ids);
 	return ret;
 }
 
@@ -10092,6 +10133,127 @@ finish:
 	return nmc->return_value;
 }
 
+static NMCResultCode
+do_connection_export (NmCli *nmc, int argc, char **argv)
+{
+	NMConnection *connection = NULL;
+	const char *name;
+	const char *out_name = NULL;
+	char *name_ask = NULL;
+	char *out_name_ask = NULL;
+	const char *path = NULL;
+	const char *selector = NULL;
+	const char *type = NULL;
+	NMVpnEditorPlugin *plugin;
+	GError *error = NULL;
+
+	if (argc == 0) {
+		if (nmc->ask) {
+			name_ask = nmc_readline (PROMPT_VPN_CONNECTION);
+			name = name_ask = name_ask ? g_strstrip (name_ask) : NULL;
+			out_name = out_name_ask = nmc_readline (_("Output file name: "));
+		} else {
+			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+	} else {
+		if (   strcmp (*argv, "id") == 0
+		    || strcmp (*argv, "uuid") == 0
+		    || strcmp (*argv, "path") == 0) {
+
+			selector = *argv;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."),
+				                 selector);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto finish;
+			}
+		}
+		name = *argv;
+		if (next_arg (&argc, &argv) == 0)
+			out_name = *argv;
+
+		if (next_arg (&argc, &argv) == 0) {
+			g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+	}
+
+	if (!name) {
+		g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto finish;
+	}
+
+	type = nm_connection_get_connection_type (connection);
+	if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) != 0) {
+		g_string_printf (nmc->return_text, _("Error: the connection is not VPN."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
+
+	/* Export VPN configuration */
+	plugin = nm_vpn_get_plugin_by_service (type, &error);
+	if (!plugin) {
+		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin."));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto finish;
+	}
+
+	if (out_name)
+		path = out_name;
+	else {
+		int fd;
+		char tmpfile[] = "/tmp/nmcli-export-temp-XXXXXX";
+		fd = g_mkstemp (tmpfile);
+		if (fd == -1) {
+			g_string_printf (nmc->return_text, _("Error: failed to create temporary file %s."), tmpfile);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			goto finish;
+		}
+		close (fd);
+		path = tmpfile;
+	}
+
+	if (!nm_vpn_editor_plugin_export (plugin, path, connection, &error)) {
+		g_string_printf (nmc->return_text, _("Error: failed to export '%s': %s."),
+		                 nm_connection_get_id (connection), error ? error->message : "(unknown)");
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto finish;
+	}
+
+	/* No output file -> copy data to stdout */
+	if (!out_name) {
+		char *contents = NULL;
+		gsize len = 0;
+		if (!g_file_get_contents (path, &contents, &len, &error)) {
+			g_string_printf (nmc->return_text, _("Error: failed to read temporary file '%s': %s."),
+			                 path, error->message);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			goto finish;
+		}
+		g_print ("%s", contents);
+		g_free (contents);
+	}
+
+finish:
+	if (!out_name && path)
+		unlink (path);
+	g_clear_error (&error);
+	g_free (name_ask);
+	g_free (out_name_ask);
+	return nmc->return_value;
+}
+
 
 typedef struct {
 	NmCli *nmc;
@@ -10197,6 +10359,8 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	} else if (g_strcmp0 (rl_prompt, PROMPT_IMPORT_FILE) == 0) {
 		rl_attempted_completion_over = 0;
 		rl_complete_with_tilde_expansion = 1;
+	} else if (g_strcmp0 (rl_prompt, PROMPT_VPN_CONNECTION) == 0) {
+		generator_func = gen_vpn_ids;
 	}
 
 	if (generator_func)
@@ -10389,6 +10553,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 				next_arg (&argc, &argv);
 			}
 			nmc->return_value = do_connection_import (nmc, temporary, argc, argv);
+		} else if (matches(*argv, "export") == 0) {
+			nmc->return_value = do_connection_export (nmc, argc-1, argv+1);
 		} else {
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);

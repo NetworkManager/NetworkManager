@@ -831,6 +831,14 @@ so that nmcli could import the data.
 The imported connection profile will be saved as persistent unless \fI--temporary\fP
 option is specified, in which case the new profile won't exist after NetworkManager
 restart.
+.TP
+.B export [ id | uuid | path ] <ID> [<output file>]
+.br
+Export a connection.
+.br
+Only VPN connections are supported at the moment. A proper VPN plugin has to be
+installed so that nmcli could export a connection. If no \fI<output file>\fP is
+provided, the VPN configuration data will be printed to standard output.
 .RE
 
 .TP
@@ -1205,6 +1213,10 @@ removes the specified IP address from (static) profile ABC.
 .IP "\fB\f(CWnmcli con import type openvpn file ~/Downloads/frootvpn.ovpn\fP\fP"
 .IP
 imports an OpenVPN configuration to NetworkManager.
+
+.IP "\fB\f(CWnmcli con export corp-vpnc /home/joe/corpvpn.conf\fP\fP"
+.IP
+exports NetworkManager VPN profile corp-vpnc as standard Cisco (vpnc) configuration.
 
 .SH NOTES
 \fInmcli\fP accepts abbreviations, as long as they are a unique prefix in the set
