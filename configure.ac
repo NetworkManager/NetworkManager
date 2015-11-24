@@ -945,7 +945,7 @@ else
 	fi
 fi
 AS_IF([test "$with_valgrind" != "no"],
-	AC_SUBST(VALGRIND_RULES, 'LOG_COMPILER = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
+	AC_SUBST(VALGRIND_RULES, 'LOG_COMPILER = "$(top_srcdir)/tools/run-test-valgrind.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
 	AC_SUBST(VALGRIND_RULES, []))
 AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
 
