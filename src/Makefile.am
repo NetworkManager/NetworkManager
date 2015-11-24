@@ -169,7 +169,8 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/systemd/sd-icmp6-nd.h \
 	systemd/src/systemd/sd-id128.h \
 	systemd/src/systemd/sd-ipv4acd.h \
-	systemd/src/systemd/sd-ipv4ll.h
+	systemd/src/systemd/sd-ipv4ll.h \
+	systemd/src/systemd/sd-ndisc.h
 
 libsystemd_nm_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
