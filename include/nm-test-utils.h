@@ -370,7 +370,44 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		/* g_test_init() sets g_log_set_always_fatal() for G_LOG_LEVEL_WARNING
 		 * and G_LOG_LEVEL_CRITICAL. So, beware that the test will fail if you
 		 * have any WARN or ERR log messages -- unless you g_test_expect_message(). */
-		g_test_init (argc, argv, NULL);
+		GPtrArray *arg_array = g_ptr_array_new ();
+		gs_free char **arg_array_c = NULL;
+		int arg_array_n, j;
+
+		if (*argc) {
+			for (i = 0; i < *argc; i++)
+				g_ptr_array_add (arg_array, (*argv)[i]);
+		} else
+			g_ptr_array_add (arg_array, "./test");
+
+		if (test_quick_set && !test_quick_argv)
+			g_ptr_array_add (arg_array, "-m=quick");
+
+		g_ptr_array_add (arg_array, NULL);
+
+		arg_array_n = arg_array->len - 1;
+		arg_array_c = (char **) g_ptr_array_free (arg_array, FALSE);
+
+		g_test_init (&arg_array_n, &arg_array_c, NULL);
+
+		if (*argc > 1) {
+			/* collaps argc/argv by removing the arguments detected
+			 * by g_test_init(). */
+			for (i = 1, j = 1; i < *argc; i++) {
+				if ((*argv)[i] == arg_array_c[j])
+					j++;
+				else
+					(*argv)[i] = NULL;
+			}
+			for (i = 1, j = 1; i < *argc; i++) {
+				if ((*argv)[i]) {
+					(*argv)[j++] = (*argv)[i];
+					if (i >= j)
+						(*argv)[i] = NULL;
+				}
+			}
+			*argc = j;
+		}
 	}
 
 	if (test_quick_set)
