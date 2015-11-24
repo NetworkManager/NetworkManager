@@ -75,8 +75,8 @@ int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__pr
 
 gboolean nmtstp_wait_for_signal (guint timeout_ms);
 gboolean nmtstp_wait_for_signal_until (gint64 until_ms);
-const NMPlatformLink *nmtstp_wait_for_link (const char *ifname, guint timeout_ms);
-const NMPlatformLink *nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms);
+const NMPlatformLink *nmtstp_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
+const NMPlatformLink *nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
 
 const NMPlatformLink *nmtstp_assert_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
 const NMPlatformLink *nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms);

@@ -367,13 +367,13 @@ nmtstp_wait_for_signal_until (gint64 until_ms)
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link (const char *ifname, guint timeout_ms)
+nmtstp_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
 {
-	return nmtstp_wait_for_link_until (ifname, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+	return nmtstp_wait_for_link_until (ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms)
+nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
 {
 	const NMPlatformLink *plink;
 	gint64 now;
@@ -382,7 +382,8 @@ nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms)
 		now = nm_utils_get_monotonic_timestamp_ms ();
 
 		plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
-		if (plink)
+		if (   plink
+		    && (expected_link_type == NM_LINK_TYPE_NONE || plink->type == expected_link_type))
 			return plink;
 
 		if (until_ms < now)
@@ -403,10 +404,8 @@ nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_
 {
 	const NMPlatformLink *plink;
 
-	plink = nmtstp_wait_for_link_until (ifname, until_ms);
+	plink = nmtstp_wait_for_link_until (ifname, expected_link_type, until_ms);
 	g_assert (plink);
-	if (expected_link_type != NM_LINK_TYPE_NONE)
-		g_assert_cmpint (plink->type, ==, expected_link_type);
 	return plink;
 }
 
