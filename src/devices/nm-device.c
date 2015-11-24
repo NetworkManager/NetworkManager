@@ -7007,7 +7007,7 @@ nm_device_start_ip_check (NMDevice *self)
 		if (priv->ip4_config && priv->ip4_state == IP_DONE) {
 			guint gw = 0;
 
-			ping_binary = "/usr/bin/ping";
+			ping_binary = nm_utils_find_helper ("ping", "/usr/bin/ping", NULL);
 			log_domain = LOGD_IP4;
 
 			gw = nm_ip4_config_get_gateway (priv->ip4_config);
@@ -7016,7 +7016,7 @@ nm_device_start_ip_check (NMDevice *self)
 		} else if (priv->ip6_config && priv->ip6_state == IP_DONE) {
 			const struct in6_addr *gw = NULL;
 
-			ping_binary = "/usr/bin/ping6";
+			ping_binary = nm_utils_find_helper ("ping6", "/usr/bin/ping6", NULL);
 			log_domain = LOGD_IP6;
 
 			gw = nm_ip6_config_get_gateway (priv->ip6_config);
