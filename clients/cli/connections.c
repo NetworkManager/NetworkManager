@@ -9217,7 +9217,7 @@ do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	if (argc == 0) {
 		if (nmc->ask) {
 			name = name_ask = nmc_readline (PROMPT_CONNECTION);
-			new_name = new_name_ask = nmc_readline ("New connection name: ");
+			new_name = new_name_ask = nmc_readline (_("New connection name: "));
 		} else {
 			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
