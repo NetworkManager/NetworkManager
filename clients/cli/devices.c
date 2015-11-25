@@ -2042,7 +2042,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 
 		if (matches (*argv, "managed") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: Argument missing."));
+				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -2057,7 +2057,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches (*argv, "autoconnect") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: Argument missing."));
+				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
