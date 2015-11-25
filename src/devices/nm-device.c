@@ -7886,7 +7886,8 @@ queued_ip6_config_change (gpointer user_data)
 	g_object_ref (self);
 	update_ip6_config (self, FALSE);
 
-	if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
+	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+	    && priv->state < NM_DEVICE_STATE_DEACTIVATING) {
 		/* Handle DAD falures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
 			NMPlatformIP6Address *addr = iter->data;
@@ -7951,7 +7952,8 @@ device_ipx_changed (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		addr = platform_object;
 
-		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
+		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
                     && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
 		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE))) {
 			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
