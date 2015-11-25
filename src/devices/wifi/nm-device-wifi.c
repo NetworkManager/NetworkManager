@@ -115,6 +115,8 @@ struct _NMDeviceWifiPrivate {
 
 	guint             periodic_source_id;
 	guint             link_timeout_id;
+	guint32           failed_iface_count;
+	guint             reacquire_iface_id;
 
 	NMDeviceWifiCapabilities capabilities;
 };
@@ -1667,6 +1669,15 @@ cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 }
 
 static void
+cleanup_supplicant_failures (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->reacquire_iface_id);
+	priv->failed_iface_count = 0;
+}
+
+static void
 wifi_secrets_cb (NMActRequest *req,
                  NMActRequestGetSecretsCallId call_id,
                  NMSettingsConnection *connection,
@@ -1848,6 +1859,24 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 	return handled;
 }
 
+static gboolean
+reacquire_interface_cb (gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	priv->reacquire_iface_id = 0;
+	priv->failed_iface_count++;
+
+	_LOGW (LOGD_WIFI, "re-acquiring supplicant interface (#%d).", priv->failed_iface_count);
+
+	if (!priv->sup_iface)
+		supplicant_interface_acquire (self);
+
+	return G_SOURCE_REMOVE;
+}
+
 static void
 supplicant_iface_state_cb (NMSupplicantInterface *iface,
                            guint32 new_state,
@@ -1954,7 +1983,10 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		 * ready if the supplicant comes back.
 		 */
 		supplicant_interface_release (self);
-		supplicant_interface_acquire (self);
+		if (priv->failed_iface_count < 5)
+			priv->reacquire_iface_id = g_timeout_add_seconds (10, reacquire_interface_cb, self);
+		else
+			_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
 		break;
 	default:
 		break;
@@ -2785,6 +2817,7 @@ device_state_changed (NMDevice *device,
 		}
 
 		cleanup_association_attempt (self, TRUE);
+		cleanup_supplicant_failures (self);
 		remove_all_aps (self);
 	}
 
@@ -2871,6 +2904,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 		}
 
 		/* Re-initialize the supplicant interface and wait for it to be ready */
+		cleanup_supplicant_failures (self);
 		if (priv->sup_iface)
 			supplicant_interface_release (self);
 		supplicant_interface_acquire (self);
@@ -2919,6 +2953,7 @@ dispose (GObject *object)
 
 	cleanup_association_attempt (self, TRUE);
 	supplicant_interface_release (self);
+	cleanup_supplicant_failures (self);
 
 	g_clear_object (&priv->sup_mgr);
 
