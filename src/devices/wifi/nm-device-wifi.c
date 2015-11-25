@@ -113,7 +113,6 @@ struct _NMDeviceWifiPrivate {
 	gboolean          ssid_found;
 	NM80211Mode       mode;
 
-	guint32           failed_link_count;
 	guint             periodic_source_id;
 	guint             link_timeout_id;
 
