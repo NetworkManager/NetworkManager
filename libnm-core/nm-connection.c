@@ -1594,7 +1594,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TEAM_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME))
+	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_TUN_SETTING_NAME))
 		return TRUE;
 
 	if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
@@ -1947,6 +1948,24 @@ nm_connection_get_setting_serial (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
+}
+
+/**
+ * nm_connection_get_setting_tun:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingTun the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingTun if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.2
+ **/
+NMSettingTun *
+nm_connection_get_setting_tun (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingTun *) nm_connection_get_setting (connection, NM_TYPE_SETTING_TUN);
 }
 
 /**

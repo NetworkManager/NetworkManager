@@ -22,5 +22,6 @@
 #define NM_DEVICE_PRIVATE_H
 
 void _nm_device_set_device_type (NMDevice *device, NMDeviceType dtype);
+NMDeviceType _nm_device_type_for_path (DBusGConnection *connection, const char *path);
 
 #endif /* NM_DEVICE_PRIVATE_H */

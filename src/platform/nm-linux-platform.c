@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <dlfcn.h>
 #include <netinet/icmp6.h>
@@ -4235,6 +4236,66 @@ link_vlan_change (NMPlatform *platform,
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
+static int
+tun_add (NMPlatform *platform, const char *name, gboolean tap,
+         gint64 owner, gint64 group, gboolean pi, gboolean vnet_hdr,
+         gboolean multi_queue, NMPlatformLink *out_link)
+{
+       const NMPObject *obj;
+       struct ifreq ifr = { };
+       int fd;
+
+       _LOGD ("link: add %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
+              tap ? "tap" : "tun", name, owner, group);
+
+       fd = open ("/dev/net/tun", O_RDWR);
+       if (fd < 0)
+               return FALSE;
+
+       strncpy (ifr.ifr_name, name, IFNAMSIZ);
+       ifr.ifr_flags = tap ? IFF_TAP : IFF_TUN;
+
+       if (!pi)
+               ifr.ifr_flags |= IFF_NO_PI;
+       if (vnet_hdr)
+               ifr.ifr_flags |= IFF_VNET_HDR;
+       if (multi_queue)
+               ifr.ifr_flags |= NM_IFF_MULTI_QUEUE;
+
+       if (ioctl (fd, TUNSETIFF, &ifr)) {
+               close (fd);
+               return FALSE;
+       }
+
+       if (owner >= 0 && owner < G_MAXINT32) {
+               if (ioctl (fd, TUNSETOWNER, (uid_t) owner)) {
+                       close (fd);
+                       return FALSE;
+               }
+       }
+
+       if (group >= 0 && group < G_MAXINT32) {
+               if (ioctl (fd, TUNSETGROUP, (gid_t) group)) {
+                       close (fd);
+                       return FALSE;
+               }
+       }
+
+       if (ioctl (fd, TUNSETPERSIST, 1)) {
+               close (fd);
+               return FALSE;
+       }
+       do_request_link (platform, 0, name, TRUE);
+       obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+                                         0, name, FALSE,
+                                         tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN,
+                                         NULL, NULL);
+       if (out_link && obj)
+               *out_link = obj->link;
+
+       return !!obj;
+}
+
 static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
@@ -5443,6 +5504,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
+
+	platform_class->tun_add = tun_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
 

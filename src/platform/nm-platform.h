@@ -61,6 +61,8 @@ typedef struct _NMPlatform NMPlatform;
 #define NM_IN6_ADDR_GEN_MODE_NONE              1    /* IN6_ADDR_GEN_MODE_NONE */
 #define NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY    2    /* IN6_ADDR_GEN_MODE_STABLE_PRIVACY */
 
+#define NM_IFF_MULTI_QUEUE                     0x0100 /* IFF_MULTI_QUEUE */
+
 typedef enum { /*< skip >*/
 
 	/* dummy value, to enforce that the enum type is signed and has a size
@@ -525,6 +527,9 @@ typedef struct {
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
 
+	gboolean (*tun_add) (NMPlatform *platform, const char *name, gboolean tap, gint64 owner, gint64 group, gboolean pi,
+	                     gboolean vnet_hdr, gboolean multi_queue, NMPlatformLink *out_link);
+
 	gboolean    (*wifi_get_capabilities) (NMPlatform *, int ifindex, NMDeviceWifiCapabilities *caps);
 	gboolean    (*wifi_get_bssid)        (NMPlatform *, int ifindex, guint8 *bssid);
 	GByteArray *(*wifi_get_ssid)         (NMPlatform *, int ifindex);
@@ -727,6 +732,9 @@ gboolean nm_platform_link_vlan_change (NMPlatform *self,
                                        const NMVlanQosMapping *egress_map,
                                        gsize n_egress_map);
 
+
+NMPlatformError nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap, gint64 owner, gint64 group, gboolean pi,
+                                     gboolean vnet_hdr, gboolean multi_queue, NMPlatformLink *out_link);
 
 NMPlatformError nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
 gboolean nm_platform_infiniband_get_properties (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);

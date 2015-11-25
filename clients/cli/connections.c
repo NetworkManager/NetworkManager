@@ -54,6 +54,9 @@ static const char *nmc_known_vpns[] =
 	{ "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
 	  "ssh", "l2tp", "iodine", NULL };
 
+static const char *nmc_tun_modes[] =
+	{ "tun", "tap", NULL };
+
 /* Available fields for 'connection show' */
 static NmcOutputField nmc_fields_con_show[] = {
 	{"NAME",                 N_("NAME")},                  /* 0 */
@@ -104,6 +107,7 @@ extern NmcOutputField nmc_fields_setting_bridge_port[];
 extern NmcOutputField nmc_fields_setting_team[];
 extern NmcOutputField nmc_fields_setting_team_port[];
 extern NmcOutputField nmc_fields_setting_dcb[];
+extern NmcOutputField nmc_fields_setting_tun[];
 
 /* Available settings for 'connection show <con>' - profile part */
 static NmcOutputField nmc_fields_settings_names[] = {
@@ -132,6 +136,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_TEAM_SETTING_NAME,              nmc_fields_setting_team + 1),              /* 22 */
 	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME,         nmc_fields_setting_team_port + 1),         /* 23 */
 	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME,               nmc_fields_setting_dcb + 1),               /* 24 */
+	SETTING_FIELD (NM_SETTING_TUN_SETTING_NAME,               nmc_fields_setting_tun + 1),               /* 25 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -157,7 +162,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_BRIDGE_PORT_SETTING_NAME","\
                                          NM_SETTING_TEAM_SETTING_NAME","\
                                          NM_SETTING_TEAM_PORT_SETTING_NAME"," \
-                                         NM_SETTING_DCB_SETTING_NAME
+                                         NM_SETTING_DCB_SETTING_NAME"," \
+                                         NM_SETTING_TUN_SETTING_NAME
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
 
 /* Active connection data */
@@ -395,6 +401,12 @@ usage_connection_add (void)
 	              "                  protocol pppoa|pppoe|ipoatm\n"
 	              "                  [password <password>]\n"
 	              "                  [encapsulation vcmux|llc]\n\n"
+	              "    tun:          mode tun|tap\n"
+	              "                  [owner <UID>]\n"
+	              "                  [group <GID>]\n"
+	              "                  [pi yes|no]\n"
+	              "                  [vnet-hdr yes|no]\n"
+	              "                  [multi-queue yes|no]\n\n"
 	              "  SLAVE_OPTIONS:\n"
 	              "    bridge:       [priority <0-63>]\n"
 	              "                  [path-cost <1-65535>]\n"
@@ -2729,6 +2741,13 @@ static const NameItem nmc_bridge_slave_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
+static const NameItem nmc_tun_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_TUN_SETTING_NAME,        NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
 
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
@@ -2751,6 +2770,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ "bond-slave",                       NULL,        nmc_bond_slave_settings   },
 	{ "team-slave",                       NULL,        nmc_team_slave_settings   },
 	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
+	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
 	{ NULL, NULL, NULL }
 };
 
@@ -2980,6 +3000,20 @@ check_infiniband_p_key (const char *p_key, guint32 *p_key_int, GError **error)
 	}
 	if (p_key_int)
 		*p_key_int = (guint32) local_p_key_int;
+	return TRUE;
+}
+
+static gboolean
+check_user_group_id (const char *id, GError **error)
+{
+	unsigned long int value;
+
+	if (!nmc_string_to_uint (id, FALSE, 0, 0, &value)) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("Error: '%s' is not a valid UID/GID."), id);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -4249,6 +4283,82 @@ is_property_valid (NMSetting *setting, const char *property, GError **error)
 	return ret;
 }
 
+static void
+do_questionnaire_tun (char **user, char **group,
+                      char **pi, char **vnet_hdr, char **multi_queue)
+{
+	gboolean once_more;
+	GError *error = NULL;
+	gboolean b;
+
+	if (!*user) {
+		do {
+			*user = nmc_readline (_("User ID [none]: "));
+			if (!*user)
+				break;
+			once_more = !check_user_group_id (*user, &error);
+			if (once_more) {
+				g_print ("%s\n", error->message);
+				g_clear_error (&error);
+				g_free (*user);
+			}
+		} while (once_more);
+	}
+	if (!*group) {
+		do {
+			*group = nmc_readline (_("Group ID [none]: "));
+			if (!*group)
+				break;
+			once_more = !check_user_group_id (*group, &error);
+			if (once_more) {
+				g_print ("%s\n", error->message);
+				g_clear_error (&error);
+				g_free (*group);
+			}
+		} while (once_more);
+	}
+
+	if (!*pi) {
+		do {
+			*pi = nmc_readline (_("Enable PI %s"), prompt_yes_no (FALSE, ":"));
+			*pi = *pi ? *pi : g_strdup ("no");
+			normalize_yes_no (pi);
+			once_more = !nmc_string_to_bool (*pi, &b, &error);
+			if (once_more) {
+				g_print (_("Error: 'pi': %s.\n"), error->message);
+				g_clear_error (&error);
+				g_free (*pi);
+			}
+		} while (once_more);
+	}
+	if (!*vnet_hdr) {
+		do {
+			*vnet_hdr = nmc_readline (_("Enable VNET header %s"), prompt_yes_no (FALSE, ":"));
+			*vnet_hdr = *vnet_hdr ? *vnet_hdr : g_strdup ("no");
+			normalize_yes_no (vnet_hdr);
+			once_more = !nmc_string_to_bool (*vnet_hdr, &b, &error);
+			if (once_more) {
+				g_print (_("Error: 'vnet-hdr': %s.\n"), error->message);
+				g_clear_error (&error);
+				g_free (*vnet_hdr);
+			}
+		} while (once_more);
+	}
+	if (!*multi_queue) {
+		do {
+			*multi_queue = nmc_readline (_("Enable multi queue %s"), prompt_yes_no (FALSE, ":"));
+			*multi_queue = *multi_queue ? *multi_queue : g_strdup ("no");
+			normalize_yes_no (multi_queue);
+			once_more = !nmc_string_to_bool (*multi_queue, &b, &error);
+			if (once_more) {
+				g_print (_("Error: 'multi-queue': %s.\n"), error->message);
+				g_clear_error (&error);
+				g_free (*multi_queue);
+			}
+		} while (once_more);
+	}
+}
+
 static gboolean
 read_connection_properties (NMConnection *connection,
                             int argc,
@@ -4459,6 +4569,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingVpn *s_vpn;
 	NMSettingOlpcMesh *s_olpc_mesh;
 	NMSettingAdsl *s_adsl;
+	NMSettingTun *s_tun;
 	const char *slave_type;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -5569,6 +5680,114 @@ cleanup_adsl:
 		if (!success)
 			return FALSE;
 
+	} else if (!strcmp (con_type, NM_SETTING_TUN_SETTING_NAME)) {
+		/* Build up the settings required for 'tun' */
+		gboolean success = FALSE;
+		const char *mode = NULL;
+		NMSettingTunMode mode_enum;
+		char *mode_ask = NULL;
+		const char *owner_c = NULL, *group_c = NULL;
+		char *owner = NULL, *group = NULL;
+		const char *pi_c = NULL, *vnet_hdr_c = NULL, *multi_queue_c = NULL;
+		char *pi = NULL, *vnet_hdr = NULL, *multi_queue = NULL;
+		gboolean pi_bool, vnet_hdr_bool, multi_queue_bool;
+		nmc_arg_t exp_args[] = { {"mode",        TRUE,  &mode,          !ask},
+		                         {"owner",       TRUE,  &owner_c,       FALSE},
+		                         {"group",       TRUE,  &group_c,       FALSE},
+		                         {"pi",          TRUE,  &pi_c,          FALSE},
+		                         {"vnet-hdr",    TRUE,  &vnet_hdr_c,    FALSE},
+		                         {"multi-queue", TRUE,  &multi_queue_c, FALSE},
+                                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!mode && ask)
+			mode = mode_ask = nmc_readline (_("Mode: "));
+		if (!mode) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'mode' is required."));
+			goto cleanup_tun;
+		}
+
+		if (!(mode = nmc_string_is_valid (mode, nmc_tun_modes, NULL))) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'mode' must be 'tun' or 'tap'."));
+			goto cleanup_tun;
+		}
+
+		if (owner && !check_user_group_id (owner, error))
+			goto cleanup_tun;
+		if (group && !check_user_group_id (group, error))
+			goto cleanup_tun;
+
+		owner = g_strdup (owner_c);
+		group = g_strdup (group_c);
+		pi = g_strdup (pi_c);
+		vnet_hdr = g_strdup (vnet_hdr_c);
+		multi_queue = g_strdup (multi_queue_c);
+		if (ask)
+			do_questionnaire_tun (&owner, &group, &pi, &vnet_hdr, &multi_queue);
+
+		if (pi) {
+			GError *tmp_err = NULL;
+
+			if (!nmc_string_to_bool (pi, &pi_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'pi': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_tun;
+			}
+		}
+
+		if (vnet_hdr) {
+			GError *tmp_err = NULL;
+
+			if (!nmc_string_to_bool (vnet_hdr, &vnet_hdr_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'vnet-hdr': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_tun;
+			}
+		}
+
+		if (multi_queue) {
+			GError *tmp_err = NULL;
+
+			if (!nmc_string_to_bool (multi_queue, &multi_queue_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'multi-queue': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_tun;
+			}
+		}
+		/* Add 'tun' setting */
+		s_tun = (NMSettingTun *) nm_setting_tun_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_tun));
+		mode_enum = !strcmp (mode, "tun") ? NM_SETTING_TUN_MODE_TUN : NM_SETTING_TUN_MODE_TAP;
+
+		g_object_set (s_tun,
+		              NM_SETTING_TUN_MODE,   mode_enum,
+		              NM_SETTING_TUN_OWNER,  owner,
+		              NM_SETTING_TUN_GROUP,  group,
+		              NULL);
+		if (pi)
+			g_object_set (s_tun, NM_SETTING_TUN_PI, pi_bool, NULL);
+		if (vnet_hdr)
+			g_object_set (s_tun, NM_SETTING_TUN_VNET_HDR, vnet_hdr_bool, NULL);
+		if (multi_queue)
+			g_object_set (s_tun, NM_SETTING_TUN_MULTI_QUEUE, multi_queue_bool, NULL);
+
+		success = TRUE;
+cleanup_tun:
+		g_free (mode_ask);
+		g_free (owner);
+		g_free (group);
+		g_free (pi);
+		g_free (vnet_hdr);
+		g_free (multi_queue);
+		if (!success)
+			return FALSE;
 	} else if (!strcmp (con_type, NM_SETTING_GENERIC_SETTING_NAME)) {
 		/* Add 'generic' setting */
 		s_generic = (NMSettingGeneric *) nm_setting_generic_new ();
