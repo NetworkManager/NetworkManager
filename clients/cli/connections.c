@@ -50,9 +50,20 @@
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
 #define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
 
-static const char *nmc_known_vpns[] =
-	{ "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
-	  "ssh", "l2tp", "iodine", NULL };
+static const char *nmc_known_vpns[] = {
+	"openvpn",
+	"vpnc",
+	"pptp",
+	"openconnect",
+	"openswan",
+	"libreswan",
+	"strongswan",
+	"ssh",
+	"l2tp",
+	"iodine",
+	"fortisslvpn",
+	NULL
+};
 
 static const char *nmc_tun_modes[] =
 	{ "tun", "tap", NULL };

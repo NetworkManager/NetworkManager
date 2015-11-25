@@ -622,7 +622,7 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 .RS
 .TP
 .B vpn:
-.IP "\fIvpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\fP" 42
+.IP "\fIvpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|strongswan|ssh|l2tp|iodine|fortisslvpn|...\fP" 42
 \(en VPN type
 .IP "\fI[user <username>]\fP" 42
 \(en VPN username
