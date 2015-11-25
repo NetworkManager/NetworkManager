@@ -111,6 +111,17 @@ __g_type_ensure (GType type)
 #define g_test_initialized() (g_test_config_vars->test_initialized)
 #endif
 
+/* Rumtime check for glib version. First do a compile time check which
+ * (if satisfied) shortcuts the runtime check. */
+#define nm_glib_check_version(major, minor, micro) \
+    (   GLIB_CHECK_VERSION ((major), (minor), (micro)) \
+     || (   (   glib_major_version > (major)) \
+         || (   glib_major_version == (major) \
+             && glib_minor_version > (minor)) \
+         || (   glib_major_version == (major) \
+             && glib_minor_version == (minor) \
+             && glib_micro_version >= (micro))))
+
 /* g_test_skip() is only available since glib 2.38. Add a compatibility wrapper. */
 inline static void
 __nmtst_g_test_skip (const gchar *msg)
