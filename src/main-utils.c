@@ -79,8 +79,11 @@ nm_main_utils_setup_signals (GMainLoop *main_loop)
 	signal (SIGPIPE, SIG_IGN);
 
 	g_unix_signal_add (SIGHUP, sighup_handler, GINT_TO_POINTER (SIGHUP));
-	g_unix_signal_add (SIGUSR1, sighup_handler, GINT_TO_POINTER (SIGUSR1));
-	g_unix_signal_add (SIGUSR2, sighup_handler, GINT_TO_POINTER (SIGUSR2));
+	if (nm_glib_check_version (2, 36, 0)) {
+		g_unix_signal_add (SIGUSR1, sighup_handler, GINT_TO_POINTER (SIGUSR1));
+		g_unix_signal_add (SIGUSR2, sighup_handler, GINT_TO_POINTER (SIGUSR2));
+	} else
+		nm_log_warn (LOGD_CORE, "glib-version: cannot handle SIGUSR1 and SIGUSR2 signals. Consider upgrading glib to 2.36.0 or newer");
 	g_unix_signal_add (SIGINT, sigint_handler, main_loop);
 	g_unix_signal_add (SIGTERM, sigterm_handler, main_loop);
 }
