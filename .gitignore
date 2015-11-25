@@ -270,3 +270,11 @@ test-*.trs
 /src/tests/test-wired-defname
 
 /vapi/*.vapi
+
+
+# The following names are no longer present on this branch,
+# but they were on older versions. Thus keep ignoring them
+# otherwise when switching branches these untracked files show
+# up.
+/src/settings/plugins/ifnet/tests/check_ifnet
+
