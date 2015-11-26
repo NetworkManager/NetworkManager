@@ -150,11 +150,11 @@ fi
 			</task>
 			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
 				<params>
-					<param name="GIT_TARGETBRANCH" value="$GIT_TARGETBRANCH"/>
+					<param name="GIT_URL" value="$GIT_TEST_REPO"/>
+					<param name="GIT_TARGETBRANCH" value="$GIT_TEST_BRANCH"/>
 					<param name="TESTS" value="$TESTS"/>
 					<param name="TEST_MAPPER" value="True"/>
 					<param name="COMPONENT" value="NetworkManager"/>
-					<param name="GIT_URL" value="$GIT_URL"/>
 					<param name="TYPE" value="TEST"/>
 				</params>
 			</task>

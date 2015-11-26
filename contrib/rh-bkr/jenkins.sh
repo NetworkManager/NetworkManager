@@ -16,7 +16,7 @@ DIR="$(dirname "$(readlink -f "$0")")"
 # HOSTYPE=
 # TESTS=
 # ARGS=
-# GIT_TARGETBRANCH=
+# GIT_TEST_BRANCH=
 
 # Trigger from remote:
 # TOKEN_NAME= // secret
@@ -50,10 +50,10 @@ for r in $ARGS; do
 	_ARGS+=("$r")
 done
 
-if [ -n "$GIT_TARGETBRANCH" -a "$GIT_TARGETBRANCH" != "--" ]; then
-	GIT_TARGETBRANCH=(--var "GIT_TARGETBRANCH=$GIT_TARGETBRANCH")
+if [ -n "$GIT_TEST_BRANCH" -a "$GIT_TEST_BRANCH" != "--" ]; then
+	GIT_TEST_BRANCH=(--var "GIT_TEST_BRANCH=$GIT_TEST_BRANCH")
 else
-	GIT_TARGETBRANCH=()
+	GIT_TEST_BRANCH=()
 fi
 
 if [ "$ARCH" == "<random>" ]; then
@@ -75,7 +75,7 @@ python -u \
     "${PROFILE[@]}" \
     "${HOSTTYPE[@]}" \
     --var "TESTS=$TESTS" \
-    "${GIT_TARGETBRANCH[@]}" \
+    "${GIT_TEST_BRANCH[@]}" \
     --bkr-write-job-id 'beaker_job_id' \
     --bkr-wait-completion \
     --bkr-job-results 'results.xml' \

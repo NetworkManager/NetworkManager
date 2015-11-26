@@ -658,7 +658,7 @@ class CmdSubmit(CmdBase):
 
         # if unspecified, detect the test-plan based on the target-branch.
         try:
-            target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("nitrate-test-plan")
+            target_branch = self.__process_line_get_GIT_TEST_BRANCH_detect("nitrate-test-plan")
         except:
             target_branch = None
 
@@ -670,10 +670,10 @@ class CmdSubmit(CmdBase):
         print("Detected nitrate-test-plan=%s" % (t))
         return t
 
-    def __process_line_get_GIT_TARGETBRANCH_detect(self, key_name):
+    def __process_line_get_GIT_TEST_BRANCH_detect(self, key_name):
         # we default to 'master', unless there is an RPM that looks like it's from
         # rhel-7.0.
-        v = self._get_var('GIT_TARGETBRANCH')
+        v = self._get_var('GIT_TEST_BRANCH')
         if v is not None:
             return v
         if self.rpm is not None:
@@ -706,8 +706,8 @@ class CmdSubmit(CmdBase):
                         return 'master' # upstream 1.1
         if self.options.build_id:
             return 'master'
-        raise Exception("could not detect %s. Try setting as target branch GIT_TARGETBRANCH%s" % (key_name,
-                    ((" or "+key_name) if key_name != 'GIT_TARGETBRANCH' else '')))
+        raise Exception("could not detect %s. Try setting as target branch GIT_TEST_BRANCH%s" % (key_name,
+                    ((" or "+key_name) if key_name != 'GIT_TEST_BRANCH' else '')))
 
     def _detect_hosttype(self):
         return 'default'
@@ -746,14 +746,14 @@ class CmdSubmit(CmdBase):
         else:
             return '<group op="=" value="desktopqe-net"/>'
 
-    def _get_var_for_GIT_TARGETBRANCH(self, key):
-        return self.__process_line_get_GIT_TARGETBRANCH_detect("GIT_TARGETBRANCH")
+    def _get_var_for_GIT_TEST_BRANCH(self, key):
+        return self.__process_line_get_GIT_TEST_BRANCH_detect("GIT_TEST_BRANCH")
 
     def _get_var_for_DISTRO_NAME(self, key):
         v = self._get_var('DISTO_NAME')
         if v is not None:
             return v
-        target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_NAME")
+        target_branch = self.__process_line_get_GIT_TEST_BRANCH_detect("DISTRO_NAME")
         if target_branch == 'rhel-7.0':
             return 'RHEL-7.0-20140507.0'
         if target_branch == 'rhel-7.1':
@@ -766,7 +766,7 @@ class CmdSubmit(CmdBase):
         v = self._get_var('DISTRO_TAG')
         if v is not None:
             return v
-        target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_TAG")
+        target_branch = self.__process_line_get_GIT_TEST_BRANCH_detect("DISTRO_TAG")
         if target_branch == 'rhel-7.0':
             return 'RHEL-7_0-Z-branch'
         if target_branch == 'rhel-7.1':
@@ -849,7 +849,8 @@ class CmdSubmit(CmdBase):
             'JOBTYPE'           : _get_var_for_JOBTYPE,
             'DISTROREQUIRES'    : _get_var_for_DISTROREQUIRES,
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
-            'GIT_TARGETBRANCH'  : _get_var_for_GIT_TARGETBRANCH,
+            'GIT_TEST_REPO'     : 'http://code.engineering.redhat.com/gerrit/desktopqe/NetworkManager',
+            'GIT_TEST_BRANCH'   : _get_var_for_GIT_TEST_BRANCH,
             'UUID'              : str(uuid.uuid4()),
             'RESERVESYS'        : _get_var_for_RESERVESYS,
             'SELINUX_DISABLED'  : _get_var_for_SELINUX_DISABLED,
@@ -859,7 +860,6 @@ class CmdSubmit(CmdBase):
             'CONF_LOGLEVEL'     : 'DEBUG',
             'CONF_DHCP'         : 'dhclient',
             'CONF_DEBUG'        : 'RLIMIT_CORE,fatal-warnings',
-            'GIT_URL'           : 'http://code.engineering.redhat.com/gerrit/desktopqe/NetworkManager',
             'RPM_LIST'          : _get_var_for_RPM_LIST,
         }
     def _process_line_get(self, key, replacements):
