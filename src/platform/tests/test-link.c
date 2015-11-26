@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <sched.h>
+
 #include "nmp-object.h"
 
 #include "test-common.h"
@@ -1379,6 +1381,8 @@ test_nl_bugs_veth (void)
 	int ifindex_veth0, ifindex_veth1;
 	int i;
 	const NMPlatformLink *pllink_veth0, *pllink_veth1;
+	gs_free_error GError *error = NULL;
+	NMTstpNamespaceHandle *ns_handle = NULL;
 
 	/* create veth pair. */
 	nmtstp_run_command_check ("ip link add dev %s type veth peer name %s", IFACE_VETH0, IFACE_VETH1);
@@ -1409,9 +1413,32 @@ test_nl_bugs_veth (void)
 	g_assert (pllink_veth1);
 	g_assert_cmpint (pllink_veth1->parent, ==, ifindex_veth0);
 
+
+	/* move one veth peer to another namespace and check that the
+	 * parent/IFLA_LINK of the remaining peer properly updates
+	 * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
+	ns_handle = nmtstp_namespace_create (CLONE_NEWNET, &error);
+	g_assert_no_error (error);
+	g_assert (ns_handle);
+
+	nmtstp_run_command_check ("ip link set %s netns %ld", IFACE_VETH1, (long) nmtstp_namespace_handle_get_pid (ns_handle));
+	NMTST_WAIT_ASSERT (100, {
+		nmtstp_wait_for_signal (50);
+		nm_platform_process_events (NM_PLATFORM_GET);
+
+		pllink_veth1 = nm_platform_link_get (NM_PLATFORM_GET, ifindex_veth1);
+		pllink_veth0 = nm_platform_link_get (NM_PLATFORM_GET, ifindex_veth0);
+		if (   !pllink_veth1
+		    && pllink_veth0
+		    && pllink_veth0->parent == NM_PLATFORM_LINK_OTHER_NETNS) {
+			break;
+		}
+	});
+
 out:
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth0));
+	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth0);
 	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth1);
+	nmtstp_namespace_handle_release (ns_handle);
 }
 
 /*****************************************************************************/

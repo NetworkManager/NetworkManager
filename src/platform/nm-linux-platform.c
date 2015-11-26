@@ -2738,7 +2738,8 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 
 			/* removal of a link could be caused by moving the link to another netns.
 			 * In this case, we potentially have to update other links that have this link as parent.
-			 * Currently, kernel misses to sent us a notification in this case (rh #1262908). */
+			 * Currently, kernel misses to sent us a notification in this case
+			 * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
 
 			if (   ops_type == NMP_CACHE_OPS_REMOVED
 			    && old /* <-- nonsensical, make coverity happy */
