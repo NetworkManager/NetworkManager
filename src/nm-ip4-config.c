@@ -936,8 +936,8 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 
 /**
  * nm_ip4_config_replace:
- * @dst: config from which to remove everything in @src
- * @src: config to remove from @dst
+ * @dst: config to replace with @src content
+ * @src: source config to copy
  * @relevant_changes: return whether there are changes to the
  * destination object that are relevant. This is equal to
  * nm_ip4_config_equal() showing any difference.
@@ -988,7 +988,10 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 	/* default gateway */
 	if (   src_priv->gateway != dst_priv->gateway
 	    || src_priv->has_gateway != dst_priv->has_gateway) {
-		nm_ip4_config_set_gateway (dst, src_priv->gateway);
+		if (src_priv->has_gateway)
+			nm_ip4_config_set_gateway (dst, src_priv->gateway);
+		else
+			nm_ip4_config_unset_gateway (dst);
 		has_relevant_changes = TRUE;
 	}
 
