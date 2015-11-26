@@ -327,8 +327,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 	case NM_DEVICE_TYPE_IP_TUNNEL:
 		return NM_TYPE_DEVICE_GENERIC;
 	default:
-		g_warning ("Unknown device type %d", dtype);
-		return G_TYPE_INVALID;
+		/* Fall back to NMDeviceGeneric for unknown devices */
+		return NM_TYPE_DEVICE_GENERIC;
 	}
 }
 
