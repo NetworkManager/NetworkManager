@@ -2778,6 +2778,31 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				                         NULL);
 			}
 		}
+		if (   NM_IN_SET (ops_type, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_UPDATED)
+		    && (new && new->_link.netlink.is_in_netlink)
+		    && (!old || !old->_link.netlink.is_in_netlink))
+		{
+			if (!new->_link.netlink.lnk) {
+				/* certain link-types also come with a IFLA_INFO_DATA/lnk_data. It may happen that
+				 * kernel didn't send this notification, thus when we first learn about a link
+				 * that lacks an lnk_data we re-request it again.
+				 *
+				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
+				switch (new->link.type) {
+				case NM_LINK_TYPE_GRE:
+				case NM_LINK_TYPE_INFINIBAND:
+				case NM_LINK_TYPE_MACVLAN:
+				case NM_LINK_TYPE_VLAN:
+				case NM_LINK_TYPE_VXLAN:
+					delayed_action_schedule (platform,
+					                         DELAYED_ACTION_TYPE_REFRESH_LINK,
+					                         GINT_TO_POINTER (new->link.ifindex));
+					break;
+				default:
+					break;
+				}
+			}
+		}
 		{
 			/* on enslave/release, we also refresh the master. */
 			int ifindex1 = 0, ifindex2 = 0;
