@@ -1443,6 +1443,56 @@ out:
 
 /*****************************************************************************/
 
+static void
+test_nl_bugs_spuroius_newlink (void)
+{
+	const char *IFACE_BOND0 = "nm-test-bond0";
+	const char *IFACE_DUMMY0 = "nm-test-dummy0";
+	int ifindex_bond0, ifindex_dummy0;
+	const NMPlatformLink *pllink;
+	gboolean wait_for_settle;
+
+	/* see https://bugzilla.redhat.com/show_bug.cgi?id=1285719 */
+
+	nmtstp_run_command_check ("ip link add %s type dummy", IFACE_DUMMY0);
+	ifindex_dummy0 = nmtstp_assert_wait_for_link (IFACE_DUMMY0, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+
+	nmtstp_run_command_check ("ip link add %s type bond", IFACE_BOND0);
+	ifindex_bond0 = nmtstp_assert_wait_for_link (IFACE_BOND0, NM_LINK_TYPE_BOND, 100)->ifindex;
+
+	nmtstp_link_set_updown (-1, ifindex_bond0, TRUE);
+
+	nmtstp_run_command_check ("ip link set %s master %s", IFACE_DUMMY0, IFACE_BOND0);
+	NMTST_WAIT_ASSERT (100, {
+		nmtstp_wait_for_signal (50);
+
+		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_dummy0);
+		g_assert (pllink);
+		if (pllink->master == ifindex_bond0)
+			break;
+	});
+
+	nmtstp_run_command_check ("ip link del %s",  IFACE_BOND0);
+
+	wait_for_settle = TRUE;
+	nmtstp_wait_for_signal (50);
+again:
+	nm_platform_process_events (NM_PLATFORM_GET);
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_bond0);
+	g_assert (!pllink);
+
+	if (wait_for_settle) {
+		wait_for_settle = FALSE;
+		NMTST_WAIT (300, { nmtstp_wait_for_signal (50); });
+		goto again;
+	}
+
+	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_bond0);
+	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_dummy0);
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -1480,5 +1530,6 @@ setup_tests (void)
 		g_test_add_func ("/link/software/vlan/set-xgress", test_vlan_set_xgress);
 
 		g_test_add_func ("/link/nl-bugs/veth", test_nl_bugs_veth);
+		g_test_add_func ("/link/nl-bugs/spurious-newlink", test_nl_bugs_spuroius_newlink);
 	}
 }
