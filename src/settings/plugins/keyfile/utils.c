@@ -29,6 +29,8 @@
 #include <nm-setting-wireless-security.h>
 #include "nm-config.h"
 
+#define NM_CONFIG_KEYFILE_PATH_DEFAULT NMCONFDIR "/system-connections"
+
 static const char temp_letters[] =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
