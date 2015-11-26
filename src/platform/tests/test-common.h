@@ -46,6 +46,19 @@ typedef struct {
 gboolean nmtstp_is_root_test (void);
 gboolean nmtstp_is_sysfs_writable (void);
 
+/******************************************************************************/
+
+typedef struct _NMTstpNamespaceHandle NMTstpNamespaceHandle;
+
+NMTstpNamespaceHandle *nmtstp_namespace_create (int flags, GError **error);
+
+void nmtstp_namespace_handle_release (NMTstpNamespaceHandle *handle);
+pid_t nmtstp_namespace_handle_get_pid (NMTstpNamespaceHandle *handle);
+
+int nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name);
+
+/******************************************************************************/
+
 SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname);
 #define add_signal(name, change_type, callback) add_signal_full (name, change_type, (GCallback) callback, 0, NULL)
 #define add_signal_ifindex(name, change_type, callback, ifindex) add_signal_full (name, change_type, (GCallback) callback, ifindex, NULL)
@@ -71,7 +84,7 @@ void _assert_ip4_route_exists (const char *file, guint line, const char *func, g
 void link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data);
 
 int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
-#define nmtstp_run_command_check(format, ...) do { g_assert_cmpint (nmtstp_run_command (format, __VA_ARGS__), ==, 0); } while (0)
+#define nmtstp_run_command_check(...) do { g_assert_cmpint (nmtstp_run_command (__VA_ARGS__), ==, 0); } while (0)
 
 gboolean nmtstp_wait_for_signal (guint timeout_ms);
 gboolean nmtstp_wait_for_signal_until (gint64 until_ms);
