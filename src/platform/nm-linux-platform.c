@@ -2802,6 +2802,15 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 					break;
 				}
 			}
+			if (   new->link.type == NM_LINK_TYPE_VETH
+			    && new->link.parent == 0) {
+				/* the initial notification when adding a veth pair can lack the parent/IFLA_LINK
+				 * (https://bugzilla.redhat.com/show_bug.cgi?id=1285827).
+				 * Request it again. */
+				delayed_action_schedule (platform,
+				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
+				                         GINT_TO_POINTER (new->link.ifindex));
+			}
 		}
 		{
 			/* on enslave/release, we also refresh the master. */

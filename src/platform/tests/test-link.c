@@ -1371,6 +1371,51 @@ test_vlan_set_xgress (void)
 
 /*****************************************************************************/
 
+static void
+test_nl_bugs_veth (void)
+{
+	const char *IFACE_VETH0 = "nm-test-veth0";
+	const char *IFACE_VETH1 = "nm-test-veth1";
+	int ifindex_veth0, ifindex_veth1;
+	int i;
+	const NMPlatformLink *pllink_veth0, *pllink_veth1;
+
+	/* create veth pair. */
+	nmtstp_run_command_check ("ip link add dev %s type veth peer name %s", IFACE_VETH0, IFACE_VETH1);
+	ifindex_veth0 = nmtstp_assert_wait_for_link (IFACE_VETH0, NM_LINK_TYPE_VETH, 100)->ifindex;
+	ifindex_veth1 = nmtstp_assert_wait_for_link (IFACE_VETH1, NM_LINK_TYPE_VETH, 100)->ifindex;
+
+	/* assert that nm_platform_veth_get_properties() returns the expected peer ifindexes. */
+	g_assert (nm_platform_veth_get_properties (NM_PLATFORM_GET, ifindex_veth0, &i));
+	g_assert_cmpint (i, ==, ifindex_veth1);
+
+	g_assert (nm_platform_veth_get_properties (NM_PLATFORM_GET, ifindex_veth1, &i));
+	g_assert_cmpint (i, ==, ifindex_veth0);
+
+	/* assert that NMPlatformLink.parent is the peer-ifindex. */
+	pllink_veth0 = nm_platform_link_get (NM_PLATFORM_GET, ifindex_veth0);
+	g_assert (pllink_veth0);
+	if (pllink_veth0->parent == 0) {
+		/* pre-4.1 kernels don't support exposing the veth peer as IFA_LINK. skip the remainder
+		 * of the test. */
+		goto out;
+	}
+	g_assert_cmpint (pllink_veth0->parent, ==, ifindex_veth1);
+
+
+	/* The following tests whether we have a workaround for kernel bug
+	 * https://bugzilla.redhat.com/show_bug.cgi?id=1285827 in place. */
+	pllink_veth1 = nm_platform_link_get (NM_PLATFORM_GET, ifindex_veth1);
+	g_assert (pllink_veth1);
+	g_assert_cmpint (pllink_veth1->parent, ==, ifindex_veth0);
+
+out:
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth0));
+	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth1);
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -1406,5 +1451,7 @@ setup_tests (void)
 		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
 
 		g_test_add_func ("/link/software/vlan/set-xgress", test_vlan_set_xgress);
+
+		g_test_add_func ("/link/nl-bugs/veth", test_nl_bugs_veth);
 	}
 }
