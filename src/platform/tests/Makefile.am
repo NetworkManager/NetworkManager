@@ -32,7 +32,6 @@ PLATFORM_LDADD = \
 
 noinst_PROGRAMS = \
 	monitor \
-	platform \
 	test-link-fake \
 	test-link-linux \
 	test-address-fake \
@@ -48,9 +47,6 @@ EXTRA_DIST = test-common.h
 
 monitor_SOURCES = monitor.c $(PLATFORM_SOURCES)
 monitor_LDADD = $(PLATFORM_LDADD)
-
-platform_SOURCES = platform.c $(PLATFORM_SOURCES)
-platform_LDADD = $(PLATFORM_LDADD)
 
 test_link_fake_SOURCES = test-link.c $(TEST_SOURCES)
 test_link_fake_CPPFLAGS = \
