@@ -103,14 +103,6 @@ nm_ppp_manager_init (NMPPPManager *manager)
 }
 
 static void
-constructed (GObject *object)
-{
-	nm_exported_object_export (NM_EXPORTED_OBJECT (object));
-
-	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructed (object);
-}
-
-static void
 dispose (GObject *object)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
@@ -593,8 +585,8 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH "/PPP";
+	exported_object_class->export_on_construction = TRUE;
 
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
