@@ -838,6 +838,49 @@ nmtstp_link_sit_add (gboolean external_command, const char *name, NMPlatformLnkS
 	return success;
 }
 
+gboolean
+nmtstp_link_vxlan_add (gboolean external_command, const char *name, NMPlatformLnkVxlan *lnk)
+{
+	gboolean success;
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		gs_free char *dev = NULL;
+		gs_free char *local = NULL, *remote = NULL;
+
+		if (lnk->parent_ifindex)
+			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (NM_PLATFORM_GET, lnk->parent_ifindex));
+
+		if (lnk->local)
+			local = g_strdup_printf ("%s", nm_utils_inet4_ntop (lnk->local, NULL));
+		else if (memcmp (&lnk->local6, &in6addr_any, sizeof (in6addr_any)))
+			local = g_strdup_printf ("%s", nm_utils_inet6_ntop (&lnk->local6, NULL));
+
+		if (lnk->group)
+			remote = g_strdup_printf ("%s", nm_utils_inet4_ntop (lnk->group, NULL));
+		else if (memcmp (&lnk->group6, &in6addr_any, sizeof (in6addr_any)))
+			remote = g_strdup_printf ("%s", nm_utils_inet6_ntop (&lnk->group6, NULL));
+
+		success = !nmtstp_run_command ("ip link add %s type vxlan id %u %s local %s group %s ttl %u tos %02x dstport %u srcport %u %u ageing %u",
+		                               name,
+		                               lnk->id,
+		                               dev ? dev : "",
+		                               local,
+		                               remote,
+		                               lnk->ttl,
+		                               lnk->tos,
+		                               lnk->dst_port,
+		                               lnk->src_port_min, lnk->src_port_max,
+		                               lnk->ageing);
+		if (success)
+			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_VXLAN, 100);
+	} else
+		success = nm_platform_link_vxlan_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+
+	return success;
+}
+
 void
 nmtstp_ip4_address_add (gboolean external_command,
                         int ifindex,
