@@ -76,7 +76,6 @@ python -u \
     "${HOSTTYPE[@]}" \
     --var "TESTS=$TESTS" \
     "${GIT_TARGETBRANCH[@]}" \
-    --var "GIT_URL=$GIT_TEST_REPOSITORY" \
     --bkr-write-job-id 'beaker_job_id' \
     --bkr-wait-completion \
     --bkr-job-results 'results.xml' \
