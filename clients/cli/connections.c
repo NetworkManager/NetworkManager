@@ -4302,6 +4302,10 @@ do_questionnaire_tun (char **user, char **group,
 	GError *error = NULL;
 	gboolean b;
 
+	/* Ask for optional 'tun' arguments. */
+	if (!want_provide_opt_args (_("Tun"), 5))
+		return;
+
 	if (!*user) {
 		do {
 			*user = nmc_readline (_("User ID [none]: "));
