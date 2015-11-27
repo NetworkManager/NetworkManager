@@ -9465,20 +9465,30 @@ do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
-			name = *argv;
 		}
 		name = *argv;
-		if (!name) {
-			g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
 		if (next_arg (&argc, &argv) != 0) {
 			g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto finish;
 		}
 		new_name = *argv;
+		if (next_arg (&argc, &argv) == 0) {
+			g_string_printf (nmc->return_text, _("Error: unexpected extra argument '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+	}
+
+	if (!name) {
+		g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	if (!new_name) {
+		g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
 	}
 
 	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
