@@ -289,10 +289,14 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 
 	/* Release */
+	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
+	ensure_no_signal (link_removed);
 	g_assert (nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0);
+	accept_signals (link_added, 0, 1);
 	accept_signals (link_changed, 1, 3);
+	accept_signals (link_removed, 0, 1);
 	accept_signals (master_changed, 1, 2);
 
 	ensure_no_signal (master_changed);
@@ -304,7 +308,9 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (master_changed);
 
 	/* Remove */
+	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
+	ensure_no_signal (link_removed);
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
@@ -1493,6 +1499,61 @@ again:
 
 /*****************************************************************************/
 
+static void
+test_nl_bugs_spuroius_dellink (void)
+{
+	const char *IFACE_BRIDGE0 = "nm-test-bridge0";
+	const char *IFACE_DUMMY0 = "nm-test-dummy0";
+	int ifindex_bridge0, ifindex_dummy0;
+	const NMPlatformLink *pllink;
+	gboolean wait_for_settle;
+
+	/* see https://bugzilla.redhat.com/show_bug.cgi?id=1285719 */
+
+	nmtstp_run_command_check ("ip link add %s type dummy", IFACE_DUMMY0);
+	ifindex_dummy0 = nmtstp_assert_wait_for_link (IFACE_DUMMY0, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+
+	nmtstp_run_command_check ("ip link add %s type bridge", IFACE_BRIDGE0);
+	ifindex_bridge0 = nmtstp_assert_wait_for_link (IFACE_BRIDGE0, NM_LINK_TYPE_BRIDGE, 100)->ifindex;
+
+	nmtstp_link_set_updown (-1, ifindex_bridge0, TRUE);
+
+	nmtstp_run_command_check ("ip link set %s master %s", IFACE_DUMMY0, IFACE_BRIDGE0);
+	NMTST_WAIT_ASSERT (100, {
+		nmtstp_wait_for_signal (50);
+
+		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_dummy0);
+		g_assert (pllink);
+		if (pllink->master == ifindex_bridge0)
+			break;
+	});
+
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	nmtstp_run_command_check ("ip link set %s nomaster",  IFACE_DUMMY0);
+
+	wait_for_settle = TRUE;
+	nmtstp_wait_for_signal (50);
+again:
+	nm_platform_process_events (NM_PLATFORM_GET);
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_bridge0);
+	g_assert (pllink);
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_dummy0);
+	g_assert (pllink);
+	g_assert_cmpint (pllink->parent, ==, 0);
+
+	if (wait_for_settle) {
+		wait_for_settle = FALSE;
+		NMTST_WAIT (300, { nmtstp_wait_for_signal (50); });
+		goto again;
+	}
+
+	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_bridge0);
+	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_dummy0);
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -1531,5 +1592,6 @@ setup_tests (void)
 
 		g_test_add_func ("/link/nl-bugs/veth", test_nl_bugs_veth);
 		g_test_add_func ("/link/nl-bugs/spurious-newlink", test_nl_bugs_spuroius_newlink);
+		g_test_add_func ("/link/nl-bugs/spurious-dellink", test_nl_bugs_spuroius_dellink);
 	}
 }

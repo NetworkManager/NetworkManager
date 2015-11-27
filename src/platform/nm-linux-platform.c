@@ -2200,7 +2200,6 @@ struct _NMLinuxPlatformPrivate {
 	} delayed_action;
 
 	GHashTable *prune_candidates;
-	GHashTable *delayed_deletion;
 
 	GHashTable *wifi_data;
 };
@@ -2599,39 +2598,6 @@ cache_prune_candidates_prune (NMPlatform *platform)
 }
 
 static void
-cache_delayed_deletion_prune (NMPlatform *platform)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GPtrArray *prune_list = NULL;
-	GHashTableIter iter;
-	guint i;
-	NMPObject *obj;
-
-	if (g_hash_table_size (priv->delayed_deletion) == 0)
-		return;
-
-	g_hash_table_iter_init (&iter, priv->delayed_deletion);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &obj)) {
-		if (obj) {
-			if (!prune_list)
-				prune_list = g_ptr_array_new_full (g_hash_table_size (priv->delayed_deletion), (GDestroyNotify) nmp_object_unref);
-			g_ptr_array_add (prune_list, nmp_object_ref (obj));
-		}
-	}
-
-	g_hash_table_remove_all (priv->delayed_deletion);
-
-	if (prune_list) {
-		for (i = 0; i < prune_list->len; i++) {
-			obj = prune_list->pdata[i];
-			_LOGt ("delayed-deletion: delete %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-			cache_remove_netlink (platform, obj, NULL, NULL, NM_PLATFORM_REASON_EXTERNAL);
-		}
-		g_ptr_array_unref (prune_list);
-	}
-}
-
-static void
 cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data)
 {
 	NMPlatform *platform = NM_PLATFORM (user_data);
@@ -2805,7 +2771,22 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				if (ifindex2 > 0 && ifindex1 != ifindex2)
 					delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex2));
 			}
-
+		}
+		{
+			if (   (       (ops_type == NMP_CACHE_OPS_REMOVED)
+			        || (   (ops_type == NMP_CACHE_OPS_UPDATED)
+			            && new
+			            && !new->_link.netlink.is_in_netlink))
+			    && old
+			    && old->_link.netlink.is_in_netlink
+			    && old->link.master) {
+				/* sometimes we receive a wrong RTM_DELLINK message when unslaving
+				 * a device. Refetch the link again to check whether the device
+				 * is really gone.
+				 *
+				 * https://bugzilla.redhat.com/show_bug.cgi?id=1285719#c2 */
+				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (old->link.ifindex));
+			}
 		}
 		break;
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
@@ -2899,13 +2880,8 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 	_LOGD ("do-request-link: %d %s", ifindex, name ? name : "");
 
 	if (ifindex > 0) {
-		NMPObject *obj;
-
 		cache_prune_candidates_record_one (platform,
 		                                   (NMPObject *) nmp_cache_lookup_link (priv->cache, ifindex));
-		obj = nmp_object_new_link (ifindex);
-		_LOGt ("delayed-deletion: protect object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-		g_hash_table_insert (priv->delayed_deletion, obj, NULL);
 	}
 
 	event_handler_read_netlink_all (platform, FALSE);
@@ -2926,7 +2902,6 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 
 	event_handler_read_netlink_all (platform, TRUE);
 
-	cache_delayed_deletion_prune (platform);
 	cache_prune_candidates_prune (platform);
 
 	if (handle_delayed_action)
@@ -3084,30 +3059,12 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	switch (msghdr->nlmsg_type) {
 
 	case RTM_NEWLINK:
-		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
-			if (g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
-				/* the object is scheduled for delayed deletion. Replace that object
-				 * by clearing the value from priv->delayed_deletion. */
-				_LOGt ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
-			}
-		}
-		/* fall-through */
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
 		cache_update_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
 		break;
 
 	case RTM_DELLINK:
-		if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
-		    && g_hash_table_contains (priv->delayed_deletion, obj)) {
-			/* We sometimes receive spurious RTM_DELLINK events. In this case, we want to delay
-			 * the deletion of the object until later. */
-			_LOGt ("delayed-deletion: delay deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-			g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), nmp_object_ref (obj));
-			break;
-		}
-		/* fall-through */
 	case RTM_DELADDR:
 	case RTM_DELROUTE:
 		cache_remove_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
@@ -5311,10 +5268,6 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 
 	self->priv = priv;
 
-	priv->delayed_deletion = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
-	                                                (GEqualFunc) nmp_object_id_equal,
-	                                                (GDestroyNotify) nmp_object_unref,
-	                                                (GDestroyNotify) nmp_object_unref);
 	priv->cache = nmp_cache_new ();
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
@@ -5417,7 +5370,6 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->delayed_action.idle_id);
 
 	g_clear_pointer (&priv->prune_candidates, g_hash_table_unref);
-	g_clear_pointer (&priv->delayed_deletion, g_hash_table_unref);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->dispose (object);
 }
