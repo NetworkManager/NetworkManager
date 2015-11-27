@@ -2310,7 +2310,13 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 	/* don't expose @obj directly, but clone the public fields. A signal handler might
 	 * call back into NMPlatform which could invalidate (or modify) @obj. */
 	memcpy (&obj_clone.object, &obj->object, klass->sizeof_public);
-	g_signal_emit_by_name (platform, klass->signal_type, klass->obj_type, obj_clone.object.ifindex, &obj_clone.object, (NMPlatformSignalChangeType) cache_op);
+	g_signal_emit (platform,
+	               _nm_platform_signal_id_get (klass->signal_type_id),
+	               0,
+	               klass->obj_type,
+	               obj_clone.object.ifindex,
+	               &obj_clone.object,
+	               (NMPlatformSignalChangeType) cache_op);
 }
 
 /******************************************************************/

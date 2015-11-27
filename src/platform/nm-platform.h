@@ -153,6 +153,18 @@ struct _NMPlatformLink {
 	guint mtu;
 };
 
+typedef enum { /*< skip >*/
+	NM_PLATFORM_SIGNAL_ID_NONE,
+	NM_PLATFORM_SIGNAL_ID_LINK,
+	NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,
+	NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
+	NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
+	NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
+	_NM_PLATFORM_SIGNAL_ID_LAST,
+} NMPlatformSignalIdType;
+
+guint _nm_platform_signal_id_get (NMPlatformSignalIdType signal_type);
+
 typedef enum {
 	NM_PLATFORM_SIGNAL_NONE,
 	NM_PLATFORM_SIGNAL_ADDED,
