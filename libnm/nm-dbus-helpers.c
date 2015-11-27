@@ -25,6 +25,7 @@
 #include "nm-default.h"
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
+#include "nm-macros-internal.h"
 
 static GBusType nm_bus = G_BUS_TYPE_SYSTEM;
 
@@ -116,6 +117,67 @@ _nm_dbus_register_proxy_type (const char *interface,
 #define NM_DBUS_PROXY_FLAGS (G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | \
                              G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START)
 
+/* D-Bus has an upper limit on number of Match rules and it's rather easy
+ * to hit as the proxy likes to add one for each object. Let's remove the Match
+ * rule the proxy added and ensure a less granular rule is present instead.
+ *
+ * Also, don't do this immediately since it has a performance penalty.
+ * Still better than loosing the signals altogether.
+ *
+ * Ideally, we should be able to tell glib not to hook its rules:
+ * https://bugzilla.gnome.org/show_bug.cgi?id=758749
+ */
+static void
+_nm_dbus_proxy_replace_match (GDBusProxy *proxy)
+{
+	GDBusConnection *connection = g_dbus_proxy_get_connection (proxy);
+	static unsigned match_counter = 1024;
+	gchar *match;
+
+	nm_assert (!g_strcmp0 (g_dbus_proxy_get_name (proxy), NM_DBUS_SERVICE));
+
+	if (match_counter == 1) {
+		/* If we hit the low matches watermark, install a
+		 * less granular one. */
+		g_dbus_connection_call (connection,
+		                        "org.freedesktop.DBus",
+		                        "/org/freedesktop/DBus",
+		                        "org.freedesktop.DBus",
+		                        "AddMatch",
+		                        g_variant_new ("(s)", "type='signal',sender='" NM_DBUS_SERVICE "'"),
+		                        NULL,
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        -1,
+		                        NULL,
+		                        NULL,
+		                        NULL);
+	}
+
+	if (match_counter)
+		match_counter--;
+	if (match_counter)
+		return;
+
+	/* Remove what this proxy added. */
+	match = g_strdup_printf ("type='signal',sender='" NM_DBUS_SERVICE "',"
+	                         "interface='%s',path='%s'",
+	                         g_dbus_proxy_get_interface_name (proxy),
+	                         g_dbus_proxy_get_object_path (proxy));
+	g_dbus_connection_call (connection,
+	                        "org.freedesktop.DBus",
+	                        "/org/freedesktop/DBus",
+	                        "org.freedesktop.DBus",
+	                        "RemoveMatch",
+	                        g_variant_new ("(s)", match),
+	                        NULL,
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1,
+	                        NULL,
+	                        NULL,
+	                        NULL);
+	g_free (match);
+}
+
 GDBusProxy *
 _nm_dbus_new_proxy_for_connection (GDBusConnection *connection,
                                    const char *path,
@@ -123,6 +185,7 @@ _nm_dbus_new_proxy_for_connection (GDBusConnection *connection,
                                    GCancellable *cancellable,
                                    GError **error)
 {
+	GDBusProxy *proxy;
 	GType proxy_type;
 	const char *name;
 
@@ -135,13 +198,16 @@ _nm_dbus_new_proxy_for_connection (GDBusConnection *connection,
 	else
 		name = NM_DBUS_SERVICE;
 
-	return g_initable_new (proxy_type, cancellable, error,
-	                       "g-connection", connection,
-	                       "g-flags", NM_DBUS_PROXY_FLAGS,
-	                       "g-name", name,
-	                       "g-object-path", path,
-	                       "g-interface-name", interface,
-	                       NULL);
+	proxy = g_initable_new (proxy_type, cancellable, error,
+	                        "g-connection", connection,
+	                        "g-flags", NM_DBUS_PROXY_FLAGS,
+	                        "g-name", name,
+	                        "g-object-path", path,
+	                        "g-interface-name", interface,
+	                        NULL);
+	_nm_dbus_proxy_replace_match (proxy);
+
+	return proxy;
 }
 
 void
@@ -178,13 +244,15 @@ GDBusProxy *
 _nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
                                           GError **error)
 {
-	GObject *source, *proxy;
+	GObject *source;
+	GDBusProxy *proxy;
 
 	source = g_async_result_get_source_object (result);
-	proxy = g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, error);
+	proxy = G_DBUS_PROXY (g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, error));
 	g_object_unref (source);
+	_nm_dbus_proxy_replace_match (proxy);
 
-	return G_DBUS_PROXY (proxy);
+	return proxy;
 }
 
 /* Binds the properties on a generated server-side GDBus object to the
