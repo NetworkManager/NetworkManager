@@ -65,9 +65,6 @@ static const char *nmc_known_vpns[] = {
 	NULL
 };
 
-static const char *nmc_tun_modes[] =
-	{ "tun", "tap", NULL };
-
 /* Available fields for 'connection show' */
 static NmcOutputField nmc_fields_con_show[] = {
 	{"NAME",                 N_("NAME")},                  /* 0 */
@@ -3113,6 +3110,15 @@ check_adsl_encapsulation (char **encapsulation, GError **error)
 	return check_valid_enumeration (encapsulation, modes, "encapsulation", _("ADSL encapsulation"), error);
 }
 
+/* Checks TUN mode. */
+static gboolean
+check_tun_mode (char **mode, GError **error)
+{
+	const char *modes[] = { "tun", "tap", NULL };
+
+	return check_valid_enumeration (mode, modes, "mode", _("TUN device mode"), error);
+}
+
 static gboolean
 check_and_convert_vlan_flags (const char *flags, guint32 *flags_int, GError **error)
 {
@@ -4294,6 +4300,9 @@ is_property_valid (NMSetting *setting, const char *property, GError **error)
 	return ret;
 }
 
+#define WORD_TUN  "tun"
+#define WORD_TAP  "tap"
+#define PROMPT_TUN_MODE "(" WORD_TUN "/" WORD_TAP ") [" WORD_TUN "]: "
 static void
 do_questionnaire_tun (char **user, char **group,
                       char **pi, char **vnet_hdr, char **multi_queue)
@@ -5698,15 +5707,15 @@ cleanup_adsl:
 	} else if (!strcmp (con_type, NM_SETTING_TUN_SETTING_NAME)) {
 		/* Build up the settings required for 'tun' */
 		gboolean success = FALSE;
-		const char *mode = NULL;
+		const char *mode_c = NULL;
+		char *mode_ask = NULL, *mode = NULL;
 		NMSettingTunMode mode_enum;
-		char *mode_ask = NULL;
 		const char *owner_c = NULL, *group_c = NULL;
 		char *owner = NULL, *group = NULL;
 		const char *pi_c = NULL, *vnet_hdr_c = NULL, *multi_queue_c = NULL;
 		char *pi = NULL, *vnet_hdr = NULL, *multi_queue = NULL;
 		gboolean pi_bool, vnet_hdr_bool, multi_queue_bool;
-		nmc_arg_t exp_args[] = { {"mode",        TRUE,  &mode,          !ask},
+		nmc_arg_t exp_args[] = { {"mode",        TRUE,  &mode_c,        !ask},
 		                         {"owner",       TRUE,  &owner_c,       FALSE},
 		                         {"group",       TRUE,  &group_c,       FALSE},
 		                         {"pi",          TRUE,  &pi_c,          FALSE},
@@ -5717,19 +5726,19 @@ cleanup_adsl:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!mode && ask)
-			mode = mode_ask = nmc_readline (_("Mode: "));
-		if (!mode) {
+		if (!mode_c && ask) {
+			mode_ask = nmc_readline (_("Mode %s"), PROMPT_TUN_MODE);
+			mode_ask = mode_ask ? mode_ask : g_strdup ("tun");
+			mode_c = mode_ask;
+		}
+		if (!mode_c) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'mode' is required."));
 			goto cleanup_tun;
 		}
-
-		if (!(mode = nmc_string_is_valid (mode, nmc_tun_modes, NULL))) {
-			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("Error: 'mode' must be 'tun' or 'tap'."));
+		mode = g_strdup (mode_c);
+		if (!check_tun_mode (&mode, error))
 			goto cleanup_tun;
-		}
 
 		if (owner && !check_user_group_id (owner, error))
 			goto cleanup_tun;
@@ -5796,6 +5805,7 @@ cleanup_adsl:
 		success = TRUE;
 cleanup_tun:
 		g_free (mode_ask);
+		g_free (mode);
 		g_free (owner);
 		g_free (group);
 		g_free (pi);
@@ -6177,6 +6187,13 @@ gen_func_adsl_encap (const char *text, int state)
 }
 
 static char *
+gen_func_tun_mode (const char *text, int state)
+{
+	const char *words[] = { "tun", "tap", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
 gen_func_master_ifnames (const char *text, int state)
 {
 	int i;
@@ -6266,6 +6283,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_adsl_proto;
 	else if (g_str_has_suffix (rl_prompt, PROMPT_ADSL_ENCAP))
 		generator_func = gen_func_adsl_encap;
+	else if (g_str_has_suffix (rl_prompt, PROMPT_TUN_MODE))
+		generator_func = gen_func_tun_mode;
 
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
