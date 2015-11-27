@@ -12,6 +12,7 @@ clients/cli/settings.c
 clients/cli/utils.c
 clients/common/nm-polkit-listener.c
 clients/common/nm-secret-agent-simple.c
+clients/common/nm-vpn-helpers.c
 clients/nm-online.c
 clients/tui/newt/nmt-newt-utils.c
 clients/tui/nm-editor-utils.c

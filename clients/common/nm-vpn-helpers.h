@@ -20,14 +20,21 @@
 #define __NM_VPN_HELPERS_H__
 
 #include <glib.h>
-#include <nm-connection.h>
+#include <NetworkManager.h>
 
 #include <nm-vpn-editor-plugin.h>
+
+struct {
+	const char *name;
+	const char *ui_name;
+} typedef VpnPasswordName;
 
 GSList *nm_vpn_get_plugins (GError **error);
 
 NMVpnEditorPlugin *nm_vpn_get_plugin_by_service (const char *service);
 
 gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
+
+const VpnPasswordName * nm_vpn_get_secret_names (const char *vpn_type);
 
 #endif  /* __NM_VPN_HELPERS_H__ */

@@ -39,6 +39,7 @@
 #include <NetworkManager.h>
 #include <nm-core-internal.h>
 
+#include "nm-vpn-helpers.h"
 #include "nm-secret-agent-simple.h"
 
 G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT_OLD)
@@ -338,53 +339,6 @@ add_pppoe_secrets (NMSecretAgentSimpleRequest *request,
 	return TRUE;
 }
 
-struct {
-	const char *name;
-	const char *ui_name;
-} typedef VpnPasswordName;
-
-static const VpnPasswordName *
-vpn_get_secret_names (const char *vpn_type)
-{
-	const char *type;
-	static VpnPasswordName generic_vpn_secrets[] = { {"password", N_("Password")}, {NULL, NULL} };
-	static VpnPasswordName vpnc_secrets[] = { {"Xauth password", N_("Password")},
-	                                          {"IPSec secret", N_("Group password")},
-	                                          {NULL, NULL} };
-	static VpnPasswordName swan_secrets[] = { {"xauthpassword", N_("Password")},
-	                                          {"pskvalue", N_("Group password")},
-	                                          {NULL, NULL} };
-	static VpnPasswordName openconnect_secrets[] = { {"gateway", N_("Gateway")},
-	                                                 {"cookie", N_("Cookie")},
-	                                                 {"gwcert", N_("Gateway certificate hash")},
-	                                                 {NULL, NULL} };
-
-	if (!vpn_type)
-		return NULL;
-
-	if (g_str_has_prefix (vpn_type, NM_DBUS_INTERFACE))
-		type = vpn_type + strlen (NM_DBUS_INTERFACE) + 1;
-	else
-		type = vpn_type;
-
-	if (   !g_strcmp0 (type, "openvpn")
-	    || !g_strcmp0 (type, "pptp")
-	    || !g_strcmp0 (type, "iodine")
-	    || !g_strcmp0 (type, "ssh")
-	    || !g_strcmp0 (type, "l2tp")
-	    || !g_strcmp0 (type, "fortisslvpn"))
-		 return generic_vpn_secrets;
-	else if (!g_strcmp0 (type, "vpnc"))
-		return vpnc_secrets;
-	else if (   !g_strcmp0 (type, "openswan")
-	         || !g_strcmp0 (type, "libreswan")
-	         || !g_strcmp0 (type, "strongswan"))
-		return swan_secrets;
-	else if (!g_strcmp0 (type, "openconnect"))
-		return openconnect_secrets;
-	return NULL;
-}
-
 static NMSettingSecretFlags
 get_vpn_secret_flags (NMSettingVpn *s_vpn, const char *secret_name)
 {
@@ -464,7 +418,7 @@ add_vpn_secrets (NMSecretAgentSimpleRequest *request,
 		*msg = g_strdup (tmp);
 
 	/* Now add what client thinks might be required, because hints may be empty or incomplete */
-	p = secret_names = vpn_get_secret_names (nm_setting_vpn_get_service_type (s_vpn));
+	p = secret_names = nm_vpn_get_secret_names (nm_setting_vpn_get_service_type (s_vpn));
 	while (p && p->name) {
 		add_vpn_secret_helper (secrets, s_vpn, p->name, _(p->ui_name));
 		p++;
