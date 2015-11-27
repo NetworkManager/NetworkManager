@@ -4286,12 +4286,23 @@ nmc_property_wired_set_s390_nettype (NMSetting *setting, const char *prop, const
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_s390_nettype, wired_valid_s390_nettypes)
 
 /* 's390-options' */
+/* Validate value of 's390-options' */
+static const char *
+_validate_s390_option_value (const char *option, const char *value, GError **error)
+{
+	/*  nm_setting_wired_add_s390_option() requires value len in <1,199> interval */
+	if (!value || !*value || strlen (value) >= 200) {
+		g_set_error (error, 1, 0, _("'%s' string value should consists of 1 - 199 characters"), option);
+		return NULL;
+	}
+	return value;
+}
 DEFINE_SETTER_OPTIONS (nmc_property_wired_set_s390_options,
                        NM_SETTING_WIRED,
                        NMSettingWired,
                        nm_setting_wired_add_s390_option,
                        nm_setting_wired_get_valid_s390_options,
-                       NULL)
+                       _validate_s390_option_value)
 DEFINE_REMOVER_OPTION (nmc_property_wired_remove_option_s390_options,
                        NM_SETTING_WIRED,
                        nm_setting_wired_remove_s390_option)
