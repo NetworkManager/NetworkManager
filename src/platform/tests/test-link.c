@@ -274,10 +274,14 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 
 	/* Release */
+	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
+	ensure_no_signal (link_removed);
 	g_assert (nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0);
+	accept_signals (link_added, 0, 1);
 	accept_signals (link_changed, 1, 3);
+	accept_signals (link_removed, 0, 1);
 	accept_signals (master_changed, 1, 2);
 
 	ensure_no_signal (master_changed);
@@ -289,7 +293,9 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (master_changed);
 
 	/* Remove */
+	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
+	ensure_no_signal (link_removed);
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
