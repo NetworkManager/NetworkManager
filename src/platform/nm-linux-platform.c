@@ -149,7 +149,6 @@ static void do_request_link (NMPlatform *platform, int ifindex, const char *name
 static void do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean handle_delayed_action);
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 static gboolean event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks);
-static NMPCacheOpsType cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason);
 
 /******************************************************************
  * Support IFLA_INET6_ADDR_GEN_MODE
@@ -2256,7 +2255,7 @@ process_events (NMPlatform *platform)
 /******************************************************************/
 
 static void
-do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cache_op, gboolean was_visible, NMPlatformReason reason)
+do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cache_op, gboolean was_visible)
 {
 	gboolean is_visible;
 	NMPObject obj_clone;
@@ -2303,16 +2302,15 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
-	_LOGt ("emit signal %s %s: %s (%ld)",
+	_LOGt ("emit signal %s %s: %s",
 	       klass->signal_type,
 	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
-	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0),
-	       (long) reason);
+	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	/* don't expose @obj directly, but clone the public fields. A signal handler might
 	 * call back into NMPlatform which could invalidate (or modify) @obj. */
 	memcpy (&obj_clone.object, &obj->object, klass->sizeof_public);
-	g_signal_emit_by_name (platform, klass->signal_type, klass->obj_type, obj_clone.object.ifindex, &obj_clone.object, (NMPlatformSignalChangeType) cache_op, reason);
+	g_signal_emit_by_name (platform, klass->signal_type, klass->obj_type, obj_clone.object.ifindex, &obj_clone.object, (NMPlatformSignalChangeType) cache_op);
 }
 
 /******************************************************************/
@@ -2372,7 +2370,7 @@ delayed_action_handle_MASTER_CONNECTED (NMPlatform *platform, int master_ifindex
 	NMPCacheOpsType cache_op;
 
 	cache_op = nmp_cache_update_link_master_connected (priv->cache, master_ifindex, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
+	do_emit_signal (platform, obj_cache, cache_op, was_visible);
 }
 
 static void
@@ -2591,7 +2589,7 @@ cache_prune_candidates_prune (NMPlatform *platform)
 
 		_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 		cache_op = nmp_cache_remove (priv->cache, obj, TRUE, &obj_cache, &was_visible, cache_pre_hook, platform);
-		do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
+		do_emit_signal (platform, obj_cache, cache_op, was_visible);
 	}
 
 	g_hash_table_unref (prune_candidates);
@@ -2808,7 +2806,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 }
 
 static NMPCacheOpsType
-cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason)
+cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject **out_obj_cache, gboolean *out_was_visible)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	NMPObject *obj_cache;
@@ -2816,7 +2814,7 @@ cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject *
 	NMPCacheOpsType cache_op;
 
 	cache_op = nmp_cache_remove_netlink (priv->cache, obj_id, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
+	do_emit_signal (platform, obj_cache, cache_op, was_visible);
 
 	if (out_obj_cache)
 		*out_obj_cache = obj_cache;
@@ -2829,7 +2827,7 @@ cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject *
 }
 
 static NMPCacheOpsType
-cache_update_netlink (NMPlatform *platform, NMPObject *obj, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason)
+cache_update_netlink (NMPlatform *platform, NMPObject *obj, NMPObject **out_obj_cache, gboolean *out_was_visible)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	NMPObject *obj_cache;
@@ -2840,7 +2838,7 @@ cache_update_netlink (NMPlatform *platform, NMPObject *obj, NMPObject **out_obj_
 	 * at once. */
 
 	cache_op = nmp_cache_update_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible, reason);
+	do_emit_signal (platform, obj_cache, cache_op, was_visible);
 
 	if (out_obj_cache)
 		*out_obj_cache = obj_cache;
@@ -3061,13 +3059,13 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	case RTM_NEWLINK:
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
-		cache_update_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
+		cache_update_netlink (platform, obj, &obj_cache, NULL);
 		break;
 
 	case RTM_DELLINK:
 	case RTM_DELADDR:
 	case RTM_DELROUTE:
-		cache_remove_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
+		cache_remove_netlink (platform, obj, &obj_cache, NULL);
 		break;
 
 	default:
@@ -5165,7 +5163,7 @@ cache_update_link_udev (NMPlatform *platform, int ifindex, GUdevDevice *udev_dev
 	NMPCacheOpsType cache_op;
 
 	cache_op = nmp_cache_update_link_udev (priv->cache, ifindex, udev_device, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
+	do_emit_signal (platform, obj_cache, cache_op, was_visible);
 }
 
 static void

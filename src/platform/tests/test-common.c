@@ -109,7 +109,7 @@ _free_signal (const char *file, int line, const char *func, SignalData *data)
 }
 
 void
-link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
+link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, SignalData *data)
 {
 	GArray *links;
 	NMPlatformLink *cached;
@@ -299,7 +299,6 @@ _wait_for_signal_cb (NMPlatform *platform,
                      int ifindex,
                      NMPlatformLink *plink,
                      NMPlatformSignalChangeType change_type,
-                     NMPlatformReason reason,
                      gpointer user_data)
 {
 	WaitForSignalData *data = user_data;

@@ -1009,7 +1009,6 @@ _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
                                       int ifindex,
                                       const NMPlatformIP4Route *route,
                                       NMPlatformSignalChangeType change_type,
-                                      NMPlatformReason reason,
                                       NMRouteManager *self)
 {
 	NMRouteManagerPrivate *priv;

@@ -83,19 +83,6 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_NO_FIRMWARE,
 } NMPlatformError;
 
-typedef enum {
-	NM_PLATFORM_REASON_NONE,
-	/* Event was requested by NetworkManager. */
-	NM_PLATFORM_REASON_INTERNAL,
-	/* Event came from the kernel. */
-	NM_PLATFORM_REASON_EXTERNAL,
-	/* Event is a result of cache checking and cleanups. */
-	NM_PLATFORM_REASON_CACHE_CHECK,
-
-	/* Internal reason to suppress announcing change events */
-	_NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL,
-} NMPlatformReason;
-
 
 typedef struct {
 	union {

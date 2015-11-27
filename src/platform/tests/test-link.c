@@ -138,7 +138,6 @@ test_link_changed_signal_cb (NMPlatform *platform,
                              int ifindex,
                              const NMPlatformIP4Route *route,
                              NMPlatformSignalChangeType change_type,
-                             NMPlatformReason reason,
                              gboolean *p_test_link_changed_signal_arg)
 {
 	/* test invocation of platform signals with multiple listeners
@@ -160,9 +159,6 @@ test_link_changed_signal_cb (NMPlatform *platform,
 
 	g_assert_cmpint ((gint64) change_type, !=, (gint64) 0);
 	g_assert_cmpint (change_type, !=, NM_PLATFORM_SIGNAL_NONE);
-
-	g_assert_cmpint ((gint64) reason, !=, (gint64) 0);
-	g_assert_cmpint (reason, !=, NM_PLATFORM_REASON_NONE);
 
 	*p_test_link_changed_signal_arg = TRUE;
 }
