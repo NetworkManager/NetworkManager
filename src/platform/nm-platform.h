@@ -379,6 +379,15 @@ typedef struct {
 } NMPlatformLnkInfiniband;
 
 typedef struct {
+	int parent_ifindex;
+	in_addr_t local;
+	in_addr_t remote;
+	guint8 ttl;
+	guint8 tos;
+	gboolean path_mtu_discovery;
+} NMPlatformLnkIpIp;
+
+typedef struct {
 	const char *mode;
 	gboolean no_promisc;
 } NMPlatformLnkMacvlan;
@@ -540,6 +549,8 @@ typedef struct {
 
 	gboolean (*link_gre_add) (NMPlatform *, const char *name, NMPlatformLnkGre *props,
 	                          NMPlatformLink *out_link);
+	gboolean (*link_ipip_add) (NMPlatform *, const char *name, NMPlatformLnkIpIp *props,
+	                           NMPlatformLink *out_link);
 	gboolean (*link_sit_add) (NMPlatform *, const char *name, NMPlatformLnkSit *props,
 	                          NMPlatformLink *out_link);
 
@@ -732,6 +743,7 @@ char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *o
 const NMPObject *nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkSit *nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
@@ -785,6 +797,8 @@ const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int i
 
 NMPlatformError nm_platform_link_gre_add (NMPlatform *self, const char *name, NMPlatformLnkGre *props,
                                           NMPlatformLink *out_link);
+NMPlatformError nm_platform_link_ipip_add (NMPlatform *self, const char *name, NMPlatformLnkIpIp *props,
+                                           NMPlatformLink *out_link);
 NMPlatformError nm_platform_link_sit_add (NMPlatform *self, const char *name, NMPlatformLnkSit *props,
                                           NMPlatformLink *out_link);
 
@@ -829,6 +843,7 @@ gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_ipip_to_string (const NMPlatformLnkIpIp *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_sit_to_string (const NMPlatformLnkSit *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len);
@@ -847,6 +862,7 @@ const char *nm_platform_vlan_qos_mapping_to_string (const char *name,
 int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);
 int nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b);
+int nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b);
 int nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b);
 int nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b);
 int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);

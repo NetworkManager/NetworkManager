@@ -329,6 +329,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
 	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
 	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
+	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
 	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
 	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
 	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
@@ -915,6 +916,44 @@ _parse_lnk_infiniband (const char *kind, struct nlattr *info_data)
 /*****************************************************************************/
 
 static NMPObject *
+_parse_lnk_ipip (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
+		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
+		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
+		[IFLA_IPTUN_TTL]      = { .type = NLA_U8 },
+		[IFLA_IPTUN_TOS]      = { .type = NLA_U8 },
+		[IFLA_IPTUN_PMTUDISC] = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkIpIp *props;
+
+	if (!info_data || g_strcmp0 (kind, "ipip"))
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_IPIP, NULL);
+	props = &obj->lnk_ipip;
+
+	props->parent_ifindex = tb[IFLA_IPTUN_LINK] ? nla_get_u32 (tb[IFLA_IPTUN_LINK]) : 0;
+	props->local = tb[IFLA_IPTUN_LOCAL] ? nla_get_u32 (tb[IFLA_IPTUN_LOCAL]) : 0;
+	props->remote = tb[IFLA_IPTUN_REMOTE] ? nla_get_u32 (tb[IFLA_IPTUN_REMOTE]) : 0;
+	props->tos = tb[IFLA_IPTUN_TOS] ? nla_get_u8 (tb[IFLA_IPTUN_TOS]) : 0;
+	props->ttl = tb[IFLA_IPTUN_TTL] ? nla_get_u8 (tb[IFLA_IPTUN_TTL]) : 0;
+	props->path_mtu_discovery = !tb[IFLA_IPTUN_PMTUDISC] || !!nla_get_u8 (tb[IFLA_IPTUN_PMTUDISC]);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
 _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 {
 	static struct nla_policy policy[IFLA_MACVLAN_MAX + 1] = {
@@ -1384,6 +1423,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		break;
 	case NM_LINK_TYPE_INFINIBAND:
 		lnk_data = _parse_lnk_infiniband (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_IPIP:
+		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_MACVLAN:
 		lnk_data = _parse_lnk_macvlan (nl_info_kind, nl_info_data);
@@ -4154,6 +4196,57 @@ nla_put_failure:
 }
 
 static int
+link_ipip_add (NMPlatform *platform,
+               const char *name,
+               NMPlatformLnkIpIp *props,
+               NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	char buffer[INET_ADDRSTRLEN];
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "ipip",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "ipip");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LINK, props->parent_ifindex);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LOCAL, props->local);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_REMOTE, props->remote);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TOS, props->tos);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
 link_sit_add (NMPlatform *platform,
               const char *name,
               NMPlatformLnkSit *props,
@@ -5658,6 +5751,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->mesh_set_ssid = mesh_set_ssid;
 
 	platform_class->link_gre_add = link_gre_add;
+	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;
 
 	platform_class->ip4_address_get = ip4_address_get;

@@ -1429,6 +1429,12 @@ nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlat
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_INFINIBAND, out_link);
 }
 
+const NMPlatformLnkIpIp *
+nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IPIP, out_link);
+}
+
 const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1851,6 +1857,45 @@ nm_platform_infiniband_get_properties (NMPlatform *self,
 	NM_SET_OUT (out_p_key, p_key);
 	NM_SET_OUT (out_mode, mode);
 	return TRUE;
+}
+
+/**
+ * nm_platform_ipip_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create an IPIP tunnel.
+ */
+NMPlatformError
+nm_platform_link_ipip_add (NMPlatform *self,
+                           const char *name,
+                           NMPlatformLnkIpIp *props,
+                           NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+	char buffer[INET_ADDRSTRLEN];
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_IPIP, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "ipip",
+	       name,
+		   props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	if (!klass->link_ipip_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 /**
@@ -2892,6 +2937,38 @@ nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *
 }
 
 const char *
+nm_platform_lnk_ipip_to_string (const NMPlatformLnkIpIp *lnk, char *buf, gsize len)
+{
+	char str_local[30];
+	char str_local1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_remote[30];
+	char str_remote1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_ttl[30];
+	char str_tos[30];
+	char str_parent_ifindex[30];
+
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "ipip"
+	            "%s" /* remote */
+	            "%s" /* local */
+	            "%s" /* parent_ifindex */
+	            "%s" /* ttl */
+	            "%s" /* tos */
+	            "%s" /* path_mtu_discovery */
+	            "",
+	            lnk->remote ? nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet4_ntop (lnk->remote, str_remote1)) : "",
+	            lnk->local ? nm_sprintf_buf (str_local, " local %s", nm_utils_inet4_ntop (lnk->local, str_local1)) : "",
+	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
+	            lnk->ttl ? nm_sprintf_buf (str_ttl, " ttl %u", lnk->ttl) : " ttl inherit",
+	            lnk->tos ? (lnk->tos == 1 ? " tos inherit" : nm_sprintf_buf (str_tos, " tos 0x%x", lnk->tos)) : "",
+	            lnk->path_mtu_discovery ? "" : " nopmtudisc");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len)
 {
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
@@ -3481,6 +3558,19 @@ nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatfo
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, p_key);
 	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	return 0;
+}
+
+int
+nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, parent_ifindex);
+	_CMP_FIELD (a, b, local);
+	_CMP_FIELD (a, b, remote);
+	_CMP_FIELD (a, b, ttl);
+	_CMP_FIELD (a, b, tos);
+	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
 }
 
