@@ -4423,13 +4423,26 @@ nmc_property_vlan_remove_egress_priority_map (NMSetting *setting,
 }
 
 /* --- NM_SETTING_VPN_SETTING_NAME property setter functions --- */
+/* Validate value of vpn 'data' and 'secret'  options */
+static const char *
+_validate_vpn_hash_value (const char *option, const char *value, GError **error)
+{
+	/* nm_setting_vpn_add_data_item() and nm_setting_vpn_add_secret() does not
+	 * allow empty strings */
+	if (!value || !*value) {
+		g_set_error (error, 1, 0, _("'%s' cannot be empty"), option);
+		return NULL;
+	}
+	return value;
+}
+
 /* 'data' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_data,
                        NM_SETTING_VPN,
                        NMSettingVpn,
                        nm_setting_vpn_add_data_item,
                        NULL,
-                       NULL)
+                       _validate_vpn_hash_value)
 DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_data,
                        NM_SETTING_VPN,
                        nm_setting_vpn_remove_data_item)
@@ -4440,7 +4453,7 @@ DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_secrets,
                        NMSettingVpn,
                        nm_setting_vpn_add_secret,
                        NULL,
-                       NULL)
+                       _validate_vpn_hash_value)
 DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_secret,
                        NM_SETTING_VPN,
                        nm_setting_vpn_remove_secret)
