@@ -83,19 +83,6 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_NO_FIRMWARE,
 } NMPlatformError;
 
-typedef enum {
-	NM_PLATFORM_REASON_NONE,
-	/* Event was requested by NetworkManager. */
-	NM_PLATFORM_REASON_INTERNAL,
-	/* Event came from the kernel. */
-	NM_PLATFORM_REASON_EXTERNAL,
-	/* Event is a result of cache checking and cleanups. */
-	NM_PLATFORM_REASON_CACHE_CHECK,
-
-	/* Internal reason to suppress announcing change events */
-	_NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL,
-} NMPlatformReason;
-
 
 typedef struct {
 	union {
@@ -165,6 +152,18 @@ struct _NMPlatformLink {
 
 	guint mtu;
 };
+
+typedef enum { /*< skip >*/
+	NM_PLATFORM_SIGNAL_ID_NONE,
+	NM_PLATFORM_SIGNAL_ID_LINK,
+	NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,
+	NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
+	NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
+	NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
+	_NM_PLATFORM_SIGNAL_ID_LAST,
+} NMPlatformSignalIdType;
+
+guint _nm_platform_signal_id_get (NMPlatformSignalIdType signal_type);
 
 typedef enum {
 	NM_PLATFORM_SIGNAL_NONE,

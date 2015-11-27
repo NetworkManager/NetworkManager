@@ -2,6 +2,8 @@
 
 #include <sys/mount.h>
 #include <sched.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 #include "test-common.h"
 
@@ -107,7 +109,7 @@ _free_signal (const char *file, int line, const char *func, SignalData *data)
 }
 
 void
-link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
+link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, SignalData *data)
 {
 	GArray *links;
 	NMPlatformLink *cached;
@@ -297,7 +299,6 @@ _wait_for_signal_cb (NMPlatform *platform,
                      int ifindex,
                      NMPlatformLink *plink,
                      NMPlatformSignalChangeType change_type,
-                     NMPlatformReason reason,
                      gpointer user_data)
 {
 	WaitForSignalData *data = user_data;
@@ -367,13 +368,13 @@ nmtstp_wait_for_signal_until (gint64 until_ms)
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link (const char *ifname, guint timeout_ms)
+nmtstp_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
 {
-	return nmtstp_wait_for_link_until (ifname, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+	return nmtstp_wait_for_link_until (ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms)
+nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
 {
 	const NMPlatformLink *plink;
 	gint64 now;
@@ -382,7 +383,8 @@ nmtstp_wait_for_link_until (const char *ifname, gint64 until_ms)
 		now = nm_utils_get_monotonic_timestamp_ms ();
 
 		plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
-		if (plink)
+		if (   plink
+		    && (expected_link_type == NM_LINK_TYPE_NONE || plink->type == expected_link_type))
 			return plink;
 
 		if (until_ms < now)
@@ -403,10 +405,8 @@ nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_
 {
 	const NMPlatformLink *plink;
 
-	plink = nmtstp_wait_for_link_until (ifname, until_ms);
+	plink = nmtstp_wait_for_link_until (ifname, expected_link_type, until_ms);
 	g_assert (plink);
-	if (expected_link_type != NM_LINK_TYPE_NONE)
-		g_assert_cmpint (plink->type, ==, expected_link_type);
 	return plink;
 }
 
@@ -876,6 +876,169 @@ nmtstp_link_set_updown (gboolean external_command,
 
 		g_assert (nmtstp_wait_for_signal_until (end_time));
 	} while (TRUE);
+}
+
+/*****************************************************************************/
+
+struct _NMTstpNamespaceHandle {
+	pid_t pid;
+	int pipe_fd;
+};
+
+NMTstpNamespaceHandle *
+nmtstp_namespace_create (int unshare_flags, GError **error)
+{
+	NMTstpNamespaceHandle *ns_handle;
+	int e;
+	int errsv;
+	pid_t pid, pid2;
+	int pipefd_c2p[2];
+	int pipefd_p2c[2];
+	ssize_t r;
+
+	e = pipe (pipefd_c2p);
+	if (e != 0) {
+		errsv = errno;
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "pipe() failed with %d (%s)", errsv, strerror (errsv));
+		return FALSE;
+	}
+
+	e = pipe (pipefd_p2c);
+	if (e != 0) {
+		errsv = errno;
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "pipe() failed with %d (%s)", errsv, strerror (errsv));
+		close (pipefd_c2p[0]);
+		close (pipefd_c2p[1]);
+		return FALSE;
+	}
+
+	pid = fork ();
+	if (pid < 0) {
+		errsv = errno;
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "fork() failed with %d (%s)", errsv, strerror (errsv));
+		close (pipefd_c2p[0]);
+		close (pipefd_c2p[1]);
+		close (pipefd_p2c[0]);
+		close (pipefd_p2c[1]);
+		return FALSE;
+	}
+
+	if (pid == 0) {
+		char read_buf[1];
+
+		close (pipefd_c2p[0]); /* close read-end */
+		close (pipefd_p2c[1]); /* close write-end */
+
+		if (unshare (unshare_flags) != 0) {
+			errsv = errno;
+			if (errsv == 0)
+				errsv = -1;
+		} else
+			errsv = 0;
+
+		/* sync with parent process and send result. */
+		do {
+			r = write (pipefd_c2p[1], &errsv, sizeof (errsv));
+		} while (r < 0 && errno == EINTR);
+		if (r != sizeof (errsv)) {
+			errsv = errno;
+			if (errsv == 0)
+				errsv = -2;
+		}
+		close (pipefd_c2p[1]);
+
+		/* wait until parent process terminates (or kills us). */
+		if (errsv == 0) {
+			do {
+				r = read (pipefd_p2c[0], read_buf, sizeof (read_buf));
+			} while (r < 0 && errno == EINTR);
+		}
+		close (pipefd_p2c[0]);
+		_exit (0);
+	}
+
+	close (pipefd_c2p[1]); /* close write-end */
+	close (pipefd_p2c[0]); /* close read-end */
+
+	/* sync with child process. */
+	do {
+		r = read (pipefd_c2p[0], &errsv, sizeof (errsv));
+	} while (r < 0 && errno == EINTR);
+
+	close (pipefd_c2p[0]);
+
+	if (   r != sizeof (errsv)
+	    || errsv != 0) {
+		int status;
+
+		if (r != sizeof (errsv)) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			             "child process failed for unknown reason");
+		} else {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			             "child process signaled failure %d (%s)", errsv, strerror (errsv));
+		}
+		close (pipefd_p2c[1]);
+		kill (pid, SIGKILL);
+		do {
+			pid2 = waitpid (pid, &status, 0);
+		} while (pid2 == -1 && errno == EINTR);
+		return FALSE;
+	}
+
+	ns_handle = g_new0 (NMTstpNamespaceHandle, 1);
+	ns_handle->pid = pid;
+	ns_handle->pipe_fd = pipefd_p2c[1];
+	return ns_handle;
+}
+
+pid_t
+nmtstp_namespace_handle_get_pid (NMTstpNamespaceHandle *ns_handle)
+{
+	g_return_val_if_fail (ns_handle, 0);
+	g_return_val_if_fail (ns_handle->pid > 0, 0);
+
+	return ns_handle->pid;
+}
+
+void
+nmtstp_namespace_handle_release (NMTstpNamespaceHandle *ns_handle)
+{
+	pid_t pid;
+	int status;
+
+	if (!ns_handle)
+		return;
+
+	g_return_if_fail (ns_handle->pid > 0);
+
+	close (ns_handle->pipe_fd);
+	ns_handle->pipe_fd = 0;
+
+	kill (ns_handle->pid, SIGKILL);
+
+	do {
+		pid = waitpid (ns_handle->pid, &status, 0);
+	} while (pid == -1 && errno == EINTR);
+	ns_handle->pid = 0;
+
+	g_free (ns_handle);
+}
+
+int
+nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name)
+{
+	char p[1000];
+
+	g_return_val_if_fail (pid > 0, 0);
+	g_return_val_if_fail (ns_name && ns_name[0] && strlen (ns_name) < 50, 0);
+
+	nm_sprintf_buf (p, "/proc/%lu/ns/%s", (long unsigned) pid, ns_name);
+
+	return open(p, O_RDONLY);
 }
 
 /*****************************************************************************/

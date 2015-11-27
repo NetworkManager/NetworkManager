@@ -1965,7 +1965,6 @@ platform_link_cb (NMPlatform *platform,
                   int ifindex,
                   NMPlatformLink *plink,
                   NMPlatformSignalChangeType change_type,
-                  NMPlatformReason reason,
                   gpointer user_data)
 {
 	PlatformLinkCbData *data;

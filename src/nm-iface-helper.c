@@ -332,7 +332,6 @@ ip6_address_changed (NMPlatform *platform,
                      int iface,
                      NMPlatformIP6Address *addr,
                      NMPlatformSignalChangeType change_type,
-                     NMPlatformReason reason,
                      NMRDisc *rdisc)
 {
 	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)

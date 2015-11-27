@@ -116,6 +116,7 @@ typedef struct {
 	int rtm_gettype;
 	int sizeof_data;
 	int sizeof_public;
+	NMPlatformSignalIdType signal_type_id;
 	const char *obj_type_name;
 	const char *signal_type;
 

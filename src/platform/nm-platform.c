@@ -77,17 +77,7 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
 
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
 
-/* NMPlatform signals */
-enum {
-	SIGNAL_LINK_CHANGED,
-	SIGNAL_IP4_ADDRESS_CHANGED,
-	SIGNAL_IP6_ADDRESS_CHANGED,
-	SIGNAL_IP4_ROUTE_CHANGED,
-	SIGNAL_IP6_ROUTE_CHANGED,
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
+static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 
 enum {
 	PROP_0,
@@ -98,6 +88,18 @@ enum {
 typedef struct {
 	gboolean register_singleton;
 } NMPlatformPrivate;
+
+/******************************************************************/
+
+guint
+_nm_platform_signal_id_get (NMPlatformSignalIdType signal_type)
+{
+	nm_assert (   signal_type > 0
+	           && signal_type != NM_PLATFORM_SIGNAL_ID_NONE
+	           && signal_type < _NM_PLATFORM_SIGNAL_ID_LAST);
+
+	return signals[signal_type];
+}
 
 /******************************************************************/
 
@@ -3697,14 +3699,6 @@ nm_platform_init (NMPlatform *object)
 {
 }
 
-#define SIGNAL(signal_id, method) signals[signal_id] = \
-	g_signal_new_class_handler (NM_PLATFORM_ ## signal_id, \
-		G_OBJECT_CLASS_TYPE (object_class), \
-		G_SIGNAL_RUN_FIRST, \
-		G_CALLBACK (method), \
-		NULL, NULL, NULL, \
-		G_TYPE_NONE, 5, NM_TYPE_POBJECT_TYPE, G_TYPE_INT, G_TYPE_POINTER, NM_TYPE_PLATFORM_SIGNAL_CHANGE_TYPE, NM_TYPE_PLATFORM_REASON);
-
 static void
 nm_platform_class_init (NMPlatformClass *platform_class)
 {
@@ -3725,10 +3719,21 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS));
 
+#define SIGNAL(signal, signal_id, method) \
+	G_STMT_START { \
+		signals[signal] = \
+			g_signal_new_class_handler (""signal_id"", \
+			                            G_OBJECT_CLASS_TYPE (object_class), \
+			                            G_SIGNAL_RUN_FIRST, \
+			                            G_CALLBACK (method), \
+			                            NULL, NULL, NULL, \
+			                            G_TYPE_NONE, 4, NM_TYPE_POBJECT_TYPE, G_TYPE_INT, G_TYPE_POINTER, NM_TYPE_PLATFORM_SIGNAL_CHANGE_TYPE); \
+	} G_STMT_END
+
 	/* Signals */
-	SIGNAL (SIGNAL_LINK_CHANGED, log_link)
-	SIGNAL (SIGNAL_IP4_ADDRESS_CHANGED, log_ip4_address)
-	SIGNAL (SIGNAL_IP6_ADDRESS_CHANGED, log_ip6_address)
-	SIGNAL (SIGNAL_IP4_ROUTE_CHANGED, log_ip4_route)
-	SIGNAL (SIGNAL_IP6_ROUTE_CHANGED, log_ip6_route)
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_LINK,        NM_PLATFORM_SIGNAL_LINK_CHANGED,        log_link);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, log_ip4_address);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, log_ip6_address);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,   NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,   log_ip4_route);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,   NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,   log_ip6_route);
 }

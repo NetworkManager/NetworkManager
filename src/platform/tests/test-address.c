@@ -16,7 +16,7 @@ static int EX = -1;
 /*****************************************************************************/
 
 static void
-ip4_address_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformIP4Address *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
+ip4_address_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformIP4Address *received, NMPlatformSignalChangeType change_type, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
@@ -36,7 +36,7 @@ ip4_address_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex,
 }
 
 static void
-ip6_address_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformIP6Address *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
+ip6_address_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformIP6Address *received, NMPlatformSignalChangeType change_type, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);

@@ -1359,7 +1359,6 @@ _platform_changed_cb (NMPlatform *platform,
                       int ifindex,
                       gpointer platform_object,
                       NMPlatformSignalChangeType change_type,
-                      NMPlatformReason reason,
                       NMDefaultRouteManager *self)
 {
 	switch (obj_type) {

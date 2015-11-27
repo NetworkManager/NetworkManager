@@ -1580,7 +1580,6 @@ link_changed_cb (NMPlatform *platform,
                  int ifindex,
                  NMPlatformLink *info,
                  NMPlatformSignalChangeType change_type,
-                 NMPlatformReason reason,
                  NMDevice *self)
 {
 	NMDevicePrivate *priv;
@@ -1589,12 +1588,6 @@ link_changed_cb (NMPlatform *platform,
 		return;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	/* We don't filter by 'reason' because we are interested in *all* link
-	 * changes. For example a call to nm_platform_link_set_up() may result
-	 * in an internal carrier change (i.e. we ask the kernel to set IFF_UP
-	 * and it results in also setting IFF_LOWER_UP.
-	 */
 
 	if (ifindex == nm_device_get_ifindex (self)) {
 		if (!priv->device_link_changed_id) {
@@ -7932,7 +7925,6 @@ device_ipx_changed (NMPlatform *platform,
                     int ifindex,
                     gpointer platform_object,
                     NMPlatformSignalChangeType change_type,
-                    NMPlatformReason reason,
                     NMDevice *self)
 {
 	NMDevicePrivate *priv;

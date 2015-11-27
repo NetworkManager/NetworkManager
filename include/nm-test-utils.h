@@ -69,6 +69,8 @@
  *    If you set the level to DEBUG or TRACE, it also sets G_MESSAGES_DEBUG=all (unless
  *    in assert-logging mode and unless G_MESSAGES_DEBUG is already defined).
  *
+ * "TRACE", this is shorthand for "log-level=TRACE".
+ *
  * "sudo-cmd=PATH": when running root tests as normal user, the test will execute
  *   itself by invoking sudo at PATH.
  *   For example
@@ -126,16 +128,26 @@ nmtst_assert_error (GError *error,
 	}
 }
 
-#define NMTST_BUSY_WAIT(max_wait_ms, condition, wait) \
-	G_STMT_START { \
+#define NMTST_WAIT(max_wait_ms, wait) \
+	({ \
+		gboolean _not_expired = TRUE; \
 		gint64 _nmtst_end, _nmtst_max_wait_us = (max_wait_ms) * 1000L; \
 		\
 		_nmtst_end = g_get_monotonic_time () + _nmtst_max_wait_us; \
-		while (!(condition)) { \
+		while (TRUE) { \
 			{ wait }; \
-			if (g_get_monotonic_time () > _nmtst_end) \
-				g_assert_not_reached (); \
+			if (g_get_monotonic_time () > _nmtst_end) { \
+				_not_expired = FALSE; \
+				break; \
+			} \
 		} \
+		_not_expired; \
+	})
+
+#define NMTST_WAIT_ASSERT(max_wait_ms, wait) \
+	G_STMT_START { \
+		if (!(NMTST_WAIT (max_wait_ms, wait))) \
+			g_assert_not_reached (); \
 	} G_STMT_END
 
 inline static void
@@ -322,6 +334,9 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			} else if (!g_ascii_strncasecmp (debug, "log-level=", strlen ("log-level="))) {
 				g_free (c_log_level);
 				log_level = c_log_level = g_strdup (&debug[strlen ("log-level=")]);
+			} else if (!g_ascii_strcasecmp (debug, "TRACE")) {
+				g_free (c_log_level);
+				log_level = c_log_level = g_strdup (debug);
 			} else if (!g_ascii_strncasecmp (debug, "log-domains=", strlen ("log-domains="))) {
 				g_free (c_log_domains);
 				log_domains = c_log_domains = g_strdup (&debug[strlen ("log-domains=")]);
