@@ -5325,6 +5325,10 @@ nmc_property_tun_set_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
+static const char *tun_valid_modes[] = { "tun", "tap", "unknown", NULL };
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_tun_allowed_mode, tun_valid_modes)
+
 /*----------------------------------------------------------------------------*/
 
 static inline void
@@ -7032,7 +7036,7 @@ nmc_properties_init (void)
 	                    nmc_property_tun_set_mode,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_tun_allowed_mode,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (TUN, OWNER),
 	                    nmc_property_tun_get_owner,
