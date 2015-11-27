@@ -23,10 +23,17 @@
 
 #include "nm-default.h"
 
+struct {
+	const char *name;
+	const char *ui_name;
+} typedef VpnPasswordName;
+
 GSList *nm_vpn_get_plugins (void);
 
 NMVpnEditorPlugin *nm_vpn_get_plugin_by_service (const char *service, GError **error);
 
 gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
+
+const VpnPasswordName * nm_vpn_get_secret_names (const char *vpn_type);
 
 #endif  /* __NM_VPN_HELPERS_H__ */

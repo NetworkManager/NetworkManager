@@ -94,3 +94,46 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 	capabilities = nm_vpn_editor_plugin_get_capabilities (plugin);
 	return NM_FLAGS_HAS (capabilities, NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6);
 }
+
+const VpnPasswordName *
+nm_vpn_get_secret_names (const char *vpn_type)
+{
+	const char *type;
+	static VpnPasswordName generic_vpn_secrets[] = { {"password", N_("Password")}, {NULL, NULL} };
+	static VpnPasswordName vpnc_secrets[] = { {"Xauth password", N_("Password")},
+	                                          {"IPSec secret", N_("Group password")},
+	                                          {NULL, NULL} };
+	static VpnPasswordName swan_secrets[] = { {"xauthpassword", N_("Password")},
+	                                          {"pskvalue", N_("Group password")},
+	                                          {NULL, NULL} };
+	static VpnPasswordName openconnect_secrets[] = { {"gateway", N_("Gateway")},
+	                                                 {"cookie", N_("Cookie")},
+	                                                 {"gwcert", N_("Gateway certificate hash")},
+	                                                 {NULL, NULL} };
+
+	if (!vpn_type)
+		return NULL;
+
+	if (g_str_has_prefix (vpn_type, NM_DBUS_INTERFACE))
+		type = vpn_type + strlen (NM_DBUS_INTERFACE) + 1;
+	else
+		type = vpn_type;
+
+	if (   !g_strcmp0 (type, "openvpn")
+	    || !g_strcmp0 (type, "pptp")
+	    || !g_strcmp0 (type, "iodine")
+	    || !g_strcmp0 (type, "ssh")
+	    || !g_strcmp0 (type, "l2tp")
+	    || !g_strcmp0 (type, "fortisslvpn"))
+		 return generic_vpn_secrets;
+	else if (!g_strcmp0 (type, "vpnc"))
+		return vpnc_secrets;
+	else if (   !g_strcmp0 (type, "openswan")
+	         || !g_strcmp0 (type, "libreswan")
+	         || !g_strcmp0 (type, "strongswan"))
+		return swan_secrets;
+	else if (!g_strcmp0 (type, "openconnect"))
+		return openconnect_secrets;
+	return NULL;
+}
+

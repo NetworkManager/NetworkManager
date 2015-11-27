@@ -116,6 +116,8 @@ nmtui_SOURCES = \
 	nmt-widget-list.h \
 	$(srcdir)/../common/nm-secret-agent-simple.c \
 	$(srcdir)/../common/nm-secret-agent-simple.h \
+	$(srcdir)/../common/nm-vpn-helpers.c \
+	$(srcdir)/../common/nm-vpn-helpers.h \
 	$(NULL)
 
 nmtui_LDADD = \
