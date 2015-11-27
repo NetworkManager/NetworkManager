@@ -1429,6 +1429,12 @@ nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlat
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_INFINIBAND, out_link);
 }
 
+const NMPlatformLnkIp6Tnl *
+nm_platform_link_get_lnk_ip6tnl (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6TNL, out_link);
+}
+
 const NMPlatformLnkIpIp *
 nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1857,6 +1863,45 @@ nm_platform_infiniband_get_properties (NMPlatform *self,
 	NM_SET_OUT (out_p_key, p_key);
 	NM_SET_OUT (out_mode, mode);
 	return TRUE;
+}
+
+/**
+ * nm_platform_ip6tnl_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create an IPv6 tunnel.
+ */
+NMPlatformError
+nm_platform_link_ip6tnl_add (NMPlatform *self,
+                             const char *name,
+                             NMPlatformLnkIp6Tnl *props,
+                             NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+	char buffer[INET6_ADDRSTRLEN];
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_IP6TNL, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "ip6tnl",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet6_ntop (&props->local, NULL),
+	       nm_utils_inet6_ntop (&props->remote, buffer));
+
+	if (!klass->link_ip6tnl_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 /**
@@ -2937,6 +2982,45 @@ nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *
 }
 
 const char *
+nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsize len)
+{
+	char str_local[30];
+	char str_local1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_remote[30];
+	char str_remote1[NM_UTILS_INET_ADDRSTRLEN];
+	char str_ttl[30];
+	char str_tclass[30];
+	char str_flow[30];
+	char str_encap[30];
+	char str_proto[30];
+	char str_parent_ifindex[30];
+
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "ip6tnl"
+	            "%s" /* remote */
+	            "%s" /* local */
+	            "%s" /* parent_ifindex */
+	            "%s" /* ttl */
+	            "%s" /* tclass */
+	            "%s" /* encap limit */
+	            "%s" /* flow label */
+	            "%s" /* proto */
+	            "",
+	            nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet6_ntop (&lnk->remote, str_remote1)),
+	            nm_sprintf_buf (str_local, " local %s", nm_utils_inet6_ntop (&lnk->local, str_local1)),
+	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
+	            lnk->ttl ? nm_sprintf_buf (str_ttl, " ttl %u", lnk->ttl) : " ttl inherit",
+	            lnk->tclass == 1 ? " tclass inherit" : nm_sprintf_buf (str_tclass, " tclass 0x%x", lnk->tclass),
+	            nm_sprintf_buf (str_encap, " encap-limit %u", lnk->encap_limit),
+	            nm_sprintf_buf (str_flow, " flow-label 0x05%x", lnk->flow_label),
+	            nm_sprintf_buf (str_proto, " proto %u", lnk->proto));
+	return buf;
+}
+
+const char *
 nm_platform_lnk_ipip_to_string (const NMPlatformLnkIpIp *lnk, char *buf, gsize len)
 {
 	char str_local[30];
@@ -3558,6 +3642,21 @@ nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatfo
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, p_key);
 	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	return 0;
+}
+
+int
+nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6Tnl *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, parent_ifindex);
+	_CMP_FIELD_MEMCMP (a, b, local);
+	_CMP_FIELD_MEMCMP (a, b, remote);
+	_CMP_FIELD (a, b, ttl);
+	_CMP_FIELD (a, b, tclass);
+	_CMP_FIELD (a, b, encap_limit);
+	_CMP_FIELD (a, b, flow_label);
+	_CMP_FIELD (a, b, proto);
 	return 0;
 }
 

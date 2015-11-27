@@ -2045,6 +2045,15 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_infiniband_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_infiniband_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_IP6TNL - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_IP6TNL,
+		.sizeof_data                        = sizeof (NMPObjectLnkIp6Tnl),
+		.sizeof_public                      = sizeof (NMPlatformLnkIp6Tnl),
+		.obj_type_name                      = "ip6tnl",
+		.lnk_link_type                      = NM_LINK_TYPE_IP6TNL,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_ip6tnl_to_string,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_IPIP - 1] = {
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IPIP,
 		.sizeof_data                        = sizeof (NMPObjectLnkIpIp),
