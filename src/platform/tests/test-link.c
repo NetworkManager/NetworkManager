@@ -690,6 +690,19 @@ test_software_detect (gconstpointer user_data)
 		}
 		break;
 	}
+	case NM_LINK_TYPE_IPIP: {
+		NMPlatformLnkIpIp lnk_ipip = { };
+
+		inet_pton (AF_INET, "1.2.3.4", &lnk_ipip.local);
+		inet_pton (AF_INET, "5.6.7.8", &lnk_ipip.remote);
+		lnk_ipip.parent_ifindex = ifindex_parent;
+		lnk_ipip.tos = 32;
+		lnk_ipip.path_mtu_discovery = FALSE;
+
+		if (!nmtstp_link_ipip_add (EX, DEVICE_NAME, &lnk_ipip))
+			g_error ("Failed adding IPIP tunnel");
+		break;
+	}
 	case NM_LINK_TYPE_MACVLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type macvlan", DEVICE_NAME, PARENT_NAME);
 		break;
@@ -784,6 +797,18 @@ test_software_detect (gconstpointer user_data)
 			g_assert_cmpint (plnk->ttl, ==, 174);
 			g_assert_cmpint (plnk->tos, ==, 37);
 			g_assert_cmpint (plnk->path_mtu_discovery, ==, TRUE);
+			break;
+		}
+		case NM_LINK_TYPE_IPIP: {
+			const NMPlatformLnkIpIp *plnk = &lnk->lnk_ipip;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip4_address (plnk->local, "1.2.3.4");
+			nmtst_assert_ip4_address (plnk->remote, "5.6.7.8");
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->tos, ==, 32);
+			g_assert_cmpint (plnk->path_mtu_discovery, ==, FALSE);
 			break;
 		}
 		case NM_LINK_TYPE_MACVLAN: {
@@ -1624,6 +1649,7 @@ setup_tests (void)
 		g_test_add_func ("/link/external", test_external);
 
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
+		test_software_detect_add ("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
 		test_software_detect_add ("/link/software/detect/sit", NM_LINK_TYPE_SIT, 0);
 		test_software_detect_add ("/link/software/detect/vlan", NM_LINK_TYPE_VLAN, 0);
