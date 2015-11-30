@@ -703,6 +703,21 @@ test_software_detect (gconstpointer user_data)
 			g_error ("Failed adding IPIP tunnel");
 		break;
 	}
+	case NM_LINK_TYPE_IP6TNL: {
+		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+
+		inet_pton (AF_INET6, "fd01::15", &lnk_ip6tnl.local);
+		inet_pton (AF_INET6, "fd01::16", &lnk_ip6tnl.remote);
+		lnk_ip6tnl.parent_ifindex = ifindex_parent;
+		lnk_ip6tnl.tclass = 20;
+		lnk_ip6tnl.encap_limit = 6;
+		lnk_ip6tnl.flow_label = 1337;
+		lnk_ip6tnl.proto = IPPROTO_IPV6;
+
+		if (!nmtstp_link_ip6tnl_add (EX, DEVICE_NAME, &lnk_ip6tnl))
+			g_error ("Failed adding IPv6 tunnel");
+		break;
+	}
 	case NM_LINK_TYPE_MACVLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type macvlan", DEVICE_NAME, PARENT_NAME);
 		break;
@@ -797,6 +812,20 @@ test_software_detect (gconstpointer user_data)
 			g_assert_cmpint (plnk->ttl, ==, 174);
 			g_assert_cmpint (plnk->tos, ==, 37);
 			g_assert_cmpint (plnk->path_mtu_discovery, ==, TRUE);
+			break;
+		}
+		case NM_LINK_TYPE_IP6TNL: {
+			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip6_address (&plnk->local, "fd01::15");
+			nmtst_assert_ip6_address (&plnk->remote, "fd01::16");
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->tclass, ==, 20);
+			g_assert_cmpint (plnk->encap_limit, ==, 6);
+			g_assert_cmpint (plnk->flow_label, ==, 1337);
+			g_assert_cmpint (plnk->proto, ==, IPPROTO_IPV6);
 			break;
 		}
 		case NM_LINK_TYPE_IPIP: {
@@ -1649,6 +1678,7 @@ setup_tests (void)
 		g_test_add_func ("/link/external", test_external);
 
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
+		test_software_detect_add ("/link/software/detect/ip6tnl", NM_LINK_TYPE_IP6TNL, 0);
 		test_software_detect_add ("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
 		test_software_detect_add ("/link/software/detect/sit", NM_LINK_TYPE_SIT, 0);

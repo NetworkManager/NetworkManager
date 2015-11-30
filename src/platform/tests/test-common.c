@@ -701,6 +701,50 @@ nmtstp_link_gre_add (gboolean external_command, const char *name, NMPlatformLnkG
 }
 
 gboolean
+nmtstp_link_ip6tnl_add (gboolean external_command, const char *name, NMPlatformLnkIp6Tnl *lnk)
+{
+	gboolean success;
+	char buffer[INET6_ADDRSTRLEN];
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		gs_free char *dev = NULL;
+		const char *mode;
+
+		if (lnk->parent_ifindex)
+			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (NM_PLATFORM_GET, lnk->parent_ifindex));
+
+		switch (lnk->proto) {
+		case IPPROTO_IPIP:
+			mode = "ipip6";
+			break;
+		case IPPROTO_IPV6:
+			mode = "ip6ip6";
+			break;
+		default:
+			g_assert (FALSE);
+		}
+
+		success = !nmtstp_run_command ("ip -6 tunnel add %s mode %s %s local %s remote %s ttl %u tclass %02x encaplimit %u flowlabel %x",
+		                                name,
+		                                mode,
+		                                dev,
+		                                nm_utils_inet6_ntop (&lnk->local, NULL),
+		                                nm_utils_inet6_ntop (&lnk->remote, buffer),
+		                                lnk->ttl,
+		                                lnk->tclass,
+		                                lnk->encap_limit,
+		                                lnk->flow_label);
+		if (success)
+			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IP6TNL, 100);
+	} else
+		success = nm_platform_link_ip6tnl_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+
+	return success;
+}
+
+gboolean
 nmtstp_link_ipip_add (gboolean external_command, const char *name, NMPlatformLnkIpIp *lnk)
 {
 	gboolean success;
