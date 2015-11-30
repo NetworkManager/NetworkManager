@@ -59,6 +59,21 @@
       </tp:docstring>
     </property>
 
+    <property name="EncapsulationLimit" type="y" access="read">
+      <tp:docstring>
+        How many additional levels of encapsulation are permitted to
+        be prepended to packets. This property applies only to IPv6
+        tunnels.
+      </tp:docstring>
+    </property>
+
+    <property name="FlowLabel" type="u" access="read">
+      <tp:docstring>
+        The flow label to assign to tunnel packets. This property
+        applies only to IPv6 tunnels.
+      </tp:docstring>
+    </property>
+
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
             <tp:docstring>

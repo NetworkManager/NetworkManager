@@ -42,6 +42,8 @@ G_BEGIN_DECLS
 #define NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY  "path-mtu-discovery"
 #define NM_DEVICE_IP_TUNNEL_INPUT_KEY           "input-key"
 #define NM_DEVICE_IP_TUNNEL_OUTPUT_KEY          "output-key"
+#define NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT "encapsulation-limit"
+#define NM_DEVICE_IP_TUNNEL_FLOW_LABEL          "flow-label"
 
 typedef struct {
 	NMDevice parent;

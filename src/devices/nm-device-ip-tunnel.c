@@ -57,6 +57,8 @@ typedef struct {
 	int addr_family;
 	char *input_key;
 	char *output_key;
+	guint8 encap_limit;
+	guint32 flow_label;
 } NMDeviceIPTunnelPrivate;
 
 enum {
@@ -70,6 +72,8 @@ enum {
 	PROP_PATH_MTU_DISCOVERY,
 	PROP_INPUT_KEY,
 	PROP_OUTPUT_KEY,
+	PROP_ENCAPSULATION_LIMIT,
+	PROP_FLOW_LABEL,
 
 	LAST_PROP
 };
@@ -118,8 +122,9 @@ update_properties (NMDevice *device)
 	int parent_ifindex;
 	in_addr_t local4, remote4;
 	struct in6_addr local6, remote6;
-	guint8 ttl, tos;
-	gboolean pmtud;
+	guint8 ttl = 0, tos = 0, encap_limit = 0;
+	gboolean pmtud = FALSE;
+	guint32 flow_label = 0;
 	char *key;
 
 	if (priv->mode == NM_IP_TUNNEL_MODE_GRE) {
@@ -197,6 +202,23 @@ update_properties (NMDevice *device)
 		ttl = lnk->ttl;
 		tos = lnk->tos;
 		pmtud = lnk->path_mtu_discovery;
+	} else if (   priv->mode == NM_IP_TUNNEL_MODE_IPIP6
+	           || priv->mode == NM_IP_TUNNEL_MODE_IP6IP6) {
+		const NMPlatformLnkIp6Tnl *lnk;
+
+		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		if (!lnk) {
+			_LOGW (LOGD_HW, "could not read %s properties", "ip6tnl");
+			return;
+		}
+
+		parent_ifindex = lnk->parent_ifindex;
+		local6 = lnk->local;
+		remote6 = lnk->remote;
+		ttl = lnk->ttl;
+		tos = lnk->tclass;
+		encap_limit = lnk->encap_limit;
+		flow_label = lnk->flow_label;
 	} else
 		g_return_if_reached ();
 
@@ -252,6 +274,16 @@ update_properties (NMDevice *device)
 	if (priv->path_mtu_discovery != pmtud) {
 		priv->path_mtu_discovery = pmtud;
 		g_object_notify (object, NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY);
+	}
+
+	if (priv->encap_limit != encap_limit) {
+		priv->encap_limit = encap_limit;
+		g_object_notify (object, NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT);
+	}
+
+	if (priv->flow_label != flow_label) {
+		priv->flow_label = flow_label;
+		g_object_notify (object, NM_DEVICE_IP_TUNNEL_FLOW_LABEL);
 	}
 }
 
@@ -350,6 +382,20 @@ update_connection (NMDevice *device, NMConnection *connection)
 		              NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
 		              priv->path_mtu_discovery,
 		              NULL);
+	}
+
+	if (nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel) != priv->encap_limit) {
+		g_object_set (G_OBJECT (s_ip_tunnel),
+		                        NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT,
+		                        priv->encap_limit,
+		                        NULL);
+	}
+
+	if (nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel) != priv->flow_label) {
+		g_object_set (G_OBJECT (s_ip_tunnel),
+		                        NM_SETTING_IP_TUNNEL_FLOW_LABEL,
+		                        priv->flow_label,
+		                        NULL);
 	}
 
 	if (priv->mode == NM_IP_TUNNEL_MODE_GRE || priv->mode == NM_IP_TUNNEL_MODE_IP6GRE) {
@@ -452,8 +498,16 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (nm_setting_ip_tunnel_get_tos (s_ip_tunnel) != priv->tos)
 		return FALSE;
 
-	if (nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel) != priv->path_mtu_discovery)
-		return FALSE;
+	if (priv->addr_family == AF_INET) {
+		if (nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel) != priv->path_mtu_discovery)
+			return FALSE;
+	} else {
+		if (nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel) != priv->encap_limit)
+			return FALSE;
+
+		if (nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel) != priv->flow_label)
+			return FALSE;
+	}
 
 	return TRUE;
 }
@@ -461,9 +515,19 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static NMIPTunnelMode
 platform_link_to_tunnel_mode (const NMPlatformLink *link)
 {
+	const NMPlatformLnkIp6Tnl *lnk;
+
 	switch (link->type) {
 	case NM_LINK_TYPE_GRE:
 		return NM_IP_TUNNEL_MODE_GRE;
+	case NM_LINK_TYPE_IP6TNL:
+		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, link->ifindex, NULL);
+		if (lnk->proto == IPPROTO_IPIP)
+			return NM_IP_TUNNEL_MODE_IPIP6;
+		else if (lnk->proto == IPPROTO_IPV6)
+			return NM_IP_TUNNEL_MODE_IP6IP6;
+		else
+			return NM_IP_TUNNEL_MODE_UKNOWN;
 	case NM_LINK_TYPE_IPIP:
 		return NM_IP_TUNNEL_MODE_IPIP;
 	case NM_LINK_TYPE_SIT:
@@ -485,7 +549,11 @@ constructed (GObject *object)
 {
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
 
-	priv->addr_family = AF_INET; /* at the moment we support only IPv4 tunnels */
+	if (   priv->mode == NM_IP_TUNNEL_MODE_IPIP6
+	    || priv->mode == NM_IP_TUNNEL_MODE_IP6IP6)
+		priv->addr_family = AF_INET6;
+	else
+		priv->addr_family = AF_INET;
 
 	G_OBJECT_CLASS (nm_device_ip_tunnel_parent_class)->constructed (object);
 }
@@ -503,6 +571,7 @@ create_and_realize (NMDevice *device,
 	NMPlatformLnkGre lnk_gre = { };
 	NMPlatformLnkSit lnk_sit = { };
 	NMPlatformLnkIpIp lnk_ipip = { };
+	NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
 	const char *str;
 	gint64 val;
 
@@ -609,6 +678,35 @@ create_and_realize (NMDevice *device,
 			return FALSE;
 		}
 		break;
+	case NM_IP_TUNNEL_MODE_IPIP6:
+	case NM_IP_TUNNEL_MODE_IP6IP6:
+		if (parent)
+			lnk_ip6tnl.parent_ifindex = nm_device_get_ifindex (parent);
+
+		str = nm_setting_ip_tunnel_get_local (s_ip_tunnel);
+		if (str)
+			inet_pton (AF_INET6, str, &lnk_ip6tnl.local);
+
+		str = nm_setting_ip_tunnel_get_remote (s_ip_tunnel);
+		g_assert (str);
+		inet_pton (AF_INET6, str, &lnk_ip6tnl.remote);
+
+		lnk_ip6tnl.ttl = nm_setting_ip_tunnel_get_ttl (s_ip_tunnel);
+		lnk_ip6tnl.tclass = nm_setting_ip_tunnel_get_tos (s_ip_tunnel);
+		lnk_ip6tnl.encap_limit = nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel);
+		lnk_ip6tnl.flow_label = nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel);
+		lnk_ip6tnl.proto = nm_setting_ip_tunnel_get_mode (s_ip_tunnel) == NM_IP_TUNNEL_MODE_IPIP6 ? IPPROTO_IPIP : IPPROTO_IPV6;
+
+		plerr = nm_platform_link_ip6tnl_add (NM_PLATFORM_GET, iface, &lnk_ip6tnl, out_plink);
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+			             "Failed to create IPIP interface '%s' for '%s': %s",
+			             iface,
+			             nm_connection_get_id (connection),
+			             nm_platform_error_to_string (plerr));
+			return FALSE;
+		}
+		break;
 	default:
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create IP tunnel interface '%s' for '%s': mode %d not supported",
@@ -664,6 +762,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_OUTPUT_KEY:
 		g_value_set_string (value, priv->output_key);
+		break;
+	case PROP_ENCAPSULATION_LIMIT:
+		g_value_set_uchar (value, priv->encap_limit);
+		break;
+	case PROP_FLOW_LABEL:
+		g_value_set_uint (value, priv->flow_label);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -774,6 +878,20 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	g_object_class_install_property
+		(object_class, PROP_ENCAPSULATION_LIMIT,
+		  g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT, "", "",
+		                      0, 255, 0,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_FLOW_LABEL,
+		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLOW_LABEL, "", "",
+		                    0, (1 << 20) - 1, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
+
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_IPTUNNEL_SKELETON,
 	                                        NULL);
@@ -798,6 +916,9 @@ create_device (NMDeviceFactory *factory,
 		mode = nm_setting_ip_tunnel_get_mode (s_ip_tunnel);
 	} else
 		mode = platform_link_to_tunnel_mode (plink);
+
+	if (mode == NM_IP_TUNNEL_MODE_UKNOWN)
+		return NULL;
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_IP_TUNNEL,
 	                                  NM_DEVICE_IFACE, iface,
