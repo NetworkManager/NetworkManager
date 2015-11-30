@@ -182,6 +182,21 @@ update_properties (NMDevice *device)
 		ttl = lnk->ttl;
 		tos = lnk->tos;
 		pmtud = lnk->path_mtu_discovery;
+	} else if (priv->mode == NM_IP_TUNNEL_MODE_IPIP) {
+		const NMPlatformLnkIpIp *lnk;
+
+		lnk = nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		if (!lnk) {
+			_LOGW (LOGD_HW, "could not read %s properties", "ipip");
+			return;
+		}
+
+		parent_ifindex = lnk->parent_ifindex;
+		local4 = lnk->local;
+		remote4 = lnk->remote;
+		ttl = lnk->ttl;
+		tos = lnk->tos;
+		pmtud = lnk->path_mtu_discovery;
 	} else
 		g_return_if_reached ();
 
@@ -449,6 +464,8 @@ platform_link_to_tunnel_mode (const NMPlatformLink *link)
 	switch (link->type) {
 	case NM_LINK_TYPE_GRE:
 		return NM_IP_TUNNEL_MODE_GRE;
+	case NM_LINK_TYPE_IPIP:
+		return NM_IP_TUNNEL_MODE_IPIP;
 	case NM_LINK_TYPE_SIT:
 		return NM_IP_TUNNEL_MODE_SIT;
 	default:
@@ -485,6 +502,7 @@ create_and_realize (NMDevice *device,
 	NMPlatformError plerr;
 	NMPlatformLnkGre lnk_gre = { };
 	NMPlatformLnkSit lnk_sit = { };
+	NMPlatformLnkIpIp lnk_ipip = { };
 	const char *str;
 	gint64 val;
 
@@ -559,6 +577,32 @@ create_and_realize (NMDevice *device,
 		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 					"Failed to create SIT interface '%s' for '%s': %s",
+					iface,
+					nm_connection_get_id (connection),
+					nm_platform_error_to_string (plerr));
+			return FALSE;
+		}
+		break;
+	case NM_IP_TUNNEL_MODE_IPIP:
+		if (parent)
+			lnk_ipip.parent_ifindex = nm_device_get_ifindex (parent);
+
+		str = nm_setting_ip_tunnel_get_local (s_ip_tunnel);
+		if (str)
+			inet_pton (AF_INET, str, &lnk_ipip.local);
+
+		str = nm_setting_ip_tunnel_get_remote (s_ip_tunnel);
+		g_assert (str);
+		inet_pton (AF_INET, str, &lnk_ipip.remote);
+
+		lnk_ipip.ttl = nm_setting_ip_tunnel_get_ttl (s_ip_tunnel);
+		lnk_ipip.tos = nm_setting_ip_tunnel_get_tos (s_ip_tunnel);
+		lnk_ipip.path_mtu_discovery = nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel);
+
+		plerr = nm_platform_link_ipip_add (NM_PLATFORM_GET, iface, &lnk_ipip, out_plink);
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+					"Failed to create IPIP interface '%s' for '%s': %s",
 					iface,
 					nm_connection_get_id (connection),
 					nm_platform_error_to_string (plerr));
@@ -798,7 +842,7 @@ get_virtual_iface_name (NMDeviceFactory *factory,
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (IP_TUNNEL, IPTunnel, ip_tunnel,
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_SIT)
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_SIT, NM_LINK_TYPE_IPIP)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_IP_TUNNEL_SETTING_NAME),
 	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
