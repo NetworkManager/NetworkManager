@@ -321,6 +321,7 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_VLAN;
 	case NM_DEVICE_TYPE_GENERIC:
 	case NM_DEVICE_TYPE_TUN:
+	case NM_DEVICE_TYPE_IP_TUNNEL:
 		return NM_TYPE_DEVICE_GENERIC;
 	default:
 		g_warning ("Unknown device type %d", dtype);
