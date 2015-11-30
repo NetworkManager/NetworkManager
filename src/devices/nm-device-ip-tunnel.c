@@ -167,6 +167,21 @@ update_properties (NMDevice *device)
 				g_object_notify (object, NM_DEVICE_IP_TUNNEL_OUTPUT_KEY);
 			}
 		}
+	} else if (priv->mode == NM_IP_TUNNEL_MODE_SIT) {
+		const NMPlatformLnkSit *lnk;
+
+		lnk = nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		if (!lnk) {
+			_LOGW (LOGD_HW, "could not read %s properties", "sit");
+			return;
+		}
+
+		parent_ifindex = lnk->parent_ifindex;
+		local4 = lnk->local;
+		remote4 = lnk->remote;
+		ttl = lnk->ttl;
+		tos = lnk->tos;
+		pmtud = lnk->path_mtu_discovery;
 	} else
 		g_return_if_reached ();
 
@@ -434,6 +449,8 @@ platform_link_to_tunnel_mode (const NMPlatformLink *link)
 	switch (link->type) {
 	case NM_LINK_TYPE_GRE:
 		return NM_IP_TUNNEL_MODE_GRE;
+	case NM_LINK_TYPE_SIT:
+		return NM_IP_TUNNEL_MODE_SIT;
 	default:
 		g_return_val_if_reached (NM_IP_TUNNEL_MODE_UKNOWN);
 	}
@@ -467,6 +484,7 @@ create_and_realize (NMDevice *device,
 	NMSettingIPTunnel *s_ip_tunnel;
 	NMPlatformError plerr;
 	NMPlatformLnkGre lnk_gre = { };
+	NMPlatformLnkSit lnk_sit = { };
 	const char *str;
 	gint64 val;
 
@@ -518,6 +536,32 @@ create_and_realize (NMDevice *device,
 			             iface,
 			             nm_connection_get_id (connection),
 			             nm_platform_error_to_string (plerr));
+			return FALSE;
+		}
+		break;
+	case NM_IP_TUNNEL_MODE_SIT:
+		if (parent)
+			lnk_sit.parent_ifindex = nm_device_get_ifindex (parent);
+
+		str = nm_setting_ip_tunnel_get_local (s_ip_tunnel);
+		if (str)
+			inet_pton (AF_INET, str, &lnk_sit.local);
+
+		str = nm_setting_ip_tunnel_get_remote (s_ip_tunnel);
+		g_assert (str);
+		inet_pton (AF_INET, str, &lnk_sit.remote);
+
+		lnk_sit.ttl = nm_setting_ip_tunnel_get_ttl (s_ip_tunnel);
+		lnk_sit.tos = nm_setting_ip_tunnel_get_tos (s_ip_tunnel);
+		lnk_sit.path_mtu_discovery = nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel);
+
+		plerr = nm_platform_link_sit_add (NM_PLATFORM_GET, iface, &lnk_sit, out_plink);
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+					"Failed to create SIT interface '%s' for '%s': %s",
+					iface,
+					nm_connection_get_id (connection),
+					nm_platform_error_to_string (plerr));
 			return FALSE;
 		}
 		break;
@@ -754,7 +798,7 @@ get_virtual_iface_name (NMDeviceFactory *factory,
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (IP_TUNNEL, IPTunnel, ip_tunnel,
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE)
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_SIT)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_IP_TUNNEL_SETTING_NAME),
 	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
