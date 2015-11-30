@@ -41,12 +41,16 @@ nm_vpn_get_plugin_by_service (const char *service, GError **error)
 {
 	NMVpnEditorPlugin *plugin = NULL;
 	NMVpnPluginInfo *plugin_info;
+	char *type = NULL;
 
 	g_return_val_if_fail (service != NULL, NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
 	if (G_UNLIKELY (!plugins_loaded))
 		nm_vpn_get_plugins ();
+
+	if (!g_str_has_prefix (service, NM_DBUS_INTERFACE))
+		service = type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, service);
 
 	plugin_info = nm_vpn_plugin_info_list_find_by_service (plugins, service);
 	if (plugin_info) {
@@ -56,6 +60,7 @@ nm_vpn_get_plugin_by_service (const char *service, GError **error)
 	} else
 		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
 		                     _("could not get VPN plugin info"));
+	g_free (type);
 	return plugin;
 }
 
