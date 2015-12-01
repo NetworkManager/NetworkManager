@@ -113,7 +113,7 @@ address_equal_pn (int family, const char *a, const void *b)
 }
 
 static void
-update_properties (NMDevice *device)
+update_properties_from_ifindex (NMDevice *device, int ifindex)
 {
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
@@ -127,10 +127,36 @@ update_properties (NMDevice *device)
 	guint32 flow_label = 0;
 	char *key;
 
+	if (ifindex <= 0) {
+		if (priv->parent || priv->parent_ifindex) {
+			g_clear_object (&priv->parent);
+			priv->parent_ifindex = 0;
+			g_object_notify (object, NM_DEVICE_IP_TUNNEL_PARENT);
+		}
+		if (priv->local) {
+			g_clear_pointer (&priv->local, g_free);
+			g_object_notify (object, NM_DEVICE_IP_TUNNEL_LOCAL);
+		}
+		if (priv->remote) {
+			g_clear_pointer (&priv->remote, g_free);
+			g_object_notify (object, NM_DEVICE_IP_TUNNEL_REMOTE);
+		}
+		if (priv->input_key) {
+			g_clear_pointer (&priv->input_key, g_free);
+			g_object_notify (object, NM_DEVICE_IP_TUNNEL_INPUT_KEY);
+		}
+		if (priv->output_key) {
+			g_clear_pointer (&priv->output_key, g_free);
+			g_object_notify (object, NM_DEVICE_IP_TUNNEL_OUTPUT_KEY);
+		}
+
+		goto out;
+	}
+
 	if (priv->mode == NM_IP_TUNNEL_MODE_GRE) {
 		const NMPlatformLnkGre *lnk;
 
-		lnk = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		lnk = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "gre");
 			return;
@@ -175,7 +201,7 @@ update_properties (NMDevice *device)
 	} else if (priv->mode == NM_IP_TUNNEL_MODE_SIT) {
 		const NMPlatformLnkSit *lnk;
 
-		lnk = nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		lnk = nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "sit");
 			return;
@@ -190,7 +216,7 @@ update_properties (NMDevice *device)
 	} else if (priv->mode == NM_IP_TUNNEL_MODE_IPIP) {
 		const NMPlatformLnkIpIp *lnk;
 
-		lnk = nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		lnk = nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "ipip");
 			return;
@@ -206,7 +232,7 @@ update_properties (NMDevice *device)
 	           || priv->mode == NM_IP_TUNNEL_MODE_IP6IP6) {
 		const NMPlatformLnkIp6Tnl *lnk;
 
-		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
+		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "ip6tnl");
 			return;
@@ -261,6 +287,8 @@ update_properties (NMDevice *device)
 		}
 	}
 
+out:
+
 	if (priv->ttl != ttl) {
 		priv->ttl = ttl;
 		g_object_notify (object, NM_DEVICE_IP_TUNNEL_TTL);
@@ -285,6 +313,12 @@ update_properties (NMDevice *device)
 		priv->flow_label = flow_label;
 		g_object_notify (object, NM_DEVICE_IP_TUNNEL_FLOW_LABEL);
 	}
+}
+
+static void
+update_properties (NMDevice *device)
+{
+	update_properties_from_ifindex (device, nm_device_get_ifindex (device));
 }
 
 static void
@@ -730,29 +764,9 @@ setup (NMDevice *device, NMPlatformLink *plink)
 static void
 unrealize (NMDevice *device, gboolean remove_resources)
 {
-	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
-	GParamSpec **properties;
-	guint n_properties, i;
-
 	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize (device, remove_resources);
 
-	g_clear_object (&priv->parent);
-	priv->parent_ifindex = 0;
-	g_clear_pointer (&priv->local, g_free);
-	g_clear_pointer (&priv->remote, g_free);
-	priv->ttl = 0;
-	priv->tos = 0;
-	priv->path_mtu_discovery = FALSE;
-	g_clear_pointer (&priv->input_key, g_free);
-	g_clear_pointer (&priv->output_key, g_free);
-	priv->encap_limit = 0;
-	priv->flow_label = 0;
-
-	properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (self), &n_properties);
-	for (i = 0; i < n_properties; i++)
-		 g_object_notify_by_pspec (G_OBJECT (self), properties[i]);
-	g_free (properties);
+	update_properties_from_ifindex (device, 0);
 }
 
 static void
