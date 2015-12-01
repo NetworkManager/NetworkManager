@@ -481,6 +481,7 @@ EOF
             patch -f --no-backup-if-mismatch -R "-p$PNUM" < "../${LAST_PATCH[$i]}" || (
                 # error applying patch. Maybe we have a multi line patch...
 
+                rm -f "../${LAST_PATCH[$i]}".makerepo-split.*
                 split_patch "../${LAST_PATCH[$i]}" ".makerepo-split."
 
                 git reset --hard
