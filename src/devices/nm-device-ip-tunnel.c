@@ -370,8 +370,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_ip_tunnel);
 	}
 
-	update_properties (device);
-
 	if (nm_setting_ip_tunnel_get_mode (s_ip_tunnel) != priv->mode)
 		g_object_set (G_OBJECT (s_ip_tunnel), NM_SETTING_IP_TUNNEL_MODE, priv->mode, NULL);
 
@@ -504,8 +502,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
 	if (!s_ip_tunnel)
 		return FALSE;
-
-	update_properties (device);
 
 	/* Check parent interface; could be an interface name or a UUID */
 	parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
