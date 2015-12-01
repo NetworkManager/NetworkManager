@@ -128,6 +128,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 	char *key;
 
 	if (ifindex <= 0) {
+clear:
 		if (priv->parent || priv->parent_ifindex) {
 			g_clear_object (&priv->parent);
 			priv->parent_ifindex = 0;
@@ -159,7 +160,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 		lnk = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "gre");
-			return;
+			goto clear;
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
@@ -204,7 +205,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 		lnk = nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "sit");
-			return;
+			goto clear;
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
@@ -219,7 +220,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 		lnk = nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "ipip");
-			return;
+			goto clear;
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
@@ -235,7 +236,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_HW, "could not read %s properties", "ip6tnl");
-			return;
+			goto clear;
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
