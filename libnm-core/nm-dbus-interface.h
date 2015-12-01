@@ -67,7 +67,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_MACVLAN    NM_DBUS_INTERFACE_DEVICE ".Macvlan"
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN      NM_DBUS_INTERFACE_DEVICE ".Vxlan"
 #define NM_DBUS_INTERFACE_DEVICE_GRE        NM_DBUS_INTERFACE_DEVICE ".Gre"
-
+#define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL  NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
 
 #define NM_DBUS_INTERFACE_SETTINGS        "org.freedesktop.NetworkManager.Settings"
 #define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"
@@ -173,6 +173,7 @@ typedef enum {
 	NM_DEVICE_TYPE_GENERIC    = 14,
 	NM_DEVICE_TYPE_TEAM       = 15,
 	NM_DEVICE_TYPE_TUN        = 16,
+	NM_DEVICE_TYPE_IP_TUNNEL  = 17,
 } NMDeviceType;
 
 /**
@@ -667,5 +668,35 @@ typedef enum /*< flags >*/ {
 #define NM_LLDP_DEST_NEAREST_BRIDGE "nearest-bridge"
 #define NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE "nearest-non-tpmr-bridge"
 #define NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE "nearest-customer-bridge"
+
+/**
+ * NMIPTunnelMode:
+ * @NM_IP_TUNNEL_MODE_UNKNOWN: Unknown/unset tunnel mode
+ * @NM_IP_TUNNEL_MODE_IPIP:    IP in IP tunnel
+ * @NM_IP_TUNNEL_MODE_GRE:     GRE tunnel
+ * @NM_IP_TUNNEL_MODE_SIT:     SIT tunnel
+ * @NM_IP_TUNNEL_MODE_ISATAP:  ISATAP tunnel
+ * @NM_IP_TUNNEL_MODE_VTI:     VTI tunnel
+ * @NM_IP_TUNNEL_MODE_IP6IP6:  IPv6 in IPv6 tunnel
+ * @NM_IP_TUNNEL_MODE_IPIP6:   IPv4 in IPv6 tunnel
+ * @NM_IP_TUNNEL_MODE_IP6GRE:  IPv6 GRE tunnel
+ * @NM_IP_TUNNEL_MODE_VTI6:    IPv6 VTI tunnel
+ *
+ * The tunneling mode.
+ *
+ * Since: 1.2
+ */
+typedef enum {
+	NM_IP_TUNNEL_MODE_UKNOWN      = 0,
+	NM_IP_TUNNEL_MODE_IPIP        = 1,
+	NM_IP_TUNNEL_MODE_GRE         = 2,
+	NM_IP_TUNNEL_MODE_SIT         = 3,
+	NM_IP_TUNNEL_MODE_ISATAP      = 4,
+	NM_IP_TUNNEL_MODE_VTI         = 5,
+	NM_IP_TUNNEL_MODE_IP6IP6      = 6,
+	NM_IP_TUNNEL_MODE_IPIP6       = 7,
+	NM_IP_TUNNEL_MODE_IP6GRE      = 8,
+	NM_IP_TUNNEL_MODE_VTI6        = 9,
+} NMIPTunnelMode;
 
 #endif /* __NM_DBUS_INTERFACE_H__ */

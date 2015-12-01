@@ -86,9 +86,28 @@
 #define IFLA_MACVLAN_FLAGS              2
 #define __IFLA_MACVLAN_MAX              3
 
+#define IFLA_IPTUN_LINK                 1
+#define IFLA_IPTUN_LOCAL                2
+#define IFLA_IPTUN_REMOTE               3
+#define IFLA_IPTUN_TTL                  4
+#define IFLA_IPTUN_TOS                  5
+#define IFLA_IPTUN_ENCAP_LIMIT          6
+#define IFLA_IPTUN_FLOWINFO             7
+#define IFLA_IPTUN_FLAGS                8
+#define IFLA_IPTUN_PROTO                9
+#define IFLA_IPTUN_PMTUDISC             10
+#define __IFLA_IPTUN_MAX                19
+#ifndef IFLA_IPTUN_MAX
+#define IFLA_IPTUN_MAX                  (__IFLA_IPTUN_MAX - 1)
+#endif
+
 #ifndef MACVLAN_FLAG_NOPROMISC
 #define MACVLAN_FLAG_NOPROMISC          1
 #endif
+
+#define IP6_FLOWINFO_TCLASS_MASK        0x0FF00000
+#define IP6_FLOWINFO_TCLASS_SHIFT       20
+#define IP6_FLOWINFO_FLOWLABEL_MASK     0x000FFFFF
 
 /*********************************************************************************************/
 
@@ -117,6 +136,8 @@
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
+
+#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
 
 /******************************************************************
  * Forward declarations and enums
@@ -314,10 +335,13 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
 	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
 	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
+	{ NM_LINK_TYPE_IP6TNL,        "ip6tnl",      "ip6tnl",      NULL },
+	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
 	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
 	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
 	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
 	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
+	{ NM_LINK_TYPE_SIT,           "sit",         "sit",         NULL },
 	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
 	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
@@ -611,6 +635,10 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_LOOPBACK;
 	else if (arptype == ARPHRD_INFINIBAND)
 		return NM_LINK_TYPE_INFINIBAND;
+	else if (arptype == ARPHRD_SIT)
+		return NM_LINK_TYPE_SIT;
+	else if (arptype == ARPHRD_TUNNEL6)
+		return NM_LINK_TYPE_IP6TNL;
 
 	if (ifname) {
 		gs_free char *driver = NULL;
@@ -821,10 +849,10 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	props = &obj->lnk_gre;
 
 	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
-	props->input_flags = tb[IFLA_GRE_IFLAGS] ? nla_get_u16 (tb[IFLA_GRE_IFLAGS]) : 0;
-	props->output_flags = tb[IFLA_GRE_OFLAGS] ? nla_get_u16 (tb[IFLA_GRE_OFLAGS]) : 0;
-	props->input_key = (props->input_flags & GRE_KEY) && tb[IFLA_GRE_IKEY] ? nla_get_u32 (tb[IFLA_GRE_IKEY]) : 0;
-	props->output_key = (props->output_flags & GRE_KEY) && tb[IFLA_GRE_OKEY] ? nla_get_u32 (tb[IFLA_GRE_OKEY]) : 0;
+	props->input_flags = tb[IFLA_GRE_IFLAGS] ? ntohs (nla_get_u16 (tb[IFLA_GRE_IFLAGS])) : 0;
+	props->output_flags = tb[IFLA_GRE_OFLAGS] ? ntohs (nla_get_u16 (tb[IFLA_GRE_OFLAGS])) : 0;
+	props->input_key = tb[IFLA_GRE_IKEY] ? ntohl (nla_get_u32 (tb[IFLA_GRE_IKEY])) : 0;
+	props->output_key = tb[IFLA_GRE_OKEY] ? ntohl (nla_get_u32 (tb[IFLA_GRE_OKEY])) : 0;
 	props->local = tb[IFLA_GRE_LOCAL] ? nla_get_u32 (tb[IFLA_GRE_LOCAL]) : 0;
 	props->remote = tb[IFLA_GRE_REMOTE] ? nla_get_u32 (tb[IFLA_GRE_REMOTE]) : 0;
 	props->tos = tb[IFLA_GRE_TOS] ? nla_get_u8 (tb[IFLA_GRE_TOS]) : 0;
@@ -897,6 +925,97 @@ _parse_lnk_infiniband (const char *kind, struct nlattr *info_data)
 /*****************************************************************************/
 
 static NMPObject *
+_parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+		[IFLA_IPTUN_LINK]        = { .type = NLA_U32 },
+		[IFLA_IPTUN_LOCAL]       = { .type = NLA_UNSPEC,
+		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_IPTUN_REMOTE]      = { .type = NLA_UNSPEC,
+		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_IPTUN_TTL]         = { .type = NLA_U8 },
+		[IFLA_IPTUN_ENCAP_LIMIT] = { .type = NLA_U8 },
+		[IFLA_IPTUN_FLOWINFO]    = { .type = NLA_U32 },
+		[IFLA_IPTUN_PROTO]       = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkIp6Tnl *props;
+	guint32 flowinfo;
+
+	if (!info_data || g_strcmp0 (kind, "ip6tnl"))
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_IP6TNL, NULL);
+	props = &obj->lnk_ip6tnl;
+
+	if (tb[IFLA_IPTUN_LINK])
+		props->parent_ifindex = nla_get_u32 (tb[IFLA_IPTUN_LINK]);
+	if (tb[IFLA_IPTUN_LOCAL])
+		memcpy (&props->local, nla_data (tb[IFLA_IPTUN_LOCAL]), sizeof (props->local));
+	if (tb[IFLA_IPTUN_REMOTE])
+		memcpy (&props->remote, nla_data (tb[IFLA_IPTUN_REMOTE]), sizeof (props->remote));
+	if (tb[IFLA_IPTUN_TTL])
+		props->ttl = nla_get_u8 (tb[IFLA_IPTUN_TTL]);
+	if (tb[IFLA_IPTUN_ENCAP_LIMIT])
+		props->encap_limit = nla_get_u8 (tb[IFLA_IPTUN_ENCAP_LIMIT]);
+	if (tb[IFLA_IPTUN_FLOWINFO]) {
+		flowinfo = ntohl (nla_get_u32 (tb[IFLA_IPTUN_FLOWINFO]));
+		props->flow_label = flowinfo & IP6_FLOWINFO_FLOWLABEL_MASK;
+		props->tclass = (flowinfo & IP6_FLOWINFO_TCLASS_MASK) >> IP6_FLOWINFO_TCLASS_SHIFT;
+	}
+	if (tb[IFLA_IPTUN_PROTO])
+		props->proto = nla_get_u8 (tb[IFLA_IPTUN_PROTO]);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
+_parse_lnk_ipip (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
+		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
+		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
+		[IFLA_IPTUN_TTL]      = { .type = NLA_U8 },
+		[IFLA_IPTUN_TOS]      = { .type = NLA_U8 },
+		[IFLA_IPTUN_PMTUDISC] = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkIpIp *props;
+
+	if (!info_data || g_strcmp0 (kind, "ipip"))
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_IPIP, NULL);
+	props = &obj->lnk_ipip;
+
+	props->parent_ifindex = tb[IFLA_IPTUN_LINK] ? nla_get_u32 (tb[IFLA_IPTUN_LINK]) : 0;
+	props->local = tb[IFLA_IPTUN_LOCAL] ? nla_get_u32 (tb[IFLA_IPTUN_LOCAL]) : 0;
+	props->remote = tb[IFLA_IPTUN_REMOTE] ? nla_get_u32 (tb[IFLA_IPTUN_REMOTE]) : 0;
+	props->tos = tb[IFLA_IPTUN_TOS] ? nla_get_u8 (tb[IFLA_IPTUN_TOS]) : 0;
+	props->ttl = tb[IFLA_IPTUN_TTL] ? nla_get_u8 (tb[IFLA_IPTUN_TTL]) : 0;
+	props->path_mtu_discovery = !tb[IFLA_IPTUN_PMTUDISC] || !!nla_get_u8 (tb[IFLA_IPTUN_PMTUDISC]);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
 _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 {
 	static struct nla_policy policy[IFLA_MACVLAN_MAX + 1] = {
@@ -942,6 +1061,48 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 
 	if (tb[IFLA_MACVLAN_FLAGS])
 		props->no_promisc = NM_FLAGS_HAS (nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]), MACVLAN_FLAG_NOPROMISC);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
+_parse_lnk_sit (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
+		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
+		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
+		[IFLA_IPTUN_TTL]      = { .type = NLA_U8 },
+		[IFLA_IPTUN_TOS]      = { .type = NLA_U8 },
+		[IFLA_IPTUN_PMTUDISC] = { .type = NLA_U8 },
+		[IFLA_IPTUN_FLAGS]    = { .type = NLA_U16 },
+		[IFLA_IPTUN_PROTO]    = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkSit *props;
+
+	if (!info_data || g_strcmp0 (kind, "sit"))
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_IPTUN_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_SIT, NULL);
+	props = &obj->lnk_sit;
+
+	props->parent_ifindex = tb[IFLA_IPTUN_LINK] ? nla_get_u32 (tb[IFLA_IPTUN_LINK]) : 0;
+	props->local = tb[IFLA_IPTUN_LOCAL] ? nla_get_u32 (tb[IFLA_IPTUN_LOCAL]) : 0;
+	props->remote = tb[IFLA_IPTUN_REMOTE] ? nla_get_u32 (tb[IFLA_IPTUN_REMOTE]) : 0;
+	props->tos = tb[IFLA_IPTUN_TOS] ? nla_get_u8 (tb[IFLA_IPTUN_TOS]) : 0;
+	props->ttl = tb[IFLA_IPTUN_TTL] ? nla_get_u8 (tb[IFLA_IPTUN_TTL]) : 0;
+	props->path_mtu_discovery = !tb[IFLA_IPTUN_PMTUDISC] || !!nla_get_u8 (tb[IFLA_IPTUN_PMTUDISC]);
+	props->flags = tb[IFLA_IPTUN_FLAGS] ? nla_get_u16 (tb[IFLA_IPTUN_FLAGS]) : 0;
+	props->proto = tb[IFLA_IPTUN_PROTO] ? nla_get_u8 (tb[IFLA_IPTUN_PROTO]) : 0;
 
 	return obj;
 }
@@ -1325,8 +1486,17 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	case NM_LINK_TYPE_INFINIBAND:
 		lnk_data = _parse_lnk_infiniband (nl_info_kind, nl_info_data);
 		break;
+	case NM_LINK_TYPE_IP6TNL:
+		lnk_data = _parse_lnk_ip6tnl (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_IPIP:
+		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
+		break;
 	case NM_LINK_TYPE_MACVLAN:
 		lnk_data = _parse_lnk_macvlan (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_SIT:
+		lnk_data = _parse_lnk_sit (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_VLAN:
 		lnk_data = _parse_lnk_vlan (nl_info_kind, nl_info_data);
@@ -2734,8 +2904,10 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
 				switch (new->link.type) {
 				case NM_LINK_TYPE_GRE:
+				case NM_LINK_TYPE_IP6TNL:
 				case NM_LINK_TYPE_INFINIBAND:
 				case NM_LINK_TYPE_MACVLAN:
+				case NM_LINK_TYPE_SIT:
 				case NM_LINK_TYPE_VLAN:
 				case NM_LINK_TYPE_VXLAN:
 					delayed_action_schedule (platform,
@@ -4030,6 +4202,224 @@ vlan_add (NMPlatform *platform,
 		return FALSE;
 
 	return do_add_link_with_lookup (platform, NM_LINK_TYPE_VLAN, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
+link_gre_add (NMPlatform *platform,
+              const char *name,
+              NMPlatformLnkGre *props,
+              NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	char buffer[INET_ADDRSTRLEN];
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "gre",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "gre");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_GRE_LINK, props->parent_ifindex);
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_LOCAL, props->local);
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_REMOTE, props->remote);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_TOS, props->tos);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_PMTUDISC, !!props->path_mtu_discovery);
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform, NM_LINK_TYPE_GRE, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
+link_ip6tnl_add (NMPlatform *platform,
+                 const char *name,
+                 NMPlatformLnkIp6Tnl *props,
+                 NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	char buffer[INET_ADDRSTRLEN];
+	guint32 flowinfo;
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "ip6tnl",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet6_ntop (&props->local, NULL),
+	       nm_utils_inet6_ntop (&props->remote, buffer));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "ip6tnl");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LINK, props->parent_ifindex);
+
+	if (memcmp (&props->local, &in6addr_any, sizeof (in6addr_any)))
+		NLA_PUT (nlmsg, IFLA_IPTUN_LOCAL, sizeof (props->local), &props->local);
+	if (memcmp (&props->remote, &in6addr_any, sizeof (in6addr_any)))
+		NLA_PUT (nlmsg, IFLA_IPTUN_REMOTE, sizeof (props->remote), &props->remote);
+
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_ENCAP_LIMIT, props->encap_limit);
+
+	flowinfo = props->flow_label & IP6_FLOWINFO_FLOWLABEL_MASK;
+	flowinfo |=   (props->tclass << IP6_FLOWINFO_TCLASS_SHIFT)
+	            & IP6_FLOWINFO_TCLASS_MASK;
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_FLOWINFO, htonl (flowinfo));
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_PROTO, props->proto);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IP6TNL, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
+link_ipip_add (NMPlatform *platform,
+               const char *name,
+               NMPlatformLnkIpIp *props,
+               NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	char buffer[INET_ADDRSTRLEN];
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "ipip",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "ipip");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LINK, props->parent_ifindex);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LOCAL, props->local);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_REMOTE, props->remote);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TOS, props->tos);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
+link_sit_add (NMPlatform *platform,
+              const char *name,
+              NMPlatformLnkSit *props,
+              NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	char buffer[INET_ADDRSTRLEN];
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "sit",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "sit");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LINK, props->parent_ifindex);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LOCAL, props->local);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_REMOTE, props->remote);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TOS, props->tos);
+	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform, NM_LINK_TYPE_SIT, name, nlmsg, out_link);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -5486,6 +5876,11 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->mesh_get_channel = mesh_get_channel;
 	platform_class->mesh_set_channel = mesh_set_channel;
 	platform_class->mesh_set_ssid = mesh_set_ssid;
+
+	platform_class->link_gre_add = link_gre_add;
+	platform_class->link_ip6tnl_add = link_ip6tnl_add;
+	platform_class->link_ipip_add = link_ipip_add;
+	platform_class->link_sit_add = link_sit_add;
 
 	platform_class->ip4_address_get = ip4_address_get;
 	platform_class->ip6_address_get = ip6_address_get;

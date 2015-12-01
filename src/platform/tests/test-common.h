@@ -135,6 +135,19 @@ void nmtstp_link_set_updown (gboolean external_command,
                              int ifindex,
                              gboolean up);
 
+gboolean nmtstp_link_gre_add (gboolean external_command,
+                              const char *name,
+                              NMPlatformLnkGre *lnk);
+gboolean nmtstp_link_ip6tnl_add (gboolean external_command,
+                                 const char *name,
+                                 NMPlatformLnkIp6Tnl *lnk);
+gboolean nmtstp_link_ipip_add (gboolean external_command,
+                               const char *name,
+                               NMPlatformLnkIpIp *lnk);
+gboolean nmtstp_link_sit_add (gboolean external_command,
+                              const char *name,
+                              NMPlatformLnkSit *lnk);
+
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);
 

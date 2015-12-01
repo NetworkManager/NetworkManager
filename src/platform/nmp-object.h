@@ -170,8 +170,20 @@ typedef struct {
 } NMPObjectLnkInfiniband;
 
 typedef struct {
+	NMPlatformLnkIp6Tnl _public;
+} NMPObjectLnkIp6Tnl;
+
+typedef struct {
+	NMPlatformLnkIpIp _public;
+} NMPObjectLnkIpIp;
+
+typedef struct {
 	NMPlatformLnkMacvlan _public;
 } NMPObjectLnkMacvlan;
+
+typedef struct {
+	NMPlatformLnkSit _public;
+} NMPObjectLnkSit;
 
 typedef struct {
 	NMPlatformLnkVlan _public;
@@ -218,8 +230,17 @@ struct _NMPObject {
 		NMPlatformLnkInfiniband lnk_infiniband;
 		NMPObjectLnkInfiniband  _lnk_infiniband;
 
+		NMPlatformLnkIpIp       lnk_ipip;
+		NMPObjectLnkIpIp        _lnk_ipip;
+
+		NMPlatformLnkIp6Tnl     lnk_ip6tnl;
+		NMPObjectLnkIp6Tnl      _lnk_ip6tnl;
+
 		NMPlatformLnkMacvlan    lnk_macvlan;
 		NMPObjectLnkMacvlan     _lnk_macvlan;
+
+		NMPlatformLnkSit        lnk_sit;
+		NMPObjectLnkSit         _lnk_sit;
 
 		NMPlatformLnkVlan       lnk_vlan;
 		NMPObjectLnkVlan        _lnk_vlan;

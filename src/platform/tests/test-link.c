@@ -659,32 +659,93 @@ test_software_detect (gconstpointer user_data)
 	const NMPlatformLink *plink;
 	const NMPObject *lnk;
 	guint i_step;
-	int exit_code;
+	const gint EX = -1;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
 	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	switch (test_data->link_type) {
 	case NM_LINK_TYPE_GRE: {
+		NMPlatformLnkGre lnk_gre = { };
 		gboolean gracefully_skip = FALSE;
+
+		inet_pton (AF_INET, "192.168.233.204", &lnk_gre.local);
+		inet_pton (AF_INET, "172.168.10.25", &lnk_gre.remote);
+		lnk_gre.parent_ifindex = ifindex_parent;
+		lnk_gre.ttl = 174;
+		lnk_gre.tos = 37;
+		lnk_gre.path_mtu_discovery = TRUE;
 
 		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "gre0")) {
 			/* Seems that the ip_gre module is not loaded... try to load it. */
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip_gre", NULL) != 0;
 		}
-		exit_code = nmtstp_run_command ("ip tunnel add %s mode gre remote 172.168.10.25 local 192.168.233.204 ttl 174", DEVICE_NAME);
-		if (exit_code != 0) {
+
+		if (!nmtstp_link_gre_add (EX, DEVICE_NAME, &lnk_gre)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create gre tunnel because of missing ip_gre module (modprobe ip_gre)");
 				goto out_delete_parent;
 			}
-			g_error ("Failed adding GRE tunnel: exit code %d", exit_code);
+			g_error ("Failed adding GRE tunnel");
 		}
+		break;
+	}
+	case NM_LINK_TYPE_IPIP: {
+		NMPlatformLnkIpIp lnk_ipip = { };
+
+		inet_pton (AF_INET, "1.2.3.4", &lnk_ipip.local);
+		inet_pton (AF_INET, "5.6.7.8", &lnk_ipip.remote);
+		lnk_ipip.parent_ifindex = ifindex_parent;
+		lnk_ipip.tos = 32;
+		lnk_ipip.path_mtu_discovery = FALSE;
+
+		if (!nmtstp_link_ipip_add (EX, DEVICE_NAME, &lnk_ipip))
+			g_error ("Failed adding IPIP tunnel");
+		break;
+	}
+	case NM_LINK_TYPE_IP6TNL: {
+		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+
+		inet_pton (AF_INET6, "fd01::15", &lnk_ip6tnl.local);
+		inet_pton (AF_INET6, "fd01::16", &lnk_ip6tnl.remote);
+		lnk_ip6tnl.parent_ifindex = ifindex_parent;
+		lnk_ip6tnl.tclass = 20;
+		lnk_ip6tnl.encap_limit = 6;
+		lnk_ip6tnl.flow_label = 1337;
+		lnk_ip6tnl.proto = IPPROTO_IPV6;
+
+		if (!nmtstp_link_ip6tnl_add (EX, DEVICE_NAME, &lnk_ip6tnl))
+			g_error ("Failed adding IPv6 tunnel");
 		break;
 	}
 	case NM_LINK_TYPE_MACVLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type macvlan", DEVICE_NAME, PARENT_NAME);
 		break;
+	case NM_LINK_TYPE_SIT: {
+		NMPlatformLnkSit lnk_sit = { };
+		gboolean gracefully_skip = FALSE;
+
+		inet_pton (AF_INET, "192.168.200.1", &lnk_sit.local);
+		inet_pton (AF_INET, "172.25.100.14", &lnk_sit.remote);
+		lnk_sit.parent_ifindex = ifindex_parent;
+		lnk_sit.ttl = 0;
+		lnk_sit.tos = 31;
+		lnk_sit.path_mtu_discovery = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "sit0")) {
+			/* Seems that the sit module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "sit", NULL) != 0;
+		}
+
+		if (!nmtstp_link_sit_add (EX, DEVICE_NAME, &lnk_sit)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create sit tunnel because of missing sit module (modprobe sit)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding SIT tunnel");
+		}
+		break;
+	}
 	case NM_LINK_TYPE_VLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1242", DEVICE_NAME, PARENT_NAME);
 		break;
@@ -741,7 +802,7 @@ test_software_detect (gconstpointer user_data)
 			const NMPlatformLnkGre *plnk = &lnk->lnk_gre;
 
 			g_assert (plnk == nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL));
-			g_assert_cmpint (plnk->parent_ifindex, ==, 0);
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
 			g_assert_cmpint (plnk->input_flags, ==, 0);
 			g_assert_cmpint (plnk->output_flags, ==, 0);
 			g_assert_cmpint (plnk->input_key, ==, 0);
@@ -749,8 +810,34 @@ test_software_detect (gconstpointer user_data)
 			nmtst_assert_ip4_address (plnk->local, "192.168.233.204");
 			nmtst_assert_ip4_address (plnk->remote, "172.168.10.25");
 			g_assert_cmpint (plnk->ttl, ==, 174);
-			g_assert_cmpint (plnk->tos, ==, 0);
+			g_assert_cmpint (plnk->tos, ==, 37);
 			g_assert_cmpint (plnk->path_mtu_discovery, ==, TRUE);
+			break;
+		}
+		case NM_LINK_TYPE_IP6TNL: {
+			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip6_address (&plnk->local, "fd01::15");
+			nmtst_assert_ip6_address (&plnk->remote, "fd01::16");
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->tclass, ==, 20);
+			g_assert_cmpint (plnk->encap_limit, ==, 6);
+			g_assert_cmpint (plnk->flow_label, ==, 1337);
+			g_assert_cmpint (plnk->proto, ==, IPPROTO_IPV6);
+			break;
+		}
+		case NM_LINK_TYPE_IPIP: {
+			const NMPlatformLnkIpIp *plnk = &lnk->lnk_ipip;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip4_address (plnk->local, "1.2.3.4");
+			nmtst_assert_ip4_address (plnk->remote, "5.6.7.8");
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->tos, ==, 32);
+			g_assert_cmpint (plnk->path_mtu_discovery, ==, FALSE);
 			break;
 		}
 		case NM_LINK_TYPE_MACVLAN: {
@@ -759,6 +846,18 @@ test_software_detect (gconstpointer user_data)
 			g_assert (plnk == nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->no_promisc, ==, FALSE);
 			g_assert_cmpstr (plnk->mode, ==, "vepa");
+			break;
+		}
+		case NM_LINK_TYPE_SIT: {
+			const NMPlatformLnkSit *plnk = &lnk->lnk_sit;
+
+			g_assert (plnk == nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip4_address (plnk->local, "192.168.200.1");
+			nmtst_assert_ip4_address (plnk->remote, "172.25.100.14");
+			g_assert_cmpint (plnk->ttl, ==, 0);
+			g_assert_cmpint (plnk->tos, ==, 31);
+			g_assert_cmpint (plnk->path_mtu_discovery, ==, FALSE);
 			break;
 		}
 		case NM_LINK_TYPE_VLAN: {
@@ -1579,7 +1678,10 @@ setup_tests (void)
 		g_test_add_func ("/link/external", test_external);
 
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
+		test_software_detect_add ("/link/software/detect/ip6tnl", NM_LINK_TYPE_IP6TNL, 0);
+		test_software_detect_add ("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
+		test_software_detect_add ("/link/software/detect/sit", NM_LINK_TYPE_SIT, 0);
 		test_software_detect_add ("/link/software/detect/vlan", NM_LINK_TYPE_VLAN, 0);
 		test_software_detect_add ("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
 		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);

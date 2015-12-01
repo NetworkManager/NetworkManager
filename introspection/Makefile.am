@@ -31,10 +31,10 @@ nodist_libnmdbus_la_SOURCES = \
 	nmdbus-device.h \
 	nmdbus-device-generic.c \
 	nmdbus-device-generic.h \
-	nmdbus-device-gre.c \
-	nmdbus-device-gre.h \
 	nmdbus-device-infiniband.c \
 	nmdbus-device-infiniband.h \
+	nmdbus-device-ip-tunnel.c \
+	nmdbus-device-ip-tunnel.h \
 	nmdbus-device-macvlan.c \
 	nmdbus-device-macvlan.h \
 	nmdbus-device-modem.c \
@@ -108,8 +108,8 @@ EXTRA_DIST = \
 	nm-device-bt.xml \
 	nm-device-ethernet.xml \
 	nm-device-generic.xml \
-	nm-device-gre.xml \
 	nm-device-infiniband.xml \
+	nm-device-ip-tunnel.xml \
 	nm-device-macvlan.xml \
 	nm-device-modem.xml \
 	nm-device-olpc-mesh.xml \

@@ -116,6 +116,7 @@ extern NmcOutputField nmc_fields_setting_team[];
 extern NmcOutputField nmc_fields_setting_team_port[];
 extern NmcOutputField nmc_fields_setting_dcb[];
 extern NmcOutputField nmc_fields_setting_tun[];
+extern NmcOutputField nmc_fields_setting_ip_tunnel[];
 
 /* Available settings for 'connection show <con>' - profile part */
 static NmcOutputField nmc_fields_settings_names[] = {
@@ -145,6 +146,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME,         nmc_fields_setting_team_port + 1),         /* 23 */
 	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME,               nmc_fields_setting_dcb + 1),               /* 24 */
 	SETTING_FIELD (NM_SETTING_TUN_SETTING_NAME,               nmc_fields_setting_tun + 1),               /* 25 */
+	SETTING_FIELD (NM_SETTING_IP_TUNNEL_SETTING_NAME,         nmc_fields_setting_ip_tunnel + 1),         /* 26 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -171,7 +173,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_TEAM_SETTING_NAME","\
                                          NM_SETTING_TEAM_PORT_SETTING_NAME"," \
                                          NM_SETTING_DCB_SETTING_NAME"," \
-                                         NM_SETTING_TUN_SETTING_NAME
+                                         NM_SETTING_TUN_SETTING_NAME"," \
+                                         NM_SETTING_IP_TUNNEL_SETTING_NAME
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
 
 /* Active connection data */
@@ -2757,6 +2760,14 @@ static const NameItem nmc_tun_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
+static const NameItem nmc_ip_tunnel_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
+
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      },
@@ -2779,6 +2790,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ "team-slave",                       NULL,        nmc_team_slave_settings   },
 	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
 	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,        nmc_ip_tunnel_settings    },
 	{ NULL, NULL, NULL }
 };
 
@@ -4383,6 +4395,31 @@ do_questionnaire_tun (char **user, char **group,
 	}
 }
 
+static void
+do_questionnaire_ip_tunnel (char **local)
+{
+	gboolean once_more;
+
+	/* Ask for optional 'ip-tunnel' arguments. */
+	if (!want_provide_opt_args (_("IP Tunnel"), 1))
+		return;
+
+	if (!*local) {
+		do {
+			*local = nmc_readline (_("Local endpoint [none]: "));
+			if (!*local)
+				break;
+			once_more =    !nm_utils_ipaddr_valid (AF_INET, *local)
+			            && !nm_utils_ipaddr_valid (AF_INET6, *local);
+			if (once_more) {
+				g_print (_("Error: 'local': '%s' is not valid; must be an IP address\n"),
+				         *local);
+				g_free (*local);
+			}
+		} while (once_more);
+	}
+}
+
 static gboolean
 read_connection_properties (NMConnection *connection,
                             int argc,
@@ -4594,6 +4631,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingOlpcMesh *s_olpc_mesh;
 	NMSettingAdsl *s_adsl;
 	NMSettingTun *s_tun;
+	NMSettingIPTunnel *s_ip_tunnel;
 	const char *slave_type;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -5813,6 +5851,96 @@ cleanup_tun:
 		g_free (multi_queue);
 		if (!success)
 			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_IP_TUNNEL_SETTING_NAME)) {
+		/* Build up the settings required for 'ip-tunnel' */
+		const char *mode_c = NULL, *local_c = NULL, *remote_c = NULL;
+		char *mode_ask = NULL, *remote_ask = NULL, *local = NULL;
+		gboolean success = FALSE;
+		NMIPTunnelMode mode_enum;
+		nmc_arg_t exp_args[] = { {"mode",    TRUE, &mode_c,     !ask},
+		                         {"local",   TRUE, &local_c,    FALSE},
+		                         {"remote",  TRUE, &remote_c,   !ask},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!mode_c && ask)
+			mode_c = mode_ask = nmc_readline (_("Tunnel mode: "));
+		if (!mode_c) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'mode' is required."));
+			goto cleanup_tunnel;
+		}
+
+		if (!remote_c && ask)
+			remote_c = remote_ask = nmc_readline (_("Remote endpoint: "));
+		if (!remote_c) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'remote' is required."));
+			goto cleanup_tunnel;
+		}
+
+		if (!nm_utils_enum_from_str (nm_ip_tunnel_mode_get_type (),
+		                             mode_c, (int *) &mode_enum, NULL)) {
+			gs_free const char **values = NULL;
+			gs_free char *values_str = NULL;
+
+			values = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
+			                                   NM_IP_TUNNEL_MODE_UKNOWN + 1,
+			                                   G_MAXINT);
+			values_str = g_strjoinv (",", (char **) values);
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'mode': '%s' is not valid, use one of %s"),
+			             mode_c, values_str);
+			goto cleanup_tunnel;
+		}
+
+		if (   !nm_utils_ipaddr_valid (AF_INET, remote_c)
+		    && !nm_utils_ipaddr_valid (AF_INET6, remote_c)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'remote': '%s' is not valid; must be an IP address"),
+			             remote_c);
+			goto cleanup_tunnel;
+		}
+
+		local = g_strdup (local_c);
+		if (ask)
+			do_questionnaire_ip_tunnel (&local);
+
+		if (   local
+		    && !nm_utils_ipaddr_valid (AF_INET, local)
+		    && !nm_utils_ipaddr_valid (AF_INET6, local)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'local': '%s' is not valid; must be an IP address"),
+			             local);
+			goto cleanup_tunnel;
+		}
+
+		/* Add 'tunnel' setting */
+		s_ip_tunnel = (NMSettingIPTunnel *) nm_setting_ip_tunnel_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_ip_tunnel));
+
+		/* Set 'tunnel' properties */
+		g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_MODE, mode_enum, NULL);
+		g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_REMOTE, remote_c, NULL);
+		if (local)
+			g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_LOCAL, local, NULL);
+
+		/* Set default values for IPv6 tunnels */
+		if (nm_utils_ipaddr_valid (AF_INET6, remote_c)) {
+			g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_TOS, 64, NULL);
+			g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT, 4, NULL);
+		}
+
+		success = TRUE;
+cleanup_tunnel:
+		g_free (remote_ask);
+		g_free (mode_ask);
+		if (!success)
+			return FALSE;
+
 	} else if (!strcmp (con_type, NM_SETTING_GENERIC_SETTING_NAME)) {
 		/* Add 'generic' setting */
 		s_generic = (NMSettingGeneric *) nm_setting_generic_new ();

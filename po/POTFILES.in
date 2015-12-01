@@ -65,6 +65,7 @@ libnm-core/nm-setting-infiniband.c
 libnm-core/nm-setting-ip-config.c
 libnm-core/nm-setting-ip4-config.c
 libnm-core/nm-setting-ip6-config.c
+libnm-core/nm-setting-ip-tunnel.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c
@@ -119,6 +120,7 @@ libnm/nm-device-ethernet.c
 libnm/nm-device-generic.c
 libnm/nm-device-tun.c
 libnm/nm-device-infiniband.c
+libnm/nm-device-ip-tunnel.c
 libnm/nm-device-modem.c
 libnm/nm-device-olpc-mesh.c
 libnm/nm-device-team.c
@@ -148,6 +150,7 @@ src/devices/nm-device-bridge.c
 src/devices/nm-device-ethernet.c
 src/devices/nm-device-ethernet-utils.c
 src/devices/nm-device-infiniband.c
+src/devices/nm-device-ip-tunnel.c
 src/devices/nm-device-tun.c
 src/devices/nm-device-vlan.c
 src/devices/team/nm-device-team.c

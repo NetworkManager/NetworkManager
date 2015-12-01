@@ -4740,6 +4740,21 @@ test_nm_utils_enum_to_str_do (GType type, int flags, const char *exp_str)
 	g_free (str);
 }
 
+static void
+test_nm_utils_enum_get_values_do (GType type, int from, int to, const char *exp_str)
+{
+	const char **strv;
+	char *str;
+
+	strv = nm_utils_enum_get_values (type, from, to);
+	g_assert (strv);
+	str = g_strjoinv (",", (char **) strv);
+	g_assert_cmpstr (str, ==, exp_str);
+	g_free (str);
+	g_free (strv);
+}
+
+
 static void test_nm_utils_enum (void)
 {
 	GType bool_enum = nm_test_general_bool_enum_get_type();
@@ -4783,6 +4798,12 @@ static void test_nm_utils_enum (void)
 	test_nm_utils_enum_from_str_do (color_flags, "blue,red", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_BLUE |
 	                                                               NM_TEST_GENERAL_COLOR_FLAGS_RED, NULL);
 	test_nm_utils_enum_from_str_do (color_flags, "blue,white", FALSE, 0, "white");
+
+	test_nm_utils_enum_get_values_do (bool_enum, 0, G_MAXINT, "no,yes,maybe,unknown");
+	test_nm_utils_enum_get_values_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES,
+	                                  NM_TEST_GENERAL_BOOL_ENUM_MAYBE, "yes,maybe");
+	test_nm_utils_enum_get_values_do (meta_flags, 0, G_MAXINT, "none,foo,bar,baz");
+	test_nm_utils_enum_get_values_do (color_flags, 0, G_MAXINT, "blue,red,green");
 }
 
 /******************************************************************************/
