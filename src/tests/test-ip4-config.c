@@ -336,6 +336,27 @@ test_merge_subtract_mss_mtu (void)
 	g_object_unref (cfg3);
 }
 
+static void
+test_strip_search_trailing_dot (void)
+{
+	NMIP4Config *config;
+
+	config = nm_ip4_config_new ();
+
+	nm_ip4_config_add_search (config, ".");
+	nm_ip4_config_add_search (config, "foo");
+	nm_ip4_config_add_search (config, "bar.");
+	nm_ip4_config_add_search (config, "baz.com");
+	nm_ip4_config_add_search (config, "baz.com.");
+
+	g_assert_cmpuint (nm_ip4_config_get_num_searches (config), ==, 3);
+	g_assert_cmpstr (nm_ip4_config_get_search (config, 0), ==, "foo");
+	g_assert_cmpstr (nm_ip4_config_get_search (config, 1), ==, "bar");
+	g_assert_cmpstr (nm_ip4_config_get_search (config, 2), ==, "baz.com");
+
+	g_object_unref (config);
+}
+
 /*******************************************/
 
 int
@@ -352,6 +373,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/ip4-config/add-address-with-source", test_add_address_with_source);
 	g_test_add_func ("/ip4-config/add-route-with-source", test_add_route_with_source);
 	g_test_add_func ("/ip4-config/merge-subtract-mss-mtu", test_merge_subtract_mss_mtu);
+	g_test_add_func ("/ip4-config/strip-search-trailing-dot", test_strip_search_trailing_dot);
 
 	return g_test_run ();
 }
