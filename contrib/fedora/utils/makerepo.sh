@@ -237,6 +237,7 @@ detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
 detect_build_type 'initscripts-[0-9]*' initscripts.spec
 detect_build_type 'libqmi-[0-9]*' libqmi.spec
 detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
+detect_build_type 'iproute2-*' iproute.spec
 
 [[ -n "$BUILD_TYPE" ]] || die "Could not detect dist-git type"
 
@@ -309,6 +310,8 @@ pushd "$DIRNAME"
         git remote add origin 'git://git.kernel.org/pub/scm/libs/infiniband/libibverbs.git';
     elif [[ "$BUILD_TYPE" == "initscripts" ]]; then
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
+    elif [[ "$BUILD_TYPE" == "iproute" ]]; then
+        git remote add origin "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
@@ -345,6 +348,8 @@ pushd "$DIRNAME"
             RELEASE_BASE_COMMIT="$(sed -n 's/^LIBNL_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NMA_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+        elif [[ "$BUILD_TYPE" == "iproute" ]]; then
+            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<iproute2-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\..*/v\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
             DATE="$(sed -n 's/%global snapshot .git\(20[0-3][0-9]\)\([0-1][0-9]\)\([0-3][0-9]\)/\1-\2-\3/p' "../$SPEC")"
             if [[ "x$DATE" != x ]]; then
