@@ -1792,7 +1792,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	priv->fw_started_id = g_signal_connect (nm_firewall_manager_get (), "started",
 	                                        G_CALLBACK (firewall_started), policy);
 
-	priv->dns_manager = nm_dns_manager_get ();
+	priv->dns_manager = g_object_ref (nm_dns_manager_get ());
 	nm_dns_manager_set_initial_hostname (priv->dns_manager, priv->orig_hostname);
 	priv->config_changed_id = g_signal_connect (priv->dns_manager, "config-changed",
 	                                            G_CALLBACK (dns_config_changed), policy);
@@ -1903,7 +1903,7 @@ dispose (GObject *object)
 
 	if (priv->dns_manager) {
 		g_signal_handler_disconnect (priv->dns_manager, priv->config_changed_id);
-		priv->dns_manager = NULL;
+		g_clear_object (&priv->dns_manager);
 	}
 
 	for (iter = priv->manager_ids; iter; iter = g_slist_next (iter))

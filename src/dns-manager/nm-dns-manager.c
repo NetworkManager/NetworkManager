@@ -1074,18 +1074,7 @@ nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
 
 /******************************************************************/
 
-NMDnsManager *
-nm_dns_manager_get (void)
-{
-	static NMDnsManager * singleton = NULL;
-
-	if (!singleton) {
-		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
-		g_assert (singleton);
-	}
-
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
 static void
 init_resolv_conf_mode (NMDnsManager *self)

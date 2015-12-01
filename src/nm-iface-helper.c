@@ -327,7 +327,6 @@ int
 main (int argc, char *argv[])
 {
 	char *bad_domains = NULL;
-	gs_unref_object NMDhcpManager *dhcp_mgr = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	gs_free char *pidfile = NULL;
@@ -437,11 +436,7 @@ main (int argc, char *argv[])
 	if (global_opt.dhcp4_address) {
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip4_property_path (global_opt.ifname, "promote_secondaries"), "1");
 
-		/* Initialize DHCP manager */
-		dhcp_mgr = nm_dhcp_manager_get ();
-		g_assert (dhcp_mgr != NULL);
-
-		dhcp4_client = nm_dhcp_manager_start_ip4 (dhcp_mgr,
+		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 		                                          global_opt.ifname,
 		                                          ifindex,
 		                                          hwaddr,

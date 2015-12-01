@@ -1922,7 +1922,7 @@ nm_settings_init (NMSettings *self)
 	 * transient, and we don't want the agent manager to get destroyed and
 	 * recreated often.
 	 */
-	priv->agent_mgr = nm_agent_manager_get ();
+	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
 	g_signal_connect (priv->agent_mgr, "agent-registered", G_CALLBACK (secret_agent_registered), self);
 }
