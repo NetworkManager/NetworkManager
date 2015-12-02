@@ -649,13 +649,13 @@ enslave_slave (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
+static void
 release_slave (NMDevice *device,
                NMDevice *slave,
                gboolean configure)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
-	gboolean success = TRUE, no_firmware = FALSE;
+	gboolean success, no_firmware = FALSE;
 
 	if (configure) {
 		success = nm_platform_link_release (NM_PLATFORM_GET,
@@ -669,8 +669,7 @@ release_slave (NMDevice *device,
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface (slave));
 
-	if (success)
-		g_object_notify (G_OBJECT (device), NM_DEVICE_TEAM_SLAVES);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_TEAM_SLAVES);
 
 	if (configure) {
 		/* Kernel team code "closes" the port when releasing it, (which clears
@@ -681,8 +680,6 @@ release_slave (NMDevice *device,
 			_LOGW (LOGD_TEAM, "released team port %s could not be brought up",
 			       nm_device_get_ip_iface (slave));
 	}
-
-	return success;
 }
 
 static gboolean

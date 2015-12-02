@@ -419,13 +419,13 @@ enslave_slave (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
+static void
 release_slave (NMDevice *device,
                NMDevice *slave,
                gboolean configure)
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	gboolean success = TRUE, no_firmware = FALSE;
+	gboolean success, no_firmware = FALSE;
 
 	if (configure) {
 		success = nm_platform_link_release (NM_PLATFORM_GET,
@@ -444,8 +444,7 @@ release_slave (NMDevice *device,
 		             nm_device_get_ip_iface (slave));
 	}
 
-	if (success)
-		g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
 
 	if (configure) {
 		/* Kernel bonding code "closes" the slave when releasing it, (which clears
@@ -455,8 +454,6 @@ release_slave (NMDevice *device,
 		if (!nm_device_bring_up (slave, TRUE, &no_firmware))
 			_LOGW (LOGD_BOND, "released bond slave could not be brought up.");
 	}
-
-	return success;
 }
 
 static gboolean

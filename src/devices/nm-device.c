@@ -1123,12 +1123,8 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 		return FALSE;
 	priv->slaves = g_slist_remove (priv->slaves, info);
 
-	if (info->slave_is_enslaved) {
-		success = NM_DEVICE_GET_CLASS (self)->release_slave (self, slave, configure);
-		/* The release_slave() implementation logs success/failure (in the
-		 * correct device-specific log domain), so we don't have to do anything.
-		 */
-	}
+	if (info->slave_is_enslaved)
+		NM_DEVICE_GET_CLASS (self)->release_slave (self, slave, configure);
 
 	nm_device_slave_notify_release (info->slave, reason);
 

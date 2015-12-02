@@ -356,13 +356,13 @@ enslave_slave (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
+static void
 release_slave (NMDevice *device,
                NMDevice *slave,
                gboolean configure)
 {
 	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
-	gboolean success = TRUE;
+	gboolean success;
 
 	if (configure) {
 		success = nm_platform_link_release (NM_PLATFORM_GET,
@@ -382,7 +382,6 @@ release_slave (NMDevice *device,
 	}
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
-	return success;
 }
 
 static gboolean
