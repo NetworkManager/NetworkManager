@@ -61,6 +61,11 @@
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
 #define NM_DEVICE_REAL             "real"
 
+/* the "slaves" property is internal in the parent class, but exposed
+ * by the derived classes NMDeviceBond, NMDeviceBridge and NMDeviceTeam.
+ * It is thus important that the property name matches. */
+#define NM_DEVICE_SLAVES           "slaves"         /* partially internal */
+
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"        /* Internal only */
@@ -387,7 +392,6 @@ void            nm_device_replace_vpn6_config   (NMDevice *dev,
 void            nm_device_capture_initial_config (NMDevice *dev);
 
 /* Master */
-GSList *        nm_device_master_get_slaves (NMDevice *dev);
 gboolean        nm_device_is_master         (NMDevice *dev);
 
 /* Slave */

@@ -54,13 +54,6 @@ typedef struct {
 	guint teamd_dbus_watch;
 } NMDeviceTeamPrivate;
 
-enum {
-	PROP_0,
-	PROP_SLAVES,
-
-	LAST_PROP
-};
-
 static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
 
 /******************************************************************/
@@ -644,7 +637,7 @@ enslave_slave (NMDevice *device,
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was enslaved", slave_iface);
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_TEAM_SLAVES);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_SLAVES);
 
 	return TRUE;
 }
@@ -669,7 +662,7 @@ release_slave (NMDevice *device,
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface (slave));
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_TEAM_SLAVES);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_SLAVES);
 
 	if (configure) {
 		/* Kernel team code "closes" the port when releasing it, (which clears
@@ -746,36 +739,6 @@ constructed (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	GSList *list;
-
-	switch (prop_id) {
-		break;
-	case PROP_SLAVES:
-		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		nm_utils_g_value_set_object_path_array (value, list, NULL, NULL);
-		g_slist_free (list);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMDevice *device = NM_DEVICE (object);
@@ -801,10 +764,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_TEAM_SETTING_NAME, NM_LINK_TYPE_TEAM)
 
-	/* virtual methods */
 	object_class->constructed = constructed;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	parent_class->create_and_realize = create_and_realize;
@@ -821,15 +781,6 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	parent_class->deactivate = deactivate;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
-
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
-
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_TEAM_SKELETON,

@@ -130,6 +130,7 @@ enum {
 	PROP_METERED,
 	PROP_LLDP_NEIGHBORS,
 	PROP_REAL,
+	PROP_SLAVES,
 	LAST_PROP
 };
 
@@ -2187,7 +2188,7 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
  *
  * Returns: any slaves of which @self is the master.  Caller owns returned list.
  */
-GSList *
+static GSList *
 nm_device_master_get_slaves (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -10399,6 +10400,24 @@ get_property (GObject *object, guint prop_id,
 	case PROP_REAL:
 		g_value_set_boolean (value, priv->real);
 		break;
+	case PROP_SLAVES: {
+		GSList *slave_iter;
+		char **slave_list;
+		guint i;
+
+		slave_list = g_new (char *, g_slist_length (priv->slaves) + 1);
+		for (slave_iter = priv->slaves, i = 0; slave_iter; slave_iter = slave_iter->next) {
+			SlaveInfo *info = slave_iter->data;
+			const char *path;
+
+			path = nm_exported_object_get_path ((NMExportedObject *) info->slave);
+			if (path)
+				slave_list[i++] = g_strdup (path);
+		}
+		slave_list[i] = NULL;
+		g_value_take_boxed (value, slave_list);
+		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -10697,6 +10716,13 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	    (object_class, PROP_SLAVES,
+	     g_param_spec_boxed (NM_DEVICE_SLAVES, "", "",
+	                         G_TYPE_STRV,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[STATE_CHANGED] =
