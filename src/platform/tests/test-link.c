@@ -692,6 +692,12 @@ test_software_detect (gconstpointer user_data)
 	}
 	case NM_LINK_TYPE_IPIP: {
 		NMPlatformLnkIpIp lnk_ipip = { };
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "tunl0")) {
+			/* Seems that the ipip module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ipip", NULL) != 0;
+		}
 
 		inet_pton (AF_INET, "1.2.3.4", &lnk_ipip.local);
 		inet_pton (AF_INET, "5.6.7.8", &lnk_ipip.remote);
@@ -699,12 +705,23 @@ test_software_detect (gconstpointer user_data)
 		lnk_ipip.tos = 32;
 		lnk_ipip.path_mtu_discovery = FALSE;
 
-		if (!nmtstp_link_ipip_add (EX, DEVICE_NAME, &lnk_ipip))
+		if (!nmtstp_link_ipip_add (EX, DEVICE_NAME, &lnk_ipip)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create ipip tunnel because of missing ipip module (modprobe ipip)");
+				goto out_delete_parent;
+			}
 			g_error ("Failed adding IPIP tunnel");
+		}
 		break;
 	}
 	case NM_LINK_TYPE_IP6TNL: {
 		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "ip6tnl0")) {
+			/* Seems that the ip6_tunnel module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_tunnel", NULL) != 0;
+		}
 
 		inet_pton (AF_INET6, "fd01::15", &lnk_ip6tnl.local);
 		inet_pton (AF_INET6, "fd01::16", &lnk_ip6tnl.remote);
@@ -714,8 +731,13 @@ test_software_detect (gconstpointer user_data)
 		lnk_ip6tnl.flow_label = 1337;
 		lnk_ip6tnl.proto = IPPROTO_IPV6;
 
-		if (!nmtstp_link_ip6tnl_add (EX, DEVICE_NAME, &lnk_ip6tnl))
-			g_error ("Failed adding IPv6 tunnel");
+		if (!nmtstp_link_ip6tnl_add (EX, DEVICE_NAME, &lnk_ip6tnl)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create ip6tnl tunnel because of missing ip6_tunnel module (modprobe ip6_tunnel)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding IP6TNL tunnel");
+		}
 		break;
 	}
 	case NM_LINK_TYPE_MACVLAN:
