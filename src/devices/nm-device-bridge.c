@@ -344,8 +344,6 @@ enslave_slave (NMDevice *device,
 		       nm_device_get_ip_iface (slave));
 	}
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_SLAVES);
-
 	return TRUE;
 }
 
@@ -373,8 +371,6 @@ release_slave (NMDevice *device,
 		_LOGI (LOGD_BRIDGE, "bridge port %s was detached",
 		       nm_device_get_ip_iface (slave));
 	}
-
-	g_object_notify (G_OBJECT (device), NM_DEVICE_SLAVES);
 }
 
 static gboolean

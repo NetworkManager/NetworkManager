@@ -637,8 +637,6 @@ enslave_slave (NMDevice *device,
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was enslaved", slave_iface);
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_SLAVES);
-
 	return TRUE;
 }
 
@@ -659,12 +657,7 @@ release_slave (NMDevice *device,
 			_LOGI (LOGD_TEAM, "released team port %s", nm_device_get_ip_iface (slave));
 		else
 			_LOGW (LOGD_TEAM, "failed to release team port %s", nm_device_get_ip_iface (slave));
-	} else
-		_LOGI (LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface (slave));
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_SLAVES);
-
-	if (configure) {
 		/* Kernel team code "closes" the port when releasing it, (which clears
 		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
 		 * other state is noticed by the now-released port.
@@ -672,7 +665,8 @@ release_slave (NMDevice *device,
 		if (!nm_device_bring_up (slave, TRUE, &no_firmware))
 			_LOGW (LOGD_TEAM, "released team port %s could not be brought up",
 			       nm_device_get_ip_iface (slave));
-	}
+	} else
+		_LOGI (LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface (slave));
 }
 
 static gboolean
