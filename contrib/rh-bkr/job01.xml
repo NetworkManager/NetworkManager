@@ -46,9 +46,8 @@ EOF
 sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
 rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 
-DEFAULT_RPM_LIST="yum NetworkManager-wifi"
-
-yum downgrade -y $$DEFAULT_RPM_LIST $RPM_LIST || yum install -y $$DEFAULT_RPM_LIST $RPM_LIST
+yum downgrade -y $RPM_LIST
+yum install -y $RPM_LIST
 
 if [[ -n "$BUILD_ID" ]]; then
 
