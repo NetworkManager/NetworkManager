@@ -479,7 +479,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 	str = g_hash_table_lookup (options, "dhcp_lease_time");
 	if (str) {
 		address.lifetime = address.preferred = strtoul (str, NULL, 10);
-		nm_log_info (LOGD_DHCP4, "  lease time %d", address.lifetime);
+		nm_log_info (LOGD_DHCP4, "  lease time %u", address.lifetime);
 	}
 
 	address.source = NM_IP_CONFIG_SOURCE_DHCP;
@@ -623,13 +623,13 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 	str = g_hash_table_lookup (options, "max_life");
 	if (str) {
 		address.lifetime = strtoul (str, NULL, 10);
-		nm_log_info (LOGD_DHCP6, "  valid_lft %d", address.lifetime);
+		nm_log_info (LOGD_DHCP6, "  valid_lft %u", address.lifetime);
 	}
 
 	str = g_hash_table_lookup (options, "preferred_life");
 	if (str) {
 		address.preferred = strtoul (str, NULL, 10);
-		nm_log_info (LOGD_DHCP6, "  preferred_lft %d", address.preferred);
+		nm_log_info (LOGD_DHCP6, "  preferred_lft %u", address.preferred);
 	}
 
 	str = g_hash_table_lookup (options, "ip6_address");
