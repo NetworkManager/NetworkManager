@@ -49,7 +49,7 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 
 if [[ -n "$RPM_LIST" ]]; then
 
-    yum downgrade -y $RPM_LIST
+    yum downgrade -y $RPM_LIST || :
     yum install -y $RPM_LIST
 
 fi
