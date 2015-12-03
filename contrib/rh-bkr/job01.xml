@@ -15,6 +15,7 @@
 abrt-tui
 abrt-addon-ccpp
 libreport-rhel-bugzilla
+NetworkManager-wifi
 %end
 
 %post --log=/dev/console --erroronfail
@@ -46,8 +47,12 @@ EOF
 sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
 rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 
-yum downgrade -y $RPM_LIST
-yum install -y $RPM_LIST
+if [[ -n "$RPM_LIST" ]]; then
+
+    yum downgrade -y $RPM_LIST
+    yum install -y $RPM_LIST
+
+fi
 
 if [[ -n "$BUILD_ID" ]]; then
 
