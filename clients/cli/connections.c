@@ -9087,12 +9087,6 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
 
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		return nmc->return_value;
-	}
-
 	if (!nm_client_reload_connections (nmc->client, NULL, &error)) {
 		g_string_printf (nmc->return_text, _("Error: failed to reload connections: %s."),
 		                 error->message);
@@ -9112,12 +9106,6 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		return nmc->return_value;
-	}
 
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No connection specified."));
