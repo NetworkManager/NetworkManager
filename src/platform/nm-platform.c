@@ -3059,10 +3059,9 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 		return buf;
 
 	g_snprintf (buf, len,
-	            "macvlan%s%s%s",
-	            lnk->mode ? " mode " : "",
-	            lnk->mode ?: "",
-	            lnk->no_promisc ? " not-promisc" : " promisc");
+	            "macvlan mode %u %s",
+	            lnk->mode,
+	            lnk->no_promisc ? "not-promisc" : "promisc");
 	return buf;
 }
 
@@ -3667,7 +3666,7 @@ int
 nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
 {
 	_CMP_SELF (a, b);
-	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	_CMP_FIELD (a, b, mode);
 	_CMP_FIELD_BOOL (a, b, no_promisc);
 	return 0;
 }

@@ -56,6 +56,23 @@ enum {
 
 /**************************************************************/
 
+static const char *
+macvlan_mode_to_string (guint mode)
+{
+	switch (mode) {
+	case MACVLAN_MODE_PRIVATE:
+		return "private";
+	case MACVLAN_MODE_VEPA:
+		return "vepa";
+	case MACVLAN_MODE_BRIDGE:
+		return "bridge";
+	case MACVLAN_MODE_PASSTHRU:
+		return "passthru";
+	default:
+		return "unknown";
+	}
+}
+
 static void
 update_properties (NMDevice *device)
 {
@@ -75,7 +92,7 @@ update_properties (NMDevice *device)
 
 	if (priv->parent_ifindex != plink->parent)
 		g_object_notify (object, NM_DEVICE_MACVLAN_PARENT);
-	if (g_strcmp0 (priv->props.mode, props->mode) != 0)
+	if (priv->props.mode != props->mode)
 		g_object_notify (object, NM_DEVICE_MACVLAN_MODE);
 	if (priv->props.no_promisc != props->no_promisc)
 		g_object_notify (object, NM_DEVICE_MACVLAN_NO_PROMISC);
@@ -124,7 +141,7 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_g_value_set_object_path (value, parent);
 		break;
 	case PROP_MODE:
-		g_value_set_string (value, priv->props.mode);
+		g_value_set_string (value, macvlan_mode_to_string (priv->props.mode));
 		break;
 	case PROP_NO_PROMISC:
 		g_value_set_boolean (value, priv->props.no_promisc);

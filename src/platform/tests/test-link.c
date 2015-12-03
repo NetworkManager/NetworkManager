@@ -867,7 +867,7 @@ test_software_detect (gconstpointer user_data)
 
 			g_assert (plnk == nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->no_promisc, ==, FALSE);
-			g_assert_cmpstr (plnk->mode, ==, "vepa");
+			g_assert_cmpint (plnk->mode, ==, MACVLAN_MODE_VEPA);
 			break;
 		}
 		case NM_LINK_TYPE_SIT: {

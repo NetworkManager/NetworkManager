@@ -24,6 +24,7 @@
 #include <netinet/in.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
+#include <linux/if_link.h>
 
 #include "nm-dbus-interface.h"
 #include "nm-default.h"
@@ -399,7 +400,7 @@ typedef struct {
 } NMPlatformLnkIpIp;
 
 typedef struct {
-	const char *mode;
+	guint mode;
 	gboolean no_promisc;
 } NMPlatformLnkMacvlan;
 

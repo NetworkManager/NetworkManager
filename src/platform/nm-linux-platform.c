@@ -1026,7 +1026,6 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
 	int err;
 	NMPObject *obj;
-	const char *mode;
 
 	if (!info_data || g_strcmp0 (kind, "macvlan"))
 		return NULL;
@@ -1038,26 +1037,9 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 	if (!tb[IFLA_MACVLAN_MODE])
 		return NULL;
 
-	switch (nla_get_u32 (tb[IFLA_MACVLAN_MODE])) {
-	case MACVLAN_MODE_PRIVATE:
-		mode = "private";
-		break;
-	case MACVLAN_MODE_VEPA:
-		mode = "vepa";
-		break;
-	case MACVLAN_MODE_BRIDGE:
-		mode = "bridge";
-		break;
-	case MACVLAN_MODE_PASSTHRU:
-		mode = "passthru";
-		break;
-	default:
-		return NULL;
-	}
-
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACVLAN, NULL);
 	props = &obj->lnk_macvlan;
-	props->mode = mode;
+	props->mode = nla_get_u32 (tb[IFLA_MACVLAN_MODE]);
 
 	if (tb[IFLA_MACVLAN_FLAGS])
 		props->no_promisc = NM_FLAGS_HAS (nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]), MACVLAN_FLAG_NOPROMISC);
