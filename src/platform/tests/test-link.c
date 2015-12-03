@@ -740,9 +740,16 @@ test_software_detect (gconstpointer user_data)
 		}
 		break;
 	}
-	case NM_LINK_TYPE_MACVLAN:
-		nmtstp_run_command_check ("ip link add name %s link %s type macvlan", DEVICE_NAME, PARENT_NAME);
+	case NM_LINK_TYPE_MACVLAN: {
+		NMPlatformLnkMacvlan lnk_macvlan = { };
+
+		lnk_macvlan.mode = MACVLAN_MODE_BRIDGE;
+		lnk_macvlan.no_promisc = FALSE;
+
+		if (!nmtstp_link_macvlan_add (EX, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
+			g_error ("Failed adding MACVLAN interface");
 		break;
+	}
 	case NM_LINK_TYPE_SIT: {
 		NMPlatformLnkSit lnk_sit = { };
 		gboolean gracefully_skip = FALSE;
@@ -867,7 +874,7 @@ test_software_detect (gconstpointer user_data)
 
 			g_assert (plnk == nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->no_promisc, ==, FALSE);
-			g_assert_cmpint (plnk->mode, ==, MACVLAN_MODE_VEPA);
+			g_assert_cmpint (plnk->mode, ==, MACVLAN_MODE_BRIDGE);
 			break;
 		}
 		case NM_LINK_TYPE_SIT: {

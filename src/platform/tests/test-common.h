@@ -144,6 +144,9 @@ gboolean nmtstp_link_ip6tnl_add (gboolean external_command,
 gboolean nmtstp_link_ipip_add (gboolean external_command,
                                const char *name,
                                NMPlatformLnkIpIp *lnk);
+gboolean nmtstp_link_macvlan_add (gboolean external_command,
+                                  const char *name,
+                                  int parent, NMPlatformLnkMacvlan *lnk);
 gboolean nmtstp_link_sit_add (gboolean external_command,
                               const char *name,
                               NMPlatformLnkSit *lnk);
