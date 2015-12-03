@@ -1944,6 +1944,43 @@ nm_platform_link_ipip_add (NMPlatform *self,
 }
 
 /**
+ * nm_platform_macvlan_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create a MACVLAN device.
+ */
+NMPlatformError
+nm_platform_link_macvlan_add (NMPlatform *self,
+                              const char *name,
+                              int parent,
+                              NMPlatformLnkMacvlan *props,
+                              NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_MACVLAN, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("adding macvlan '%s' parent %u mode %u",
+	       name,
+	       parent,
+	       props->mode);
+
+	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+/**
  * nm_platform_sit_add:
  * @self: platform instance
  * @name: name of the new interface

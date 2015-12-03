@@ -565,6 +565,8 @@ typedef struct {
 	                             NMPlatformLink *out_link);
 	gboolean (*link_ipip_add) (NMPlatform *, const char *name, NMPlatformLnkIpIp *props,
 	                           NMPlatformLink *out_link);
+	gboolean (*link_macvlan_add) (NMPlatform *, const char *name, int parent, NMPlatformLnkMacvlan *props,
+	                              NMPlatformLink *out_link);
 	gboolean (*link_sit_add) (NMPlatform *, const char *name, NMPlatformLnkSit *props,
 	                          NMPlatformLink *out_link);
 
@@ -817,6 +819,8 @@ NMPlatformError nm_platform_link_ip6tnl_add (NMPlatform *self, const char *name,
                                              NMPlatformLink *out_link);
 NMPlatformError nm_platform_link_ipip_add (NMPlatform *self, const char *name, NMPlatformLnkIpIp *props,
                                            NMPlatformLink *out_link);
+NMPlatformError nm_platform_link_macvlan_add (NMPlatform *self, const char *name, int parent, NMPlatformLnkMacvlan *props,
+                                              NMPlatformLink *out_link);
 NMPlatformError nm_platform_link_sit_add (NMPlatform *self, const char *name, NMPlatformLnkSit *props,
                                           NMPlatformLink *out_link);
 
