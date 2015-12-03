@@ -669,8 +669,8 @@ test_software_detect (gconstpointer user_data)
 		NMPlatformLnkGre lnk_gre = { };
 		gboolean gracefully_skip = FALSE;
 
-		inet_pton (AF_INET, "192.168.233.204", &lnk_gre.local);
-		inet_pton (AF_INET, "172.168.10.25", &lnk_gre.remote);
+		lnk_gre.local = nmtst_inet4_from_string ("192.168.233.204");
+		lnk_gre.remote = nmtst_inet4_from_string ("172.168.10.25");
 		lnk_gre.parent_ifindex = ifindex_parent;
 		lnk_gre.ttl = 174;
 		lnk_gre.tos = 37;
@@ -699,8 +699,8 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ipip", NULL) != 0;
 		}
 
-		inet_pton (AF_INET, "1.2.3.4", &lnk_ipip.local);
-		inet_pton (AF_INET, "5.6.7.8", &lnk_ipip.remote);
+		lnk_ipip.local = nmtst_inet4_from_string ("1.2.3.4");
+		lnk_ipip.remote = nmtst_inet4_from_string ("5.6.7.8");
 		lnk_ipip.parent_ifindex = ifindex_parent;
 		lnk_ipip.tos = 32;
 		lnk_ipip.path_mtu_discovery = FALSE;
@@ -723,8 +723,8 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_tunnel", NULL) != 0;
 		}
 
-		inet_pton (AF_INET6, "fd01::15", &lnk_ip6tnl.local);
-		inet_pton (AF_INET6, "fd01::16", &lnk_ip6tnl.remote);
+		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::15");
+		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::16");
 		lnk_ip6tnl.parent_ifindex = ifindex_parent;
 		lnk_ip6tnl.tclass = 20;
 		lnk_ip6tnl.encap_limit = 6;
@@ -766,8 +766,8 @@ test_software_detect (gconstpointer user_data)
 		NMPlatformLnkSit lnk_sit = { };
 		gboolean gracefully_skip = FALSE;
 
-		inet_pton (AF_INET, "192.168.200.1", &lnk_sit.local);
-		inet_pton (AF_INET, "172.25.100.14", &lnk_sit.remote);
+		lnk_sit.local = nmtst_inet4_from_string ("192.168.200.1");
+		lnk_sit.remote = nmtst_inet4_from_string ("172.25.100.14");
 		lnk_sit.parent_ifindex = ifindex_parent;
 		lnk_sit.ttl = 0;
 		lnk_sit.tos = 31;
@@ -797,8 +797,8 @@ test_software_detect (gconstpointer user_data)
 		case 0:
 			lnk_vxlan.parent_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME);
 			lnk_vxlan.id = 42;
-			inet_pton (AF_INET, "23.1.2.164", &lnk_vxlan.local);
-			inet_pton (AF_INET, "239.1.2.134", &lnk_vxlan.group);
+			lnk_vxlan.local = nmtst_inet4_from_string ("23.1.2.164");
+			lnk_vxlan.group = nmtst_inet4_from_string ("239.1.2.134");
 			lnk_vxlan.dst_port = 4789;
 			lnk_vxlan.learning = TRUE;
 			lnk_vxlan.ageing = 1245;
@@ -806,8 +806,8 @@ test_software_detect (gconstpointer user_data)
 		case 1:
 			lnk_vxlan.parent_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME);
 			lnk_vxlan.id = 11214423;
-			inet_pton (AF_INET6, "1:2:3:4:334:23::23", &lnk_vxlan.local6);
-			inet_pton (AF_INET6, "ff0e::115", &lnk_vxlan.group6);
+			lnk_vxlan.local6 = *nmtst_inet6_from_string ("1:2:3:4:334:23::23");
+			lnk_vxlan.group6 = *nmtst_inet6_from_string ("ff0e::115");
 			lnk_vxlan.ttl = 32;
 			lnk_vxlan.dst_port = 57412;
 			lnk_vxlan.src_port_min = 1000;
