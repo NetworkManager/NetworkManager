@@ -1107,13 +1107,6 @@ nm_device_release_one_slave (NMDevice *self, NMDevice *slave, gboolean configure
 		 */
 	}
 
-	if (!configure) {
-		g_warn_if_fail (reason == NM_DEVICE_STATE_REASON_NONE || reason == NM_DEVICE_STATE_REASON_REMOVED);
-		reason = NM_DEVICE_STATE_REASON_NONE;
-	} else if (reason == NM_DEVICE_STATE_REASON_NONE) {
-		g_warn_if_reached ();
-		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
-	}
 	nm_device_slave_notify_release (info->slave, reason);
 
 	free_slave_info (info);
@@ -1457,7 +1450,7 @@ device_link_changed (NMDevice *self)
 
 	/* Update slave status for external changes */
 	if (priv->enslaved && info.master != nm_device_get_ifindex (priv->master))
-		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	if (info.master && !priv->enslaved) {
 		device_set_master (self, info.master);
 		if (priv->master)
@@ -2152,8 +2145,7 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 	NMDeviceState new_state;
 	const char *master_status;
 
-	if (   reason != NM_DEVICE_STATE_REASON_NONE
-	    && priv->state > NM_DEVICE_STATE_DISCONNECTED
+	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 	    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
 		if (reason == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
 			new_state = NM_DEVICE_STATE_FAILED;
@@ -2207,8 +2199,11 @@ nm_device_removed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->enslaved)
-		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
+	if (priv->enslaved) {
+		/* this is called when something externally messes with the slave or during shut-down.
+		 * Release the slave from master, but don't touch the device. */
+		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+	}
 }
 
 
