@@ -1627,14 +1627,17 @@ can_start_device (NMManager *self, NMDevice *device)
 }
 
 static gboolean
-recheck_assume_connection (NMDevice *device, gpointer user_data)
+recheck_assume_connection (NMManager *self, NMDevice *device)
 {
-	NMManager *self = NM_MANAGER (user_data);
 	NMSettingsConnection *connection;
 	gboolean was_unmanaged = FALSE, success, generated = FALSE;
 	NMDeviceState state;
 
-	g_return_val_if_fail (!nm_device_get_is_nm_owned (device), FALSE);
+	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	if (nm_device_get_is_nm_owned (device))
+		return FALSE;
 
 	if (!can_start_device (self, device))
 		return FALSE;
@@ -1684,6 +1687,12 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 }
 
 static void
+recheck_assume_connection_cb (NMDevice *device, gpointer user_data)
+{
+	recheck_assume_connection (user_data, device);
+}
+
+static void
 device_ip_iface_changed (NMDevice *device,
                          GParamSpec *pspec,
                          NMManager *self)
@@ -1714,7 +1723,6 @@ device_realized (NMDevice *device,
                  NMManager *self)
 {
 	int ifindex;
-	gboolean assumed = FALSE;
 
 	/* Emit D-Bus signals */
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
@@ -1728,13 +1736,8 @@ device_realized (NMDevice *device,
 	if (!can_start_device (self, device))
 		return;
 
-	if (!nm_device_get_is_nm_owned (device)) {
-		assumed = recheck_assume_connection (device, self);
-		g_signal_connect (device, NM_DEVICE_RECHECK_ASSUME,
-		                  G_CALLBACK (recheck_assume_connection), self);
-	}
-
-	if (!assumed && nm_device_get_managed (device)) {
+	if (   !recheck_assume_connection (self, device)
+	    && nm_device_get_managed (device)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
@@ -1799,6 +1802,10 @@ add_device (NMManager *self, NMDevice *device)
 
 	g_signal_connect (device, NM_DEVICE_LINK_INITIALIZED,
 	                  G_CALLBACK (device_link_initialized_cb),
+	                  self);
+
+	g_signal_connect (device, NM_DEVICE_RECHECK_ASSUME,
+	                  G_CALLBACK (recheck_assume_connection_cb),
 	                  self);
 
 	g_signal_connect (device, "notify::" NM_DEVICE_IP_IFACE,
