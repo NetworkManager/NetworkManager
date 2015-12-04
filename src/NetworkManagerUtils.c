@@ -1837,6 +1837,19 @@ nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 	gsize i;
 	char *p;
 
+#if NM_MORE_ASSERTS > 10
+	nm_assert (descs);
+	nm_assert (n_descs > 0);
+	for (i = 0; i < n_descs; i++) {
+		gsize j;
+
+		nm_assert (descs[i].flag && nm_utils_is_power_of_two (descs[i].flag));
+		nm_assert (descs[i].name && descs[i].name[0]);
+		for (j = 0; j < i; j++)
+			nm_assert (descs[j].flag != descs[i].flag);
+	}
+#endif
+
 	nm_utils_to_string_buffer_init (&buf, &len);
 
 	if (!len)
