@@ -308,7 +308,7 @@ typedef struct {
 	                                   NMConnection *connection,
 	                                   gboolean configure);
 
-	gboolean        (* release_slave) (NMDevice *self,
+	void            (* release_slave) (NMDevice *self,
 	                                   NMDevice *slave,
 	                                   gboolean configure);
 
