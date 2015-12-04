@@ -402,7 +402,10 @@ typedef struct {
 typedef struct {
 	guint mode;
 	gboolean no_promisc;
+	gboolean tap;
 } NMPlatformLnkMacvlan;
+
+typedef NMPlatformLnkMacvlan NMPlatformLnkMacvtap;
 
 typedef struct {
 	int parent_ifindex;
@@ -763,6 +766,7 @@ const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int if
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkMacvtap *nm_platform_link_get_lnk_macvtap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkSit *nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);

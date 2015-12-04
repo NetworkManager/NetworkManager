@@ -1447,6 +1447,12 @@ nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatfor
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
 }
 
+const NMPlatformLnkMacvtap *
+nm_platform_link_get_lnk_macvtap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVTAP, out_link);
+}
+
 const NMPlatformLnkSit *
 nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1950,7 +1956,7 @@ nm_platform_link_ipip_add (NMPlatform *self,
  * @props: interface properties
  * @out_link: on success, the link object
  *
- * Create a MACVLAN device.
+ * Create a MACVLAN or MACVTAP device.
  */
 NMPlatformError
 nm_platform_link_macvlan_add (NMPlatform *self,
@@ -1960,17 +1966,21 @@ nm_platform_link_macvlan_add (NMPlatform *self,
                               NMPlatformLink *out_link)
 {
 	NMPlatformError plerr;
+	NMLinkType type;
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
 
-	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_MACVLAN, out_link);
+	type = props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN;
+
+	plerr = _link_add_check_existing (self, name, type, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding macvlan '%s' parent %u mode %u",
+	_LOGD ("adding %s '%s' parent %u mode %u",
+	       props->tap ? "macvtap" : "macvlan",
 	       name,
 	       parent,
 	       props->mode);
