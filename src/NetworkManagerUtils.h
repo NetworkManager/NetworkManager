@@ -203,6 +203,21 @@ typedef struct {
 
 #define NM_UTILS_FLAGS2STR(f, n) { .flag = f, .name = ""n, }
 
+#define NM_UTILS_FLAGS2STR_DEFINE(fcn_name, flags_type, ...) \
+const char * \
+fcn_name (flags_type flags, char *buf, gsize len) \
+{ \
+	static const NMUtilsFlags2StrDesc descs[] = { \
+		__VA_ARGS__ \
+	}; \
+	G_STATIC_ASSERT (sizeof (flags_type) <= sizeof (unsigned)); \
+	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len); \
+};
+
+#define NM_UTILS_FLAGS2STR_DEFINE_STATIC(fcn_name, flags_type, ...) \
+static \
+NM_UTILS_FLAGS2STR_DEFINE (fcn_name, flags_type, __VA_ARGS__)
+
 const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
                                 gsize n_descs,
                                 unsigned flags,
