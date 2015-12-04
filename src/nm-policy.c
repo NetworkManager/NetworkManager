@@ -148,8 +148,12 @@ set_system_hostname (const char *new_hostname, const char *msg)
 	nm_log_info (LOGD_DNS, "Setting system hostname to '%s' (%s)", name, msg);
 	ret = sethostname (name, strlen (name));
 	if (ret != 0) {
+		int errsv = errno;
+
 		nm_log_warn (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
-		             name, errno, strerror (errno));
+		             name, errsv, strerror (errsv));
+		if (errsv == EPERM)
+			nm_log_warn (LOGD_DNS, "You should use hostnamed when systemd hardening is in effect!");
 	}
 
 	return (ret == 0);
