@@ -3269,32 +3269,27 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	return buf;
 }
 
-const char *
-nm_platform_link_flags2str (unsigned flags, char *buf, gsize len)
-{
-	static const NMUtilsFlags2StrDesc descs[] = {
-		NM_UTILS_FLAGS2STR (IFF_LOOPBACK, "loopback"),
-		NM_UTILS_FLAGS2STR (IFF_BROADCAST, "broadcast"),
-		NM_UTILS_FLAGS2STR (IFF_POINTOPOINT, "pointopoint"),
-		NM_UTILS_FLAGS2STR (IFF_MULTICAST, "multicast"),
-		NM_UTILS_FLAGS2STR (IFF_NOARP, "noarp"),
-		NM_UTILS_FLAGS2STR (IFF_ALLMULTI, "allmulti"),
-		NM_UTILS_FLAGS2STR (IFF_PROMISC, "promisc"),
-		NM_UTILS_FLAGS2STR (IFF_MASTER, "master"),
-		NM_UTILS_FLAGS2STR (IFF_SLAVE, "slave"),
-		NM_UTILS_FLAGS2STR (IFF_DEBUG, "debug"),
-		NM_UTILS_FLAGS2STR (IFF_DYNAMIC, "dynamic"),
-		NM_UTILS_FLAGS2STR (IFF_AUTOMEDIA, "automedia"),
-		NM_UTILS_FLAGS2STR (IFF_PORTSEL, "portsel"),
-		NM_UTILS_FLAGS2STR (IFF_NOTRAILERS, "notrailers"),
-		NM_UTILS_FLAGS2STR (IFF_UP, "up"),
-		NM_UTILS_FLAGS2STR (IFF_RUNNING, "running"),
-		NM_UTILS_FLAGS2STR (IFF_LOWER_UP, "lowerup"),
-		NM_UTILS_FLAGS2STR (IFF_DORMANT, "dormant"),
-		NM_UTILS_FLAGS2STR (IFF_ECHO, "echo"),
-	};
-	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len);
-};
+NM_UTILS_FLAGS2STR_DEFINE (nm_platform_link_flags2str, unsigned,
+	NM_UTILS_FLAGS2STR (IFF_LOOPBACK, "loopback"),
+	NM_UTILS_FLAGS2STR (IFF_BROADCAST, "broadcast"),
+	NM_UTILS_FLAGS2STR (IFF_POINTOPOINT, "pointopoint"),
+	NM_UTILS_FLAGS2STR (IFF_MULTICAST, "multicast"),
+	NM_UTILS_FLAGS2STR (IFF_NOARP, "noarp"),
+	NM_UTILS_FLAGS2STR (IFF_ALLMULTI, "allmulti"),
+	NM_UTILS_FLAGS2STR (IFF_PROMISC, "promisc"),
+	NM_UTILS_FLAGS2STR (IFF_MASTER, "master"),
+	NM_UTILS_FLAGS2STR (IFF_SLAVE, "slave"),
+	NM_UTILS_FLAGS2STR (IFF_DEBUG, "debug"),
+	NM_UTILS_FLAGS2STR (IFF_DYNAMIC, "dynamic"),
+	NM_UTILS_FLAGS2STR (IFF_AUTOMEDIA, "automedia"),
+	NM_UTILS_FLAGS2STR (IFF_PORTSEL, "portsel"),
+	NM_UTILS_FLAGS2STR (IFF_NOTRAILERS, "notrailers"),
+	NM_UTILS_FLAGS2STR (IFF_UP, "up"),
+	NM_UTILS_FLAGS2STR (IFF_RUNNING, "running"),
+	NM_UTILS_FLAGS2STR (IFF_LOWER_UP, "lowerup"),
+	NM_UTILS_FLAGS2STR (IFF_DORMANT, "dormant"),
+	NM_UTILS_FLAGS2STR (IFF_ECHO, "echo"),
+);
 
 const char *
 nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len)
@@ -3318,22 +3313,17 @@ nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len)
 	return buf;
 }
 
-const char *
-nm_platform_addr_flags2str (unsigned flags, char *buf, gsize len)
-{
-	static const NMUtilsFlags2StrDesc descs[] = {
-		NM_UTILS_FLAGS2STR (IFA_F_SECONDARY, "secondary"),
-		NM_UTILS_FLAGS2STR (IFA_F_NODAD, "nodad"),
-		NM_UTILS_FLAGS2STR (IFA_F_OPTIMISTIC, "optimistic"),
-		NM_UTILS_FLAGS2STR (IFA_F_HOMEADDRESS, "homeaddress"),
-		NM_UTILS_FLAGS2STR (IFA_F_DEPRECATED, "deprecated"),
-		NM_UTILS_FLAGS2STR (IFA_F_TENTATIVE, "tentative"),
-		NM_UTILS_FLAGS2STR (IFA_F_PERMANENT, "permanent"),
-		NM_UTILS_FLAGS2STR (IFA_F_MANAGETEMPADDR, "mngtmpaddr"),
-		NM_UTILS_FLAGS2STR (IFA_F_NOPREFIXROUTE, "noprefixroute"),
-	};
-	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len);
-};
+NM_UTILS_FLAGS2STR_DEFINE (nm_platform_addr_flags2str, unsigned,
+	NM_UTILS_FLAGS2STR (IFA_F_SECONDARY, "secondary"),
+	NM_UTILS_FLAGS2STR (IFA_F_NODAD, "nodad"),
+	NM_UTILS_FLAGS2STR (IFA_F_OPTIMISTIC, "optimistic"),
+	NM_UTILS_FLAGS2STR (IFA_F_HOMEADDRESS, "homeaddress"),
+	NM_UTILS_FLAGS2STR (IFA_F_DEPRECATED, "deprecated"),
+	NM_UTILS_FLAGS2STR (IFA_F_TENTATIVE, "tentative"),
+	NM_UTILS_FLAGS2STR (IFA_F_PERMANENT, "permanent"),
+	NM_UTILS_FLAGS2STR (IFA_F_MANAGETEMPADDR, "mngtmpaddr"),
+	NM_UTILS_FLAGS2STR (IFA_F_NOPREFIXROUTE, "noprefixroute"),
+);
 
 const char *
 nm_platform_route_scope2str (int scope, char *buf, gsize len)
