@@ -143,6 +143,8 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceMacvlanPrivate));
 
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP)
+
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 

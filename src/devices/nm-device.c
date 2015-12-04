@@ -129,6 +129,7 @@ enum {
 	PROP_HAS_PENDING_ACTION,
 	PROP_METERED,
 	PROP_LLDP_NEIGHBORS,
+	PROP_REAL,
 	LAST_PROP
 };
 
@@ -207,6 +208,7 @@ typedef struct {
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
+	gboolean      real;
 	char *        ip_iface;
 	int           ip_ifindex;
 	NMDeviceType  type;
@@ -554,15 +556,36 @@ nm_device_get_iface (NMDevice *self)
 int
 nm_device_get_ifindex (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (NM_IS_DEVICE (self), 0);
 
 	return NM_DEVICE_GET_PRIVATE (self)->ifindex;
 }
 
+/**
+ * nm_device_is_software:
+ * @self: the #NMDevice
+ *
+ * Indicates if the device is a software-based virtual device without
+ * backing hardware, which can be added and removed programmatically.
+ *
+ * Returns: %TRUE if the device is a software-based device
+ */
 gboolean
 nm_device_is_software (NMDevice *self)
 {
 	return NM_FLAGS_HAS (NM_DEVICE_GET_PRIVATE (self)->capabilities, NM_DEVICE_CAP_IS_SOFTWARE);
+}
+
+/**
+ * nm_device_is_real:
+ * @self: the #NMDevice
+ *
+ * Returns: %TRUE if the device exists, %FALSE if the device is a placeholder
+ */
+gboolean
+nm_device_is_real (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->real;
 }
 
 const char *
@@ -1129,8 +1152,7 @@ nm_device_release_one_slave (NMDevice *self, NMDevice *slave, gboolean configure
 static gboolean
 can_unmanaged_external_down (NMDevice *self)
 {
-	return   nm_device_is_software (self)
-	      && !nm_device_get_is_nm_owned (self);
+	return nm_device_is_software (self) && !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
 }
 
 /**
@@ -1362,23 +1384,31 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 }
 
 static void
-device_set_master (NMDevice *self, int ifindex)
+device_recheck_slave_status (NMDevice *self, NMPlatformLink *plink)
 {
-	NMDevice *master;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	master = nm_manager_get_device_by_ifindex (nm_manager_get (), ifindex);
-	if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave) {
-		g_clear_object (&priv->master);
-		priv->master = g_object_ref (master);
-		nm_device_master_add_slave (master, self, FALSE);
-	} else if (master) {
-		_LOGI (LOGD_DEVICE, "enslaved to non-master-type device %s; ignoring",
-		       nm_device_get_iface (master));
-	} else {
-		_LOGW (LOGD_DEVICE, "enslaved to unknown device %d %s",
-		       ifindex,
-		       nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));
+	g_return_if_fail (plink != NULL);
+
+	if (priv->enslaved && plink->master != nm_device_get_ifindex (priv->master))
+		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+
+	if (plink->master && !priv->enslaved) {
+		NMDevice *master;
+
+		master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
+		if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave) {
+			g_clear_object (&priv->master);
+			priv->master = g_object_ref (master);
+			nm_device_master_add_slave (master, self, FALSE);
+		} else if (master) {
+			_LOGI (LOGD_DEVICE, "enslaved to non-master-type device %s; ignoring",
+			       nm_device_get_iface (master));
+		} else {
+			_LOGW (LOGD_DEVICE, "enslaved to unknown device %d %s",
+			       plink->master,
+			       nm_platform_link_get_name (NM_PLATFORM_GET, plink->master));
+		}
 	}
 }
 
@@ -1426,6 +1456,12 @@ device_link_changed (NMDevice *self)
 		g_object_notify (G_OBJECT (self), NM_DEVICE_MTU);
 	}
 
+	if (info.driver && g_strcmp0 (priv->driver, info.driver) != 0) {
+		g_free (priv->driver);
+		priv->driver = g_strdup (info.driver);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
+	}
+
 	if (info.name[0] && strcmp (priv->iface, info.name) != 0) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
 		       priv->ifindex, priv->iface, info.name);
@@ -1446,15 +1482,6 @@ device_link_changed (NMDevice *self)
 		 * to auto-activate on the device.
 		 */
 		nm_device_emit_recheck_auto_activate (self);
-	}
-
-	/* Update slave status for external changes */
-	if (priv->enslaved && info.master != nm_device_get_ifindex (priv->master))
-		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-	if (info.master && !priv->enslaved) {
-		device_set_master (self, info.master);
-		if (priv->master)
-			nm_device_enslave_slave (priv->master, self, NULL);
 	}
 
 	if (priv->rdisc && nm_platform_link_get_ipv6_token (NM_PLATFORM_GET, priv->ifindex, &token_iid)) {
@@ -1539,6 +1566,7 @@ device_link_changed (NMDevice *self)
 	if (emit_link_initialized)
 		g_signal_emit (self, signals[LINK_INITIALIZED], 0);
 
+	device_recheck_slave_status (self, &info);
 	return G_SOURCE_REMOVE;
 }
 
@@ -1606,26 +1634,76 @@ link_changed (NMDevice *self, NMPlatformLink *info)
 		nm_device_set_carrier (self, info->connected);
 }
 
+static gboolean
+link_type_compatible (NMDevice *self,
+                      NMLinkType link_type,
+                      gboolean *out_compatible,
+                      GError **error)
+{
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
+	guint i = 0;
+
+	if (!klass->link_types) {
+		NM_SET_OUT (out_compatible, FALSE);
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                     "Device does not support platform links");
+		return FALSE;
+	}
+
+	for (i = 0; klass->link_types[i] > NM_LINK_TYPE_UNKNOWN; i++) {
+		if (klass->link_types[i] == link_type)
+			return TRUE;
+		if (klass->link_types[i] == NM_LINK_TYPE_ANY)
+			return TRUE;
+	}
+
+	NM_SET_OUT (out_compatible, FALSE);
+	g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+	             "Device does not support platform link type 0x%X",
+	             link_type);
+	return FALSE;
+}
+
 /**
  * nm_device_realize():
  * @self: the #NMDevice
  * @plink: an existing platform link or %NULL
+ * @out_compatible: %TRUE on return if @self is compatible with @plink
  * @error: location to store error, or %NULL
  *
- * Initializes and sets up the device using existing backing resources.
+ * Initializes and sets up the device using existing backing resources. Before
+ * the device is ready for use nm_device_setup_finish() must be called.
+ * @out_compatible will only be set if @plink is not %NULL, and
  *
  * Returns: %TRUE on success, %FALSE on error
  */
 gboolean
-nm_device_realize (NMDevice *self, NMPlatformLink *plink, GError **error)
+nm_device_realize (NMDevice *self,
+                   NMPlatformLink *plink,
+                   gboolean *out_compatible,
+                   GError **error)
 {
+	NM_SET_OUT (out_compatible, TRUE);
+
+	if (plink) {
+		if (g_strcmp0 (nm_device_get_iface (self), plink->name) != 0) {
+			NM_SET_OUT (out_compatible, FALSE);
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			                     "Device interface name does not match platform link");
+			return FALSE;
+		}
+
+		if (!link_type_compatible (self, plink->type, out_compatible, error))
+			return FALSE;
+	}
+
 	/* Try to realize the device from existing resources */
 	if (NM_DEVICE_GET_CLASS (self)->realize) {
 		if (!NM_DEVICE_GET_CLASS (self)->realize (self, plink, error))
 			return FALSE;
 	}
 
-	NM_DEVICE_GET_CLASS (self)->setup (self, plink);
+	NM_DEVICE_GET_CLASS (self)->setup_start (self, plink);
 
 	return TRUE;
 }
@@ -1648,7 +1726,11 @@ nm_device_create_and_realize (NMDevice *self,
                               NMDevice *parent,
                               GError **error)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatformLink plink = { .type = NM_LINK_TYPE_UNKNOWN };
+
+	/* Must be set before device is realized */
+	priv->is_nm_owned = !nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
 
 	/* Create any resources the device needs */
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
@@ -1656,7 +1738,8 @@ nm_device_create_and_realize (NMDevice *self,
 			return FALSE;
 	}
 
-	NM_DEVICE_GET_CLASS (self)->setup (self, (plink.type != NM_LINK_TYPE_UNKNOWN) ? &plink : NULL);
+	NM_DEVICE_GET_CLASS (self)->setup_start (self, (plink.type != NM_LINK_TYPE_UNKNOWN) ? &plink : NULL);
+	nm_device_setup_finish (self, (plink.type != NM_LINK_TYPE_UNKNOWN) ? &plink : NULL);
 
 	g_return_val_if_fail (nm_device_check_connection_compatible (self, connection), TRUE);
 	return TRUE;
@@ -1719,7 +1802,7 @@ check_carrier (NMDevice *self)
 }
 
 static void
-setup (NMDevice *self, NMPlatformLink *plink)
+setup_start (NMDevice *self, NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	static guint32 id = 0;
@@ -1728,15 +1811,16 @@ setup (NMDevice *self, NMPlatformLink *plink)
 	g_return_if_fail (priv->ip_ifindex <= 0);
 	g_return_if_fail (priv->ip_iface == NULL);
 
+	/* Balanced by a thaw in nm_device_setup_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
 
 	if (plink) {
-		g_return_if_fail (priv->iface == NULL || strcmp (plink->name, priv->iface) == 0);
+		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
 		update_device_from_platform_link (self, plink);
 	}
 
 	if (priv->ifindex > 0) {
-		_LOGD (LOGD_DEVICE, "setup(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
+		_LOGD (LOGD_DEVICE, "setup_start(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
 
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
@@ -1821,15 +1905,150 @@ setup (NMDevice *self, NMPlatformLink *plink)
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
 
-	/* Enslave ourselves */
-	if (priv->ifindex > 0) {
-		int master = nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex);
+	priv->real = TRUE;
+}
 
-		if (master > 0)
-			device_set_master (self, master);
+static void
+setup_finish (NMDevice *self, NMPlatformLink *plink)
+{
+	if (plink) {
+		update_device_from_platform_link (self, plink);
+		device_recheck_slave_status (self, plink);
+	}
+}
+
+void
+nm_device_setup_finish (NMDevice *self, NMPlatformLink *plink)
+{
+	g_return_if_fail (!plink || link_type_compatible (self, plink->type, NULL, NULL));
+
+	NM_DEVICE_GET_CLASS (self)->setup_finish (self, plink);
+
+	NM_DEVICE_GET_PRIVATE (self)->real = TRUE;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
+
+	nm_device_recheck_available_connections (self);
+
+	/* Balanced by a freeze in setup_start() */
+	g_object_thaw_notify (G_OBJECT (self));
+}
+
+static void
+unrealize (NMDevice *self, gboolean remove_resources)
+{
+	int ifindex;
+
+	if (remove_resources) {
+		ifindex = nm_device_get_ifindex (self);
+		if (   ifindex > 0
+		    && nm_device_is_software (self))
+			nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
+	}
+}
+
+/**
+ * nm_device_unrealize():
+ * @self: the #NMDevice
+ * @remove_resources: if %TRUE, remove backing resources
+ * @error: location to store error, or %NULL
+ *
+ * Clears any properties that depend on backing resources (kernel devices,
+ * etc) and removes those resources if @remove_resources is %TRUE.
+ *
+ * Returns: %TRUE on success, %FALSE on error
+ */
+gboolean
+nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	if (!nm_device_is_software (self) || !nm_device_is_real (self)) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_NOT_SOFTWARE,
+		                     "This device is not a software device or is not realized");
+		return FALSE;
 	}
 
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->iface != NULL, FALSE);
+
+	g_object_freeze_notify (G_OBJECT (self));
+
+	if (NM_DEVICE_GET_CLASS (self)->unrealize)
+		NM_DEVICE_GET_CLASS (self)->unrealize (self, remove_resources);
+
+	if (priv->ifindex > 0) {
+		priv->ifindex = 0;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_IFINDEX);
+	}
+	priv->ip_ifindex = 0;
+	if (priv->ip_iface) {
+		g_clear_pointer (&priv->ip_iface, g_free);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
+	}
+	if (priv->driver_version) {
+		g_clear_pointer (&priv->driver_version, g_free);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER_VERSION);
+	}
+	if (priv->firmware_version) {
+		g_clear_pointer (&priv->firmware_version, g_free);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_FIRMWARE_VERSION);
+	}
+	if (priv->udi) {
+		g_clear_pointer (&priv->udi, g_free);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+	}
+	if (priv->hw_addr) {
+		g_clear_pointer (&priv->hw_addr, g_free);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
+	}
+	if (priv->physical_port_id) {
+		g_clear_pointer (&priv->physical_port_id, g_free);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
+	}
+
+	g_clear_pointer (&priv->perm_hw_addr, g_free);
+	g_clear_pointer (&priv->initial_hw_addr, g_free);
+
+	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
+
+	priv->real = FALSE;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
+
 	g_object_thaw_notify (G_OBJECT (self));
+
+	nm_device_state_changed (self,
+	                         NM_DEVICE_STATE_UNMANAGED,
+	                         remove_resources ?
+	                             NM_DEVICE_STATE_REASON_USER_REQUESTED : NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+
+	return TRUE;
+}
+
+/**
+ * nm_device_notify_new_device_added():
+ * @self: the #NMDevice
+ * @device: the newly added device
+ *
+ * Called by the manager to notify the device that a new device has
+ * been found and added.
+ */
+void
+nm_device_notify_new_device_added (NMDevice *self, NMDevice *device)
+{
+	NMDeviceClass *klass;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->notify_new_device_added)
+		klass->notify_new_device_added (self, device);
 }
 
 /**
@@ -1847,8 +2066,14 @@ setup (NMDevice *self, NMPlatformLink *plink)
 gboolean
 nm_device_notify_component_added (NMDevice *self, GObject *component)
 {
-	if (NM_DEVICE_GET_CLASS (self)->component_added)
-		return NM_DEVICE_GET_CLASS (self)->component_added (self, component);
+	NMDeviceClass *klass;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (G_IS_OBJECT (component), FALSE);
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->component_added)
+		return klass->component_added (self, component);
 	return FALSE;
 }
 
@@ -2062,6 +2287,18 @@ nm_device_master_release_slaves (NMDevice *self)
 
 		nm_device_release_one_slave (self, info->slave, TRUE, reason);
 	}
+}
+
+/**
+ * nm_device_is_master:
+ * @self: the device
+ *
+ * Returns: %TRUE if the device can have slaves
+ */
+gboolean
+nm_device_is_master (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->is_master;
 }
 
 /**
@@ -2418,7 +2655,7 @@ device_has_config (NMDevice *self)
 		return TRUE;
 
 	/* The existence of a software device is good enough. */
-	if (nm_device_is_software (self))
+	if (nm_device_is_software (self) && nm_device_is_real (self))
 		return TRUE;
 
 	/* Slaves are also configured by definition */
@@ -2648,6 +2885,34 @@ nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
 	return NM_DEVICE_GET_CLASS (self)->check_connection_compatible (self, connection);
 }
 
+gboolean
+nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave)
+{
+	NMDevicePrivate *priv;
+	NMSettingConnection *s_con;
+	const char *connection_type, *slave_type;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (slave), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->is_master)
+		return FALSE;
+
+	/* All masters should have connection type set */
+	connection_type = NM_DEVICE_GET_CLASS (self)->connection_type;
+	g_return_val_if_fail (connection_type, FALSE);
+
+	s_con = nm_connection_get_setting_connection (slave);
+	g_assert (s_con);
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (!slave_type)
+		return FALSE;
+
+	return strcmp (connection_type, slave_type) == 0;
+}
+
 /**
  * nm_device_can_assume_connections:
  * @self: #NMDevice instance
@@ -2660,7 +2925,8 @@ nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
 static gboolean
 nm_device_can_assume_connections (NMDevice *self)
 {
-	return !!NM_DEVICE_GET_CLASS (self)->update_connection;
+	return   !!NM_DEVICE_GET_CLASS (self)->update_connection
+	      && !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
 }
 
 /**
@@ -6397,14 +6663,6 @@ nm_device_get_is_nm_owned (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
 }
 
-void
-nm_device_set_nm_owned (NMDevice *self)
-{
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	NM_DEVICE_GET_PRIVATE (self)->is_nm_owned = TRUE;
-}
-
 /*
  * delete_on_deactivate_link_delete
  *
@@ -6418,16 +6676,21 @@ delete_on_deactivate_link_delete (gpointer user_data)
 	DeleteOnDeactivateData *data = user_data;
 	NMDevice *self = data->device;
 
+	_LOGD (LOGD_DEVICE, "delete_on_deactivate: cleanup and delete virtual link #%d (id=%u)",
+	       data->ifindex, data->idle_add_id);
+
 	if (data->device) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (data->device);
+		gs_free_error GError *error = NULL;
 
 		g_object_remove_weak_pointer (G_OBJECT (data->device), (void **) &data->device);
 		priv->delete_on_deactivate_data = NULL;
-	}
 
-	_LOGD (LOGD_DEVICE, "delete_on_deactivate: cleanup and delete virtual link #%d (id=%u)",
-	       data->ifindex, data->idle_add_id);
-	nm_platform_link_delete (NM_PLATFORM_GET, data->ifindex);
+		if (!nm_device_unrealize (data->device, TRUE, &error))
+			_LOGD (LOGD_DEVICE, "delete_on_deactivate: unrealizing %d failed (%s)", data->ifindex, error->message);
+	} else
+		nm_platform_link_delete (NM_PLATFORM_GET, data->ifindex);
+
 	g_free (data);
 	return FALSE;
 }
@@ -6462,7 +6725,7 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 		return;
 	if (priv->queued_act_request)
 		return;
-	if (!nm_device_is_software (self))
+	if (!nm_device_is_software (self) || !nm_device_is_real (self))
 		return;
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED)
 		return;
@@ -6558,6 +6821,8 @@ delete_cb (NMDevice *self,
            GError *error,
            gpointer user_data)
 {
+	GError *local = NULL;
+
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, FALSE, subject, error->message);
@@ -6565,9 +6830,11 @@ delete_cb (NMDevice *self,
 	}
 
 	/* Authorized */
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_device_get_ifindex (self));
-	g_dbus_method_invocation_return_value (context, NULL);
 	nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, TRUE, subject, NULL);
+	if (nm_device_unrealize (self, TRUE, &local))
+		g_dbus_method_invocation_return_value (context, NULL);
+	else
+		g_dbus_method_invocation_take_error (context, local);
 }
 
 static void
@@ -6575,10 +6842,10 @@ impl_device_delete (NMDevice *self, GDBusMethodInvocation *context)
 {
 	GError *error = NULL;
 
-	if (!nm_device_is_software (self)) {
+	if (!nm_device_is_software (self) || !nm_device_is_real (self)) {
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_NOT_SOFTWARE,
-		                             "This device is not a software device");
+		                             "This device is not a software device or is not realized");
 		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
@@ -8302,6 +8569,7 @@ _nm_device_check_connection_available (NMDevice *self,
 	    && nm_device_get_unmanaged (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
+	    && !nm_device_is_software (self)
 	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
 	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
 	        || (    NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
@@ -9896,6 +10164,7 @@ set_property (GObject *object, guint prop_id,
 	const char *hw_addr, *p;
 	guint count;
 	gboolean val_bool;
+	const NMPlatformLink *pllink;
 
 	switch (prop_id) {
 	case PROP_UDI:
@@ -9905,12 +10174,19 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_IFACE:
-		if (g_value_get_string (value)) {
+		p = g_value_get_string (value);
+		if (p) {
+
 			g_free (priv->iface);
-			priv->iface = g_value_dup_string (value);
-			priv->ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->iface);
-			if (priv->ifindex > 0)
-				priv->up = nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex);
+			priv->iface = g_strdup (p);
+
+			pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
+			if (pllink) {
+				if (link_type_compatible (self, pllink->type, NULL, NULL)) {
+					priv->ifindex = pllink->ifindex;
+					priv->up = nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex);
+				}
+			}
 		}
 		break;
 	case PROP_DRIVER:
@@ -10103,7 +10379,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->is_master);
 		break;
 	case PROP_MASTER:
-		g_value_set_object (value, priv->master);
+		g_value_set_object (value, nm_device_get_master (self));
 		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
@@ -10121,6 +10397,9 @@ get_property (GObject *object, guint prop_id,
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
+		break;
+	case PROP_REAL:
+		g_value_set_boolean (value, priv->real);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -10162,7 +10441,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
-	klass->setup = setup;
+	klass->setup_start = setup_start;
+	klass->setup_finish = setup_finish;
+	klass->unrealize = unrealize;
 	klass->is_up = is_up;
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;
@@ -10409,6 +10690,13 @@ nm_device_class_init (NMDeviceClass *klass)
 		 g_param_spec_variant (NM_DEVICE_LLDP_NEIGHBORS, "", "",
 		                       G_VARIANT_TYPE ("aa{sv}"),
 		                       NULL,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_REAL,
+		 g_param_spec_boolean (NM_DEVICE_REAL, "", "",
+		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 

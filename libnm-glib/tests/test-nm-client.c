@@ -686,6 +686,7 @@ typedef struct {
 static void
 da_check_quit (DaInfo *info)
 {
+	g_assert (info->quit_count > 0);
 	info->quit_count--;
 	if (info->quit_count == 0) {
 		g_source_remove (info->quit_id);

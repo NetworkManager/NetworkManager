@@ -861,6 +861,7 @@ global:
 	nm_connection_get_setting_ip_tunnel;
 	nm_connection_verify_secrets;
 	nm_device_ethernet_get_s390_subchannels;
+	nm_client_get_all_devices;
 	nm_device_get_lldp_neighbors;
 	nm_device_get_metered;
 	nm_device_ip_tunnel_get_encapsulation_limit;
@@ -876,6 +877,7 @@ global:
 	nm_device_ip_tunnel_get_ttl;
 	nm_device_ip_tunnel_get_type;
 	nm_device_get_nm_plugin_missing;
+	nm_device_is_real;
 	nm_device_set_managed;
 	nm_device_tun_get_group;
 	nm_device_tun_get_hw_address;
@@ -896,6 +898,7 @@ global:
 	nm_lldp_neighbor_new;
 	nm_lldp_neighbor_ref;
 	nm_lldp_neighbor_unref;
+	nm_manager_get_all_devices;
 	nm_metered_get_type;
 	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;

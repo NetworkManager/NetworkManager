@@ -73,6 +73,7 @@ enum {
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
+	PROP_ALL_DEVICES,
 	PROP_CONNECTIONS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
@@ -84,6 +85,8 @@ enum {
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
+	ANY_DEVICE_ADDED,
+	ANY_DEVICE_REMOVED,
 	PERMISSION_CHANGED,
 	CONNECTION_ADDED,
 	CONNECTION_REMOVED,
@@ -717,6 +720,34 @@ nm_client_get_devices (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	return nm_manager_get_devices (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+/**
+ * nm_client_get_all_devices:
+ * @client: a #NMClient
+ *
+ * Gets both real devices and device placeholders (eg, software devices which
+ * do not currently exist, but could be created automatically by NetworkManager
+ * if one of their NMDevice::ActivatableConnections was activated).  Use
+ * nm_device_is_real() to determine whether each device is a real device or
+ * a placeholder.
+ *
+ * Use nm_device_get_type() or the NM_IS_DEVICE_XXXX() functions to determine
+ * what kind of device each member of the returned array is, and then you may
+ * use device-specific methods such as nm_device_ethernet_get_hw_address().
+ *
+ * Returns: (transfer none) (element-type NMDevice): a #GPtrArray
+ * containing all the #NMDevices.  The returned array is owned by the
+ * #NMClient object and should not be modified.
+ *
+ * Since: 1.2
+ **/
+const GPtrArray *
+nm_client_get_all_devices (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	return nm_manager_get_all_devices (NM_CLIENT_GET_PRIVATE (client)->manager);
 }
 
 /**
@@ -1660,12 +1691,29 @@ manager_device_added (NMManager *manager,
 {
 	g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
 }
+
 static void
 manager_device_removed (NMManager *manager,
                         NMDevice *device,
                         gpointer client)
 {
 	g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
+}
+
+static void
+manager_any_device_added (NMManager *manager,
+                          NMDevice *device,
+                          gpointer client)
+{
+	g_signal_emit (client, signals[ANY_DEVICE_ADDED], 0, device);
+}
+
+static void
+manager_any_device_removed (NMManager *manager,
+                            NMDevice *device,
+                            gpointer client)
+{
+	g_signal_emit (client, signals[ANY_DEVICE_REMOVED], 0, device);
 }
 
 static void
@@ -1707,6 +1755,10 @@ constructed (GObject *object)
 	                  G_CALLBACK (manager_device_added), client);
 	g_signal_connect (priv->manager, "device-removed",
 	                  G_CALLBACK (manager_device_removed), client);
+	g_signal_connect (priv->manager, "any-device-added",
+	                  G_CALLBACK (manager_any_device_added), client);
+	g_signal_connect (priv->manager, "any-device-removed",
+	                  G_CALLBACK (manager_any_device_removed), client);
 	g_signal_connect (priv->manager, "permission-changed",
 	                  G_CALLBACK (manager_permission_changed), client);
 
@@ -1873,6 +1925,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ACTIVATING_CONNECTION:
 	case PROP_DEVICES:
 	case PROP_METERED:
+	case PROP_ALL_DEVICES:
 		g_object_get_property (G_OBJECT (NM_CLIENT_GET_PRIVATE (object)->manager),
 		                       pspec->name, value);
 		break;
@@ -2092,13 +2145,28 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient:devices:
 	 *
-	 * List of known network devices.
+	 * List of real network devices.  Does not include placeholder devices.
 	 *
 	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_CLIENT_DEVICES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:all-devices:
+	 *
+	 * List of both real devices and device placeholders.
+	 *
+	 * Element-type: NMDevice
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ALL_DEVICES,
+		 g_param_spec_boxed (NM_CLIENT_ALL_DEVICES, "", "",
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
@@ -2166,7 +2234,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * @client: the client that received the signal
 	 * @device: (type NMDevice): the new device
 	 *
-	 * Notifies that a #NMDevice is added.
+	 * Notifies that a #NMDevice is added.  This signal is not emitted for
+	 * placeholder devices.
 	 **/
 	signals[DEVICE_ADDED] =
 		g_signal_new (NM_CLIENT_DEVICE_ADDED,
@@ -2182,13 +2251,48 @@ nm_client_class_init (NMClientClass *client_class)
 	 * @client: the client that received the signal
 	 * @device: (type NMDevice): the removed device
 	 *
-	 * Notifies that a #NMDevice is removed.
+	 * Notifies that a #NMDevice is removed.  This signal is not emitted for
+	 * placeholder devices.
 	 **/
 	signals[DEVICE_REMOVED] =
 		g_signal_new (NM_CLIENT_DEVICE_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMClientClass, device_removed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::any-device-added:
+	 * @client: the client that received the signal
+	 * @device: (type NMDevice): the new device
+	 *
+	 * Notifies that a #NMDevice is added.  This signal is emitted for both
+	 * regular devices and placeholder devices.
+	 **/
+	signals[ANY_DEVICE_ADDED] =
+		g_signal_new (NM_CLIENT_ANY_DEVICE_ADDED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMClientClass, any_device_added),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::any-device-removed:
+	 * @client: the client that received the signal
+	 * @device: (type NMDevice): the removed device
+	 *
+	 * Notifies that a #NMDevice is removed.  This signal is emitted for both
+	 * regular devices and placeholder devices.
+	 **/
+	signals[ANY_DEVICE_REMOVED] =
+		g_signal_new (NM_CLIENT_ANY_DEVICE_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMClientClass, any_device_removed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);

@@ -758,7 +758,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLAVES:
 		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		nm_utils_g_value_set_object_path_array (value, list);
+		nm_utils_g_value_set_object_path_array (value, list, NULL, NULL);
 		g_slist_free (list);
 		break;
 	default:
@@ -802,7 +802,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceTeamPrivate));
 
-	parent_class->connection_type = NM_SETTING_TEAM_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_TEAM_SETTING_NAME, NM_LINK_TYPE_TEAM)
 
 	/* virtual methods */
 	object_class->constructed = constructed;

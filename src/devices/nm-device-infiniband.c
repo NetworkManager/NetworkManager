@@ -149,7 +149,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_infiniband)
 		return FALSE;
 
-	if (s_infiniband) {
+	if (nm_device_is_real (device)) {
 		const char *mac;
 
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
@@ -326,6 +326,8 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceInfinibandPrivate));
+
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_INFINIBAND_SETTING_NAME, NM_LINK_TYPE_INFINIBAND)
 
 	/* virtual methods */
 	object_class->get_property = get_property;

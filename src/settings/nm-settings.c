@@ -1854,12 +1854,19 @@ default_wired_clear_tag (NMSettings *self,
 		nm_config_set_no_auto_default_for_device (NM_SETTINGS_GET_PRIVATE (self)->config, device);
 }
 
-void
-nm_settings_device_added (NMSettings *self, NMDevice *device)
+static void
+device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 {
 	NMConnection *connection;
 	NMSettingsConnection *added;
 	GError *error = NULL;
+
+	if (!nm_device_is_real (device))
+		return;
+
+	g_signal_handlers_disconnect_by_func (device,
+	                                      G_CALLBACK (device_realized),
+	                                      self);
 
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
@@ -1899,9 +1906,25 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 }
 
 void
+nm_settings_device_added (NMSettings *self, NMDevice *device)
+{
+	if (nm_device_is_real (device))
+		device_realized (device, NULL, self);
+	else {
+		g_signal_connect_after (device, "notify::" NM_DEVICE_REAL,
+		                        G_CALLBACK (device_realized),
+		                        self);
+	}
+}
+
+void
 nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting)
 {
 	NMSettingsConnection *connection;
+
+	g_signal_handlers_disconnect_by_func (device,
+	                                      G_CALLBACK (device_realized),
+	                                      self);
 
 	connection = g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG);
 	if (connection) {

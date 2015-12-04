@@ -161,6 +161,13 @@
         LLDP TLV names to variant boxed values.
       </tp:docstring>
     </property>
+    <property name="Real" type="b" access="read">
+      <tp:docstring>
+        True if the device exists, or False for placeholder devices that
+        do not yet exist but could be automatically created by NetworkManager
+        if one of their AvailableConnections was activated.
+      </tp:docstring>
+    </property>
 
     <method name="Disconnect">
       <tp:docstring>

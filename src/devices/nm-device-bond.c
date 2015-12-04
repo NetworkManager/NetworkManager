@@ -501,7 +501,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLAVES:
 		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		nm_utils_g_value_set_object_path_array (value, list);
+		nm_utils_g_value_set_object_path_array (value, list, NULL, NULL);
 		g_slist_free (list);
 		break;
 	default:
@@ -529,7 +529,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBondPrivate));
 
-	parent_class->connection_type = NM_SETTING_BOND_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BOND_SETTING_NAME, NM_LINK_TYPE_BOND)
 
 	/* virtual methods */
 	object_class->get_property = get_property;

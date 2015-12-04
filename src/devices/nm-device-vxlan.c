@@ -22,9 +22,9 @@
 
 #include <string.h>
 
+#include "nm-default.h"
 #include "nm-device-vxlan.h"
 #include "nm-device-private.h"
-#include "nm-default.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
@@ -133,15 +133,32 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 static void
-setup (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, NMPlatformLink *plink)
 {
 	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
 
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->setup (device, plink);
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->setup_start (device, plink);
 
 	update_properties (device);
 }
 
+static void
+unrealize (NMDevice *device, gboolean remove_resources)
+{
+	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
+	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
+	GParamSpec **properties;
+	guint n_properties, i;
+
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize (device, remove_resources);
+
+	memset (&priv->props, 0, sizeof (NMPlatformLnkVxlan));
+
+	properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (self), &n_properties);
+	for (i = 0; i < n_properties; i++)
+		g_object_notify_by_pspec (G_OBJECT (self), properties[i]);
+	g_free (properties);
+}
 
 /**************************************************************/
 
@@ -227,10 +244,13 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceVxlanPrivate));
 
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VXLAN)
+
 	object_class->get_property = get_property;
 
 	device_class->link_changed = link_changed;
-	device_class->setup = setup;
+	device_class->setup_start = setup_start;
+	device_class->unrealize = unrealize;
 
 	/* properties */
 	g_object_class_install_property

@@ -59,6 +59,7 @@
 #define NM_DEVICE_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_METERED          "metered"
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
+#define NM_DEVICE_REAL             "real"
 
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */
@@ -122,6 +123,7 @@ typedef struct {
 	NMExportedObjectClass parent;
 
 	const char *connection_type;
+	const NMLinkType *link_types;
 
 	void (*state_changed) (NMDevice *device,
 	                       NMDeviceState new_state,
@@ -173,14 +175,39 @@ typedef struct {
 	                                       GError **error);
 
 	/**
-	 * setup():
+	 * setup_start():
 	 * @self: the #NMDevice
 	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
 	 * Update the device from backing resource properties (like hardware
-	 * addresses, carrier states, driver/firmware info, etc).
+	 * addresses, carrier states, driver/firmware info, etc).  This function
+	 * should only change properties for this device, and should not perform
+	 * any tasks that affect other interfaces (like master/slave or parent/child
+	 * stuff).
 	 */
-	void        (*setup) (NMDevice *self, NMPlatformLink *plink);
+	void        (*setup_start) (NMDevice *self, NMPlatformLink *plink);
+
+	/**
+	 * setup_finish():
+	 * @self: the #NMDevice
+	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
+	 *
+	 * Update the device's master/slave or parent/child relationships from
+	 * backing resource properties.  After this function finishes, the device
+	 * is ready for network connectivity.
+	 */
+	void        (*setup_finish) (NMDevice *self, NMPlatformLink *plink);
+
+	/**
+	 * unrealize():
+	 * @self: the #NMDevice
+	 * @remove_resources: if %TRUE remove backing resources
+	 * @error: location to store error, or %NULL
+	 *
+	 * Clears any properties that depend on backing resources (kernel devices,
+	 * etc) and removes those resources if @remove_resources is %TRUE.
+	 */
+	void            (*unrealize)  (NMDevice *self, gboolean remove_resources);
 
 	/* Hardware state (IFF_UP) */
 	gboolean        (*can_unmanaged_external_down)  (NMDevice *self);
@@ -288,6 +315,8 @@ typedef struct {
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
 
+	void            (* notify_new_device_added) (NMDevice *self, NMDevice *new_device);
+
 	/**
 	 * component_added:
 	 * @self: the #NMDevice
@@ -324,6 +353,7 @@ const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
 int             nm_device_get_ifindex	(NMDevice *dev);
 gboolean        nm_device_is_software   (NMDevice *dev);
+gboolean        nm_device_is_real       (NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
 int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
@@ -358,6 +388,7 @@ void            nm_device_capture_initial_config (NMDevice *dev);
 
 /* Master */
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
+gboolean        nm_device_is_master         (NMDevice *dev);
 
 /* Slave */
 NMDevice *      nm_device_get_master        (NMDevice *dev);
@@ -391,6 +422,7 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         GError **error);
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
+gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnection *connection);
 
 gboolean nm_device_uses_assumed_connection (NMDevice *device);
 
@@ -451,16 +483,21 @@ void nm_device_set_unmanaged_initial (NMDevice *device,
                                       gboolean unmanaged);
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
-void     nm_device_set_nm_owned    (NMDevice *device);
 
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
 gboolean nm_device_realize            (NMDevice *device,
                                        NMPlatformLink *plink,
+                                       gboolean *out_compatible,
                                        GError **error);
 gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMConnection *connection,
                                        NMDevice *parent,
+                                       GError **error);
+void     nm_device_setup_finish       (NMDevice *self,
+                                       NMPlatformLink *plink);
+gboolean nm_device_unrealize          (NMDevice *device,
+                                       gboolean remove_resources,
                                        GError **error);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
@@ -496,6 +533,7 @@ gboolean   nm_device_check_connection_available (NMDevice *device,
                                                  NMDeviceCheckConAvailableFlags flags,
                                                  const char *specific_object);
 
+void     nm_device_notify_new_device_added (NMDevice *self, NMDevice *new_device);
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);

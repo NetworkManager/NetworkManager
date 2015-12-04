@@ -50,6 +50,7 @@
 #define NM_MANAGER_DEVICES "devices"
 #define NM_MANAGER_METERED "metered"
 #define NM_MANAGER_GLOBAL_DNS_CONFIGURATION "global-dns-configuration"
+#define NM_MANAGER_ALL_DEVICES "all-devices"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
