@@ -265,7 +265,7 @@ usage (void)
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
 	              "COMMAND := { show | up | down | add | modify | edit | delete | monitor | reload | load }\n\n"
 	              "  show [--active] [--order <order spec>]\n"
-	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
+	              "  show [--active] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
@@ -293,13 +293,13 @@ usage_connection_show (void)
 	              "profiles are listed. When --active option is specified, only the active\n"
 	              "profiles are shown. --order allows custom connection ordering (see manual page).\n"
 	              "\n"
-	              "ARGUMENTS := [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n"
+	              "ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
 	              "\n"
 	              "Show details for specified connections. By default, both static configuration\n"
 	              "and active connection data are displayed. It is possible to filter the output\n"
 	              "using global '--fields' option. Refer to the manual page for more information.\n"
 	              "When --active option is specified, only the active profiles are taken into\n"
-	              "account. --show-secrets option will reveal associated secrets as well.\n"));
+	              "account. Use global --show-secrets option to reveal associated secrets as well.\n"));
 }
 
 static void
@@ -10489,6 +10489,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 					active = TRUE;
 					next_arg (&argc, &argv);
 				}
+				/* --show-secrets is deprecated in favour of global --show-secrets */
+				/* Keep it here for backwards compatibility */
 				if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
 					show_secrets = TRUE;
 					next_arg (&argc, &argv);
@@ -10505,6 +10507,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 					next_arg (&argc, &argv);
 				}
 			}
+			show_secrets = nmc->show_secrets || show_secrets;
 			nmc->return_value = do_connections_show (nmc, active, show_secrets, order, argc, argv);
 			if (order)
 				g_array_unref (order);

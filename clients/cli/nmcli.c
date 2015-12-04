@@ -92,6 +92,7 @@ usage (const char *prog_name)
 	              "  -e[scape] yes|no                           escape columns separators in values\n"
 	              "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
 	              "  -a[sk]                                     ask for missing parameters\n"
+	              "  -s[how-secrets]                            allow displaying passwords\n"
 	              "  -w[ait] <seconds>                          set timeout waiting for finishing operations\n"
 	              "  -v[ersion]                                 show program version\n"
 	              "  -h[elp]                                    print this help\n"
@@ -257,6 +258,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			nmc->nocheck_ver = TRUE;
 		} else if (matches (opt, "-ask") == 0) {
 			nmc->ask = TRUE;
+		} else if (matches (opt, "-show-secrets") == 0) {
+			nmc->show_secrets = TRUE;
 		} else if (matches (opt, "-wait") == 0) {
 			unsigned long timeout;
 			next_arg (&argc, &argv);
@@ -545,6 +548,7 @@ nmc_init (NmCli *nmc)
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
+	nmc->show_secrets = FALSE;
 	nmc->use_colors = NMC_USE_COLOR_AUTO;
 	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;

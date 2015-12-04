@@ -293,8 +293,7 @@ usage (void)
 	              "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	              "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden yes|no]\n\n"
-	              "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]\n\n"
-	              "               [password <password>] [--show-password]\n\n"
+	              "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>] [password <password>]\n\n"
 	              "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
 	              "  lldp [list [ifname <ifname>]]\n\n"
 	              ));
@@ -414,7 +413,6 @@ usage_device_wifi (void)
 	              "\n"
 	              "ARGUMENTS := wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
 	              "                          [band a|bg] [channel <channel>] [password <password>]\n"
-	              "                          [--show-password]\n"
 	              "\n"
 	              "Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
 	              "to stop the hotspot.\n"
@@ -425,7 +423,6 @@ usage_device_wifi (void)
 	              "band - Wi-Fi band to use\n"
 	              "channel - Wi-Fi channel to use\n"
 	              "password - password to use for the hotspot\n"
-	              "--show-password - tell nmcli to print password to stdout\n"
 	              "\n"
 	              "ARGUMENTS := rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
 	              "\n"
@@ -3033,6 +3030,8 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 			password = *argv;
+		/* --show-password is deprecated in favour of global --show-secrets option */
+		/* Keep it here for backwards compatibility */
 		} else if (nmc_arg_is_option (*argv, "show-password")) {
 			show_password = TRUE;
 		} else {
@@ -3044,6 +3043,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 		argc--;
 		argv++;
 	}
+	show_password = nmc->show_secrets || show_password;
 
 	/* Verify band and channel parameters */
 	if (!channel) {

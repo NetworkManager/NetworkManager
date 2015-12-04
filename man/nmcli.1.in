@@ -55,6 +55,8 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 .br
 \fB\-a\fR[\fIsk\fR]
 .br
+\fB\-s\fR[\fIhow-secrets\fR]
+.br
 \fB\-w\fR[\fIait\fR] <seconds>
 .br
 \fB\-v\fR[\fIersion\fR]
@@ -140,6 +142,11 @@ When using this option \fInmcli\fP will stop and ask for any missing required
 arguments, so do not use this option for non-interactive purposes like scripts.
 This option controls, for example, whether you will be prompted for a password
 if it is required for connecting to a network.
+.TP
+.B \-s, \-\-show-secrets
+When using this option \fInmcli\fP will display passwords and secrets that might
+be present in an output of an operation. This option also influences echoing
+passwords typed by user as an input.
 .TP
 .B \-w, \-\-wait <seconds>
 This option sets a timeout period for which \fInmcli\fP will wait for \fINetworkManager\fP
@@ -299,12 +306,12 @@ active if a device is using that connection profile. Without a parameter, all
 profiles are listed. When --active option is specified, only the active profiles
 are shown.
 .TP
-.B show [--active] [--order <order spec>] [--show-secrets] [ id | uuid | path | apath ] <ID> ...
+.B show [--active] [--order <order spec>] [ id | uuid | path | apath ] <ID> ...
 .br
 Show details for specified connections. By default, both static configuration
 and active connection data are displayed.  When --active option is specified,
-only the active profiles are taken into account. When --show-secrets option is
-specified, secrets associated with the profile will be revealed too.
+only the active profiles are taken into account. Use global --show-secrets option
+to display secrets associated with the profile.
 .sp
 Ordering:
 .br
@@ -938,8 +945,7 @@ Otherwise the connection is system\(hywide, which is the default.
 Otherwise the SSID would not be found and the connection attempt would fail.
 .RE
 .TP
-.B wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>]
-.B [password <password>] [--show-password]
+.B wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] [channel <channel>] [password <password>]
 .br
 Create a Wi-Fi hotspot. The command creates a hotspot connection profile according to
 Wi-Fi device capabilities and activates it on the device. The hotspot is secured with WPA
@@ -963,9 +969,9 @@ Parameters of the hotspot can be influenced by the optional parameters:
 \(en password to use for the created hotspot. If not provided,
 nmcli will generate a password. The password is either WPA
 pre-shared key or WEP key.
-.IP \fI--show-password\fP 17
-\(en tell nmcli to print the password to stdout. It is useful
-when the user did not provide his own password.
+.PP
+Note that \fI--show-secrets\fP global option can be used to print the hotspot
+password. It is useful especially when the password was generated.
 .RE
 .TP
 .B wifi rescan [ifname <ifname>] [[ssid <SSID>] ...]
@@ -1108,7 +1114,7 @@ shows all connection profile names and their auto-connect property.
 .IP
 shows details for "My default em1" connection profile.
 
-.IP "\fB\f(CWnmcli connection show --show-secrets \(dq\&My Home WiFi\(dq\&\fP\fP"
+.IP "\fB\f(CWnmcli --show-secrets connection show \(dq\&My Home WiFi\(dq\&\fP\fP"
 .IP
 shows details for "My Home WiFi" connection profile with all passwords.
 Without \fI--show-secrets\fP option, secrets would not be displayed.
@@ -1162,7 +1168,7 @@ using password "caffeine". This is mainly useful when connecting to "Cafe Hotspo
 the first time. Next time, it is better to use 'nmcli con up id "My cafe"' so that the
 existing connection profile can be used and no additional is created.
 
-.IP "\fB\f(CWnmcli dev wifi hotspot -s con-name QuickHotspot\fP\fP"
+.IP "\fB\f(CWnmcli -s dev wifi hotspot con-name QuickHotspot\fP\fP"
 .IP
 creates a hotspot profile and connects it. Prints the hotspot password the user should use
 to connect to the hotspot from other devices.

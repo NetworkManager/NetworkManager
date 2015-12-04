@@ -999,7 +999,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		nmc_terminal_erase_line ();
 
 	success = get_secrets_from_user (request_id, title, msg, nmc->in_editor || nmc->ask,
-	                                 FALSE, nmc->pwds_hash, secrets);
+	                                 nmc->show_secrets, nmc->pwds_hash, secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else {
