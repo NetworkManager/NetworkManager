@@ -77,7 +77,7 @@ parent_state_changed (NMDevice *parent,
 	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
 		return;
 
-	nm_device_set_unmanaged (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
+	nm_device_set_unmanaged_flags (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
 }
 
 static void
@@ -134,10 +134,10 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 		                                           G_CALLBACK (parent_hwaddr_changed), device);
 
 		/* Set parent-dependent unmanaged flag */
-		nm_device_set_unmanaged (device,
-		                         NM_UNMANAGED_PARENT,
-		                         !nm_device_get_managed (parent),
-		                         NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
+		nm_device_set_unmanaged_flags (device,
+		                               NM_UNMANAGED_PARENT,
+		                               !nm_device_get_managed (parent),
+		                               NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
 	}
 
 	/* Recheck availability now that the parent has changed */

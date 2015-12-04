@@ -444,25 +444,27 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
 /**
  * NMUnmanagedFlags:
  * @NM_UNMANAGED_NONE: placeholder value
- * @NM_UNMANAGED_DEFAULT: %TRUE when unmanaged by default (ie, Generic devices)
  * @NM_UNMANAGED_INTERNAL: %TRUE when unmanaged by internal decision (ie,
  *   because NM is sleeping or not managed for some other reason)
- * @NM_UNMANAGED_USER: %TRUE when unmanaged by user decision (via unmanaged-specs)
  * @NM_UNMANAGED_PARENT: %TRUE when unmanaged due to parent device being unmanaged
- * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
+ * @NM_UNMANAGED_LOOPBACK: %TRUE for unmanaging loopback device
  * @NM_UNMANAGED_PLATFORM_INIT: %TRUE when unmanaged because platform link not
  *   yet initialized
- * @NM_UNMANAGED_LOOPBACK: %TRUE for unmanaging loopback device
+ * @NM_UNMANAGED_USER: %TRUE when unmanaged by user decision (via unmanaged-specs)
+ * @NM_UNMANAGED_DEFAULT: %TRUE when unmanaged by default (ie, Generic devices)
+ * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
  */
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_UNMANAGED_NONE          = 0,
-	NM_UNMANAGED_DEFAULT       = (1LL <<  0),
-	NM_UNMANAGED_INTERNAL      = (1LL <<  1),
-	NM_UNMANAGED_USER          = (1LL <<  2),
-	NM_UNMANAGED_PARENT        = (1LL <<  3),
-	NM_UNMANAGED_EXTERNAL_DOWN = (1LL <<  4),
-	NM_UNMANAGED_PLATFORM_INIT = (1LL <<  5),
-	NM_UNMANAGED_LOOPBACK      = (1LL <<  6),
+
+	NM_UNMANAGED_INTERNAL      = (1LL <<  0),
+	NM_UNMANAGED_PARENT        = (1LL <<  1),
+	NM_UNMANAGED_LOOPBACK      = (1LL <<  2),
+	NM_UNMANAGED_PLATFORM_INIT = (1LL <<  3),
+	NM_UNMANAGED_USER          = (1LL <<  4),
+
+	NM_UNMANAGED_DEFAULT       = (1LL <<  8),
+	NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 11),
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
@@ -471,16 +473,16 @@ typedef enum {
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
-gboolean nm_device_get_unmanaged (NMDevice *device, NMUnmanagedFlags flag);
-void nm_device_set_unmanaged (NMDevice *device,
-                              NMUnmanagedFlags flag,
-                              gboolean unmanaged,
-                              NMDeviceStateReason reason);
-void nm_device_set_unmanaged_by_device_spec (NMDevice *self, const GSList *unmanaged_specs);
+NMUnmanagedFlags nm_device_get_unmanaged_flags (NMDevice *device, NMUnmanagedFlags flag);
+void nm_device_set_unmanaged_flags (NMDevice *device,
+                                    NMUnmanagedFlags flag,
+                                    gboolean unmanaged,
+                                    NMDeviceStateReason reason);
+void nm_device_set_unmanaged_flags_by_device_spec (NMDevice *self, const GSList *unmanaged_specs);
+void nm_device_set_unmanaged_flags_initial (NMDevice *device,
+                                            NMUnmanagedFlags flag,
+                                            gboolean unmanaged);
 void nm_device_set_unmanaged_quitting (NMDevice *device);
-void nm_device_set_unmanaged_initial (NMDevice *device,
-                                      NMUnmanagedFlags flag,
-                                      gboolean unmanaged);
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
 
@@ -501,6 +503,7 @@ gboolean nm_device_unrealize          (NMDevice *device,
                                        GError **error);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
+void nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect);
 
 void nm_device_state_changed (NMDevice *device,
                               NMDeviceState state,
