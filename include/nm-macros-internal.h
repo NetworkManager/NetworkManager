@@ -248,7 +248,7 @@ nm_clear_g_cancellable (GCancellable **cancellable)
  * For negative @x, always returns FALSE. That only applies, if the data
  * type of @x is signed. */
 #define nm_utils_is_power_of_two(x) ({ \
-		const typeof(x) __x = (x); \
+		typeof(x) __x = (x); \
 		\
 		/* Check if the value is negative. In that case, return FALSE.
 		 * The first expression is a compile time constant, depending on whether
