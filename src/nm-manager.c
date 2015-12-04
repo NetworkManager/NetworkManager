@@ -2007,39 +2007,42 @@ static gboolean
 _platform_link_cb_idle (PlatformLinkCbData *data)
 {
 	NMManager *self = data->self;
+	const NMPlatformLink *l;
 
-	if (self) {
-		const NMPlatformLink *l;
+	if (!self)
+		goto out;
 
-		l = nm_platform_link_get (NM_PLATFORM_GET, data->ifindex);
-		if (l) {
-			NMPlatformLink pllink;
+	g_object_remove_weak_pointer (G_OBJECT (self), (gpointer *) &data->self);
 
-			pllink = *l; /* make a copy of the link instance */
-			platform_link_added (self, data->ifindex, &pllink);
-		} else {
-			NMDevice *device;
-			GError *error = NULL;
+	l = nm_platform_link_get (NM_PLATFORM_GET, data->ifindex);
+	if (l) {
+		NMPlatformLink pllink;
 
-			device = nm_manager_get_device_by_ifindex (self, data->ifindex);
-			if (device) {
-				if (nm_device_is_software (device)) {
-					/* Software devices stick around until their connection is removed */
-					if (!nm_device_unrealize (device, FALSE, &error)) {
-						nm_log_warn (LOGD_DEVICE, "(%s): failed to unrealize: %s",
-						             nm_device_get_iface (device),
-						             error->message);
-						g_clear_error (&error);
-						remove_device (self, device, FALSE, TRUE);
-					}
-				} else {
-					/* Hardware devices always get removed when their kernel link is gone */
+		pllink = *l; /* make a copy of the link instance */
+		platform_link_added (self, data->ifindex, &pllink);
+	} else {
+		NMDevice *device;
+		GError *error = NULL;
+
+		device = nm_manager_get_device_by_ifindex (self, data->ifindex);
+		if (device) {
+			if (nm_device_is_software (device)) {
+				/* Software devices stick around until their connection is removed */
+				if (!nm_device_unrealize (device, FALSE, &error)) {
+					nm_log_warn (LOGD_DEVICE, "(%s): failed to unrealize: %s",
+					             nm_device_get_iface (device),
+					             error->message);
+					g_clear_error (&error);
 					remove_device (self, device, FALSE, TRUE);
 				}
+			} else {
+				/* Hardware devices always get removed when their kernel link is gone */
+				remove_device (self, device, FALSE, TRUE);
 			}
-			g_object_remove_weak_pointer (G_OBJECT (self), (gpointer *) &data->self);
 		}
 	}
+
+out:
 	g_slice_free (PlatformLinkCbData, data);
 	return G_SOURCE_REMOVE;
 }
