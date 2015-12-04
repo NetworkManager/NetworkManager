@@ -865,7 +865,8 @@ create_pppd_cmd_line (NMPPPManager *self,
 		return NULL;
 
 	if (   pppoe
-	    || (adsl && strcmp (nm_setting_adsl_get_protocol (adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE))) {
+	    || (   adsl
+	        && !strcmp (nm_setting_adsl_get_protocol (adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE))) {
 		pppoe_binary = nm_utils_find_helper ("pppoe", NULL, err);
 		if (!pppoe_binary)
 			return NULL;
