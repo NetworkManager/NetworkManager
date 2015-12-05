@@ -49,6 +49,34 @@ function unquote(str)
   return (string.gsub(str, "^([\"\'])(.*)%1$", "%2"))
 end
 
+function ip_mask_to_prefix(mask)
+  local b, prefix
+  local b1,b2,b3,b4 = mask:match("(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)")
+  b1 = tonumber(b1)
+  b2 = tonumber(b2)
+  b3 = tonumber(b3)
+  b4 = tonumber(b4)
+
+  if b4 ~= 0 then
+    prefix = 24
+    b = b4
+  elseif b3 ~= 0 then
+    prefix = 16
+    b = b3
+  elseif b2 ~= 0 then
+    prefix = 8
+    b = b2
+  else
+    prefix = 0
+    b = b1
+  end
+  while b ~= 0 do
+    prefix = prefix + 1
+    b = bit32.band(0x000000FF, bit32.lshift(b, 1))
+  end
+  return prefix
+end
+
 function vpn_settings_to_text(vpn_settings)
   local t = {}
   for k,v in pairs(vpn_settings) do
@@ -177,49 +205,59 @@ function handle_remote_cert_tls(t, option, value)
   end
   t[option] = value[2]
 end
+function handle_routes(t, option, value)
+  if not value[2] then io.stderr:write("Warning: invalid option 'route'\n") return end
+  value[3] = value[3] or "255.255.255.255"
+  value[4] = value[4] or "0.0.0.0"
+  value[5] = value[5] or "0"
+  if not t[option] then t[option] = {} end
+  t[option][#t[option]+1] = {value[2], value[3], value[4], value[5]}
+end
 
 -- global variables
 g_vpn_data = {}
+g_ip4_data = {}
 g_switches = {}
 
 vpn2nm = {
-  ["auth"]              = { nm_opt="auth",             func=handle_generic },
-  ["auth-user-pass"]    = { nm_opt="auth-user-pass",   func=set_bool },
-  ["ca"]                = { nm_opt="ca",               func=handle_path },
-  ["cert"]              = { nm_opt="cert",             func=handle_path },
-  ["cipher"]            = { nm_opt="cipher",           func=handle_generic },
-  ["keysize"]           = { nm_opt="keysize",          func=handle_generic },
-  ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive },
-  ["client"]            = { nm_opt="client",           func=set_bool },
-  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_yes },
-  ["float"]             = { nm_opt="float",            func=handle_yes },
+  ["auth"]              = { nm_opt="auth",             func=handle_generic,         tbl=g_vpn_data },
+  ["auth-user-pass"]    = { nm_opt="auth-user-pass",   func=set_bool,               tbl={} },
+  ["ca"]                = { nm_opt="ca",               func=handle_path,            tbl=g_vpn_data },
+  ["cert"]              = { nm_opt="cert",             func=handle_path,            tbl=g_vpn_data },
+  ["cipher"]            = { nm_opt="cipher",           func=handle_generic,         tbl=g_vpn_data },
+  ["keysize"]           = { nm_opt="keysize",          func=handle_generic,         tbl=g_vpn_data },
+  ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive, tbl=g_vpn_data },
+  ["client"]            = { nm_opt="client",           func=set_bool,               tbl={} },
+  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_yes,             tbl=g_vpn_data },
+  ["float"]             = { nm_opt="float",            func=handle_yes,             tbl=g_vpn_data },
 --  ["dev"]               = { nm_opt="tap-dev",        func=handle_dev_old },
-  ["dev"]               = { nm_opt="dev",              func=handle_generic },
-  ["dev-type"]          = { nm_opt="dev-type",         func=handle_dev_type },
-  ["fragment"]          = { nm_opt="fragment-size",    func=handle_generic },
-  ["ifconfig"]          = { nm_opt={"local-ip", "remote-ip"}, func=handle_ifconfig },
-  ["key"]               = { nm_opt="key",              func=handle_path },
-  ["mssfix"]            = { nm_opt="mssfix",           func=handle_yes },
-  ["ping"]              = { nm_opt="ping",             func=handle_number },
-  ["ping-exit"]         = { nm_opt="ping-exit",        func=handle_number },
-  ["ping-restart"]      = { nm_opt="ping-restart",     func=handle_number },
-  ["pkcs12"]            = { nm_opt="client",           func=handle_path },
-  ["port"]              = { nm_opt="port",             func=handle_port },
-  ["rport"]             = { nm_opt="port",             func=handle_port },
-  ["proto"]             = { nm_opt="proto-tcp",        func=handle_proto },
-  ["http-proxy"]        = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy },
-  ["http-proxy-retry"]  = { nm_opt="proxy-retry",      func=handle_yes },
-  ["socks-proxy"]       = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy },
-  ["socks-proxy-retry"] = { nm_opt="proxy-retry",      func=handle_yes },
-  ["remote"]            = { nm_opt="remote",           func=handle_remote },
-  ["remote-random"]     = { nm_opt="remote-random",    func=handle_yes },
-  ["reneg-sec"]         = { nm_opt="reneg-seconds",    func=handle_generic },
-  ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret },
-  ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret },
-  ["tls-client"]        = { nm_opt="client",           func=set_bool },
-  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_tls_remote },
-  ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls },
-  ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic }
+  ["dev"]               = { nm_opt="dev",              func=handle_generic,         tbl=g_vpn_data },
+  ["dev-type"]          = { nm_opt="dev-type",         func=handle_dev_type,        tbl=g_vpn_data },
+  ["fragment"]          = { nm_opt="fragment-size",    func=handle_generic,         tbl=g_vpn_data },
+  ["ifconfig"]          = { nm_opt={"local-ip", "remote-ip"}, func=handle_ifconfig, tbl=g_vpn_data },
+  ["key"]               = { nm_opt="key",              func=handle_path,            tbl=g_vpn_data },
+  ["mssfix"]            = { nm_opt="mssfix",           func=handle_yes,             tbl=g_vpn_data },
+  ["ping"]              = { nm_opt="ping",             func=handle_number,          tbl=g_vpn_data },
+  ["ping-exit"]         = { nm_opt="ping-exit",        func=handle_number,          tbl=g_vpn_data },
+  ["ping-restart"]      = { nm_opt="ping-restart",     func=handle_number,          tbl=g_vpn_data },
+  ["pkcs12"]            = { nm_opt="client",           func=handle_path,            tbl=g_vpn_data },
+  ["port"]              = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
+  ["rport"]             = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
+  ["proto"]             = { nm_opt="proto-tcp",        func=handle_proto,           tbl=g_vpn_data },
+  ["http-proxy"]        = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
+  ["http-proxy-retry"]  = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
+  ["socks-proxy"]       = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
+  ["socks-proxy-retry"] = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
+  ["remote"]            = { nm_opt="remote",           func=handle_remote,          tbl=g_vpn_data },
+  ["remote-random"]     = { nm_opt="remote-random",    func=handle_yes,             tbl=g_vpn_data },
+  ["reneg-sec"]         = { nm_opt="reneg-seconds",    func=handle_generic,         tbl=g_vpn_data },
+  ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret, tbl=g_vpn_data },
+  ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret,          tbl=g_vpn_data },
+  ["tls-client"]        = { nm_opt="client",           func=set_bool,               tbl={} },
+  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_tls_remote,      tbl=g_vpn_data },
+  ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls, tbl=g_vpn_data },
+  ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic,         tbl=g_vpn_data },
+  ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data }
 }
 
 ------------------------------------------------------------
@@ -249,7 +287,7 @@ function read_and_convert(in_file)
       local words = line_split(line)
       local val = vpn2nm[words[1]]
       if val then
-        if type(val) == "table" then val.func(g_vpn_data, val.nm_opt, words)
+        if type(val) == "table" then val.func(val.tbl, val.nm_opt, words)
         else print(string.format("debug: '%s' : val=%s"..val)) end
       end
     until true
@@ -297,6 +335,7 @@ autoconnect=no
 [ipv4]
 method=auto
 never-default=true
+__ROUTES_PLACEHOLDER__
 
 [ipv6]
 method=auto
@@ -306,8 +345,15 @@ service-type=org.freedesktop.NetworkManager.openvpn
 ]]
   connection = connection .. vpn_settings_to_text(g_vpn_data)
 
+  local routes = ""
+  for idx, r in ipairs(g_ip4_data["routes"] or {}) do
+    routes = routes .. string.format("routes%d=%s/%s,%s,%s\n",
+                                     idx, r[1], ip_mask_to_prefix(r[2]), r[3], r[4])
+  end
+
   connection = string.gsub(connection, "__NAME_PLACEHOLDER__", (out_file:gsub(".*/", "")))
   connection = string.gsub(connection, "__UUID_PLACEHOLDER__", uuid())
+  connection = string.gsub(connection, "__ROUTES_PLACEHOLDER__\n", routes)
 
   -- write output file
   local f, err = io.open(out_file, "w")
@@ -337,17 +383,29 @@ function import_vpn_to_NM(filename)
     local profile = NM.SimpleConnection.new()
 
     s_con = NM.SettingConnection.new()
+    s_ip4 = NM.SettingIP4Config.new()
     s_vpn = NM.SettingVpn.new()
     s_con[NM.SETTING_CONNECTION_ID] = name
     s_con[NM.SETTING_CONNECTION_UUID] = uuid()
+    s_ip4[NM.SETTING_IP_CONFIG_METHOD] = NM.SETTING_IP4_CONFIG_METHOD_AUTO
     s_con[NM.SETTING_CONNECTION_TYPE] = "vpn"
     s_vpn[NM.SETTING_VPN_SERVICE_TYPE] = "org.freedesktop.NetworkManager.openvpn"
+
+    -- add routes
+    local AF_INET = 2
+    for _, r in ipairs(g_ip4_data["routes"] or {}) do
+      route = NM.IPRoute.new(AF_INET, r[1], ip_mask_to_prefix(r[2]), r[3], r[4])
+      s_ip4:add_route(route)
+    end
+
+    -- add vpn data
     for k,v in pairs(g_vpn_data) do
       s_vpn:add_data_item(k, v)
     end
 
     profile:add_setting(s_con)
     profile:add_setting(s_vpn)
+    profile:add_setting(s_ip4)
     return profile
   end
 
@@ -412,6 +470,7 @@ if import_mode then
     else io.stderr:write(err_msg .. "\n") end
     -- reset global vars
     g_vpn_data = {}
+    g_ip4_data = {}
     g_switches = {}
   end
 else
