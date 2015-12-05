@@ -91,7 +91,7 @@ if [ "$NMTST_NO_VALGRIND" != "" ]; then
 	exit $?
 fi
 
-LOGFILE="valgrind-`echo "$TEST" | tr -cd '[:alpha:]-'`.log"
+LOGFILE="${TEST}.valgrind-log"
 
 export G_SLICE=always-malloc
 export G_DEBUG=gc-friendly
