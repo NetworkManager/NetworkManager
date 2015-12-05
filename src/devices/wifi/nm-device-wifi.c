@@ -2204,7 +2204,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		 * dialogs, just retry or fail, and if we never connect the user can
 		 * fix the password somewhere else.
 		 */
-		if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp))
+		if (nm_settings_connection_get_timestamp (nm_act_request_get_settings_connection (req), &timestamp))
 			new_secrets = !timestamp;
 
 		if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE)
