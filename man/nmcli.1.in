@@ -33,7 +33,7 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 .sp
 
 .IR OBJECT " := { "
-.BR general " | " networking " | " radio " | " connection " | " device " | " agent
+.BR general " | " networking " | " radio " | " connection " | " device " | " agent " | " monitor
 .RI " }"
 .sp
 
@@ -260,6 +260,16 @@ Show or set all previously mentioned radio switches at the same time.
 .RE
 
 .TP
+.B monitor \- monitor NetworkManager
+.br
+Use this object to observe NetworkManager activity. Watches for changes
+in connectivity state, devices or connection profiles.
+.br
+See also \fImonitor\fP command of \fIconnection\fP or \fIdevice\fP object
+to watch for changes in certain objects or object classes.
+.RE
+
+.TP
 .B connection \- start, stop, and manage network connections
 .sp
 NetworkManager stores all network configuration as \fIconnections\fP, which are
@@ -278,7 +288,7 @@ be saved as two connections which both apply to eth0, one for DHCP (called
 connected to the DHCP-enabled network the user would run "nmcli con up default"
 , and when connected to the static network the user would run "nmcli con up testing".
 .TP
-.SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | reload | load }
+.SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | monitor | reload | load }
 .sp
 .RS
 .TP
@@ -779,6 +789,19 @@ See \fBconnection show\fP above for the description of the <ID>-specifying keywo
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
+.B monitor [ id | uuid | path ] <ID> ...
+.br
+Monitor connection profile activity. This command prints a line whenever the
+specified connection changes. The connection to be monitored is identified by
+its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
+\fIuuid\fP or \fIpath\fP can be used.
+.br
+See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
+.br
+Monitors all connection profiles in case none is specified. The command terminates
+when all monitored connections disappear. If you want to monitor connection creation
+consider using the global monitor with \fInmcli monitor\fP command.
+.TP
 .B reload
 .br
 Reload all connection files from disk. \fINetworkManager\fP does not monitor
@@ -799,7 +822,7 @@ of its latest state.
 .B device - show and manage network interfaces
 .br
 .TP
-.SS \fICOMMAND\fP := { status | show | set | connect | disconnect | delete | wifi | lldp }
+.SS \fICOMMAND\fP := { status | show | set | connect | disconnect | delete | monitor | wifi | lldp }
 .sp
 .RS
 .TP
@@ -842,6 +865,15 @@ this only works for software devices like bonds, bridges, teams, etc.
 Hardware devices (like Ethernet) cannot be deleted by the command.
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
+.TP
+.B monitor [<ifname>] ...
+.br
+Monitor device activity. This command prints a line whenever the specified devices
+change state.
+.br
+Monitors all devices in case no interface is specified. The monitor terminates when
+all specified devices disappear. If you want to monitor device addition consider
+using the global monitor with \fInmcli monitor\fP command.
 .TP
 .B wifi [list [ifname <ifname>] [bssid <BSSID>]]
 .br

@@ -1562,14 +1562,16 @@ nm_device_get_product (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (!priv->product) {
+	if (!priv->product)
 		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_MODEL_FROM_DATABASE");
-		if (!priv->product) {
-			/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
-			priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
-		}
-		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
-	}
+
+	/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
+	if (!priv->product)
+		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
+
+	if (!priv->product)
+		priv->product = g_strdup ("");
+
 	return priv->product;
 }
 
@@ -1590,10 +1592,13 @@ nm_device_get_vendor (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (!priv->vendor) {
+
+	if (!priv->vendor)
 		priv->vendor = _get_udev_property (device, "ID_VENDOR_ENC", "ID_VENDOR_FROM_DATABASE");
-		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
-	}
+
+	if (!priv->vendor)
+		priv->vendor = g_strdup ("");
+
 	return priv->vendor;
 }
 

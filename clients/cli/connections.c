@@ -261,7 +261,7 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
-	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
+	              "COMMAND := { show | up | down | add | modify | edit | delete | monitor | reload | load }\n\n"
 	              "  show [--active] [--order <order spec>]\n"
 	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
@@ -272,6 +272,7 @@ usage (void)
 	              "  edit [id | uuid | path] <ID>\n"
 	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	              "  delete [id | uuid | path] <ID>\n\n"
+	              "  monitor [id | uuid | path] <ID> ...\n\n"
 	              "  reload\n\n"
 	              "  load <filename> [ <filename>... ]\n\n"));
 }
@@ -490,6 +491,18 @@ usage_connection_delete (void)
 }
 
 static void
+usage_connection_monitor (void)
+{
+	g_printerr (_("Usage: nmcli connection monitor { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> ...\n"
+	              "\n"
+	              "Monitor connection profile activity.\n"
+	              "This command prints a line whenever the specified connection changes.\n"
+	              "Monitors all connection profiles in case none is specified.\n\n"));
+}
+
+static void
 usage_connection_reload (void)
 {
 	g_printerr (_("Usage: nmcli connection reload { help }\n"
@@ -530,6 +543,8 @@ usage_connection_second_level (const char *cmd)
 		usage_connection_edit ();
 	else if (matches (cmd, "delete") == 0)
 		usage_connection_delete ();
+	else if (matches (cmd, "monitor") == 0)
+		usage_connection_monitor ();
 	else if (matches (cmd, "reload") == 0)
 		usage_connection_reload ();
 	else if (matches (cmd, "load") == 0)
@@ -1535,8 +1550,6 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 	char *profile_flds = NULL, *active_flds = NULL;
 	GPtrArray *invisibles, *sorted_cons;
 
-	nmc->should_wait = FALSE;
-
 	if (argc == 0) {
 		char *fields_str;
 		char *fields_all =    NMC_FIELDS_CON_SHOW_ALL;
@@ -2377,13 +2390,14 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	 * and we can follow activation progress.
 	 */
 	nmc->nowait_flag = (nmc->timeout == 0);
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 
 	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, pwds, activate_connection_cb, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."),
 		                 error ? error->message : _("unknown error"));
 		nmc->return_value = error ? error->code : NMC_RESULT_ERROR_CON_ACTIVATION;
 		g_clear_error (&error);
+		nmc->should_wait--;
 		goto error;
 	}
 
@@ -2391,10 +2405,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, _("preparing"));
 
-	g_free (line);
-	return nmc->return_value;
 error:
-	nmc->should_wait = FALSE;
 	g_free (line);
 	return nmc->return_value;
 }
@@ -2549,7 +2560,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	queue = g_slist_reverse (queue);
 
 	if (nmc->timeout > 0) {
-		nmc->should_wait = TRUE;
+		nmc->should_wait++;
 
 		info = g_slice_new0 (ConnectionCbInfo);
 		info->nmc = nmc;
@@ -6586,7 +6597,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 
 	info = g_malloc0 (sizeof (AddConnectionInfo));
 	info->nmc = nmc;
@@ -6610,7 +6621,6 @@ error:
 	g_free (type_ask);
 	g_free (ifname_ask);
 
-	nmc->should_wait = FALSE;
 	return nmc->return_value;
 }
 
@@ -8017,7 +8027,7 @@ property_edit_submenu (NmCli *nmc,
 	/* Set global variable for use in TAB completion */
 	nmc_tab_completion.property = prop_name;
 
-	prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	prompt = nmc_colorize (nmc, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
 	                       "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
@@ -8345,13 +8355,14 @@ typedef	struct {
 } NmcEditorMenuContext;
 
 static void
-menu_switch_to_level0 (NmcEditorMenuContext *menu_ctx,
+menu_switch_to_level0 (NmCli *nmc,
+                       NmcEditorMenuContext *menu_ctx,
                        const char *prompt,
                        NmcTermColor prompt_color)
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (prompt_color, NMC_TERM_FORMAT_NORMAL, "%s", prompt);
+	menu_ctx->main_prompt = nmc_colorize (nmc, prompt_color, NMC_TERM_FORMAT_NORMAL, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -8360,14 +8371,15 @@ menu_switch_to_level0 (NmcEditorMenuContext *menu_ctx,
 }
 
 static void
-menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
+menu_switch_to_level1 (NmCli *nmc,
+                       NmcEditorMenuContext *menu_ctx,
                        NMSetting *setting,
                        const char *setting_name,
                        NmcTermColor prompt_color)
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (prompt_color, NMC_TERM_FORMAT_NORMAL,
+	menu_ctx->main_prompt = nmc_colorize (nmc, prompt_color, NMC_TERM_FORMAT_NORMAL,
 	                                      "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
@@ -8402,7 +8414,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
-	menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	menu_ctx.main_prompt = nmc_colorize (nmc, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
 	                                     BASE_PROMPT);
 	menu_ctx.curr_setting = NULL;
 	menu_ctx.valid_props = NULL;
@@ -8561,7 +8573,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				nmc_tab_completion.setting = setting;
 
 				/* Switch to level 1 */
-				menu_switch_to_level1 (&menu_ctx, setting, setting_name, nmc->editor_prompt_color);
+				menu_switch_to_level1 (nmc, &menu_ctx, setting, setting_name, nmc->editor_prompt_color);
 
 				if (!cmd_arg_s) {
 					g_print (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
@@ -8635,7 +8647,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					connection_remove_setting (connection, ss);
 					if (ss == menu_ctx.curr_setting) {
 						/* If we removed the setting we are in, go up */
-						menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+						menu_switch_to_level0 (nmc, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
 						nmc_tab_completion.setting = NULL;  /* for TAB completion */
 					}
 				} else {
@@ -8658,7 +8670,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
-								menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+								menu_switch_to_level0 (nmc, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
 								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
 						} else
@@ -8957,7 +8969,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			}
 
 			nmc->nowait_flag = FALSE;
-			nmc->should_wait = TRUE;
+			nmc->should_wait++;
 			nmc->print_output = NMC_PRINT_PRETTY;
 			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp, NULL,
 			                              activate_connection_editor_cb, &tmp_err)) {
@@ -9000,7 +9012,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_BACK:
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
-				menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+				menu_switch_to_level0 (nmc, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
 				nmc_tab_completion.setting = NULL;  /* for TAB completion */
 			}
 			break;
@@ -9046,10 +9058,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc->editor_prompt_color = color;
 					g_free (menu_ctx.main_prompt);
 					if (menu_ctx.level == 0)
-						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						menu_ctx.main_prompt = nmc_colorize (nmc, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
 						                                     BASE_PROMPT);
 					else
-						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						menu_ctx.main_prompt = nmc_colorize (nmc, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
 						                                     "nmcli %s> ",
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
 				}
@@ -9431,14 +9443,14 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		g_object_unref (connection);
 	g_free (nmc_tab_completion.con_type);
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 	return nmc->return_value;
 
 error:
 	g_assert (!connection);
 	g_free (type_ask);
 
-	nmc->should_wait = FALSE;
+	nmc->should_wait++;
 	return nmc->return_value;
 }
 
@@ -9481,7 +9493,6 @@ do_connection_modify (NmCli *nmc,
 	GError *error = NULL;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
-	nmc->should_wait = FALSE;
 
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No arguments provided."));
@@ -9536,7 +9547,7 @@ do_connection_modify (NmCli *nmc,
 
 	update_connection (!temporary, rc, modify_connection_cb, nmc);
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 finish:
 	return nmc->return_value;
 }
@@ -9783,7 +9794,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	info->timeout_id = g_timeout_add_seconds (nmc->timeout, connection_op_timeout_cb, info);
 
 	nmc->nowait_flag = (nmc->timeout == 0);
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 
 	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed_cb), info);
@@ -9805,13 +9816,108 @@ finish:
 	return nmc->return_value;
 }
 
+static void
+connection_changed (NMConnection *connection, NmCli *nmc)
+{
+	g_print (_("%s: connection profile changed\n"), nm_connection_get_id (connection));
+}
+
+static void
+connection_watch (NmCli *nmc, NMConnection *connection)
+{
+	nmc->should_wait++;
+	g_signal_connect (connection, NM_CONNECTION_CHANGED, G_CALLBACK (connection_changed), nmc);
+}
+
+static void
+connection_unwatch (NmCli *nmc, NMConnection *connection)
+{
+	if (g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_changed), nmc))
+		nmc->should_wait--;
+
+	/* Terminate if all the watched connections disappeared. */
+	if (!nmc->should_wait)
+		quit ();
+}
+
+static void
+connection_added (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
+{
+	NMConnection *connection = NM_CONNECTION (con);
+
+	g_print (_("%s: connection profile created\n"), nm_connection_get_id (connection));
+	connection_watch (nmc, connection);
+}
+
+static void
+connection_removed (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
+{
+	NMConnection *connection = NM_CONNECTION (con);
+
+	g_print (_("%s: connection profile removed\n"), nm_connection_get_id (connection));
+	connection_unwatch (nmc, connection);
+}
+
+static NMCResultCode
+do_connection_monitor (NmCli *nmc, int argc, char **argv)
+{
+	if (argc == 0) {
+		/* No connections specified. Monitor all. */
+		int i;
+
+		nmc->connections = nm_client_get_connections (nmc->client);
+		for (i = 0; i < nmc->connections->len; i++)
+			connection_watch (nmc, g_ptr_array_index (nmc->connections, i));
+
+		/* We'll watch the connection additions too, never exit. */
+		nmc->should_wait++;
+		g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_ADDED, G_CALLBACK (connection_added), nmc);
+	} else {
+		/* Look up the specified connections and watch them. */
+		NMConnection *connection;
+		char **arg_ptr = argv;
+		int arg_num = argc;
+		int pos = 0;
+
+		do {
+			const char *selector = NULL;
+
+			if (   strcmp (*arg_ptr, "id") == 0
+			    || strcmp (*arg_ptr, "uuid") == 0
+			    || strcmp (*arg_ptr, "path") == 0) {
+				selector = *arg_ptr;
+				if (next_arg (&arg_num, &arg_ptr) != 0) {
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
+					return NMC_RESULT_ERROR_USER_INPUT;
+				}
+			}
+
+			connection = nmc_find_connection (nmc->connections, selector, *arg_ptr, &pos);
+			if (connection) {
+				connection_watch (nmc, connection);
+			} else {
+				g_printerr (_("Error: unknown connection '%s'\n"), *arg_ptr);
+				g_string_printf (nmc->return_text, _("Error: not all connections found."));
+				return NMC_RESULT_ERROR_NOT_FOUND;
+			}
+
+			/* Take next argument (if there's no other connection of the same name) */
+			if (!pos)
+				next_arg (&arg_num, &arg_ptr);
+		} while (arg_num > 0);
+	}
+
+	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED, G_CALLBACK (connection_removed), nmc);
+
+	return NMC_RESULT_SUCCESS;
+}
+
 static NMCResultCode
 do_connection_reload (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
-	nmc->should_wait = FALSE;
 
 	if (!nm_client_reload_connections (nmc->client, NULL, &error)) {
 		g_string_printf (nmc->return_text, _("Error: failed to reload connections: %s."),
@@ -9831,7 +9937,6 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	int i;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
-	nmc->should_wait = FALSE;
 
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No connection specified."));
@@ -10113,7 +10218,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		} else if (matches(*argv, "add") == 0) {
 			nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "edit") == 0) {
-			nmc->should_wait = TRUE;
+			nmc->should_wait++;
 			editor_thread_data.nmc = nmc;
 			editor_thread_data.argc = argc - 1;
 			editor_thread_data.argv = argv + 1;
@@ -10121,6 +10226,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 			g_thread_unref (editor_thread);
 		} else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
+		} else if (matches(*argv, "monitor") == 0) {
+			nmc->return_value = do_connection_monitor (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "reload") == 0) {
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "load") == 0) {
@@ -10157,4 +10264,10 @@ opt_error:
 	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	g_error_free (error);
 	return nmc->return_value;
+}
+
+void
+monitor_connections (NmCli *nmc)
+{
+	do_connection_monitor (nmc, 0, NULL);
 }

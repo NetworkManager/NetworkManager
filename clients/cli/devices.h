@@ -24,4 +24,6 @@
 
 NMCResultCode do_devices (NmCli *nmc, int argc, char **argv);
 
+void monitor_devices (NmCli *nmc);
+
 #endif /* NMC_DEVICES_H */
