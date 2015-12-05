@@ -776,7 +776,7 @@ the connection.id (\fI<new name>\fP) and connection.uuid (generated)
 properties.
 .br
 The new connection profile will be saved as persistent unless \fI--temporary\fP
-option is specified, in which case the new profile won't outlive NetworkManager
+option is specified, in which case the new profile won't exist after NetworkManager
 restart.
 .TP
 .B delete [ id | uuid | path ] <ID> ...
