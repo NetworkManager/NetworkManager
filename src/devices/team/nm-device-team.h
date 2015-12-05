@@ -32,8 +32,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_TEAM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_TEAM))
 #define NM_DEVICE_TEAM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_TEAM, NMDeviceTeamClass))
 
-#define NM_DEVICE_TEAM_SLAVES "slaves"
-
 typedef NMDevice NMDeviceTeam;
 typedef NMDeviceClass NMDeviceTeamClass;
 

@@ -46,13 +46,6 @@ typedef struct {
 	int dummy;
 } NMDeviceBondPrivate;
 
-enum {
-	PROP_0,
-	PROP_SLAVES,
-
-	LAST_PROP
-};
-
 /******************************************************************/
 
 static NMDeviceCapabilities
@@ -415,7 +408,6 @@ enslave_slave (NMDevice *device,
 	} else
 		_LOGI (LOGD_BOND, "bond slave %s was enslaved", slave_iface);
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
 	return TRUE;
 }
 
@@ -439,20 +431,16 @@ release_slave (NMDevice *device,
 			_LOGW (LOGD_BOND, "failed to release bond slave %s",
 			       nm_device_get_ip_iface (slave));
 		}
-	} else {
-		_LOGI (LOGD_BOND, "bond slave %s was released",
-		             nm_device_get_ip_iface (slave));
-	}
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
-
-	if (configure) {
 		/* Kernel bonding code "closes" the slave when releasing it, (which clears
 		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
 		 * other state is noticed by the now-released slave.
 		 */
 		if (!nm_device_bring_up (slave, TRUE, &no_firmware))
 			_LOGW (LOGD_BOND, "released bond slave could not be brought up.");
+	} else {
+		_LOGI (LOGD_BOND, "bond slave %s was released",
+		       nm_device_get_ip_iface (slave));
 	}
 }
 
@@ -489,36 +477,6 @@ nm_device_bond_init (NMDeviceBond * self)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	GSList *list;
-
-	switch (prop_id) {
-		break;
-	case PROP_SLAVES:
-		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		nm_utils_g_value_set_object_path_array (value, list, NULL, NULL);
-		g_slist_free (list);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -527,10 +485,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDeviceBondPrivate));
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BOND_SETTING_NAME, NM_LINK_TYPE_BOND)
-
-	/* virtual methods */
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
@@ -546,14 +500,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
-
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_BOND_SLAVES, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_BOND_SKELETON,

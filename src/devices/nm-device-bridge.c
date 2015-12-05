@@ -44,13 +44,6 @@ typedef struct {
 	int dummy;
 } NMDeviceBridgePrivate;
 
-enum {
-	PROP_0,
-	PROP_SLAVES,
-
-	LAST_PROP
-};
-
 /******************************************************************/
 
 static NMDeviceCapabilities
@@ -351,8 +344,6 @@ enslave_slave (NMDevice *device,
 		       nm_device_get_ip_iface (slave));
 	}
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
-
 	return TRUE;
 }
 
@@ -380,8 +371,6 @@ release_slave (NMDevice *device,
 		_LOGI (LOGD_BRIDGE, "bridge port %s was detached",
 		       nm_device_get_ip_iface (slave));
 	}
-
-	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
 }
 
 static gboolean
@@ -437,36 +426,6 @@ nm_device_bridge_init (NMDeviceBridge * self)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	GSList *list;
-
-	switch (prop_id) {
-		break;
-	case PROP_SLAVES:
-		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		nm_utils_g_value_set_object_path_array (value, list, NULL, NULL);
-		g_slist_free (list);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -475,10 +434,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDeviceBridgePrivate));
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE)
-
-	/* virtual methods */
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
@@ -493,14 +448,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
-
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_BRIDGE_SLAVES, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_BRIDGE_SKELETON,
