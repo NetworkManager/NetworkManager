@@ -246,6 +246,11 @@ nm_vpn_editor_plugin_import (NMVpnEditorPlugin *plugin,
 		g_return_val_if_fail (NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin)->import_from_file != NULL, NULL);
 		return NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin)->import_from_file (plugin, path, error);
 	}
+
+	g_set_error (error,
+	             NM_VPN_PLUGIN_ERROR,
+	             NM_VPN_PLUGIN_ERROR_FAILED,
+	             _("the plugin does not support import capability"));
 	return NULL;
 }
 
@@ -261,6 +266,11 @@ nm_vpn_editor_plugin_export (NMVpnEditorPlugin *plugin,
 		g_return_val_if_fail (NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin)->export_to_file != NULL, FALSE);
 		return NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin)->export_to_file (plugin, path, connection, error);
 	}
+
+	g_set_error (error,
+	             NM_VPN_PLUGIN_ERROR,
+	             NM_VPN_PLUGIN_ERROR_FAILED,
+	             _("the plugin does not support export capability"));
 	return FALSE;
 }
 
