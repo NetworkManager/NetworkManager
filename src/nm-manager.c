@@ -5623,7 +5623,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
+		g_signal_new (NM_MANAGER_STATE_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, state_changed),

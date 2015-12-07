@@ -60,6 +60,7 @@
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
 #define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
 #define NM_MANAGER_CONFIGURE_QUIT            "configure-quit"
+#define NM_MANAGER_STATE_CHANGED             "state-changed"
 
 
 struct _NMManager {

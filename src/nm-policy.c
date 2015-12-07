@@ -1779,7 +1779,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 
 	priv->resolver = g_resolver_get_default ();
 
-	_connect_manager_signal (policy, "state-changed", global_state_changed);
+	_connect_manager_signal (policy, NM_MANAGER_STATE_CHANGED, global_state_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_NETWORKING_ENABLED, sleeping_changed);
