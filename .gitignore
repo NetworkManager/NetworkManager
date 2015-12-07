@@ -139,9 +139,6 @@ test-*.trs
 
 /include/nm-version-macros.h
 
-/initscript/Slackware/rc.networkmanager
-/initscript/*/[Nn]etwork[Mm]anager
-
 /introspection/all.xml
 /introspection/nmdbus-*.c
 /introspection/nmdbus-*.h
@@ -276,5 +273,7 @@ test-*.trs
 # but they were on older versions. Thus keep ignoring them
 # otherwise when switching branches these untracked files show
 # up.
+/initscript/Slackware/rc.networkmanager
+/initscript/*/[Nn]etwork[Mm]anager
 /src/settings/plugins/ifnet/tests/check_ifnet
 

@@ -1061,13 +1061,6 @@ clients/Makefile
 clients/cli/Makefile
 clients/tui/Makefile
 clients/tui/newt/Makefile
-initscript/RedHat/NetworkManager
-initscript/Debian/NetworkManager
-initscript/Slackware/rc.networkmanager
-initscript/SUSE/networkmanager
-initscript/Arch/networkmanager
-initscript/Mandriva/networkmanager
-initscript/linexa/networkmanager
 introspection/Makefile
 introspection/all.xml
 man/Makefile
