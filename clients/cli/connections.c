@@ -10075,7 +10075,7 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 			else
 				g_printerr (_("Warning: 'file' already specified, ignoring extra one.\n"));
 		} else {
-			g_string_printf (nmc->return_text, _("Unknown parameter: %s\n"), *argv);
+			g_string_printf (nmc->return_text, _("Unknown parameter: %s"), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto finish;
 		}
