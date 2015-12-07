@@ -64,11 +64,26 @@ reload_tun_properties (NMDeviceTun *self)
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 	GObject *object = G_OBJECT (self);
 	NMPlatformTunProperties props;
+	int ifindex;
 
-	if (!nm_platform_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), &props)) {
-		_LOGD (LOGD_HW, "could not read tun properties");
-		return;
-	}
+	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
+	if (ifindex > 0) {
+		if (!nm_platform_tun_get_properties (NM_PLATFORM_GET, ifindex, &props)) {
+			_LOGD (LOGD_DEVICE, "tun-properties: cannot loading tun properties from platform for ifindex %d", ifindex);
+			ifindex = 0;
+		} else if (g_strcmp0 (priv->mode, props.mode) != 0) {
+			/* if the mode differs, we ignore what we loaded. A NMDeviceTun cannot
+			 * change the mode after construction. */
+			_LOGD (LOGD_DEVICE, "tun-properties: loading tun properties yielded tun-mode %s%s%s, but %s%s%s expected (ifindex %d)",
+			       NM_PRINT_FMT_QUOTE_STRING (props.mode),
+			       NM_PRINT_FMT_QUOTE_STRING (priv->mode),
+			       ifindex);
+			ifindex = 0;
+		}
+	} else
+		_LOGD (LOGD_DEVICE, "tun-properties: ignore loading properties due to missing ifindex");
+	if (ifindex <= 0)
+		memset (&props, 0, sizeof (props));
 
 	g_object_freeze_notify (object);
 
@@ -83,7 +98,6 @@ reload_tun_properties (NMDeviceTun *self)
 	if (priv->props.multi_queue != props.multi_queue)
 		g_object_notify (object, NM_DEVICE_TUN_MULTI_QUEUE);
 
-	priv->mode = props.mode;
 	memcpy (&priv->props, &props, sizeof (NMPlatformTunProperties));
 
 	g_object_thaw_notify (object);
