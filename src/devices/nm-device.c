@@ -442,7 +442,7 @@ state_to_string (NMDeviceState state)
 	return queued_state_to_string (state) + strlen (QUEUED_PREFIX);
 }
 
-static const char *reason_table[] = {
+NM_UTILS_STRING_LOOKUP_TABLE_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason, NULL,
 	[NM_DEVICE_STATE_REASON_UNKNOWN]                  = "unknown",
 	[NM_DEVICE_STATE_REASON_NONE]                     = "none",
 	[NM_DEVICE_STATE_REASON_NOW_MANAGED]              = "managed",
@@ -506,15 +506,10 @@ static const char *reason_table[] = {
 	[NM_DEVICE_STATE_REASON_NEW_ACTIVATION]           = "new-activation",
 	[NM_DEVICE_STATE_REASON_PARENT_CHANGED]           = "parent-changed",
 	[NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED]   = "parent-managed-changed",
-};
+);
 
-static const char *
-reason_to_string (NMDeviceStateReason reason)
-{
-	if ((gsize) reason < G_N_ELEMENTS (reason_table))
-		return reason_table[reason];
-	return reason_table[NM_DEVICE_STATE_REASON_UNKNOWN];
-}
+#define reason_to_string(reason) \
+	NM_UTILS_STRING_LOOKUP_TABLE (_reason_to_string, reason)
 
 /***********************************************************/
 
