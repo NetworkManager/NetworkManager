@@ -3019,9 +3019,14 @@ nm_device_can_assume_active_connection (NMDevice *self)
 }
 
 static gboolean
-nm_device_emit_recheck_assume (gpointer self)
+nm_device_emit_recheck_assume (gpointer user_data)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->recheck_assume_id = 0;
 	if (!nm_device_get_act_request (self)) {
@@ -6389,10 +6394,14 @@ send_arps (NMDevice *self, const char *mode_arg)
 }
 
 static gboolean
-arp_announce_round2 (gpointer self)
+arp_announce_round2 (gpointer user_data)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
 
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	priv->arp_round2_id = 0;
 
 	if (   priv->state >= NM_DEVICE_STATE_IP_CONFIG
