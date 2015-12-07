@@ -10146,6 +10146,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	const char *type = NULL;
 	NMVpnEditorPlugin *plugin;
 	GError *error = NULL;
+	char tmpfile[] = "/tmp/nmcli-export-temp-XXXXXX";
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -10214,7 +10215,6 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 		path = out_name;
 	else {
 		int fd;
-		char tmpfile[] = "/tmp/nmcli-export-temp-XXXXXX";
 		fd = g_mkstemp (tmpfile);
 		if (fd == -1) {
 			g_string_printf (nmc->return_text, _("Error: failed to create temporary file %s."), tmpfile);
