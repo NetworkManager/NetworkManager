@@ -341,6 +341,17 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 		_buf; \
 	})
 
+#define nm_sprintf_bufa(n_elements, format, ...) \
+	({ \
+		char *_buf; \
+		\
+		G_STATIC_ASSERT (sizeof (char[MAX ((n_elements), 1)]) == (n_elements)); \
+		_buf = g_alloca (n_elements); \
+		g_snprintf (_buf, n_elements, \
+		            ""format"", __VA_ARGS__); \
+		_buf; \
+	})
+
 /*****************************************************************************/
 
 #endif /* __NM_MACROS_INTERNAL_H__ */
