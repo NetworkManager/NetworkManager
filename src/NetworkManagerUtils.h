@@ -229,6 +229,42 @@ const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
+#define _NM_UTILS_STRING_LOOKUP_TABLE_DEFINE(scope, fcn_name, lookup_type, unknown_val, ...) \
+scope const char * \
+fcn_name (lookup_type idx) \
+{ \
+	static const char *const descs[] = { \
+		__VA_ARGS__ \
+	}; \
+	if ((gssize) idx >= 0 && idx < G_N_ELEMENTS (descs)) \
+		return descs[idx]; \
+	return unknown_val; \
+}
+
+#define NM_UTILS_STRING_LOOKUP_TABLE_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_STRING_LOOKUP_TABLE_DEFINE (, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+#define NM_UTILS_STRING_LOOKUP_TABLE_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_STRING_LOOKUP_TABLE_DEFINE (static, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+
+/* Call the string-lookup-table function @fcn_name. If the function returns
+ * %NULL, the numeric index is converted to string using a alloca() buffer.
+ * Beware: this macro uses alloca(). */
+#define NM_UTILS_STRING_LOOKUP_TABLE(fcn_name, idx) \
+	({ \
+		typeof (idx) _idx = (idx); \
+		const char *_s; \
+		\
+		_s = fcn_name (_idx); \
+		if (!_s) { \
+			_s = g_alloca (30); \
+			\
+			g_snprintf ((char *) _s, 30, "(%lld)", (long long) _idx); \
+		} \
+		_s; \
+	})
+
+/*****************************************************************************/
+
 void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) __attribute__((__format__ (__printf__, 3, 4)));
 void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
 void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
