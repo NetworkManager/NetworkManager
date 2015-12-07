@@ -10204,7 +10204,8 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	/* Export VPN configuration */
 	plugin = nm_vpn_get_plugin_by_service (type, &error);
 	if (!plugin) {
-		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin."));
+		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
+		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto finish;
 	}
