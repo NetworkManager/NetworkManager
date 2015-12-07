@@ -1198,8 +1198,11 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 	g_free (prompt);
 
 	/* Restore original terminal settings */
-	if (!echo_on)
+	if (!echo_on) {
 		tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
+		/* New line - setting ECHONL | ICANON did not help */
+		fprintf (stdout, "\n");
+	}
 
 	return str;
 }
