@@ -1004,12 +1004,12 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
 	if (nm_ppp_manager_start (priv->ppp_manager, req, nm_setting_pppoe_get_username (s_pppoe), 30, &err)) {
-		g_signal_connect (priv->ppp_manager, "state-changed",
-					   G_CALLBACK (ppp_state_changed),
-					   self);
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_STATE_CHANGED,
+		                  G_CALLBACK (ppp_state_changed),
+		                  self);
 		g_signal_connect (priv->ppp_manager, "ip4-config",
-					   G_CALLBACK (ppp_ip4_config),
-					   self);
+		                  G_CALLBACK (ppp_ip4_config),
+		                  self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		_LOGW (LOGD_DEVICE, "PPPoE failed to start: %s", err->message);

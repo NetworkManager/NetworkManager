@@ -531,7 +531,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 
 	priv->ppp_manager = nm_ppp_manager_new (priv->data_port);
 	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, &error)) {
-		g_signal_connect (priv->ppp_manager, "state-changed",
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_STATE_CHANGED,
 		                  G_CALLBACK (ppp_state_changed),
 		                  self);
 		g_signal_connect (priv->ppp_manager, "ip4-config",

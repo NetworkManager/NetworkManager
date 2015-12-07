@@ -41,6 +41,9 @@
 
 #define NM_PPP_MANAGER_PARENT_IFACE "parent-iface"
 
+/* signals */
+#define NM_PPP_MANAGER_STATE_CHANGED "state-changed"
+
 typedef struct {
 	NMExportedObject parent;
 } NMPPPManager;
