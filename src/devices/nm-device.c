@@ -2203,7 +2203,7 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 		 * because slave_priv->is_enslaved is not true, thus the value
 		 * didn't change yet. */
 	} else
-		g_return_if_fail (slave_priv->master == slave);
+		g_return_if_fail (slave_priv->master == self);
 
 	nm_device_queue_recheck_assume (self);
 }
