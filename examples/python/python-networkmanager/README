@@ -1,0 +1,6 @@
+There is a client library in Python, named python-networkmanager.
+
+This library is developed outside of the core NetworkManager project.
+
+See https://github.com/seveas/python-networkmanager
+and https://github.com/seveas/python-networkmanager/tree/master/examples

@@ -1,2 +1,2 @@
-SUBDIRS= dbus gi
+SUBDIRS= dbus gi python-networkmanager
 

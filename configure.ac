@@ -1087,6 +1087,7 @@ examples/shell/Makefile
 examples/python/Makefile
 examples/python/dbus/Makefile
 examples/python/gi/Makefile
+examples/python/python-networkmanager/Makefile
 examples/ruby/Makefile
 examples/lua/Makefile
 examples/lua/lgi/Makefile
