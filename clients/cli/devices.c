@@ -2762,7 +2762,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
 		/* Ask for missing password when one is expected and '--ask' is used */
 		if (!password && nmc->ask)
-			password = passwd_ask = nmc_readline (_("Password: "));
+			password = passwd_ask = nmc_readline_echo (nmc->show_secrets, _("Password: "));
 
 		if (password) {
 			if (!connection)
