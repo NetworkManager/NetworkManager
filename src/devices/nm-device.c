@@ -2191,7 +2191,8 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 		info = g_slice_new0 (SlaveInfo);
 		info->slave = g_object_ref (slave);
 		info->configure = configure;
-		info->watch_id = g_signal_connect (slave, "state-changed",
+		info->watch_id = g_signal_connect (slave,
+		                                   NM_DEVICE_STATE_CHANGED,
 		                                   G_CALLBACK (slave_state_changed), self);
 		priv->slaves = g_slist_append (priv->slaves, info);
 		slave_priv->master = g_object_ref (self);
@@ -9543,7 +9544,7 @@ _set_state_full (NMDevice *self,
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE_REASON);
-	g_signal_emit_by_name (self, "state-changed", state, old_state, reason);
+	g_signal_emit_by_name (self, NM_DEVICE_STATE_CHANGED, state, old_state, reason);
 
 	/* Post-process the event after internal notification */
 
@@ -10778,7 +10779,7 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	/* Signals */
 	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
+		g_signal_new (NM_DEVICE_STATE_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),

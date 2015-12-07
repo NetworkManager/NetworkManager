@@ -339,7 +339,7 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	_LOGI (LOGD_OLPC, "found companion WiFi device %s",
 	       nm_device_get_iface (other));
 
-	g_signal_connect (G_OBJECT (other), "state-changed",
+	g_signal_connect (G_OBJECT (other), NM_DEVICE_STATE_CHANGED,
 	                  G_CALLBACK (companion_state_changed_cb), self);
 
 	g_signal_connect (G_OBJECT (other), "notify::scanning",

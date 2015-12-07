@@ -1788,7 +1788,7 @@ add_device (NMManager *self, NMDevice *device)
 
 	priv->devices = g_slist_append (priv->devices, g_object_ref (device));
 
-	g_signal_connect (device, "state-changed",
+	g_signal_connect (device, NM_DEVICE_STATE_CHANGED,
 	                  G_CALLBACK (manager_device_state_changed),
 	                  self);
 

@@ -1370,7 +1370,7 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 
 	/* Connect state-changed with _after, so that the handler is invoked after other handlers. */
-	_connect_device_signal (policy, device, "state-changed", device_state_changed, TRUE);
+	_connect_device_signal (policy, device, NM_DEVICE_STATE_CHANGED, device_state_changed, TRUE);
 	_connect_device_signal (policy, device, NM_DEVICE_IP4_CONFIG_CHANGED, device_ip4_config_changed, FALSE);
 	_connect_device_signal (policy, device, NM_DEVICE_IP6_CONFIG_CHANGED, device_ip6_config_changed, FALSE);
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_AUTOCONNECT, device_autoconnect_changed, FALSE);

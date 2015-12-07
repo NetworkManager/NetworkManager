@@ -504,7 +504,7 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 
 		priv->device = g_object_ref (device);
 
-		g_signal_connect (device, "state-changed",
+		g_signal_connect (device, NM_DEVICE_STATE_CHANGED,
 		                  G_CALLBACK (device_state_changed), self);
 		g_signal_connect (device, "notify::master",
 		                  G_CALLBACK (device_master_changed), self);

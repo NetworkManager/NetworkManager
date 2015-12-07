@@ -80,6 +80,7 @@
 #define NM_DEVICE_REMOVED               "removed"
 #define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
 #define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
+#define NM_DEVICE_STATE_CHANGED         "state-changed"
 #define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
 
 G_BEGIN_DECLS

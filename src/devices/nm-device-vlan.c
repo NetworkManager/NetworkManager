@@ -126,7 +126,7 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 	if (parent) {
 		priv->parent = g_object_ref (parent);
 		priv->parent_state_id = g_signal_connect (priv->parent,
-		                                          "state-changed",
+		                                          NM_DEVICE_STATE_CHANGED,
 		                                          G_CALLBACK (parent_state_changed),
 		                                          device);
 
