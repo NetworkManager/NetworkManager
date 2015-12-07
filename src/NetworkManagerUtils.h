@@ -196,6 +196,8 @@ extern char _nm_utils_to_string_buffer[2096];
 void     nm_utils_to_string_buffer_init (char **buf, gsize *len);
 gboolean nm_utils_to_string_buffer_init_null (gconstpointer obj, char **buf, gsize *len);
 
+/*****************************************************************************/
+
 typedef struct {
 	unsigned flag;
 	const char *name;
@@ -203,8 +205,8 @@ typedef struct {
 
 #define NM_UTILS_FLAGS2STR(f, n) { .flag = f, .name = ""n, }
 
-#define NM_UTILS_FLAGS2STR_DEFINE(fcn_name, flags_type, ...) \
-const char * \
+#define _NM_UTILS_FLAGS2STR_DEFINE(scope, fcn_name, flags_type, ...) \
+scope const char * \
 fcn_name (flags_type flags, char *buf, gsize len) \
 { \
 	static const NMUtilsFlags2StrDesc descs[] = { \
@@ -214,15 +216,18 @@ fcn_name (flags_type flags, char *buf, gsize len) \
 	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len); \
 };
 
+#define NM_UTILS_FLAGS2STR_DEFINE(fcn_name, flags_type, ...) \
+	_NM_UTILS_FLAGS2STR_DEFINE (, fcn_name, flags_type, __VA_ARGS__)
 #define NM_UTILS_FLAGS2STR_DEFINE_STATIC(fcn_name, flags_type, ...) \
-static \
-NM_UTILS_FLAGS2STR_DEFINE (fcn_name, flags_type, __VA_ARGS__)
+	_NM_UTILS_FLAGS2STR_DEFINE (static, fcn_name, flags_type, __VA_ARGS__)
 
 const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
                                 gsize n_descs,
                                 unsigned flags,
                                 char *buf,
                                 gsize len);
+
+/*****************************************************************************/
 
 void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) __attribute__((__format__ (__printf__, 3, 4)));
 void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
