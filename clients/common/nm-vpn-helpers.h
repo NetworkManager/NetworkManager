@@ -25,7 +25,7 @@
 
 GSList *nm_vpn_get_plugins (void);
 
-NMVpnEditorPlugin *nm_vpn_get_plugin_by_service (const char *service);
+NMVpnEditorPlugin *nm_vpn_get_plugin_by_service (const char *service, GError **error);
 
 gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
 
