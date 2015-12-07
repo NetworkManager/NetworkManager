@@ -941,8 +941,11 @@ nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray
 gboolean
 nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 {
-	return    nm_route_manager_ip4_route_sync (self, ifindex, NULL, FALSE, TRUE)
-	       && nm_route_manager_ip6_route_sync (self, ifindex, NULL, FALSE, TRUE);
+	bool success = TRUE;
+
+	success &= (bool) nm_route_manager_ip4_route_sync (self, ifindex, NULL, FALSE, TRUE);
+	success &= (bool) nm_route_manager_ip6_route_sync (self, ifindex, NULL, FALSE, TRUE);
+	return success;
 }
 
 /*********************************************************************************************/
