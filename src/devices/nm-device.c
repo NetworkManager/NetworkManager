@@ -78,7 +78,7 @@ static void nm_device_start_ip_check (NMDevice *self);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
+#define NM_DEVICE_GET_PRIVATE(o) ((o)->priv)
 
 enum {
 	STATE_CHANGED,
@@ -190,7 +190,7 @@ typedef struct {
 	int ifindex;
 } DeleteOnDeactivateData;
 
-typedef struct {
+typedef struct _NMDevicePrivate {
 	gboolean in_state_changed;
 	gboolean initialized;
 	gboolean platform_link_initialized;
@@ -10033,7 +10033,11 @@ _activation_func_to_string (ActivationHandleFunc func)
 static void
 nm_device_init (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DEVICE, NMDevicePrivate);
+
+	self->priv = priv;
 
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;

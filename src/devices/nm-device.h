@@ -110,8 +110,13 @@ typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_CON_AVAILABLE_ALL - 1) << 1) - 1),
 } NMDeviceCheckConAvailableFlags;
 
+struct _NMDevicePrivate;
+
 struct _NMDevice {
 	NMExportedObject parent;
+
+	/* private */
+	struct _NMDevicePrivate *priv;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
