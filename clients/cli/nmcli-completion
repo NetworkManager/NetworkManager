@@ -184,6 +184,9 @@ _nmcli_compl_OPTIONS()
             ask)
                 _nmcli_array_delete_at words 0
                 ;;
+            show-secrets)
+                _nmcli_array_delete_at words 0
+                ;;
             order)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                    local ord="${words[1]}"
@@ -210,9 +213,6 @@ _nmcli_compl_OPTIONS()
                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
-                ;;
-            show-secrets)
-                _nmcli_array_delete_at words 0
                 ;;
             active)
                 _nmcli_array_delete_at words 0
@@ -522,8 +522,7 @@ _nmcli_compl_ARGS()
             hairpin| \
             save| \
             hidden| \
-            private| \
-            show-password)
+            private)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no"
                     return 0
@@ -792,7 +791,7 @@ _nmcli()
     local COMMAND_CONNECTION_ACTIVE=""
 
     HELP_ONLY_AS_FIRST=
-    local LONG_OPTIONS=(terse pretty mode fields colors escape nocheck ask wait version help)
+    local LONG_OPTIONS=(terse pretty mode fields colors escape nocheck ask show-secrets wait version help)
     _nmcli_compl_OPTIONS
     i=$?
 
@@ -887,11 +886,11 @@ _nmcli()
                 case "$command" in
                     s|sh|sho|show)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active show-secrets order
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active order
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
 
-                            LONG_OPTIONS=(help active show-secrets order)
+                            LONG_OPTIONS=(help active order)
                             HELP_ONLY_AS_FIRST=1
                             _nmcli_compl_OPTIONS
                             i=$?
@@ -1444,7 +1443,7 @@ _nmcli()
                                     ;;
                                 h|ho|hot|hots|hotsp|hotspo|hotspot)
                                     _nmcli_array_delete_at words 0 2
-                                    OPTIONS=(ifname con-name ssid band channel password show-password)
+                                    OPTIONS=(ifname con-name ssid band channel password)
                                     _nmcli_compl_ARGS
                                     ;;
                                 r|re|res|resc|resca|rescan)

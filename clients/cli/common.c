@@ -930,6 +930,7 @@ get_secrets_from_user (const char *request_id,
                        const char *title,
                        const char *msg,
                        gboolean ask,
+                       gboolean echo_on,
                        GHashTable *pwds_hash,
                        GPtrArray *secrets)
 {
@@ -951,7 +952,7 @@ get_secrets_from_user (const char *request_id,
 					rl_startup_hook = nmc_rl_set_deftext;
 					nmc_rl_pre_input_deftext = g_strdup (secret->value);
 				}
-				pwd = nmc_readline ("%s (%s): ", secret->name, secret->prop_name);
+				pwd = nmc_readline_echo (echo_on, "%s (%s): ", secret->name, secret->prop_name);
 				if (!pwd)
 					pwd = g_strdup ("");
 			} else {
@@ -998,7 +999,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		nmc_terminal_erase_line ();
 
 	success = get_secrets_from_user (request_id, title, msg, nmc->in_editor || nmc->ask,
-	                                 nmc->pwds_hash, secrets);
+	                                 nmc->show_secrets, nmc->pwds_hash, secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else {
@@ -1074,30 +1075,12 @@ nmc_set_in_readline (gboolean in_readline)
 /* Global variable defined in nmcli.c */
 extern NmCli nm_cli;
 
-/**
- * nmc_readline:
- * @prompt_fmt: prompt to print (telling user what to enter). It is standard
- *   printf() format string
- * @...: a list of arguments according to the @prompt_fmt format string
- *
- * Wrapper around libreadline's readline() function.
- * If user pressed Ctrl-C, readline() is called again (if not in editor and
- * line is empty, nmcli will quit).
- * If user pressed Ctrl-D on empty line, nmcli will quit.
- *
- * Returns: the user provided string. In case the user entered empty string,
- * this function returns NULL.
- */
-char *
-nmc_readline (const char *prompt_fmt, ...)
-{
-	va_list args;
-	char *prompt, *str;
-	int b;
 
-	va_start (args, prompt_fmt);
-	prompt = g_strdup_vprintf (prompt_fmt, args);
-	va_end (args);
+static char *
+nmc_readline_helper (const char *prompt)
+{
+	char *str;
+	int b;
 
 readline_mark:
 	/* We are in readline -> Ctrl-C should not quit nmcli */
@@ -1145,13 +1128,79 @@ readline_mark:
 				sleep (3);
 		}
 	}
-	g_free (prompt);
 
 	/* Return NULL, not empty string */
 	if (str && *str == '\0') {
 		g_free (str);
 		str = NULL;
 	}
+	return str;
+}
+
+/**
+ * nmc_readline:
+ * @prompt_fmt: prompt to print (telling user what to enter). It is standard
+ *   printf() format string
+ * @...: a list of arguments according to the @prompt_fmt format string
+ *
+ * Wrapper around libreadline's readline() function.
+ * If user pressed Ctrl-C, readline() is called again (if not in editor and
+ * line is empty, nmcli will quit).
+ * If user pressed Ctrl-D on empty line, nmcli will quit.
+ *
+ * Returns: the user provided string. In case the user entered empty string,
+ * this function returns NULL.
+ */
+char *
+nmc_readline (const char *prompt_fmt, ...)
+{
+	va_list args;
+	char *prompt, *str;
+
+	va_start (args, prompt_fmt);
+	prompt = g_strdup_vprintf (prompt_fmt, args);
+	va_end (args);
+
+	str = nmc_readline_helper (prompt);
+
+	g_free (prompt);
+
+	return str;
+}
+
+/**
+ * nmc_readline_echo:
+ *
+ * The same as nmc_readline() except it can disable echoing of input characters if @echo_on is %FALSE.
+ * nmc_readline(TRUE, ...) == nmc_readline(...)
+ */
+char *
+nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
+{
+	va_list args;
+	char *prompt, *str;
+	struct termios termios_orig, termios_new;
+
+	va_start (args, prompt_fmt);
+	prompt = g_strdup_vprintf (prompt_fmt, args);
+	va_end (args);
+
+	/* Disable echoing characters */
+	if (!echo_on) {
+		tcgetattr (STDIN_FILENO, &termios_orig);
+		termios_new = termios_orig;
+		termios_new.c_lflag &= ~(ECHO);
+		tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_new);
+	}
+
+	str = nmc_readline_helper (prompt);
+
+	g_free (prompt);
+
+	/* Restore original terminal settings */
+	if (!echo_on)
+		tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
+
 	return str;
 }
 

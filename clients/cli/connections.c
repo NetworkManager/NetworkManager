@@ -265,7 +265,7 @@ usage (void)
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
 	              "COMMAND := { show | up | down | add | modify | edit | delete | monitor | reload | load }\n\n"
 	              "  show [--active] [--order <order spec>]\n"
-	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
+	              "  show [--active] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
@@ -293,13 +293,13 @@ usage_connection_show (void)
 	              "profiles are listed. When --active option is specified, only the active\n"
 	              "profiles are shown. --order allows custom connection ordering (see manual page).\n"
 	              "\n"
-	              "ARGUMENTS := [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n"
+	              "ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
 	              "\n"
 	              "Show details for specified connections. By default, both static configuration\n"
 	              "and active connection data are displayed. It is possible to filter the output\n"
 	              "using global '--fields' option. Refer to the manual page for more information.\n"
 	              "When --active option is specified, only the active profiles are taken into\n"
-	              "account. --show-secrets option will reveal associated secrets as well.\n"));
+	              "account. Use global --show-secrets option to reveal associated secrets as well.\n"));
 }
 
 static void
@@ -3656,7 +3656,7 @@ do_questionnaire_wimax (char **mac)
 }
 
 static void
-do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
+do_questionnaire_pppoe (gboolean echo, char **password, char **service, char **mtu, char **mac)
 {
 	gboolean once_more;
 	GError *error = NULL;
@@ -3666,7 +3666,7 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 		return;
 
 	if (!*password)
-		*password = nmc_readline (_("Password [none]: "));
+		*password = nmc_readline_echo (echo, _("Password [none]: "));
 	if (!*service)
 		*service = nmc_readline (_("Service [none]: "));
 
@@ -3695,7 +3695,7 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 }
 
 static void
-do_questionnaire_mobile (char **user, char **password)
+do_questionnaire_mobile (gboolean echo, char **user, char **password)
 {
 	/* Ask for optional 'gsm' or 'cdma' arguments. */
 	if (!want_provide_opt_args (_("mobile broadband"), 2))
@@ -3704,7 +3704,7 @@ do_questionnaire_mobile (char **user, char **password)
 	if (!*user)
 		*user = nmc_readline (_("Username [none]: "));
 	if (!*password)
-		*password = nmc_readline (_("Password [none]: "));
+		*password = nmc_readline_echo (echo, _("Password [none]: "));
 }
 
 #define WORD_PANU      "panu"
@@ -4181,7 +4181,7 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 
 #define PROMPT_ADSL_ENCAP "(" NM_SETTING_ADSL_ENCAPSULATION_VCMUX "/" NM_SETTING_ADSL_ENCAPSULATION_LLC ") [none]: "
 static void
-do_questionnaire_adsl (char **password, char **encapsulation)
+do_questionnaire_adsl (gboolean echo, char **password, char **encapsulation)
 {
 	gboolean once_more;
 	GError *error = NULL;
@@ -4191,7 +4191,7 @@ do_questionnaire_adsl (char **password, char **encapsulation)
 		return;
 
 	if (!*password)
-		*password = nmc_readline (_("Password [none]: "));
+		*password = nmc_readline_echo (echo, _("Password [none]: "));
 
 	if (!*encapsulation) {
 		do {
@@ -4650,6 +4650,7 @@ complete_connection_by_type (NMConnection *connection,
                              const char *con_type,
                              const GPtrArray *all_connections,
                              gboolean ask,
+                             gboolean show_secrets,
                              int argc,
                              char **argv,
                              GError **error)
@@ -4970,7 +4971,7 @@ cleanup_wimax:
 		mtu = g_strdup (mtu_c);
 		mac = g_strdup (mac_c);
 		if (ask)
-			do_questionnaire_pppoe (&password, &service, &mtu, &mac);
+			do_questionnaire_pppoe (show_secrets, &password, &service, &mtu, &mac);
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_pppoe;
@@ -5040,7 +5041,7 @@ cleanup_pppoe:
 		user = g_strdup (user_c);
 		password = g_strdup (password_c);
 		if (ask)
-			do_questionnaire_mobile (&user, &password);
+			do_questionnaire_mobile (show_secrets, &user, &password);
 
 		if (is_gsm) {
 			g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME, NULL);
@@ -5760,7 +5761,7 @@ cleanup_olpc:
 		password = g_strdup (password_c);
 		encapsulation = g_strdup (encapsulation_c);
 		if (ask)
-			do_questionnaire_adsl (&password, &encapsulation);
+			do_questionnaire_adsl (show_secrets, &password, &encapsulation);
 
 		if (!check_adsl_encapsulation (&encapsulation, error))
 			goto cleanup_adsl;
@@ -6620,6 +6621,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	                                  setting_name,
 	                                  nmc->connections,
 	                                  nmc->ask,
+	                                  nmc->show_secrets,
 	                                  argc,
 	                                  argv,
 	                                  &error)) {
@@ -10487,6 +10489,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 					active = TRUE;
 					next_arg (&argc, &argv);
 				}
+				/* --show-secrets is deprecated in favour of global --show-secrets */
+				/* Keep it here for backwards compatibility */
 				if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
 					show_secrets = TRUE;
 					next_arg (&argc, &argv);
@@ -10503,6 +10507,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 					next_arg (&argc, &argv);
 				}
 			}
+			show_secrets = nmc->show_secrets || show_secrets;
 			nmc->return_value = do_connections_show (nmc, active, show_secrets, order, argc, argv);
 			if (order)
 				g_array_unref (order);
