@@ -6340,7 +6340,7 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 		return FALSE;
 	}
 
-	priv->dnsmasq_state_id = g_signal_connect (priv->dnsmasq_manager, "state-changed",
+	priv->dnsmasq_state_id = g_signal_connect (priv->dnsmasq_manager, NM_DNS_MASQ_MANAGER_STATE_CHANGED,
 	                                           G_CALLBACK (dnsmasq_state_changed_cb),
 	                                           self);
 	return TRUE;
