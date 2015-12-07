@@ -3272,7 +3272,7 @@ master_ready (NMDevice *self,
 	master = nm_active_connection_get_device (master_connection);
 
 	_LOGD (LOGD_DEVICE, "master connection ready; master device %s",
-	       nm_device_get_iface (priv->master));
+	       nm_device_get_iface (master));
 
 	if (priv->master && priv->master != master)
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
