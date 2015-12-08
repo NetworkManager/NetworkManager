@@ -1656,13 +1656,26 @@ link_type_compatible (NMDevice *self,
                       gboolean *out_compatible,
                       GError **error)
 {
-	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
+	NMDeviceClass *klass;
+	NMLinkType device_type;
 	guint i = 0;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	klass = NM_DEVICE_GET_CLASS (self);
 
 	if (!klass->link_types) {
 		NM_SET_OUT (out_compatible, FALSE);
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "Device does not support platform links");
+		return FALSE;
+	}
+
+	device_type = self->priv->link_type;
+	if (device_type > NM_LINK_TYPE_UNKNOWN && device_type != link_type) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "Needed link type 0x%x does not match the platform link type 0x%X",
+		             device_type, link_type);
 		return FALSE;
 	}
 
