@@ -449,10 +449,34 @@ create_device (NMDeviceFactory *factory,
                NMConnection *connection,
                gboolean *out_ignore)
 {
+	NMSettingTun *s_tun;
+	NMLinkType link_type = NM_LINK_TYPE_UNKNOWN;
+
+	if (plink) {
+		link_type = plink->type;
+	} else if (connection) {
+		s_tun = nm_connection_get_setting_tun (connection);
+		if (!s_tun)
+			return NULL;
+		switch (nm_setting_tun_get_mode (s_tun)) {
+		case NM_SETTING_TUN_MODE_TUN:
+			link_type = NM_LINK_TYPE_TUN;
+			break;
+		case NM_SETTING_TUN_MODE_TAP:
+			link_type = NM_LINK_TYPE_TAP;
+			break;
+		case NM_SETTING_TUN_MODE_UNKNOWN:
+			g_return_val_if_reached (NULL);
+		}
+	}
+
+	g_return_val_if_fail (link_type != NM_LINK_TYPE_UNKNOWN, NULL);
+
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Tun",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_TUN,
+	                                  NM_DEVICE_LINK_TYPE, link_type,
 	                                  NULL);
 }
 

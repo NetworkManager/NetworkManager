@@ -702,6 +702,7 @@ nm_device_team_new (const char *iface)
 	                                  NM_DEVICE_DRIVER, "team",
 	                                  NM_DEVICE_TYPE_DESC, "Team",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_TEAM,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_TEAM,
 	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }
