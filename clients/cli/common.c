@@ -31,6 +31,7 @@
 #include <readline/history.h>
 
 #include "nm-default.h"
+#include "nm-vpn-helpers.h"
 #include "common.h"
 #include "utils.h"
 
@@ -926,15 +927,96 @@ nmc_find_connection (const GPtrArray *connections,
 }
 
 static gboolean
+vpn_openconnect_get_secrets (NMConnection *connection, GPtrArray *secrets)
+{
+	GError *error = NULL;
+	NMSettingVpn *s_vpn;
+	const char *vpn_type, *gw, *port;
+	char *cookie = NULL;
+	char *gateway = NULL;
+	char *gwcert = NULL;
+	int status = 0;
+	int i;
+	gboolean ret;
+
+	if (!connection)
+		return FALSE;
+
+	if (!nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
+		return FALSE;
+
+	s_vpn = nm_connection_get_setting_vpn (connection);
+	vpn_type = nm_setting_vpn_get_service_type (s_vpn);
+	if (g_strcmp0 (vpn_type, NM_DBUS_INTERFACE ".openconnect"))
+		return FALSE;
+
+	/* Get gateway and port */
+	gw = nm_setting_vpn_get_data_item (s_vpn, "gateway");
+	port = gw ? strrchr (gw, ':') : NULL;
+
+	/* Interactively authenticate to OpenConnect server and get secrets */
+	ret = nm_vpn_openconnect_authenticate_helper (gw, &cookie, &gateway, &gwcert, &status, &error);
+	if (!ret) {
+		g_printerr (_("Error: openconnect failed: %s\n"), error->message);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	if (WIFEXITED (status)) {
+		if (WEXITSTATUS (status) != 0)
+			g_printerr (_("Error: openconnect failed with status %d\n"), WEXITSTATUS (status));
+	} else if (WIFSIGNALED (status))
+		g_printerr (_("Error: openconnect failed with signal %d\n"), WTERMSIG (status));
+
+	/* Append port to the host value */
+	if (gateway && port) {
+		char *tmp = gateway;
+		gateway = g_strdup_printf ("%s%s", gateway, port);
+		g_free (tmp);
+	}
+
+	/* Fill secrets to the array */
+	for (i = 0; i < secrets->len; i++) {
+		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+
+		if (!g_strcmp0 (secret->vpn_type, vpn_type)) {
+			if (!g_strcmp0 (secret->vpn_property, "cookie")) {
+				g_free (secret->value);
+				secret->value = cookie;
+				cookie = NULL;
+			} else if (!g_strcmp0 (secret->vpn_property, "gateway")) {
+				g_free (secret->value);
+				secret->value = gateway;
+				gateway = NULL;
+			} else if (!g_strcmp0 (secret->vpn_property, "gwcert")) {
+				g_free (secret->value);
+				secret->value = gwcert;
+				gwcert = NULL;
+			}
+		}
+	}
+	g_free (cookie);
+	g_free (gateway);
+	g_free (gwcert);
+
+	return TRUE;
+}
+
+static gboolean
 get_secrets_from_user (const char *request_id,
                        const char *title,
                        const char *msg,
+                       NMConnection *connection,
                        gboolean ask,
                        gboolean echo_on,
                        GHashTable *pwds_hash,
                        GPtrArray *secrets)
 {
 	int i;
+
+	/* Check if there is a VPN OpenConnect secret to ask for */
+	if (ask)
+		vpn_openconnect_get_secrets (connection, secrets);
 
 	for (i = 0; i < secrets->len; i++) {
 		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
@@ -993,12 +1075,24 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
                        gpointer             user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
+	NMConnection *connection = NULL;
+	char *path, *p;
 	gboolean success = FALSE;
 
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
 
-	success = get_secrets_from_user (request_id, title, msg, nmc->in_editor || nmc->ask,
+	/* Find the connection for the request */
+	path = g_strdup (request_id);
+	if (path) {
+		p = strrchr (path, '/');
+		if (p)
+			*p = '\0';
+		connection = nmc_find_connection (nmc->connections, "path", path, NULL);
+		g_free (path);
+	}
+
+	success = get_secrets_from_user (request_id, title, msg, connection, nmc->in_editor || nmc->ask,
 	                                 nmc->show_secrets, nmc->pwds_hash, secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
