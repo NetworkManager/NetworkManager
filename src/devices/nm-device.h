@@ -49,6 +49,7 @@
 #define NM_DEVICE_STATE_REASON     "state-reason"
 #define NM_DEVICE_ACTIVE_CONNECTION "active-connection"
 #define NM_DEVICE_DEVICE_TYPE      "device-type" /* ugh */
+#define NM_DEVICE_LINK_TYPE        "link-type"
 #define NM_DEVICE_MANAGED          "managed"
 #define NM_DEVICE_AUTOCONNECT      "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
@@ -372,6 +373,7 @@ const char *	nm_device_get_driver_version	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 const char *	nm_device_get_type_description (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
+NMLinkType	nm_device_get_link_type	(NMDevice *dev);
 NMMetered       nm_device_get_metered	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
