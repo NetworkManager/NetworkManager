@@ -319,8 +319,8 @@ config_changed_cb (NMConfig *config,
 {
 	gs_free char *old_value = NULL, *new_value = NULL;
 
-	old_value = nm_config_data_get_value (old_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices", NM_CONFIG_GET_VALUE_TYPE_SPEC);
-	new_value = nm_config_data_get_value (config_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices", NM_CONFIG_GET_VALUE_TYPE_SPEC);
+	old_value = nm_config_data_get_value (old_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES, NM_CONFIG_GET_VALUE_TYPE_SPEC);
+	new_value = nm_config_data_get_value (config_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 
 	if (g_strcmp0 (old_value, new_value) != 0)
 		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
@@ -522,7 +522,10 @@ get_unmanaged_specs (NMSettingsPlugin *config)
 	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	gs_free char *value = NULL;
 
-	value = nm_config_data_get_value (nm_config_get_data (priv->config), NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices", NM_CONFIG_GET_VALUE_TYPE_SPEC);
+	value = nm_config_data_get_value (nm_config_get_data (priv->config),
+	                                  NM_CONFIG_KEYFILE_GROUP_KEYFILE,
+	                                  NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES,
+	                                  NM_CONFIG_GET_VALUE_TYPE_SPEC);
 	return nm_match_spec_split (value);
 }
 
@@ -574,7 +577,8 @@ constructed (GObject *object)
 
 	priv->config = g_object_ref (nm_config_get ());
 	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
-	                              NM_CONFIG_KEYFILE_GROUP_KEYFILE, "hostname",
+	                              NM_CONFIG_KEYFILE_GROUP_KEYFILE,
+	                              NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
 	                              NM_CONFIG_GET_VALUE_RAW))
 		nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
 }
