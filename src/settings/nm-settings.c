@@ -2270,7 +2270,7 @@ finalize (GObject *object)
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
