@@ -114,6 +114,7 @@ enum {
 	PROP_STATE_REASON,
 	PROP_ACTIVE_CONNECTION,
 	PROP_DEVICE_TYPE,
+	PROP_LINK_TYPE,
 	PROP_MANAGED,
 	PROP_AUTOCONNECT,
 	PROP_FIRMWARE_MISSING,
@@ -215,6 +216,7 @@ typedef struct _NMDevicePrivate {
 	NMDeviceType  type;
 	char *        type_desc;
 	char *        type_description;
+	NMLinkType    link_type;
 	NMDeviceCapabilities capabilities;
 	char *        driver;
 	char *        driver_version;
@@ -708,6 +710,14 @@ nm_device_get_device_type (NMDevice *self)
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
 	return NM_DEVICE_GET_PRIVATE (self)->type;
+}
+
+NMLinkType
+nm_device_get_link_type (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_LINK_TYPE_UNKNOWN);
+
+	return NM_DEVICE_GET_PRIVATE (self)->link_type;
 }
 
 /**
@@ -1646,13 +1656,26 @@ link_type_compatible (NMDevice *self,
                       gboolean *out_compatible,
                       GError **error)
 {
-	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
+	NMDeviceClass *klass;
+	NMLinkType device_type;
 	guint i = 0;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	klass = NM_DEVICE_GET_CLASS (self);
 
 	if (!klass->link_types) {
 		NM_SET_OUT (out_compatible, FALSE);
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "Device does not support platform links");
+		return FALSE;
+	}
+
+	device_type = self->priv->link_type;
+	if (device_type > NM_LINK_TYPE_UNKNOWN && device_type != link_type) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "Needed link type 0x%x does not match the platform link type 0x%X",
+		             device_type, link_type);
 		return FALSE;
 	}
 
@@ -10064,12 +10087,25 @@ constructed (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatform *platform;
+	const NMPlatformLink *pllink;
+
+	platform = nm_platform_get ();
+
+	if (priv->iface) {
+		pllink = nm_platform_link_get_by_ifname (platform, priv->iface);
+
+		nm_assert (pllink->type != NM_LINK_TYPE_NONE);
+
+		if (pllink && link_type_compatible (self, pllink->type, NULL, NULL)) {
+			priv->ifindex = pllink->ifindex;
+			priv->up = NM_FLAGS_HAS (pllink->flags, IFF_UP);
+		}
+	}
 
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
 	/* Watch for external IP config changes */
-	platform = nm_platform_get ();
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
@@ -10214,7 +10250,6 @@ set_property (GObject *object, guint prop_id,
 	const char *hw_addr, *p;
 	guint count;
 	gboolean val_bool;
-	const NMPlatformLink *pllink;
 
 	switch (prop_id) {
 	case PROP_UDI:
@@ -10224,20 +10259,9 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_IFACE:
-		p = g_value_get_string (value);
-		if (p) {
-
-			g_free (priv->iface);
-			priv->iface = g_strdup (p);
-
-			pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
-			if (pllink) {
-				if (link_type_compatible (self, pllink->type, NULL, NULL)) {
-					priv->ifindex = pllink->ifindex;
-					priv->up = nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex);
-				}
-			}
-		}
+		/* construct only */
+		g_return_if_fail (!priv->iface);
+		priv->iface = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
 		if (g_value_get_string (value)) {
@@ -10279,6 +10303,11 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DEVICE_TYPE:
 		g_return_if_fail (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
+		break;
+	case PROP_LINK_TYPE:
+		/* construct only */
+		g_return_if_fail (priv->link_type == NM_LINK_TYPE_NONE);
+		priv->link_type = g_value_get_uint (value);
 		break;
 	case PROP_TYPE_DESC:
 		g_free (priv->type_desc);
@@ -10395,6 +10424,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
+		break;
+	case PROP_LINK_TYPE:
+		g_value_set_uint (value, priv->link_type);
 		break;
 	case PROP_MANAGED:
 		g_value_set_boolean (value, nm_device_get_managed (self));
@@ -10645,6 +10677,13 @@ nm_device_class_init (NMDeviceClass *klass)
 		(object_class, PROP_DEVICE_TYPE,
 		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_LINK_TYPE,
+		 g_param_spec_uint (NM_DEVICE_LINK_TYPE, "", "",
+		                    0, G_MAXUINT32, NM_LINK_TYPE_NONE,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
 

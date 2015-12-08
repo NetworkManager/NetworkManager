@@ -2927,6 +2927,7 @@ nm_device_wifi_new (const char *iface)
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "802.11 WiFi",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
 	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
 	                                  NULL);
 }

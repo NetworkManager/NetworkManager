@@ -58,7 +58,7 @@
 #include "nmdbus-manager.h"
 #include "nmdbus-device.h"
 
-static void add_device (NMManager *self, NMDevice *device);
+static gboolean add_device (NMManager *self, NMDevice *device, GError **error);
 
 static NMActiveConnection *_new_active_connection (NMManager *self,
                                                    NMConnection *connection,
@@ -1056,7 +1056,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 	if (!device)
 		return NULL;
 
-	add_device (self, device);
+	if (!add_device (self, device, error)) {
+		g_object_unref (device);
+		return NULL;
+	}
 
 	/* Add device takes a reference that NMManager still owns, so it's
 	 * safe to unref here and still return @device.
@@ -1748,12 +1751,13 @@ device_realized (NMDevice *device,
  * add_device:
  * @self: the #NMManager
  * @device: the #NMDevice to add
+ * @error: (out): the #GError
  *
  * If successful, this function will increase the references count of @device.
  * Callers should decrease the reference count.
  */
-static void
-add_device (NMManager *self, NMDevice *device)
+static gboolean
+add_device (NMManager *self, NMDevice *device, GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *type_desc;
@@ -1765,8 +1769,11 @@ add_device (NMManager *self, NMDevice *device)
 
 	/* No duplicates */
 	ifindex = nm_device_get_ifindex (device);
-	if (ifindex > 0 && nm_manager_get_device_by_ifindex (self, ifindex))
-		return;
+	if (ifindex > 0 && nm_manager_get_device_by_ifindex (self, ifindex)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "A device with ifindex %d already exits", ifindex);
+		return FALSE;
+	}
 
 	/* Remove existing devices owned by the new device; eg remove ethernet
 	 * ports that are owned by a WWAN modem, since udev may announce them
@@ -1861,6 +1868,8 @@ add_device (NMManager *self, NMDevice *device)
 		if (d != device)
 			nm_device_notify_new_device_added (d, device);
 	}
+
+	return TRUE;
 }
 
 /*******************************************************************/
@@ -1873,7 +1882,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
 	GError *error = NULL;
 
 	if (nm_device_realize (device, NULL, NULL, &error)) {
-		add_device (NM_MANAGER (user_data), device);
+		add_device (NM_MANAGER (user_data), device, NULL);
 		nm_device_setup_finish (device, NULL);
 	} else {
 		nm_log_warn (LOGD_DEVICE, "(%s): failed to realize device: %s",
@@ -1994,7 +2003,7 @@ platform_link_added (NMManager *self,
 		if (nm_plugin_missing)
 			nm_device_set_nm_plugin_missing (device, TRUE);
 		if (nm_device_realize (device, plink, NULL, &error)) {
-			add_device (self, device);
+			add_device (self, device, NULL);
 			nm_device_setup_finish (device, plink);
 		} else {
 			nm_log_warn (LOGD_DEVICE, "%s: failed to realize device: %s",

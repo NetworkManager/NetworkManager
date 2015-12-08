@@ -189,10 +189,13 @@ create_device (NMDeviceFactory *factory,
                NMConnection *connection,
                gboolean *out_ignore)
 {
+	g_return_val_if_fail (plink, NULL);
+
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MACVLAN,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Macvlan",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+	                                  NM_DEVICE_LINK_TYPE, plink->type,
 	                                  NULL);
 }
 

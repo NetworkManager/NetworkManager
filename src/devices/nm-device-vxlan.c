@@ -386,6 +386,7 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Vxlan",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_VXLAN,
 	                                  NULL);
 }
 

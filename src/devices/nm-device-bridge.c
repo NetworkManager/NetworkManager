@@ -471,6 +471,7 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_DRIVER, "bridge",
 	                                  NM_DEVICE_TYPE_DESC, "Bridge",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_BRIDGE,
 	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }

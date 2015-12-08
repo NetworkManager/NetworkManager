@@ -727,6 +727,7 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_DRIVER, "8021q",
 	                                  NM_DEVICE_TYPE_DESC, "VLAN",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_VLAN,
 	                                  NULL);
 }
 

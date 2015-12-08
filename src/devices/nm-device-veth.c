@@ -189,6 +189,7 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Veth",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_VETH,
 	                                  NULL);
 }
 

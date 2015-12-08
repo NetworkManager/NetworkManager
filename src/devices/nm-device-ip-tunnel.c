@@ -570,6 +570,24 @@ platform_link_to_tunnel_mode (const NMPlatformLink *link)
 	}
 }
 
+static NMLinkType
+tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
+{
+	switch (tunnel_mode) {
+	case NM_IP_TUNNEL_MODE_GRE:
+		return NM_LINK_TYPE_GRE;
+	case NM_IP_TUNNEL_MODE_IPIP6:
+	case NM_IP_TUNNEL_MODE_IP6IP6:
+		return NM_LINK_TYPE_IP6TNL;
+	case NM_IP_TUNNEL_MODE_IPIP:
+		return NM_LINK_TYPE_IPIP;
+	case NM_IP_TUNNEL_MODE_SIT:
+		return NM_LINK_TYPE_SIT;
+	default:
+		g_return_val_if_reached (NM_LINK_TYPE_UNKNOWN);
+	}
+}
+
 /**************************************************************/
 
 static void
@@ -957,12 +975,16 @@ create_device (NMDeviceFactory *factory,
 {
 	NMSettingIPTunnel *s_ip_tunnel;
 	NMIPTunnelMode mode;
+	NMLinkType link_type;
 
 	if (connection) {
 		s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
 		mode = nm_setting_ip_tunnel_get_mode (s_ip_tunnel);
-	} else
+		link_type = tunnel_mode_to_link_type (mode);
+	} else {
+		link_type = plink->type;
 		mode = platform_link_to_tunnel_mode (plink);
+	}
 
 	if (mode == NM_IP_TUNNEL_MODE_UKNOWN)
 		return NULL;
@@ -971,6 +993,7 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "IPTunnel",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_IP_TUNNEL,
+	                                  NM_DEVICE_LINK_TYPE, link_type,
 	                                  NM_DEVICE_IP_TUNNEL_MODE, mode,
 	                                  NULL);
 }
