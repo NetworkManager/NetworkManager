@@ -148,7 +148,7 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);

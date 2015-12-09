@@ -197,7 +197,7 @@ typedef struct {
 	 * any tasks that affect other interfaces (like master/slave or parent/child
 	 * stuff).
 	 */
-	void        (*setup_start) (NMDevice *self, NMPlatformLink *plink);
+	void        (*setup_start) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
 	 * setup_finish():
@@ -208,7 +208,7 @@ typedef struct {
 	 * backing resource properties.  After this function finishes, the device
 	 * is ready for network connectivity.
 	 */
-	void        (*setup_finish) (NMDevice *self, NMPlatformLink *plink);
+	void        (*setup_finish) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
 	 * unrealize():
@@ -509,7 +509,7 @@ gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMDevice *parent,
                                        GError **error);
 void     nm_device_setup_finish       (NMDevice *self,
-                                       NMPlatformLink *plink);
+                                       const NMPlatformLink *plink);
 gboolean nm_device_unrealize          (NMDevice *device,
                                        gboolean remove_resources,
                                        GError **error);

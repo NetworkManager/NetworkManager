@@ -771,7 +771,7 @@ create_and_realize (NMDevice *device,
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->setup_start (device, plink);
 

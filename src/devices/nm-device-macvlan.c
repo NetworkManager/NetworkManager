@@ -559,7 +559,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->setup_start (device, plink);
 

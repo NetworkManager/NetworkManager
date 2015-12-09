@@ -143,7 +143,7 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
 

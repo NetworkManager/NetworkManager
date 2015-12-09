@@ -1780,7 +1780,7 @@ nm_device_create_and_realize (NMDevice *self,
 }
 
 static void
-update_device_from_platform_link (NMDevice *self, NMPlatformLink *plink)
+update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *udi;
@@ -1836,7 +1836,7 @@ check_carrier (NMDevice *self)
 }
 
 static void
-setup_start (NMDevice *self, NMPlatformLink *plink)
+setup_start (NMDevice *self, const NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	static guint32 id = 0;
@@ -1943,7 +1943,7 @@ setup_start (NMDevice *self, NMPlatformLink *plink)
 }
 
 static void
-setup_finish (NMDevice *self, NMPlatformLink *plink)
+setup_finish (NMDevice *self, const NMPlatformLink *plink)
 {
 	if (plink) {
 		update_device_from_platform_link (self, plink);
@@ -1952,7 +1952,7 @@ setup_finish (NMDevice *self, NMPlatformLink *plink)
 }
 
 void
-nm_device_setup_finish (NMDevice *self, NMPlatformLink *plink)
+nm_device_setup_finish (NMDevice *self, const NMPlatformLink *plink)
 {
 	g_return_if_fail (!plink || link_type_compatible (self, plink->type, NULL, NULL));
 

@@ -241,7 +241,7 @@ realize (NMDevice *device, NMPlatformLink *plink, GError **error)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_tun_parent_class)->setup_start (device, plink);
 	reload_tun_properties (device);

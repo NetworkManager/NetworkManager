@@ -424,7 +424,7 @@ periodic_update_cb (gpointer user_data)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->setup_start (device, plink);
 

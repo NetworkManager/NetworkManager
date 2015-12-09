@@ -305,7 +305,7 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->setup_start (device, plink);
 
