@@ -571,7 +571,7 @@ nm_platform_link_get_by_address (NMPlatform *self,
 }
 
 static NMPlatformError
-_link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, NMPlatformLink *out_link)
+_link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, const NMPlatformLink **out_link)
 {
 	const NMPlatformLink *pllink;
 
@@ -586,11 +586,13 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, N
 		       wrong_type ? ", expected " : "",
 		       wrong_type ? nm_link_type_to_string (type) : "");
 		if (out_link)
-			*out_link = *pllink;
+			*out_link = pllink;
 		if (wrong_type)
 			return NM_PLATFORM_ERROR_WRONG_TYPE;
 		return NM_PLATFORM_ERROR_EXISTS;
 	}
+	if (out_link)
+		*out_link = NULL;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
@@ -619,7 +621,7 @@ nm_platform_link_add (NMPlatform *self,
                       NMLinkType type,
                       const void *address,
                       size_t address_len,
-                      NMPlatformLink *out_link)
+                      const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 
@@ -648,7 +650,7 @@ nm_platform_link_add (NMPlatform *self,
  * Create a software ethernet-like interface
  */
 NMPlatformError
-nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
+nm_platform_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, 0, out_link);
 }
@@ -1488,7 +1490,7 @@ nm_platform_bridge_add (NMPlatform *self,
                         const char *name,
                         const void *address,
                         size_t address_len,
-                        NMPlatformLink *out_link)
+                        const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, address, address_len, out_link);
 }
@@ -1502,7 +1504,7 @@ nm_platform_bridge_add (NMPlatform *self,
  * Create a software bonding device.
  */
 NMPlatformError
-nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
+nm_platform_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, 0, out_link);
 }
@@ -1516,7 +1518,7 @@ nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_li
  * Create a software teaming device.
  */
 NMPlatformError
-nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
+nm_platform_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, 0, out_link);
 }
@@ -1537,7 +1539,7 @@ nm_platform_vlan_add (NMPlatform *self,
                       int parent,
                       int vlanid,
                       guint32 vlanflags,
-                      NMPlatformLink *out_link)
+                      const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 
@@ -1572,7 +1574,7 @@ NMPlatformError
 nm_platform_link_vxlan_add (NMPlatform *self,
                             const char *name,
                             NMPlatformLnkVxlan *props,
-                            NMPlatformLink *out_link)
+                            const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 
@@ -1608,7 +1610,7 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 NMPlatformError
 nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap,
                      gint64 owner, gint64 group, gboolean pi, gboolean vnet_hdr,
-                     gboolean multi_queue, NMPlatformLink *out_link)
+                     gboolean multi_queue, const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 
@@ -1779,7 +1781,7 @@ NMPlatformError
 nm_platform_link_gre_add (NMPlatform *self,
                           const char *name,
                           NMPlatformLnkGre *props,
-                          NMPlatformLink *out_link)
+                          const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 	char buffer[INET_ADDRSTRLEN];
@@ -1806,7 +1808,7 @@ nm_platform_link_gre_add (NMPlatform *self,
 }
 
 NMPlatformError
-nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link)
+nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	gs_free char *parent_name = NULL;
 	gs_free char *name = NULL;
@@ -1915,7 +1917,7 @@ NMPlatformError
 nm_platform_link_ip6tnl_add (NMPlatform *self,
                              const char *name,
                              NMPlatformLnkIp6Tnl *props,
-                             NMPlatformLink *out_link)
+                             const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 	char buffer[INET6_ADDRSTRLEN];
@@ -1954,7 +1956,7 @@ NMPlatformError
 nm_platform_link_ipip_add (NMPlatform *self,
                            const char *name,
                            NMPlatformLnkIpIp *props,
-                           NMPlatformLink *out_link)
+                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 	char buffer[INET_ADDRSTRLEN];
@@ -1994,7 +1996,7 @@ nm_platform_link_macvlan_add (NMPlatform *self,
                               const char *name,
                               int parent,
                               NMPlatformLnkMacvlan *props,
-                              NMPlatformLink *out_link)
+                              const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 	NMLinkType type;
@@ -2034,7 +2036,7 @@ NMPlatformError
 nm_platform_link_sit_add (NMPlatform *self,
                           const char *name,
                           NMPlatformLnkSit *props,
-                          NMPlatformLink *out_link)
+                          const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 	char buffer[INET_ADDRSTRLEN];

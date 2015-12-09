@@ -3592,7 +3592,7 @@ do_add_link_with_lookup (NMPlatform *platform,
                          NMLinkType link_type,
                          const char *name,
                          struct nl_msg *nlmsg,
-                         NMPlatformLink *out_link)
+                         const NMPlatformLink **out_link)
 {
 	const NMPObject *obj;
 
@@ -3600,8 +3600,8 @@ do_add_link_with_lookup (NMPlatform *platform,
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
 	                                  0, name, FALSE, link_type, NULL, NULL);
-	if (out_link && obj)
-		*out_link = obj->link;
+	if (out_link)
+		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
 }
 
@@ -3801,7 +3801,7 @@ link_add (NMPlatform *platform,
           NMLinkType type,
           const void *address,
           size_t address_len,
-          NMPlatformLink *out_link)
+          const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
@@ -4160,7 +4160,7 @@ vlan_add (NMPlatform *platform,
           int parent,
           int vlan_id,
           guint32 vlan_flags,
-          NMPlatformLink *out_link)
+          const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
@@ -4204,7 +4204,7 @@ static int
 link_gre_add (NMPlatform *platform,
               const char *name,
               NMPlatformLnkGre *props,
-              NMPlatformLink *out_link)
+              const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4259,7 +4259,7 @@ static int
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
                  NMPlatformLnkIp6Tnl *props,
-                 NMPlatformLink *out_link)
+                 const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4320,7 +4320,7 @@ static int
 link_ipip_add (NMPlatform *platform,
                const char *name,
                NMPlatformLnkIpIp *props,
-               NMPlatformLink *out_link)
+               const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4372,7 +4372,7 @@ link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
                   NMPlatformLnkMacvlan *props,
-                  NMPlatformLink *out_link)
+                  const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4420,7 +4420,7 @@ static int
 link_sit_add (NMPlatform *platform,
               const char *name,
               NMPlatformLnkSit *props,
-              NMPlatformLink *out_link)
+              const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4471,7 +4471,7 @@ static gboolean
 link_vxlan_add (NMPlatform *platform,
                 const char *name,
                 NMPlatformLnkVxlan *props,
-                NMPlatformLink *out_link)
+                const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4714,7 +4714,7 @@ link_vlan_change (NMPlatform *platform,
 static int
 tun_add (NMPlatform *platform, const char *name, gboolean tap,
          gint64 owner, gint64 group, gboolean pi, gboolean vnet_hdr,
-         gboolean multi_queue, NMPlatformLink *out_link)
+         gboolean multi_queue, const NMPlatformLink **out_link)
 {
        const NMPObject *obj;
        struct ifreq ifr = { };
@@ -4765,8 +4765,8 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
                                          0, name, FALSE,
                                          tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN,
                                          NULL, NULL);
-       if (out_link && obj)
-               *out_link = obj->link;
+       if (out_link)
+               *out_link = obj ? &obj->link : NULL;
 
        return !!obj;
 }
@@ -4887,7 +4887,7 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 /******************************************************************/
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
@@ -4911,8 +4911,8 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
 	                                  0, ifname, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
-	if (out_link && obj)
-		*out_link = obj->link;
+	if (out_link)
+		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
 }
 

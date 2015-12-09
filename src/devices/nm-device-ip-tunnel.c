@@ -613,7 +613,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
@@ -628,7 +628,6 @@ create_and_realize (NMDevice *device,
 
 	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
 	g_assert (s_ip_tunnel);
-	g_assert (out_plink);
 
 	switch (nm_setting_ip_tunnel_get_mode (s_ip_tunnel)) {
 	case NM_IP_TUNNEL_MODE_GRE:

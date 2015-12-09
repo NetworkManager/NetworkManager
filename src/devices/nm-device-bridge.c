@@ -377,7 +377,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	NMSettingBridge *s_bridge;
@@ -387,7 +387,6 @@ create_and_realize (NMDevice *device,
 	NMPlatformError plerr;
 
 	g_assert (iface);
-	g_assert (out_plink);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);

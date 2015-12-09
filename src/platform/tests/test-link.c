@@ -462,11 +462,13 @@ test_bridge_addr (void)
 {
 	char addr[ETH_ALEN];
 	NMPlatformLink link;
-	const NMPlatformLink *plink;
+	const NMPlatformLink *plink = NULL;
 
 	nm_utils_hwaddr_aton ("de:ad:be:ef:00:11", addr, sizeof (addr));
 
-	g_assert_cmpint (nm_platform_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &link), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert_cmpint (nm_platform_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &plink), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (plink);
+	link = *plink;
 	g_assert_cmpstr (link.name, ==, DEVICE_NAME);
 
 	g_assert_cmpint (link.addr.len, ==, sizeof (addr));

@@ -236,14 +236,12 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
 	int parent_ifindex, p_key;
 	NMPlatformError plerr;
-
-	g_assert (out_plink);
 
 	if (!NM_IS_DEVICE_INFINIBAND (parent)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,

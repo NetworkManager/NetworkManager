@@ -170,7 +170,9 @@ typedef struct {
 	 * @self: the #NMDevice
 	 * @connection: the #NMConnection being activated
 	 * @parent: the parent #NMDevice, if any
-	 * @out_plink: on success, a backing kernel network device if one exists
+	 * @out_plink: on success, a backing kernel network device if one exists.
+	 *   The returned pointer is owned by platform and only valid until the
+	 *   next platform operation.
 	 * @error: location to store error, or %NULL
 	 *
 	 * Create any backing resources (kernel devices, etc) required for this
@@ -183,7 +185,7 @@ typedef struct {
 	gboolean        (*create_and_realize) (NMDevice *self,
 	                                       NMConnection *connection,
 	                                       NMDevice *parent,
-	                                       NMPlatformLink *out_plink,
+	                                       const NMPlatformLink **out_plink,
 	                                       GError **error);
 
 	/**

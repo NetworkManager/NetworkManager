@@ -207,7 +207,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
@@ -215,8 +215,6 @@ create_and_realize (NMDevice *device,
 	NMSettingVlan *s_vlan;
 	int parent_ifindex, vlan_id;
 	NMPlatformError plerr;
-
-	g_assert (out_plink);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);

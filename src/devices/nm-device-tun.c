@@ -199,7 +199,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
@@ -209,7 +209,6 @@ create_and_realize (NMDevice *device,
 
 	s_tun = nm_connection_get_setting_tun (connection);
 	g_assert (s_tun);
-	g_assert (out_plink);
 
 	user = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_owner (s_tun), 10, 0, G_MAXINT32, -1);
 	group = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_group (s_tun), 10, 0, G_MAXINT32, -1);
