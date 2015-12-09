@@ -10018,7 +10018,7 @@ spec_match_list (NMDevice *self, const GSList *specs)
 			break;
 		}
 	}
-	if (priv->hw_addr_len) {
+	if (priv->hw_addr_len && priv->hw_addr) {
 		m = nm_match_spec_hwaddr (specs, priv->hw_addr);
 		matched = MAX (matched, m);
 	}
