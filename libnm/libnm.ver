@@ -877,6 +877,12 @@ global:
 	nm_device_ip_tunnel_get_tos;
 	nm_device_ip_tunnel_get_ttl;
 	nm_device_ip_tunnel_get_type;
+	nm_device_macvlan_get_hw_address;
+	nm_device_macvlan_get_mode;
+	nm_device_macvlan_get_no_promisc;
+	nm_device_macvlan_get_parent;
+	nm_device_macvlan_get_tap;
+	nm_device_macvlan_get_type;
 	nm_device_get_nm_plugin_missing;
 	nm_device_is_real;
 	nm_device_set_managed;
