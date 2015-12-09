@@ -199,9 +199,9 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 
 	value = g_strdup_printf ("%u", uval);
 	if (slave)
-		nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
+		nm_platform_sysctl_slave_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
 	else
-		nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
+		nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
 }
 
 static void
@@ -245,7 +245,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	for (option = master_options; option->name; option++) {
-		gs_free char *str = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, option->sysname);
+		gs_free char *str = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, option->sysname);
 		int value;
 
 		if (str) {
@@ -284,7 +284,7 @@ master_update_slave_connection (NMDevice *device,
 	}
 
 	for (option = slave_options; option->name; option++) {
-		gs_free char *str = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex_slave, option->sysname);
+		gs_free char *str = nm_platform_sysctl_slave_get_option (NM_PLATFORM_GET, ifindex_slave, option->sysname);
 		int value;
 
 		if (str) {

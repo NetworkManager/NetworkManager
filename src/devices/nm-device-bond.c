@@ -130,7 +130,7 @@ set_bond_attr (NMDevice *device, const char *attr, const char *value)
 	gboolean ret;
 	int ifindex = nm_device_get_ifindex (device);
 
-	ret = nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, attr, value);
+	ret = nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, attr, value);
 	if (!ret)
 		_LOGW (LOGD_HW, "failed to set bonding attribute '%s' to '%s'", attr, value);
 	return ret;
@@ -164,7 +164,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* Read bond options from sysfs and update the Bond setting to match */
 	options = nm_setting_bond_get_valid_options (s_bond);
 	while (options && *options) {
-		gs_free char *value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, *options);
+		gs_free char *value = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, *options);
 		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
 
 		if (value && !ignore_if_zero (*options, value) && (g_strcmp0 (value, defvalue) != 0)) {
@@ -320,7 +320,7 @@ apply_bonding_config (NMDevice *device)
 	}
 
 	/* Clear ARP targets */
-	contents = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "arp_ip_target");
+	contents = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, "arp_ip_target");
 	set_arp_targets (device, contents, " \n", "-");
 	g_free (contents);
 

@@ -274,8 +274,8 @@ test_slave (int master, int type, SignalData *master_changed)
 	switch (type) {
 	case NM_LINK_TYPE_BRIDGE:
 		if (nmtstp_is_sysfs_writable ()) {
-			g_assert (nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, "priority", "789"));
-			value = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex, "priority");
+			g_assert (nm_platform_sysctl_slave_set_option (NM_PLATFORM_GET, ifindex, "priority", "789"));
+			value = nm_platform_sysctl_slave_get_option (NM_PLATFORM_GET, ifindex, "priority");
 			g_assert_cmpstr (value, ==, "789");
 			g_free (value);
 		}
@@ -367,16 +367,16 @@ test_software (NMLinkType link_type, const char *link_typename)
 	switch (link_type) {
 	case NM_LINK_TYPE_BRIDGE:
 		if (nmtstp_is_sysfs_writable ()) {
-			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "forward_delay", "789"));
-			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "forward_delay");
+			g_assert (nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, "forward_delay", "789"));
+			value = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, "forward_delay");
 			g_assert_cmpstr (value, ==, "789");
 			g_free (value);
 		}
 		break;
 	case NM_LINK_TYPE_BOND:
 		if (nmtstp_is_sysfs_writable ()) {
-			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "mode", "active-backup"));
-			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "mode");
+			g_assert (nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, "mode", "active-backup"));
+			value = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, "mode");
 			/* When reading back, the output looks slightly different. */
 			g_assert (g_str_has_prefix (value, "active-backup"));
 			g_free (value);

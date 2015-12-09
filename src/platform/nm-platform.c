@@ -1637,7 +1637,7 @@ nm_platform_link_tun_add (NMPlatform *self,
 }
 
 gboolean
-nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
+nm_platform_sysctl_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -1650,7 +1650,7 @@ nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option
 }
 
 char *
-nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option)
+nm_platform_sysctl_master_get_option (NMPlatform *self, int ifindex, const char *option)
 {
 	_CHECK_SELF (self, klass, NULL);
 
@@ -1662,7 +1662,7 @@ nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option
 }
 
 gboolean
-nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
+nm_platform_sysctl_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -1675,7 +1675,7 @@ nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option,
 }
 
 char *
-nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option)
+nm_platform_sysctl_slave_get_option (NMPlatform *self, int ifindex, const char *option)
 {
 	_CHECK_SELF (self, klass, NULL);
 

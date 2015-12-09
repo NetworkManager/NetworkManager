@@ -757,10 +757,10 @@ gboolean nm_platform_link_supports_vlans (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_enslave (NMPlatform *self, int master, int slave);
 gboolean nm_platform_link_release (NMPlatform *self, int master, int slave);
 
-gboolean nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
-char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option);
-gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
-char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option);
+gboolean nm_platform_sysctl_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
+char *nm_platform_sysctl_master_get_option (NMPlatform *self, int ifindex, const char *option);
+gboolean nm_platform_sysctl_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
+char *nm_platform_sysctl_slave_get_option (NMPlatform *self, int ifindex, const char *option);
 
 const NMPObject *nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
