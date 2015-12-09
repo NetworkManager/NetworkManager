@@ -484,7 +484,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMDeviceIPTunnel:parent:
+	 * NMDeviceIPTunnel:input-key:
 	 *
 	 * The key used for tunneled input packets, if applicable.
 	 *
