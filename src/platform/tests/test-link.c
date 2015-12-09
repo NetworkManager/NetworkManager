@@ -61,8 +61,8 @@ test_bogus(void)
 	g_assert (!nm_platform_link_supports_vlans (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
 	g_assert (!nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
-	g_assert (!nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
-	g_assert (!nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
+	g_assert (!nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
+	g_assert (!nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
 }
 
 static void
@@ -83,15 +83,15 @@ software_add (NMLinkType link_type, const char *name)
 {
 	switch (link_type) {
 	case NM_LINK_TYPE_DUMMY:
-		return nm_platform_dummy_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		return nm_platform_link_dummy_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_BRIDGE:
-		return nm_platform_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		return nm_platform_link_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_BOND:
 		{
 			gboolean bond0_exists = !!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "bond0");
 			NMPlatformError plerr;
 
-			plerr = nm_platform_bond_add (NM_PLATFORM_GET, name, NULL);
+			plerr = nm_platform_link_bond_add (NM_PLATFORM_GET, name, NULL);
 
 			/* Check that bond0 is *not* automatically created. */
 			if (!bond0_exists)
@@ -99,14 +99,14 @@ software_add (NMLinkType link_type, const char *name)
 			return plerr == NM_PLATFORM_ERROR_SUCCESS;
 		}
 	case NM_LINK_TYPE_TEAM:
-		return nm_platform_team_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		return nm_platform_link_team_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_VLAN: {
 		SignalData *parent_added;
 		SignalData *parent_changed;
 
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
-		if (nm_platform_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS)
+		if (nm_platform_link_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS)
 			accept_signal (parent_added);
 		free_signal (parent_added);
 
@@ -123,7 +123,7 @@ software_add (NMLinkType link_type, const char *name)
 				accept_signal (parent_changed);
 			free_signal (parent_changed);
 
-			return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+			return nm_platform_link_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 		}
 	}
 	default:
@@ -466,7 +466,7 @@ test_bridge_addr (void)
 
 	nm_utils_hwaddr_aton ("de:ad:be:ef:00:11", addr, sizeof (addr));
 
-	g_assert_cmpint (nm_platform_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &plink), ==, NM_PLATFORM_ERROR_SUCCESS);
+	g_assert_cmpint (nm_platform_link_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &plink), ==, NM_PLATFORM_ERROR_SUCCESS);
 	g_assert (plink);
 	link = *plink;
 	g_assert_cmpstr (link.name, ==, DEVICE_NAME);
@@ -518,11 +518,11 @@ test_internal (void)
 	g_assert (!nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 
 	/* Add device */
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 
 	/* Try to add again */
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_EXISTS);
+	g_assert (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_EXISTS);
 
 	/* Check device index, name and type */
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
@@ -1092,58 +1092,58 @@ test_vlan_set_xgress (void)
 
 	/* ingress-qos-map */
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 4, 5));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 4, 5));
 	_assert_ingress_qos_mappings (ifindex, 1,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 7));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 7));
 	_assert_ingress_qos_mappings (ifindex, 2,
 	                              3, 7,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 8));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 3, 8));
 	_assert_ingress_qos_mappings (ifindex, 2,
 	                              3, 8,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 4));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 4));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, 4,
 	                              3, 8,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, G_MAXUINT32));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, G_MAXUINT32));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, G_MAXUINT32,
 	                              3, 8,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, G_MAXUINT32 - 1));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, G_MAXUINT32 - 1));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, G_MAXUINT32 - 1,
 	                              3, 8,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 5));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 5));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, 5,
 	                              3, 8,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 5));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 0, 5));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, 5,
 	                              3, 8,
 	                              4, 5);
 
 	/* Set invalid values: */
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 8, 3));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 8, 3));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, 5,
 	                              3, 8,
 	                              4, 5);
 
-	g_assert (nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 9, 4));
+	g_assert (nm_platform_link_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, 9, 4));
 	_assert_ingress_qos_mappings (ifindex, 3,
 	                              0, 5,
 	                              3, 8,
@@ -1151,36 +1151,36 @@ test_vlan_set_xgress (void)
 
 	/* egress-qos-map */
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 3));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 7, 3));
 	_assert_egress_qos_mappings (ifindex, 1,
 	                             7, 3);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 4));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 4));
 	_assert_egress_qos_mappings (ifindex, 2,
 	                             7, 3,
 	                             8, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 4));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 4));
 	_assert_egress_qos_mappings (ifindex, 3,
 	                             0, 4,
 	                             7, 3,
 	                             8, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 4));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 4));
 	_assert_egress_qos_mappings (ifindex, 4,
 	                             0, 4,
 	                             1, 4,
 	                             7, 3,
 	                             8, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 5));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 5));
 	_assert_egress_qos_mappings (ifindex, 4,
 	                             0, 4,
 	                             1, 5,
 	                             7, 3,
 	                             8, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 9, 5));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 9, 5));
 	_assert_egress_qos_mappings (ifindex, 5,
 	                             0, 4,
 	                             1, 5,
@@ -1188,7 +1188,7 @@ test_vlan_set_xgress (void)
 	                             8, 4,
 	                             9, 5);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 5));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 5));
 	_assert_egress_qos_mappings (ifindex, 5,
 	                             0, 4,
 	                             1, 5,
@@ -1196,27 +1196,27 @@ test_vlan_set_xgress (void)
 	                             8, 5,
 	                             9, 5);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 0));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 8, 0));
 	_assert_egress_qos_mappings (ifindex, 4,
 	                             0, 4,
 	                             1, 5,
 	                             7, 3,
 	                             9, 5);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 0));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 0, 0));
 	_assert_egress_qos_mappings (ifindex, 3,
 	                             1, 5,
 	                             7, 3,
 	                             9, 5);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 100, 4));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 100, 4));
 	_assert_egress_qos_mappings (ifindex, 4,
 	                             1, 5,
 	                             7, 3,
 	                             9, 5,
 	                             100, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 4));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 4));
 	_assert_egress_qos_mappings (ifindex, 5,
 	                             1, 5,
 	                             7, 3,
@@ -1224,7 +1224,7 @@ test_vlan_set_xgress (void)
 	                             100, 4,
 	                             G_MAXUINT32, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 8));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 8));
 	_assert_egress_qos_mappings (ifindex, 5,
 	                             1, 5,
 	                             7, 3,
@@ -1232,20 +1232,20 @@ test_vlan_set_xgress (void)
 	                             100, 4,
 	                             G_MAXUINT32, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 0));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, G_MAXUINT32, 0));
 	_assert_egress_qos_mappings (ifindex, 4,
 	                             1, 5,
 	                             7, 3,
 	                             9, 5,
 	                             100, 4);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 100, 0));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 100, 0));
 	_assert_egress_qos_mappings (ifindex, 3,
 	                             1, 5,
 	                             7, 3,
 	                             9, 5);
 
-	g_assert (nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 0));
+	g_assert (nm_platform_link_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, 1, 0));
 	_assert_egress_qos_mappings (ifindex, 2,
 	                             7, 3,
 	                             9, 5);
@@ -1559,11 +1559,11 @@ test_nl_bugs_veth (void)
 	ifindex_veth0 = nmtstp_assert_wait_for_link (IFACE_VETH0, NM_LINK_TYPE_VETH, 100)->ifindex;
 	ifindex_veth1 = nmtstp_assert_wait_for_link (IFACE_VETH1, NM_LINK_TYPE_VETH, 100)->ifindex;
 
-	/* assert that nm_platform_veth_get_properties() returns the expected peer ifindexes. */
-	g_assert (nm_platform_veth_get_properties (NM_PLATFORM_GET, ifindex_veth0, &i));
+	/* assert that nm_platform_link_veth_get_properties() returns the expected peer ifindexes. */
+	g_assert (nm_platform_link_veth_get_properties (NM_PLATFORM_GET, ifindex_veth0, &i));
 	g_assert_cmpint (i, ==, ifindex_veth1);
 
-	g_assert (nm_platform_veth_get_properties (NM_PLATFORM_GET, ifindex_veth1, &i));
+	g_assert (nm_platform_link_veth_get_properties (NM_PLATFORM_GET, ifindex_veth1, &i));
 	g_assert_cmpint (i, ==, ifindex_veth0);
 
 	/* assert that NMPlatformLink.parent is the peer-ifindex. */

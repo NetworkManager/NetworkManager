@@ -618,7 +618,7 @@ _linktype_get_type (NMPlatform *platform,
 			NMPlatformTunProperties props;
 
 			if (   platform
-			    && nm_platform_tun_get_properties_ifname (platform, ifname, &props)) {
+			    && nm_platform_link_tun_get_properties_ifname (platform, ifname, &props)) {
 				if (!g_strcmp0 (props.mode, "tap"))
 					return NM_LINK_TYPE_TAP;
 				if (!g_strcmp0 (props.mode, "tun"))

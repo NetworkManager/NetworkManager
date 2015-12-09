@@ -400,11 +400,11 @@ create_and_realize (NMDevice *device,
 		}
 	}
 
-	plerr = nm_platform_bridge_add (NM_PLATFORM_GET,
-	                                iface,
-	                                hwaddr ? mac_address : NULL,
-	                                hwaddr ? ETH_ALEN : 0,
-	                                out_plink);
+	plerr = nm_platform_link_bridge_add (NM_PLATFORM_GET,
+	                                     iface,
+	                                     hwaddr ? mac_address : NULL,
+	                                     hwaddr ? ETH_ALEN : 0,
+	                                     out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create bridge interface '%s' for '%s': %s",

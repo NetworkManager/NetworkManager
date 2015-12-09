@@ -642,7 +642,7 @@ nm_platform_link_add (NMPlatform *self,
 }
 
 /**
- * nm_platform_dummy_add:
+ * nm_platform_link_dummy_add:
  * @self: platform instance
  * @name: New interface name
  * @out_link: on success, the link object
@@ -650,7 +650,7 @@ nm_platform_link_add (NMPlatform *self,
  * Create a software ethernet-like interface
  */
 NMPlatformError
-nm_platform_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, 0, out_link);
 }
@@ -1476,7 +1476,7 @@ nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformL
 /*****************************************************************************/
 
 /**
- * nm_platform_bridge_add:
+ * nm_platform_link_bridge_add:
  * @self: platform instance
  * @name: New interface name
  * @address: (allow-none): set the mac address of the new bridge
@@ -1486,17 +1486,17 @@ nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformL
  * Create a software bridge.
  */
 NMPlatformError
-nm_platform_bridge_add (NMPlatform *self,
-                        const char *name,
-                        const void *address,
-                        size_t address_len,
-                        const NMPlatformLink **out_link)
+nm_platform_link_bridge_add (NMPlatform *self,
+                             const char *name,
+                             const void *address,
+                             size_t address_len,
+                             const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, address, address_len, out_link);
 }
 
 /**
- * nm_platform_bond_add:
+ * nm_platform_link_bond_add:
  * @self: platform instance
  * @name: New interface name
  * @out_link: on success, the link object
@@ -1504,13 +1504,13 @@ nm_platform_bridge_add (NMPlatform *self,
  * Create a software bonding device.
  */
 NMPlatformError
-nm_platform_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, 0, out_link);
 }
 
 /**
- * nm_platform_team_add:
+ * nm_platform_link_team_add:
  * @self: platform instance
  * @name: New interface name
  * @out_link: on success, the link object
@@ -1518,13 +1518,13 @@ nm_platform_bond_add (NMPlatform *self, const char *name, const NMPlatformLink *
  * Create a software teaming device.
  */
 NMPlatformError
-nm_platform_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, 0, out_link);
 }
 
 /**
- * nm_platform_vlan_add:
+ * nm_platform_link_vlan_add:
  * @self: platform instance
  * @name: New interface name
  * @vlanid: VLAN identifier
@@ -1534,7 +1534,7 @@ nm_platform_team_add (NMPlatform *self, const char *name, const NMPlatformLink *
  * Create a software VLAN device.
  */
 NMPlatformError
-nm_platform_vlan_add (NMPlatform *self,
+nm_platform_link_vlan_add (NMPlatform *self,
                       const char *name,
                       int parent,
                       int vlanid,
@@ -1594,7 +1594,7 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 }
 
 /**
- * nm_platform_tun_add:
+ * nm_platform_link_tun_add:
  * @self: platform instance
  * @name: new interface name
  * @tap: whether the interface is a TAP
@@ -1608,9 +1608,15 @@ nm_platform_link_vxlan_add (NMPlatform *self,
  * Create a TUN or TAP interface.
  */
 NMPlatformError
-nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap,
-                     gint64 owner, gint64 group, gboolean pi, gboolean vnet_hdr,
-                     gboolean multi_queue, const NMPlatformLink **out_link)
+nm_platform_link_tun_add (NMPlatform *self,
+                          const char *name,
+                          gboolean tap,
+                          gint64 owner,
+                          gint64 group,
+                          gboolean pi,
+                          gboolean vnet_hdr,
+                          gboolean multi_queue,
+                          const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 
@@ -1747,7 +1753,7 @@ nm_platform_link_vlan_change (NMPlatform *self,
 }
 
 gboolean
-nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to)
+nm_platform_link_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to)
 {
 	NMVlanQosMapping map = {
 		.from = from,
@@ -1758,7 +1764,7 @@ nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int t
 }
 
 gboolean
-nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to)
+nm_platform_link_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to)
 {
 	NMVlanQosMapping map = {
 		.from = from,
@@ -1808,7 +1814,7 @@ nm_platform_link_gre_add (NMPlatform *self,
 }
 
 NMPlatformError
-nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link)
+nm_platform_link_infiniband_add (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	gs_free char *parent_name = NULL;
 	gs_free char *name = NULL;
@@ -1838,11 +1844,11 @@ nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, c
 }
 
 gboolean
-nm_platform_infiniband_get_properties (NMPlatform *self,
-                                       int ifindex,
-                                       int *out_parent,
-                                       int *out_p_key,
-                                       const char **out_mode)
+nm_platform_link_infiniband_get_properties (NMPlatform *self,
+                                            int ifindex,
+                                            int *out_parent,
+                                            int *out_p_key,
+                                            const char **out_mode)
 {
 	const NMPlatformLnkInfiniband *plnk;
 	const NMPlatformLink *plink;
@@ -2063,7 +2069,7 @@ nm_platform_link_sit_add (NMPlatform *self,
 }
 
 gboolean
-nm_platform_veth_get_properties (NMPlatform *self, int ifindex, int *out_peer_ifindex)
+nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_peer_ifindex)
 {
 	const NMPlatformLink *plink;
 	int peer_ifindex;
@@ -2093,7 +2099,7 @@ nm_platform_veth_get_properties (NMPlatform *self, int ifindex, int *out_peer_if
 }
 
 gboolean
-nm_platform_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMPlatformTunProperties *props)
+nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMPlatformTunProperties *props)
 {
 	char *path, *val;
 	gboolean success = TRUE;
@@ -2154,14 +2160,14 @@ nm_platform_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMP
 }
 
 gboolean
-nm_platform_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
+nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
 
-	return nm_platform_tun_get_properties_ifname (self, nm_platform_link_get_name (self, ifindex), props);
+	return nm_platform_link_tun_get_properties_ifname (self, nm_platform_link_get_name (self, ifindex), props);
 }
 
 gboolean

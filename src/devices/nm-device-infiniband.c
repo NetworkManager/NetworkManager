@@ -226,7 +226,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	ifindex = nm_device_get_ifindex (device);
 	if (ifindex > 0) {
-		if (!nm_platform_infiniband_get_properties (NM_PLATFORM_GET, ifindex, NULL, NULL, &transport_mode))
+		if (!nm_platform_link_infiniband_get_properties (NM_PLATFORM_GET, ifindex, NULL, NULL, &transport_mode))
 			transport_mode = "datagram";
 	}
 	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);
@@ -268,7 +268,7 @@ create_and_realize (NMDevice *device,
 		return FALSE;
 	}
 
-	plerr = nm_platform_infiniband_partition_add (NM_PLATFORM_GET, parent_ifindex, p_key, out_plink);
+	plerr = nm_platform_link_infiniband_add (NM_PLATFORM_GET, parent_ifindex, p_key, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create InfiniBand P_Key interface '%s' for '%s': %s",

@@ -700,10 +700,10 @@ const NMPlatformLink *nm_platform_link_get_by_ifname (NMPlatform *self, const ch
 const NMPlatformLink *nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length);
 
 GArray *nm_platform_link_get_all (NMPlatform *self);
-NMPlatformError nm_platform_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
-NMPlatformError nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, const NMPlatformLink **out_link);
-NMPlatformError nm_platform_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
-NMPlatformError nm_platform_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 /* convienience methods to lookup the link and access fields of NMPlatformLink. */
@@ -756,6 +756,7 @@ gboolean nm_platform_link_supports_vlans (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_enslave (NMPlatform *self, int master, int slave);
 gboolean nm_platform_link_release (NMPlatform *self, int master, int slave);
+
 gboolean nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
 char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option);
 gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
@@ -773,9 +774,9 @@ const NMPlatformLnkSit *nm_platform_link_get_lnk_sit (NMPlatform *self, int ifin
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 
-NMPlatformError nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
-gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
-gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
+NMPlatformError nm_platform_link_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
+gboolean nm_platform_link_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
+gboolean nm_platform_link_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_link_vlan_change (NMPlatform *self,
                                        int ifindex,
                                        NMVlanFlags flags_mask,
@@ -789,16 +790,23 @@ gboolean nm_platform_link_vlan_change (NMPlatform *self,
 
 NMPlatformError nm_platform_link_vxlan_add (NMPlatform *self, const char *name, NMPlatformLnkVxlan *props, const NMPlatformLink **out_link);
 
-NMPlatformError nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap, gint64 owner, gint64 group, gboolean pi,
-                                     gboolean vnet_hdr, gboolean multi_queue, const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_tun_add (NMPlatform *self,
+                                          const char *name,
+                                          gboolean tap,
+                                          gint64 owner,
+                                          gint64 group,
+                                          gboolean pi,
+                                          gboolean vnet_hdr,
+                                          gboolean multi_queue,
+                                          const NMPlatformLink **out_link);
 
-NMPlatformError nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link);
-gboolean nm_platform_infiniband_get_properties (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
+NMPlatformError nm_platform_link_infiniband_add (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link);
+gboolean nm_platform_link_infiniband_get_properties (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
 
-gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, int *out_peer_ifindex);
-gboolean nm_platform_tun_get_properties         (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);
+gboolean nm_platform_link_veth_get_properties   (NMPlatform *self, int ifindex, int *out_peer_ifindex);
+gboolean nm_platform_link_tun_get_properties    (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);
 
-gboolean nm_platform_tun_get_properties_ifname  (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
+gboolean nm_platform_link_tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
 
 gboolean    nm_platform_wifi_get_capabilities (NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
 gboolean    nm_platform_wifi_get_bssid        (NMPlatform *self, int ifindex, guint8 *bssid);
