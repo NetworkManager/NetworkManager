@@ -1439,7 +1439,7 @@ device_link_changed (NMDevice *self)
 	NMPlatformLink info;
 	const NMPlatformLink *pllink;
 	int ifindex;
-	gboolean emit_link_initialized = FALSE;
+	gboolean just_initialized = FALSE;
 	gboolean was_up;
 
 	priv->device_link_changed_id = 0;
@@ -1530,14 +1530,15 @@ device_link_changed (NMDevice *self)
 		                               FALSE,
 		                               NM_DEVICE_STATE_REASON_NOW_MANAGED);
 
-		emit_link_initialized = TRUE;
+		just_initialized = TRUE;
 	}
 
 	was_up = priv->up;
 	priv->up = NM_FLAGS_HAS (info.flags, IFF_UP);
 
 	if (   priv->platform_link_initialized
-	    && (emit_link_initialized || priv->up != was_up)) {
+	    && (   just_initialized
+	        || priv->up != was_up)) {
 
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
@@ -1579,7 +1580,7 @@ device_link_changed (NMDevice *self)
 		}
 	}
 
-	if (emit_link_initialized)
+	if (just_initialized)
 		g_signal_emit (self, signals[LINK_INITIALIZED], 0);
 
 	device_recheck_slave_status (self, &info);
