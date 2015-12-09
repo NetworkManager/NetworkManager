@@ -2042,8 +2042,8 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 
 		device = nm_manager_get_device_by_ifindex (self, data->ifindex);
 		if (device) {
-			if (nm_device_is_software (device)) {
-				/* Software devices stick around until their connection is removed */
+			if (nm_device_is_software (device) && nm_device_get_is_nm_owned (device)) {
+				/* Our software devices stick around until their connection is removed */
 				if (!nm_device_unrealize (device, FALSE, &error)) {
 					nm_log_warn (LOGD_DEVICE, "(%s): failed to unrealize: %s",
 					             nm_device_get_iface (device),
@@ -2052,7 +2052,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 					remove_device (self, device, FALSE, TRUE);
 				}
 			} else {
-				/* Hardware devices always get removed when their kernel link is gone */
+				/* Hardware and external devices always get removed when their kernel link is gone */
 				remove_device (self, device, FALSE, TRUE);
 			}
 		}
