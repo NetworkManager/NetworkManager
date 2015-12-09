@@ -561,6 +561,8 @@ typedef struct {
 	                              gboolean egress_reset_all,
 	                              const NMVlanQosMapping *egress_map,
 	                              gsize n_egress_map);
+	gboolean (*link_vxlan_add) (NMPlatform *, const char *name, NMPlatformLnkVxlan *props,
+	                            NMPlatformLink *out_link);
 
 	gboolean (*link_gre_add) (NMPlatform *, const char *name, NMPlatformLnkGre *props,
 	                          NMPlatformLink *out_link);
@@ -785,6 +787,7 @@ gboolean nm_platform_link_vlan_change (NMPlatform *self,
                                        const NMVlanQosMapping *egress_map,
                                        gsize n_egress_map);
 
+NMPlatformError nm_platform_link_vxlan_add (NMPlatform *self, const char *name, NMPlatformLnkVxlan *props, NMPlatformLink *out_link);
 
 NMPlatformError nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap, gint64 owner, gint64 group, gboolean pi,
                                      gboolean vnet_hdr, gboolean multi_queue, NMPlatformLink *out_link);

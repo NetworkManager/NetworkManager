@@ -75,6 +75,7 @@ libnm-core/nm-setting-team-port.c
 libnm-core/nm-setting-tun.c
 libnm-core/nm-setting-vlan.c
 libnm-core/nm-setting-vpn.c
+libnm-core/nm-setting-vxlan.c
 libnm-core/nm-setting-wimax.c
 libnm-core/nm-setting-wired.c
 libnm-core/nm-setting-wireless-security.c
@@ -128,6 +129,7 @@ libnm/nm-device-modem.c
 libnm/nm-device-olpc-mesh.c
 libnm/nm-device-team.c
 libnm/nm-device-vlan.c
+libnm/nm-device-vxlan.c
 libnm/nm-device-wifi.c
 libnm/nm-device-wimax.c
 libnm/nm-device.c
@@ -157,6 +159,7 @@ src/devices/nm-device-ip-tunnel.c
 src/devices/nm-device-macvlan.c
 src/devices/nm-device-tun.c
 src/devices/nm-device-vlan.c
+src/devices/nm-device-vxlan.c
 src/devices/team/nm-device-team.c
 src/devices/wifi/nm-device-olpc-mesh.c
 src/devices/wifi/nm-device-wifi.c

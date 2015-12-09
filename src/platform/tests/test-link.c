@@ -669,8 +669,8 @@ test_software_detect (gconstpointer user_data)
 		NMPlatformLnkGre lnk_gre = { };
 		gboolean gracefully_skip = FALSE;
 
-		inet_pton (AF_INET, "192.168.233.204", &lnk_gre.local);
-		inet_pton (AF_INET, "172.168.10.25", &lnk_gre.remote);
+		lnk_gre.local = nmtst_inet4_from_string ("192.168.233.204");
+		lnk_gre.remote = nmtst_inet4_from_string ("172.168.10.25");
 		lnk_gre.parent_ifindex = ifindex_parent;
 		lnk_gre.ttl = 174;
 		lnk_gre.tos = 37;
@@ -699,8 +699,8 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ipip", NULL) != 0;
 		}
 
-		inet_pton (AF_INET, "1.2.3.4", &lnk_ipip.local);
-		inet_pton (AF_INET, "5.6.7.8", &lnk_ipip.remote);
+		lnk_ipip.local = nmtst_inet4_from_string ("1.2.3.4");
+		lnk_ipip.remote = nmtst_inet4_from_string ("5.6.7.8");
 		lnk_ipip.parent_ifindex = ifindex_parent;
 		lnk_ipip.tos = 32;
 		lnk_ipip.path_mtu_discovery = FALSE;
@@ -723,8 +723,8 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_tunnel", NULL) != 0;
 		}
 
-		inet_pton (AF_INET6, "fd01::15", &lnk_ip6tnl.local);
-		inet_pton (AF_INET6, "fd01::16", &lnk_ip6tnl.remote);
+		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::15");
+		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::16");
 		lnk_ip6tnl.parent_ifindex = ifindex_parent;
 		lnk_ip6tnl.tclass = 20;
 		lnk_ip6tnl.encap_limit = 6;
@@ -766,8 +766,8 @@ test_software_detect (gconstpointer user_data)
 		NMPlatformLnkSit lnk_sit = { };
 		gboolean gracefully_skip = FALSE;
 
-		inet_pton (AF_INET, "192.168.200.1", &lnk_sit.local);
-		inet_pton (AF_INET, "172.25.100.14", &lnk_sit.remote);
+		lnk_sit.local = nmtst_inet4_from_string ("192.168.200.1");
+		lnk_sit.remote = nmtst_inet4_from_string ("172.25.100.14");
 		lnk_sit.parent_ifindex = ifindex_parent;
 		lnk_sit.ttl = 0;
 		lnk_sit.tos = 31;
@@ -790,22 +790,37 @@ test_software_detect (gconstpointer user_data)
 	case NM_LINK_TYPE_VLAN:
 		nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1242", DEVICE_NAME, PARENT_NAME);
 		break;
-	case NM_LINK_TYPE_VXLAN:
+	case NM_LINK_TYPE_VXLAN: {
+		NMPlatformLnkVxlan lnk_vxlan = { };
+
 		switch (test_data->test_mode) {
 		case 0:
-			if (nmtstp_run_command ("ip link add %s type vxlan id 42 local 23.1.2.164 group 239.1.2.134 dev %s ageing 1245 dstport 4789", DEVICE_NAME, PARENT_NAME)) {
-				g_test_skip ("could not add a vxlan");
-				goto out_delete_parent;
-			}
+			lnk_vxlan.parent_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME);
+			lnk_vxlan.id = 42;
+			lnk_vxlan.local = nmtst_inet4_from_string ("23.1.2.164");
+			lnk_vxlan.group = nmtst_inet4_from_string ("239.1.2.134");
+			lnk_vxlan.dst_port = 4789;
+			lnk_vxlan.learning = TRUE;
+			lnk_vxlan.ageing = 1245;
 			break;
 		case 1:
-			if (nmtstp_run_command ("ip link add %s type vxlan id 11214423 local 1:2:3:4:334:23::23 group ff0e::115 dev %s ageing 3245 dstport 57412", DEVICE_NAME, PARENT_NAME)) {
-				g_test_skip ("could not add a vxlan");
-				goto out_delete_parent;
-			}
+			lnk_vxlan.parent_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME);
+			lnk_vxlan.id = 11214423;
+			lnk_vxlan.local6 = *nmtst_inet6_from_string ("1:2:3:4:334:23::23");
+			lnk_vxlan.group6 = *nmtst_inet6_from_string ("ff0e::115");
+			lnk_vxlan.ttl = 32;
+			lnk_vxlan.dst_port = 57412;
+			lnk_vxlan.src_port_min = 1000;
+			lnk_vxlan.src_port_max = 1003;
+			lnk_vxlan.learning = TRUE;
+			lnk_vxlan.ageing = 3245;
 			break;
 		}
+
+		if (!nmtstp_link_vxlan_add (EX, DEVICE_NAME, &lnk_vxlan))
+			g_error ("Failed adding VXLAN link");
 		break;
+	}
 	default:
 		g_assert_not_reached ();
 	}
@@ -922,11 +937,8 @@ test_software_detect (gconstpointer user_data)
 			g_assert (plnk == nm_platform_link_get_lnk_vxlan (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->parent_ifindex, !=, 0);
 			g_assert_cmpint (plnk->tos, ==, 0);
-			g_assert_cmpint (plnk->ttl, ==, 0);
 			g_assert_cmpint (plnk->learning, ==, TRUE);
 			g_assert_cmpint (plnk->limit, ==, 0);
-			g_assert_cmpint (plnk->src_port_min, ==, 0);
-			g_assert_cmpint (plnk->src_port_max, ==, 0);
 			g_assert_cmpint (plnk->proxy, ==, FALSE);
 			g_assert_cmpint (plnk->rsc, ==, FALSE);
 			g_assert_cmpint (plnk->l2miss, ==, FALSE);
@@ -939,8 +951,11 @@ test_software_detect (gconstpointer user_data)
 				nmtst_assert_ip4_address (plnk->group, "239.1.2.134");
 				nmtst_assert_ip6_address (&plnk->group6, "::");
 				nmtst_assert_ip6_address (&plnk->local6, "::");
+				g_assert_cmpint (plnk->ttl, ==, 0);
 				g_assert_cmpint (plnk->ageing, ==, 1245);
 				g_assert_cmpint (plnk->dst_port, ==, 4789);
+				g_assert_cmpint (plnk->src_port_min, ==, 0);
+				g_assert_cmpint (plnk->src_port_max, ==, 0);
 				break;
 			case 1:
 				g_assert_cmpint (plnk->id, ==, 11214423);
@@ -950,6 +965,9 @@ test_software_detect (gconstpointer user_data)
 				nmtst_assert_ip6_address (&plnk->local6, "1:2:3:4:334:23::23");
 				g_assert_cmpint (plnk->ageing, ==, 3245);
 				g_assert_cmpint (plnk->dst_port, ==, 57412);
+				g_assert_cmpint (plnk->ttl, ==, 32);
+				g_assert_cmpint (plnk->src_port_min, ==, 1000);
+				g_assert_cmpint (plnk->src_port_max, ==, 1003);
 				break;
 			}
 			break;

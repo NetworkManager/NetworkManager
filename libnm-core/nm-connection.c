@@ -1597,7 +1597,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TUN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME))
+	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_VXLAN_SETTING_NAME))
 		return TRUE;
 
 	if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
@@ -2020,6 +2021,24 @@ nm_connection_get_setting_vpn (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingVpn *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+}
+
+/**
+ * nm_connection_get_setting_vxlan:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingVxlan the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingVxlan if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.2
+ **/
+NMSettingVxlan *
+nm_connection_get_setting_vxlan (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingVxlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VXLAN);
 }
 
 /**

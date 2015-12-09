@@ -709,6 +709,31 @@ link_vlan_change (NMPlatform *platform,
 }
 
 static gboolean
+link_vxlan_add (NMPlatform *platform,
+                const char *name,
+                NMPlatformLnkVxlan *props,
+                NMPlatformLink *out_link)
+{
+	NMFakePlatformLink *device;
+
+	if (!link_add (platform, name, NM_LINK_TYPE_VXLAN, NULL, 0, NULL))
+		return FALSE;
+
+	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
+
+	g_return_val_if_fail (device, FALSE);
+	g_return_val_if_fail (!device->lnk, FALSE);
+
+	device->lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VXLAN, NULL);
+	device->lnk->lnk_vxlan = *props;
+	device->link.parent = props->parent_ifindex;
+
+	if (out_link)
+		*out_link = device->link;
+	return TRUE;
+}
+
+static gboolean
 infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
 {
 	NMFakePlatformLink *device, *parent_device;
@@ -1458,6 +1483,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
+	platform_class->link_vxlan_add = link_vxlan_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
 

@@ -1560,6 +1560,38 @@ nm_platform_vlan_add (NMPlatform *self,
 }
 
 /**
+ * nm_platform_link_vxlan_add:
+ * @self: platform instance
+ * @name: New interface name
+ * @props: properties of the new link
+ * @out_link: on success, the link object
+ *
+ * Create a VXLAN device.
+ */
+NMPlatformError
+nm_platform_link_vxlan_add (NMPlatform *self,
+                            const char *name,
+                            NMPlatformLnkVxlan *props,
+                            NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_VXLAN, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("link: adding vxlan '%s' parent %d id %d",
+	       name, props->parent_ifindex, props->id);
+	if (!klass->link_vxlan_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+/**
  * nm_platform_tun_add:
  * @self: platform instance
  * @name: new interface name
@@ -1595,7 +1627,6 @@ nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap,
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
-
 
 gboolean
 nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)

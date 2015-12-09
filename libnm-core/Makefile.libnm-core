@@ -38,6 +38,7 @@ libnm_core_headers =				\
 	$(core)/nm-setting-tun.h		\
 	$(core)/nm-setting-vlan.h		\
 	$(core)/nm-setting-vpn.h		\
+	$(core)/nm-setting-vxlan.h		\
 	$(core)/nm-setting-wimax.h		\
 	$(core)/nm-setting-wired.h		\
 	$(core)/nm-setting-wireless-security.h	\
@@ -97,6 +98,7 @@ libnm_core_sources =				\
 	$(core)/nm-setting-tun.c		\
 	$(core)/nm-setting-vlan.c		\
 	$(core)/nm-setting-vpn.c		\
+	$(core)/nm-setting-vxlan.c		\
 	$(core)/nm-setting-wimax.c		\
 	$(core)/nm-setting-wired.c		\
 	$(core)/nm-setting-wireless-security.c	\

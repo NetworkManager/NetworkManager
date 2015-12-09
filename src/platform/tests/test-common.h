@@ -150,6 +150,9 @@ gboolean nmtstp_link_macvlan_add (gboolean external_command,
 gboolean nmtstp_link_sit_add (gboolean external_command,
                               const char *name,
                               NMPlatformLnkSit *lnk);
+gboolean nmtstp_link_vxlan_add (gboolean external_command,
+                                const char *name,
+                                NMPlatformLnkVxlan *lnk);
 
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);
