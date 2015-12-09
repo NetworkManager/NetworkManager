@@ -545,10 +545,6 @@ typedef struct {
 
 	gboolean (*link_enslave) (NMPlatform *, int master, int slave);
 	gboolean (*link_release) (NMPlatform *, int master, int slave);
-	gboolean (*master_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
-	char * (*master_get_option) (NMPlatform *, int ifindex, const char *option);
-	gboolean (*slave_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
-	char * (*slave_get_option) (NMPlatform *, int ifindex, const char *option);
 
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
 	gboolean (*link_vlan_change) (NMPlatform *self,

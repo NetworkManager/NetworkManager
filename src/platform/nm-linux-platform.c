@@ -4801,89 +4801,6 @@ link_release (NMPlatform *platform, int master, int slave)
 	return link_enslave (platform, 0, slave);
 }
 
-static char *
-link_option_path (NMPlatform *platform, int master, const char *category, const char *option)
-{
-	const char *name = nm_platform_link_get_name (platform, master);
-
-	if (!name || !category || !option)
-		return NULL;
-
-	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
-	                        ASSERT_VALID_PATH_COMPONENT (name),
-	                        ASSERT_VALID_PATH_COMPONENT (category),
-	                        ASSERT_VALID_PATH_COMPONENT (option));
-}
-
-static gboolean
-link_set_option (NMPlatform *platform, int master, const char *category, const char *option, const char *value)
-{
-	gs_free char *path = link_option_path (platform, master, category, option);
-
-	return path && nm_platform_sysctl_set (platform, path, value);
-}
-
-static char *
-link_get_option (NMPlatform *platform, int master, const char *category, const char *option)
-{
-	gs_free char *path = link_option_path (platform, master, category, option);
-
-	return path ? nm_platform_sysctl_get (platform, path) : NULL;
-}
-
-static const char *
-master_category (NMPlatform *platform, int master)
-{
-	switch (nm_platform_link_get_type (platform, master)) {
-	case NM_LINK_TYPE_BRIDGE:
-		return "bridge";
-	case NM_LINK_TYPE_BOND:
-		return "bonding";
-	default:
-		return NULL;
-	}
-}
-
-static const char *
-slave_category (NMPlatform *platform, int slave)
-{
-	int master = nm_platform_link_get_master (platform, slave);
-
-	if (master <= 0)
-		return NULL;
-
-	switch (nm_platform_link_get_type (platform, master)) {
-	case NM_LINK_TYPE_BRIDGE:
-		return "brport";
-	default:
-		return NULL;
-	}
-}
-
-static gboolean
-master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
-{
-	return link_set_option (platform, master, master_category (platform, master), option, value);
-}
-
-static char *
-master_get_option (NMPlatform *platform, int master, const char *option)
-{
-	return link_get_option (platform, master, master_category (platform, master), option);
-}
-
-static gboolean
-slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
-{
-	return link_set_option (platform, slave, slave_category (platform, slave), option, value);
-}
-
-static char *
-slave_get_option (NMPlatform *platform, int slave, const char *option)
-{
-	return link_get_option (platform, slave, slave_category (platform, slave), option);
-}
-
 /******************************************************************/
 
 static gboolean
@@ -5967,10 +5884,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
-	platform_class->master_set_option = master_set_option;
-	platform_class->master_get_option = master_get_option;
-	platform_class->slave_set_option = slave_set_option;
-	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;

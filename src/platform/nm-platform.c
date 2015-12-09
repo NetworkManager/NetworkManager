@@ -1636,6 +1636,67 @@ nm_platform_link_tun_add (NMPlatform *self,
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
+/*****************************************************************************/
+
+static char *
+link_option_path (NMPlatform *self, int master, const char *category, const char *option)
+{
+	const char *name = nm_platform_link_get_name (self, master);
+
+	if (!name || !category || !option)
+		return NULL;
+
+	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
+	                        ASSERT_VALID_PATH_COMPONENT (name),
+	                        ASSERT_VALID_PATH_COMPONENT (category),
+	                        ASSERT_VALID_PATH_COMPONENT (option));
+}
+
+static gboolean
+link_set_option (NMPlatform *self, int master, const char *category, const char *option, const char *value)
+{
+	gs_free char *path = link_option_path (self, master, category, option);
+
+	return path && nm_platform_sysctl_set (self, path, value);
+}
+
+static char *
+link_get_option (NMPlatform *self, int master, const char *category, const char *option)
+{
+	gs_free char *path = link_option_path (self, master, category, option);
+
+	return path ? nm_platform_sysctl_get (self, path) : NULL;
+}
+
+static const char *
+master_category (NMPlatform *self, int master)
+{
+	switch (nm_platform_link_get_type (self, master)) {
+	case NM_LINK_TYPE_BRIDGE:
+		return "bridge";
+	case NM_LINK_TYPE_BOND:
+		return "bonding";
+	default:
+		return NULL;
+	}
+}
+
+static const char *
+slave_category (NMPlatform *self, int slave)
+{
+	int master = nm_platform_link_get_master (self, slave);
+
+	if (master <= 0)
+		return NULL;
+
+	switch (nm_platform_link_get_type (self, master)) {
+	case NM_LINK_TYPE_BRIDGE:
+		return "brport";
+	default:
+		return NULL;
+	}
+}
+
 gboolean
 nm_platform_sysctl_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
 {
@@ -1644,9 +1705,8 @@ nm_platform_sysctl_master_set_option (NMPlatform *self, int ifindex, const char 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
 	g_return_val_if_fail (value, FALSE);
-	g_return_val_if_fail (klass->master_set_option, FALSE);
 
-	return klass->master_set_option (self, ifindex, option, value);
+	return link_set_option (self, ifindex, master_category (self, ifindex), option, value);
 }
 
 char *
@@ -1656,9 +1716,8 @@ nm_platform_sysctl_master_get_option (NMPlatform *self, int ifindex, const char 
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
-	g_return_val_if_fail (klass->master_set_option, FALSE);
 
-	return klass->master_get_option (self, ifindex, option);
+	return link_get_option (self, ifindex, master_category (self, ifindex), option);
 }
 
 gboolean
@@ -1669,9 +1728,8 @@ nm_platform_sysctl_slave_set_option (NMPlatform *self, int ifindex, const char *
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
 	g_return_val_if_fail (value, FALSE);
-	g_return_val_if_fail (klass->slave_set_option, FALSE);
 
-	return klass->slave_set_option (self, ifindex, option, value);
+	return link_set_option (self, ifindex, slave_category (self, ifindex), option, value);
 }
 
 char *
@@ -1681,10 +1739,11 @@ nm_platform_sysctl_slave_get_option (NMPlatform *self, int ifindex, const char *
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
-	g_return_val_if_fail (klass->slave_set_option, FALSE);
 
-	return klass->slave_get_option (self, ifindex, option);
+	return link_get_option (self, ifindex, slave_category (self, ifindex), option);
 }
+
+/******************************************************************************/
 
 gboolean
 nm_platform_link_vlan_change (NMPlatform *self,
