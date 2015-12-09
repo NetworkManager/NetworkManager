@@ -181,6 +181,8 @@ typedef struct {
 	NMPlatformLnkMacvlan _public;
 } NMPObjectLnkMacvlan;
 
+typedef NMPObjectLnkMacvlan NMPObjectLnkMacvtap;
+
 typedef struct {
 	NMPlatformLnkSit _public;
 } NMPObjectLnkSit;

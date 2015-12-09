@@ -781,6 +781,8 @@ nm_device_get_priority (NMDevice *self)
 		return 350;
 	case NM_DEVICE_TYPE_VLAN:
 		return 400;
+	case NM_DEVICE_TYPE_MACVLAN:
+		return 410;
 	case NM_DEVICE_TYPE_BRIDGE:
 		return 425;
 	case NM_DEVICE_TYPE_TUN:

@@ -39,6 +39,7 @@ libnminclude_hfiles =			\
 	nm-device-generic.h		\
 	nm-device-infiniband.h		\
 	nm-device-ip-tunnel.h		\
+	nm-device-macvlan.h		\
 	nm-device-modem.h		\
 	nm-device-olpc-mesh.h		\
 	nm-device-team.h		\
@@ -92,6 +93,7 @@ libnm_la_csources =			\
 	nm-device-generic.c		\
 	nm-device-infiniband.c		\
 	nm-device-ip-tunnel.c		\
+	nm-device-macvlan.c		\
 	nm-device-modem.c		\
 	nm-device-olpc-mesh.c		\
 	nm-device-team.c		\

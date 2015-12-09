@@ -24,6 +24,7 @@
 #include <netinet/in.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
+#include <linux/if_link.h>
 
 #include "nm-dbus-interface.h"
 #include "nm-default.h"
@@ -399,9 +400,12 @@ typedef struct {
 } NMPlatformLnkIpIp;
 
 typedef struct {
-	const char *mode;
+	guint mode;
 	gboolean no_promisc;
+	gboolean tap;
 } NMPlatformLnkMacvlan;
+
+typedef NMPlatformLnkMacvlan NMPlatformLnkMacvtap;
 
 typedef struct {
 	int parent_ifindex;
@@ -564,6 +568,8 @@ typedef struct {
 	                             NMPlatformLink *out_link);
 	gboolean (*link_ipip_add) (NMPlatform *, const char *name, NMPlatformLnkIpIp *props,
 	                           NMPlatformLink *out_link);
+	gboolean (*link_macvlan_add) (NMPlatform *, const char *name, int parent, NMPlatformLnkMacvlan *props,
+	                              NMPlatformLink *out_link);
 	gboolean (*link_sit_add) (NMPlatform *, const char *name, NMPlatformLnkSit *props,
 	                          NMPlatformLink *out_link);
 
@@ -760,6 +766,7 @@ const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int if
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkMacvtap *nm_platform_link_get_lnk_macvtap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkSit *nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
@@ -816,6 +823,8 @@ NMPlatformError nm_platform_link_ip6tnl_add (NMPlatform *self, const char *name,
                                              NMPlatformLink *out_link);
 NMPlatformError nm_platform_link_ipip_add (NMPlatform *self, const char *name, NMPlatformLnkIpIp *props,
                                            NMPlatformLink *out_link);
+NMPlatformError nm_platform_link_macvlan_add (NMPlatform *self, const char *name, int parent, NMPlatformLnkMacvlan *props,
+                                              NMPlatformLink *out_link);
 NMPlatformError nm_platform_link_sit_add (NMPlatform *self, const char *name, NMPlatformLnkSit *props,
                                           NMPlatformLink *out_link);
 

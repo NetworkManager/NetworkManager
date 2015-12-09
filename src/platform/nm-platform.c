@@ -1447,6 +1447,12 @@ nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatfor
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
 }
 
+const NMPlatformLnkMacvtap *
+nm_platform_link_get_lnk_macvtap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVTAP, out_link);
+}
+
 const NMPlatformLnkSit *
 nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1939,6 +1945,47 @@ nm_platform_link_ipip_add (NMPlatform *self,
 	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	if (!klass->link_ipip_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+/**
+ * nm_platform_macvlan_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create a MACVLAN or MACVTAP device.
+ */
+NMPlatformError
+nm_platform_link_macvlan_add (NMPlatform *self,
+                              const char *name,
+                              int parent,
+                              NMPlatformLnkMacvlan *props,
+                              NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+	NMLinkType type;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	type = props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN;
+
+	plerr = _link_add_check_existing (self, name, type, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("adding %s '%s' parent %u mode %u",
+	       props->tap ? "macvtap" : "macvlan",
+	       name,
+	       parent,
+	       props->mode);
+
+	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3059,10 +3106,9 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 		return buf;
 
 	g_snprintf (buf, len,
-	            "macvlan%s%s%s",
-	            lnk->mode ? " mode " : "",
-	            lnk->mode ?: "",
-	            lnk->no_promisc ? " not-promisc" : " promisc");
+	            "macvlan mode %u %s",
+	            lnk->mode,
+	            lnk->no_promisc ? "not-promisc" : "promisc");
 	return buf;
 }
 
@@ -3667,7 +3713,7 @@ int
 nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
 {
 	_CMP_SELF (a, b);
-	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	_CMP_FIELD (a, b, mode);
 	_CMP_FIELD_BOOL (a, b, no_promisc);
 	return 0;
 }

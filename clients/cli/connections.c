@@ -119,6 +119,7 @@ extern NmcOutputField nmc_fields_setting_team_port[];
 extern NmcOutputField nmc_fields_setting_dcb[];
 extern NmcOutputField nmc_fields_setting_tun[];
 extern NmcOutputField nmc_fields_setting_ip_tunnel[];
+extern NmcOutputField nmc_fields_setting_macvlan[];
 
 /* Available settings for 'connection show <con>' - profile part */
 static NmcOutputField nmc_fields_settings_names[] = {
@@ -149,6 +150,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME,               nmc_fields_setting_dcb + 1),               /* 24 */
 	SETTING_FIELD (NM_SETTING_TUN_SETTING_NAME,               nmc_fields_setting_tun + 1),               /* 25 */
 	SETTING_FIELD (NM_SETTING_IP_TUNNEL_SETTING_NAME,         nmc_fields_setting_ip_tunnel + 1),         /* 26 */
+	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 27 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -176,7 +178,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_TEAM_PORT_SETTING_NAME"," \
                                          NM_SETTING_DCB_SETTING_NAME"," \
                                          NM_SETTING_TUN_SETTING_NAME"," \
-                                         NM_SETTING_IP_TUNNEL_SETTING_NAME
+                                         NM_SETTING_IP_TUNNEL_SETTING_NAME"," \
+                                         NM_SETTING_MACVLAN_SETTING_NAME
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
 
 /* Active connection data */
@@ -423,6 +426,9 @@ usage_connection_add (void)
 	              "                  [pi yes|no]\n"
 	              "                  [vnet-hdr yes|no]\n"
 	              "                  [multi-queue yes|no]\n\n"
+	              "    macvlan:      dev <parent device (connection  UUID, ifname, or MAC)>\n"
+	              "                  mode vepa|bridge|private|passthru|source\n"
+	              "                  [tap yes|no]\n\n"
 	              "  SLAVE_OPTIONS:\n"
 	              "    bridge:       [priority <0-63>]\n"
 	              "                  [path-cost <1-65535>]\n"
@@ -2811,6 +2817,15 @@ static const NameItem nmc_ip_tunnel_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
+static const NameItem nmc_macvlan_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
+
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      },
@@ -2834,6 +2849,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
 	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,        nmc_ip_tunnel_settings    },
+	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,        nmc_macvlan_settings      },
 	{ NULL, NULL, NULL }
 };
 
@@ -4206,6 +4222,33 @@ do_questionnaire_adsl (gboolean echo, char **password, char **encapsulation)
 	}
 }
 
+
+static void
+do_questionnaire_macvlan (char **tap)
+{
+	gboolean once_more;
+	GError *error = NULL;
+
+	/* Ask for optional 'bridge-slave' arguments. */
+	if (!want_provide_opt_args (_("macvlan"), 1))
+		return;
+
+	if (!*tap) {
+		gboolean tap_bool;
+		do {
+			*tap = nmc_readline (_("Tap %s"), prompt_yes_no (FALSE, ":"));
+			*tap = *tap ? *tap : g_strdup ("yes");
+			normalize_yes_no (tap);
+			once_more = !nmc_string_to_bool (*tap, &tap_bool, &error);
+			if (once_more) {
+				g_print (_("Error: 'tap': %s.\n"), error->message);
+				g_clear_error (&error);
+				g_free (*tap);
+			}
+		} while (once_more);
+	}
+}
+
 static gboolean
 split_address (char* str, char **ip, char **rest)
 {
@@ -4676,6 +4719,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingAdsl *s_adsl;
 	NMSettingTun *s_tun;
 	NMSettingIPTunnel *s_ip_tunnel;
+	NMSettingMacvlan *s_macvlan;
 	const char *slave_type;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -5783,6 +5827,99 @@ cleanup_adsl:
 		g_free (password);
 		g_free (protocol_ask);
 		g_free (encapsulation);
+
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_MACVLAN_SETTING_NAME)) {
+		/* Build up the settings required for 'macvlan' */
+		gboolean success = FALSE;
+		const char *parent = NULL;
+		char *parent_ask = NULL;
+		const char *mode = NULL;
+		char *mode_ask = NULL;
+		const char *tap_c = NULL;
+		char *tap = NULL;
+		NMSettingMacvlanMode mode_enum;
+		gboolean valid_mac = FALSE;
+		gboolean tap_bool = FALSE;
+		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,    !ask},
+		                         {"mode",    TRUE, &mode,      !ask},
+		                         {"tap",     TRUE, &tap_c,     FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!parent && ask)
+			parent = parent_ask = nmc_readline (_("MACVLAN parent device or connection UUID: "));
+		if (!parent) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'dev' is required."));
+			return FALSE;
+		}
+
+		if (   !(valid_mac = nm_utils_hwaddr_valid (parent, ETH_ALEN))
+		    && !nm_utils_is_uuid (parent)
+		    && !nm_utils_iface_valid_name (parent)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'dev': '%s' is neither UUID, interface name, nor MAC."),
+			             parent);
+			goto cleanup_macvlan;
+		}
+
+		if (!mode && ask)
+			mode = mode_ask = nmc_readline (_("MACVLAN mode: "));
+		if (!mode) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'mode' is required."));
+			return FALSE;
+		}
+
+		if (!nm_utils_enum_from_str (nm_setting_macvlan_mode_get_type(), mode, (int *) &mode_enum, NULL)) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'mode' is not valid."));
+			return FALSE;
+		}
+
+		/* Also ask for all optional arguments if '--ask' is specified. */
+		tap = g_strdup (tap_c);
+		if (ask)
+			do_questionnaire_macvlan (&tap);
+
+		if (tap) {
+			GError *tmp_err = NULL;
+			if (!nmc_string_to_bool (tap, &tap_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					     _("Error: 'tap': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_macvlan;
+			}
+		}
+
+		/* Add 'macvlan' setting */
+		s_macvlan = (NMSettingMacvlan *) nm_setting_macvlan_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_macvlan));
+
+		/* Add 'wired' setting if necessary */
+		if (valid_mac) {
+			s_wired = (NMSettingWired *) nm_setting_wired_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_wired));
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, parent, NULL);
+		}
+
+		/* Set 'macvlan' properties */
+		if (!valid_mac)
+			g_object_set (s_macvlan, NM_SETTING_MACVLAN_PARENT, parent, NULL);
+		g_object_set (s_macvlan, NM_SETTING_MACVLAN_MODE, mode_enum, NULL);
+		g_object_set (s_macvlan, NM_SETTING_MACVLAN_TAP, tap_bool, NULL);
+
+		success = TRUE;
+cleanup_macvlan:
+		g_free (parent_ask);
+		g_free (mode_ask);
+		g_free (tap);
+
 		if (!success)
 			return FALSE;
 

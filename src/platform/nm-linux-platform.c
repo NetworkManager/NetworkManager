@@ -1026,9 +1026,16 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
 	int err;
 	NMPObject *obj;
-	const char *mode;
+	gboolean tap;
 
-	if (!info_data || g_strcmp0 (kind, "macvlan"))
+	if (!info_data)
+		return NULL;
+
+	if (!g_strcmp0 (kind, "macvlan"))
+		tap = FALSE;
+	else if (!g_strcmp0 (kind, "macvtap"))
+		tap = TRUE;
+	else
 		return NULL;
 
 	err = nla_parse_nested (tb, IFLA_MACVLAN_MAX, info_data, policy);
@@ -1038,26 +1045,10 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 	if (!tb[IFLA_MACVLAN_MODE])
 		return NULL;
 
-	switch (nla_get_u32 (tb[IFLA_MACVLAN_MODE])) {
-	case MACVLAN_MODE_PRIVATE:
-		mode = "private";
-		break;
-	case MACVLAN_MODE_VEPA:
-		mode = "vepa";
-		break;
-	case MACVLAN_MODE_BRIDGE:
-		mode = "bridge";
-		break;
-	case MACVLAN_MODE_PASSTHRU:
-		mode = "passthru";
-		break;
-	default:
-		return NULL;
-	}
-
-	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACVLAN, NULL);
+	obj = nmp_object_new (tap ? NMP_OBJECT_TYPE_LNK_MACVTAP : NMP_OBJECT_TYPE_LNK_MACVLAN, NULL);
 	props = &obj->lnk_macvlan;
-	props->mode = mode;
+	props->mode = nla_get_u32 (tb[IFLA_MACVLAN_MODE]);
+	props->tap = tap;
 
 	if (tb[IFLA_MACVLAN_FLAGS])
 		props->no_promisc = NM_FLAGS_HAS (nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]), MACVLAN_FLAG_NOPROMISC);
@@ -1493,6 +1484,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_MACVLAN:
+	case NM_LINK_TYPE_MACVTAP:
 		lnk_data = _parse_lnk_macvlan (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_SIT:
@@ -2907,6 +2899,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				case NM_LINK_TYPE_IP6TNL:
 				case NM_LINK_TYPE_INFINIBAND:
 				case NM_LINK_TYPE_MACVLAN:
+				case NM_LINK_TYPE_MACVTAP:
 				case NM_LINK_TYPE_SIT:
 				case NM_LINK_TYPE_VLAN:
 				case NM_LINK_TYPE_VXLAN:
@@ -4369,6 +4362,55 @@ link_ipip_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, info);
 
 	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
+link_macvlan_add (NMPlatform *platform,
+                  const char *name,
+                  int parent,
+                  NMPlatformLnkMacvlan *props,
+                  NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+
+	_LOGD ("adding %s '%s' parent %u mode %u",
+	       props->tap ? "macvtap" : "macvlan",
+	       name,
+	       parent,
+	       props->mode);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->tap ? "macvtap" : "macvlan");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	NLA_PUT_U32 (nlmsg, IFLA_MACVLAN_MODE, props->mode);
+	NLA_PUT_U16 (nlmsg, IFLA_MACVLAN_FLAGS, props->no_promisc ? MACVLAN_FLAG_NOPROMISC : 0);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform,
+	                                props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN,
+	                                name, nlmsg, out_link);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -5879,6 +5921,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;
+	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;
 

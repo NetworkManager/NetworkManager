@@ -775,6 +775,40 @@ nmtstp_link_ipip_add (gboolean external_command, const char *name, NMPlatformLnk
 }
 
 gboolean
+nmtstp_link_macvlan_add (gboolean external_command, const char *name, int parent, NMPlatformLnkMacvlan *lnk)
+{
+	gboolean success;
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		const char *dev;
+		char *modes[] = {
+				[MACVLAN_MODE_BRIDGE]   = "bridge",
+				[MACVLAN_MODE_VEPA]     = "vepa",
+				[MACVLAN_MODE_PRIVATE]  = "private",
+				[MACVLAN_MODE_PASSTHRU] = "passthru",
+		};
+
+		dev = nm_platform_link_get_name (NM_PLATFORM_GET, parent);
+		g_assert (dev);
+		g_assert_cmpint (lnk->mode, <, G_N_ELEMENTS (modes));
+
+		success = !nmtstp_run_command ("ip link add name %s link %s type %s mode %s %s",
+		                                name,
+		                                dev,
+		                                lnk->tap ? "macvtap" : "macvlan",
+		                                modes[lnk->mode],
+		                                lnk->no_promisc ? "nopromisc" : "");
+		if (success)
+			nmtstp_assert_wait_for_link (name, lnk->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN, 100);
+	} else
+		success = nm_platform_link_macvlan_add (NM_PLATFORM_GET, name, parent, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+
+	return success;
+}
+
+gboolean
 nmtstp_link_sit_add (gboolean external_command, const char *name, NMPlatformLnkSit *lnk)
 {
 	gboolean success;

@@ -1596,7 +1596,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TUN_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME))
+	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME))
 		return TRUE;
 
 	if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
@@ -1903,6 +1904,24 @@ nm_connection_get_setting_ip6_config (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingIPConfig *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+}
+
+/**
+ * nm_connection_get_setting_macvlan:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingMacvlan the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingMacvlan if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.2
+ **/
+NMSettingMacvlan *
+nm_connection_get_setting_macvlan (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingMacvlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_MACVLAN);
 }
 
 /**
