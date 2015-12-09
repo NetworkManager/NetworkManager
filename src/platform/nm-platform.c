@@ -281,7 +281,6 @@ nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value)
 
 	g_return_val_if_fail (path, FALSE);
 	g_return_val_if_fail (value, FALSE);
-	g_return_val_if_fail (klass->sysctl_set, FALSE);
 
 	return klass->sysctl_set (self, path, value);
 }
@@ -333,7 +332,6 @@ nm_platform_sysctl_get (NMPlatform *self, const char *path)
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (path, NULL);
-	g_return_val_if_fail (klass->sysctl_get, NULL);
 
 	return klass->sysctl_get (self, path);
 }
@@ -412,8 +410,6 @@ nm_platform_link_get_all (NMPlatform *self)
 	NMPlatformLink *item;
 
 	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (klass->link_get_all, NULL);
 
 	links = klass->link_get_all (self);
 
@@ -628,7 +624,6 @@ nm_platform_link_add (NMPlatform *self,
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
-	g_return_val_if_fail (klass->link_add, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail ( (address != NULL) ^ (address_len == 0) , NM_PLATFORM_ERROR_BUG);
 
 	plerr = _link_add_check_existing (self, name, type, out_link);
@@ -743,8 +738,6 @@ const char *
 nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (klass->link_get_type_name, NULL);
 
 	return klass->link_get_type_name (self, ifindex);
 }
@@ -971,7 +964,6 @@ nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolea
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->check_support_user_ipv6ll, FALSE);
 
 	if (klass->link_set_user_ipv6ll_enabled)
 		return klass->link_set_user_ipv6ll_enabled (self, ifindex, enabled);
@@ -994,7 +986,6 @@ nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer addre
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (address, FALSE);
 	g_return_val_if_fail (length > 0, FALSE);
-	g_return_val_if_fail (klass->link_set_address, FALSE);
 
 	_LOGD ("link: setting '%s' (%d) hardware address", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_address (self, ifindex, address, length);
@@ -1073,7 +1064,6 @@ nm_platform_link_supports_carrier_detect (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_supports_carrier_detect, FALSE);
 
 	return klass->link_supports_carrier_detect (self, ifindex);
 }
@@ -1084,7 +1074,6 @@ nm_platform_link_supports_vlans (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_supports_vlans, FALSE);
 
 	return klass->link_supports_vlans (self, ifindex);
 }
@@ -1103,7 +1092,6 @@ nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmwar
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (klass->link_set_up, FALSE);
 
 	_LOGD ("link: setting up '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_up (self, ifindex, out_no_firmware);
@@ -1122,7 +1110,6 @@ nm_platform_link_set_down (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (klass->link_set_down, FALSE);
 
 	_LOGD ("link: setting down '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_down (self, ifindex);
@@ -1141,7 +1128,6 @@ nm_platform_link_set_arp (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_set_arp, FALSE);
 
 	_LOGD ("link: setting arp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_arp (self, ifindex);
@@ -1160,7 +1146,6 @@ nm_platform_link_set_noarp (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_set_noarp, FALSE);
 
 	_LOGD ("link: setting noarp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_noarp (self, ifindex);
@@ -1181,7 +1166,6 @@ nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (mtu > 0, FALSE);
-	g_return_val_if_fail (klass->link_set_mtu, FALSE);
 
 	_LOGD ("link: setting '%s' (%d) mtu %"G_GUINT32_FORMAT, nm_platform_link_get_name (self, ifindex), ifindex, mtu);
 	return klass->link_set_mtu (self, ifindex, mtu);
@@ -1296,7 +1280,6 @@ nm_platform_link_get_driver_info (NMPlatform *self,
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_get_driver_info, FALSE);
 
 	return klass->link_get_driver_info (self,
 	                                    ifindex,
@@ -1320,7 +1303,6 @@ nm_platform_link_enslave (NMPlatform *self, int master, int slave)
 
 	g_return_val_if_fail (master > 0, FALSE);
 	g_return_val_if_fail (slave> 0, FALSE);
-	g_return_val_if_fail (klass->link_enslave, FALSE);
 
 	_LOGD ("link: enslaving '%s' (%d) to master '%s' (%d)",
 	       nm_platform_link_get_name (self, slave), slave,
@@ -1343,7 +1325,6 @@ nm_platform_link_release (NMPlatform *self, int master, int slave)
 
 	g_return_val_if_fail (master > 0, FALSE);
 	g_return_val_if_fail (slave > 0, FALSE);
-	g_return_val_if_fail (klass->link_release, FALSE);
 
 	if (nm_platform_link_get_master (self, slave) != master)
 		return FALSE;
@@ -1548,7 +1529,6 @@ nm_platform_link_vlan_add (NMPlatform *self,
 	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (vlanid >= 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
-	g_return_val_if_fail (klass->vlan_add, NM_PLATFORM_ERROR_BUG);
 
 	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_VLAN, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
@@ -1623,7 +1603,6 @@ nm_platform_link_tun_add (NMPlatform *self,
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
-	g_return_val_if_fail (klass->tun_add, NM_PLATFORM_ERROR_BUG);
 
 	plerr = _link_add_check_existing (self, name, tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
@@ -1883,7 +1862,6 @@ nm_platform_link_infiniband_add (NMPlatform *self, int parent, int p_key, const 
 
 	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (p_key >= 0, NM_PLATFORM_ERROR_BUG);
-	g_return_val_if_fail (klass->infiniband_partition_add, NM_PLATFORM_ERROR_BUG);
 
 	parent_name = g_strdup (nm_platform_link_get_name (self, parent));
 	if (   !parent_name
@@ -2416,7 +2394,6 @@ nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex > 0, NULL);
-	g_return_val_if_fail (klass->ip4_address_get_all, NULL);
 
 	return klass->ip4_address_get_all (self, ifindex);
 }
@@ -2427,7 +2404,6 @@ nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex > 0, NULL);
-	g_return_val_if_fail (klass->ip6_address_get_all, NULL);
 
 	return klass->ip6_address_get_all (self, ifindex);
 }
@@ -2448,7 +2424,6 @@ nm_platform_ip4_address_add (NMPlatform *self,
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (preferred <= lifetime, FALSE);
-	g_return_val_if_fail (klass->ip4_address_add, FALSE);
 	g_return_val_if_fail (!label || strlen (label) < sizeof (((NMPlatformIP4Address *) NULL)->label), FALSE);
 
 	if (_LOGD_ENABLED ()) {
@@ -2485,7 +2460,6 @@ nm_platform_ip6_address_add (NMPlatform *self,
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (preferred <= lifetime, FALSE);
-	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
 	if (_LOGD_ENABLED ()) {
 		NMPlatformIP6Address addr = { 0 };
@@ -2515,7 +2489,6 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
-	g_return_val_if_fail (klass->ip4_address_delete, FALSE);
 
 	_LOGD ("address: deleting IPv4 address %s/%d, %sifindex %d%s",
 	       nm_utils_inet4_ntop (address, NULL), plen,
@@ -2535,7 +2508,6 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
-	g_return_val_if_fail (klass->ip6_address_delete, FALSE);
 
 	_LOGD ("address: deleting IPv6 address %s/%d, ifindex %d%s",
 	       nm_utils_inet6_ntop (&address, NULL), plen, ifindex,
@@ -2768,7 +2740,6 @@ nm_platform_ip4_route_add (NMPlatform *self,
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
-	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
 	if (_LOGD_ENABLED ()) {
 		NMPlatformIP4Route route = { 0 };
@@ -2796,7 +2767,6 @@ nm_platform_ip6_route_add (NMPlatform *self,
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
-	g_return_val_if_fail (klass->ip6_route_add, FALSE);
 
 	if (_LOGD_ENABLED ()) {
 		NMPlatformIP6Route route = { 0 };
@@ -2821,8 +2791,6 @@ nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, 
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
-
 	_LOGD ("route: deleting IPv4 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet4_ntop (network, NULL), plen, metric, ifindex,
 	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
@@ -2835,8 +2803,6 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
 	_LOGD ("route: deleting IPv6 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet6_ntop (&network, NULL), plen, metric, ifindex,
