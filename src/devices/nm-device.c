@@ -2505,7 +2505,7 @@ is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 	if (priv->carrier || priv->ignore_carrier)
 		return TRUE;
 
-	if (NM_FLAGS_HAS (flags, NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))
+	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))
 		return TRUE;
 
 	return FALSE;
@@ -8641,10 +8641,10 @@ _nm_device_check_connection_available (NMDevice *self,
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
 	    && !nm_device_is_software (self)
-	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
+	    && (   (   !NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)
 	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
-	        || (    NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
-	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))))
+	        || (    NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)
+	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST))))
 		return FALSE;
 
 	if (!nm_device_check_connection_compatible (self, connection))

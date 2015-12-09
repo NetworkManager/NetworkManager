@@ -124,10 +124,11 @@ struct _NMDevice {
  * a device appear more available. It can never make a device less available. */
 typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_DEV_AVAILABLE_NONE                                  = 0,
-	NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER                        = (1L << 0),
 
-	__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL,
-	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL - 1) << 1) - 1),
+	_NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER                       = (1L << 0),
+	NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER,
+
+	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (1L << 1) - 1,
 } NMDeviceCheckDevAvailableFlags;
 
 typedef struct {
