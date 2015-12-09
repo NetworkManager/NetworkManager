@@ -531,7 +531,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 * NMDeviceIPTunnel:flow-label:
 	 *
 	 * The flow label to assign to tunnel packets. This property
-     * applies only to IPv6 tunnels.
+	 * applies only to IPv6 tunnels.
 	 *
 	 * Since: 1.2
 	 **/
