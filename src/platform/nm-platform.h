@@ -456,34 +456,6 @@ typedef struct {
 
 /******************************************************************/
 
-/* NMPlatform abstract class and its implementations provide a layer between
- * networkmanager's device management classes and the operating system kernel.
- *
- * How it works, is best seen in tests/nm-platform-test.c source file.
- *
- * NMPlatform provides interface to configure kernel interfaces and receive
- * notifications about both internal and external configuration changes. It
- * respects the following rules:
- *
- * 1) Every change made through NMPlatform is readily available and the respective
- * signals are called synchronously.
- *
- * 2) State of an object retrieved from NMPlatform (through functions or events)
- * is at least as recent than the state retrieved before.
- *
- * Any failure of the above rules should be fixed in NMPlatform implementations
- * and tested in nm-platform-test. Synchronization hacks should never be put
- * to any other code. That's why NMPlatform was created and that's why the
- * testing code was written for it.
- *
- * In future, parts of linux platform implementation may be moved to the libnl
- * library.
- *
- * If you have any problems related to NMPlatform on your system, you should
- * always first run tests/nm-linux-platform-test as root and with all
- * network configuration daemons stopped. Look at the code first.
- */
-
 struct _NMPlatform {
 	GObject parent;
 };
