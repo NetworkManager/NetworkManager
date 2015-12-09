@@ -451,6 +451,7 @@ create_device (NMDeviceFactory *factory,
 {
 	NMSettingTun *s_tun;
 	NMLinkType link_type = NM_LINK_TYPE_UNKNOWN;
+	const char *mode;
 
 	if (plink) {
 		link_type = plink->type;
@@ -471,12 +472,14 @@ create_device (NMDeviceFactory *factory,
 	}
 
 	g_return_val_if_fail (link_type != NM_LINK_TYPE_UNKNOWN, NULL);
+	mode = link_type == NM_LINK_TYPE_TUN ? "tun" : "tap";
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Tun",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_TUN,
 	                                  NM_DEVICE_LINK_TYPE, link_type,
+	                                  NM_DEVICE_TUN_MODE, mode,
 	                                  NULL);
 }
 
