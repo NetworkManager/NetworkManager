@@ -10081,26 +10081,45 @@ nm_device_init (NMDevice *self)
 	priv->v6_commit_first_time = TRUE;
 }
 
-static void
-constructed (GObject *object)
+static GObject*
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
-	NMDevice *self = NM_DEVICE (object);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMPlatform *platform;
+	GObject *object;
+	GObjectClass *klass;
+	NMDevice *self;
+	NMDevicePrivate *priv;
 	const NMPlatformLink *pllink;
 
-	platform = nm_platform_get ();
+	klass = G_OBJECT_CLASS (nm_device_parent_class);
+	object = klass->constructor (type, n_construct_params, construct_params);
+	if (!object)
+		return NULL;
+
+	self = NM_DEVICE (object);
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->iface) {
-		pllink = nm_platform_link_get_by_ifname (platform, priv->iface);
-
-		nm_assert (pllink->type != NM_LINK_TYPE_NONE);
+		pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
 
 		if (pllink && link_type_compatible (self, pllink->type, NULL, NULL)) {
 			priv->ifindex = pllink->ifindex;
 			priv->up = NM_FLAGS_HAS (pllink->flags, IFF_UP);
 		}
 	}
+
+	return object;
+}
+
+static void
+constructed (GObject *object)
+{
+	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPlatform *platform;
+
+	platform = nm_platform_get ();
 
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
@@ -10524,6 +10543,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->finalize = finalize;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 
 	klass->link_changed = link_changed;
