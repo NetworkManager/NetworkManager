@@ -2808,7 +2808,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	}
 
-	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
+	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
 	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
