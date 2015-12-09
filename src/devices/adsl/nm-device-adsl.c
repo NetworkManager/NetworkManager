@@ -35,7 +35,6 @@
 #include "nm-default.h"
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
-#include "NetworkManagerUtils.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 
@@ -51,6 +50,13 @@ _LOG_DECLARE_SELF (NMDeviceAdsl);
 G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ADSL, NMDeviceAdslPrivate))
+
+enum {
+	PROP_0,
+	PROP_ATM_INDEX,
+
+	LAST_PROP
+};
 
 /**********************************************/
 
@@ -549,63 +555,35 @@ carrier_update_cb (gpointer user_data)
 NMDevice *
 nm_device_adsl_new (const char *udi,
                     const char *iface,
-                    const char *driver)
+                    const char *driver,
+                    int atm_index)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (atm_index >= 0, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ADSL,
 	                                  NM_DEVICE_UDI, udi,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_DRIVER, driver,
+	                                  NM_DEVICE_ADSL_ATM_INDEX, atm_index,
 	                                  NM_DEVICE_TYPE_DESC, "ADSL",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ADSL,
 	                                  NULL);
 }
 
-static int
-get_atm_index (const char *iface)
+static void
+constructed (GObject *object)
 {
-	char *path;
-	int idx;
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (object);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 
-	path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
-	                        ASSERT_VALID_PATH_COMPONENT (iface));
-	idx = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET, path, 10, 0, G_MAXINT, -1);
-	g_free (path);
+	G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructed (object);
 
-	return idx;
-}
+	priv->carrier_poll_id = g_timeout_add_seconds (5, carrier_update_cb, self);
 
-static GObject*
-constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMDeviceAdsl *self;
-	NMDeviceAdslPrivate *priv;
+	_LOGD (LOGD_ADSL, "ATM device index %d", priv->atm_index);
 
-	object = G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructor (type,
-	                                                                    n_construct_params,
-	                                                                    construct_params);
-	if (!object)
-		return NULL;
-
-	self = NM_DEVICE_ADSL (object);
-	priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
-
-	priv->atm_index = get_atm_index (nm_device_get_iface (NM_DEVICE (object)));
-	if (priv->atm_index < 0) {
-		_LOGE (LOGD_ADSL, "error reading ATM device index");
-		g_object_unref (object);
-		return NULL;
-	} else
-		_LOGD (LOGD_ADSL, "ATM device index %d", priv->atm_index);
-
-	/* Poll the carrier */
-	priv->carrier_poll_id = g_timeout_add_seconds (5, carrier_update_cb, object);
-
-	return object;
+	g_return_if_fail (priv->atm_index >= 0);
 }
 
 static void
@@ -616,6 +594,35 @@ dispose (GObject *object)
 	nm_clear_g_source (&NM_DEVICE_ADSL_GET_PRIVATE (object)->carrier_poll_id);
 
 	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_ATM_INDEX:
+		g_value_set_int (value, NM_DEVICE_ADSL_GET_PRIVATE (object)->atm_index);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_ATM_INDEX:
+		/* construct only */
+		NM_DEVICE_ADSL_GET_PRIVATE (object)->atm_index = g_value_get_int (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -631,8 +638,10 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
 
-	object_class->constructor  = constructor;
+	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 
@@ -642,6 +651,14 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_ATM_INDEX,
+		 g_param_spec_int (NM_DEVICE_ADSL_ATM_INDEX, "", "",
+		                   -1, G_MAXINT, -1,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_ADSL_SKELETON,
