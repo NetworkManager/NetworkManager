@@ -1761,7 +1761,7 @@ nm_device_create_and_realize (NMDevice *self,
                               GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMPlatformLink plink = { .type = NM_LINK_TYPE_UNKNOWN };
+	NMPlatformLink plink = { .type = NM_LINK_TYPE_NONE };
 
 	/* Must be set before device is realized */
 	priv->is_nm_owned = !nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
@@ -1772,8 +1772,8 @@ nm_device_create_and_realize (NMDevice *self,
 			return FALSE;
 	}
 
-	NM_DEVICE_GET_CLASS (self)->setup_start (self, (plink.type != NM_LINK_TYPE_UNKNOWN) ? &plink : NULL);
-	nm_device_setup_finish (self, (plink.type != NM_LINK_TYPE_UNKNOWN) ? &plink : NULL);
+	NM_DEVICE_GET_CLASS (self)->setup_start (self, (plink.type != NM_LINK_TYPE_NONE) ? &plink : NULL);
+	nm_device_setup_finish (self, (plink.type != NM_LINK_TYPE_NONE) ? &plink : NULL);
 
 	g_return_val_if_fail (nm_device_check_connection_compatible (self, connection), TRUE);
 	return TRUE;
