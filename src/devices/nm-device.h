@@ -108,8 +108,7 @@ typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
 	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP,
 
-	__NM_DEVICE_CHECK_CON_AVAILABLE_ALL,
-	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_CON_AVAILABLE_ALL - 1) << 1) - 1),
+	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (1L << 2) - 1,
 } NMDeviceCheckConAvailableFlags;
 
 struct _NMDevicePrivate;
