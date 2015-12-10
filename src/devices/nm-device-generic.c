@@ -61,7 +61,7 @@ get_type_description (NMDevice *device)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NMDeviceGeneric *self = NM_DEVICE_GENERIC (device);
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);

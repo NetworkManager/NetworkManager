@@ -148,7 +148,7 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
@@ -207,7 +207,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
@@ -215,8 +215,6 @@ create_and_realize (NMDevice *device,
 	NMSettingVlan *s_vlan;
 	int parent_ifindex, vlan_id;
 	NMPlatformError plerr;
-
-	g_assert (out_plink);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
@@ -234,12 +232,12 @@ create_and_realize (NMDevice *device,
 
 	vlan_id = nm_setting_vlan_get_id (s_vlan);
 
-	plerr = nm_platform_vlan_add (NM_PLATFORM_GET,
-	                              iface,
-	                              parent_ifindex,
-	                              vlan_id,
-	                              nm_setting_vlan_get_flags (s_vlan),
-	                              out_plink);
+	plerr = nm_platform_link_vlan_add (NM_PLATFORM_GET,
+	                                   iface,
+	                                   parent_ifindex,
+	                                   vlan_id,
+	                                   nm_setting_vlan_get_flags (s_vlan),
+	                                   out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create VLAN interface '%s' for '%s': %s",

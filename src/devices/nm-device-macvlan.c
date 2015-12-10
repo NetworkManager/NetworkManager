@@ -220,7 +220,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
@@ -231,7 +231,6 @@ create_and_realize (NMDevice *device,
 
 	s_macvlan = nm_connection_get_setting_macvlan (connection);
 	g_assert (s_macvlan);
-	g_assert (out_plink);
 
 	parent_ifindex = nm_device_get_ifindex (parent);
 	g_warn_if_fail (parent_ifindex > 0);
@@ -559,7 +558,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->setup_start (device, plink);
 

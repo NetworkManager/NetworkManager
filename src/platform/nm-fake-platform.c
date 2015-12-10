@@ -292,10 +292,11 @@ link_add (NMPlatform *platform,
           NMLinkType type,
           const void *address,
           size_t address_len,
-          NMPlatformLink *out_link)
+          const NMPlatformLink **out_link)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink device;
+	NMFakePlatformLink *new_device;
 
 	link_init (&device, priv->links->len, type, name);
 
@@ -306,6 +307,7 @@ link_add (NMPlatform *platform,
 	}
 
 	g_array_append_val (priv->links, device);
+	new_device = &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1);
 
 	if (device.link.ifindex) {
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, NMP_OBJECT_TYPE_LINK, device.link.ifindex, &device, NM_PLATFORM_SIGNAL_ADDED);
@@ -314,7 +316,7 @@ link_add (NMPlatform *platform,
 	}
 
 	if (out_link)
-		*out_link = device.link;
+		*out_link = &new_device->link;
 	return TRUE;
 }
 
@@ -640,43 +642,11 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 }
 
 static gboolean
-master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
-{
-	gs_free char *path = g_strdup_printf ("master:%d:%s", master, option);
-
-	return sysctl_set (platform, path, value);
-}
-
-static char *
-master_get_option (NMPlatform *platform, int master, const char *option)
-{
-	gs_free char *path = g_strdup_printf ("master:%d:%s", master, option);
-
-	return sysctl_get (platform, path);
-}
-
-static gboolean
-slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
-{
-	gs_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
-
-	return sysctl_set (platform, path, value);
-}
-
-static char *
-slave_get_option (NMPlatform *platform, int slave, const char *option)
-{
-	gs_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
-
-	return sysctl_get (platform, path);
-}
-
-static gboolean
-vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags, NMPlatformLink *out_link)
+vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags, const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device;
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0, NULL))
+	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0, out_link))
 		return FALSE;
 
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
@@ -689,7 +659,7 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	device->link.parent = parent;
 
 	if (out_link)
-		*out_link = device->link;
+		*out_link = &device->link;
 	return TRUE;
 }
 
@@ -712,11 +682,11 @@ static gboolean
 link_vxlan_add (NMPlatform *platform,
                 const char *name,
                 NMPlatformLnkVxlan *props,
-                NMPlatformLink *out_link)
+                const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device;
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VXLAN, NULL, 0, NULL))
+	if (!link_add (platform, name, NM_LINK_TYPE_VXLAN, NULL, 0, out_link))
 		return FALSE;
 
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
@@ -729,12 +699,12 @@ link_vxlan_add (NMPlatform *platform,
 	device->link.parent = props->parent_ifindex;
 
 	if (out_link)
-		*out_link = device->link;
+		*out_link = &device->link;
 	return TRUE;
 }
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device, *parent_device;
 	gs_free char *name = NULL;
@@ -1476,10 +1446,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
-	platform_class->master_set_option = master_set_option;
-	platform_class->master_get_option = master_get_option;
-	platform_class->slave_set_option = slave_set_option;
-	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;

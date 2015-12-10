@@ -618,7 +618,7 @@ _linktype_get_type (NMPlatform *platform,
 			NMPlatformTunProperties props;
 
 			if (   platform
-			    && nm_platform_tun_get_properties_ifname (platform, ifname, &props)) {
+			    && nm_platform_link_tun_get_properties_ifname (platform, ifname, &props)) {
 				if (!g_strcmp0 (props.mode, "tap"))
 					return NM_LINK_TYPE_TAP;
 				if (!g_strcmp0 (props.mode, "tun"))
@@ -3592,7 +3592,7 @@ do_add_link_with_lookup (NMPlatform *platform,
                          NMLinkType link_type,
                          const char *name,
                          struct nl_msg *nlmsg,
-                         NMPlatformLink *out_link)
+                         const NMPlatformLink **out_link)
 {
 	const NMPObject *obj;
 
@@ -3600,8 +3600,8 @@ do_add_link_with_lookup (NMPlatform *platform,
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
 	                                  0, name, FALSE, link_type, NULL, NULL);
-	if (out_link && obj)
-		*out_link = obj->link;
+	if (out_link)
+		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
 }
 
@@ -3801,7 +3801,7 @@ link_add (NMPlatform *platform,
           NMLinkType type,
           const void *address,
           size_t address_len,
-          NMPlatformLink *out_link)
+          const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
@@ -4160,7 +4160,7 @@ vlan_add (NMPlatform *platform,
           int parent,
           int vlan_id,
           guint32 vlan_flags,
-          NMPlatformLink *out_link)
+          const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
@@ -4204,7 +4204,7 @@ static int
 link_gre_add (NMPlatform *platform,
               const char *name,
               NMPlatformLnkGre *props,
-              NMPlatformLink *out_link)
+              const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4259,7 +4259,7 @@ static int
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
                  NMPlatformLnkIp6Tnl *props,
-                 NMPlatformLink *out_link)
+                 const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4320,7 +4320,7 @@ static int
 link_ipip_add (NMPlatform *platform,
                const char *name,
                NMPlatformLnkIpIp *props,
-               NMPlatformLink *out_link)
+               const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4372,7 +4372,7 @@ link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
                   NMPlatformLnkMacvlan *props,
-                  NMPlatformLink *out_link)
+                  const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4420,7 +4420,7 @@ static int
 link_sit_add (NMPlatform *platform,
               const char *name,
               NMPlatformLnkSit *props,
-              NMPlatformLink *out_link)
+              const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4471,7 +4471,7 @@ static gboolean
 link_vxlan_add (NMPlatform *platform,
                 const char *name,
                 NMPlatformLnkVxlan *props,
-                NMPlatformLink *out_link)
+                const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
@@ -4714,61 +4714,61 @@ link_vlan_change (NMPlatform *platform,
 static int
 tun_add (NMPlatform *platform, const char *name, gboolean tap,
          gint64 owner, gint64 group, gboolean pi, gboolean vnet_hdr,
-         gboolean multi_queue, NMPlatformLink *out_link)
+         gboolean multi_queue, const NMPlatformLink **out_link)
 {
-       const NMPObject *obj;
-       struct ifreq ifr = { };
-       int fd;
+	const NMPObject *obj;
+	struct ifreq ifr = { };
+	int fd;
 
-       _LOGD ("link: add %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
-              tap ? "tap" : "tun", name, owner, group);
+	_LOGD ("link: add %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
+	       tap ? "tap" : "tun", name, owner, group);
 
-       fd = open ("/dev/net/tun", O_RDWR);
-       if (fd < 0)
-               return FALSE;
+	fd = open ("/dev/net/tun", O_RDWR);
+	if (fd < 0)
+		return FALSE;
 
-       strncpy (ifr.ifr_name, name, IFNAMSIZ);
-       ifr.ifr_flags = tap ? IFF_TAP : IFF_TUN;
+	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_flags = tap ? IFF_TAP : IFF_TUN;
 
-       if (!pi)
-               ifr.ifr_flags |= IFF_NO_PI;
-       if (vnet_hdr)
-               ifr.ifr_flags |= IFF_VNET_HDR;
-       if (multi_queue)
-               ifr.ifr_flags |= NM_IFF_MULTI_QUEUE;
+	if (!pi)
+		ifr.ifr_flags |= IFF_NO_PI;
+	if (vnet_hdr)
+		ifr.ifr_flags |= IFF_VNET_HDR;
+	if (multi_queue)
+		ifr.ifr_flags |= NM_IFF_MULTI_QUEUE;
 
-       if (ioctl (fd, TUNSETIFF, &ifr)) {
-               close (fd);
-               return FALSE;
-       }
+	if (ioctl (fd, TUNSETIFF, &ifr)) {
+		close (fd);
+		return FALSE;
+	}
 
-       if (owner >= 0 && owner < G_MAXINT32) {
-               if (ioctl (fd, TUNSETOWNER, (uid_t) owner)) {
-                       close (fd);
-                       return FALSE;
-               }
-       }
+	if (owner >= 0 && owner < G_MAXINT32) {
+		if (ioctl (fd, TUNSETOWNER, (uid_t) owner)) {
+			close (fd);
+			return FALSE;
+		}
+	}
 
-       if (group >= 0 && group < G_MAXINT32) {
-               if (ioctl (fd, TUNSETGROUP, (gid_t) group)) {
-                       close (fd);
-                       return FALSE;
-               }
-       }
+	if (group >= 0 && group < G_MAXINT32) {
+		if (ioctl (fd, TUNSETGROUP, (gid_t) group)) {
+			close (fd);
+			return FALSE;
+		}
+	}
 
-       if (ioctl (fd, TUNSETPERSIST, 1)) {
-               close (fd);
-               return FALSE;
-       }
-       do_request_link (platform, 0, name, TRUE);
-       obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-                                         0, name, FALSE,
-                                         tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN,
-                                         NULL, NULL);
-       if (out_link && obj)
-               *out_link = obj->link;
+	if (ioctl (fd, TUNSETPERSIST, 1)) {
+		close (fd);
+		return FALSE;
+	}
+	do_request_link (platform, 0, name, TRUE);
+	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+	                                  0, name, FALSE,
+	                                  tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN,
+	                                  NULL, NULL);
+	if (out_link)
+		*out_link = obj ? &obj->link : NULL;
 
-       return !!obj;
+	return !!obj;
 }
 
 static gboolean
@@ -4801,93 +4801,10 @@ link_release (NMPlatform *platform, int master, int slave)
 	return link_enslave (platform, 0, slave);
 }
 
-static char *
-link_option_path (NMPlatform *platform, int master, const char *category, const char *option)
-{
-	const char *name = nm_platform_link_get_name (platform, master);
-
-	if (!name || !category || !option)
-		return NULL;
-
-	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
-	                        ASSERT_VALID_PATH_COMPONENT (name),
-	                        ASSERT_VALID_PATH_COMPONENT (category),
-	                        ASSERT_VALID_PATH_COMPONENT (option));
-}
-
-static gboolean
-link_set_option (NMPlatform *platform, int master, const char *category, const char *option, const char *value)
-{
-	gs_free char *path = link_option_path (platform, master, category, option);
-
-	return path && nm_platform_sysctl_set (platform, path, value);
-}
-
-static char *
-link_get_option (NMPlatform *platform, int master, const char *category, const char *option)
-{
-	gs_free char *path = link_option_path (platform, master, category, option);
-
-	return path ? nm_platform_sysctl_get (platform, path) : NULL;
-}
-
-static const char *
-master_category (NMPlatform *platform, int master)
-{
-	switch (nm_platform_link_get_type (platform, master)) {
-	case NM_LINK_TYPE_BRIDGE:
-		return "bridge";
-	case NM_LINK_TYPE_BOND:
-		return "bonding";
-	default:
-		return NULL;
-	}
-}
-
-static const char *
-slave_category (NMPlatform *platform, int slave)
-{
-	int master = nm_platform_link_get_master (platform, slave);
-
-	if (master <= 0)
-		return NULL;
-
-	switch (nm_platform_link_get_type (platform, master)) {
-	case NM_LINK_TYPE_BRIDGE:
-		return "brport";
-	default:
-		return NULL;
-	}
-}
-
-static gboolean
-master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
-{
-	return link_set_option (platform, master, master_category (platform, master), option, value);
-}
-
-static char *
-master_get_option (NMPlatform *platform, int master, const char *option)
-{
-	return link_get_option (platform, master, master_category (platform, master), option);
-}
-
-static gboolean
-slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
-{
-	return link_set_option (platform, slave, slave_category (platform, slave), option, value);
-}
-
-static char *
-slave_get_option (NMPlatform *platform, int slave, const char *option)
-{
-	return link_get_option (platform, slave, slave_category (platform, slave), option);
-}
-
 /******************************************************************/
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
@@ -4911,8 +4828,8 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
 	                                  0, ifname, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
-	if (out_link && obj)
-		*out_link = obj->link;
+	if (out_link)
+		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
 }
 
@@ -5967,10 +5884,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
-	platform_class->master_set_option = master_set_option;
-	platform_class->master_get_option = master_get_option;
-	platform_class->slave_set_option = slave_set_option;
-	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;

@@ -143,7 +143,7 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
 
@@ -174,7 +174,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
@@ -186,7 +186,6 @@ create_and_realize (NMDevice *device,
 
 	s_vxlan = nm_connection_get_setting_vxlan (connection);
 	g_assert (s_vxlan);
-	g_assert (out_plink);
 
 	if (parent)
 		props.parent_ifindex = nm_device_get_ifindex (parent);

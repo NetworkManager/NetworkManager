@@ -170,7 +170,9 @@ typedef struct {
 	 * @self: the #NMDevice
 	 * @connection: the #NMConnection being activated
 	 * @parent: the parent #NMDevice, if any
-	 * @out_plink: on success, a backing kernel network device if one exists
+	 * @out_plink: on success, a backing kernel network device if one exists.
+	 *   The returned pointer is owned by platform and only valid until the
+	 *   next platform operation.
 	 * @error: location to store error, or %NULL
 	 *
 	 * Create any backing resources (kernel devices, etc) required for this
@@ -183,7 +185,7 @@ typedef struct {
 	gboolean        (*create_and_realize) (NMDevice *self,
 	                                       NMConnection *connection,
 	                                       NMDevice *parent,
-	                                       NMPlatformLink *out_plink,
+	                                       const NMPlatformLink **out_plink,
 	                                       GError **error);
 
 	/**
@@ -197,7 +199,7 @@ typedef struct {
 	 * any tasks that affect other interfaces (like master/slave or parent/child
 	 * stuff).
 	 */
-	void        (*setup_start) (NMDevice *self, NMPlatformLink *plink);
+	void        (*setup_start) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
 	 * setup_finish():
@@ -208,7 +210,7 @@ typedef struct {
 	 * backing resource properties.  After this function finishes, the device
 	 * is ready for network connectivity.
 	 */
-	void        (*setup_finish) (NMDevice *self, NMPlatformLink *plink);
+	void        (*setup_finish) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
 	 * unrealize():
@@ -509,7 +511,7 @@ gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMDevice *parent,
                                        GError **error);
 void     nm_device_setup_finish       (NMDevice *self,
-                                       NMPlatformLink *plink);
+                                       const NMPlatformLink *plink);
 gboolean nm_device_unrealize          (NMDevice *device,
                                        gboolean remove_resources,
                                        GError **error);

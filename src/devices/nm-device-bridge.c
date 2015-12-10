@@ -199,9 +199,9 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 
 	value = g_strdup_printf ("%u", uval);
 	if (slave)
-		nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
+		nm_platform_sysctl_slave_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
 	else
-		nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
+		nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
 }
 
 static void
@@ -245,7 +245,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	for (option = master_options; option->name; option++) {
-		gs_free char *str = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, option->sysname);
+		gs_free char *str = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, option->sysname);
 		int value;
 
 		if (str) {
@@ -284,7 +284,7 @@ master_update_slave_connection (NMDevice *device,
 	}
 
 	for (option = slave_options; option->name; option++) {
-		gs_free char *str = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex_slave, option->sysname);
+		gs_free char *str = nm_platform_sysctl_slave_get_option (NM_PLATFORM_GET, ifindex_slave, option->sysname);
 		int value;
 
 		if (str) {
@@ -377,7 +377,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	NMSettingBridge *s_bridge;
@@ -387,7 +387,6 @@ create_and_realize (NMDevice *device,
 	NMPlatformError plerr;
 
 	g_assert (iface);
-	g_assert (out_plink);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
@@ -401,11 +400,11 @@ create_and_realize (NMDevice *device,
 		}
 	}
 
-	plerr = nm_platform_bridge_add (NM_PLATFORM_GET,
-	                                iface,
-	                                hwaddr ? mac_address : NULL,
-	                                hwaddr ? ETH_ALEN : 0,
-	                                out_plink);
+	plerr = nm_platform_link_bridge_add (NM_PLATFORM_GET,
+	                                     iface,
+	                                     hwaddr ? mac_address : NULL,
+	                                     hwaddr ? ETH_ALEN : 0,
+	                                     out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create bridge interface '%s' for '%s': %s",

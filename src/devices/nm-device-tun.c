@@ -68,7 +68,7 @@ reload_tun_properties (NMDeviceTun *self)
 
 	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
 	if (ifindex > 0) {
-		if (!nm_platform_tun_get_properties (NM_PLATFORM_GET, ifindex, &props)) {
+		if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, ifindex, &props)) {
 			_LOGD (LOGD_DEVICE, "tun-properties: cannot loading tun properties from platform for ifindex %d", ifindex);
 			ifindex = 0;
 		} else if (g_strcmp0 (priv->mode, props.mode) != 0) {
@@ -162,7 +162,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_tun);
 	}
 
-	if (!nm_platform_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
 		_LOGW (LOGD_HW, "failed to get TUN interface info while updating connection.");
 		return;
 	}
@@ -199,7 +199,7 @@ static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
-                    NMPlatformLink *out_plink,
+                    const NMPlatformLink **out_plink,
                     GError **error)
 {
 	const char *iface = nm_device_get_iface (device);
@@ -209,18 +209,17 @@ create_and_realize (NMDevice *device,
 
 	s_tun = nm_connection_get_setting_tun (connection);
 	g_assert (s_tun);
-	g_assert (out_plink);
 
 	user = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_owner (s_tun), 10, 0, G_MAXINT32, -1);
 	group = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_group (s_tun), 10, 0, G_MAXINT32, -1);
 
-	plerr = nm_platform_tun_add (NM_PLATFORM_GET, iface,
-	                             nm_setting_tun_get_mode (s_tun) == NM_SETTING_TUN_MODE_TAP,
-	                             user, group,
-	                             nm_setting_tun_get_pi (s_tun),
-	                             nm_setting_tun_get_vnet_hdr (s_tun),
-	                             nm_setting_tun_get_multi_queue (s_tun),
-	                             out_plink);
+	plerr = nm_platform_link_tun_add (NM_PLATFORM_GET, iface,
+	                                  nm_setting_tun_get_mode (s_tun) == NM_SETTING_TUN_MODE_TAP,
+	                                  user, group,
+	                                  nm_setting_tun_get_pi (s_tun),
+	                                  nm_setting_tun_get_vnet_hdr (s_tun),
+	                                  nm_setting_tun_get_multi_queue (s_tun),
+	                                  out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create TUN/TAP interface '%s' for '%s': %s",
@@ -241,7 +240,7 @@ realize (NMDevice *device, NMPlatformLink *plink, GError **error)
 }
 
 static void
-setup_start (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, const NMPlatformLink *plink)
 {
 	NM_DEVICE_CLASS (nm_device_tun_parent_class)->setup_start (device, plink);
 	reload_tun_properties (device);
