@@ -796,7 +796,7 @@ fi
 AC_DEFINE_UNQUOTED(KERNEL_FIRMWARE_DIR, "$KERNEL_FIRMWARE_DIR", [Define to path of the kernel firmware directory])
 AC_SUBST(KERNEL_FIRMWARE_DIR)
 
-PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26], [have_libsoup=yes],[have_libsoup=no])
+PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.32], [have_libsoup=yes],[have_libsoup=no])
 AC_ARG_WITH(libsoup, AS_HELP_STRING([--with-libsoup=yes|no], [Link against libsoup]), [], [with_libsoup=${have_libsoup}])
 if test "$with_libsoup" != "no"; then
 	if test "$have_libsoup" != "yes"; then
@@ -808,6 +808,7 @@ else
 	AC_DEFINE(WITH_LIBSOUP, 0, [Define if you have libsoup])
 fi
 AM_CONDITIONAL(WITH_LIBSOUP, test "$with_libsoup" != "no")
+LIBSOUP_CFLAGS="$LIBSOUP_CFLAGS -DSOUP_VERSION_MIN_REQUIRED=SOUP_VERSION_2_32 -DSOUP_VERSION_MAX_ALLOWED=SOUP_VERSION_2_32"
 
 AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
                      [enable_concheck=${enableval}], [enable_concheck=${with_libsoup}])
