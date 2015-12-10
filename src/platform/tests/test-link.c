@@ -307,7 +307,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
 	ensure_no_signal (link_removed);
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, NULL);
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
 	accept_signal (link_removed);
@@ -401,20 +401,18 @@ test_software (NMLinkType link_type, const char *link_typename)
 	free_signal (link_changed);
 
 	/* Delete */
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert_cmpint (nm_platform_link_get_type (NM_PLATFORM_GET, ifindex), ==, NM_LINK_TYPE_NONE);
-	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
 	accept_signal (link_removed);
 
 	/* Delete again */
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 
 	/* VLAN: Delete parent */
 	if (link_type == NM_LINK_TYPE_VLAN) {
 		SignalData *link_removed_parent = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, vlan_parent);
 
-		g_assert (nm_platform_link_delete (NM_PLATFORM_GET, vlan_parent));
+		nmtstp_link_del (-1, vlan_parent, NULL);
 		accept_signal (link_removed_parent);
 		free_signal (link_removed_parent);
 	}
@@ -497,8 +495,7 @@ test_bridge_addr (void)
 	g_assert_cmpint (plink->addr.len, ==, sizeof (addr));
 	g_assert (!memcmp (plink->addr.data, addr, sizeof (addr)));
 
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, link.ifindex));
-	g_assert (!nm_platform_link_get (NM_PLATFORM_GET, link.ifindex));
+	nmtstp_link_del (-1, link.ifindex, link.name);
 }
 
 /*****************************************************************************/
@@ -573,7 +570,7 @@ test_internal (void)
 	accept_signal (link_changed);
 
 	/* Delete device */
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
 	accept_signal (link_removed);
 
 	/* Try to delete again */
@@ -979,9 +976,9 @@ test_software_detect (gconstpointer user_data)
 		}
 	}
 
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
 out_delete_parent:
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));
+	nmtstp_link_del (-1, ifindex_parent, PARENT_NAME);
 }
 
 static void
@@ -1537,8 +1534,8 @@ test_vlan_set_xgress (void)
 		_assert_vlan_flags (ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
 	}
 
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
+	nmtstp_link_del (-1, ifindex_parent, PARENT_NAME);
 }
 
 /*****************************************************************************/
@@ -1606,8 +1603,9 @@ test_nl_bugs_veth (void)
 	});
 
 out:
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth0);
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth1);
+	nmtstp_link_del (-1, ifindex_veth0, IFACE_VETH0);
+	g_assert (!nmtstp_link_get (ifindex_veth0, IFACE_VETH0));
+	g_assert (!nmtstp_link_get (ifindex_veth1, IFACE_VETH1));
 	nmtstp_namespace_handle_release (ns_handle);
 }
 
@@ -1657,8 +1655,8 @@ again:
 		goto again;
 	}
 
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_bond0);
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_dummy0);
+	g_assert (!nmtstp_link_get (ifindex_bond0, IFACE_BOND0));
+	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
 /*****************************************************************************/
@@ -1712,8 +1710,8 @@ again:
 		goto again;
 	}
 
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_bridge0);
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_dummy0);
+	nmtstp_link_del (-1, ifindex_bridge0, IFACE_BRIDGE0);
+	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
 /*****************************************************************************/
