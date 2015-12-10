@@ -2254,8 +2254,11 @@ _nl_sock_flush_data (struct nl_sock *sk)
 {
 	int nle;
 	struct nl_cb *cb;
+	struct nl_cb *cb0;
 
-	cb = nl_cb_clone (nl_socket_get_cb (sk));
+	cb0 = nl_socket_get_cb (sk);
+	cb = nl_cb_clone (cb0);
+	nl_cb_put (cb0);
 	if (cb == NULL)
 		return -NLE_NOMEM;
 
@@ -5449,6 +5452,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
+	errno = 0;
 	nle = nl_recvmsgs_default (priv->nlh_event);
 
 	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */

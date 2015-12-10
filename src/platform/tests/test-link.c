@@ -307,7 +307,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
 	ensure_no_signal (link_removed);
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, NULL);
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
 	accept_signal (link_removed);
@@ -401,20 +401,18 @@ test_software (NMLinkType link_type, const char *link_typename)
 	free_signal (link_changed);
 
 	/* Delete */
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert_cmpint (nm_platform_link_get_type (NM_PLATFORM_GET, ifindex), ==, NM_LINK_TYPE_NONE);
-	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
 	accept_signal (link_removed);
 
 	/* Delete again */
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 
 	/* VLAN: Delete parent */
 	if (link_type == NM_LINK_TYPE_VLAN) {
 		SignalData *link_removed_parent = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, vlan_parent);
 
-		g_assert (nm_platform_link_delete (NM_PLATFORM_GET, vlan_parent));
+		nmtstp_link_del (-1, vlan_parent, NULL);
 		accept_signal (link_removed_parent);
 		free_signal (link_removed_parent);
 	}
@@ -497,8 +495,7 @@ test_bridge_addr (void)
 	g_assert_cmpint (plink->addr.len, ==, sizeof (addr));
 	g_assert (!memcmp (plink->addr.data, addr, sizeof (addr)));
 
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, link.ifindex));
-	g_assert (!nm_platform_link_get (NM_PLATFORM_GET, link.ifindex));
+	nmtstp_link_del (-1, link.ifindex, link.name);
 }
 
 /*****************************************************************************/
@@ -573,7 +570,7 @@ test_internal (void)
 	accept_signal (link_changed);
 
 	/* Delete device */
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
 	accept_signal (link_removed);
 
 	/* Try to delete again */
@@ -979,9 +976,9 @@ test_software_detect (gconstpointer user_data)
 		}
 	}
 
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
 out_delete_parent:
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));
+	nmtstp_link_del (-1, ifindex_parent, PARENT_NAME);
 }
 
 static void
@@ -1537,8 +1534,85 @@ test_vlan_set_xgress (void)
 		_assert_vlan_flags (ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
 	}
 
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex_parent));
+	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
+	nmtstp_link_del (-1, ifindex_parent, PARENT_NAME);
+}
+
+/*****************************************************************************/
+
+static void
+test_create_many_links_do (guint n_devices)
+{
+	gint64 time, start_time = nm_utils_get_monotonic_timestamp_ns ();
+	guint i;
+	char name[64];
+	const NMPlatformLink *pllink;
+	gs_unref_array GArray *ifindexes = g_array_sized_new (FALSE, FALSE, sizeof (int), n_devices);
+	const gint EX = ((int) (nmtst_get_rand_int () % 4)) - 1;
+
+	g_assert (EX >= -1 && EX <= 2);
+
+	_LOGI (">>> create devices (EX=%d)...", EX);
+
+	for (i = 0; i < n_devices; i++) {
+		nm_sprintf_buf (name, "t-%05u", i);
+		if (EX == 2) {
+			/* This mode is different from letting nmtstp_link_dummy_add()
+			 * because in this case we don't process any platform events
+			 * while adding all the links. */
+			nmtstp_run_command_check ("ip link add %s type dummy", name);
+		} else
+			nmtstp_link_dummy_add (EX, name);
+	}
+
+	_LOGI (">>> process events after creating devices...");
+
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	_LOGI (">>> check devices...");
+
+	for (i = 0; i < n_devices; i++) {
+		nm_sprintf_buf (name, "t-%05u", i);
+
+		pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name);
+		g_assert (pllink);
+		g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_DUMMY);
+		g_assert_cmpstr (pllink->name, ==, name);
+
+		g_array_append_val (ifindexes, pllink->ifindex);
+	}
+
+	_LOGI (">>> delete devices...");
+
+	g_assert_cmpint (ifindexes->len, ==, n_devices);
+	for (i = 0; i < n_devices; i++) {
+		nm_sprintf_buf (name, "t-%05u", i);
+
+		if (EX == 2)
+			nmtstp_run_command_check ("ip link delete %s", name);
+		else
+			nmtstp_link_del (EX, g_array_index (ifindexes, int, i), name);
+	}
+
+	_LOGI (">>> process events after deleting devices...");
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	time = nm_utils_get_monotonic_timestamp_ns () - start_time;
+	_LOGI (">>> finished in %ld.%09ld seconds", (long) (time / NM_UTILS_NS_PER_SECOND), (long) (time % NM_UTILS_NS_PER_SECOND));
+}
+
+static void
+test_create_many_links (gconstpointer user_data)
+{
+	guint n_devices = GPOINTER_TO_UINT (user_data);
+
+	if (n_devices > 100 && nmtst_test_quick ()) {
+		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", str_if_set (g_get_prgname (), "test-link-linux"));
+		g_test_skip ("Skip long running test");
+		return;
+	}
+
+	test_create_many_links_do (n_devices);
 }
 
 /*****************************************************************************/
@@ -1606,8 +1680,9 @@ test_nl_bugs_veth (void)
 	});
 
 out:
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth0);
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_veth1);
+	nmtstp_link_del (-1, ifindex_veth0, IFACE_VETH0);
+	g_assert (!nmtstp_link_get (ifindex_veth0, IFACE_VETH0));
+	g_assert (!nmtstp_link_get (ifindex_veth1, IFACE_VETH1));
 	nmtstp_namespace_handle_release (ns_handle);
 }
 
@@ -1657,8 +1732,8 @@ again:
 		goto again;
 	}
 
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_bond0);
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_dummy0);
+	g_assert (!nmtstp_link_get (ifindex_bond0, IFACE_BOND0));
+	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
 /*****************************************************************************/
@@ -1712,8 +1787,8 @@ again:
 		goto again;
 	}
 
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_bridge0);
-	nm_platform_link_delete (NM_PLATFORM_GET, ifindex_dummy0);
+	nmtstp_link_del (-1, ifindex_bridge0, IFACE_BRIDGE0);
+	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
 /*****************************************************************************/
@@ -1757,6 +1832,9 @@ setup_tests (void)
 		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
 
 		g_test_add_func ("/link/software/vlan/set-xgress", test_vlan_set_xgress);
+
+		g_test_add_data_func ("/link/create-many-links/20", GUINT_TO_POINTER (20), test_create_many_links);
+		g_test_add_data_func ("/link/create-many-links/1000", GUINT_TO_POINTER (1000), test_create_many_links);
 
 		g_test_add_func ("/link/nl-bugs/veth", test_nl_bugs_veth);
 		g_test_add_func ("/link/nl-bugs/spurious-newlink", test_nl_bugs_spuroius_newlink);

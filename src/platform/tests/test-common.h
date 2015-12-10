@@ -25,9 +25,14 @@
         const NMLogDomain __domain = (domain); \
         \
         if (nm_logging_enabled (__level, __domain)) { \
+            gint64 _ts = nm_utils_get_monotonic_timestamp_ns (); \
+            \
             _nm_log (__level, __domain, 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     _NMLOG_PREFIX_NAME _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+                     "%s[%ld.%09ld]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     (long) (_ts / NM_UTILS_NS_PER_SECOND), \
+                     (long) (_ts % NM_UTILS_NS_PER_SECOND) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
 
@@ -131,9 +136,14 @@ void nmtstp_ip6_address_del (gboolean external_command,
                              struct in6_addr address,
                              int plen);
 
+const NMPlatformLink *nmtstp_link_get (int ifindex, const char *name);
+
 void nmtstp_link_set_updown (gboolean external_command,
                              int ifindex,
                              gboolean up);
+
+const NMPlatformLink *nmtstp_link_dummy_add (gboolean external_command,
+                                             const char *name);
 
 gboolean nmtstp_link_gre_add (gboolean external_command,
                               const char *name,
@@ -153,6 +163,10 @@ gboolean nmtstp_link_sit_add (gboolean external_command,
 gboolean nmtstp_link_vxlan_add (gboolean external_command,
                                 const char *name,
                                 NMPlatformLnkVxlan *lnk);
+
+void nmtstp_link_del (gboolean external_command,
+                      int ifindex,
+                      const char *name);
 
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);

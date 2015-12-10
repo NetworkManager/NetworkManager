@@ -670,6 +670,29 @@ _ip_address_add (gboolean external_command,
 	} while (TRUE);
 }
 
+const NMPlatformLink *
+nmtstp_link_dummy_add (gboolean external_command, const char *name)
+{
+	const NMPlatformLink *plink = NULL;
+	gboolean success;
+
+	g_assert (nm_utils_iface_valid_name (name));
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		success = !nmtstp_run_command ("ip link add %s type dummy",
+		                                name);
+		if (success)
+			plink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_DUMMY, 100);
+	} else
+		success = nm_platform_link_dummy_add (NM_PLATFORM_GET, name, &plink) == NM_PLATFORM_ERROR_SUCCESS;
+
+	g_assert (success);
+	g_assert (plink);
+	return plink;
+}
+
 gboolean
 nmtstp_link_gre_add (gboolean external_command, const char *name, NMPlatformLnkGre *lnk)
 {
@@ -1041,6 +1064,81 @@ nmtstp_ip6_address_del (gboolean external_command,
 	                 (NMIPAddr *) &address,
 	                 plen,
 	                 NULL);
+}
+
+const NMPlatformLink *
+nmtstp_link_get (int ifindex,
+                 const char *name)
+{
+	const NMPlatformLink *pllink = NULL;
+
+	if (ifindex > 0) {
+		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+
+		if (pllink) {
+			g_assert_cmpint (pllink->ifindex, ==, ifindex);
+			if (name)
+				g_assert_cmpstr (name, ==, pllink->name);
+		} else {
+			if (name)
+				g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name));
+		}
+	} else {
+		g_assert (name);
+
+		pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name);
+
+		if (pllink)
+			g_assert_cmpstr (name, ==, pllink->name);
+	}
+
+	g_assert (!name || nm_utils_iface_valid_name (name));
+
+	return pllink;
+}
+
+void
+nmtstp_link_del (gboolean external_command,
+                 int ifindex,
+                 const char *name)
+{
+	gint64 end_time;
+	const NMPlatformLink *pllink;
+	gboolean success;
+	gs_free char *name_copy = NULL;
+
+	pllink = nmtstp_link_get (ifindex, name);
+
+	g_assert (pllink);
+
+	name = name_copy = g_strdup (pllink->name);
+	ifindex = pllink->ifindex;
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		nmtstp_run_command_check ("ip link delete %s", name);
+	} else {
+		success = nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
+		g_assert (success);
+	}
+
+	/* Let's wait until we get the result */
+	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	do {
+		if (external_command)
+			nm_platform_process_events (NM_PLATFORM_GET);
+
+		if (!nm_platform_link_get (NM_PLATFORM_GET, ifindex)) {
+			g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name));
+			break;
+		}
+
+		/* for internal command, we expect not to reach this line.*/
+		g_assert (external_command);
+
+		g_assert (nmtstp_wait_for_signal_until (end_time));
+	} while (TRUE);
 }
 
 void
