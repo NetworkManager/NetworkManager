@@ -1066,6 +1066,37 @@ nmtstp_ip6_address_del (gboolean external_command,
 	                 NULL);
 }
 
+const NMPlatformLink *
+nmtstp_link_get (int ifindex,
+                 const char *name)
+{
+	const NMPlatformLink *pllink = NULL;
+
+	if (ifindex > 0) {
+		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+
+		if (pllink) {
+			g_assert_cmpint (pllink->ifindex, ==, ifindex);
+			if (name)
+				g_assert_cmpstr (name, ==, pllink->name);
+		} else {
+			if (name)
+				g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name));
+		}
+	} else {
+		g_assert (name);
+
+		pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name);
+
+		if (pllink)
+			g_assert_cmpstr (name, ==, pllink->name);
+	}
+
+	g_assert (!name || nm_utils_iface_valid_name (name));
+
+	return pllink;
+}
+
 void
 nmtstp_link_set_updown (gboolean external_command,
                         int ifindex,
