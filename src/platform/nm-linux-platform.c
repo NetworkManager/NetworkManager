@@ -384,6 +384,7 @@ _nl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 	NMNLInfoDataClosure data = { .parser = parser, .parser_data = parser_data };
 	struct nl_msg *msg = NULL;
 	struct nl_cb *cb;
+	struct nl_cb *cb0;
 	int err;
 
 	err = rtnl_link_build_get_request (ifindex, NULL, &msg);
@@ -395,7 +396,9 @@ _nl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 	if (err < 0)
 		return err;
 
-	cb = nl_cb_clone (nl_socket_get_cb (sk));
+	cb0 = nl_socket_get_cb (sk);
+	cb = nl_cb_clone (cb0);
+	nl_cb_put (cb0);
 	if (cb == NULL)
 		return -NLE_NOMEM;
 	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, _nl_link_parse_info_data_cb, &data);
