@@ -25,9 +25,14 @@
         const NMLogDomain __domain = (domain); \
         \
         if (nm_logging_enabled (__level, __domain)) { \
+            gint64 _ts = nm_utils_get_monotonic_timestamp_ns (); \
+            \
             _nm_log (__level, __domain, 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     _NMLOG_PREFIX_NAME _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+                     "%s[%ld.%09ld]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     (long) (_ts / NM_UTILS_NS_PER_SECOND), \
+                     (long) (_ts % NM_UTILS_NS_PER_SECOND) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
 
