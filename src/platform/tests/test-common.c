@@ -1098,6 +1098,50 @@ nmtstp_link_get (int ifindex,
 }
 
 void
+nmtstp_link_del (gboolean external_command,
+                 int ifindex,
+                 const char *name)
+{
+	gint64 end_time;
+	const NMPlatformLink *pllink;
+	gboolean success;
+	gs_free char *name_copy = NULL;
+
+	pllink = nmtstp_link_get (ifindex, name);
+
+	g_assert (pllink);
+
+	name = name_copy = g_strdup (pllink->name);
+	ifindex = pllink->ifindex;
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		nmtstp_run_command_check ("ip link delete %s", name);
+	} else {
+		success = nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
+		g_assert (success);
+	}
+
+	/* Let's wait until we get the result */
+	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	do {
+		if (external_command)
+			nm_platform_process_events (NM_PLATFORM_GET);
+
+		if (!nm_platform_link_get (NM_PLATFORM_GET, ifindex)) {
+			g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name));
+			break;
+		}
+
+		/* for internal command, we expect not to reach this line.*/
+		g_assert (external_command);
+
+		g_assert (nmtstp_wait_for_signal_until (end_time));
+	} while (TRUE);
+}
+
+void
 nmtstp_link_set_updown (gboolean external_command,
                         int ifindex,
                         gboolean up)

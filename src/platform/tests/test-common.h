@@ -164,6 +164,10 @@ gboolean nmtstp_link_vxlan_add (gboolean external_command,
                                 const char *name,
                                 NMPlatformLnkVxlan *lnk);
 
+void nmtstp_link_del (gboolean external_command,
+                      int ifindex,
+                      const char *name);
+
 void init_tests (int *argc, char ***argv);
 void setup_tests (void);
 
