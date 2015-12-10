@@ -1541,6 +1541,83 @@ test_vlan_set_xgress (void)
 /*****************************************************************************/
 
 static void
+test_create_many_links_do (guint n_devices)
+{
+	gint64 time, start_time = nm_utils_get_monotonic_timestamp_ns ();
+	guint i;
+	char name[64];
+	const NMPlatformLink *pllink;
+	gs_unref_array GArray *ifindexes = g_array_sized_new (FALSE, FALSE, sizeof (int), n_devices);
+	const gint EX = ((int) (nmtst_get_rand_int () % 4)) - 1;
+
+	g_assert (EX >= -1 && EX <= 2);
+
+	_LOGI (">>> create devices (EX=%d)...", EX);
+
+	for (i = 0; i < n_devices; i++) {
+		nm_sprintf_buf (name, "t-%05u", i);
+		if (EX == 2) {
+			/* This mode is different from letting nmtstp_link_dummy_add()
+			 * because in this case we don't process any platform events
+			 * while adding all the links. */
+			nmtstp_run_command_check ("ip link add %s type dummy", name);
+		} else
+			nmtstp_link_dummy_add (EX, name);
+	}
+
+	_LOGI (">>> process events after creating devices...");
+
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	_LOGI (">>> check devices...");
+
+	for (i = 0; i < n_devices; i++) {
+		nm_sprintf_buf (name, "t-%05u", i);
+
+		pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name);
+		g_assert (pllink);
+		g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_DUMMY);
+		g_assert_cmpstr (pllink->name, ==, name);
+
+		g_array_append_val (ifindexes, pllink->ifindex);
+	}
+
+	_LOGI (">>> delete devices...");
+
+	g_assert_cmpint (ifindexes->len, ==, n_devices);
+	for (i = 0; i < n_devices; i++) {
+		nm_sprintf_buf (name, "t-%05u", i);
+
+		if (EX == 2)
+			nmtstp_run_command_check ("ip link delete %s", name);
+		else
+			nmtstp_link_del (EX, g_array_index (ifindexes, int, i), name);
+	}
+
+	_LOGI (">>> process events after deleting devices...");
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	time = nm_utils_get_monotonic_timestamp_ns () - start_time;
+	_LOGI (">>> finished in %ld.%09ld seconds", (long) (time / NM_UTILS_NS_PER_SECOND), (long) (time % NM_UTILS_NS_PER_SECOND));
+}
+
+static void
+test_create_many_links (gconstpointer user_data)
+{
+	guint n_devices = GPOINTER_TO_UINT (user_data);
+
+	if (n_devices > 100 && nmtst_test_quick ()) {
+		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", str_if_set (g_get_prgname (), "test-link-linux"));
+		g_test_skip ("Skip long running test");
+		return;
+	}
+
+	test_create_many_links_do (n_devices);
+}
+
+/*****************************************************************************/
+
+static void
 test_nl_bugs_veth (void)
 {
 	const char *IFACE_VETH0 = "nm-test-veth0";
@@ -1755,6 +1832,9 @@ setup_tests (void)
 		test_software_detect_add ("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
 
 		g_test_add_func ("/link/software/vlan/set-xgress", test_vlan_set_xgress);
+
+		g_test_add_data_func ("/link/create-many-links/20", GUINT_TO_POINTER (20), test_create_many_links);
+		g_test_add_data_func ("/link/create-many-links/1000", GUINT_TO_POINTER (1000), test_create_many_links);
 
 		g_test_add_func ("/link/nl-bugs/veth", test_nl_bugs_veth);
 		g_test_add_func ("/link/nl-bugs/spurious-newlink", test_nl_bugs_spuroius_newlink);
