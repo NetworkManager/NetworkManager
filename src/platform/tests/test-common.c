@@ -670,6 +670,29 @@ _ip_address_add (gboolean external_command,
 	} while (TRUE);
 }
 
+const NMPlatformLink *
+nmtstp_link_dummy_add (gboolean external_command, const char *name)
+{
+	const NMPlatformLink *plink = NULL;
+	gboolean success;
+
+	g_assert (nm_utils_iface_valid_name (name));
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	if (external_command) {
+		success = !nmtstp_run_command ("ip link add %s type dummy",
+		                                name);
+		if (success)
+			plink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_DUMMY, 100);
+	} else
+		success = nm_platform_link_dummy_add (NM_PLATFORM_GET, name, &plink) == NM_PLATFORM_ERROR_SUCCESS;
+
+	g_assert (success);
+	g_assert (plink);
+	return plink;
+}
+
 gboolean
 nmtstp_link_gre_add (gboolean external_command, const char *name, NMPlatformLnkGre *lnk)
 {

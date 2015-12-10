@@ -140,6 +140,9 @@ void nmtstp_link_set_updown (gboolean external_command,
                              int ifindex,
                              gboolean up);
 
+const NMPlatformLink *nmtstp_link_dummy_add (gboolean external_command,
+                                             const char *name);
+
 gboolean nmtstp_link_gre_add (gboolean external_command,
                               const char *name,
                               NMPlatformLnkGre *lnk);
