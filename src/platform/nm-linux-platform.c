@@ -4578,6 +4578,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
+	errno = 0;
 	nle = nl_recvmsgs_default (priv->nlh_event);
 
 	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
