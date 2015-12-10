@@ -1267,8 +1267,10 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	}
 
 	g_clear_pointer (&priv->banner, g_free);
-	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &str))
+	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &str)) {
 		priv->banner = g_strdup (str);
+		g_object_notify (G_OBJECT (self), NM_VPN_CONNECTION_BANNER);
+	}
 
 	/* External world-visible address of the VPN server */
 	priv->ip4_external_gw = 0;
