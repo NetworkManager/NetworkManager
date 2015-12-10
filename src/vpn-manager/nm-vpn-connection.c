@@ -1292,7 +1292,7 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	}
 
 	priv->mtu = 0;
-	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "u", &u32))
+	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_MTU, "u", &u32))
 		priv->mtu = u32;
 
 	return TRUE;
