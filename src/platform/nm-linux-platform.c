@@ -4582,8 +4582,12 @@ event_handler_read_netlink_one (NMPlatform *platform)
 	nle = nl_recvmsgs_default (priv->nlh_event);
 
 	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
-	if (nle == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	if (nle == 0 && errno == EAGAIN) {
+		/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
+		 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
+		G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
 		nle = -NLE_AGAIN;
+	}
 
 	if (nle < 0)
 		switch (nle) {
