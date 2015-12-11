@@ -681,7 +681,7 @@ link_vlan_change (NMPlatform *platform,
 static gboolean
 link_vxlan_add (NMPlatform *platform,
                 const char *name,
-                NMPlatformLnkVxlan *props,
+                const NMPlatformLnkVxlan *props,
                 const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device;

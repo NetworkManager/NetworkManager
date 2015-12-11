@@ -645,7 +645,9 @@ nm_platform_link_add (NMPlatform *self,
  * Create a software ethernet-like interface
  */
 NMPlatformError
-nm_platform_link_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_dummy_add (NMPlatform *self,
+                            const char *name,
+                            const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, 0, out_link);
 }
@@ -1485,7 +1487,9 @@ nm_platform_link_bridge_add (NMPlatform *self,
  * Create a software bonding device.
  */
 NMPlatformError
-nm_platform_link_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_bond_add (NMPlatform *self,
+                           const char *name,
+                           const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, 0, out_link);
 }
@@ -1499,7 +1503,9 @@ nm_platform_link_bond_add (NMPlatform *self, const char *name, const NMPlatformL
  * Create a software teaming device.
  */
 NMPlatformError
-nm_platform_link_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_team_add (NMPlatform *self,
+                           const char *name,
+                           const NMPlatformLink **out_link)
 {
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, 0, out_link);
 }
@@ -1516,11 +1522,11 @@ nm_platform_link_team_add (NMPlatform *self, const char *name, const NMPlatformL
  */
 NMPlatformError
 nm_platform_link_vlan_add (NMPlatform *self,
-                      const char *name,
-                      int parent,
-                      int vlanid,
-                      guint32 vlanflags,
-                      const NMPlatformLink **out_link)
+                           const char *name,
+                           int parent,
+                           int vlanid,
+                           guint32 vlanflags,
+                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
 
@@ -1553,7 +1559,7 @@ nm_platform_link_vlan_add (NMPlatform *self,
 NMPlatformError
 nm_platform_link_vxlan_add (NMPlatform *self,
                             const char *name,
-                            NMPlatformLnkVxlan *props,
+                            const NMPlatformLnkVxlan *props,
                             const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
@@ -1824,7 +1830,7 @@ nm_platform_link_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, i
 NMPlatformError
 nm_platform_link_gre_add (NMPlatform *self,
                           const char *name,
-                          NMPlatformLnkGre *props,
+                          const NMPlatformLnkGre *props,
                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
@@ -1852,7 +1858,10 @@ nm_platform_link_gre_add (NMPlatform *self,
 }
 
 NMPlatformError
-nm_platform_link_infiniband_add (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link)
+nm_platform_link_infiniband_add (NMPlatform *self,
+                                 int parent,
+                                 int p_key,
+                                 const NMPlatformLink **out_link)
 {
 	gs_free char *parent_name = NULL;
 	gs_free char *name = NULL;
@@ -1959,7 +1968,7 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 NMPlatformError
 nm_platform_link_ip6tnl_add (NMPlatform *self,
                              const char *name,
-                             NMPlatformLnkIp6Tnl *props,
+                             const NMPlatformLnkIp6Tnl *props,
                              const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
@@ -1998,7 +2007,7 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
 NMPlatformError
 nm_platform_link_ipip_add (NMPlatform *self,
                            const char *name,
-                           NMPlatformLnkIpIp *props,
+                           const NMPlatformLnkIpIp *props,
                            const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
@@ -2038,7 +2047,7 @@ NMPlatformError
 nm_platform_link_macvlan_add (NMPlatform *self,
                               const char *name,
                               int parent,
-                              NMPlatformLnkMacvlan *props,
+                              const NMPlatformLnkMacvlan *props,
                               const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
@@ -2078,7 +2087,7 @@ nm_platform_link_macvlan_add (NMPlatform *self,
 NMPlatformError
 nm_platform_link_sit_add (NMPlatform *self,
                           const char *name,
-                          NMPlatformLnkSit *props,
+                          const NMPlatformLnkSit *props,
                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;

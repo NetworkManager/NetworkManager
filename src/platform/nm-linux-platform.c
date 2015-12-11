@@ -4206,7 +4206,7 @@ nla_put_failure:
 static int
 link_gre_add (NMPlatform *platform,
               const char *name,
-              NMPlatformLnkGre *props,
+              const NMPlatformLnkGre *props,
               const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4261,7 +4261,7 @@ nla_put_failure:
 static int
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
-                 NMPlatformLnkIp6Tnl *props,
+                 const NMPlatformLnkIp6Tnl *props,
                  const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4322,7 +4322,7 @@ nla_put_failure:
 static int
 link_ipip_add (NMPlatform *platform,
                const char *name,
-               NMPlatformLnkIpIp *props,
+               const NMPlatformLnkIpIp *props,
                const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4374,7 +4374,7 @@ static int
 link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
-                  NMPlatformLnkMacvlan *props,
+                  const NMPlatformLnkMacvlan *props,
                   const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4422,7 +4422,7 @@ nla_put_failure:
 static int
 link_sit_add (NMPlatform *platform,
               const char *name,
-              NMPlatformLnkSit *props,
+              const NMPlatformLnkSit *props,
               const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4473,7 +4473,7 @@ nla_put_failure:
 static gboolean
 link_vxlan_add (NMPlatform *platform,
                 const char *name,
-                NMPlatformLnkVxlan *props,
+                const NMPlatformLnkVxlan *props,
                 const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
