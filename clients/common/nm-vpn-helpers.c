@@ -29,6 +29,7 @@
 #include <gmodule.h>
 
 #include "nm-default.h"
+#include "nm-utils.h"
 #include "nm-vpn-helpers.h"
 
 #include "nm-macros-internal.h"
@@ -135,5 +136,82 @@ nm_vpn_get_secret_names (const char *vpn_type)
 	else if (!g_strcmp0 (type, "openconnect"))
 		return openconnect_secrets;
 	return NULL;
+}
+
+static gboolean
+_extract_variable_value (char *line, const char *tag, char **value)
+{
+	char *p1, *p2;
+
+	if (g_str_has_prefix (line, tag)) {
+		p1 = line + strlen (tag);
+		p2 = line + strlen (line) - 1;
+		if ((*p1 == '\'' || *p1 == '"') && (*p1 == *p2)) {
+			p1++;
+			*p2 = '\0';
+		}
+		if (value)
+			*value = g_strdup (p1);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+gboolean
+nm_vpn_openconnect_authenticate_helper (const char *host,
+                                        char **cookie,
+                                        char **gateway,
+                                        char **gwcert,
+                                        int *status,
+                                        GError **error)
+{
+	char *output = NULL;
+	gboolean ret;
+	char **strv = NULL, **iter;
+	char *argv[4];
+	const char *path;
+	const char *const DEFAULT_PATHS[] = {
+		"/sbin/",
+		"/usr/sbin/",
+		"/usr/local/sbin/",
+		"/bin/",
+		"/usr/bin/",
+		"/usr/local/bin/",
+		NULL,
+	};
+
+	path = nm_utils_file_search_in_paths ("openconnect", "/usr/sbin/openconnect", DEFAULT_PATHS,
+	                                      G_FILE_TEST_IS_EXECUTABLE, NULL, NULL, error);
+	if (!path)
+		return FALSE;
+
+	argv[0] = (char *) path;
+	argv[1] = "--authenticate";
+	argv[2] = (char *) host;
+	argv[3] = NULL;
+
+	ret = g_spawn_sync (NULL, argv, NULL,
+	                    G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
+	                    NULL, NULL,  &output, NULL,
+	                    status, error);
+
+	if (!ret)
+		return FALSE;
+
+	/* Parse output and set cookie, gateway and gwcert
+	 * output example:
+	 * COOKIE='loremipsum'
+	 * HOST='1.2.3.4'
+	 * FINGERPRINT='sha1:32bac90cf09a722e10ecc1942c67fe2ac8c21e2e'
+	 */
+	strv = g_strsplit_set (output ? output : "", "\r\n", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		_extract_variable_value (*iter, "COOKIE=", cookie);
+		_extract_variable_value (*iter, "HOST=", gateway);
+		_extract_variable_value (*iter, "FINGERPRINT=", gwcert);
+	}
+	g_strfreev (strv);
+
+	return TRUE;
 }
 
