@@ -5548,40 +5548,6 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 	return any;
 }
 
-static struct nl_sock *
-setup_socket (NMPlatform *platform, gboolean event)
-{
-	struct nl_sock *sock;
-	int nle;
-
-	sock = nl_socket_alloc ();
-	g_return_val_if_fail (sock, NULL);
-
-	/* Only ever accept messages from kernel */
-	nle = nl_socket_modify_cb (sock, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
-	g_assert (!nle);
-
-	/* Dispatch event messages (event socket only) */
-	if (event) {
-		nl_socket_modify_cb (sock, NL_CB_VALID, NL_CB_CUSTOM, event_notification, platform);
-		nl_socket_modify_cb (sock, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, platform);
-		nl_socket_modify_err_cb (sock, NL_CB_CUSTOM, event_err, platform);
-	}
-
-	nle = nl_connect (sock, NETLINK_ROUTE);
-	g_assert (!nle);
-	nle = nl_socket_set_passcred (sock, 1);
-	g_assert (!nle);
-
-	/* No blocking for event socket, so that we can drain it safely. */
-	if (event) {
-		nle = nl_socket_set_nonblocking (sock);
-		g_assert (!nle);
-	}
-
-	return sock;
-}
-
 /******************************************************************/
 
 static void
@@ -5716,26 +5682,59 @@ constructed (GObject *_object)
 
 	_LOGD ("create");
 
-	/* Initialize netlink socket for requests */
-	priv->nlh = setup_socket (platform, FALSE);
-	g_assert (priv->nlh);
+	{
+		priv->nlh = nl_socket_alloc ();
+		g_assert (priv->nlh);
+
+		nle = nl_socket_modify_cb (priv->nlh, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
+		g_assert (!nle);
+
+		nle = nl_connect (priv->nlh, NETLINK_ROUTE);
+		g_assert (!nle);
+		nle = nl_socket_set_passcred (priv->nlh, 1);
+		g_assert (!nle);
+	}
 	_LOGD ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
-	/* Initialize netlink socket for events */
-	priv->nlh_event = setup_socket (platform, TRUE);
-	g_assert (priv->nlh_event);
-	/* The default buffer size wasn't enough for the testsuites. It might just
-	 * as well happen with NetworkManager itself. For now let's hope 128KB is
-	 * good enough.
-	 */
-	nle = nl_socket_set_buffer_size (priv->nlh_event, 131072, 0);
-	g_assert (!nle);
-	nle = nl_socket_add_memberships (priv->nlh_event,
-	                                 RTNLGRP_LINK,
-	                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
-	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
-	                                 0);
-	g_assert (!nle);
+	{
+		priv->nlh_event = nl_socket_alloc ();
+		g_assert (priv->nlh_event);
+
+		nle = nl_socket_modify_cb (priv->nlh_event, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
+		g_assert (!nle);
+		nle = nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_CUSTOM, event_notification, platform);
+		g_assert (!nle);
+		nle = nl_socket_modify_cb (priv->nlh_event, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, platform);
+		g_assert (!nle);
+		nle = nl_socket_modify_err_cb (priv->nlh_event, NL_CB_CUSTOM, event_err, platform);
+		g_assert (!nle);
+
+		nle = nl_connect (priv->nlh_event, NETLINK_ROUTE);
+		g_assert (!nle);
+		nle = nl_socket_set_passcred (priv->nlh_event, 1);
+		g_assert (!nle);
+
+		/* No blocking for event socket, so that we can drain it safely. */
+		nle = nl_socket_set_nonblocking (priv->nlh_event);
+		g_assert (!nle);
+
+		/* The default buffer size wasn't enough for the testsuites. It might just
+		 * as well happen with NetworkManager itself. For now let's hope 128KB is
+		 * good enough.
+		 *
+		 * FIXME: it's unclear that this is still actually needed. The testsuite
+		 * certainly doesn't fail for me. Maybe it can be removed.
+		 */
+		nle = nl_socket_set_buffer_size (priv->nlh_event, 131072, 0);
+		g_assert (!nle);
+
+		nle = nl_socket_add_memberships (priv->nlh_event,
+		                                 RTNLGRP_LINK,
+		                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
+		                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
+		                                 0);
+		g_assert (!nle);
+	}
 	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
 
 	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh_event));
