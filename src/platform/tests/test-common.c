@@ -1081,8 +1081,9 @@ nmtstp_ip6_address_del (gboolean external_command,
 }
 
 const NMPlatformLink *
-nmtstp_link_get (int ifindex,
-                 const char *name)
+nmtstp_link_get_typed (int ifindex,
+                       const char *name,
+                       NMLinkType link_type)
 {
 	const NMPlatformLink *pllink = NULL;
 
@@ -1108,7 +1109,17 @@ nmtstp_link_get (int ifindex,
 
 	g_assert (!name || nm_utils_iface_valid_name (name));
 
+	if (pllink && link_type != NM_LINK_TYPE_NONE)
+		g_assert_cmpint (pllink->type, ==, link_type);
+
 	return pllink;
+}
+
+const NMPlatformLink *
+nmtstp_link_get (int ifindex,
+                 const char *name)
+{
+	return nmtstp_link_get_typed (ifindex, name, NM_LINK_TYPE_NONE);
 }
 
 void

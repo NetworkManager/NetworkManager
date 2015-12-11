@@ -136,6 +136,7 @@ void nmtstp_ip6_address_del (gboolean external_command,
                              struct in6_addr address,
                              int plen);
 
+const NMPlatformLink *nmtstp_link_get_typed (int ifindex, const char *name, NMLinkType link_type);
 const NMPlatformLink *nmtstp_link_get (int ifindex, const char *name);
 
 void nmtstp_link_set_updown (gboolean external_command,
