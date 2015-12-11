@@ -152,6 +152,8 @@ nmt_password_dialog_constructed (GObject *object)
 		if (secret->password)
 			flags |= NMT_NEWT_ENTRY_PASSWORD;
 		widget = nmt_newt_entry_new (30, flags);
+		if (secret->value)
+			nmt_newt_entry_set_text (NMT_NEWT_ENTRY (widget), secret->value);
 		nmt_newt_grid_add (secret_grid, widget, 1, i);
 		g_ptr_array_add (priv->entries, widget);
 
