@@ -967,9 +967,6 @@ get_virtual_iface_name (NMManager *self,
 
 	factory = nm_device_factory_manager_find_factory_for_connection (connection);
 	if (!factory) {
-		nm_log_warn (LOGD_DEVICE, "(%s) NetworkManager plugin for '%s' unavailable",
-		             nm_connection_get_id (connection),
-		             nm_connection_get_connection_type (connection));
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
@@ -983,8 +980,6 @@ get_virtual_iface_name (NMManager *self,
 	                                                  connection,
 	                                                  parent ? nm_device_get_ip_iface (parent) : NULL);
 	if (!iface) {
-		nm_log_warn (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
-		             nm_connection_get_id (connection));
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -1005,25 +1000,27 @@ get_virtual_iface_name (NMManager *self,
  *
  * If @connection requires a virtual device and one does not yet exist for it,
  * creates that device.
- *
- * Returns: the #NMDevice if successfully created, %NULL if not
  */
-static NMDevice *
-system_create_virtual_device (NMManager *self, NMConnection *connection, GError **error)
+static void
+system_create_virtual_device (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
 	GSList *connections, *iter;
 	gs_free char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
+	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+	g_return_if_fail (NM_IS_MANAGER (self));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	iface = get_virtual_iface_name (self, connection, &parent, error);
-	if (!iface)
-		return NULL;
+	iface = get_virtual_iface_name (self, connection, &parent, &error);
+	if (!iface) {
+		nm_log_warn (LOGD_DEVICE, "(%s) can't get a name of a virtual device: %s",
+		             nm_connection_get_id (connection), error->message);
+		g_error_free (error);
+		return;
+	}
 
 	/* See if there's a device that is already compatible with this connection */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -1035,7 +1032,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 			if (nm_device_is_real (candidate)) {
 				nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
 				            nm_connection_get_id (connection), iface);
-				return NULL;
+				return;
 			}
 
 			device = candidate;
@@ -1051,21 +1048,23 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 			nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
 				    nm_connection_get_id (connection), iface,
 				    nm_connection_get_connection_type (connection));
-			g_set_error (error,
-				     NM_MANAGER_ERROR,
-				     NM_MANAGER_ERROR_FAILED,
-				     "NetworkManager plugin for '%s' unavailable",
-				     nm_connection_get_connection_type (connection));
-			return NULL;
+			return;
 		}
 
-		device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, error);
-		if (!device)
-			return NULL;
+		device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, &error);
+		if (!device) {
+			nm_log_warn (LOGD_DEVICE, "(%s) factory can't create the device: %s",
+				     nm_connection_get_id (connection), error->message);
+			g_error_free (error);
+			return;
+		}
 
-		if (!add_device (self, device, error)) {
+		if (!add_device (self, device, &error)) {
+			nm_log_warn (LOGD_DEVICE, "(%s) can't register the device with manager: %s",
+				     nm_connection_get_id (connection), error->message);
+			g_error_free (error);
 			g_object_unref (device);
-			return NULL;
+			return;
 		}
 
 		/* Add device takes a reference that NMManager still owns, so it's
@@ -1089,14 +1088,15 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 			continue;
 
 		/* Create any backing resources the device needs */
-		if (!nm_device_create_and_realize (device, connection, parent, error)) {
+		if (!nm_device_create_and_realize (device, connection, parent, &error)) {
+			nm_log_warn (LOGD_DEVICE, "(%s) couldn't create the device: %s",
+				     nm_connection_get_id (connection), error->message);
+			g_error_free (error);
 			remove_device (self, device, FALSE, TRUE);
-			device = NULL;
+			return;
 		}
 		break;
 	}
-
-	return device;
 }
 
 static void
@@ -1105,7 +1105,7 @@ connection_added (NMSettings *settings,
                   NMManager *manager)
 {
 	if (nm_connection_is_virtual (connection))
-		system_create_virtual_device (manager, connection, NULL);
+		system_create_virtual_device (manager, connection);
 }
 
 static void
@@ -1114,7 +1114,7 @@ connection_changed (NMSettings *settings,
                     NMManager *manager)
 {
 	if (nm_connection_is_virtual (connection))
-		system_create_virtual_device (manager, connection, NULL);
+		system_create_virtual_device (manager, connection);
 }
 
 static void
