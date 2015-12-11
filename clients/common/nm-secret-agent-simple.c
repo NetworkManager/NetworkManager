@@ -162,6 +162,7 @@ nm_secret_agent_simple_secret_free (NMSecretAgentSimpleSecret *secret)
 	g_free (secret->prop_name);
 	g_free (secret->value);
 	g_free (secret->vpn_property);
+	g_free (secret->vpn_type);
 	g_free (real->property);
 	g_clear_object (&real->setting);
 
@@ -173,6 +174,7 @@ nm_secret_agent_simple_secret_new (const char *name,
                                    NMSetting  *setting,
                                    const char *property,
                                    const char *vpn_property,
+                                   const char *vpn_type,
                                    gboolean    password)
 {
 	NMSecretAgentSimpleSecretReal *real;
@@ -183,6 +185,7 @@ nm_secret_agent_simple_secret_new (const char *name,
 	                         g_strdup_printf ("%s.%s.%s", nm_setting_get_name (setting), property, vpn_property) :
 	                         g_strdup_printf ("%s.%s", nm_setting_get_name (setting), property);
 	real->base.vpn_property = g_strdup (vpn_property);
+	real->base.vpn_type = g_strdup (vpn_type);
 	real->base.password = password;
 
 	if (setting) {
@@ -222,11 +225,13 @@ add_8021x_secrets (NMSecretAgentSimpleRequest *request,
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_IDENTITY,
 		                                            NULL,
+		                                            NULL,
 		                                            FALSE);
 		g_ptr_array_add (secrets, secret);
 		secret = nm_secret_agent_simple_secret_new (_("Password"),
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_PASSWORD,
+		                                            NULL,
 		                                            NULL,
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
@@ -238,11 +243,13 @@ add_8021x_secrets (NMSecretAgentSimpleRequest *request,
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_IDENTITY,
 		                                            NULL,
+		                                            NULL,
 		                                            FALSE);
 		g_ptr_array_add (secrets, secret);
 		secret = nm_secret_agent_simple_secret_new (_("Private key password"),
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
+		                                            NULL,
 		                                            NULL,
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
@@ -268,6 +275,7 @@ add_wireless_secrets (NMSecretAgentSimpleRequest *request,
 		                                            NM_SETTING (s_wsec),
 		                                            NM_SETTING_WIRELESS_SECURITY_PSK,
 		                                            NULL,
+		                                            NULL,
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
 		return TRUE;
@@ -283,6 +291,7 @@ add_wireless_secrets (NMSecretAgentSimpleRequest *request,
 		                                            NM_SETTING (s_wsec),
 		                                            key,
 		                                            NULL,
+		                                            NULL,
 		                                            TRUE);
 		g_free (key);
 
@@ -295,6 +304,7 @@ add_wireless_secrets (NMSecretAgentSimpleRequest *request,
 			secret = nm_secret_agent_simple_secret_new (_("Password"),
 			                                            NM_SETTING (s_wsec),
 			                                            NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
+			                                            NULL,
 			                                            NULL,
 			                                            TRUE);
 			g_ptr_array_add (secrets, secret);
@@ -320,17 +330,20 @@ add_pppoe_secrets (NMSecretAgentSimpleRequest *request,
 	                                            NM_SETTING (s_pppoe),
 	                                            NM_SETTING_PPPOE_USERNAME,
 	                                            NULL,
+	                                            NULL,
 	                                            FALSE);
 	g_ptr_array_add (secrets, secret);
 	secret = nm_secret_agent_simple_secret_new (_("Service"),
 	                                            NM_SETTING (s_pppoe),
 	                                            NM_SETTING_PPPOE_SERVICE,
 	                                            NULL,
+	                                            NULL,
 	                                            FALSE);
 	g_ptr_array_add (secrets, secret);
 	secret = nm_secret_agent_simple_secret_new (_("Password"),
 	                                            NM_SETTING (s_pppoe),
 	                                            NM_SETTING_PPPOE_PASSWORD,
+	                                            NULL,
 	                                            NULL,
 	                                            TRUE);
 	g_ptr_array_add (secrets, secret);
@@ -372,6 +385,7 @@ add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name
 		                                            NM_SETTING (s_vpn),
 		                                            NM_SETTING_VPN_SECRETS,
 		                                            name,
+		                                            nm_setting_vpn_get_service_type (s_vpn),
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
 	}
@@ -448,6 +462,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		                                            NM_SETTING (s_con),
 		                                            NM_SETTING_CONNECTION_ID,
 		                                            NULL,
+		                                            NULL,
 		                                            FALSE);
 		g_ptr_array_add (secrets, secret);
 		ok = add_8021x_secrets (request, secrets);
@@ -466,6 +481,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			secret = nm_secret_agent_simple_secret_new (_("PIN"),
 			                                            NM_SETTING (s_gsm),
 			                                            NM_SETTING_GSM_PIN,
+								    NULL,
 			                                            NULL,
 			                                            FALSE);
 			g_ptr_array_add (secrets, secret);
@@ -477,6 +493,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			secret = nm_secret_agent_simple_secret_new (_("Password"),
 			                                            NM_SETTING (s_gsm),
 			                                            NM_SETTING_GSM_PASSWORD,
+			                                            NULL,
 			                                            NULL,
 			                                            TRUE);
 			g_ptr_array_add (secrets, secret);
@@ -491,6 +508,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		secret = nm_secret_agent_simple_secret_new (_("Password"),
 		                                            NM_SETTING (s_cdma),
 		                                            NM_SETTING_CDMA_PASSWORD,
+		                                            NULL,
 		                                            NULL,
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
@@ -508,6 +526,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		secret = nm_secret_agent_simple_secret_new (_("Password"),
 		                                            setting,
 		                                            "password",
+		                                            NULL,
 		                                            NULL,
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
