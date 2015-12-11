@@ -145,22 +145,22 @@ void nmtstp_link_set_updown (gboolean external_command,
 
 const NMPlatformLink *nmtstp_link_dummy_add (gboolean external_command,
                                              const char *name);
-
-gboolean nmtstp_link_gre_add (gboolean external_command,
-                              const char *name,
-                              NMPlatformLnkGre *lnk);
-gboolean nmtstp_link_ip6tnl_add (gboolean external_command,
-                                 const char *name,
-                                 NMPlatformLnkIp6Tnl *lnk);
-gboolean nmtstp_link_ipip_add (gboolean external_command,
-                               const char *name,
-                               NMPlatformLnkIpIp *lnk);
-gboolean nmtstp_link_macvlan_add (gboolean external_command,
-                                  const char *name,
-                                  int parent, NMPlatformLnkMacvlan *lnk);
-gboolean nmtstp_link_sit_add (gboolean external_command,
-                              const char *name,
-                              NMPlatformLnkSit *lnk);
+const NMPlatformLink *nmtstp_link_gre_add (gboolean external_command,
+                                           const char *name,
+                                           const NMPlatformLnkGre *lnk);
+const NMPlatformLink *nmtstp_link_ip6tnl_add (gboolean external_command,
+                                              const char *name,
+                                              const NMPlatformLnkIp6Tnl *lnk);
+const NMPlatformLink *nmtstp_link_ipip_add (gboolean external_command,
+                                            const char *name,
+                                            const NMPlatformLnkIpIp *lnk);
+const NMPlatformLink *nmtstp_link_macvlan_add (gboolean external_command,
+                                               const char *name,
+                                               int parent,
+                                               const NMPlatformLnkMacvlan *lnk);
+const NMPlatformLink *nmtstp_link_sit_add (gboolean external_command,
+                                           const char *name,
+                                           const NMPlatformLnkSit *lnk);
 const NMPlatformLink *nmtstp_link_vxlan_add (gboolean external_command,
                                              const char *name,
                                              const NMPlatformLnkVxlan *lnk);

@@ -670,10 +670,24 @@ _ip_address_add (gboolean external_command,
 	} while (TRUE);
 }
 
+#define _assert_pllink(success, pllink, name, type) \
+	G_STMT_START { \
+		const NMPlatformLink *_pllink = (pllink); \
+		\
+		if ((success)) { \
+			g_assert (_pllink); \
+			g_assert (_pllink == nmtstp_link_get_typed (_pllink->ifindex, (name), (type))); \
+		} else { \
+			g_assert (!_pllink); \
+			g_assert (!nmtstp_link_get (0, (name))); \
+		} \
+	} G_STMT_END
+
 const NMPlatformLink *
-nmtstp_link_dummy_add (gboolean external_command, const char *name)
+nmtstp_link_dummy_add (gboolean external_command,
+                       const char *name)
 {
-	const NMPlatformLink *plink = NULL;
+	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 
 	g_assert (nm_utils_iface_valid_name (name));
@@ -684,20 +698,25 @@ nmtstp_link_dummy_add (gboolean external_command, const char *name)
 		success = !nmtstp_run_command ("ip link add %s type dummy",
 		                                name);
 		if (success)
-			plink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_DUMMY, 100);
+			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_DUMMY, 100);
 	} else
-		success = nm_platform_link_dummy_add (NM_PLATFORM_GET, name, &plink) == NM_PLATFORM_ERROR_SUCCESS;
+		success = nm_platform_link_dummy_add (NM_PLATFORM_GET, name, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
 	g_assert (success);
-	g_assert (plink);
-	return plink;
+	_assert_pllink (success, pllink, name, NM_LINK_TYPE_DUMMY);
+	return pllink;
 }
 
-gboolean
-nmtstp_link_gre_add (gboolean external_command, const char *name, NMPlatformLnkGre *lnk)
+const NMPlatformLink *
+nmtstp_link_gre_add (gboolean external_command,
+                     const char *name,
+                     const NMPlatformLnkGre *lnk)
 {
+	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 	char buffer[INET_ADDRSTRLEN];
+
+	g_assert (nm_utils_iface_valid_name (name));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -716,18 +735,25 @@ nmtstp_link_gre_add (gboolean external_command, const char *name, NMPlatformLnkG
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_GRE, 100);
+			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_GRE, 100);
 	} else
-		success = nm_platform_link_gre_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		success = nm_platform_link_gre_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	return success;
+	_assert_pllink (success, pllink, name, NM_LINK_TYPE_GRE);
+
+	return pllink;
 }
 
-gboolean
-nmtstp_link_ip6tnl_add (gboolean external_command, const char *name, NMPlatformLnkIp6Tnl *lnk)
+const NMPlatformLink *
+nmtstp_link_ip6tnl_add (gboolean external_command,
+                        const char *name,
+                        const NMPlatformLnkIp6Tnl *lnk)
 {
+	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 	char buffer[INET6_ADDRSTRLEN];
+
+	g_assert (nm_utils_iface_valid_name (name));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -746,7 +772,7 @@ nmtstp_link_ip6tnl_add (gboolean external_command, const char *name, NMPlatformL
 			mode = "ip6ip6";
 			break;
 		default:
-			g_assert (FALSE);
+			g_assert_not_reached ();
 		}
 
 		success = !nmtstp_run_command ("ip -6 tunnel add %s mode %s %s local %s remote %s ttl %u tclass %02x encaplimit %u flowlabel %x",
@@ -760,18 +786,25 @@ nmtstp_link_ip6tnl_add (gboolean external_command, const char *name, NMPlatformL
 		                                lnk->encap_limit,
 		                                lnk->flow_label);
 		if (success)
-			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IP6TNL, 100);
+			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IP6TNL, 100);
 	} else
-		success = nm_platform_link_ip6tnl_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		success = nm_platform_link_ip6tnl_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	return success;
+	_assert_pllink (success, pllink, name, NM_LINK_TYPE_IP6TNL);
+
+	return pllink;
 }
 
-gboolean
-nmtstp_link_ipip_add (gboolean external_command, const char *name, NMPlatformLnkIpIp *lnk)
+const NMPlatformLink *
+nmtstp_link_ipip_add (gboolean external_command,
+                      const char *name,
+                      const NMPlatformLnkIpIp *lnk)
 {
+	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 	char buffer[INET_ADDRSTRLEN];
+
+	g_assert (nm_utils_iface_valid_name (name));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -790,19 +823,30 @@ nmtstp_link_ipip_add (gboolean external_command, const char *name, NMPlatformLnk
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IPIP, 100);
+			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IPIP, 100);
 	} else
-		success = nm_platform_link_ipip_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		success = nm_platform_link_ipip_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	return success;
+	_assert_pllink (success, pllink, name, NM_LINK_TYPE_IPIP);
+
+	return pllink;
 }
 
-gboolean
-nmtstp_link_macvlan_add (gboolean external_command, const char *name, int parent, NMPlatformLnkMacvlan *lnk)
+const NMPlatformLink *
+nmtstp_link_macvlan_add (gboolean external_command,
+                         const char *name,
+                         int parent,
+                         const NMPlatformLnkMacvlan *lnk)
 {
+	const NMPlatformLink *pllink = NULL;
 	gboolean success;
+	NMLinkType link_type;
+
+	g_assert (nm_utils_iface_valid_name (name));
 
 	external_command = nmtstp_run_command_check_external (external_command);
+
+	link_type = lnk->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN;
 
 	if (external_command) {
 		const char *dev;
@@ -824,28 +868,40 @@ nmtstp_link_macvlan_add (gboolean external_command, const char *name, int parent
 		                                modes[lnk->mode],
 		                                lnk->no_promisc ? "nopromisc" : "");
 		if (success)
-			nmtstp_assert_wait_for_link (name, lnk->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN, 100);
+			pllink = nmtstp_assert_wait_for_link (name, link_type, 100);
 	} else
-		success = nm_platform_link_macvlan_add (NM_PLATFORM_GET, name, parent, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		success = nm_platform_link_macvlan_add (NM_PLATFORM_GET, name, parent, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	return success;
+	_assert_pllink (success, pllink, name, link_type);
+
+	return pllink;
 }
 
-gboolean
-nmtstp_link_sit_add (gboolean external_command, const char *name, NMPlatformLnkSit *lnk)
+const NMPlatformLink *
+nmtstp_link_sit_add (gboolean external_command,
+                     const char *name,
+                     const NMPlatformLnkSit *lnk)
 {
+	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 	char buffer[INET_ADDRSTRLEN];
+
+	g_assert (nm_utils_iface_valid_name (name));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
 	if (external_command) {
-		gs_free char *dev = NULL;
+		const char *dev = "";
 
-		if (lnk->parent_ifindex)
-			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (NM_PLATFORM_GET, lnk->parent_ifindex));
+		if (lnk->parent_ifindex) {
+			const char *parent_name;
 
-		success = !nmtstp_run_command ("ip tunnel add %s mode sit %s local %s remote %s ttl %u tos %02x %s",
+			parent_name = nm_platform_link_get_name (NM_PLATFORM_GET, lnk->parent_ifindex);
+			g_assert (parent_name);
+			dev = nm_sprintf_bufa (100, " dev %s", parent_name);
+		}
+
+		success = !nmtstp_run_command ("ip tunnel add %s mode sit%s local %s remote %s ttl %u tos %02x %s",
 		                                name,
 		                                dev,
 		                                nm_utils_inet4_ntop (lnk->local, NULL),
@@ -854,15 +910,19 @@ nmtstp_link_sit_add (gboolean external_command, const char *name, NMPlatformLnkS
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_SIT, 100);
+			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_SIT, 100);
 	} else
-		success = nm_platform_link_sit_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		success = nm_platform_link_sit_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	return success;
+	_assert_pllink (success, pllink, name, NM_LINK_TYPE_SIT);
+
+	return pllink;
 }
 
 const NMPlatformLink *
-nmtstp_link_vxlan_add (gboolean external_command, const char *name, const NMPlatformLnkVxlan *lnk)
+nmtstp_link_vxlan_add (gboolean external_command,
+                       const char *name,
+                       const NMPlatformLnkVxlan *lnk)
 {
 	const NMPlatformLink *pllink = NULL;
 	NMPlatformError plerr;
