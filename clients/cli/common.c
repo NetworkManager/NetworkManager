@@ -1027,17 +1027,23 @@ get_secrets_from_user (const char *request_id,
 		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->prop_name))) {
 			pwd = g_strdup (pwd);
 		} else {
-			g_print ("%s\n", msg);
 			if (ask) {
 				if (secret->value) {
-					/* Prefill the password if we have it. */
-					rl_startup_hook = nmc_rl_set_deftext;
-					nmc_rl_pre_input_deftext = g_strdup (secret->value);
+					if (!g_strcmp0 (secret->vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
+						/* Do not present and ask user for openconnect secrets, we already have them */
+						continue;
+					} else {
+						/* Prefill the password if we have it. */
+						rl_startup_hook = nmc_rl_set_deftext;
+						nmc_rl_pre_input_deftext = g_strdup (secret->value);
+					}
 				}
+				g_print ("%s\n", msg);
 				pwd = nmc_readline_echo (echo_on, "%s (%s): ", secret->name, secret->prop_name);
 				if (!pwd)
 					pwd = g_strdup ("");
 			} else {
+				g_print ("%s\n", msg);
 				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
 				              "and nmcli cannot ask without '--ask' option.\n"),
 				            secret->prop_name);
