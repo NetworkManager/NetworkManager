@@ -648,6 +648,7 @@ test_external (void)
 typedef struct {
 	NMLinkType link_type;
 	int test_mode;
+	gboolean external_command;
 } TestAddSoftwareDetectData;
 
 static void
@@ -658,7 +659,7 @@ test_software_detect (gconstpointer user_data)
 	const NMPlatformLink *plink;
 	const NMPObject *lnk;
 	guint i_step;
-	const gint EX = -1;
+	const gboolean ext = test_data->external_command;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
 	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
@@ -680,7 +681,7 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip_gre", NULL) != 0;
 		}
 
-		if (!nmtstp_link_gre_add (EX, DEVICE_NAME, &lnk_gre)) {
+		if (!nmtstp_link_gre_add (ext, DEVICE_NAME, &lnk_gre)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create gre tunnel because of missing ip_gre module (modprobe ip_gre)");
 				goto out_delete_parent;
@@ -704,7 +705,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_ipip.tos = 32;
 		lnk_ipip.path_mtu_discovery = FALSE;
 
-		if (!nmtstp_link_ipip_add (EX, DEVICE_NAME, &lnk_ipip)) {
+		if (!nmtstp_link_ipip_add (ext, DEVICE_NAME, &lnk_ipip)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create ipip tunnel because of missing ipip module (modprobe ipip)");
 				goto out_delete_parent;
@@ -730,7 +731,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_ip6tnl.flow_label = 1337;
 		lnk_ip6tnl.proto = IPPROTO_IPV6;
 
-		if (!nmtstp_link_ip6tnl_add (EX, DEVICE_NAME, &lnk_ip6tnl)) {
+		if (!nmtstp_link_ip6tnl_add (ext, DEVICE_NAME, &lnk_ip6tnl)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create ip6tnl tunnel because of missing ip6_tunnel module (modprobe ip6_tunnel)");
 				goto out_delete_parent;
@@ -746,7 +747,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_macvlan.no_promisc = FALSE;
 		lnk_macvlan.tap = FALSE;
 
-		if (!nmtstp_link_macvlan_add (EX, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
+		if (!nmtstp_link_macvlan_add (ext, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
 			g_error ("Failed adding MACVLAN interface");
 		break;
 	}
@@ -757,7 +758,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_macvtap.no_promisc = FALSE;
 		lnk_macvtap.tap = TRUE;
 
-		if (!nmtstp_link_macvlan_add (EX, DEVICE_NAME, ifindex_parent, &lnk_macvtap))
+		if (!nmtstp_link_macvlan_add (ext, DEVICE_NAME, ifindex_parent, &lnk_macvtap))
 			g_error ("Failed adding MACVTAP interface");
 		break;
 	}
@@ -777,7 +778,7 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "sit", NULL) != 0;
 		}
 
-		if (!nmtstp_link_sit_add (EX, DEVICE_NAME, &lnk_sit)) {
+		if (!nmtstp_link_sit_add (ext, DEVICE_NAME, &lnk_sit)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create sit tunnel because of missing sit module (modprobe sit)");
 				goto out_delete_parent;
@@ -816,7 +817,7 @@ test_software_detect (gconstpointer user_data)
 			break;
 		}
 
-		g_assert (nmtstp_link_vxlan_add (EX, DEVICE_NAME, &lnk_vxlan));
+		g_assert (nmtstp_link_vxlan_add (ext, DEVICE_NAME, &lnk_vxlan));
 		break;
 	}
 	default:
@@ -991,12 +992,34 @@ test_software_detect_add (const char *testpath,
                           int test_mode)
 {
 	TestAddSoftwareDetectData *test_data;
+	char *path;
 
 	test_data = g_new0 (TestAddSoftwareDetectData, 1);
 	test_data->link_type = link_type;
 	test_data->test_mode = test_mode;
+	test_data->external_command = TRUE;
 
-	g_test_add_data_func_full (testpath, test_data, test_software_detect, g_free);
+	path = g_strdup_printf ("%s/external", testpath);
+	g_test_add_data_func_full (path, test_data, test_software_detect, g_free);
+	g_free (path);
+
+	test_data = g_new0 (TestAddSoftwareDetectData, 1);
+	test_data->link_type = link_type;
+	test_data->test_mode = test_mode;
+	test_data->external_command = FALSE;
+
+	path = g_strdup_printf ("%s/platform", testpath);
+	g_test_add_data_func_full (path, test_data, test_software_detect, g_free);
+	g_free (path);
+
+	test_data = g_new0 (TestAddSoftwareDetectData, 1);
+	test_data->link_type = link_type;
+	test_data->test_mode = test_mode;
+	test_data->external_command = -1;
+
+	path = g_strdup_printf ("%s/random", testpath);
+	g_test_add_data_func_full (path, test_data, test_software_detect, g_free);
+	g_free (path);
 }
 
 /*****************************************************************************/
