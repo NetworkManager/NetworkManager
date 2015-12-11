@@ -160,9 +160,9 @@ gboolean nmtstp_link_macvlan_add (gboolean external_command,
 gboolean nmtstp_link_sit_add (gboolean external_command,
                               const char *name,
                               NMPlatformLnkSit *lnk);
-gboolean nmtstp_link_vxlan_add (gboolean external_command,
-                                const char *name,
-                                NMPlatformLnkVxlan *lnk);
+const NMPlatformLink *nmtstp_link_vxlan_add (gboolean external_command,
+                                             const char *name,
+                                             const NMPlatformLnkVxlan *lnk);
 
 void nmtstp_link_del (gboolean external_command,
                       int ifindex,

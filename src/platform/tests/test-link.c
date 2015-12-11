@@ -816,8 +816,7 @@ test_software_detect (gconstpointer user_data)
 			break;
 		}
 
-		if (!nmtstp_link_vxlan_add (EX, DEVICE_NAME, &lnk_vxlan))
-			g_error ("Failed adding VXLAN link");
+		g_assert (nmtstp_link_vxlan_add (EX, DEVICE_NAME, &lnk_vxlan));
 		break;
 	}
 	default:

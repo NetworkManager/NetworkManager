@@ -861,10 +861,14 @@ nmtstp_link_sit_add (gboolean external_command, const char *name, NMPlatformLnkS
 	return success;
 }
 
-gboolean
-nmtstp_link_vxlan_add (gboolean external_command, const char *name, NMPlatformLnkVxlan *lnk)
+const NMPlatformLink *
+nmtstp_link_vxlan_add (gboolean external_command, const char *name, const NMPlatformLnkVxlan *lnk)
 {
-	gboolean success;
+	const NMPlatformLink *pllink = NULL;
+	NMPlatformError plerr;
+	int err;
+
+	g_assert (nm_utils_iface_valid_name (name));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -885,23 +889,33 @@ nmtstp_link_vxlan_add (gboolean external_command, const char *name, NMPlatformLn
 		else if (memcmp (&lnk->group6, &in6addr_any, sizeof (in6addr_any)))
 			remote = g_strdup_printf ("%s", nm_utils_inet6_ntop (&lnk->group6, NULL));
 
-		success = !nmtstp_run_command ("ip link add %s type vxlan id %u %s local %s group %s ttl %u tos %02x dstport %u srcport %u %u ageing %u",
-		                               name,
-		                               lnk->id,
-		                               dev ? dev : "",
-		                               local,
-		                               remote,
-		                               lnk->ttl,
-		                               lnk->tos,
-		                               lnk->dst_port,
-		                               lnk->src_port_min, lnk->src_port_max,
-		                               lnk->ageing);
-		if (success)
-			nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_VXLAN, 100);
-	} else
-		success = nm_platform_link_vxlan_add (NM_PLATFORM_GET, name, lnk, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+		err = nmtstp_run_command ("ip link add %s type vxlan id %u %s local %s group %s ttl %u tos %02x dstport %u srcport %u %u ageing %u",
+		                          name,
+		                          lnk->id,
+		                          dev ? dev : "",
+		                          local,
+		                          remote,
+		                          lnk->ttl,
+		                          lnk->tos,
+		                          lnk->dst_port,
+		                          lnk->src_port_min, lnk->src_port_max,
+		                          lnk->ageing);
+		/* Older versions of iproute2 don't support adding vxlan devices.
+		 * On failure, fallback to using platform code. */
+		if (err == 0)
+			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_VXLAN, 100);
+		else
+			_LOGI ("Adding vxlan device via iproute2 failed. Assume iproute2 is not up to the task.");
+	}
+	if (!pllink) {
+		plerr = nm_platform_link_vxlan_add (NM_PLATFORM_GET, name, lnk, &pllink);
+		g_assert_cmpint (plerr, ==, NM_PLATFORM_ERROR_SUCCESS);
+		g_assert (pllink);
+	}
 
-	return success;
+	g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_VXLAN);
+	g_assert_cmpstr (pllink->name, ==, name);
+	return pllink;
 }
 
 void
