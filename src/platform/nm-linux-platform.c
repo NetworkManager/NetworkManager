@@ -2279,23 +2279,6 @@ _nl_sock_flush_data (struct nl_sock *sk)
 	return nle;
 }
 
-static void
-_nl_msg_set_seq (struct nl_sock *sk, struct nl_msg *msg, guint32 *out_seq)
-{
-	guint32 seq;
-
-	/* choose our own sequence number, because libnl does not ensure that
-	 * it isn't zero -- which would confuse our checking for outstanding
-	 * messages. */
-	seq = nl_socket_use_seq (sk);
-	if (seq == 0)
-		seq = nl_socket_use_seq (sk);
-
-	nlmsg_hdr (msg)->nlmsg_seq = seq;
-	if (out_seq)
-		*out_seq = seq;
-}
-
 /******************************************************************/
 
 static int _support_kernel_extended_ifa_flags = -1;
@@ -3027,14 +3010,35 @@ cache_update_netlink (NMPlatform *platform, NMPObject *obj, NMPObject **out_obj_
 
 /******************************************************************/
 
-static void
-_new_sequence_number (NMPlatform *platform, guint32 seq)
+static int
+_nl_send_auto_with_seq (NMPlatform *platform, struct nl_msg *nlmsg)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	guint32 seq;
+	int nle;
 
-	_LOGt ("_new_sequence_number(): new sequence number %u", seq);
+	/* complete the message, by choosing our own sequence number, because libnl
+	 * does not ensure that it isn't zero -- which would confuse our checking for
+	 * outstanding messages. */
+	seq = nl_socket_use_seq (priv->nlh_event);
+	if (seq == 0)
+		seq = nl_socket_use_seq (priv->nlh_event);
 
-	priv->nlh_seq_expect = seq;
+	nlmsg_hdr (nlmsg)->nlmsg_seq = seq;
+
+	nle = nl_send_auto (priv->nlh_event, nlmsg);
+
+	if (nle >= 0) {
+		_LOGt ("sequence-number: new %u%s",
+		       seq,
+		       priv->nlh_seq_expect
+		           ? nm_sprintf_bufa (100, " (replaces %u)", priv->nlh_seq_expect)
+		           : "");
+		priv->nlh_seq_expect = seq;
+	} else
+		_LOGD ("failed sending message: %s (%d)", nl_geterror (nle), nle);
+
+	return nle;
 }
 
 static void
@@ -3042,8 +3046,6 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	int nle;
-	guint32 seq;
 
 	if (name && !name[0])
 		name = NULL;
@@ -3065,13 +3067,8 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 	                          name,
 	                          0,
 	                          0);
-	if (nlmsg) {
-		_nl_msg_set_seq (priv->nlh_event, nlmsg, &seq);
-
-		nle = nl_send_auto (priv->nlh_event, nlmsg);
-		if (nle >= 0)
-			_new_sequence_number (platform, seq);
-	}
+	if (nlmsg)
+		_nl_send_auto_with_seq (platform, nlmsg);
 
 	event_handler_read_netlink_all (platform, TRUE);
 
@@ -3091,7 +3088,6 @@ static void
 do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean handle_delayed_action)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	guint32 seq;
 	DelayedActionType iflags;
 
 	nm_assert (!NM_FLAGS_ANY (action_type, ~DELAYED_ACTION_TYPE_REFRESH_ALL));
@@ -3135,11 +3131,7 @@ do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean ha
 			if (nle < 0)
 				goto next;
 
-			_nl_msg_set_seq (priv->nlh_event, nlmsg, &seq);
-
-			nle = nl_send_auto (priv->nlh_event, nlmsg);
-			if (nle >= 0)
-				_new_sequence_number (platform, seq);
+			_nl_send_auto_with_seq (platform, nlmsg);
 		}
 next:
 		;
@@ -3167,13 +3159,13 @@ event_seq_check (struct nl_msg *msg, gpointer user_data)
 	priv->nlh_seq_last = hdr->nlmsg_seq;
 
 	if (priv->nlh_seq_expect == 0)
-		_LOGt ("event_seq_check(): seq %u received (not waited)", hdr->nlmsg_seq);
+		_LOGt ("sequence-number: seq %u received (not waited)", hdr->nlmsg_seq);
 	else if (hdr->nlmsg_seq == priv->nlh_seq_expect) {
-		_LOGt ("event_seq_check(): seq %u received", hdr->nlmsg_seq);
+		_LOGt ("sequence-number: seq %u received", hdr->nlmsg_seq);
 
 		priv->nlh_seq_expect = 0;
 	} else
-		_LOGt ("event_seq_check(): seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
+		_LOGt ("sequence-number: seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
 
 	return NL_OK;
 }
