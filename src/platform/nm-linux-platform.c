@@ -3307,14 +3307,13 @@ event_seq_check (struct nl_msg *msg, gpointer user_data)
 	return NL_OK;
 }
 
-static int
+static void
 event_err (struct sockaddr_nl *nla, struct nlmsgerr *nlerr, gpointer platform)
 {
 	_LOGt ("event_err(): error from kernel: %s (%d) for request %d",
 	       strerror (nlerr ? -nlerr->error : 0),
 	       nlerr ? -nlerr->error : 0,
 	       NM_LINUX_PLATFORM_GET_PRIVATE (platform)->nlh_seq_last);
-	return NL_OK;
 }
 
 /* This function does all the magic to avoid race conditions caused
@@ -5397,6 +5396,160 @@ event_handler (GIOChannel *channel,
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+#define NL_CB_CALL(cmd) \
+do { \
+	err = (cmd); \
+	switch (err) { \
+	case NL_OK: \
+		err = 0; \
+		break; \
+	case NL_SKIP: \
+		goto skip; \
+	case NL_STOP: \
+		goto stop; \
+	default: \
+		goto out; \
+	} \
+} while (0)
+
+/* copied from libnl3's recvmsgs() */
+static int
+event_handler_recvmsgs (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_sock *sk = priv->nlh_event;
+	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
+	unsigned char *buf = NULL;
+	struct nlmsghdr *hdr;
+
+	/*
+	nla is passed on to not only to nl_recv() but may also be passed
+	to a function pointer provided by the caller which may or may not
+	initialize the variable. Thomas Graf.
+	*/
+	struct sockaddr_nl nla = {0};
+	struct nl_msg *msg = NULL;
+	struct ucred *creds = NULL;
+
+continue_reading:
+	n = nl_recv(sk, &nla, &buf, &creds);
+
+	if (n <= 0)
+		return n;
+
+	hdr = (struct nlmsghdr *) buf;
+	while (nlmsg_ok(hdr, n)) {
+		nlmsg_free(msg);
+		msg = nlmsg_convert(hdr);
+		if (!msg) {
+			err = -NLE_NOMEM;
+			goto out;
+		}
+
+		nlmsg_set_proto(msg, NETLINK_ROUTE);
+		nlmsg_set_src(msg, &nla);
+		if (creds)
+			nlmsg_set_creds(msg, creds);
+
+		nrecv++;
+
+		/* NL_CB_MSG_IN */
+		NL_CB_CALL (verify_source (msg, platform));
+
+		NL_CB_CALL (event_seq_check (msg, platform));
+
+		if (hdr->nlmsg_flags & NLM_F_MULTI)
+			multipart = 1;
+
+		if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
+			/*
+			 * We have to continue reading to clear
+			 * all messages until a NLMSG_DONE is
+			 * received and report the inconsistency.
+			 */
+			interrupted = 1;
+		}
+
+		/* Other side wishes to see an ack for this message */
+		if (hdr->nlmsg_flags & NLM_F_ACK) {
+			/* FIXME: implement */
+		}
+
+		if (hdr->nlmsg_type == NLMSG_DONE) {
+			/* messages terminates a multipart message, this is
+			 * usually the end of a message and therefore we slip
+			 * out of the loop by default. the user may overrule
+			 * this action by skipping this packet. */
+			multipart = 0;
+		} else if (hdr->nlmsg_type == NLMSG_NOOP) {
+			/* Message to be ignored, the default action is to
+			 * skip this message if no callback is specified. The
+			 * user may overrule this action by returning
+			 * NL_PROCEED. */
+			goto skip;
+		} else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
+			/* Data got lost, report back to user. The default action is to
+			 * quit parsing. The user may overrule this action by retuning
+			 * NL_SKIP or NL_PROCEED (dangerous) */
+			err = -NLE_MSG_OVERFLOW;
+			goto out;
+		} else if (hdr->nlmsg_type == NLMSG_ERROR) {
+			/* Message carries a nlmsgerr */
+			struct nlmsgerr *e = nlmsg_data(hdr);
+
+			if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
+				/* Truncated error message, the default action
+				 * is to stop parsing. The user may overrule
+				 * this action by returning NL_SKIP or
+				 * NL_PROCEED (dangerous) */
+				err = -NLE_MSG_TRUNC;
+				goto out;
+			} else if (e->error) {
+				/* Error message reported back from kernel. */
+				event_err (&nla, e, platform);
+			}
+		} else {
+			/* Valid message (not checking for MULTIPART bit to
+			 * get along with broken kernels. NL_SKIP has no
+			 * effect on this.  */
+			event_notification (msg, platform);
+		}
+skip:
+		err = 0;
+		hdr = nlmsg_next(hdr, &n);
+	}
+
+	nlmsg_free(msg);
+	free(buf);
+	free(creds);
+	buf = NULL;
+	msg = NULL;
+	creds = NULL;
+
+	if (multipart) {
+		/* Multipart message not yet complete, continue reading */
+		goto continue_reading;
+	}
+stop:
+	err = 0;
+out:
+	nlmsg_free(msg);
+	free(buf);
+	free(creds);
+
+	if (interrupted)
+		err = -NLE_DUMP_INTR;
+
+	if (!err)
+		err = nrecv;
+
+	return err;
+}
+
+/*****************************************************************************/
+
 static gboolean
 event_handler_read_netlink_one (NMPlatform *platform)
 {
@@ -5404,7 +5557,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 	int nle;
 
 	errno = 0;
-	nle = nl_recvmsgs_default (priv->nlh_event);
+	nle = event_handler_recvmsgs (platform);
 
 	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
 	if (nle == 0 && errno == EAGAIN) {
@@ -5658,15 +5811,6 @@ constructed (GObject *_object)
 	{
 		priv->nlh_event = nl_socket_alloc ();
 		g_assert (priv->nlh_event);
-
-		nle = nl_socket_modify_cb (priv->nlh_event, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
-		g_assert (!nle);
-		nle = nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_CUSTOM, event_notification, platform);
-		g_assert (!nle);
-		nle = nl_socket_modify_cb (priv->nlh_event, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, platform);
-		g_assert (!nle);
-		nle = nl_socket_modify_err_cb (priv->nlh_event, NL_CB_CUSTOM, event_err, platform);
-		g_assert (!nle);
 
 		nle = nl_connect (priv->nlh_event, NETLINK_ROUTE);
 		g_assert (!nle);
