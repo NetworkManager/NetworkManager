@@ -44,6 +44,7 @@ typedef struct {
 typedef struct {
 	char *name, *prop_name, *value;
 	char *vpn_property;
+	char *vpn_type;
 	gboolean password;
 } NMSecretAgentSimpleSecret;
 
