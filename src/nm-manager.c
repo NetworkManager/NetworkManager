@@ -1025,46 +1025,54 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 	if (!iface)
 		return NULL;
 
-	/* If some other device is already compatible with this connection,
-	 * don't create a new device for it.
-	 */
+	/* See if there's a device that is already compatible with this connection */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = iter->data;
 
 		if (   g_strcmp0 (nm_device_get_iface (candidate), iface) == 0
 		    && nm_device_check_connection_compatible (candidate, connection)) {
-			nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
-			            nm_connection_get_id (connection), iface);
-			return NULL;
+
+			if (nm_device_is_real (candidate)) {
+				nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
+				            nm_connection_get_id (connection), iface);
+				return NULL;
+			}
+
+			device = candidate;
+			break;
 		}
 	}
 
-	factory = nm_device_factory_manager_find_factory_for_connection (connection);
-	if (!factory) {
-		nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
-		            nm_connection_get_id (connection), iface,
-		            nm_connection_get_connection_type (connection));
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "NetworkManager plugin for '%s' unavailable",
-		             nm_connection_get_connection_type (connection));
-		return NULL;
-	}
+	if (!device) {
+		/* No matching device found. Proceed creating a new one. */
 
-	device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, error);
-	if (!device)
-		return NULL;
+		factory = nm_device_factory_manager_find_factory_for_connection (connection);
+		if (!factory) {
+			nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
+				    nm_connection_get_id (connection), iface,
+				    nm_connection_get_connection_type (connection));
+			g_set_error (error,
+				     NM_MANAGER_ERROR,
+				     NM_MANAGER_ERROR_FAILED,
+				     "NetworkManager plugin for '%s' unavailable",
+				     nm_connection_get_connection_type (connection));
+			return NULL;
+		}
 
-	if (!add_device (self, device, error)) {
+		device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, error);
+		if (!device)
+			return NULL;
+
+		if (!add_device (self, device, error)) {
+			g_object_unref (device);
+			return NULL;
+		}
+
+		/* Add device takes a reference that NMManager still owns, so it's
+		 * safe to unref here and still return @device.
+		 */
 		g_object_unref (device);
-		return NULL;
 	}
-
-	/* Add device takes a reference that NMManager still owns, so it's
-	 * safe to unref here and still return @device.
-	 */
-	g_object_unref (device);
 
 	/* Create backing resources if the device has any autoconnect connections */
 	connections = nm_settings_get_connections (priv->settings);
