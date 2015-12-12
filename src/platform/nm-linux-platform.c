@@ -2963,51 +2963,6 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 	}
 }
 
-static NMPCacheOpsType
-cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_id, NMPObject **out_obj_cache, gboolean *out_was_visible)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	NMPObject *obj_cache;
-	gboolean was_visible;
-	NMPCacheOpsType cache_op;
-
-	cache_op = nmp_cache_remove_netlink (priv->cache, obj_id, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible);
-
-	if (out_obj_cache)
-		*out_obj_cache = obj_cache;
-	else
-		nmp_object_unref (obj_cache);
-	if (out_was_visible)
-		*out_was_visible = was_visible;
-
-	return cache_op;
-}
-
-static NMPCacheOpsType
-cache_update_netlink (NMPlatform *platform, NMPObject *obj, NMPObject **out_obj_cache, gboolean *out_was_visible)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	NMPObject *obj_cache;
-	gboolean was_visible;
-	NMPCacheOpsType cache_op;
-
-	/* This is basically a convenience method to call nmp_cache_update() and do_emit_signal()
-	 * at once. */
-
-	cache_op = nmp_cache_update_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible);
-
-	if (out_obj_cache)
-		*out_obj_cache = obj_cache;
-	else
-		nmp_object_unref (obj_cache);
-	if (out_was_visible)
-		*out_was_visible = was_visible;
-
-	return cache_op;
-}
-
 /******************************************************************/
 
 static int
@@ -3193,9 +3148,11 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	nm_auto_nmpobj NMPObject *obj_cache = NULL;
+	NMPCacheOpsType cache_op;
 	struct nlmsghdr *msghdr;
 	char buf_nlmsg_type[16];
 	gboolean id_only = FALSE;
+	gboolean was_visible;
 
 	msghdr = nlmsg_hdr (msg);
 
@@ -3226,13 +3183,15 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	case RTM_NEWLINK:
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
-		cache_update_netlink (platform, obj, &obj_cache, NULL);
+		cache_op = nmp_cache_update_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
+		do_emit_signal (platform, obj_cache, cache_op, was_visible);
 		break;
 
 	case RTM_DELLINK:
 	case RTM_DELADDR:
 	case RTM_DELROUTE:
-		cache_remove_netlink (platform, obj, &obj_cache, NULL);
+		cache_op = nmp_cache_remove_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
+		do_emit_signal (platform, obj_cache, cache_op, was_visible);
 		break;
 
 	default:
