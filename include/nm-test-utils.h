@@ -639,7 +639,6 @@ nmtst_test_quick (void)
 		const char *_func = (func); \
 		int _line = (line); \
 		\
-		g_assert (nmtst_initialized ()); \
 		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) \
 			g_debug ("nmtst: assert-logging: g_test_assert_expected_messages(%s, %s:%d, %s)", _domain?:"", _file?:"", _line, _func?:""); \
 		\
