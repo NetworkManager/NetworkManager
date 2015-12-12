@@ -4128,7 +4128,7 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
  *
  * Returns the list of possible values for a given enum.
  *
- * Returns: a NULL-terminated dynamically-allocated array of static strings
+ * Returns: (transfer full): a NULL-terminated dynamically-allocated array of static strings
  * or %NULL on error
  *
  * Since: 1.2
