@@ -39,7 +39,59 @@
 #include "nmt-connect-connection-list.h"
 #include "nmt-password-dialog.h"
 #include "nm-secret-agent-simple.h"
+#include "nm-vpn-helpers.h"
 #include "nmt-utils.h"
+
+/**
+ * Runs openconnect to authenticate. The current screen state is saved
+ * before starting the command and restored after it returns.
+ */
+static gboolean
+openconnect_authenticate (NMConnection *connection, char **cookie, char **gateway, char **gwcert)
+{
+	GError *error = NULL;
+	NMSettingVpn *s_vpn;
+	gboolean ret;
+	int status = 0;
+	const char *gw, *port;
+
+	nmt_newt_message_dialog (_("openconnect will be run to authenticate.\nIt will return to nmtui when completed."));
+
+	/* Get port */
+	s_vpn = nm_connection_get_setting_vpn (connection);
+	gw = nm_setting_vpn_get_data_item (s_vpn, "gateway");
+	port = gw ? strrchr (gw, ':') : NULL;
+
+	newtSuspend ();
+
+	ret = nm_vpn_openconnect_authenticate_helper (gw, cookie, gateway, gwcert, &status, &error);
+
+	newtResume ();
+
+	if (!ret) {
+		nmt_newt_message_dialog (_("Error: openconnect failed: %s"), error->message);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	if (WIFEXITED (status)) {
+		if (WEXITSTATUS (status) != 0) {
+			nmt_newt_message_dialog (_("openconnect failed with status %d"), WEXITSTATUS (status));
+			return FALSE;
+		}
+	} else if (WIFSIGNALED (status)) {
+		nmt_newt_message_dialog (_("openconnect failed with signal %d"), WTERMSIG (status));
+		return FALSE;
+	}
+
+	if (gateway && *gateway && port) {
+		char *tmp = *gateway;
+		*gateway = g_strdup_printf ("%s%s", *gateway, port);
+		g_free (tmp);
+	}
+
+	return TRUE;
+}
 
 static void
 secrets_requested (NMSecretAgentSimple *agent,
@@ -50,6 +102,44 @@ secrets_requested (NMSecretAgentSimple *agent,
                    gpointer             user_data)
 {
 	NmtNewtForm *form;
+	NMConnection *connection = NM_CONNECTION (user_data);
+	char *cookie = NULL;
+	char *gateway = NULL;
+	char *gwcert = NULL;
+	int i;
+
+	/* Get secrets for OpenConnect VPN */
+	if (connection && nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
+		NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (connection);
+		const char *vpn_type = nm_setting_vpn_get_service_type (s_vpn);
+
+		if (!g_strcmp0 (vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
+			openconnect_authenticate (connection, &cookie, &gateway, &gwcert);
+
+			for (i = 0; i < secrets->len; i++) {
+				NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+
+				if (!g_strcmp0 (secret->vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
+					if (!g_strcmp0 (secret->vpn_property, "cookie")) {
+						g_free (secret->value);
+						secret->value = cookie;
+						cookie = NULL;
+					} else if (!g_strcmp0 (secret->vpn_property, "gateway")) {
+						g_free (secret->value);
+						secret->value = gateway;
+						gateway = NULL;
+					} else if (!g_strcmp0 (secret->vpn_property, "gwcert")) {
+						g_free (secret->value);
+						secret->value = gwcert;
+						gwcert = NULL;
+					}
+				}
+			}
+			g_free (cookie);
+			g_free (gateway);
+			g_free (gwcert);
+		}
+	}
 
 	form = nmt_password_dialog_new (request_id, title, msg, secrets);
 	nmt_newt_form_run_sync (form);
@@ -153,7 +243,7 @@ activate_connection (NMConnection *connection,
 			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent),
 			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
-		g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
+		g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), connection);
 	}
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;

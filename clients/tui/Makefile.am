@@ -18,6 +18,8 @@ AM_CPPFLAGS= \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DLOCALEDIR=\""$(localedir)"\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMLIBDIR=\"$(libdir)\" \
 	$(NULL)
 
 bin_PROGRAMS = nmtui
@@ -116,6 +118,8 @@ nmtui_SOURCES = \
 	nmt-widget-list.h \
 	$(srcdir)/../common/nm-secret-agent-simple.c \
 	$(srcdir)/../common/nm-secret-agent-simple.h \
+	$(srcdir)/../common/nm-vpn-helpers.c \
+	$(srcdir)/../common/nm-vpn-helpers.h \
 	$(NULL)
 
 nmtui_LDADD = \

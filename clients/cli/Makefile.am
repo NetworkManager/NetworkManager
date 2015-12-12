@@ -14,7 +14,9 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
+	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMLIBDIR=\"$(libdir)\"
 
 nmcli_SOURCES = \
 	agent.c \
@@ -38,6 +40,8 @@ nmcli_SOURCES = \
 	\
 	$(srcdir)/../common/nm-secret-agent-simple.c \
 	$(srcdir)/../common/nm-secret-agent-simple.h \
+	$(srcdir)/../common/nm-vpn-helpers.c \
+	$(srcdir)/../common/nm-vpn-helpers.h \
 	$(NULL)
 
 nmcli_LDADD = \
