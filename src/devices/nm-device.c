@@ -402,9 +402,6 @@ static void _set_state_full (NMDevice *self,
                              NMDeviceStateReason reason,
                              gboolean quitting);
 
-static void nm_device_update_hw_address (NMDevice *self);
-static void nm_device_update_initial_hw_address (NMDevice *self);
-
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
 
@@ -9860,18 +9857,23 @@ nm_device_get_hw_address (NMDevice *self)
 	return priv->hw_addr_len ? priv->hw_addr : NULL;
 }
 
-static void
+void
 nm_device_update_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ifindex (self);
 	const guint8 *hwaddr;
 	gsize hwaddrlen = 0;
+	static const guint8 zero_hwaddr[ETH_ALEN];
 
 	if (ifindex <= 0)
 		return;
 
 	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddrlen);
+
+	if (   priv->type == NM_DEVICE_TYPE_ETHERNET
+	    && nm_utils_hwaddr_matches (hwaddr, hwaddrlen, zero_hwaddr, sizeof (zero_hwaddr)))
+		hwaddrlen = 0;
 
 	if (hwaddrlen) {
 		priv->hw_addr_len = hwaddrlen;
@@ -9894,7 +9896,7 @@ nm_device_update_hw_address (NMDevice *self)
 	}
 }
 
-static void
+void
 nm_device_update_initial_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
