@@ -5435,9 +5435,9 @@ continue_reading:
 
 		if (!creds || creds->pid) {
 			if (creds)
-				_LOGW ("netlink: received non-kernel message (pid %d)", creds->pid);
+				_LOGW ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
 			else
-				_LOGW ("netlink: received message without credentials");
+				_LOGW ("netlink: recvmsg: received message without credentials");
 			goto stop;
 		}
 
@@ -5494,7 +5494,7 @@ continue_reading:
 				goto out;
 			} else if (e->error) {
 				/* Error message reported back from kernel. */
-				_LOGt ("event_err(): error from kernel: %s (%d) for request %d",
+				_LOGD ("netlink: recvmsg: error message from kernel: %s (%d) for request %d",
 				       strerror (e->error),
 				       e->error,
 				       priv->nlh_seq_last);
@@ -5552,10 +5552,10 @@ event_handler_read_netlink_one (NMPlatform *platform)
 		case -NLE_AGAIN:
 			return FALSE;
 		case -NLE_DUMP_INTR:
-			_LOGD ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			_LOGD ("netlink: read-one: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 		case -NLE_NOMEM:
-			_LOGI ("Too many netlink events. Need to resynchronize platform cache");
+			_LOGI ("netlink: read-one: too many netlink events. Need to resynchronize platform cache");
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
 			_nl_sock_flush_data (priv->nlh_event);
@@ -5569,7 +5569,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 			                         NULL);
 			break;
 		default:
-			_LOGE ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			_LOGE ("netlink: read-one: failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 	}
 	return TRUE;
@@ -5593,7 +5593,7 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 
 		if (!wait_for_acks || priv->nlh_seq_expect == 0) {
 			if (wait_for_seq)
-				_LOGt ("read-netlink-all: ACK for sequence number %u received", priv->nlh_seq_expect);
+				_LOGT ("netlink: read-all: ACK for sequence number %u received", priv->nlh_seq_expect);
 			return any;
 		}
 
@@ -5601,7 +5601,7 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 		if (wait_for_seq != priv->nlh_seq_expect) {
 			/* We are waiting for a new sequence number (or we will wait for the first time).
 			 * Reset/start counting the overall wait time. */
-			_LOGt ("read-netlink-all: wait for ACK for sequence number %u...", priv->nlh_seq_expect);
+			_LOGT ("netlink: read-all: wait for ACK for sequence number %u...", priv->nlh_seq_expect);
 			wait_for_seq = priv->nlh_seq_expect;
 			timestamp = now;
 			timeout = TIMEOUT;
@@ -5628,14 +5628,14 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 			int errsv = errno;
 
 			if (errsv != EINTR) {
-				_LOGE ("read-netlink-all: poll failed with %s", strerror (errsv));
+				_LOGE ("netlink: read-all: poll failed with %s", strerror (errsv));
 				return any;
 			}
 			/* Continue to read again, even if there might be nothing to read after EINTR. */
 		}
 	}
 
-	_LOGW ("read-netlink-all: timeout waiting for ACK to sequence number %u...", wait_for_seq);
+	_LOGW ("netlink: read-all: timeout waiting for ACK to sequence number %u...", wait_for_seq);
 	priv->nlh_seq_expect = 0;
 	return any;
 }
