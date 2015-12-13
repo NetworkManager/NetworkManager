@@ -3278,11 +3278,10 @@ event_seq_check (NMPlatform *platform, struct nl_msg *msg)
  * through the cache manager. In this case, nm-linux-platform serves as the
  * cache manager instead of the one provided by libnl.
  */
-static int
-event_notification (struct nl_msg *msg, gpointer user_data)
+static void
+event_valid_msg (NMPlatform *platform, struct nl_msg *msg)
 {
-	NMPlatform *platform = NM_PLATFORM (user_data);
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	nm_auto_nmpobj NMPObject *obj_cache = NULL;
 	NMPCacheOpsType cache_op;
@@ -3307,7 +3306,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		_LOGT ("event-notification: %s, seq %u: ignore",
 		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
 		       msghdr->nlmsg_seq);
-		return NL_OK;
+		return;
 	}
 
 	_LOGT ("event-notification: %s, seq %u: %s",
@@ -3336,8 +3335,6 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	}
 
 	cache_prune_candidates_drop (platform, obj_cache);
-
-	return NL_OK;
 }
 
 /******************************************************************/
@@ -5476,7 +5473,7 @@ continue_reading:
 			/* Valid message (not checking for MULTIPART bit to
 			 * get along with broken kernels. NL_SKIP has no
 			 * effect on this.  */
-			event_notification (msg, platform);
+			event_valid_msg (platform, msg);
 		}
 skip:
 		err = 0;
