@@ -5415,7 +5415,16 @@ event_handler_recvmsgs (NMPlatform *platform)
 	struct ucred *creds = NULL;
 
 continue_reading:
+	errno = 0;
 	n = nl_recv (sk, &nla, &buf, &creds);
+
+	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
+	if (n == 0 && errno == EAGAIN) {
+		/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
+		 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
+		G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
+		n = -NLE_AGAIN;
+	}
 
 	if (n <= 0)
 		return n;
@@ -5542,16 +5551,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
-	errno = 0;
 	nle = event_handler_recvmsgs (platform);
-
-	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
-	if (nle == 0 && errno == EAGAIN) {
-		/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
-		 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
-		G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
-		nle = -NLE_AGAIN;
-	}
 
 	if (nle < 0)
 		switch (nle) {
