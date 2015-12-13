@@ -3304,15 +3304,6 @@ event_seq_check (NMPlatform *platform, struct nl_msg *msg)
 		_LOGt ("sequence-number: seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
 }
 
-static void
-event_err (struct sockaddr_nl *nla, struct nlmsgerr *nlerr, gpointer platform)
-{
-	_LOGt ("event_err(): error from kernel: %s (%d) for request %d",
-	       strerror (nlerr ? -nlerr->error : 0),
-	       nlerr ? -nlerr->error : 0,
-	       NM_LINUX_PLATFORM_GET_PRIVATE (platform)->nlh_seq_last);
-}
-
 /* This function does all the magic to avoid race conditions caused
  * by concurrent usage of synchronous commands and an asynchronous cache. This
  * might be a nice future addition to libnl but it requires to do all operations
@@ -5503,7 +5494,10 @@ continue_reading:
 				goto out;
 			} else if (e->error) {
 				/* Error message reported back from kernel. */
-				event_err (&nla, e, platform);
+				_LOGt ("event_err(): error from kernel: %s (%d) for request %d",
+				       strerror (e->error),
+				       e->error,
+				       priv->nlh_seq_last);
 			}
 		} else {
 			/* Valid message (not checking for MULTIPART bit to
