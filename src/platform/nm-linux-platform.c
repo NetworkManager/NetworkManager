@@ -3272,12 +3272,6 @@ event_seq_check (NMPlatform *platform, struct nl_msg *msg)
 		_LOGt ("sequence-number: seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
 }
 
-/* This function does all the magic to avoid race conditions caused
- * by concurrent usage of synchronous commands and an asynchronous cache. This
- * might be a nice future addition to libnl but it requires to do all operations
- * through the cache manager. In this case, nm-linux-platform serves as the
- * cache manager instead of the one provided by libnl.
- */
 static void
 event_valid_msg (NMPlatform *platform, struct nl_msg *msg)
 {
