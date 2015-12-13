@@ -2249,38 +2249,6 @@ nla_put_failure:
 
 /******************************************************************/
 
-static int
-_nl_sock_flush_data (struct nl_sock *sk)
-{
-	int nle;
-	struct nl_cb *cb;
-	struct nl_cb *cb0;
-
-	cb0 = nl_socket_get_cb (sk);
-	cb = nl_cb_clone (cb0);
-	nl_cb_put (cb0);
-	if (cb == NULL)
-		return -NLE_NOMEM;
-
-	nl_cb_set (cb, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
-	nl_cb_set (cb, NL_CB_SEQ_CHECK, NL_CB_DEFAULT, NULL, NULL);
-	nl_cb_err (cb, NL_CB_DEFAULT, NULL, NULL);
-	do {
-		errno = 0;
-
-		nle = nl_recvmsgs (sk, cb);
-
-		/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
-		if (nle == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			nle = -NLE_AGAIN;
-	} while (nle != -NLE_AGAIN);
-
-	nl_cb_put (cb);
-	return nle;
-}
-
-/******************************************************************/
-
 static int _support_kernel_extended_ifa_flags = -1;
 
 #define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == -1))
@@ -5388,7 +5356,7 @@ event_handler (GIOChannel *channel,
 
 /* copied from libnl3's recvmsgs() */
 static int
-event_handler_recvmsgs (NMPlatform *platform)
+event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct nl_sock *sk = priv->nlh_event;
@@ -5419,6 +5387,11 @@ continue_reading:
 
 	if (n <= 0)
 		return n;
+
+	if (!handle_events) {
+		/* we read until failure or there is nothing to read (EAGAIN). */
+		goto continue_reading;
+	}
 
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok (hdr, n)) {
@@ -5545,7 +5518,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
-	nle = event_handler_recvmsgs (platform);
+	nle = event_handler_recvmsgs (platform, TRUE);
 
 	if (nle < 0)
 		switch (nle) {
@@ -5558,7 +5531,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 			_LOGI ("netlink: read-one: too many netlink events. Need to resynchronize platform cache");
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
-			_nl_sock_flush_data (priv->nlh_event);
+			event_handler_recvmsgs (platform, FALSE);
 			priv->nlh_seq_expect = 0;
 			delayed_action_schedule (platform,
 			                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
