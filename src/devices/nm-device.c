@@ -89,7 +89,6 @@ enum {
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
-	LINK_INITIALIZED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -1588,9 +1587,6 @@ device_link_changed (NMDevice *self)
 			}
 		}
 	}
-
-	if (just_initialized)
-		g_signal_emit (self, signals[LINK_INITIALIZED], 0);
 
 	device_recheck_slave_status (self, &info);
 	return G_SOURCE_REMOVE;
@@ -10892,13 +10888,6 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	signals[RECHECK_ASSUME] =
 		g_signal_new (NM_DEVICE_RECHECK_ASSUME,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
-
-	signals[LINK_INITIALIZED] =
-		g_signal_new (NM_DEVICE_LINK_INITIALIZED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
