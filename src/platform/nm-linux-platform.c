@@ -3281,17 +3281,16 @@ next:
 		delayed_action_handle_all (platform, FALSE);
 }
 
-static int
-event_seq_check (struct nl_msg *msg, gpointer user_data)
+static void
+event_seq_check (NMPlatform *platform, struct nl_msg *msg)
 {
-	NMPlatform *platform = NM_PLATFORM (user_data);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct nlmsghdr *hdr;
 
 	hdr = nlmsg_hdr (msg);
 
 	if (hdr->nlmsg_seq == 0)
-		return NL_OK;
+		return;
 
 	priv->nlh_seq_last = hdr->nlmsg_seq;
 
@@ -3303,8 +3302,6 @@ event_seq_check (struct nl_msg *msg, gpointer user_data)
 		priv->nlh_seq_expect = 0;
 	} else
 		_LOGt ("sequence-number: seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
-
-	return NL_OK;
 }
 
 static void
@@ -5398,22 +5395,6 @@ event_handler (GIOChannel *channel,
 
 /*****************************************************************************/
 
-#define NL_CB_CALL(cmd) \
-do { \
-	err = (cmd); \
-	switch (err) { \
-	case NL_OK: \
-		err = 0; \
-		break; \
-	case NL_SKIP: \
-		goto skip; \
-	case NL_STOP: \
-		goto stop; \
-	default: \
-		goto out; \
-	} \
-} while (0)
-
 /* copied from libnl3's recvmsgs() */
 static int
 event_handler_recvmsgs (NMPlatform *platform)
@@ -5450,15 +5431,20 @@ continue_reading:
 
 		nlmsg_set_proto (msg, NETLINK_ROUTE);
 		nlmsg_set_src (msg, &nla);
+		nrecv++;
+
+		if (!creds || creds->pid) {
+			if (creds)
+				_LOGW ("netlink: received non-kernel message (pid %d)", creds->pid);
+			else
+				_LOGW ("netlink: received message without credentials");
+			goto stop;
+		}
+
 		if (creds)
 			nlmsg_set_creds (msg, creds);
 
-		nrecv++;
-
-		/* NL_CB_MSG_IN */
-		NL_CB_CALL (verify_source (msg, platform));
-
-		NL_CB_CALL (event_seq_check (msg, platform));
+		event_seq_check (platform, msg);
 
 		if (hdr->nlmsg_flags & NLM_F_MULTI)
 			multipart = 1;
