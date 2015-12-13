@@ -5434,24 +5434,24 @@ event_handler_recvmsgs (NMPlatform *platform)
 	struct ucred *creds = NULL;
 
 continue_reading:
-	n = nl_recv(sk, &nla, &buf, &creds);
+	n = nl_recv (sk, &nla, &buf, &creds);
 
 	if (n <= 0)
 		return n;
 
 	hdr = (struct nlmsghdr *) buf;
-	while (nlmsg_ok(hdr, n)) {
-		nlmsg_free(msg);
-		msg = nlmsg_convert(hdr);
+	while (nlmsg_ok (hdr, n)) {
+		nlmsg_free (msg);
+		msg = nlmsg_convert (hdr);
 		if (!msg) {
 			err = -NLE_NOMEM;
 			goto out;
 		}
 
-		nlmsg_set_proto(msg, NETLINK_ROUTE);
-		nlmsg_set_src(msg, &nla);
+		nlmsg_set_proto (msg, NETLINK_ROUTE);
+		nlmsg_set_src (msg, &nla);
 		if (creds)
-			nlmsg_set_creds(msg, creds);
+			nlmsg_set_creds (msg, creds);
 
 		nrecv++;
 
@@ -5497,9 +5497,9 @@ continue_reading:
 			goto out;
 		} else if (hdr->nlmsg_type == NLMSG_ERROR) {
 			/* Message carries a nlmsgerr */
-			struct nlmsgerr *e = nlmsg_data(hdr);
+			struct nlmsgerr *e = nlmsg_data (hdr);
 
-			if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
+			if (hdr->nlmsg_len < nlmsg_size (sizeof (*e))) {
 				/* Truncated error message, the default action
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
@@ -5518,12 +5518,12 @@ continue_reading:
 		}
 skip:
 		err = 0;
-		hdr = nlmsg_next(hdr, &n);
+		hdr = nlmsg_next (hdr, &n);
 	}
 
-	nlmsg_free(msg);
-	free(buf);
-	free(creds);
+	nlmsg_free (msg);
+	free (buf);
+	free (creds);
 	buf = NULL;
 	msg = NULL;
 	creds = NULL;
@@ -5535,9 +5535,9 @@ skip:
 stop:
 	err = 0;
 out:
-	nlmsg_free(msg);
-	free(buf);
-	free(creds);
+	nlmsg_free (msg);
+	free (buf);
+	free (creds);
 
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
