@@ -135,6 +135,8 @@ enum {
 	LAST_PROP
 };
 
+#define DEFAULT_AUTOCONNECT TRUE
+
 /***********************************************************/
 
 #define PENDING_ACTION_DHCP4 "dhcp4"
@@ -2056,6 +2058,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	priv->real = FALSE;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
+
+	nm_device_set_autoconnect (self, DEFAULT_AUTOCONNECT);
 
 	g_object_thaw_notify (G_OBJECT (self));
 
@@ -10063,8 +10067,6 @@ _activation_func_to_string (ActivationHandleFunc func)
 }
 
 /***********************************************************/
-
-#define DEFAULT_AUTOCONNECT TRUE
 
 static void
 nm_device_init (NMDevice *self)
