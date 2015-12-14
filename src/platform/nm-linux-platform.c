@@ -3790,13 +3790,19 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 }
 
 static NMPlatformError
-do_change_link (NMPlatform *platform, int ifindex, struct nl_msg *nlmsg)
+do_change_link (NMPlatform *platform,
+                int ifindex,
+                struct nl_msg *nlmsg)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
+	char s_buf[256];
+	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
+	NMLogLevel log_level = LOGL_DEBUG;
+	const char *log_result = "failure", *log_detail = "";
 
 retry:
-	nle = nl_send_auto_complete (priv->nlh, nlmsg);
+	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
 		_LOGE ("do-change-link[%d]: failure sending netlink request \"%s\" (%d)",
 		       ifindex,
@@ -3804,35 +3810,39 @@ retry:
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
 
-	nle = nl_wait_for_ack (priv->nlh);
-	if (   nle == -NLE_OPNOTSUPP
+	/* always refetch the link after changing it. There seems to be issues
+	 * and we sometimes lack events. Nuke it from the orbit... */
+	delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex));
+
+	delayed_action_handle_all (platform, FALSE);
+
+	nm_assert (seq_result);
+
+	if (   NM_IN_SET (-((int) seq_result), EOPNOTSUPP)
 	    && nlmsg_hdr (nlmsg)->nlmsg_type == RTM_NEWLINK) {
 		nlmsg_hdr (nlmsg)->nlmsg_type = RTM_SETLINK;
 		goto retry;
 	}
 
-	switch (nle) {
-	case -NLE_SUCCESS:
-		_LOGD ("do-change-link[%d]: success changing link", ifindex);
-		break;
-	case -NLE_EXIST:
-		_LOGD ("do-change-link[%d]: success changing link: %s (%d)",
-		       ifindex, nl_geterror (nle), -nle);
-		break;
-	case -NLE_OBJ_NOTFOUND:
-		_LOGD ("do-change-link[%d]: failure changing link: firmware not found (%s, %d)",
-		       ifindex, nl_geterror (nle), -nle);
-		return NM_PLATFORM_ERROR_NO_FIRMWARE;
-	default:
-		_LOGE ("do-change-link[%d]: failure changing link: netlink error (%s, %d)",
-		       ifindex, nl_geterror (nle), -nle);
-		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
+		log_result = "success";
+	} else if (NM_IN_SET (-((int) seq_result), EEXIST, EADDRINUSE)) {
+		/* */
+	} else if (NM_IN_SET (-((int) seq_result), ESRCH, ENOENT)) {
+		log_detail = ", firmware not found";
+		result = NM_PLATFORM_ERROR_NO_FIRMWARE;
+	} else {
+		log_level = LOGL_ERR;
+		result = NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
+	_NMLOG (log_level,
+	        "do-change-link[%d]: %s changing link: %s%s",
+	        ifindex,
+	        log_result,
+	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
+	        log_detail);
 
-	/* FIXME: as we modify the link via a separate socket, the cache is not in
-	 * sync and we have to refetch the link. */
-	do_request_link (platform, ifindex, NULL);
-	return NM_PLATFORM_ERROR_SUCCESS;
+	return result;
 }
 
 static gboolean
@@ -4056,7 +4066,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_afspec (nlmsg,
 	                                     mode))
-		return FALSE;
+		g_return_val_if_reached (FALSE);
 
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -4745,7 +4755,7 @@ link_vlan_change (NMPlatform *platform,
 	                                            new_n_ingress_map,
 	                                            new_egress_map,
 	                                            new_n_egress_map))
-		return FALSE;
+		g_return_val_if_reached (FALSE);
 
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
