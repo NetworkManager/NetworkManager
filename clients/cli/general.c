@@ -902,6 +902,28 @@ finish:
 }
 
 static void
+networkmanager_running (NMClient *client, GParamSpec *param, NmCli *nmc)
+{
+	gboolean running;
+	NmcTermColor color;
+	const char *message;
+	char *str;
+
+	running = nm_client_get_nm_running (client);
+	if (running) {
+		color = NMC_TERM_COLOR_GREEN;
+		message = _("NetworkManager has started");
+	} else {
+		color = NMC_TERM_COLOR_RED;
+		message = _("NetworkManager has stopped");
+	}
+
+	str = nmc_colorize (nmc, color, NMC_TERM_FORMAT_NORMAL, message);
+	g_print ("%s\n", str);
+	g_free (str);
+}
+
+static void
 client_hostname (NMClient *client, GParamSpec *param, NmCli *nmc)
 {
 	const char *hostname;
@@ -970,6 +992,17 @@ do_monitor (NmCli *nmc, int argc, char **argv)
 
 	nmc->get_client (nmc); /* create NMClient */
 
+	if (!nm_client_get_nm_running (nmc->client)) {
+		char *str;
+
+		str = nmc_colorize (nmc, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL,
+		                    _("Networkmanager is not running (waiting for it)\n"));
+		g_print ("%s", str);
+		g_free (str);
+	}
+
+	g_signal_connect (nmc->client, "notify::" NM_CLIENT_NM_RUNNING,
+	                  G_CALLBACK (networkmanager_running), nmc);
 	g_signal_connect (nmc->client, "notify::" NM_CLIENT_HOSTNAME,
 	                  G_CALLBACK (client_hostname), nmc);
 	g_signal_connect (nmc->client, "notify::" NM_CLIENT_PRIMARY_CONNECTION,
