@@ -424,6 +424,8 @@ static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
 static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
 
+static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
+
 /***********************************************************/
 
 #define QUEUED_PREFIX "queued state change to "
@@ -4558,10 +4560,8 @@ dhcp4_restart_cb (gpointer user_data)
 	priv->dhcp4.restart_id = 0;
 	connection = nm_device_get_applied_connection (self);
 
-	if (dhcp4_start (self, connection, &reason) == NM_ACT_STAGE_RETURN_FAILURE) {
-		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-		                                                dhcp4_restart_cb, self);
-	}
+	if (dhcp4_start (self, connection, &reason) == NM_ACT_STAGE_RETURN_FAILURE)
+		dhcp_schedule_restart (self, AF_INET, NULL);
 
 	return FALSE;
 }
@@ -4582,9 +4582,7 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 	if (   priv->ip4_state == IP_DONE
 	    && priv->con_ip4_config
 	    && nm_ip4_config_get_num_addresses (priv->con_ip4_config) > 0) {
-		_LOGI (LOGD_DHCP4, "Scheduling DHCPv4 restart because device has IP addresses");
-		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-		                                                dhcp4_restart_cb, self);
+		dhcp_schedule_restart (self, AF_INET, "device has IP addresses");
 		return;
 	}
 
@@ -4593,9 +4591,7 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 	 * retry DHCP again.
 	 */
 	if (nm_device_uses_assumed_connection (self)) {
-		_LOGI (LOGD_DHCP4, "Scheduling DHCPv4 restart because the connection is assumed");
-		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-		                                                dhcp4_restart_cb, self);
+		dhcp_schedule_restart (self, AF_INET, "connection is assumed");
 		return;
 	}
 
@@ -4607,11 +4603,8 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 		 * restart DHCP for a predefined number of times.
 		 */
 		if (priv->dhcp4.num_tries_left) {
-			_LOGI (LOGD_DHCP4, "restarting DHCPv4 in %d seconds (%u tries left)",
-			       DHCP_RESTART_TIMEOUT, priv->dhcp4.num_tries_left);
-			priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-			                                                dhcp4_restart_cb, self);
 			priv->dhcp4.num_tries_left--;
+			dhcp_schedule_restart (self, AF_INET, "lease expired");
 		} else
 			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 	} else
@@ -5317,12 +5310,41 @@ dhcp6_restart_cb (gpointer user_data)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	priv->dhcp6.restart_id = 0;
 
-	if (!dhcp6_start (self, FALSE, &reason)) {
+	if (!dhcp6_start (self, FALSE, &reason))
+		dhcp_schedule_restart (self, AF_INET6, NULL);
+
+	return FALSE;
+}
+
+static void
+dhcp_schedule_restart (NMDevice *self, int family, const char *reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean inet4;
+	guint tries_left;
+	gs_free char *tries_str = NULL;
+
+	g_return_if_fail (family == AF_INET || family == AF_INET6);
+	inet4 = family == AF_INET;
+
+	tries_left = inet4 ? priv->dhcp4.num_tries_left : priv->dhcp6.num_tries_left;
+	if (tries_left != DHCP_NUM_TRIES_MAX)
+		tries_str = g_strdup_printf (", %u tries left", tries_left + 1);
+
+	_LOGI (inet4 ? LOGD_DHCP4 : LOGD_DHCP6,
+	       "scheduling DHCPv%c restart in %u seconds%s%s%s%s",
+	       inet4 ? '4' : '6',
+	       DHCP_RESTART_TIMEOUT,
+	       tries_str ? tries_str : "",
+	       NM_PRINT_FMT_QUOTED (reason, " (reason: ", reason, ")", ""));
+
+	if (inet4) {
+		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+		                                                dhcp4_restart_cb, self);
+	} else {
 		priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
 		                                                dhcp6_restart_cb, self);
 	}
-
-	return FALSE;
 }
 
 static void
@@ -5342,9 +5364,7 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		if (   priv->ip6_state == IP_DONE
 		    && priv->con_ip6_config
 		    && nm_ip6_config_get_num_addresses (priv->con_ip6_config)) {
-			_LOGI (LOGD_DHCP6, "Scheduling DHCPv6 restart because device has IP addresses");
-			priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-			                                                dhcp6_restart_cb, self);
+			dhcp_schedule_restart (self, AF_INET6, "device has IP addresses");
 			return;
 		}
 
@@ -5353,9 +5373,7 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		 * retry DHCP again.
 		 */
 		if (nm_device_uses_assumed_connection (self)) {
-			_LOGI (LOGD_DHCP6, "Scheduling DHCPv6 restart because the connection is assumed");
-			priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-			                                                dhcp6_restart_cb, self);
+			dhcp_schedule_restart (self, AF_INET6, "connection is assumed");
 			return;
 		}
 
@@ -5367,11 +5385,8 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 			 * restart DHCP for a predefined number of times.
 			 */
 			if (priv->dhcp6.num_tries_left) {
-				_LOGI (LOGD_DHCP6, "restarting DHCPv6 in %d seconds (%u tries left)",
-				       DHCP_RESTART_TIMEOUT, priv->dhcp6.num_tries_left);
-				priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-				                                                dhcp6_restart_cb, self);
 				priv->dhcp6.num_tries_left--;
+				dhcp_schedule_restart (self, AF_INET6, "lease expired");
 			} else
 				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 		} else
