@@ -2296,6 +2296,7 @@ typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
 struct _NMLinuxPlatformPrivate {
 	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
+	guint32 nlh_seq_next;
 	guint32 nlh_seq_expect;
 	guint32 nlh_seq_last;
 	NMPCache *cache;
@@ -3122,12 +3123,8 @@ _nl_send_auto_with_seq (NMPlatform *platform, struct nl_msg *nlmsg)
 	guint32 seq;
 	int nle;
 
-	/* complete the message, by choosing our own sequence number, because libnl
-	 * does not ensure that it isn't zero -- which would confuse our checking for
-	 * outstanding messages. */
-	seq = nl_socket_use_seq (priv->nlh_event);
-	if (seq == 0)
-		seq = nl_socket_use_seq (priv->nlh_event);
+	/* complete the message with a sequence number (ensuring it's not zero). */
+	seq = priv->nlh_seq_next++ ?: priv->nlh_seq_next++;
 
 	nlmsg_hdr (nlmsg)->nlmsg_seq = seq;
 
@@ -5718,6 +5715,7 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 
 	self->priv = priv;
 
+	priv->nlh_seq_next = 1;
 	priv->cache = nmp_cache_new ();
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
