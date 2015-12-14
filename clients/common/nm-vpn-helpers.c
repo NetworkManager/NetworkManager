@@ -34,7 +34,7 @@
 
 #include "nm-utils.h"
 #include "nm-vpn-helpers.h"
-
+#include "nm-glib-compat.h"
 
 #define VPN_NAME_FILES_DIR NMCONFDIR "/VPN"
 #define DEFAULT_DIR_LIB    NMLIBDIR"/VPN"
