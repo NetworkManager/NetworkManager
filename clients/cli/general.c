@@ -913,14 +913,14 @@ client_hostname (NMClient *client, GParamSpec *param, NmCli *nmc)
 static void
 client_primary_connection (NMClient *client, GParamSpec *param, NmCli *nmc)
 {
-	NMConnection *primary;
+	NMActiveConnection *primary;
 	const char *id;
 
-	g_object_get (client, NM_CLIENT_PRIMARY_CONNECTION, &primary, NULL);
+	primary = nm_client_get_primary_connection (client);
 	if (primary) {
-		id = nm_connection_get_id (primary);
+		id = nm_active_connection_get_id (primary);
 		if (!id)
-			id = nm_connection_get_uuid (primary);
+			id = nm_active_connection_get_uuid (primary);
 
 		g_print (_("'%s' is now the primary connection\n"), id);
 	} else {
