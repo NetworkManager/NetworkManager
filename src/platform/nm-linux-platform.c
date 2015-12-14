@@ -3686,8 +3686,9 @@ do_add_link_with_lookup (NMPlatform *platform,
 static gboolean
 do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
+	char s_buf[256];
 
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
 	                      NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS,
@@ -3695,7 +3696,7 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 
 	event_handler_read_netlink_all (platform, FALSE);
 
-	nle = nl_send_auto (priv->nlh, nlmsg);
+	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
 		_LOGE ("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
@@ -3704,42 +3705,32 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		return FALSE;
 	}
 
-	nle = nl_wait_for_ack (priv->nlh);
-	switch (nle) {
-	case -NLE_SUCCESS:
-		_LOGD ("do-add-%s[%s]: success adding", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-		break;
-	case -NLE_EXIST:
-		/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
-		 * never know when something sends an identical object just before
-		 * NetworkManager. */
-		_LOGD ("do-add-%s[%s]: adding link failed with \"%s\" (%d), meaning such a link already exists",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		break;
-	default:
-		_LOGE ("do-add-%s[%s]: failed with \"%s\" (%d)",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		return FALSE;
-	}
+	delayed_action_handle_all (platform, FALSE);
 
-	delayed_action_handle_all (platform, TRUE);
+	nm_assert (seq_result);
 
-	/* FIXME: instead of re-requesting the added object, add it via nlh_event
-	 * so that the events are in sync. */
-	if (!nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id)) {
-		_LOGt ("do-add-%s[%s]: the added object is not yet ready. Request anew",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+	            ? LOGL_DEBUG
+	            : LOGL_ERR,
+	        "do-add-%s[%s]: %s",
+	        NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
+	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
+	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+
+	/* In rare cases, the object is not yet ready as we received the ACK from
+	 * kernel. Need to refetch.
+	 *
+	 * We want to safe the expensive refetch, thus we look first into the cache
+	 * whether the object exists.
+	 *
+	 * FIXME: if the object already existed previously, we might not notice a
+	 * missing update. */
+	if (!nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id))
 		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
-	}
 
 	/* The return value doesn't say, whether the object is in the platform cache after adding
 	 * it. Instead the return value says, whether the netlink request succeeded. */
-	return TRUE;
+	return seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 }
 
 static gboolean
