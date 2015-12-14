@@ -2349,7 +2349,6 @@ typedef struct {
 typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatformPrivate {
-	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
 	guint32 nlh_seq_next;
 	guint32 nlh_seq_last_handled;
@@ -5467,22 +5466,6 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
 
-static int
-verify_source (struct nl_msg *msg, NMPlatform *platform)
-{
-	struct ucred *creds = nlmsg_get_creds (msg);
-
-	if (!creds || creds->pid) {
-		if (creds)
-			_LOGW ("netlink: received non-kernel message (pid %d)", creds->pid);
-		else
-			_LOGW ("netlink: received message without credentials");
-		return NL_STOP;
-	}
-
-	return NL_OK;
-}
-
 static gboolean
 event_handler (GIOChannel *channel,
                GIOCondition io_condition,
@@ -5918,20 +5901,6 @@ constructed (GObject *_object)
 	_LOGD ("create");
 
 	{
-		priv->nlh = nl_socket_alloc ();
-		g_assert (priv->nlh);
-
-		nle = nl_socket_modify_cb (priv->nlh, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
-		g_assert (!nle);
-
-		nle = nl_connect (priv->nlh, NETLINK_ROUTE);
-		g_assert (!nle);
-		nle = nl_socket_set_passcred (priv->nlh, 1);
-		g_assert (!nle);
-	}
-	_LOGD ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
-
-	{
 		priv->nlh_event = nl_socket_alloc ();
 		g_assert (priv->nlh_event);
 
@@ -6043,7 +6012,6 @@ nm_linux_platform_finalize (GObject *object)
 	/* Free netlink resources */
 	g_source_remove (priv->event_id);
 	g_io_channel_unref (priv->event_channel);
-	nl_socket_free (priv->nlh);
 	nl_socket_free (priv->nlh_event);
 
 	g_object_unref (priv->udev_client);
