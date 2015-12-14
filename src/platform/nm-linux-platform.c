@@ -2664,8 +2664,34 @@ delayed_action_to_string (DelayedActionType action_type)
 	}
 }
 
-#define _LOGt_delayed_action(action_type, arg, operation) \
-    _LOGt ("delayed-action: %s %s (%d) [%p / %d]", ""operation, delayed_action_to_string (action_type), (int) action_type, arg, GPOINTER_TO_INT (arg))
+static const char *
+delayed_action_to_string_full (DelayedActionType action_type, gpointer user_data, char *buf, gsize buf_size)
+{
+	char *buf0 = buf;
+
+	nm_utils_strbuf_append_str (&buf, &buf_size, delayed_action_to_string (action_type));
+	switch (action_type) {
+	case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
+		nm_utils_strbuf_append (&buf, &buf_size, " (master-ifindex %d)", GPOINTER_TO_INT (user_data));
+		break;
+	case DELAYED_ACTION_TYPE_REFRESH_LINK:
+		nm_utils_strbuf_append (&buf, &buf_size, " (ifindex %d)", GPOINTER_TO_INT (user_data));
+		break;
+	default:
+		nm_assert (!user_data);
+		break;
+	}
+	return buf0;
+}
+
+#define _LOGt_delayed_action(action_type, user_data, operation) \
+    G_STMT_START { \
+        char _buf[255]; \
+        \
+        _LOGt ("delayed-action: %s %s", \
+               ""operation, \
+               delayed_action_to_string_full (action_type, user_data, _buf, sizeof (_buf))); \
+    } G_STMT_END
 
 static void
 delayed_action_handle_MASTER_CONNECTED (NMPlatform *platform, int master_ifindex)
@@ -2801,16 +2827,21 @@ delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gp
 
 	nm_assert (action_type != DELAYED_ACTION_TYPE_NONE);
 
-	if (NM_FLAGS_HAS (action_type, DELAYED_ACTION_TYPE_REFRESH_LINK)) {
-		nm_assert (nm_utils_is_power_of_two (action_type));
+	switch (action_type) {
+	case DELAYED_ACTION_TYPE_REFRESH_LINK:
 		if (_nm_utils_ptrarray_find_first (priv->delayed_action.list_refresh_link->pdata, priv->delayed_action.list_refresh_link->len, user_data) < 0)
 			g_ptr_array_add (priv->delayed_action.list_refresh_link, user_data);
-	} else if (NM_FLAGS_HAS (action_type, DELAYED_ACTION_TYPE_MASTER_CONNECTED)) {
-		nm_assert (nm_utils_is_power_of_two (action_type));
+		break;
+	case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
 		if (_nm_utils_ptrarray_find_first (priv->delayed_action.list_master_connected->pdata, priv->delayed_action.list_master_connected->len, user_data) < 0)
 			g_ptr_array_add (priv->delayed_action.list_master_connected, user_data);
-	} else
+		break;
+	default:
 		nm_assert (!user_data);
+		nm_assert (!NM_FLAGS_HAS (action_type, DELAYED_ACTION_TYPE_REFRESH_LINK));
+		nm_assert (!NM_FLAGS_HAS (action_type, DELAYED_ACTION_TYPE_MASTER_CONNECTED));
+		break;
+	}
 
 	priv->delayed_action.flags |= action_type;
 
