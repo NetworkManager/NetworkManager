@@ -389,6 +389,7 @@ static void _set_state_full (NMDevice *self,
                              gboolean quitting);
 
 static void nm_device_update_hw_address (NMDevice *self);
+static void nm_device_update_initial_hw_address (NMDevice *self);
 
 /***********************************************************/
 
@@ -8894,6 +8895,33 @@ nm_device_update_hw_address (NMDevice *self)
 	priv->hw_addr_len = hwaddrlen;
 }
 
+static void
+nm_device_update_initial_hw_address (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->hw_addr_len) {
+		priv->initial_hw_addr = g_strdup (priv->hw_addr);
+		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
+
+		if (priv->ifindex > 0) {
+			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+			size_t len = 0;
+
+			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
+				g_warn_if_fail (len == priv->hw_addr_len);
+				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
+				       priv->perm_hw_addr);
+			} else {
+				/* Fall back to current address */
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
+				priv->perm_hw_addr = g_strdup (priv->hw_addr);
+			}
+		}
+	}
+}
+
 gboolean
 nm_device_set_hw_addr (NMDevice *self, const char *addr,
                        const char *detail, guint64 hw_log_domain)
@@ -9129,27 +9157,7 @@ constructed (GObject *object)
 	int master;
 
 	nm_device_update_hw_address (self);
-
-	if (priv->hw_addr_len) {
-		priv->initial_hw_addr = g_strdup (priv->hw_addr);
-		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
-
-		if (priv->ifindex > 0) {
-			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-			size_t len = 0;
-
-			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
-				g_warn_if_fail (len == priv->hw_addr_len);
-				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
-				       priv->perm_hw_addr);
-			} else {
-				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
-				priv->perm_hw_addr = g_strdup (priv->hw_addr);
-			}
-		}
-	}
+	nm_device_update_initial_hw_address (self);
 
 	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
