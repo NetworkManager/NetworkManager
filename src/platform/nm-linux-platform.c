@@ -3736,12 +3736,15 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 static gboolean
 do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
+	char s_buf[256];
+	gboolean success = TRUE;
+	const char *log_detail = "";
 
 	event_handler_read_netlink_all (platform, FALSE);
 
-	nle = nl_send_auto (priv->nlh, nlmsg);
+	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
 		_LOGE ("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
@@ -3750,72 +3753,40 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		return FALSE;
 	}
 
-	nle = nl_wait_for_ack (priv->nlh);
-	switch (nle) {
-	case -NLE_SUCCESS:
-		_LOGD ("do-delete-%s[%s]: success deleting", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-		break;
-	case -NLE_OBJ_NOTFOUND:
-		_LOGD ("do-delete-%s[%s]: failed with \"%s\" (%d), meaning the object was already removed",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		break;
-	case -NLE_FAILURE:
-		if (NMP_OBJECT_GET_TYPE (obj_id) != NMP_OBJECT_TYPE_IP6_ADDRESS)
-			goto nle_failure;
+	delayed_action_handle_all (platform, FALSE);
 
-		/* On RHEL7 kernel, deleting a non existing address fails with ENXIO (which libnl maps to NLE_FAILURE) */
-		_LOGD ("do-delete-%s[%s]: deleting address failed with \"%s\" (%d), meaning the address was already removed",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		break;
-	case -NLE_NOADDR:
-		if (   NMP_OBJECT_GET_TYPE (obj_id) != NMP_OBJECT_TYPE_IP4_ADDRESS
-		    && NMP_OBJECT_GET_TYPE (obj_id) != NMP_OBJECT_TYPE_IP6_ADDRESS)
-			goto nle_failure;
+	nm_assert (seq_result);
 
-		_LOGD ("do-delete-%s[%s]: deleting address failed with \"%s\" (%d), meaning the address was already removed",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		break;
-	default:
-nle_failure:
-		_LOGE ("do-delete-%s[%s]: failed with \"%s\" (%d)",
-		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-		       nl_geterror (nle), -nle);
-		return FALSE;
-	}
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
+		/* ok */
+	} else if (NM_IN_SET (-((int) seq_result), ESRCH, ENOENT))
+		log_detail = ", meaning the object was already removed";
+	else if (   NM_IN_SET (-((int) seq_result), ENXIO)
+	         && NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id), NMP_OBJECT_TYPE_IP6_ADDRESS)) {
+		/* On RHEL7 kernel, deleting a non existing address fails with ENXIO */
+		log_detail = ", meaning the address was already removed";
+	} else if (   NM_IN_SET (-((int) seq_result), EADDRNOTAVAIL)
+	           && NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id), NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS))
+		log_detail = ", meaning the address was already removed";
+	else
+		success = FALSE;
 
-	delayed_action_handle_all (platform, TRUE);
+	_NMLOG (success ? LOGL_DEBUG : LOGL_ERR,
+	        "do-delete-%s[%s]: %s%s",
+	        NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
+	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
+	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
+	        log_detail);
 
-	/* FIXME: instead of re-requesting the deleted object, add it via nlh_event
-	 * so that the events are in sync. */
-	if (NMP_OBJECT_GET_TYPE (obj_id) == NMP_OBJECT_TYPE_LINK) {
-		const NMPObject *obj;
-
-		obj = nmp_cache_lookup_link_full (priv->cache, obj_id->link.ifindex, obj_id->link.ifindex <= 0 && obj_id->link.name[0] ? obj_id->link.name : NULL, FALSE, NM_LINK_TYPE_NONE, NULL, NULL);
-		if (obj && obj->_link.netlink.is_in_netlink) {
-			_LOGt ("do-delete-%s[%s]: reload: the deleted object is not yet removed. Request anew",
-			       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-			       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-			do_request_link (platform, obj_id->link.ifindex, obj_id->link.name);
-		}
-	} else {
-		if (nmp_cache_lookup_obj (priv->cache, obj_id)) {
-			_LOGt ("do-delete-%s[%s]: reload: the deleted object is not yet removed. Request anew",
-			       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
-			       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
-		}
+	if (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id)) {
+		/* such an object still exists in the cache. To be sure, refetch it (and
+		 * hope it's gone) */
+		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
 	}
 
 	/* The return value doesn't say, whether the object is in the platform cache after adding
 	 * it. Instead the return value says, whether the netlink request succeeded. */
-	return TRUE;
+	return success;
 }
 
 static NMPlatformError
