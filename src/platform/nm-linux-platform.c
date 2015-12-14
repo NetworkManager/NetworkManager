@@ -3633,71 +3633,51 @@ link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMP
 /*****************************************************************************/
 
 static gboolean
-do_add_link (NMPlatform *platform,
-             NMLinkType link_type,
-             const char *name,
-             struct nl_msg *nlmsg)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int nle;
-
-	event_handler_read_netlink_all (platform, FALSE);
-
-	nle = nl_send_auto (priv->nlh, nlmsg);
-	if (nle < 0) {
-		_LOGE ("do-add-link[%s/%s]: failure sending netlink request \"%s\" (%d)",
-		       name,
-		       nm_link_type_to_string (link_type),
-		       nl_geterror (nle), -nle);
-		return FALSE;
-	}
-
-	nle = nl_wait_for_ack (priv->nlh);
-	switch (nle) {
-	case -NLE_SUCCESS:
-		_LOGD ("do-add-link[%s/%s]: success adding",
-		       name,
-		       nm_link_type_to_string (link_type));
-		break;
-	default:
-		_LOGE ("do-add-link[%s/%s]: failed with \"%s\" (%d)",
-		       name,
-		       nm_link_type_to_string (link_type),
-		       nl_geterror (nle), -nle);
-		return FALSE;
-	}
-
-	delayed_action_handle_all (platform, TRUE);
-
-	/* FIXME: we add the link object via the second netlink socket. Sometimes,
-	 * the notification is not yet ready via nlh_event, so we have to re-request the
-	 * link so that it is in the cache. A better solution would be to do everything
-	 * via one netlink socket. */
-	if (!nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, 0, name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
-		_LOGt ("do-add-link[%s/%s]: the added link is not yet ready. Request anew",
-		       name,
-		       nm_link_type_to_string (link_type));
-		do_request_link (platform, 0, name);
-	}
-
-	/* Return true, because the netlink request succeeded. This doesn't indicate that the
-	 * object is now actually in the cache, because there could be a race. */
-	return TRUE;
-}
-
-static gboolean
 do_add_link_with_lookup (NMPlatform *platform,
                          NMLinkType link_type,
                          const char *name,
                          struct nl_msg *nlmsg,
                          const NMPlatformLink **out_link)
 {
-	const NMPObject *obj;
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	const NMPObject *obj = NULL;
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	int nle;
+	char s_buf[256];
 
-	do_add_link (platform, link_type, name, nlmsg);
+	event_handler_read_netlink_all (platform, FALSE);
 
-	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-	                                  0, name, FALSE, link_type, NULL, NULL);
+	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
+	if (nle < 0) {
+		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
+		       name,
+		       nm_link_type_to_string (link_type),
+		       nl_geterror (nle), -nle);
+		return FALSE;
+	}
+
+	delayed_action_handle_all (platform, FALSE);
+
+	nm_assert (seq_result);
+
+	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+	            ? LOGL_DEBUG
+	            : LOGL_ERR,
+	        "do-add-link[%s/%s]: %s",
+	        name,
+	        nm_link_type_to_string (link_type),
+	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
+		obj = nmp_cache_lookup_link_full (priv->cache, 0, name, FALSE, link_type, NULL, NULL);
+
+	if (!obj) {
+		/* either kernel signaled failure, or it signaled success and the link object
+		 * is not (yet) in the cache. Try to reload it... */
+		do_request_link (platform, 0, name);
+		obj = nmp_cache_lookup_link_full (priv->cache, 0, name, FALSE, link_type, NULL, NULL);
+	}
+
 	if (out_link)
 		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
