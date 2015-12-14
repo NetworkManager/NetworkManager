@@ -2068,6 +2068,11 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	                         remove_resources ?
 	                             NM_DEVICE_STATE_REASON_USER_REQUESTED : NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 
+	/* Garbage-collect unneeded unrealized devices. */
+	nm_device_recheck_available_connections (self);
+	if (g_hash_table_size (priv->available_connections) == 0)
+		g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
+
 	return TRUE;
 }
 
