@@ -3683,9 +3683,11 @@ do_add_link_with_lookup (NMPlatform *platform,
 static gboolean
 do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
 	char s_buf[256];
+	const NMPObject *obj;
 
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
 	                      NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS,
@@ -3721,13 +3723,17 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	 * whether the object exists.
 	 *
 	 * FIXME: if the object already existed previously, we might not notice a
-	 * missing update. */
-	if (!nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id))
+	 * missing update. It's not clear how to fix that reliably without refechting
+	 * all the time. */
+	obj = nmp_cache_lookup_obj (priv->cache, obj_id);
+	if (!obj) {
 		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
+		obj = nmp_cache_lookup_obj (priv->cache, obj_id);
+	}
 
-	/* The return value doesn't say, whether the object is in the platform cache after adding
-	 * it. Instead the return value says, whether the netlink request succeeded. */
-	return seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+	/* Adding is only successful, if kernel reported success *and* we have the
+	 * expected object in cache afterwards. */
+	return obj && seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 }
 
 static gboolean
