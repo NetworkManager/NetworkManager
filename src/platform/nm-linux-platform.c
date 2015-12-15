@@ -3630,6 +3630,20 @@ do_add_link_with_lookup (NMPlatform *platform,
 
 	event_handler_read_netlink (platform, FALSE);
 
+	if (nmp_cache_lookup_link_full (priv->cache, 0, name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
+		/* hm, a link with such a name already exists. Try reloading first. */
+		do_request_link (platform, 0, name);
+
+		obj = nmp_cache_lookup_link_full (priv->cache, 0, name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL);
+		if (obj) {
+			_LOGE ("do-add-link[%s/%s]: link already exists: %s",
+			       name,
+			       nm_link_type_to_string (link_type),
+			       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			return FALSE;
+		}
+	}
+
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
 		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
