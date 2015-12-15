@@ -191,7 +191,7 @@ static void do_request_link_no_delayed_actions (NMPlatform *platform, int ifinde
 static void do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType action_type);
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 static void cache_prune_candidates_prune (NMPlatform *platform);
-static gboolean event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks);
+static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks);
 
 /*****************************************************************************/
 
@@ -2840,13 +2840,13 @@ delayed_action_handle_REFRESH_ALL (NMPlatform *platform, DelayedActionType flags
 static void
 delayed_action_handle_READ_NETLINK (NMPlatform *platform)
 {
-	event_handler_read_netlink_all (platform, FALSE);
+	event_handler_read_netlink (platform, FALSE);
 }
 
 static void
 delayed_action_handle_WAIT_FOR_NL_RESPONSE (NMPlatform *platform)
 {
-	event_handler_read_netlink_all (platform, TRUE);
+	event_handler_read_netlink (platform, TRUE);
 }
 
 static gboolean
@@ -3351,7 +3351,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 		                                   (NMPObject *) nmp_cache_lookup_link (priv->cache, ifindex));
 	}
 
-	event_handler_read_netlink_all (platform, FALSE);
+	event_handler_read_netlink (platform, FALSE);
 
 	nlmsg = _nl_msg_new_link (RTM_GETLINK,
 	                          0,
@@ -3403,7 +3403,7 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 				_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
 			}
 
-			event_handler_read_netlink_all (platform, FALSE);
+			event_handler_read_netlink (platform, FALSE);
 
 			/* reimplement
 			 *   nl_rtgen_request (sk, klass->rtm_gettype, klass->addr_family, NLM_F_DUMP);
@@ -3644,7 +3644,7 @@ do_add_link_with_lookup (NMPlatform *platform,
 	int nle;
 	char s_buf[256];
 
-	event_handler_read_netlink_all (platform, FALSE);
+	event_handler_read_netlink (platform, FALSE);
 
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
@@ -3693,7 +3693,7 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	                      NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS,
 	                      NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 
-	event_handler_read_netlink_all (platform, FALSE);
+	event_handler_read_netlink (platform, FALSE);
 
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
@@ -3741,7 +3741,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	gboolean success = TRUE;
 	const char *log_detail = "";
 
-	event_handler_read_netlink_all (platform, FALSE);
+	event_handler_read_netlink (platform, FALSE);
 
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
 	if (nle < 0) {
@@ -5534,9 +5534,9 @@ continue_reading:
 
 		if (!creds || creds->pid) {
 			if (creds)
-				_LOGW ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
+				_LOGD ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
 			else
-				_LOGW ("netlink: recvmsg: received message without credentials");
+				_LOGD ("netlink: recvmsg: received message without credentials");
 			goto stop;
 		}
 
@@ -5651,45 +5651,10 @@ out:
 /*****************************************************************************/
 
 static gboolean
-event_handler_read_netlink_one (NMPlatform *platform)
-{
-	int nle;
-
-	nle = event_handler_recvmsgs (platform, TRUE);
-
-	if (nle < 0)
-		switch (nle) {
-		case -NLE_AGAIN:
-			return FALSE;
-		case -NLE_DUMP_INTR:
-			_LOGD ("netlink: read-one: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
-			break;
-		case -NLE_NOMEM:
-			_LOGI ("netlink: read-one: too many netlink events. Need to resynchronize platform cache");
-			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
-			 * like to free up some space. We'll read in the status synchronously. */
-			delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
-			event_handler_recvmsgs (platform, FALSE);
-			delayed_action_schedule (platform,
-			                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
-			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
-			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
-			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
-			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
-			                         NULL);
-			break;
-		default:
-			_LOGE ("netlink: read-one: failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
-			break;
-	}
-	return TRUE;
-}
-
-static gboolean
-event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
+event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int r;
+	int r, nle;
 	struct pollfd pfd;
 	gboolean any = FALSE;
 	gint64 now_ns;
@@ -5701,8 +5666,38 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 	} data_next;
 
 	while (TRUE) {
-		while (event_handler_read_netlink_one (platform))
+
+		while (TRUE) {
+
+			nle = event_handler_recvmsgs (platform, TRUE);
+
+			if (nle < 0)
+				switch (nle) {
+				case -NLE_AGAIN:
+					goto after_read;
+				case -NLE_DUMP_INTR:
+					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+					break;
+				case -NLE_NOMEM:
+					_LOGI ("netlink: read: too many netlink events. Need to resynchronize platform cache");
+					/* Drain the event queue, we've lost events and are out of sync anyway and we'd
+					 * like to free up some space. We'll read in the status synchronously. */
+					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
+					event_handler_recvmsgs (platform, FALSE);
+					delayed_action_schedule (platform,
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+					                         NULL);
+					break;
+				default:
+					_LOGE ("netlink: read: failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+					break;
+			}
 			any = TRUE;
+		}
 
 after_read:
 
@@ -5738,7 +5733,7 @@ after_read:
 		nm_assert (data_next.timeout_abs_ns > 0);
 		nm_assert (now_ns > 0);
 
-		_LOGT ("netlink: read-all: wait for ACK for sequence number %u...", data_next.seq_number);
+		_LOGT ("netlink: read: wait for ACK for sequence number %u...", data_next.seq_number);
 
 		timeout_ms = (data_next.timeout_abs_ns - now_ns) / (NM_UTILS_NS_PER_SECOND / 1000);
 
@@ -5755,7 +5750,7 @@ after_read:
 			int errsv = errno;
 
 			if (errsv != EINTR) {
-				_LOGE ("netlink: read-all: poll failed with %s", strerror (errsv));
+				_LOGE ("netlink: read: poll failed with %s", strerror (errsv));
 				delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_POLL);
 				return any;
 			}
