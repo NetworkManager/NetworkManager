@@ -2372,6 +2372,188 @@ nm_linux_platform_setup (void)
 
 /******************************************************************/
 
+static void
+_log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
+{
+	GError *error = NULL;
+	char *contents, *contents_escaped;
+	char *value_escaped = g_strescape (value, NULL);
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
+		g_clear_error (&error);
+	} else {
+		g_strstrip (contents);
+		contents_escaped = g_strescape (contents, NULL);
+		if (strcmp (contents, value) == 0)
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
+		else
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
+		g_free (contents);
+		g_free (contents_escaped);
+	}
+	g_free (value_escaped);
+}
+
+#define _log_dbg_sysctl_set(platform, path, value) \
+	G_STMT_START { \
+		if (_LOGD_ENABLED ()) { \
+			_log_dbg_sysctl_set_impl (platform, path, value); \
+		} \
+	} G_STMT_END
+
+static gboolean
+sysctl_set (NMPlatform *platform, const char *path, const char *value)
+{
+	int fd, len, nwrote, tries;
+	char *actual;
+
+	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	/* Don't write outside known locations */
+	g_assert (g_str_has_prefix (path, "/proc/sys/")
+	          || g_str_has_prefix (path, "/sys/"));
+	/* Don't write to suspicious locations */
+	g_assert (!strstr (path, "/../"));
+
+	fd = open (path, O_WRONLY | O_TRUNC);
+	if (fd == -1) {
+		if (errno == ENOENT) {
+			_LOGD ("sysctl: failed to open '%s': (%d) %s",
+			       path, errno, strerror (errno));
+		} else {
+			_LOGE ("sysctl: failed to open '%s': (%d) %s",
+			       path, errno, strerror (errno));
+		}
+		return FALSE;
+	}
+
+	_log_dbg_sysctl_set (platform, path, value);
+
+	/* Most sysfs and sysctl options don't care about a trailing LF, while some
+	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
+	 * sysctl support partial writes so the LF must be added to the string we're
+	 * about to write.
+	 */
+	actual = g_strdup_printf ("%s\n", value);
+
+	/* Try to write the entire value three times if a partial write occurs */
+	len = strlen (actual);
+	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
+		nwrote = write (fd, actual, len);
+		if (nwrote == -1) {
+			if (errno == EINTR) {
+				_LOGD ("sysctl: interrupted, will try again");
+				continue;
+			}
+			break;
+		}
+	}
+	if (nwrote == -1 && errno != EEXIST) {
+		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
+		       path, value, errno, strerror (errno));
+	} else if (nwrote < len) {
+		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
+		       path, value);
+	}
+
+	g_free (actual);
+	close (fd);
+	return (nwrote == len);
+}
+
+static GSList *sysctl_clear_cache_list;
+
+void
+_nm_linux_platform_sysctl_clear_cache (void)
+{
+	while (sysctl_clear_cache_list) {
+		NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (sysctl_clear_cache_list->data);
+
+		sysctl_clear_cache_list = g_slist_delete_link (sysctl_clear_cache_list, sysctl_clear_cache_list);
+
+		g_hash_table_destroy (priv->sysctl_get_prev_values);
+		priv->sysctl_get_prev_values = NULL;
+		priv->sysctl_get_warned = FALSE;
+	}
+}
+
+static void
+_log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *contents)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	const char *prev_value = NULL;
+
+	if (!priv->sysctl_get_prev_values) {
+		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
+		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	} else
+		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, path);
+
+	if (prev_value) {
+		if (strcmp (prev_value, contents) != 0) {
+			char *contents_escaped = g_strescape (contents, NULL);
+			char *prev_value_escaped = g_strescape (prev_value, NULL);
+
+			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
+			g_free (contents_escaped);
+			g_free (prev_value_escaped);
+			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+		}
+	} else {
+		char *contents_escaped = g_strescape (contents, NULL);
+
+		_LOGD ("sysctl: reading '%s': '%s'", path, contents_escaped);
+		g_free (contents_escaped);
+		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+	}
+
+	if (   !priv->sysctl_get_warned
+	    && g_hash_table_size (priv->sysctl_get_prev_values) > 50000) {
+		_LOGW ("sysctl: the internal cache for debug-logging of sysctl values grew pretty large. You can clear it by disabling debug-logging: `nmcli general logging level KEEP domains PLATFORM:INFO`.");
+		priv->sysctl_get_warned = TRUE;
+	}
+}
+
+#define _log_dbg_sysctl_get(platform, path, contents) \
+	G_STMT_START { \
+		if (_LOGD_ENABLED ()) \
+			_log_dbg_sysctl_get_impl (platform, path, contents); \
+	} G_STMT_END
+
+static char *
+sysctl_get (NMPlatform *platform, const char *path)
+{
+	GError *error = NULL;
+	char *contents;
+
+	/* Don't write outside known locations */
+	g_assert (g_str_has_prefix (path, "/proc/sys/")
+	          || g_str_has_prefix (path, "/sys/"));
+	/* Don't write to suspicious locations */
+	g_assert (!strstr (path, "/../"));
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		/* We assume FAILED means EOPNOTSUP */
+		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
+		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
+			_LOGD ("error reading %s: %s", path, error->message);
+		else
+			_LOGE ("error reading %s: %s", path, error->message);
+		g_clear_error (&error);
+		return NULL;
+	}
+
+	g_strstrip (contents);
+
+	_log_dbg_sysctl_get (platform, path, contents);
+
+	return contents;
+}
+
+/******************************************************************/
+
 static gboolean
 check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 {
@@ -3201,188 +3383,6 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	cache_prune_candidates_drop (platform, obj_cache);
 
 	return NL_OK;
-}
-
-/******************************************************************/
-
-static void
-_log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
-{
-	GError *error = NULL;
-	char *contents, *contents_escaped;
-	char *value_escaped = g_strescape (value, NULL);
-
-	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
-		g_clear_error (&error);
-	} else {
-		g_strstrip (contents);
-		contents_escaped = g_strescape (contents, NULL);
-		if (strcmp (contents, value) == 0)
-			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
-		else
-			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
-		g_free (contents);
-		g_free (contents_escaped);
-	}
-	g_free (value_escaped);
-}
-
-#define _log_dbg_sysctl_set(platform, path, value) \
-	G_STMT_START { \
-		if (_LOGD_ENABLED ()) { \
-			_log_dbg_sysctl_set_impl (platform, path, value); \
-		} \
-	} G_STMT_END
-
-static gboolean
-sysctl_set (NMPlatform *platform, const char *path, const char *value)
-{
-	int fd, len, nwrote, tries;
-	char *actual;
-
-	g_return_val_if_fail (path != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
-
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys/")
-	          || g_str_has_prefix (path, "/sys/"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/../"));
-
-	fd = open (path, O_WRONLY | O_TRUNC);
-	if (fd == -1) {
-		if (errno == ENOENT) {
-			_LOGD ("sysctl: failed to open '%s': (%d) %s",
-			       path, errno, strerror (errno));
-		} else {
-			_LOGE ("sysctl: failed to open '%s': (%d) %s",
-			       path, errno, strerror (errno));
-		}
-		return FALSE;
-	}
-
-	_log_dbg_sysctl_set (platform, path, value);
-
-	/* Most sysfs and sysctl options don't care about a trailing LF, while some
-	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
-	 * sysctl support partial writes so the LF must be added to the string we're
-	 * about to write.
-	 */
-	actual = g_strdup_printf ("%s\n", value);
-
-	/* Try to write the entire value three times if a partial write occurs */
-	len = strlen (actual);
-	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
-		nwrote = write (fd, actual, len);
-		if (nwrote == -1) {
-			if (errno == EINTR) {
-				_LOGD ("sysctl: interrupted, will try again");
-				continue;
-			}
-			break;
-		}
-	}
-	if (nwrote == -1 && errno != EEXIST) {
-		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
-		       path, value, errno, strerror (errno));
-	} else if (nwrote < len) {
-		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
-		       path, value);
-	}
-
-	g_free (actual);
-	close (fd);
-	return (nwrote == len);
-}
-
-static GSList *sysctl_clear_cache_list;
-
-void
-_nm_linux_platform_sysctl_clear_cache (void)
-{
-	while (sysctl_clear_cache_list) {
-		NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (sysctl_clear_cache_list->data);
-
-		sysctl_clear_cache_list = g_slist_delete_link (sysctl_clear_cache_list, sysctl_clear_cache_list);
-
-		g_hash_table_destroy (priv->sysctl_get_prev_values);
-		priv->sysctl_get_prev_values = NULL;
-		priv->sysctl_get_warned = FALSE;
-	}
-}
-
-static void
-_log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *contents)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const char *prev_value = NULL;
-
-	if (!priv->sysctl_get_prev_values) {
-		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
-		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-	} else
-		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, path);
-
-	if (prev_value) {
-		if (strcmp (prev_value, contents) != 0) {
-			char *contents_escaped = g_strescape (contents, NULL);
-			char *prev_value_escaped = g_strescape (prev_value, NULL);
-
-			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
-			g_free (contents_escaped);
-			g_free (prev_value_escaped);
-			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
-		}
-	} else {
-		char *contents_escaped = g_strescape (contents, NULL);
-
-		_LOGD ("sysctl: reading '%s': '%s'", path, contents_escaped);
-		g_free (contents_escaped);
-		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
-	}
-
-	if (   !priv->sysctl_get_warned
-	    && g_hash_table_size (priv->sysctl_get_prev_values) > 50000) {
-		_LOGW ("sysctl: the internal cache for debug-logging of sysctl values grew pretty large. You can clear it by disabling debug-logging: `nmcli general logging level KEEP domains PLATFORM:INFO`.");
-		priv->sysctl_get_warned = TRUE;
-	}
-}
-
-#define _log_dbg_sysctl_get(platform, path, contents) \
-	G_STMT_START { \
-		if (_LOGD_ENABLED ()) \
-			_log_dbg_sysctl_get_impl (platform, path, contents); \
-	} G_STMT_END
-
-static char *
-sysctl_get (NMPlatform *platform, const char *path)
-{
-	GError *error = NULL;
-	char *contents;
-
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys/")
-	          || g_str_has_prefix (path, "/sys/"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/../"));
-
-	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		/* We assume FAILED means EOPNOTSUP */
-		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
-		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
-			_LOGD ("error reading %s: %s", path, error->message);
-		else
-			_LOGE ("error reading %s: %s", path, error->message);
-		g_clear_error (&error);
-		return NULL;
-	}
-
-	g_strstrip (contents);
-
-	_log_dbg_sysctl_get (platform, path, contents);
-
-	return contents;
 }
 
 /******************************************************************/
