@@ -1109,9 +1109,9 @@ connection_added (NMSettings *settings,
 }
 
 static void
-connection_changed (NMSettings *settings,
-                    NMConnection *connection,
-                    NMManager *manager)
+connection_updated_by_user (NMSettings *settings,
+                            NMConnection *connection,
+                            NMManager *manager)
 {
 	if (nm_connection_is_virtual (connection))
 		system_create_virtual_device (manager, connection);
@@ -5037,12 +5037,10 @@ nm_manager_setup (const char *state_file,
 	                  G_CALLBACK (system_hostname_changed_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
 	                  G_CALLBACK (connection_added), self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
-	                  G_CALLBACK (connection_changed), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
+	                  G_CALLBACK (connection_updated_by_user), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed), self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
-	                  G_CALLBACK (connection_changed), self);
 
 	priv->policy = nm_policy_new (self, priv->settings);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
@@ -5367,7 +5365,7 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, system_hostname_changed_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_added, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_by_user, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_removed, manager);
 		g_clear_object (&priv->settings);
 	}
