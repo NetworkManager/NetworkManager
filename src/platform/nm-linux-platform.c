@@ -2367,7 +2367,6 @@ struct _NMLinuxPlatformPrivate {
 		GPtrArray *list_refresh_link;
 		GArray *list_wait_for_nl_response;
 		gint is_handling;
-		guint idle_id;
 	} delayed_action;
 
 	GHashTable *prune_candidates;
@@ -2855,10 +2854,8 @@ delayed_action_handle_one (NMPlatform *platform)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gpointer user_data;
 
-	if (priv->delayed_action.flags == DELAYED_ACTION_TYPE_NONE) {
-		nm_clear_g_source (&priv->delayed_action.idle_id);
+	if (priv->delayed_action.flags == DELAYED_ACTION_TYPE_NONE)
 		return FALSE;
-	}
 
 	/* First process DELAYED_ACTION_TYPE_MASTER_CONNECTED actions.
 	 * This type of action is entirely cache-internal and is here to resolve a
@@ -2939,8 +2936,6 @@ delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink)
 
 	g_return_val_if_fail (priv->delayed_action.is_handling == 0, FALSE);
 
-	nm_clear_g_source (&priv->delayed_action.idle_id);
-
 	priv->delayed_action.is_handling++;
 	if (read_netlink)
 		delayed_action_schedule (platform, DELAYED_ACTION_TYPE_READ_NETLINK, NULL);
@@ -2951,14 +2946,6 @@ delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink)
 	cache_prune_candidates_prune (platform);
 
 	return any;
-}
-
-static gboolean
-delayed_action_handle_idle (gpointer user_data)
-{
-	NM_LINUX_PLATFORM_GET_PRIVATE (user_data)->delayed_action.idle_id = 0;
-	delayed_action_handle_all (user_data, FALSE);
-	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -2997,9 +2984,6 @@ delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gp
 				_LOGt_delayed_action (iflags, user_data, "schedule");
 		}
 	}
-
-	if (priv->delayed_action.is_handling == 0 && priv->delayed_action.idle_id == 0)
-		priv->delayed_action.idle_id = g_idle_add (delayed_action_handle_idle, platform);
 }
 
 static void
@@ -3328,7 +3312,7 @@ _nl_send_auto_with_seq (NMPlatform *platform,
 	if (nle >= 0)
 		delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result);
 	else
-		_LOGD ("failed sending message: %s (%d)", nl_geterror (nle), nle);
+		_LOGD ("netlink: send: failed sending message: %s (%d)", nl_geterror (nle), nle);
 
 	return nle;
 }
@@ -5985,8 +5969,6 @@ dispose (GObject *object)
 	priv->delayed_action.flags = DELAYED_ACTION_TYPE_NONE;
 	g_ptr_array_set_size (priv->delayed_action.list_master_connected, 0);
 	g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
-
-	nm_clear_g_source (&priv->delayed_action.idle_id);
 
 	g_clear_pointer (&priv->prune_candidates, g_hash_table_unref);
 
