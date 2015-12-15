@@ -64,6 +64,9 @@ typedef enum { /*< skip >*/
 	/* all the objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
+	/* index for the link objects by ifname. */
+	NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,
+
 	/* all the visible objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 
@@ -104,6 +107,11 @@ typedef struct {
 			guint8 obj_type; /* NMPObjectType as guint8 */
 			int ifindex;
 		} object_type_by_ifindex;
+		struct {
+			/* NMP_CACHE_ID_TYPE_LINK_BY_IFNAME */
+			guint8 _id_type;
+			char ifname_short[IFNAMSIZ - 1]; /* don't include the trailing NUL so the struct fits in 4 bytes. */
+		} link_by_ifname;
 	};
 } NMPCacheId;
 
@@ -374,6 +382,7 @@ void nmp_cache_id_destroy (NMPCacheId *id);
 NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, NMPObjectType obj_type, gboolean visible_only);
 NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, NMPObjectType obj_type, int ifindex);
 NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
+NMPCacheId *nmp_cache_id_init_link_by_ifname (NMPCacheId *id, const char *ifname);
 
 const NMPlatformObject *const *nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len);
 GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, NMPObjectType obj_type, const NMPCacheId *cache_id);

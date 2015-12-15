@@ -1072,6 +1072,24 @@ nmp_cache_id_init_routes_visible (NMPCacheId *id,
 	return id;
 }
 
+NMPCacheId *
+nmp_cache_id_init_link_by_ifname (NMPCacheId *id,
+                                  const char *ifname)
+{
+	gsize l;
+
+	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_LINK_BY_IFNAME);
+
+	if (   !ifname
+	    || (l = strlen (ifname)) > sizeof (id->link_by_ifname.ifname_short))
+		g_return_val_if_reached (id);
+
+	/* the trailing NUL is dropped!! */
+	memcpy (id->link_by_ifname.ifname_short, ifname, l);
+
+	return id;
+}
+
 /******************************************************************/
 
 static gboolean
@@ -1093,6 +1111,23 @@ _nmp_object_init_cache_id (const NMPObject *obj, NMPCacheIdType id_type, NMPCach
 		return    klass->cmd_obj_init_cache_id
 		       && klass->cmd_obj_init_cache_id (obj, id_type, id, out_id);
 	}
+}
+
+static gboolean
+_vt_cmd_obj_init_cache_id_link (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
+{
+	switch (id_type) {
+	case NMP_CACHE_ID_TYPE_LINK_BY_IFNAME:
+		if (obj->link.name[0]) {
+			*out_id = nmp_cache_id_init_link_by_ifname (id, obj->link.name);
+			return TRUE;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	*out_id = NULL;
+	return TRUE;
 }
 
 static gboolean
@@ -1356,7 +1391,7 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 	const NMPObject *obj;
 	const NMPlatformObject *const *list;
 	guint i, len;
-	NMPCacheId cache_id;
+	NMPCacheId cache_id, *p_cache_id;
 
 	if (ifindex > 0) {
 		obj = nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&obj_needle, ifindex));
@@ -1371,7 +1406,14 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 	} else if (!ifname && !match_fn)
 		return NULL;
 	else {
-		list = nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (&cache_id, NMP_OBJECT_TYPE_LINK, visible_only), &len);
+		if (   ifname
+		    && strlen (ifname) <= sizeof (cache_id.link_by_ifname.ifname_short)) {
+			p_cache_id = nmp_cache_id_init_link_by_ifname (&cache_id, ifname);
+			ifname = NULL;
+		} else
+			p_cache_id = nmp_cache_id_init_object_type (&cache_id, NMP_OBJECT_TYPE_LINK, visible_only);
+
+		list = nmp_cache_lookup_multi (cache, p_cache_id, &len);
 		for (i = 0; i < len; i++) {
 			obj = NMP_OBJECT_UP_CAST (list[i]);
 
@@ -1933,6 +1975,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETLINK,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_LINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
+		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_link,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_link,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_link,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_link,
