@@ -3719,6 +3719,7 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 static gboolean
 do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
 	char s_buf[256];
@@ -3733,7 +3734,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
 		       nl_geterror (nle), -nle);
-		return FALSE;
+		goto out;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -3761,15 +3762,14 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
 	        log_detail);
 
-	if (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id)) {
-		/* such an object still exists in the cache. To be sure, refetch it (and
-		 * hope it's gone) */
-		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
-	}
+out:
+	if (!nmp_cache_lookup_obj (priv->cache, obj_id))
+		return TRUE;
 
-	/* The return value doesn't say, whether the object is in the platform cache after adding
-	 * it. Instead the return value says, whether the netlink request succeeded. */
-	return success;
+	/* such an object still exists in the cache. To be sure, refetch it (and
+	 * hope it's gone) */
+	do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
+	return !!nmp_cache_lookup_obj (priv->cache, obj_id);
 }
 
 static NMPlatformError
@@ -5175,6 +5175,8 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
 	                             NULL);
+	if (!nlmsg)
+		g_return_val_if_reached (FALSE);
 
 	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_address);
 	return do_delete_object (platform, &obj_id, nlmsg);
@@ -5198,6 +5200,8 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
 	                             NULL);
+	if (!nlmsg)
+		g_return_val_if_reached (FALSE);
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen);
 	return do_delete_object (platform, &obj_id, nlmsg);
