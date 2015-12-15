@@ -2349,7 +2349,7 @@ typedef struct {
 typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatformPrivate {
-	struct nl_sock *nlh_event;
+	struct nl_sock *nlh;
 	guint32 nlh_seq_next;
 	guint32 nlh_seq_last_handled;
 	NMPCache *cache;
@@ -3323,7 +3323,7 @@ _nl_send_auto_with_seq (NMPlatform *platform,
 
 	nlmsg_hdr (nlmsg)->nlmsg_seq = seq;
 
-	nle = nl_send_auto (priv->nlh_event, nlmsg);
+	nle = nl_send_auto (priv->nlh, nlmsg);
 
 	if (nle >= 0)
 		delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result);
@@ -5482,7 +5482,7 @@ static int
 event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct nl_sock *sk = priv->nlh_event;
+	struct nl_sock *sk = priv->nlh;
 	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
 	unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
@@ -5738,7 +5738,7 @@ after_read:
 		timeout_ms = (data_next.timeout_abs_ns - now_ns) / (NM_UTILS_NS_PER_SECOND / 1000);
 
 		memset (&pfd, 0, sizeof (pfd));
-		pfd.fd = nl_socket_get_fd (priv->nlh_event);
+		pfd.fd = nl_socket_get_fd (priv->nlh);
 		pfd.events = POLLIN;
 		r = poll (&pfd, 1, MAX (1, timeout_ms));
 
@@ -5896,16 +5896,16 @@ constructed (GObject *_object)
 	_LOGD ("create");
 
 	{
-		priv->nlh_event = nl_socket_alloc ();
-		g_assert (priv->nlh_event);
+		priv->nlh = nl_socket_alloc ();
+		g_assert (priv->nlh);
 
-		nle = nl_connect (priv->nlh_event, NETLINK_ROUTE);
+		nle = nl_connect (priv->nlh, NETLINK_ROUTE);
 		g_assert (!nle);
-		nle = nl_socket_set_passcred (priv->nlh_event, 1);
+		nle = nl_socket_set_passcred (priv->nlh, 1);
 		g_assert (!nle);
 
 		/* No blocking for event socket, so that we can drain it safely. */
-		nle = nl_socket_set_nonblocking (priv->nlh_event);
+		nle = nl_socket_set_nonblocking (priv->nlh);
 		g_assert (!nle);
 
 		/* The default buffer size wasn't enough for the testsuites. It might just
@@ -5915,19 +5915,19 @@ constructed (GObject *_object)
 		 * FIXME: it's unclear that this is still actually needed. The testsuite
 		 * certainly doesn't fail for me. Maybe it can be removed.
 		 */
-		nle = nl_socket_set_buffer_size (priv->nlh_event, 131072, 0);
+		nle = nl_socket_set_buffer_size (priv->nlh, 131072, 0);
 		g_assert (!nle);
 
-		nle = nl_socket_add_memberships (priv->nlh_event,
+		nle = nl_socket_add_memberships (priv->nlh,
 		                                 RTNLGRP_LINK,
 		                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
 		                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
 		                                 0);
 		g_assert (!nle);
 	}
-	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
+	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
-	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh_event));
+	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh));
 	g_io_channel_set_encoding (priv->event_channel, NULL, NULL);
 	g_io_channel_set_close_on_unref (priv->event_channel, TRUE);
 
@@ -6007,7 +6007,7 @@ nm_linux_platform_finalize (GObject *object)
 	/* Free netlink resources */
 	g_source_remove (priv->event_id);
 	g_io_channel_unref (priv->event_channel);
-	nl_socket_free (priv->nlh_event);
+	nl_socket_free (priv->nlh);
 
 	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->wifi_data);
