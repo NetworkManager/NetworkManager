@@ -538,7 +538,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--job-default', '-J', action='store_true', help='Use default job file. Only has effect if --job is not specified')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
-        self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys (same as --reservesys-time=86400')
+        self.parser.add_argument('--reservesys', '-R', nargs='?', choices=['if_fail', 'new'], default=argparse.SUPPRESS, help='add task /distribution/reservesys (same as --reservesys-time=86400')
         self.parser.add_argument('--reservesys-time', help='add task /distribution/reservesys with a duration in second')
         self.parser.add_argument('--disable-selinux', action='store_true', help='add kernel option selinux=0 to disable AVC checks ($SELINUX_DISABLED)')
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
@@ -793,14 +793,21 @@ class CmdSubmit(CmdBase):
         v = self._get_var('RESERVESYS')
         if v is not None:
             return v
+
         duration = self._get_var('RESERVE')
-        if self.options.reservesys:
-            duration = '86400'
         if self.options.reservesys_time:
             duration = self.options.reservesys_time
-        if not duration:
+
+        if not hasattr (self.options, 'reservesys'):
             return ""
-        return '<reservesys duration="%s"/>' % (duration)
+        elif self.options.reservesys == "new":
+            if not duration:
+                duration = '86400'
+            return '<reservesys duration="%s"/>' % (duration)
+        else:
+            return '<task name="/distribution/reservesys" role="STANDALONE"><params>%s%s</params></task>' % (
+                ('<param name="RESERVETIME" value="%d" />' % (duration) if duration else ''),
+                ('<param name="RESERVE_IF_FAIL" value="True" />'if self.options.reservesys == "if_fail" else ''));
 
     def _get_var_for_ARCH(self, key):
         v = self._get_var('ARCH')
