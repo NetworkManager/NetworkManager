@@ -949,6 +949,7 @@ global:
 	nm_setting_ip_tunnel_get_input_key;
 	nm_setting_ip_tunnel_get_local;
 	nm_setting_ip_tunnel_get_mode;
+	nm_setting_ip_tunnel_get_mtu;
 	nm_setting_ip_tunnel_get_output_key;
 	nm_setting_ip_tunnel_get_parent;
 	nm_setting_ip_tunnel_get_path_mtu_discovery;
