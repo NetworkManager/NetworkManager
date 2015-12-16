@@ -1406,6 +1406,9 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 
 	g_return_if_fail (plink);
 
+	if (plink->master <= 0)
+		return;
+
 	if (priv->master) {
 		if (   plink->master > 0
 		    && plink->master == nm_device_get_ifindex (priv->master)) {
