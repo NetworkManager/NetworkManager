@@ -1396,6 +1396,7 @@ DEFINE_GETTER (nmc_property_tun_get_pi, NM_SETTING_TUN_PI);
 DEFINE_GETTER (nmc_property_tun_get_vnet_hdr, NM_SETTING_TUN_VNET_HDR);
 DEFINE_GETTER (nmc_property_tun_get_multi_queue, NM_SETTING_TUN_MULTI_QUEUE);
 
+/* --- NM_SETTING_IP_TUNNEL_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_ip_tunnel_get_parent, NM_SETTING_IP_TUNNEL_PARENT);
 DEFINE_GETTER (nmc_property_ip_tunnel_get_local, NM_SETTING_IP_TUNNEL_LOCAL);
 DEFINE_GETTER (nmc_property_ip_tunnel_get_remote, NM_SETTING_IP_TUNNEL_REMOTE);
@@ -1406,6 +1407,18 @@ DEFINE_GETTER (nmc_property_ip_tunnel_get_input_key, NM_SETTING_IP_TUNNEL_INPUT_
 DEFINE_GETTER (nmc_property_ip_tunnel_get_output_key, NM_SETTING_IP_TUNNEL_OUTPUT_KEY);
 DEFINE_GETTER (nmc_property_ip_tunnel_get_encapsulation_limit, NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT);
 DEFINE_GETTER (nmc_property_ip_tunnel_get_flow_label, NM_SETTING_IP_TUNNEL_FLOW_LABEL);
+
+static const char **
+nmc_property_ip_tunnel_allowed_mode (NMSetting *setting, const char *prop)
+{
+	static const char **words = NULL;
+
+	if (!words)
+		words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
+		                                  NM_IP_TUNNEL_MODE_UKNOWN + 1,
+		                                  G_MAXINT);
+	return words;
+}
 
 static char *
 nmc_property_ib_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
@@ -7288,7 +7301,7 @@ nmc_properties_init (void)
 	                    nmc_property_ip_tunnel_set_mode,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_ip_tunnel_allowed_mode,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP_TUNNEL, PARENT),
 	                    nmc_property_ip_tunnel_get_parent,
