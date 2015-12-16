@@ -1990,6 +1990,18 @@ nmc_property_macvlan_set_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
+static const char **
+nmc_property_macvlan_allowed_mode (NMSetting *setting, const char *prop)
+{
+	static const char **words = NULL;
+
+	if (!words)
+		words = nm_utils_enum_get_values (nm_setting_macvlan_mode_get_type(),
+		                                  NM_SETTING_MACVLAN_MODE_UNKNOWN + 1,
+		                                  G_MAXINT);
+	return words;
+}
+
 /* --- NM_SETTING_VXLAN_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_vxlan_get_parent, NM_SETTING_VXLAN_PARENT)
 DEFINE_GETTER (nmc_property_vxlan_get_id, NM_SETTING_VXLAN_ID)
@@ -7387,7 +7399,7 @@ nmc_properties_init (void)
 	                    nmc_property_macvlan_set_mode,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_macvlan_allowed_mode,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (MACVLAN, PROMISCUOUS),
 	                    nmc_property_macvlan_get_promiscuous,
