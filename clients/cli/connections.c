@@ -51,6 +51,7 @@
 #define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path): ")
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
 #define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
+#define PROMPT_IP_TUNNEL_MODE _("Tunnel mode: ")
 
 static const char *nmc_known_vpns[] = {
 	"openvpn",
@@ -6168,7 +6169,7 @@ cleanup_tun:
 			return FALSE;
 
 		if (!mode_c && ask)
-			mode_c = mode_ask = nmc_readline (_("Tunnel mode: "));
+			mode_c = mode_ask = nmc_readline (PROMPT_IP_TUNNEL_MODE);
 		if (!mode_c) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'mode' is required."));
@@ -6779,6 +6780,17 @@ gen_func_tun_mode (const char *text, int state)
 }
 
 static char *
+gen_func_ip_tunnel_mode (const char *text, int state)
+{
+	gs_free const char **words = NULL;
+
+	words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
+	                                  NM_IP_TUNNEL_MODE_UKNOWN + 1,
+	                                  G_MAXINT);
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
 gen_func_master_ifnames (const char *text, int state)
 {
 	int i;
@@ -6870,6 +6882,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_adsl_encap;
 	else if (g_str_has_suffix (rl_prompt, PROMPT_TUN_MODE))
 		generator_func = gen_func_tun_mode;
+	else if (g_str_has_suffix (rl_prompt, PROMPT_IP_TUNNEL_MODE))
+		generator_func = gen_func_ip_tunnel_mode;
 
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
