@@ -2845,6 +2845,7 @@ static const NameItem nmc_macvlan_settings [] = {
 static const NameItem nmc_vxlan_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
 	{ NM_SETTING_VXLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, FALSE },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,  NULL,       NULL, FALSE },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,  NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
