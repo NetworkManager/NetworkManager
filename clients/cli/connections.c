@@ -4280,7 +4280,7 @@ do_questionnaire_vxlan (char **parent, char **local, char **src_port_min,
 	gboolean once_more;
 
 	/* Ask for optional 'vxlan' arguments. */
-	if (!want_provide_opt_args (_("VXLAN"), 4))
+	if (!want_provide_opt_args (_("VXLAN"), 5))
 		return;
 
 	if (!*parent) {
