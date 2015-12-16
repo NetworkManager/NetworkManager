@@ -4579,12 +4579,12 @@ do_questionnaire_tun (char **user, char **group,
 }
 
 static void
-do_questionnaire_ip_tunnel (char **local)
+do_questionnaire_ip_tunnel (char **local, char **parent)
 {
 	gboolean once_more;
 
 	/* Ask for optional 'ip-tunnel' arguments. */
-	if (!want_provide_opt_args (_("IP Tunnel"), 1))
+	if (!want_provide_opt_args (_("IP Tunnel"), 2))
 		return;
 
 	if (!*local) {
@@ -4598,6 +4598,20 @@ do_questionnaire_ip_tunnel (char **local)
 				g_print (_("Error: 'local': '%s' is not valid; must be an IP address\n"),
 				         *local);
 				g_free (*local);
+			}
+		} while (once_more);
+	}
+
+	if (!*parent) {
+		do {
+			*parent = nmc_readline (_("Parent device [none]: "));
+			once_more =    *parent
+			            && !nm_utils_is_uuid (*parent)
+			            && !nm_utils_iface_valid_name (*parent);
+			if (once_more) {
+				g_print (_("Error: 'dev': '%s' is neither UUID nor interface name.\n"),
+				         *parent);
+				g_free (*parent);
 			}
 		} while (once_more);
 	}
@@ -6135,11 +6149,14 @@ cleanup_tun:
 		/* Build up the settings required for 'ip-tunnel' */
 		const char *mode_c = NULL, *local_c = NULL, *remote_c = NULL;
 		char *mode_ask = NULL, *remote_ask = NULL, *local = NULL;
+		const char *parent_c = NULL;
+		char *parent = NULL;
 		gboolean success = FALSE;
 		NMIPTunnelMode mode_enum;
 		nmc_arg_t exp_args[] = { {"mode",    TRUE, &mode_c,     !ask},
 		                         {"local",   TRUE, &local_c,    FALSE},
 		                         {"remote",  TRUE, &remote_c,   !ask},
+		                         {"dev",     TRUE, &parent_c,   FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
@@ -6185,8 +6202,9 @@ cleanup_tun:
 		}
 
 		local = g_strdup (local_c);
+		parent = g_strdup (parent_c);
 		if (ask)
-			do_questionnaire_ip_tunnel (&local);
+			do_questionnaire_ip_tunnel (&local, &parent);
 
 		if (   local
 		    && !nm_utils_ipaddr_valid (AF_INET, local)
@@ -6195,6 +6213,16 @@ cleanup_tun:
 			             _("Error: 'local': '%s' is not valid; must be an IP address"),
 			             local);
 			goto cleanup_tunnel;
+		}
+
+		if (parent) {
+			if (   !nm_utils_is_uuid (parent)
+			    && !nm_utils_iface_valid_name (parent)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'dev': '%s' is neither UUID nor interface name."),
+				             parent);
+				goto cleanup_tunnel;
+			}
 		}
 
 		/* Add 'tunnel' setting */
@@ -6206,6 +6234,8 @@ cleanup_tun:
 		g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_REMOTE, remote_c, NULL);
 		if (local)
 			g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_LOCAL, local, NULL);
+		if (parent)
+			g_object_set (s_ip_tunnel, NM_SETTING_IP_TUNNEL_PARENT, parent, NULL);
 
 		/* Set default values for IPv6 tunnels */
 		if (nm_utils_ipaddr_valid (AF_INET6, remote_c)) {
@@ -6217,6 +6247,8 @@ cleanup_tun:
 cleanup_tunnel:
 		g_free (remote_ask);
 		g_free (mode_ask);
+		g_free (parent);
+		g_free (local);
 		if (!success)
 			return FALSE;
 
