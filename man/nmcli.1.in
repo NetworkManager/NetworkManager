@@ -684,6 +684,18 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 .RE
 .RS
 .TP
+.B ip-tunnel:
+.IP "\fImode ipip,gre,sit,isatap,vti,ip6ip6,ipip6,ip6gre,vti6\fP" 42
+\(en tunnel mode
+.IP "\fIremote <remote endpoint IP>\fP" 42
+\(en IPv4 or IPv6 address of the remote tunnel endpoint
+.IP "\fI[local <local endpoint IP>]\fP" 42
+\(en IPv4 or IPv6 address of the local tunnel endpoint
+.IP "\fI[dev <parent device (ifname or connection UUID)>]\fP" 42
+\(en device to use for tunnel endpoint communication
+.RE
+.RS
+.TP
 .B macvlan:
 .IP "\fIdev <parent device (connection  UUID, ifname, or MAC)>\fP" 42
 \(en parent device this MACVLAN is on
@@ -699,6 +711,8 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 \(en VXLAN Network Identifer to use
 .IP "\fIremote <IP>\fP" 42
 \(en unicast destination IP address or multicast IP address to join
+.IP "\fI[dev <parent device (ifname or connection UUID)>]\fP" 42
+\(en device to use for tunnel endpoint communication
 .IP "\fI[local <IP>]\fP" 42
 \(en source IP address
 .IP "\fI[source-port-min <0-65535>]\fP" 42
