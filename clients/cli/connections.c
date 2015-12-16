@@ -52,6 +52,7 @@
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
 #define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
 #define PROMPT_IP_TUNNEL_MODE _("Tunnel mode: ")
+#define PROMPT_MACVLAN_MODE _("MACVLAN mode: ")
 
 static const char *nmc_known_vpns[] = {
 	"openvpn",
@@ -5987,7 +5988,7 @@ cleanup_adsl:
 		}
 
 		if (!mode && ask)
-			mode = mode_ask = nmc_readline (_("MACVLAN mode: "));
+			mode = mode_ask = nmc_readline (PROMPT_MACVLAN_MODE);
 		if (!mode) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'mode' is required."));
@@ -6791,6 +6792,17 @@ gen_func_ip_tunnel_mode (const char *text, int state)
 }
 
 static char *
+gen_func_macvlan_mode (const char *text, int state)
+{
+	gs_free const char **words = NULL;
+
+	words = nm_utils_enum_get_values (nm_setting_macvlan_mode_get_type(),
+	                                  NM_SETTING_MACVLAN_MODE_UNKNOWN + 1,
+	                                  G_MAXINT);
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
 gen_func_master_ifnames (const char *text, int state)
 {
 	int i;
@@ -6884,6 +6896,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_tun_mode;
 	else if (g_str_has_suffix (rl_prompt, PROMPT_IP_TUNNEL_MODE))
 		generator_func = gen_func_ip_tunnel_mode;
+	else if (g_str_has_suffix (rl_prompt, PROMPT_MACVLAN_MODE))
+		generator_func = gen_func_macvlan_mode;
 
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
