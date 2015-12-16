@@ -39,7 +39,10 @@ typedef struct {
 } NMMultiIndexIter;
 
 typedef struct {
-	GHashTableIter _iter;
+	union {
+		GHashTableIter _iter;
+		gpointer _value;
+	};
 	guint _state;
 } NMMultiIndexIdIter;
 
