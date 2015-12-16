@@ -4251,7 +4251,7 @@ do_questionnaire_macvlan (char **tap)
 	gboolean once_more;
 	GError *error = NULL;
 
-	/* Ask for optional 'bridge-slave' arguments. */
+	/* Ask for optional 'macvlan' arguments. */
 	if (!want_provide_opt_args (_("macvlan"), 1))
 		return;
 
