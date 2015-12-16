@@ -6177,14 +6177,6 @@ cleanup_tun:
 			goto cleanup_tunnel;
 		}
 
-		if (!remote_c && ask)
-			remote_c = remote_ask = nmc_readline (_("Remote endpoint: "));
-		if (!remote_c) {
-			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("Error: 'remote' is required."));
-			goto cleanup_tunnel;
-		}
-
 		if (!nm_utils_enum_from_str (nm_ip_tunnel_mode_get_type (),
 		                             mode_c, (int *) &mode_enum, NULL)) {
 			gs_free const char **values = NULL;
@@ -6197,6 +6189,14 @@ cleanup_tun:
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("Error: 'mode': '%s' is not valid, use one of %s"),
 			             mode_c, values_str);
+			goto cleanup_tunnel;
+		}
+
+		if (!remote_c && ask)
+			remote_c = remote_ask = nmc_readline (_("Remote endpoint: "));
+		if (!remote_c) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'remote' is required."));
 			goto cleanup_tunnel;
 		}
 
