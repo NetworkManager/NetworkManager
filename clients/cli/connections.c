@@ -6217,6 +6217,9 @@ cleanup_tun:
 cleanup_tunnel:
 		g_free (remote_ask);
 		g_free (mode_ask);
+		if (!success)
+			return FALSE;
+
 	} else if (!strcmp (con_type, NM_SETTING_VXLAN_SETTING_NAME)) {
 		/* Build up the settings required for 'vxlan' */
 		gboolean success = FALSE;
