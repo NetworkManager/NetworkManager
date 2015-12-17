@@ -685,7 +685,7 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 .RS
 .TP
 .B ip-tunnel:
-.IP "\fImode ipip,gre,sit,isatap,vti,ip6ip6,ipip6,ip6gre,vti6\fP" 42
+.IP "\fImode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\fP" 42
 \(en tunnel mode
 .IP "\fIremote <remote endpoint IP>\fP" 42
 \(en IPv4 or IPv6 address of the remote tunnel endpoint

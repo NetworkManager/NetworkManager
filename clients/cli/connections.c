@@ -431,7 +431,7 @@ usage_connection_add (void)
 	              "                  [pi yes|no]\n"
 	              "                  [vnet-hdr yes|no]\n"
 	              "                  [multi-queue yes|no]\n\n"
-	              "    ip-tunnel:    mode ipip,gre,sit,isatap,vti,ip6ip6,ipip6,ip6gre,vti6\n"
+	              "    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
 	              "                  remote <remote endpoint IP>\n"
 	              "                  [local <local endpoint IP>]\n"
 	              "                  [dev <parent device (ifname or connection UUID)>]\n\n"
