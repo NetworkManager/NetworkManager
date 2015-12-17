@@ -5614,7 +5614,7 @@ msgstr ""
 
 #: ../clients/cli/settings.c:4295
 #, c-format
-msgid "'%s' string value should consists of 1 - 199 characters"
+msgid "'%s' string value should consist of 1 - 199 characters"
 msgstr "wartość ciągu \"%s\" powinna składać się z 1-199 znaków"
 
 #: ../clients/cli/settings.c:4327

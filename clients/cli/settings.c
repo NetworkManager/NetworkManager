@@ -4292,7 +4292,7 @@ _validate_s390_option_value (const char *option, const char *value, GError **err
 {
 	/*  nm_setting_wired_add_s390_option() requires value len in <1,199> interval */
 	if (!value || !*value || strlen (value) >= 200) {
-		g_set_error (error, 1, 0, _("'%s' string value should consists of 1 - 199 characters"), option);
+		g_set_error (error, 1, 0, _("'%s' string value should consist of 1 - 199 characters"), option);
 		return NULL;
 	}
 	return value;
