@@ -249,7 +249,7 @@ _nmcli_compl_OPTIONS()
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "all common
                         NAME UUID TYPE TIMESTAMP TIMESTAMP-REAL AUTOCONNECT READONLY DBUS-PATH ACTIVE DEVICE STATE ACTIVE-PATH
-                        connection 802-3-ethernet 802-1x 802-11-wireless 802-11-wireless-security ipv4 ipv6 serial ppp pppoe gsm cdma bluetooth 802-11-olpc-mesh vpn wimax infiniband bond vlan adsl bridge bridge-port team team-port dcb
+                        connection 802-3-ethernet 802-1x 802-11-wireless 802-11-wireless-security ipv4 ipv6 serial ppp pppoe gsm cdma bluetooth 802-11-olpc-mesh vpn wimax infiniband bond vlan adsl bridge bridge-port team team-port dcb tun ip-tunnel macvlan vxlan
                         GENERAL IP4 DHCP4 IP6 DHCP6 VPN
                         profile active"
                    return 0
