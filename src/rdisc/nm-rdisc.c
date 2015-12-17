@@ -314,28 +314,6 @@ nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 	return FALSE;
 }
 
-static void
-clear_ra_timeout (NMRDisc *rdisc)
-{
-	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
-
-	if (priv->ra_timeout_id) {
-		g_source_remove (priv->ra_timeout_id);
-		priv->ra_timeout_id = 0;
-	}
-}
-
-static void
-clear_rs_timeout (NMRDisc *rdisc)
-{
-	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
-
-	if (priv->send_rs_id) {
-		g_source_remove (priv->send_rs_id);
-		priv->send_rs_id = 0;
-	}
-}
-
 static gboolean
 send_rs (NMRDisc *rdisc)
 {
@@ -400,7 +378,7 @@ nm_rdisc_start (NMRDisc *rdisc)
 
 	_LOGD ("starting router discovery: %d", rdisc->ifindex);
 
-	clear_ra_timeout (rdisc);
+	nm_clear_g_source (&priv->ra_timeout_id);
 	ra_wait_secs = CLAMP (rdisc->rtr_solicitations * rdisc->rtr_solicitation_interval, 30, 120);
 	priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, rdisc_ra_timeout_cb, rdisc);
 	_LOGD ("scheduling RA timeout in %d seconds", ra_wait_secs);
@@ -664,8 +642,10 @@ timeout_cb (gpointer user_data)
 void
 nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 {
-	clear_ra_timeout (rdisc);
-	clear_rs_timeout (rdisc);
+	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
+
+	nm_clear_g_source (&priv->ra_timeout_id);
+	nm_clear_g_source (&priv->send_rs_id);
 	check_timestamps (rdisc, now, changed);
 }
 
@@ -702,8 +682,8 @@ dispose (GObject *object)
 	NMRDisc *rdisc = NM_RDISC (object);
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 
-	clear_ra_timeout (rdisc);
-	clear_rs_timeout (rdisc);
+	nm_clear_g_source (&priv->ra_timeout_id);
+	nm_clear_g_source (&priv->send_rs_id);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);
