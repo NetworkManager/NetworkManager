@@ -57,7 +57,7 @@ send_rs (NMRDisc *rdisc, GError **error)
 	int errsv;
 
 	errsv = ndp_msg_new (&msg, NDP_MSG_RS);
-	if (!errsv) {
+	if (errsv) {
 		errsv = errsv > 0 ? errsv : -errsv;
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     "cannot create router solicitation");
