@@ -4333,9 +4333,9 @@ nm_manager_start (NMManager *self, GError **error)
 
 		if (rstate->desc) {
 			nm_log_info (LOGD_RFKILL, "%s %s by radio killswitch; %s by state file",
-				         rstate->desc,
-				         (rstate->hw_enabled && rstate->sw_enabled) ? "enabled" : "disabled",
-				         rstate->user_enabled ? "enabled" : "disabled");
+			             rstate->desc,
+			             (rstate->hw_enabled && rstate->sw_enabled) ? "enabled" : "disabled",
+			             rstate->user_enabled ? "enabled" : "disabled");
 		}
 		enabled = radio_enabled_for_rstate (rstate, TRUE);
 		manager_update_radio_enabled (self, rstate, enabled);
