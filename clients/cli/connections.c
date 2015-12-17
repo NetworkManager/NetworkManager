@@ -435,7 +435,6 @@ usage_connection_add (void)
 	              "                  remote <remote endpoint IP>\n"
 	              "                  [local <local endpoint IP>]\n"
 	              "                  [dev <parent device (ifname or connection UUID)>]\n\n"
-	              "    macvlan:      dev <parent device (connection  UUID, ifname, or MAC)>\n"
 	              "    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
 	              "                  mode vepa|bridge|private|passthru|source\n"
 	              "                  [tap yes|no]\n\n"
