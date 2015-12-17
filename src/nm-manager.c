@@ -996,12 +996,13 @@ get_virtual_iface_name (NMManager *self,
  * system_create_virtual_device:
  * @self: the #NMManager
  * @connection: the connection which might require a virtual device
- * @error: the error set when return value is NULL
  *
  * If @connection requires a virtual device and one does not yet exist for it,
  * creates that device.
+ *
+ * Returns: A #NMDevice that was just realized; %NULL if none
  */
-static void
+static NMDevice *
 system_create_virtual_device (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -1019,7 +1020,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		nm_log_warn (LOGD_DEVICE, "(%s) can't get a name of a virtual device: %s",
 		             nm_connection_get_id (connection), error->message);
 		g_error_free (error);
-		return;
+		return NULL;
 	}
 
 	/* See if there's a device that is already compatible with this connection */
@@ -1032,7 +1033,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			if (nm_device_is_real (candidate)) {
 				nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
 				            nm_connection_get_id (connection), iface);
-				return;
+				return NULL;
 			}
 
 			device = candidate;
@@ -1048,7 +1049,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
 				    nm_connection_get_id (connection), iface,
 				    nm_connection_get_connection_type (connection));
-			return;
+			return NULL;
 		}
 
 		device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, &error);
@@ -1056,7 +1057,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			nm_log_warn (LOGD_DEVICE, "(%s) factory can't create the device: %s",
 				     nm_connection_get_id (connection), error->message);
 			g_error_free (error);
-			return;
+			return NULL;
 		}
 
 		if (!add_device (self, device, &error)) {
@@ -1064,7 +1065,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 				     nm_connection_get_id (connection), error->message);
 			g_error_free (error);
 			g_object_unref (device);
-			return;
+			return NULL;
 		}
 
 		/* Add device takes a reference that NMManager still owns, so it's
@@ -1093,28 +1094,42 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 				     nm_connection_get_id (connection), error->message);
 			g_error_free (error);
 			remove_device (self, device, FALSE, TRUE);
-			return;
+			return NULL;
 		}
 		break;
 	}
+
+	return device;
 }
 
 static void
-connection_added (NMSettings *settings,
-                  NMConnection *connection,
-                  NMManager *manager)
+connection_changed (NMSettings *settings,
+                    NMConnection *connection,
+                    NMManager *manager)
 {
-	if (nm_connection_is_virtual (connection))
-		system_create_virtual_device (manager, connection);
-}
+	GSList *connections, *iter;
+	NMDevice *device;
 
-static void
-connection_updated_by_user (NMSettings *settings,
-                            NMConnection *connection,
-                            NMManager *manager)
-{
-	if (nm_connection_is_virtual (connection))
-		system_create_virtual_device (manager, connection);
+	if (!nm_connection_is_virtual (connection))
+		return;
+
+	device = system_create_virtual_device (manager, connection);
+	if (!device)
+		return;
+
+	/* Maybe the device that was created was needed by some other
+	 * connection's device (parent of a VLAN). Let the connections
+	 * can use the newly created device as a parent know. */
+	connections = nm_settings_get_connections (settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = iter->data;
+		NMDevice *parent;
+
+		parent = find_parent_device_for_connection (manager, candidate);
+		if (parent == device)
+			connection_changed (settings, candidate, manager);
+	}
+
 }
 
 static void
@@ -4363,7 +4378,7 @@ nm_manager_start (NMManager *self, GError **error)
 	nm_log_dbg (LOGD_CORE, "creating virtual devices...");
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = iter->next)
-		connection_added (priv->settings, NM_CONNECTION (iter->data), self);
+		connection_changed (priv->settings, NM_CONNECTION (iter->data), self);
 	g_slist_free (connections);
 
 	priv->devices_inited = TRUE;
@@ -5036,9 +5051,9 @@ nm_manager_setup (const char *state_file,
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (connection_added), self);
+	                  G_CALLBACK (connection_changed), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
-	                  G_CALLBACK (connection_updated_by_user), self);
+	                  G_CALLBACK (connection_changed), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed), self);
 
@@ -5364,8 +5379,7 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, system_hostname_changed_cb, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_added, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_by_user, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_changed, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_removed, manager);
 		g_clear_object (&priv->settings);
 	}
