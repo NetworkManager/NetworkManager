@@ -473,6 +473,15 @@ _nmcli_compl_ARGS()
                         "wifi")
                             _nmcli_list "infrastructure ap adhoc"
                             ;;
+                        "tun")
+                            _nmcli_list "tun tap"
+                            ;;
+                        "ip-tunnel")
+                            _nmcli_list "ipip gre sit isatap vti ip6ip6 ipip6 ip6gre vti6"
+                            ;;
+                        "macvlan")
+                            _nmcli_list "vepa bridge private passthru source"
+                            ;;
                         "bond"| \
                         *)
                         _nmcli_list "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb"
@@ -522,7 +531,11 @@ _nmcli_compl_ARGS()
             hairpin| \
             save| \
             hidden| \
-            private)
+            private| \
+            pi| \
+            vnet-hdr| \
+            multi-queue|\
+            tap)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no"
                     return 0
@@ -1102,6 +1115,26 @@ _nmcli()
                                     OPTIONS_TYPE=adsl
                                     OPTIONS_TYPED=(username password protocol encapsulation)
                                     OPTIONS_MANDATORY=(username protocol)
+                                    ;;
+                                tu|tun)
+                                    OPTIONS_TYPE=tun
+                                    OPTIONS_TYPED=(mode owner group pi vnet-hdr multi-queue)
+                                    OPTIONS_MANDATORY=(mode)
+                                    ;;
+                                ip|ip-|ip-t|ip-tu|ip-tun|ip-tunn|ip-tunne|ip-tunnel)
+                                    OPTIONS_TYPE=ip-tunnel
+                                    OPTIONS_TYPED=(mode remote local dev)
+                                    OPTIONS_MANDATORY=(mode remote)
+                                    ;;
+                                m|ma|mac|macv|macvl|macvla|macvlan)
+                                    OPTIONS_TYPE=macvlan
+                                    OPTIONS_TYPED=(dev mode tap)
+                                    OPTIONS_MANDATORY=(dev mode)
+                                    ;;
+                                vx|vxl|vxla|vxlan)
+                                    OPTIONS_TYPE=vxlan
+                                    OPTIONS_TYPED=(id remote local dev source-port-min source-port-max destination-port)
+                                    OPTIONS_MANDATORY=(id remote)
                                     ;;
                                 *)
                                     # for an unknown connection type, we stop completion here
