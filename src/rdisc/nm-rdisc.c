@@ -40,6 +40,7 @@ typedef struct {
 	gint64 last_rs;
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
+	char *last_send_rs_error;
 } NMRDiscPrivate;
 
 #define NM_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_RDISC, NMRDiscPrivate))
@@ -319,11 +320,24 @@ send_rs (NMRDisc *rdisc)
 {
 	NMRDiscClass *klass = NM_RDISC_GET_CLASS (rdisc);
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
+	GError *error = NULL;
 
-	_LOGD ("sending router solicitation");
-
-	if (klass->send_rs (rdisc))
+	if (klass->send_rs (rdisc, &error)) {
+		_LOGD ("router solicitation sent");
 		priv->solicitations_left--;
+		g_clear_pointer (&priv->last_send_rs_error, g_free);
+	} else {
+		gboolean different_message;
+
+		different_message = g_strcmp0 (priv->last_send_rs_error, error->message) != 0;
+		_NMLOG (different_message ? LOGL_WARN : LOGL_DEBUG,
+		        "failure sending router solicitation: %s", error->message);
+		if (different_message) {
+			g_clear_pointer (&priv->last_send_rs_error, g_free);
+			priv->last_send_rs_error = g_strdup (error->message);
+		}
+		g_clear_error (&error);
+	}
 
 	priv->last_rs = nm_utils_get_monotonic_timestamp_s ();
 	if (priv->solicitations_left > 0) {
@@ -646,6 +660,7 @@ nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
+	g_clear_pointer (&priv->last_send_rs_error, g_free);
 	check_timestamps (rdisc, now, changed);
 }
 
@@ -684,6 +699,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
+	g_clear_pointer (&priv->last_send_rs_error, g_free);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);

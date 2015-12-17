@@ -50,20 +50,28 @@ G_DEFINE_TYPE (NMLNDPRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 /******************************************************************/
 
 static gboolean
-send_rs (NMRDisc *rdisc)
+send_rs (NMRDisc *rdisc, GError **error)
 {
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	struct ndp_msg *msg;
-	int error;
+	int errsv;
 
-	error = ndp_msg_new (&msg, NDP_MSG_RS);
-	g_assert (!error);
+	errsv = ndp_msg_new (&msg, NDP_MSG_RS);
+	if (!errsv) {
+		errsv = errsv > 0 ? errsv : -errsv;
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "cannot create router solicitation");
+		return FALSE;
+	}
 	ndp_msg_ifindex_set (msg, rdisc->ifindex);
 
-	error = ndp_msg_send (priv->ndp, msg);
+	errsv = ndp_msg_send (priv->ndp, msg);
 	ndp_msg_destroy (msg);
-	if (error) {
-		_LOGE ("cannot send router solicitation: %d.", error);
+	if (errsv) {
+		errsv = errsv > 0 ? errsv : -errsv;
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "%s (%d)",
+		             g_strerror (errsv), errsv);
 		return FALSE;
 	}
 
