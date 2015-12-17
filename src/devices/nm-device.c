@@ -2250,6 +2250,7 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 		g_return_if_fail (slave_priv->master == self);
 
 	nm_device_queue_recheck_assume (self);
+	nm_device_queue_recheck_assume (slave);
 }
 
 
