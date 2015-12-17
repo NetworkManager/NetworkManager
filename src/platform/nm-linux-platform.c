@@ -2888,8 +2888,7 @@ delayed_action_handle_one (NMPlatform *platform)
 		return TRUE;
 	}
 
-	if (   NM_FLAGS_ANY (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_ALL)
-	    && priv->delayed_action.is_handling < 5 /* avoid deep recursive stacks */) {
+	if (NM_FLAGS_ANY (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_ALL)) {
 		DelayedActionType flags, iflags;
 
 		flags = priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_ALL;
@@ -2907,8 +2906,7 @@ delayed_action_handle_one (NMPlatform *platform)
 		return TRUE;
 	}
 
-	if (   NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK)
-	    && priv->delayed_action.is_handling < 5 /* avoid deep recursive stacks */) {
+	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK)) {
 		nm_assert (priv->delayed_action.list_refresh_link->len > 0);
 
 		user_data = priv->delayed_action.list_refresh_link->pdata[0];
@@ -2940,7 +2938,10 @@ delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gboolean any = FALSE;
 
+	g_return_val_if_fail (priv->delayed_action.is_handling == 0, FALSE);
+
 	nm_clear_g_source (&priv->delayed_action.idle_id);
+
 	priv->delayed_action.is_handling++;
 	if (read_netlink)
 		delayed_action_schedule (platform, DELAYED_ACTION_TYPE_READ_NETLINK, NULL);
@@ -2948,8 +2949,7 @@ delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink)
 		any = TRUE;
 	priv->delayed_action.is_handling--;
 
-	if (priv->delayed_action.is_handling <= 0)
-		cache_prune_candidates_prune (platform);
+	cache_prune_candidates_prune (platform);
 
 	return any;
 }
