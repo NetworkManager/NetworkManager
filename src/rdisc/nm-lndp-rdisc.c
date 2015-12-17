@@ -297,11 +297,17 @@ ipv6_sysctl_get (const char *ifname, const char *property, gint32 defval)
 }
 
 NMRDisc *
-nm_lndp_rdisc_new (int ifindex, const char *ifname, const char *uuid, NMSettingIP6ConfigAddrGenMode addr_gen_mode)
+nm_lndp_rdisc_new (int ifindex,
+                   const char *ifname,
+                   const char *uuid,
+                   NMSettingIP6ConfigAddrGenMode addr_gen_mode,
+                   GError **error)
 {
 	NMRDisc *rdisc;
 	NMLNDPRDiscPrivate *priv;
-	int error;
+	int errsv;
+
+	g_return_val_if_fail (!error || !*error, NULL);
 
 	rdisc = g_object_new (NM_TYPE_LNDP_RDISC, NULL);
 
@@ -318,9 +324,12 @@ nm_lndp_rdisc_new (int ifindex, const char *ifname, const char *uuid, NMSettingI
 	                                                    NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT);
 
 	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
-	error = ndp_open (&priv->ndp);
-	if (error != 0) {
-		_LOGD ("error creating socket for NDP; errno=%d", -error);
+	errsv = ndp_open (&priv->ndp);
+	if (errsv != 0) {
+		errsv = errsv > 0 ? errsv : -errsv;
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "failure creating libndp socket: %s (%d)",
+		             g_strerror (errsv), errsv);
 		g_object_unref (rdisc);
 		return NULL;
 	}

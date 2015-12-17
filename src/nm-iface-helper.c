@@ -475,7 +475,7 @@ main (int argc, char *argv[])
 	if (global_opt.slaac) {
 		nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, TRUE);
 
-		rdisc = nm_lndp_rdisc_new (ifindex, global_opt.ifname, global_opt.uuid, global_opt.addr_gen_mode);
+		rdisc = nm_lndp_rdisc_new (ifindex, global_opt.ifname, global_opt.uuid, global_opt.addr_gen_mode, NULL);
 		g_assert (rdisc);
 
 		if (iid)
