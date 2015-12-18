@@ -1012,8 +1012,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	NMDevice *device = NULL, *parent = NULL;
 	GError *error = NULL;
 
-	g_return_if_fail (NM_IS_MANAGER (self));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	iface = get_virtual_iface_name (self, connection, &parent, &error);
 	if (!iface) {
