@@ -301,28 +301,6 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
-/* not exposed until we actually need it */
-static NMSetting *
-_get_type_setting (NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-	const char *type;
-	NMSetting *base;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	type = nm_setting_connection_get_connection_type (s_con);
-	g_assert (type);
-
-	base = nm_connection_get_setting_by_name (connection, type);
-	g_assert (base);
-
-	return base;
-}
-
 static gboolean
 validate_permissions_type (GHashTable *hash, GError **error)
 {
@@ -1430,12 +1408,21 @@ nm_connection_get_interface_name (NMConnection *connection)
 const char *
 nm_connection_get_virtual_iface_name (NMConnection *connection)
 {
+	NMSettingConnection *s_con;
+	const char *type;
 	NMSetting *base;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	base = _get_type_setting (connection);
-	g_assert (base);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con, NULL);
+
+	type = nm_setting_connection_get_connection_type (s_con);
+	g_return_val_if_fail (type, NULL);
+
+	base = nm_connection_get_setting_by_name (connection, type);
+	if (!base)
+		return NULL;
 
 	return nm_setting_get_virtual_iface_name (base);
 }
