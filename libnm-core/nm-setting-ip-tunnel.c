@@ -27,7 +27,7 @@
 #include "nm-utils.h"
 
 /**
- * SECTION:nm-setting-tunnel
+ * SECTION:nm-setting-ip-tunnel
  * @short_description: Describes connection properties for IP tunnel devices
  **/
 
