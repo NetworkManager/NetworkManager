@@ -118,9 +118,9 @@ typedef enum {
 
 /**
  * NMSettingIP6ConfigAddrGenMode:
- * @NM_SETTING_IP6_CONFIG_PRIVACY_EUI64: The Interface Identifier is derived
+ * @NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64: The Interface Identifier is derived
  * from the interface hardware address.
- * @NM_SETTING_IP6_CONFIG_PRIVACY_STABLE_PRIVACY: The Interface Identifier
+ * @NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY: The Interface Identifier
  * is created by using a cryptographically secure hash of a secret host-specific
  * key along with the connection identification and the network address as
  * specified by RFC7217.
