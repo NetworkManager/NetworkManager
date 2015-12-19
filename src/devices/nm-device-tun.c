@@ -25,8 +25,10 @@
 #include <sys/types.h>
 
 #include "nm-default.h"
+#include "nm-activation-request.h"
 #include "nm-device-tun.h"
 #include "nm-device-private.h"
+#include "nm-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-tun.h"
@@ -285,6 +287,62 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	return TRUE;
 }
 
+static NMActStageReturn
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMDeviceTun *self = NM_DEVICE_TUN (device);
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	const char *cloned_mac;
+	NMActStageReturn ret;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	ret = NM_DEVICE_CLASS (nm_device_tun_parent_class)->act_stage1_prepare (device, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
+
+	/* Nothing to do for TUN devices */
+	if (g_strcmp0 (priv->mode, "tap"))
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+
+	req = nm_device_get_act_request (device);
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_applied_connection (req);
+	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		/* Set device MAC address if the connection wants to change it */
+		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+		if (cloned_mac)
+			nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_DEVICE);
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	guint32 mtu;
+
+	connection = nm_device_get_applied_connection (device);
+	g_assert (connection);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		mtu = nm_setting_wired_get_mtu (s_wired);
+		if (mtu)
+			nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+	}
+}
+
 static void
 unrealize (NMDevice *device, gboolean remove_resources)
 {
@@ -392,6 +450,8 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->setup_start = setup_start;
 	device_class->unrealize = unrealize;
 	device_class->update_connection = update_connection;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 
 	/* properties */
 	g_object_class_install_property

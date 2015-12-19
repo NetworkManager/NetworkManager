@@ -30,8 +30,10 @@
 #include "nm-utils.h"
 #include "nm-device-factory.h"
 #include "nm-setting-vxlan.h"
+#include "nm-setting-wired.h"
 #include "nm-connection-provider.h"
 #include "nm-activation-request.h"
+#include "nm-ip4-config.h"
 
 #include "nmdbus-device-vxlan.h"
 
@@ -515,6 +517,56 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 }
 
+static NMActStageReturn
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	const char *cloned_mac;
+	NMActStageReturn ret;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	ret = NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->act_stage1_prepare (device, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
+
+	req = nm_device_get_act_request (device);
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_applied_connection (req);
+	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		/* Set device MAC address if the connection wants to change it */
+		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+		if (cloned_mac)
+			nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_DEVICE);
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	guint32 mtu;
+
+	connection = nm_device_get_applied_connection (device);
+	g_assert (connection);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		mtu = nm_setting_wired_get_mtu (s_wired);
+		if (mtu)
+			nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+	}
+}
+
 /**************************************************************/
 
 static void
@@ -622,6 +674,8 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->update_connection = update_connection;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 
 	/* properties */
 	g_object_class_install_property

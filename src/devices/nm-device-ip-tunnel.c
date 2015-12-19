@@ -35,6 +35,7 @@
 #include "nm-core-internal.h"
 #include "nm-connection-provider.h"
 #include "nm-activation-request.h"
+#include "nm-ip4-config.h"
 
 #include "nmdbus-device-ip-tunnel.h"
 
@@ -778,6 +779,24 @@ setup_start (NMDevice *device, const NMPlatformLink *plink)
 }
 
 static void
+ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+{
+	NMConnection *connection;
+	NMSettingIPTunnel *s_ip_tunnel;
+	guint32 mtu;
+
+	connection = nm_device_get_applied_connection (device);
+	g_assert (connection);
+	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
+	g_assert (s_ip_tunnel);
+
+	/* MTU override */
+	mtu = nm_setting_ip_tunnel_get_mtu (s_ip_tunnel);
+	if (mtu)
+		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+}
+
+static void
 unrealize (NMDevice *device, gboolean remove_resources)
 {
 	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize (device, remove_resources);
@@ -865,6 +884,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
+	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->realize = realize;
 	device_class->setup_start = setup_start;
 	device_class->unrealize = unrealize;

@@ -49,6 +49,7 @@ typedef struct {
 	char *output_key;
 	guint encapsulation_limit;
 	guint flow_label;
+	guint mtu;
 } NMSettingIPTunnelPrivate;
 
 enum {
@@ -64,6 +65,7 @@ enum {
 	PROP_OUTPUT_KEY,
 	PROP_ENCAPSULATION_LIMIT,
 	PROP_FLOW_LABEL,
+	PROP_MTU,
 
 	LAST_PROP
 };
@@ -266,6 +268,24 @@ nm_setting_ip_tunnel_get_flow_label (NMSettingIPTunnel *setting)
 	return NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting)->flow_label;
 }
 
+/**
+ * nm_setting_ip_tunnel_get_mtu:
+ * @setting: the #NMSettingIPTunnel
+ *
+ * Returns the #NMSettingIPTunnel:mtu property of the setting.
+ *
+ * Returns: the MTU
+ *
+ * Since: 1.2
+ **/
+guint
+nm_setting_ip_tunnel_get_mtu (NMSettingIPTunnel *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_TUNNEL (setting), 0);
+
+	return NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting)->mtu;
+}
+
 /*********************************************************************/
 
 static gboolean
@@ -460,6 +480,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_FLOW_LABEL:
 		priv->flow_label = g_value_get_uint (value);
 		break;
+	case PROP_MTU:
+		priv->mtu = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -506,6 +529,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_FLOW_LABEL:
 		g_value_set_uint (value, priv->flow_label);
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, priv->mtu);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -720,5 +746,22 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *setting_class)
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPTunel:mtu:
+	 *
+	 * If non-zero, only transmit packets of the specified size or smaller,
+	 * breaking larger packets up into multiple fragments.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MTU,
+		 g_param_spec_uint (NM_SETTING_IP_TUNNEL_MTU, "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 }
