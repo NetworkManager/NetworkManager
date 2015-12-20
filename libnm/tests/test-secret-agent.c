@@ -28,7 +28,7 @@
 #include <nm-secret-agent-old.h>
 
 #include "nm-default.h"
-#include "common.h"
+#include "nm-test-libnm-utils.h"
 
 #include "nm-test-utils.h"
 

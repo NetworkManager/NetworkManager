@@ -35,7 +35,7 @@
 
 #include "nm-default.h"
 #include "nm-remote-settings.h"
-#include "common.h"
+#include "nm-test-libnm-utils.h"
 
 #include "nm-test-utils.h"
 

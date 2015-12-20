@@ -22,6 +22,8 @@
 
 #include "nm-default.h"
 
+#include "nm-test-utils.h"
+
 typedef struct {
 	GDBusConnection *bus;
 	GDBusProxy *proxy;

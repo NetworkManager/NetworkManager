@@ -36,7 +36,7 @@
 
 #include "nm-test-utils.h"
 
-#include "common.h"
+#include "nm-test-libnm-utils.h"
 
 static GMainLoop *loop = NULL;
 static NMTestServiceInfo *sinfo;

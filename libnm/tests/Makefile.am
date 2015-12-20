@@ -26,18 +26,18 @@ endif
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \
-	common.c \
-	common.h \
+	$(top_builddir)/include/nm-test-utils-impl.c \
+	$(top_builddir)/include/nm-test-libnm-utils.h \
 	test-nm-client.c
 
 test_remote_settings_client_SOURCES = \
-	common.c \
-	common.h \
+	$(top_builddir)/include/nm-test-utils-impl.c \
+	$(top_builddir)/include/nm-test-libnm-utils.h \
 	test-remote-settings-client.c
 
 test_secret_agent_SOURCES = \
-	common.c \
-	common.h \
+	$(top_builddir)/include/nm-test-utils-impl.c \
+	$(top_builddir)/include/nm-test-libnm-utils.h \
 	test-secret-agent.c
 endif
 
