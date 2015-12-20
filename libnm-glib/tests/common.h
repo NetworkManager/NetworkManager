@@ -18,6 +18,8 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
+#include <NetworkManager.h>
+
 #include "nm-default.h"
 
 typedef struct {
@@ -29,3 +31,19 @@ typedef struct {
 
 NMTestServiceInfo *nm_test_service_init (void);
 void nm_test_service_cleanup (NMTestServiceInfo *info);
+
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB)
+
+NMDevice *nm_test_service_add_device (NMTestServiceInfo *info,
+                                      NMClient *client,
+                                      const char *method,
+                                      const char *ifname);
+
+NMDevice * nm_test_service_add_wired_device (NMTestServiceInfo *sinfo,
+                                             NMClient *client,
+                                             const char *ifname,
+                                             const char *hwaddr,
+                                             const char **subchannels);
+
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
+

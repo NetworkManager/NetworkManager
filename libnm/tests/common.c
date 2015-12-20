@@ -120,6 +120,8 @@ nm_test_service_cleanup (NMTestServiceInfo *info)
 	g_free (info);
 }
 
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB)
+
 typedef struct {
 	GMainLoop *loop;
 	const char *ifname;
@@ -232,3 +234,5 @@ nm_test_service_add_wired_device (NMTestServiceInfo *sinfo, NMClient *client,
 {
 	return add_device_common (sinfo, client, "AddWiredDevice", ifname, hwaddr, subchannels);
 }
+
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB */

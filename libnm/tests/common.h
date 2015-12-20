@@ -32,6 +32,8 @@ typedef struct {
 NMTestServiceInfo *nm_test_service_init (void);
 void nm_test_service_cleanup (NMTestServiceInfo *info);
 
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB)
+
 NMDevice *nm_test_service_add_device (NMTestServiceInfo *info,
                                       NMClient *client,
                                       const char *method,
@@ -42,4 +44,6 @@ NMDevice * nm_test_service_add_wired_device (NMTestServiceInfo *sinfo,
                                              const char *ifname,
                                              const char *hwaddr,
                                              const char **subchannels);
+
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
 
