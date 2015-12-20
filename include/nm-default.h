@@ -28,6 +28,7 @@
 #define NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON       0x0002
 #define NM_NETWORKMANAGER_COMPILATION_LIB                 0x0004
 #define NM_NETWORKMANAGER_COMPILATION_SYSTEMD             0x0008
+#define NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY          0x0010
 
 #ifndef NETWORKMANAGER_COMPILATION
 /* For convenience, we don't require our Makefile.am to define
@@ -46,7 +47,7 @@
 
 /*****************************************************************************/
 
-#if (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB) || ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
 
 #include <glib/gi18n-lib.h>
 
@@ -54,7 +55,7 @@
 
 #include <glib/gi18n.h>
 
-#endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB || NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY */
 
 /*****************************************************************************/
 
