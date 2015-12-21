@@ -733,6 +733,45 @@ nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize
 	return dst;
 }
 
+/*****************************************************************************/
+
+inline static gboolean
+_nmtst_main_loop_run_timeout (gpointer user_data)
+{
+	GMainLoop **p_loop = user_data;
+
+	g_assert (p_loop);
+	g_assert (*p_loop);
+
+	g_main_loop_quit (*p_loop);
+	*p_loop = NULL;
+
+	return G_SOURCE_REMOVE;
+}
+
+inline static gboolean
+nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
+{
+	GSource *source = NULL;
+	guint id = 0;
+	GMainLoop *loopx = loop;
+
+	if (timeout_ms > 0) {
+		source = g_timeout_source_new (timeout_ms);
+		g_source_set_callback (source, _nmtst_main_loop_run_timeout, &loopx, NULL);
+		id = g_source_attach (source, g_main_loop_get_context (loop));
+		g_assert (id);
+		g_source_unref (source);
+	}
+
+	g_main_loop_run (loop);
+
+	/* if the timeout was reached, return FALSE. */
+	return loopx != NULL;
+}
+
+/*****************************************************************************/
+
 inline static const char *
 nmtst_get_sudo_cmd (void)
 {
