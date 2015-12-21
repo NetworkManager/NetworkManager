@@ -27,19 +27,16 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <NetworkManager.h>
 #include "nm-default.h"
 #include "nm-client.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wimax.h"
 
-#include "nm-test-utils.h"
-
 #include "nm-test-libnm-utils.h"
 
 static GMainLoop *loop = NULL;
-static NMTestServiceInfo *sinfo;
+static NMTstcServiceInfo *sinfo;
 
 /*******************************************************************/
 
@@ -184,7 +181,7 @@ test_device_added (void)
 	NMDevice *device;
 	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = test_client_new ();
 
 	devices = nm_client_get_devices (client);
@@ -224,7 +221,7 @@ test_device_added (void)
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -341,7 +338,7 @@ test_wifi_ap_added_removed (void)
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = test_client_new ();
 
 	/*************************************/
@@ -447,7 +444,7 @@ test_wifi_ap_added_removed (void)
 	g_free (expected_path);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -564,7 +561,7 @@ test_wimax_nsp_added_removed (void)
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = test_client_new ();
 
 	/*************************************/
@@ -670,7 +667,7 @@ test_wimax_nsp_added_removed (void)
 	g_free (expected_path);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -749,7 +746,7 @@ test_devices_array (void)
 	GError *error = NULL;
 	GVariant *ret;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = test_client_new ();
 
 	/*************************************/
@@ -833,7 +830,7 @@ test_devices_array (void)
 	g_free (paths[2]);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 static void
@@ -871,7 +868,7 @@ test_client_manager_running (void)
 	g_clear_error (&error);
 
 	/* Now start the test service. */
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client2 = test_client_new ();
 
 	/* client2 should know that NM is running, but the previously-created
@@ -889,7 +886,7 @@ test_client_manager_running (void)
 	g_source_remove (quit_id);
 
 	/* And kill it */
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 
 	g_assert (nm_client_get_manager_running (client1));
 

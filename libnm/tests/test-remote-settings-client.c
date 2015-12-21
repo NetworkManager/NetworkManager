@@ -24,14 +24,9 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <NetworkManager.h>
-
-#include "nm-default.h"
 #include "nm-test-libnm-utils.h"
 
-#include "nm-test-utils.h"
-
-static NMTestServiceInfo *sinfo;
+static NMTstcServiceInfo *sinfo;
 static NMClient *client = NULL;
 GDBusConnection *bus = NULL;
 NMRemoteConnection *remote = NULL;
@@ -517,7 +512,7 @@ main (int argc, char **argv)
 	bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
 	g_assert_no_error (error);
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
@@ -536,7 +531,7 @@ main (int argc, char **argv)
 
 	ret = g_test_run ();
 
-	nm_test_service_cleanup (sinfo);
+	nmtstc_service_cleanup (sinfo);
 	g_object_unref (client);
 	g_object_unref (bus);
 

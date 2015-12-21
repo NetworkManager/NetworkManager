@@ -24,15 +24,10 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <NetworkManager.h>
-
-#include "nm-default.h"
 #include "nm-test-libnm-utils.h"
 
-#include "nm-test-utils.h"
-
 static GMainLoop *loop = NULL;
-static NMTestServiceInfo *sinfo;
+static NMTstcServiceInfo *sinfo;
 
 /*******************************************************************/
 
@@ -74,7 +69,7 @@ test_device_added (void)
 	gboolean notified = FALSE;
 	GError *error = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -87,7 +82,7 @@ test_device_added (void)
 	                  &notified);
 
 	/* Tell the test service to add a new device */
-	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
 	/* coverity[loop_condition] */
 	while (!notified)
@@ -108,7 +103,7 @@ test_device_added (void)
 	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_SOFTWARE);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -166,7 +161,7 @@ test_device_added_signal_after_init (void)
 	guint result = 0;
 	GError *error = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -184,7 +179,7 @@ test_device_added_signal_after_init (void)
 	                  &result);
 
 	/* Tell the test service to add a new device */
-	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
 	/* Ensure the 'device-added' signal doesn't show up before
 	 * the 'Devices' property change notification */
@@ -207,7 +202,7 @@ test_device_added_signal_after_init (void)
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -314,13 +309,13 @@ test_wifi_ap_added_removed (void)
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
 	/*************************************/
 	/* Add the wifi device */
-	wifi = (NMDeviceWifi *) nm_test_service_add_device (sinfo, client, "AddWifiDevice", "wlan0");
+	wifi = (NMDeviceWifi *) nmtstc_service_add_device (sinfo, client, "AddWifiDevice", "wlan0");
 	g_assert (NM_IS_DEVICE_WIFI (wifi));
 
 	/*************************************/
@@ -406,7 +401,7 @@ test_wifi_ap_added_removed (void)
 	g_free (expected_path);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -513,13 +508,13 @@ test_wimax_nsp_added_removed (void)
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
 	/*************************************/
 	/* Add the wimax device */
-	wimax = (NMDeviceWimax *) nm_test_service_add_device (sinfo, client, "AddWimaxDevice", "wmx0");
+	wimax = (NMDeviceWimax *) nmtstc_service_add_device (sinfo, client, "AddWimaxDevice", "wmx0");
 	g_assert (NM_IS_DEVICE_WIMAX (wimax));
 
 	/*************************************/
@@ -605,7 +600,7 @@ test_wimax_nsp_added_removed (void)
 	g_free (expected_path);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -689,7 +684,7 @@ test_devices_array (void)
 	GError *error = NULL;
 	GVariant *ret;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 
 	/* Make sure that we test the async codepath in at least one test... */
 	nm_client_new_async (NULL, new_client_cb, &client);
@@ -698,9 +693,9 @@ test_devices_array (void)
 
 	/*************************************/
 	/* Add some devices */
-	wlan0 = nm_test_service_add_device (sinfo, client,"AddWifiDevice", "wlan0");
-	eth0 = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
-	eth1 = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth1");
+	wlan0 = nmtstc_service_add_device (sinfo, client,"AddWifiDevice", "wlan0");
+	eth0 = nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	eth1 = nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth1");
 
 	/* Ensure the devices now exist */
 	devices = nm_client_get_devices (client);
@@ -765,7 +760,7 @@ test_devices_array (void)
 	g_assert (device == eth1);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 static void
@@ -804,7 +799,7 @@ test_client_nm_running (void)
 	g_clear_error (&error);
 
 	/* Now start the test service. */
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client2 = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -823,7 +818,7 @@ test_client_nm_running (void)
 	g_source_remove (quit_id);
 
 	/* And kill it */
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 
 	g_assert (nm_client_get_nm_running (client1));
 
@@ -937,12 +932,12 @@ test_active_connections (void)
 	TestACInfo info = { loop, NULL, 0 };
 	GError *error = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
 	/* Tell the test service to add a new device */
-	device = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	device = nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
 	conn = nmtst_create_minimal_connection ("test-ac", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
@@ -979,7 +974,7 @@ test_active_connections (void)
 	assert_ac_and_device (client);
 	g_object_unref (client);
 
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 static void
@@ -1067,11 +1062,11 @@ test_activate_virtual (void)
 	TestConnectionInfo conn_info = { loop, NULL };
 	GError *error = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
-	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
 	conn = nmtst_create_minimal_connection ("test-ac", NULL, NM_SETTING_VLAN_SETTING_NAME, &s_con);
 	g_object_set (s_con,
@@ -1112,7 +1107,7 @@ test_activate_virtual (void)
 	g_object_unref (info.ac);
 	g_object_unref (client);
 
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 static void
@@ -1140,11 +1135,11 @@ test_activate_failed (void)
 	NMConnection *conn;
 	GError *error = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
-	device = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	device = nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
 	/* Note that test-networkmanager-service.py checks for this exact name */
 	conn = nmtst_create_minimal_connection ("object-creation-failed-test", NULL,
@@ -1157,7 +1152,7 @@ test_activate_failed (void)
 	g_object_unref (conn);
 	g_object_unref (client);
 
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 static void
@@ -1174,13 +1169,13 @@ test_device_connection_compatibility (void)
 	const char *hw_addr1 = "52:54:00:ab:db:23";
 	const char *hw_addr2 = "52:54:00:ab:db:24";
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
 	/* Create two devices */
-	device1 = nm_test_service_add_wired_device (sinfo, client, "eth0", hw_addr1, subchannels);
-	device2 = nm_test_service_add_wired_device (sinfo, client, "eth1", hw_addr2, NULL);
+	device1 = nmtstc_service_add_wired_device (sinfo, client, "eth0", hw_addr1, subchannels);
+	device2 = nmtstc_service_add_wired_device (sinfo, client, "eth1", hw_addr2, NULL);
 
 	g_assert_cmpstr (nm_device_get_hw_address (device1), ==, hw_addr1);
 	g_assert_cmpstr (nm_device_get_hw_address (device2), ==, hw_addr2);
@@ -1228,7 +1223,7 @@ test_device_connection_compatibility (void)
 	g_object_unref (conn);
 	g_object_unref (client);
 
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/

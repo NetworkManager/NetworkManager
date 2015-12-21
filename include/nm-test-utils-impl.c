@@ -53,10 +53,10 @@ name_exists (GDBusConnection *c, const char *name)
 	return exists;
 }
 
-NMTestServiceInfo *
-nm_test_service_init (void)
+NMTstcServiceInfo *
+nmtstc_service_init (void)
 {
-	NMTestServiceInfo *info;
+	NMTstcServiceInfo *info;
 	const char *args[2] = { TEST_NM_SERVICE, NULL };
 	GError *error = NULL;
 	int i;
@@ -98,7 +98,7 @@ nm_test_service_init (void)
 }
 
 void
-nm_test_service_cleanup (NMTestServiceInfo *info)
+nmtstc_service_cleanup (NMTstcServiceInfo *info)
 {
 	int i;
 
@@ -175,16 +175,16 @@ static GVariant *
 call_add_device (GDBusProxy *proxy, const char *method, const char *ifname, GError **error)
 {
 	return g_dbus_proxy_call_sync (proxy,
-	                              method,
-	                              g_variant_new ("(s)", ifname),
-	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
-	                              3000,
-	                              NULL,
-	                              error);
+	                               method,
+	                               g_variant_new ("(s)", ifname),
+	                               G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                               3000,
+	                               NULL,
+	                               error);
 }
 
 static NMDevice *
-add_device_common (NMTestServiceInfo *sinfo, NMClient *client,
+add_device_common (NMTstcServiceInfo *sinfo, NMClient *client,
                    const char *method, const char *ifname,
                    const char *hwaddr, const char **subchannels)
 {
@@ -221,16 +221,16 @@ add_device_common (NMTestServiceInfo *sinfo, NMClient *client,
 }
 
 NMDevice *
-nm_test_service_add_device (NMTestServiceInfo *sinfo, NMClient *client,
-                            const char *method, const char *ifname)
+nmtstc_service_add_device (NMTstcServiceInfo *sinfo, NMClient *client,
+                           const char *method, const char *ifname)
 {
 	return add_device_common (sinfo, client, method, ifname, NULL, NULL);
 }
 
 NMDevice *
-nm_test_service_add_wired_device (NMTestServiceInfo *sinfo, NMClient *client,
-                                  const char *ifname, const char *hwaddr,
-                                  const char **subchannels)
+nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo, NMClient *client,
+                                 const char *ifname, const char *hwaddr,
+                                 const char **subchannels)
 {
 	return add_device_common (sinfo, client, "AddWiredDevice", ifname, hwaddr, subchannels);
 }

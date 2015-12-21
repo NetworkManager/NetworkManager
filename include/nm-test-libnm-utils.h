@@ -15,12 +15,10 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 Red Hat, Inc.
+ * Copyright 2014 - 2015 Red Hat, Inc.
  */
 
-#include <NetworkManager.h>
-
-#include "nm-default.h"
+#include "NetworkManager.h"
 
 #include "nm-test-utils.h"
 
@@ -29,23 +27,23 @@ typedef struct {
 	GDBusProxy *proxy;
 	GPid pid;
 	int keepalive_fd;
-} NMTestServiceInfo;
+} NMTstcServiceInfo;
 
-NMTestServiceInfo *nm_test_service_init (void);
-void nm_test_service_cleanup (NMTestServiceInfo *info);
+NMTstcServiceInfo *nmtstc_service_init (void);
+void nmtstc_service_cleanup (NMTstcServiceInfo *info);
 
 #if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB)
 
-NMDevice *nm_test_service_add_device (NMTestServiceInfo *info,
-                                      NMClient *client,
-                                      const char *method,
-                                      const char *ifname);
+NMDevice *nmtstc_service_add_device (NMTstcServiceInfo *info,
+                                     NMClient *client,
+                                     const char *method,
+                                     const char *ifname);
 
-NMDevice * nm_test_service_add_wired_device (NMTestServiceInfo *sinfo,
-                                             NMClient *client,
-                                             const char *ifname,
-                                             const char *hwaddr,
-                                             const char **subchannels);
+NMDevice * nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo,
+                                            NMClient *client,
+                                            const char *ifname,
+                                            const char *hwaddr,
+                                            const char **subchannels);
 
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
 
