@@ -22,6 +22,8 @@
 
 #include "nm-test-utils.h"
 
+/*****************************************************************************/
+
 typedef struct {
 	GDBusConnection *bus;
 	GDBusProxy *proxy;
@@ -31,6 +33,21 @@ typedef struct {
 
 NMTstcServiceInfo *nmtstc_service_init (void);
 void nmtstc_service_cleanup (NMTstcServiceInfo *info);
+
+static inline void _nmtstc_auto_service_cleanup (NMTstcServiceInfo **info)
+{
+	if (info && *info) {
+		nmtstc_service_cleanup (*info);
+		*info = NULL;
+	}
+}
+
+#define NMTSTC_SERVICE_INFO_SETUP(sinfo) \
+	NM_PRAGMA_WARNING_DISABLE ("-Wunused-variable") \
+	__attribute__ ((cleanup(_nmtstc_auto_service_cleanup))) NMTstcServiceInfo *sinfo = nmtstc_service_init (); \
+	NM_PRAGMA_WARNING_REENABLE
+
+/*****************************************************************************/
 
 #if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB)
 
