@@ -437,8 +437,7 @@ main (int argc, char **argv)
 
 	sinfo = nmtstc_service_init ();
 
-	settings = nm_remote_settings_new (bus);
-	g_assert (settings != NULL);
+	settings = nmtstc_nm_remote_settings_new ();
 
 	/* FIXME: these tests assume that they get run in order, but g_test_run()
 	 * does not actually guarantee that!
