@@ -807,6 +807,49 @@ nmtst_reexec_sudo (void)
 	g_error (">> exec %s failed: %d - %s", __nmtst_internal.sudo_cmd, errsv, strerror (errsv));
 }
 
+/*****************************************************************************/
+
+inline static gsize
+nmtst_find_all_indexes (gpointer *elements,
+                        gsize n_elements,
+                        gpointer *needles,
+                        gsize n_needles,
+                        gboolean (*equal_fcn) (gpointer element, gpointer needle, gpointer user_data),
+                        gpointer user_data,
+                        gssize *out_idx)
+{
+	gsize i, j, k;
+	gsize found = 0;
+
+	for (i = 0; i < n_needles; i++) {
+		gssize idx = -1;
+
+		for (j = 0; j < n_elements; j++) {
+
+			/* no duplicates */
+			for (k = 0; k < i; k++) {
+				if (out_idx[k] == j)
+					goto next;
+			}
+
+			if (equal_fcn (elements[j], needles[i], user_data)) {
+				idx = j;
+				break;
+			}
+next:
+			;
+		}
+
+		out_idx[i] = idx;
+		if (idx >= 0)
+			found++;
+	}
+
+	return found;
+}
+
+/*****************************************************************************/
+
 #define __define_nmtst_static(NUM,SIZE) \
 inline static const char * \
 nmtst_static_##SIZE##_##NUM (const char *str) \
