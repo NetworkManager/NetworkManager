@@ -96,7 +96,7 @@ parent_hwaddr_changed (NMDevice *parent,
 	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
 	NMConnection *connection;
 	NMSettingWired *s_wired;
-	const char *cloned_mac = NULL;
+	const char *cloned_mac = NULL, *new_mac;
 
 	/* Never touch assumed devices */
 	if (nm_device_uses_assumed_connection (self))
@@ -112,9 +112,13 @@ parent_hwaddr_changed (NMDevice *parent,
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 
 	if (!cloned_mac) {
-		_LOGD (LOGD_VLAN, "parent hardware address changed");
-		nm_device_set_hw_addr (self, nm_device_get_hw_address (parent),
-		                       "set", LOGD_VLAN);
+		new_mac = nm_device_get_hw_address (parent);
+		_LOGD (LOGD_VLAN, "parent hardware address changed to %s%s%s",
+		       NM_PRINT_FMT_QUOTE_STRING (new_mac));
+		if (new_mac) {
+			nm_device_set_hw_addr (self, nm_device_get_hw_address (parent),
+			                       "set", LOGD_VLAN);
+		}
 	}
 }
 
