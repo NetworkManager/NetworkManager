@@ -268,6 +268,25 @@ nmtstc_nm_client_new (void)
 	return client;
 }
 
+NMRemoteSettings *
+nmtstc_nm_remote_settings_new (void)
+{
+	NMRemoteSettings *settings;
+	DBusGConnection *bus;
+	GError *error = NULL;
+
+	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+	g_assert (bus);
+
+	settings = nm_remote_settings_new (bus);
+	g_assert (settings);
+
+	dbus_g_connection_unref (bus);
+
+	return settings;
+}
+
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY */
 
 /*****************************************************************************/

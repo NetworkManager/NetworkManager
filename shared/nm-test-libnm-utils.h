@@ -67,8 +67,10 @@ NMDevice * nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo,
 #if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
 
 #include "nm-client.h"
+#include "nm-remote-settings.h"
 
 NMClient *nmtstc_nm_client_new (void);
+NMRemoteSettings *nmtstc_nm_remote_settings_new (void);
 
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY */
 
