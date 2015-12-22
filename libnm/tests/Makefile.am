@@ -1,8 +1,8 @@
 if ENABLE_TESTS
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
 	-I$(top_srcdir)/libnm-core \
@@ -26,18 +26,18 @@ endif
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \
-	$(top_builddir)/include/nm-test-utils-impl.c \
-	$(top_builddir)/include/nm-test-libnm-utils.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-nm-client.c
 
 test_remote_settings_client_SOURCES = \
-	$(top_builddir)/include/nm-test-utils-impl.c \
-	$(top_builddir)/include/nm-test-libnm-utils.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-remote-settings-client.c
 
 test_secret_agent_SOURCES = \
-	$(top_builddir)/include/nm-test-utils-impl.c \
-	$(top_builddir)/include/nm-test-libnm-utils.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-secret-agent.c
 endif
 

@@ -1,8 +1,8 @@
 if ENABLE_TESTS
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
@@ -24,8 +24,8 @@ TESTS = test-nm-client test-remote-settings-client
 ####### NMClient and non-settings tests #######
 
 test_nm_client_SOURCES = \
-	$(top_builddir)/include/nm-test-utils-impl.c \
-	$(top_builddir)/include/nm-test-libnm-utils.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-nm-client.c
 
 test_nm_client_LDADD = \
@@ -37,8 +37,8 @@ test_nm_client_LDADD = \
 ####### remote settings client test #######
 
 test_remote_settings_client_SOURCES = \
-	$(top_builddir)/include/nm-test-utils-impl.c \
-	$(top_builddir)/include/nm-test-libnm-utils.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-remote-settings-client.c
 
 test_remote_settings_client_LDADD = \

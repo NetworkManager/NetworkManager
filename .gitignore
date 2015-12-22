@@ -137,7 +137,7 @@ test-*.trs
 /examples/C/qt/list-connections
 /examples/C/qt/change-ipv4-addresses
 
-/include/nm-version-macros.h
+/shared/nm-version-macros.h
 
 /introspection/all.xml
 /introspection/nmdbus-*.c

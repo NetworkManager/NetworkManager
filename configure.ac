@@ -1007,8 +1007,8 @@ AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$h
 
 AC_CONFIG_FILES([
 Makefile
-include/Makefile
-include/nm-version-macros.h
+shared/Makefile
+shared/nm-version-macros.h
 src/Makefile
 src/tests/Makefile
 src/tests/config/Makefile

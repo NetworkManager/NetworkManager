@@ -6,7 +6,7 @@ core = $(top_srcdir)/libnm-core
 core_build = $(top_builddir)/libnm-core
 
 libnm_core_headers =				\
-	$(top_builddir)/include/nm-version-macros.h \
+	$(top_builddir)/shared/nm-version-macros.h \
 	$(core_build)/nm-core-enum-types.h	\
 	$(core)/nm-connection.h			\
 	$(core)/nm-core-types.h			\
