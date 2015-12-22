@@ -40,34 +40,6 @@ static NMTstcServiceInfo *sinfo;
 
 /*******************************************************************/
 
-static NMClient *
-test_client_new (void)
-{
-	NMClient *client;
-	DBusGConnection *bus;
-	GError *error = NULL;
-	gboolean success;
-
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-	g_assert_no_error (error);
-
-	client = g_object_new (NM_TYPE_CLIENT,
-	                       NM_OBJECT_DBUS_CONNECTION, bus,
-	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
-	                       NULL);
-	g_assert (client != NULL);
-
-	dbus_g_connection_unref (bus);
-
-	success = g_initable_init (G_INITABLE (client), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
-
-	return client;
-}
-
-/*******************************************************************/
-
 static gboolean
 loop_quit (gpointer user_data)
 {
@@ -182,7 +154,7 @@ test_device_added (void)
 	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
 
 	sinfo = nmtstc_service_init ();
-	client = test_client_new ();
+	client = nmtstc_nm_client_new ();
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices == NULL);
@@ -339,7 +311,7 @@ test_wifi_ap_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nmtstc_service_init ();
-	client = test_client_new ();
+	client = nmtstc_nm_client_new ();
 
 	/*************************************/
 	/* Add the wifi device */
@@ -562,7 +534,7 @@ test_wimax_nsp_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nmtstc_service_init ();
-	client = test_client_new ();
+	client = nmtstc_nm_client_new ();
 
 	/*************************************/
 	/* Add the wimax device */
@@ -747,7 +719,7 @@ test_devices_array (void)
 	GVariant *ret;
 
 	sinfo = nmtstc_service_init ();
-	client = test_client_new ();
+	client = nmtstc_nm_client_new ();
 
 	/*************************************/
 	/* Add some devices */
@@ -852,7 +824,7 @@ test_client_manager_running (void)
 	int running_changed = 0;
 	GError *error = NULL;
 
-	client1 = test_client_new ();
+	client1 = nmtstc_nm_client_new ();
 
 	g_assert (!nm_client_get_manager_running (client1));
 	g_assert_cmpstr (nm_client_get_version (client1), ==, NULL);
@@ -869,7 +841,7 @@ test_client_manager_running (void)
 
 	/* Now start the test service. */
 	sinfo = nmtstc_service_init ();
-	client2 = test_client_new ();
+	client2 = nmtstc_nm_client_new ();
 
 	/* client2 should know that NM is running, but the previously-created
 	 * client1 hasn't gotten the news yet.
