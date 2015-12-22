@@ -1261,7 +1261,7 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
-#if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)
+#if (defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)) || (defined(NM_CONNECTION_H))
 
 inline static NMConnection *
 nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)
@@ -1279,7 +1279,13 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 		uuid = uuid_free = nm_utils_uuid_generate ();
 
 	if (type) {
-		GType type_g = nm_setting_lookup_type (type);
+		GType type_g;
+
+#if defined(__NM_SIMPLE_CONNECTION_H__)
+		type_g = nm_setting_lookup_type (type);
+#else
+		type_g = nm_connection_lookup_setting_type (type);
+#endif
 
 		g_assert (type_g != G_TYPE_INVALID);
 
@@ -1287,7 +1293,12 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 		g_assert (NM_IS_SETTING (s_base));
 	}
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
 	con = nm_simple_connection_new ();
+#else
+	con = nm_connection_new ();
+#endif
+
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
 	g_object_set (s_con,
@@ -1358,7 +1369,11 @@ _nmtst_connection_duplicate_and_normalize (NMConnection *connection, ...)
 
 	g_assert (NM_IS_CONNECTION (connection));
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
 	connection = nm_simple_connection_new_clone (connection);
+#else
+	connection = nm_connection_duplicate (connection);
+#endif
 
 	va_start (args, connection);
 	was_modified = _nmtst_connection_normalize_v (connection, args);
@@ -1440,7 +1455,11 @@ nmtst_assert_connection_verifies_without_normalization (NMConnection *con)
 
 	g_assert (NM_IS_CONNECTION (con));
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
 	clone = nm_simple_connection_new_clone (con);
+#else
+	clone = nm_connection_duplicate (con);
+#endif
 
 	success = nm_connection_verify (con, &error);
 	g_assert_no_error (error);
