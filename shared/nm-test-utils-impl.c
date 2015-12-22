@@ -236,3 +236,38 @@ nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo, NMClient *client,
 }
 
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
+
+/*****************************************************************************/
+
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+
+NMClient *
+nmtstc_nm_client_new (void)
+{
+	NMClient *client;
+	DBusGConnection *bus;
+	GError *error = NULL;
+	gboolean success;
+
+	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+	g_assert (bus);
+
+	client = g_object_new (NM_TYPE_CLIENT,
+	                       NM_OBJECT_DBUS_CONNECTION, bus,
+	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+	                       NULL);
+	g_assert (client != NULL);
+
+	dbus_g_connection_unref (bus);
+
+	success = g_initable_init (G_INITABLE (client), NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+
+	return client;
+}
+
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY */
+
+/*****************************************************************************/

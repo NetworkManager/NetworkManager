@@ -64,3 +64,11 @@ NMDevice * nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo,
 
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
 
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+
+#include "nm-client.h"
+
+NMClient *nmtstc_nm_client_new (void);
+
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY */
+
