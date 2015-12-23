@@ -2739,7 +2739,7 @@ delayed_action_to_string_full (DelayedActionType action_type, gpointer user_data
 			gint64 timeout = data->timeout_abs_ns - nm_utils_get_monotonic_timestamp_ns ();
 			char b[255];
 
-			nm_utils_strbuf_append (&buf, &buf_size, " (seq %u, timeout in %s%ld.%09ld%s%s)",
+			nm_utils_strbuf_append (&buf, &buf_size, " (seq %u, timeout in %s%"G_GINT64_FORMAT".%09"G_GINT64_FORMAT"%s%s)",
 			                        data->seq_number,
 			                        timeout < 0 ? "-" : "",
 			                        (timeout < 0 ? -timeout : timeout) / NM_UTILS_NS_PER_SECOND,
