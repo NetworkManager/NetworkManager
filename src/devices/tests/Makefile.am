@@ -23,7 +23,8 @@ DEVICES_LDADD = \
 @GNOME_CODE_COVERAGE_RULES@
 
 noinst_PROGRAMS = \
-	test-lldp
+	test-lldp \
+	test-arping
 
 test_lldp_SOURCES = \
 	test-lldp.c \
@@ -37,6 +38,19 @@ test_lldp_CPPFLAGS = \
 
 test_lldp_LDADD = $(DEVICES_LDADD)
 
+test_arping_SOURCES = \
+	test-arping.c \
+	../nm-arping-manager.c \
+	$(top_srcdir)/src/platform/tests/test-common.c
+
+test_arping_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(top_srcdir)/src/platform/tests \
+	-DSETUP=nm_linux_platform_setup
+
+test_arping_LDADD = $(DEVICES_LDADD)
+
 @VALGRIND_RULES@
 TESTS = \
-	test-lldp
+	test-lldp \
+	test-arping
