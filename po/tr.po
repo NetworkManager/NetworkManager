@@ -55,7 +55,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/agent.c:60
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli agent polkit { help }\n"
 "\n"
@@ -168,9 +168,9 @@ msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr "geçersiz önek '%s'; <1-%d> izin veriliyor"
 
 #: ../clients/cli/common.c:387
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "geçersiz IP adresi: %s"
 
 #: ../clients/cli/common.c:451
 #, c-format
@@ -186,9 +186,9 @@ msgid "invalid metric '%s'"
 msgstr "geçersiz metrik '%s'"
 
 #: ../clients/cli/common.c:468
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "geçersiz seçenek '%s'"
+msgstr "geçersiz yönlendirme: %s"
 
 #: ../clients/cli/common.c:480
 msgid "default route cannot be added (NetworkManager handles it by itself)"
@@ -545,9 +545,8 @@ msgid "SIM PIN was incorrect"
 msgstr "SIM PIN hatalı"
 
 #: ../clients/cli/common.c:727
-#, fuzzy
 msgid "New connection activation was enqueued"
-msgstr "Hata: Bağlantı etkinleştirilemedi."
+msgstr "Yeni bağlantı etkinleştirme kuyruğa eklendi"
 
 #: ../clients/cli/common.c:730
 #, fuzzy
@@ -643,9 +642,8 @@ msgid "Connection (name, UUID, or path): "
 msgstr "Bağlantı (isim, UUID veya yol): "
 
 #: ../clients/cli/connections.c:53
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
-msgstr "Bağlantı (isim, UUID veya yol): "
+msgstr "Bağlantı(lar) (isim, UUID veya yol): "
 
 #. 0
 #: ../clients/cli/connections.c:61 ../clients/cli/connections.c:174
@@ -999,7 +997,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:316
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
 "\n"
@@ -1398,9 +1396,9 @@ msgid "VPN disconnected"
 msgstr "VPN bağlı değil"
 
 #: ../clients/cli/connections.c:640
-#, fuzzy, c-format
+#, c-format
 msgid "Error updating secrets for %s: %s\n"
-msgstr "bağ önbelleğinin güncellenmesinde hata: %s"
+msgstr "%s için gizli bilgi güncellenirken hata: %s\n"
 
 #: ../clients/cli/connections.c:660
 msgid "Connection profile details"
@@ -1610,9 +1608,9 @@ msgid "neither a valid connection nor device given"
 msgstr "geçerli bağlantı veya aygıt verilmedi"
 
 #: ../clients/cli/connections.c:2165
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection '%s' does not exist."
-msgstr "Hata: bağlantı geçerli değil: %s\n"
+msgstr "Hata: '%s' bağlantısı mevcut değil."
 
 #: ../clients/cli/connections.c:2211 ../clients/cli/devices.c:1238
 #: ../clients/cli/devices.c:2042 ../clients/cli/devices.c:2436
@@ -1626,14 +1624,14 @@ msgid "preparing"
 msgstr "hazırlanıyor"
 
 #: ../clients/cli/connections.c:2259
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "'%s' (%s) bağlantısı başarıyla güncellendi.\n"
+msgstr "'%s' (%s) bağlantısı başarıyla silindi.\n"
 
 #: ../clients/cli/connections.c:2275
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "Bağlantı başarıyla etkinleştirildi (D-Bus etkin yolu: %s)\n"
+msgstr "'%s' bağlantı başarıyla kapatıldı (D-Bus etkin yolu: %s)\n"
 
 #: ../clients/cli/connections.c:2347 ../clients/cli/connections.c:9006
 #: ../clients/cli/connections.c:9111
@@ -1642,19 +1640,19 @@ msgid "Error: No connection specified."
 msgstr "Hata: Bağlantı belirtilmedi."
 
 #: ../clients/cli/connections.c:2379
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "Hata: %s etkin bir bağlantı değil."
+msgstr "Hata: '%s' etkin bir bağlantı değil.\n"
 
 #: ../clients/cli/connections.c:2380 ../clients/cli/connections.c:9035
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all active connections found."
-msgstr "Hata: %s etkin bir bağlantı değil."
+msgstr "Hata: tüm etkin bağlantılar bulunamadı."
 
 #: ../clients/cli/connections.c:2389
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no active connection provided."
-msgstr "Hata: %s - böyle bir bağlantı profili yok."
+msgstr "Hata: etkin bağlantı sağlanmadı."
 
 #: ../clients/cli/connections.c:2708 ../clients/cli/utils.c:569
 #, c-format
@@ -1732,18 +1730,16 @@ msgstr "Hata: '%s': '%s' geçerli değil; <%u-%u> kullanın."
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:3205
-#, fuzzy, c-format
+#, c-format
 msgid "There is %d optional argument for '%s' connection type.\n"
 msgid_plural "There are %d optional arguments for '%s' connection type.\n"
-msgstr[0] "'%s' bağlantı türü için %d isteğe bağlı seçenek mevcut.\n"
-msgstr[1] "'%s' bağlantı türü için %d isteğe bağlı seçenek mevcut.\n"
+msgstr[0] "%d isteğe bağlı seçenek '%s' bağlantı türü için mevcut.\n"
 
 #: ../clients/cli/connections.c:3208
-#, fuzzy, c-format
+#, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
 msgstr[0] "Bunu sağlamak istiyor musunuz? %s"
-msgstr[1] "Bunları sağlamak istiyor musunuz? %s"
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3225
@@ -2063,24 +2059,22 @@ msgid "ADSL encapsulation %s"
 msgstr "DSL bağlantısı %d"
 
 #: ../clients/cli/connections.c:3963
-#, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]: "
-msgstr "IPv4 adresi (IP[/plen] [ağ geçidi]) [hiçbiri]: "
+msgstr "IPv4 adresi (IP[/plen]) [hiçbiri]: "
 
 #: ../clients/cli/connections.c:3965
-#, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]: "
-msgstr "IPv6 adresi (IP[/plen] [ağ geçidi]) [hiçbiri]: "
+msgstr "IPv6 adresi (IP[/plen]) [hiçbiri]: "
 
 #: ../clients/cli/connections.c:3979
-#, fuzzy, c-format
+#, c-format
 msgid "  Address successfully added: %s\n"
-msgstr "  Adres başarıyla eklendi: %s %s\n"
+msgstr "  Adres başarıyla eklendi: %s\n"
 
 #: ../clients/cli/connections.c:3981
-#, fuzzy, c-format
+#, c-format
 msgid "  Warning: address already present: %s\n"
-msgstr "  Uyarı: adres zaten var: %s %s\n"
+msgstr "  Uyarı: adres zaten var: %s\n"
 
 #: ../clients/cli/connections.c:3983
 #, c-format
@@ -2094,19 +2088,17 @@ msgid "Error: "
 msgstr "Hata: "
 
 #: ../clients/cli/connections.c:4005
-#, fuzzy
 msgid "IPv4 gateway [none]: "
-msgstr "IPv4 adresi (IP[/plen] [ağ geçidi]) [hiçbiri]: "
+msgstr "IPv4 ağ geçidi [hiçbiri]: "
 
 #: ../clients/cli/connections.c:4008
-#, fuzzy
 msgid "IPv6 gateway [none]: "
-msgstr "IPv6 adresi (IP[/plen] [ağ geçidi]) [hiçbiri]: "
+msgstr "IPv6 ağ geçidi [hiçbiri]: "
 
 #: ../clients/cli/connections.c:4028
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid gateway address '%s'\n"
-msgstr "Hata: geçersiz parametre '%s'\n"
+msgstr "Hata: geçersiz ağ geçidi adresi '%s'\n"
 
 #. Ask for IP addresses
 #: ../clients/cli/connections.c:4041
@@ -2273,32 +2265,32 @@ msgstr "Hata: '%s' geçerli bir bağlantı türü değil."
 #: ../clients/cli/connections.c:5413
 #, c-format
 msgid "Error: IPv4 gateway specified without IPv4 addresses"
-msgstr ""
+msgstr "Hata: IPv4 ağ geçidi IPv4 adresi olmadan belirtilmiş"
 
 #: ../clients/cli/connections.c:5417
-#, fuzzy, c-format
+#, c-format
 msgid "Error: multiple IPv4 gateways specified"
-msgstr "Hata: geçerli bir değiştirge belirtilmedi."
+msgstr "Hata: birden çok IPv4 ağ geçidi belirtildi"
 
 #: ../clients/cli/connections.c:5421
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid IPv4 gateway '%s'"
-msgstr "geçersiz ağ geçidi '%s'"
+msgstr "Hata: geçersiz IPv4 ağ geçidi '%s'"
 
 #: ../clients/cli/connections.c:5446
 #, c-format
 msgid "Error: IPv6 gateway specified without IPv6 addresses"
-msgstr ""
+msgstr "Hata: IPv6 ağ geçidi IPv6 adresi olmadan belirtilmiş"
 
 #: ../clients/cli/connections.c:5450
-#, fuzzy, c-format
+#, c-format
 msgid "Error: multiple IPv6 gateways specified"
-msgstr "Hata: geçerli bir değiştirge belirtilmedi."
+msgstr "Hata: birden çok IPv6 ağ geçidi belirtildi"
 
 #: ../clients/cli/connections.c:5454
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid IPv6 gateway '%s'"
-msgstr "geçersiz ağ geçidi '%s'"
+msgstr "Hata: Geçersiz IPv6 ağ geçidi '%s'"
 
 #: ../clients/cli/connections.c:5514
 #, c-format
@@ -3186,9 +3178,9 @@ msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Hata: şuradan bir değer silme başarısız %s.%s: %s."
 
 #: ../clients/cli/connections.c:8971
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections deleted."
-msgstr "Hata: Bağlantı belirtilmedi."
+msgstr "Hata: tüm bağlantılar silinmedi."
 
 #: ../clients/cli/connections.c:8972
 #, c-format
@@ -3196,14 +3188,14 @@ msgid "Error: Connection deletion failed: %s"
 msgstr "Hata: Bağlantı silinemedi: %s"
 
 #: ../clients/cli/connections.c:9034
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown connection '%s'\n"
-msgstr "Hata: bilinmeyen bağlantı: %s\n"
+msgstr "Hata: bilinmeyen bağlantı '%s'\n"
 
 #: ../clients/cli/connections.c:9048
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no connection provided."
-msgstr "Hata: Bağlantı belirtilmedi."
+msgstr "Hata: hiçbir bağlantı sağlanmadı."
 
 #. truncate trailing ", "
 #: ../clients/cli/connections.c:9073
@@ -3237,9 +3229,8 @@ msgid "Interface: "
 msgstr "Arayüz: "
 
 #: ../clients/cli/devices.c:39
-#, fuzzy
 msgid "Interface(s): "
-msgstr "Arayüz: "
+msgstr "Arayüz(ler): "
 
 #. 3
 #. 19
@@ -3255,9 +3246,8 @@ msgstr "CON-UUID"
 
 #. 2
 #: ../clients/cli/devices.c:61
-#, fuzzy
 msgid "NM-TYPE"
-msgstr "TÜR"
+msgstr "NM-TÜRÜ"
 
 #. 3
 #: ../clients/cli/devices.c:62
@@ -3330,7 +3320,7 @@ msgstr "AYGIT-YAZILIMI-EKSİK"
 #. 18
 #: ../clients/cli/devices.c:77
 msgid "PHYS-PORT-ID"
-msgstr ""
+msgstr "FİZ-PORT-KİMLİĞİ"
 
 #. 22
 #: ../clients/cli/devices.c:81
@@ -3401,12 +3391,12 @@ msgstr "ADHOC"
 #. 7
 #: ../clients/cli/devices.c:129
 msgid "2GHZ"
-msgstr ""
+msgstr "2GHZ"
 
 #. 8
 #: ../clients/cli/devices.c:130
 msgid "5GHZ"
-msgstr ""
+msgstr "5GHZ"
 
 #. 0
 #: ../clients/cli/devices.c:139
@@ -3513,7 +3503,7 @@ msgstr "İKİNCİLLER"
 #. 0
 #: ../clients/cli/devices.c:202
 msgid "PARENT"
-msgstr ""
+msgstr "PARENT"
 
 #. 1
 #: ../clients/cli/devices.c:203
@@ -3695,7 +3685,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:328
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -3708,15 +3698,16 @@ msgid ""
 msgstr ""
 "Kullanım: nmcli device disconnect { DEĞİŞKENLER | help }\n"
 "\n"
-"DEĞİŞKENLER := <ifname>\n"
+"DEĞİŞKENLER := <ifname>...\n"
 "\n"
-"Aygıtı ayır.\n"
-"Bu komut cihazı ayırır ve otomatik bağlanmaları önler\n"
-"el ile bağlantıları hariç.\n"
+"Aygıtların bağlantısını kes.\n"
+"Bu komut cihazın bağlantısını keser ve kullanıcı müdahalesi ya da elle "
+"müdahale\n"
+"olmaksızın otomatik bağlanmaları önler.\n"
 "\n"
 
 #: ../clients/cli/devices.c:340
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -3730,11 +3721,11 @@ msgid ""
 msgstr ""
 "Kullanım: nmcli device delete { DEĞİŞKENLER | help }\n"
 "\n"
-"DEĞİŞKENLER := <ifname>\n"
+"DEĞİŞKENLER := <ifname>...\n"
 "\n"
 "Yazılımsal aygıtları siler.\n"
 "Bu komut arayüzleri siler. Sadece yazılımsal aygıtlar için çalışır\n"
-"(köprüler, atlamalar). Donanımsal aygıtlar bu komut kullanılarak\n"
+"(köprüler, atlamalar, vb.). Donanımsal aygıtlar bu komut kullanılarak\n"
 "silinemezler.\n"
 "\n"
 
@@ -3933,9 +3924,9 @@ msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "'%s' aygıtı '%s' ile başarıyla etkinleştirildi.\n"
 
 #: ../clients/cli/devices.c:1394
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection activation failed: (%d) %s.\n"
-msgstr "Hata: Bağlantı etkinleştirilemedi: (%d) %s."
+msgstr "Hata: Bağlantı etkinleştirilemedi: (%d) %s.\n"
 
 #: ../clients/cli/devices.c:1428
 #, c-format
@@ -3982,64 +3973,64 @@ msgstr "Hata: fazladan değişken olamaz: '%s'."
 
 #: ../clients/cli/devices.c:1676 ../clients/cli/devices.c:1691
 #: ../clients/cli/devices.c:1755
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully disconnected.\n"
-msgstr "Başarılı: '%s' aygıtının bağlantısı başarıyla kesildi."
+msgstr "'%s' aygıtının bağlantısı başarıyla kesildi.\n"
 
 #: ../clients/cli/devices.c:1679
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully removed.\n"
-msgstr "'%s' aygıtı '%s' ile başarıyla etkinleştirildi.\n"
+msgstr "'%s' aygıtı başarıyla kaldırıldı.\n"
 
 #: ../clients/cli/devices.c:1739
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices disconnected."
-msgstr "Hata: Bağlantı etkinleştirilemedi: aygıt bağlantısı kesilmiş"
+msgstr "Hata: tüm aygıtların bağlantısı kesilemedi."
 
 #: ../clients/cli/devices.c:1740
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
-msgstr "Hata: '%s' aygıtının (%s) bağlantısı kesilemedi: %s"
+msgstr "Hata: '%s' aygıtının (%s) bağlantısı kesilemedi: %s\n"
 
 #: ../clients/cli/devices.c:1807 ../clients/cli/devices.c:1929
 #, c-format
 msgid "Warning: argument '%s' is duplicated.\n"
-msgstr ""
+msgstr "Uyarı: '%s' argümanı tekrarlanmış.\n"
 
 #: ../clients/cli/devices.c:1809 ../clients/cli/devices.c:1931
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "Hata: '%s' aygıtı bulunamadı."
+msgstr "Hata: '%s' aygıtı bulunamadı.\n"
 
 #: ../clients/cli/devices.c:1810 ../clients/cli/devices.c:1932
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices found."
-msgstr "Hata: Uygun bir aygıt bulunamadı."
+msgstr "Hata: tüm aygıtlar bulunamadı."
 
 #: ../clients/cli/devices.c:1820 ../clients/cli/devices.c:1942
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no valid device provided."
-msgstr "Hata: geçerli bir değiştirge belirtilmedi."
+msgstr "Hata: hiçbir etkin aygıt sağlanmadı."
 
 #: ../clients/cli/devices.c:1864
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices deleted."
-msgstr "Hata: Uygun bir aygıt bulunamadı."
+msgstr "Hata: tüm aygıtlar silinmedi."
 
 #: ../clients/cli/devices.c:1865
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
-msgstr "Hata: '%s' aygıtının (%s) silinmesi başarısız: %s"
+msgstr "Hata: '%s' aygıtının (%s) silinmesi başarısız oldu: %s\n"
 
 #: ../clients/cli/devices.c:1923
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' is a hardware device. It can't be deleted.\n"
-msgstr "Hata: '%s' aygıtı bir donanımsay aygıt. Silinemedi."
+msgstr "Hata: '%s' aygıtı, donanımsal bir aygıttır; silinemez.\n"
 
 #: ../clients/cli/devices.c:1925
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices valid."
-msgstr "Hata: Uygun bir aygıt bulunamadı."
+msgstr "Hata: tüm aygıtlar geçerli değil."
 
 #: ../clients/cli/devices.c:2023
 msgid "Wi-Fi scan list"
@@ -4056,11 +4047,13 @@ msgid "Error: Access point with bssid '%s' not found."
 msgstr "Hata: '%s' bssid'li erişim noktası bulunamadı."
 
 #: ../clients/cli/devices.c:2130
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
 "NetworkManager Wi-Fi plugin."
-msgstr "Hata: '%s' aygıtı bir Wi-Fi aygıtı değil."
+msgstr ""
+"Hata: '%s' aygıtı bir Wi-Fi aygıtı olarak tanınmadı; NetworkManager Wi-Fi "
+"eklentisini kontrol edin."
 
 #: ../clients/cli/devices.c:2132 ../clients/cli/devices.c:2464
 #: ../clients/cli/devices.c:2695
@@ -4992,14 +4985,14 @@ msgid "'%d' is not valid; use <%d-%d>"
 msgstr "'%d' geçerli değil, <%d-%d> kullanın"
 
 #: ../clients/cli/settings.c:2075
-#, fuzzy, c-format
+#, c-format
 msgid "'%lld' is not valid; use <%lld-%lld>"
-msgstr "'%d' geçerli değil, <%d-%d> kullanın"
+msgstr "'%lld' geçerli değil, <%lld-%lld> kullanın"
 
 #: ../clients/cli/settings.c:2097
-#, fuzzy, c-format
+#, c-format
 msgid "'%u' is not valid; use <%u-%u>"
-msgstr "'%u' geçerli değil; <%d-%d> kullanın"
+msgstr "'%u' geçerli değil; <%u-%u> kullanın"
 
 #: ../clients/cli/settings.c:2136
 #, fuzzy, c-format
@@ -5183,6 +5176,11 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/cacert.crt\n"
 msgstr ""
+"CA sertifikasının yolunu girin (tercihen file:// şeklinde).\n"
+"  [file://]<dosya yolu>\n"
+"nmcli'nin sertifikaların ham veri olarak tanımlanmasını desteklemediğini "
+"unutmayın.\n"
+"Örnek: /home/cimrman/cacert.crt\n"
 
 #: ../clients/cli/settings.c:3012
 #, c-format
@@ -5196,6 +5194,11 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/jara.crt\n"
 msgstr ""
+"İstemci sertifikasının yolunu girin (tercihen file:// şeklinde).\n"
+"  [file://]<dosya yolu>\n"
+"nmcli'nin sertifikaların ham veri olarak tanımlanmasını desteklemediğini "
+"unutmayın.\n"
+"Örnek: /home/cimrman/jara.crt\n"
 
 #: ../clients/cli/settings.c:3040
 msgid ""
@@ -5206,6 +5209,12 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/ca-zweite-phase.crt\n"
 msgstr ""
+"İç kimlik kanıtlaması için CA sertifikasının yolunu girin (tercihen file:// "
+"şeklinde).\n"
+"  [file://]<dosya yolu>\n"
+"nmcli'nin sertifikaların ham veri olarak tanımlanmasını desteklemediğini "
+"unutmayın.\n"
+"Örnek: /home/cimrman/ca-zweite-phase.crt\n"
 
 #: ../clients/cli/settings.c:3060
 #, c-format
@@ -5221,9 +5230,14 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/jara-zweite-phase.crt\n"
 msgstr ""
+"İç kimlik kanıtlaması için istemci sertifikasının yolunu girin (tercihen "
+"file:// şeklinde).\n"
+"  [file://]<dosya yolu>\n"
+"nmcli'nin sertifikaların ham veri olarak tanımlanmasını desteklemediğini "
+"unutmayın.\n"
+"Örnek: /home/cimrman/jara-zweite-phase.crt\n"
 
 #: ../clients/cli/settings.c:3096
-#, fuzzy
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5231,8 +5245,10 @@ msgid ""
 "Example: /home/cimrman/jara-priv-key Dardanely\n"
 msgstr ""
 "Gizli anahtarın yolunu ve parolasını girin (henüz ayarlamadıysanız):\n"
-"  <dosya yolu> [<parola>]\n"
-"Örneğin: /home/ali/gizli-anahtar Parolam123\n"
+"  [file://]<dosya yolu> [<parola>]\n"
+"nmcli'nin sertifikaların ham veri olarak tanımlanmasını desteklemediğini "
+"unutmayın.\n"
+"Örnek: /home/cimrman/jara-priv-key Dardanely\n"
 
 #: ../clients/cli/settings.c:3167
 msgid ""
@@ -5335,7 +5351,6 @@ msgid "the property doesn't contain IP address '%s'"
 msgstr "özellik IP adresi '%s' içermiyor"
 
 #: ../clients/cli/settings.c:3557
-#, fuzzy
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5344,15 +5359,15 @@ msgid ""
 "Example: 192.168.1.5/24, 10.0.0.11/24\n"
 msgstr ""
 "IPv4 adresleri listesini şu biçimde girin:\n"
-"  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
-"Eksik prefix var ise varsayılan olarak 32 kullanılır.\n"
+"  ip[/ön ek], ip[/ön ek],...\n"
+"Eksik ön ek var ise varsayılan olarak 32 kullanılır.\n"
 "\n"
-"Örneğin: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
+"Örneğin: 192.168.1.5/24, 10.0.0.11/24\n"
 
 #: ../clients/cli/settings.c:3573 ../clients/cli/settings.c:3848
-#, fuzzy, c-format
+#, c-format
 msgid "invalid gateway address '%s'"
-msgstr "geçersiz ağ geçidi '%s'"
+msgstr "geçersiz ağ geçidi adresi '%s'"
 
 #: ../clients/cli/settings.c:3628 ../clients/cli/settings.c:3903
 #, c-format
@@ -5360,7 +5375,6 @@ msgid "the property doesn't contain route '%s'"
 msgstr "özellik '%s' yönlendirmesini içermiyor"
 
 #: ../clients/cli/settings.c:3641
-#, fuzzy
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5375,9 +5389,9 @@ msgstr ""
 "IPv4 yönlendirmelerinin listesini girin, şu biçimde:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
 "\n"
-"Eksik önek(prefix) 32 olarak kabul edilir.\n"
-"Eksik next-hop(sonraki-atlama) 0.0.0.0. olarak kabul edilir \n"
-"Eksik metric(ölçü) ya da 0 değeri varsayılan olarak kabul edilir (NM/kernel "
+"Eksik önek 32 olarak kabul edilir.\n"
+"Eksik sonraki-atlama 0.0.0.0. olarak kabul edilir \n"
+"Eksik metrik ya da 0 değeri varsayılan olarak kabul edilir (NM/kernel "
 "varsayılan değeri ayarlar).\n"
 "\n"
 "Örneğin: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
@@ -5409,7 +5423,6 @@ msgstr ""
 "Örneğin: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
 #: ../clients/cli/settings.c:3832
-#, fuzzy
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5418,14 +5431,12 @@ msgid ""
 "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 msgstr ""
 "IPv6 adresleri listesini girin, şu biçimde olmalı:\n"
-"  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
-"Eksik prefix öğesi varsayılan olarak 128 kabul edilir.\n"
+"  ip[/ön ek], ip[/ön ek],...\n"
+"Eksik ön ek ögesi varsayılan olarak 128 kabul edilir.\n"
 "\n"
-"Örneğin: 2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, "
-"1050:0:0:0:5:600:300c:326b\n"
+"Örneğin: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
 #: ../clients/cli/settings.c:3916
-#, fuzzy
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5441,10 +5452,9 @@ msgstr ""
 "IPv6 yönlendirmelirini listesini girin, şu biçimde olmalı:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
 "\n"
-"Eksik prefix(ön ek) 128 olarak kabul edilir.\n"
-"Eksik next-hop(sonraki atlama) \"::\" olarak kabul edilir.\n"
-"Eksik metric(ölçü) 0 olarak kabul edilir (NM/kernel varsayılan değeri "
-"ayarlar).\n"
+"Eksik ön ek 128 olarak kabul edilir.\n"
+"Eksik sonraki atlama \"::\" olarak kabul edilir.\n"
+"Eksik ölçü 0 olarak kabul edilir (NM/kernel varsayılan değeri ayarlar).\n"
 "\n"
 "Örneğin: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
 "db8:beef::3 2\n"
@@ -5530,18 +5540,17 @@ msgid "the property doesn't contain MAC address '%s'"
 msgstr "özellik '%s' MAC adresini içermiyor"
 
 #: ../clients/cli/settings.c:4259
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
-msgstr "'%s' geçerli değil; 3 karakter dizisi gerekli"
+msgstr "'%s' geçerli değil; 2 veya 3 karakter dizisi gereklidir"
 
 #: ../clients/cli/settings.c:4273
-#, fuzzy
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
 "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 msgstr ""
-"Üç kanalın listesini girin (virgül ya da boşluk ile ayrılmış).\n"
+"Alt kanalların listesini girin (virgül ya da boşluk ile ayrılmış).\n"
 "\n"
 "Örneğin: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
@@ -6301,11 +6310,10 @@ msgid "(No custom routes)"
 msgstr "(Özel bir yönlendirme yok)"
 
 #: ../clients/tui/nmt-page-ip4.c:88 ../clients/tui/nmt-page-ip6.c:88
-#, fuzzy, c-format
+#, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "Bir özel yönlendirme"
-msgstr[1] "%d özel yönlendirme"
+msgstr[0] "%d özel yönlendirme"
 
 #: ../clients/tui/nmt-page-ip4.c:131
 msgid "IPv4 CONFIGURATION"
@@ -6824,7 +6832,7 @@ msgstr "Özel anahtar türü belirlenemedi."
 #: ../libnm-core/crypto.c:504
 #, c-format
 msgid "Password provided, but key was not encrypted."
-msgstr ""
+msgstr "Parola korumalı ama anahtar şifrelenmemiş."
 
 #: ../libnm-core/crypto.c:557 ../libnm-util/crypto.c:573
 #, c-format
@@ -7113,186 +7121,181 @@ msgstr "özellik eksik"
 
 #: ../libnm-core/nm-keyfile-reader.c:141
 msgid "ignoring missing number"
-msgstr ""
+msgstr "eksik sayı gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:150
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid number '%s'"
-msgstr "geçersiz metrik '%s'"
+msgstr "geçersiz sayı '%s' gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:170
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s address: %s"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "geçersiz %s adresi gözardı ediliyor: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:210
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
-msgstr "geçersiz ağ geçidi '%s'"
+msgstr "geçersiz ağ geçidi '%s' (%s rotası için) gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:230
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s route: %s"
-msgstr "Hata: geçersiz özellik: %s\n"
+msgstr "geçersiz %s rotası gözardı ediliyor: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:348
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
-msgstr ""
+msgstr "beklenmeyen karakter '%c' (%s adresi için): '%s' (konum %td)"
 
 #: ../libnm-core/nm-keyfile-reader.c:358
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
-msgstr ""
+msgstr "beklenmeyen karakter '%c' (%s için): '%s' (konum %td)"
 
 #: ../libnm-core/nm-keyfile-reader.c:367
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
-msgstr ""
+msgstr "beklenmeyen karakter '%c' (%s için önek uzunluğunda): '%s' (konum %td)"
 
 #: ../libnm-core/nm-keyfile-reader.c:378
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
-msgstr ""
+msgstr "%s değerinin sonunda çöp değer: '%s'"
 
 #: ../libnm-core/nm-keyfile-reader.c:384
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
-msgstr ""
+msgstr "%s değerinin sonunda artık kullanılmayan noktalı virgül: '%s'"
 
 #: ../libnm-core/nm-keyfile-reader.c:399
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
-msgstr ""
+msgstr "%s '%s' için geçersiz önek uzunluğu, öntanımlı %d değeri atanıyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:406
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
-msgstr ""
+msgstr "%s '%s' için eksik önek uzunluğu, %d öntanımlı değeri atanıyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:509
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv4 address '%s'"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "geçersiz DNS sunucusu IPv4 adresi '%s' gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:548
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv6 address '%s'"
-msgstr "geçersiz IPv6 adresi '%s'"
+msgstr "geçersiz DNS sunucusu IPv6 adresi '%s' gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:611 ../libnm-core/nm-keyfile-reader.c:752
 #: ../libnm-core/nm-keyfile-reader.c:1423
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
+"geçersiz bayt ögesi '%d' gözardı ediliyor (0 ile 255 -dahil- arasında değil)"
 
 #: ../libnm-core/nm-keyfile-reader.c:625
-#, fuzzy
 msgid "ignoring invalid MAC address"
-msgstr "geçerli bir MAC adresi değildir"
+msgstr "geçersiz MAC adresi gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:741
-#, fuzzy
 msgid "ignoring invalid binary property"
-msgstr "Hata: geçersiz özellik: %s\n"
+msgstr "geçersiz ikili özellik gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:784
 msgid "ignoring invalid SSID"
-msgstr ""
+msgstr "geçersiz SSID gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:800
 msgid "ignoring invalid raw password"
-msgstr ""
+msgstr "geçersiz ham parola gözardı ediliyor"
 
 #: ../libnm-core/nm-keyfile-reader.c:875 ../libnm-core/nm-keyfile-reader.c:1041
 #, c-format
 msgid "certificate or key file '%s' does not exist"
-msgstr ""
+msgstr "sertifika ya da anahtar dosyası '%s' mevcut değil"
 
 #: ../libnm-core/nm-keyfile-reader.c:880
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key/cert value path \"%s\""
-msgstr "geçersiz '%s' ya da değeri '%s'"
+msgstr "geçersiz anahtar/sertifika değeri yolu \"%s\""
 
 #: ../libnm-core/nm-keyfile-reader.c:918
 msgid "invalid key/cert value data:;base64, is not base64"
-msgstr ""
+msgstr "geçersiz anahtar/sertifika verisi:;base64, base64 değil"
 
 #: ../libnm-core/nm-keyfile-reader.c:931
 msgid "invalid key/cert value data:;base64,file://"
-msgstr ""
+msgstr "geçersiz anahtar/sertifika değeri verisi:;base64,file://"
 
 #: ../libnm-core/nm-keyfile-reader.c:1078
-#, fuzzy
 msgid "invalid key/cert value is not a valid blob"
-msgstr "'%s' değeri geçerli bir UUID değil"
+msgstr "geçersiz anahtar/sertifika değeri, geçerli bir blob değil"
 
 #: ../libnm-core/nm-keyfile-reader.c:1083
-#, fuzzy
 msgid "invalid key/cert value"
-msgstr "geçersiz '%s' ya da değeri '%s'"
+msgstr "geçersiz anahtar/sertifika değeri"
 
 #: ../libnm-core/nm-keyfile-reader.c:1130
-#, fuzzy, c-format
+#, c-format
 msgid "invalid parity value '%s'"
-msgstr "geçersiz '%s' ya da değeri '%s'"
+msgstr "geçersiz parite değeri '%s'"
 
 #: ../libnm-core/nm-keyfile-reader.c:1324
-#, fuzzy, c-format
+#, c-format
 msgid "error loading setting value: %s"
-msgstr "Hata: geçersiz ayar adı: '%s'\n"
+msgstr "ayar değeri yüklenirken hata: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:1356
-#, fuzzy, c-format
+#, c-format
 msgid "invalid negative value (%i)"
-msgstr "geçersiz ağ geçidi '%s'"
+msgstr "geçersiz sıfırdan küçük değer (%i)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1377
-#, fuzzy, c-format
+#, c-format
 msgid "invalid char value (%i)"
-msgstr "geçersiz '%s' ya da değeri '%s'"
+msgstr "geçersiz char değeri (%i)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1400
-#, fuzzy, c-format
+#, c-format
 msgid "invalid int64 value (%s)"
-msgstr "geçersiz '%s' ya da değeri '%s'"
+msgstr "geçersiz int64 değeri (%s)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1459
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
-msgstr ""
+msgstr "fazla büyük FLAGS özelliği '%s' (%llu)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1472
-#, fuzzy, c-format
+#, c-format
 msgid "unhandled setting property type '%s'"
-msgstr "Hata: geçersiz <ayar>.<özellik> '%s'."
+msgstr "işlenmemiş ayar özelliği türü '%s'"
 
 #: ../libnm-core/nm-keyfile-reader.c:1503
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting name '%s'"
-msgstr "Hata: geçersiz ayar adı: '%s'\n"
+msgstr "geçersiz ayar adı '%s'"
 
 #: ../libnm-core/nm-setting-8021x.c:412
-#, fuzzy
 msgid "data missing"
-msgstr "özellik eksik"
+msgstr "veri eksik"
 
 #: ../libnm-core/nm-setting-8021x.c:444
 msgid "binary data missing"
-msgstr ""
+msgstr "ikili veri eksik"
 
 #: ../libnm-core/nm-setting-8021x.c:461
 msgid "file:// URI not NUL terminated"
-msgstr ""
+msgstr "file:// adresi (URI) NUL ile sonlandırılmamış"
 
 #: ../libnm-core/nm-setting-8021x.c:470
 msgid "file:// URI is empty"
-msgstr ""
+msgstr "file:// adresi (URI) boş"
 
 #: ../libnm-core/nm-setting-8021x.c:478
-#, fuzzy
 msgid "file:// URI is not valid UTF-8"
-msgstr "'%s' geçerli bir indeks değil"
+msgstr "file:// adresi (URI) geçerli UTF-8 biçiminde değil"
 
 #: ../libnm-core/nm-setting-8021x.c:677 ../libnm-util/nm-setting-8021x.c:640
 msgid "CA certificate must be in X.509 format"
@@ -7353,9 +7356,9 @@ msgid "has to match '%s' property for PKCS#12"
 msgstr "PKCS#12 için '%s' özelliği eşleşmek zorunda"
 
 #: ../libnm-core/nm-setting-8021x.c:2687
-#, fuzzy, c-format
+#, c-format
 msgid "certificate is invalid: %s"
-msgstr "özellik geçersiz"
+msgstr "sertifika geçersiz: %s"
 
 #: ../libnm-core/nm-setting-8021x.c:2722
 #: ../libnm-core/nm-setting-bluetooth.c:130
@@ -7478,9 +7481,9 @@ msgid "'%s' option is only valid with mode '%s'"
 msgstr "'%s' seçeneği sadece '%s' kipi ile geçerli olur"
 
 #: ../libnm-core/nm-setting-bond.c:653
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option should be string"
-msgstr "'%s' seçeneği boş"
+msgstr "'%s' seçeneği karakter dizisi olmalı"
 
 #: ../libnm-core/nm-setting-bridge-port.c:125
 #: ../libnm-core/nm-setting-bridge-port.c:137
@@ -7536,15 +7539,15 @@ msgstr "Bilinmeyen ikincil tür '%s'"
 
 #: ../libnm-core/nm-setting-connection.c:914
 #: ../libnm-util/nm-setting-connection.c:888
-#, fuzzy, c-format
+#, c-format
 msgid "Slave connections need a valid '%s' property"
-msgstr "İkincil bağlantının ihtiyacı bir geçerli '"
+msgstr "İkincil bağlantının bir geçerli '%s' özelliğine ihtiyacı var"
 
 #: ../libnm-core/nm-setting-connection.c:935
 #: ../libnm-util/nm-setting-connection.c:898
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot set '%s' without '%s'"
-msgstr "Ayarlanamadı '"
+msgstr "'%s' '%s' olamdan ayarlanamaz"
 
 #: ../libnm-core/nm-setting-connection.c:949
 #, fuzzy, c-format
@@ -7567,6 +7570,8 @@ msgid ""
 "Detect a slave connection with '%s' set and a port type '%s'. '%s' should be "
 "set to '%s'"
 msgstr ""
+"'%s' atanmış ve bağlantı noktası türü '%s' olan bir ikincil bağlantı "
+"algılandı. '%s' '%s' olarak atanmalıdır."
 
 #: ../libnm-core/nm-setting-dcb.c:523 ../libnm-util/nm-setting-dcb.c:595
 msgid "flags invalid"
@@ -7654,9 +7659,9 @@ msgid "Missing IPv6 address"
 msgstr "geçersiz IPv6 adresi '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:82
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv4 address '%s'"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "Geçersiz IPv4 adresi '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:82
 #, fuzzy, c-format
@@ -7664,9 +7669,9 @@ msgid "Invalid IPv6 address '%s"
 msgstr "geçersiz IPv6 adresi '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:96
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv4 address prefix '%u'"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "Geçersiz IPv4 adres ön eki '%u'"
 
 #: ../libnm-core/nm-setting-ip-config.c:96
 #, fuzzy, c-format
@@ -7674,9 +7679,9 @@ msgid "Invalid IPv6 address prefix '%u"
 msgstr "geçersiz IPv6 adresi '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:114
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid routing metric '%s'"
-msgstr "geçersiz metrik '%s'"
+msgstr "Geçersiz yönlendirme metriği '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:1864
 #, c-format
@@ -7684,28 +7689,27 @@ msgid "%d. DNS server address is invalid"
 msgstr "%d. DNS sunucusu adresi geçersiz"
 
 #: ../libnm-core/nm-setting-ip-config.c:1880
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address is invalid"
-msgstr "%d. IPv4 adresi geçersiz"
+msgstr "%d. IP adresi geçersiz"
 
 #: ../libnm-core/nm-setting-ip-config.c:1892
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address has 'label' property with invalid type"
-msgstr "%d. IPv4 adresi geçersiz bir ön eke sahip"
+msgstr "%d. IP adresi geçersiz türde bir 'etiket' özelliğine sahip"
 
 #: ../libnm-core/nm-setting-ip-config.c:1901
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address has invalid label '%s'"
-msgstr "%d. IPv4 adresi geçersiz '%s' etiketine sahip"
+msgstr "%d. IP adresi geçersiz '%s' etiketine sahip"
 
 #: ../libnm-core/nm-setting-ip-config.c:1915
 msgid "gateway cannot be set if there are no addresses configured"
-msgstr ""
+msgstr "adres yapılandırılmadan ağ geçidi atanamaz"
 
 #: ../libnm-core/nm-setting-ip-config.c:1924
-#, fuzzy
 msgid "gateway is invalid"
-msgstr "özellik geçersiz"
+msgstr "ağ geçidi geçersiz"
 
 #: ../libnm-core/nm-setting-ip-config.c:1938
 #, c-format
@@ -7715,7 +7719,7 @@ msgstr "%d. yönlendirme geçersiz"
 #: ../libnm-core/nm-setting-ip-config.c:1947
 #, c-format
 msgid "%d. route cannot be a default route"
-msgstr ""
+msgstr "%d. rota varsayılan rota olamaz"
 
 #: ../libnm-core/nm-setting-ip4-config.c:123
 #: ../libnm-core/nm-setting-ip6-config.c:121
@@ -7889,7 +7893,7 @@ msgstr "'%s' ayarı '%s' özelliği istiyor"
 #: ../libnm-core/nm-setting.c:833
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
-msgstr ""
+msgstr "'%s' türündeki özellik '%s' türünün değerinden atanamadı"
 
 #: ../libnm-core/nm-setting.c:1548
 msgid "secret not found"
@@ -7902,7 +7906,7 @@ msgstr "secret ayarlı değil"
 #: ../libnm-core/nm-utils.c:2480 ../libnm-util/nm-utils.c:1828
 #, c-format
 msgid "Could not find \"%s\" binary"
-msgstr ""
+msgstr "\"%s\" ikilik dosyası bulunamadı"
 
 #: ../libnm-glib/nm-device.c:1793 ../libnm/nm-device.c:1638
 msgid "Bluetooth"
@@ -7979,14 +7983,14 @@ msgid "%d. route has invalid prefix"
 msgstr "%d. yönlendirme geçersiz bir ön eke sahip"
 
 #: ../libnm-util/nm-setting-ip6-config.c:912
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IPv6 address is invalid"
-msgstr "%d. IPv4 adresi geçersiz"
+msgstr "%d. IPv6 adresi geçersiz"
 
 #: ../libnm-util/nm-setting-ip6-config.c:922
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IPv6 address has invalid prefix"
-msgstr "%d. IPv4 adresi geçersiz bir ön eke sahip"
+msgstr "%d. IPv6 adresi geçersiz bir ön eke sahip"
 
 #: ../libnm-util/nm-setting-vpn.c:583
 #, c-format
@@ -8118,9 +8122,8 @@ msgid "The interface names of the device and the connection didn't match."
 msgstr "Aygıtın arayüz isimleri ve bağlantı eşleşmiyor."
 
 #: ../libnm/nm-manager.c:861
-#, fuzzy
 msgid "Active connection could not be attached to the device"
-msgstr "bağlantı aygıtla eşleşmiyor"
+msgstr "Etkin bağlantı aygıta eklenemiyor"
 
 #: ../libnm/nm-manager.c:1085
 msgid "Active connection removed before it was initialized"
@@ -8366,19 +8369,19 @@ msgid "Closing %s failed: %s\n"
 msgstr "%s kapatılması başarısız: %s\n"
 
 #: ../src/main-utils.c:125
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot create '%s': %s"
-msgstr "Ayarlanamadı '"
+msgstr "'%s' oluşturulamıyor: %s"
 
 #: ../src/main-utils.c:177
-#, fuzzy, c-format
+#, c-format
 msgid "%s is already running (pid %ld)\n"
-msgstr "Hata: Ağ Yöneticisi zaten çalışıyor (pid %ld)\n"
+msgstr "%s zaten çalışıyor (pid %ld)\n"
 
 #: ../src/main-utils.c:187
-#, fuzzy, c-format
+#, c-format
 msgid "You must be root to run %s!\n"
-msgstr "Ağ Yöneticisini çalıştırmak için kök iznine sahip olmalısınız\n"
+msgstr "%s uygulamasını çalıştırmak için root olmalısınız!\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:210
 msgid "# Created by NetworkManager\n"
@@ -8394,9 +8397,9 @@ msgstr ""
 "\n"
 
 #: ../src/dhcp-manager/nm-dhcp-manager.c:130
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' support not found or not enabled."
-msgstr "'dhcpcd' bulunamadı veya kapalı."
+msgstr "'%s' desteği bulunamadı veya etkin değil."
 
 #: ../src/dhcp-manager/nm-dhcp-manager.c:177
 msgid "no usable DHCP client could be found."
@@ -8679,9 +8682,8 @@ msgid "List of plugins separated by ','"
 msgstr "Eklentilerin listesi (',' ile ayrılmış)"
 
 #: ../src/nm-config.c:467
-#, fuzzy
 msgid "Quit after initial configuration"
-msgstr "Geçerli nmcli yapılandırması:\n"
+msgstr "Başlangıç yapılandırmasının ardından çık"
 
 #. These three are hidden for now, and should eventually just go away.
 #: ../src/nm-config.c:470
@@ -8698,99 +8700,95 @@ msgstr "Yanıtın beklenen başlangıcı"
 
 #. Interface/IP config
 #: ../src/nm-iface-helper.c:286
-#, fuzzy
 msgid "The interface to manage"
-msgstr "Üst arayüz [hiçbiri]: "
+msgstr "Yönetilecek arayüz"
 
 #: ../src/nm-iface-helper.c:286
 msgid "eth0"
-msgstr ""
+msgstr "eth0"
 
 #: ../src/nm-iface-helper.c:287
-#, fuzzy
 msgid "Connection UUID"
-msgstr "bağlantı"
+msgstr "Bağlantı UUID"
 
 #: ../src/nm-iface-helper.c:287
 msgid "661e8cd0-b618-46b8-9dc9-31a52baaa16b"
-msgstr ""
+msgstr "661e8cd0-b618-46b8-9dc9-31a52baaa16b"
 
 #: ../src/nm-iface-helper.c:288
 msgid "Whether to manage IPv6 SLAAC"
-msgstr ""
+msgstr "IPv6 SLAAC yönetiminin olup olmayacağı"
 
 #: ../src/nm-iface-helper.c:289
 msgid "Whether SLAAC must be successful"
-msgstr ""
+msgstr "SLAAC'ın başarılı olmasının gerekip gerekmediği"
 
 #: ../src/nm-iface-helper.c:290
 msgid "Use an IPv6 temporary privacy address"
-msgstr ""
+msgstr "Bir geçici IPv6 gizli adresi kullan"
 
 #: ../src/nm-iface-helper.c:291
-#, fuzzy
 msgid "Current DHCPv4 address"
-msgstr "Klonlanmış MAC adresi"
+msgstr "Mevcut DHCPv4 adresi"
 
 #: ../src/nm-iface-helper.c:292
 msgid "Whether DHCPv4 must be successful"
-msgstr ""
+msgstr "DHCPv4'ün başarılı olmasının gerekip gerekmemesi"
 
 #: ../src/nm-iface-helper.c:293
-#, fuzzy
 msgid "Hex-encoded DHCPv4 client ID"
-msgstr "desteklenmeyen DHCP istemcisi '%s'"
+msgstr "Onaltılık-kodlanmış DHCPv4 istemci kimliği"
 
 #: ../src/nm-iface-helper.c:294
 msgid "Hostname to send to DHCP server"
-msgstr ""
+msgstr "HDCP sunucusuna gönderilecek makine adı"
 
 #: ../src/nm-iface-helper.c:294
 msgid "barbar"
-msgstr ""
+msgstr "barbar"
 
 #: ../src/nm-iface-helper.c:295
-#, fuzzy
 msgid "Route priority for IPv4"
-msgstr "silmek için öncelik yok"
+msgstr "IPv4 için yönlendirme önceliği"
 
 #: ../src/nm-iface-helper.c:295
 msgid "0"
-msgstr ""
+msgstr "0"
 
 #: ../src/nm-iface-helper.c:296
-#, fuzzy
 msgid "Route priority for IPv6"
-msgstr "silmek için öncelik yok"
+msgstr "IPv6 için yönlendirme önceliği"
 
 #: ../src/nm-iface-helper.c:296
 msgid "1024"
-msgstr ""
+msgstr "1024"
 
 #: ../src/nm-iface-helper.c:297
 msgid "Hex-encoded Interface Identifier"
-msgstr ""
+msgstr "Onaltılık-kodlanmış Arayüz Tanımlayıcısı"
 
 #: ../src/nm-iface-helper.c:317
 msgid ""
 "nm-iface-helper is a small, standalone process that manages a single network "
 "interface."
 msgstr ""
+"nm-iface-helper küçük, tek başına çalışan ve tek bir ağ arayüzünü "
+"yönetebilen bir süreçtir."
 
 #: ../src/nm-iface-helper.c:364
 #, c-format
 msgid "An interface name and UUID are required\n"
-msgstr ""
+msgstr "Bir arayüz adı ve UUID gereklidir\n"
 
 #: ../src/nm-iface-helper.c:370
 #, c-format
 msgid "Failed to find interface index for %s (%s)\n"
-msgstr ""
+msgstr "%s için arayüz dizini bulunamadı (%s)\n"
 
 #: ../src/nm-iface-helper.c:430
 #, c-format
 msgid "(%s): Invalid IID %s\n"
-msgstr ""
+msgstr "(%s): Geçersiz IID %s\n"
 
 #: ../src/nm-logging.c:137
 #, c-format

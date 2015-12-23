@@ -293,11 +293,11 @@ msgstr "ні"
 
 #: ../clients/cli/common.c:534
 msgid "yes (guessed)"
-msgstr ""
+msgstr "так (вгадано)"
 
 #: ../clients/cli/common.c:536
 msgid "no (guessed)"
-msgstr ""
+msgstr "ні (вгадано)"
 
 #: ../clients/cli/common.c:547
 msgid "No reason given"
@@ -548,19 +548,16 @@ msgid "SIM PIN was incorrect"
 msgstr "PIN-код SIM-картки є некоректним"
 
 #: ../clients/cli/common.c:727
-#, fuzzy
 msgid "New connection activation was enqueued"
-msgstr "Помилка: невдала спроба активації з’єднання."
+msgstr "Дію з активації нового з’єднання додано до черги"
 
 #: ../clients/cli/common.c:730
-#, fuzzy
 msgid "The device's parent changed"
-msgstr "Пристрій вилучено"
+msgstr "Змінено батьківський каталог пристрою"
 
 #: ../clients/cli/common.c:733
-#, fuzzy
 msgid "The device parent's management changed"
-msgstr "Пристрій вилучено"
+msgstr "Змінено керування батьківським каталогом пристрою"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #: ../clients/cli/common.c:737 ../clients/cli/devices.c:628
@@ -586,19 +583,19 @@ msgid "'%s' is not a valid team configuration or file name."
 msgstr "«%s» не є коректним налаштуванням команди або назвою файла."
 
 #: ../clients/cli/common.c:961
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr "Помилка: з’єднання не пройшло перевірки: %s\n"
+msgstr "Помилка: не вдалося виконати openconnect: %s\n"
 
 #: ../clients/cli/common.c:968
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with status %d\n"
-msgstr "Помилка редактора з кодом стану %d"
+msgstr "Помилка: виконання openconnect завершилося невдало зі станом %d\n"
 
 #: ../clients/cli/common.c:970
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr "Помилка редактора з сигналом %d"
+msgstr "Помилка: виконання openconnect завершилося невдало із сигналом %d\n"
 
 #: ../clients/cli/common.c:1047
 #, c-format
@@ -648,7 +645,6 @@ msgid "Connection (name, UUID, or path): "
 msgstr "З’єднання (назва, UUID або шлях): "
 
 #: ../clients/cli/connections.c:53
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
 msgstr "З’єднання (назва, UUID або шлях): "
 
@@ -1001,7 +997,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:316
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
 "\n"
@@ -1013,9 +1009,9 @@ msgid ""
 "UUID or D-Bus path.\n"
 "\n"
 msgstr ""
-"Користування: nmcli connection down { АРГУМЕНТИ | help }\n"
+"Користування: nmcli connection down { ПАРАМЕТРИ | help }\n"
 "\n"
-"АРГУМЕНТИ := [id | uuid | path | apath] <ідентифікатор>\n"
+"ПАРАМЕТРИ := [id | uuid | path | apath] <ідентифікатор> ...\n"
 "\n"
 "Скасувати активацію з’єднання на пристрої (без заборони пристрою виконувати\n"
 "автоматичну активацію). Профіль для скасування активації можна вказати за\n"
@@ -1632,14 +1628,14 @@ msgid "preparing"
 msgstr "приготування"
 
 #: ../clients/cli/connections.c:2259
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Запис з’єднання «%s» (%s) успішно оновлено.\n"
+msgstr "Запис з’єднання «%s» (%s) успішно вилучено.\n"
 
 #: ../clients/cli/connections.c:2275
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "З’єднання успішно задіяно (активний шлях D-Bus: %s)\n"
+msgstr "З’єднання «%s» успішно вимкнено (активний шлях D-Bus: %s)\n"
 
 #: ../clients/cli/connections.c:2347 ../clients/cli/connections.c:9006
 #: ../clients/cli/connections.c:9111
@@ -1648,19 +1644,19 @@ msgid "Error: No connection specified."
 msgstr "Помилка: не вказано з’єднання."
 
 #: ../clients/cli/connections.c:2379
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "Помилка: «%s» не є активним з’єднанням."
+msgstr "Помилка: «%s» не є активним з’єднанням.\n"
 
 #: ../clients/cli/connections.c:2380 ../clients/cli/connections.c:9035
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all active connections found."
-msgstr "Помилка: «%s» не є активним з’єднанням."
+msgstr "Помилка: не усі активні з’єднання знайдено."
 
 #: ../clients/cli/connections.c:2389
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no active connection provided."
-msgstr "Помилка: профілю з’єднання %s не існує."
+msgstr "Помилка: не надано активного з’єднання."
 
 #: ../clients/cli/connections.c:2708 ../clients/cli/utils.c:569
 #, c-format
@@ -1714,12 +1710,11 @@ msgstr "Режим передавання InfiniBand"
 
 #: ../clients/cli/connections.c:2924
 msgid "ADSL protocol"
-msgstr ""
+msgstr "Протокол ADSL"
 
 #: ../clients/cli/connections.c:2935
-#, fuzzy
 msgid "ADSL encapsulation"
-msgstr "Розпізнавання DSL"
+msgstr "Інкапсуляція ADSL"
 
 #: ../clients/cli/connections.c:2948
 #, c-format
@@ -2073,9 +2068,9 @@ msgid "ADSL"
 msgstr "ADSL"
 
 #: ../clients/cli/connections.c:3921
-#, fuzzy, c-format
+#, c-format
 msgid "ADSL encapsulation %s"
-msgstr "З’єднання DSL %d"
+msgstr "Інкапсуляція ADSL %s"
 
 #: ../clients/cli/connections.c:3963
 msgid "IPv4 address (IP[/plen]) [none]: "
@@ -2270,19 +2265,17 @@ msgstr ""
 "діапазону <1-13>."
 
 #: ../clients/cli/connections.c:5316
-#, fuzzy
 msgid "Username: "
-msgstr "Користувач"
+msgstr "Користувач: "
 
 #: ../clients/cli/connections.c:5325
 #, c-format
 msgid "Protocol %s"
-msgstr ""
+msgstr "Протокол %s"
 
 #: ../clients/cli/connections.c:5328
-#, fuzzy
 msgid "Error: 'protocol' is required."
-msgstr "Помилка: слід вказати значення параметра «nsp»."
+msgstr "Помилка: слід вказати значення параметра «protocol»."
 
 #: ../clients/cli/connections.c:5369
 #, c-format
@@ -2361,7 +2354,7 @@ msgstr "Помилка: слід вказати значення «ifname»."
 #: ../clients/cli/connections.c:5808
 #, c-format
 msgid "Error: mandatory 'ifname' not seen before '%s'."
-msgstr ""
+msgstr "Помилка: перед «%s» немає обов’язкового «ifname»."
 
 #: ../clients/cli/connections.c:5817
 #, c-format
@@ -3228,9 +3221,9 @@ msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Помилка: не вдалося вилучити значення з %s.%s: %s."
 
 #: ../clients/cli/connections.c:8971
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections deleted."
-msgstr "Помилка: не вказано з’єднання."
+msgstr "Помилка: вилучено не усі з’єднання."
 
 #: ../clients/cli/connections.c:8972
 #, c-format
@@ -3238,14 +3231,14 @@ msgid "Error: Connection deletion failed: %s"
 msgstr "Помилка: не вдалося вилучити з’єднання: %s"
 
 #: ../clients/cli/connections.c:9034
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown connection '%s'\n"
-msgstr "Помилка: невідоме з’єднання: %s\n"
+msgstr "Помилка: невідоме з’єднання «%s»\n"
 
 #: ../clients/cli/connections.c:9048
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no connection provided."
-msgstr "Помилка: не вказано з’єднання."
+msgstr "Помилка: не надано з’єднання."
 
 #. truncate trailing ", "
 #: ../clients/cli/connections.c:9073
@@ -3279,9 +3272,8 @@ msgid "Interface: "
 msgstr "Інтерфейс: "
 
 #: ../clients/cli/devices.c:39
-#, fuzzy
 msgid "Interface(s): "
-msgstr "Інтерфейс: "
+msgstr "Інтерфейси: "
 
 #. 3
 #. 19
@@ -3297,9 +3289,8 @@ msgstr "CON-UUID"
 
 #. 2
 #: ../clients/cli/devices.c:61
-#, fuzzy
 msgid "NM-TYPE"
-msgstr "ТИП"
+msgstr "ТИП-NM"
 
 #. 3
 #: ../clients/cli/devices.c:62
@@ -3372,12 +3363,12 @@ msgstr "ПОТРІБНИЙ-МІКРОКОД"
 #. 18
 #: ../clients/cli/devices.c:77
 msgid "PHYS-PORT-ID"
-msgstr ""
+msgstr "ІД-ФІЗ-ПОРТУ"
 
 #. 22
 #: ../clients/cli/devices.c:81
 msgid "METERED"
-msgstr ""
+msgstr "ЛІЧИЛЬНЕ"
 
 #. 0
 #: ../clients/cli/devices.c:92
@@ -3443,12 +3434,12 @@ msgstr "ADHOC"
 #. 7
 #: ../clients/cli/devices.c:129
 msgid "2GHZ"
-msgstr ""
+msgstr "2 ГГц"
 
 #. 8
 #: ../clients/cli/devices.c:130
 msgid "5GHZ"
-msgstr ""
+msgstr "5 ГГц"
 
 #. 0
 #: ../clients/cli/devices.c:139
@@ -3555,7 +3546,7 @@ msgstr "SLAVES"
 #. 0
 #: ../clients/cli/devices.c:202
 msgid "PARENT"
-msgstr ""
+msgstr "БАТЬКІВСЬКИЙ"
 
 #. 1
 #: ../clients/cli/devices.c:203
@@ -3742,7 +3733,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:328
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -3753,17 +3744,17 @@ msgid ""
 "further connections without user/manual intervention.\n"
 "\n"
 msgstr ""
-"Користування: nmcli device disconnect { АРГУМЕНТИ | help }\n"
+"Користування: nmcli device disconnect { ПАРАМЕТРИ | help }\n"
 "\n"
-"АРГУМЕНТИ := <назва інтерфейсу>\n"
+"ПАРАМЕТРИ := <назва інтерфейсу>...\n"
 "\n"
-"Від’єднати пристрій.\n"
+"Від’єднати пристрої.\n"
 "За допомогою цієї команди можна від’єднати пристрій і заборонити його\n"
 "повторну активацію для подальших з’єднань без ручного втручання.\n"
 "\n"
 
 #: ../clients/cli/devices.c:340
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -3775,12 +3766,12 @@ msgid ""
 "command.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device delete { АРГУМЕНТИ | help }\n"
+"Usage: nmcli device delete { ПАРАМЕТРИ | help }\n"
 "\n"
-"АРГУМЕНТИ := <інтерфейс>\n"
+"ПАРАМЕТРИ := <інтерфейс>...\n"
 "\n"
-"Вилучити програмний пристрій.\n"
-"Команда вилучає інтерфейс. Працює лише для програмних пристроїв\n"
+"Вилучити програмні пристрої.\n"
+"Команда вилучає інтерфейси. Працює лише для програмних пристроїв\n"
 "(зокрема зв’язків, містків тощо). Апаратні пристрої не можна вилучати\n"
 "за допомогою цієї команди.\n"
 "\n"
@@ -4038,59 +4029,59 @@ msgid "Device '%s' successfully disconnected.\n"
 msgstr "Пристрій «%s» успішно від’єднано.\n"
 
 #: ../clients/cli/devices.c:1679
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully removed.\n"
-msgstr "Пристрій «%s» успішно від’єднано.\n"
+msgstr "Пристрій «%s» успішно вилучено.\n"
 
 #: ../clients/cli/devices.c:1739
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices disconnected."
-msgstr "Помилка: не вдалося активувати пристрій: пристрій було від’єднано"
+msgstr "Помилка: не усі пристрої від’єднано."
 
 #: ../clients/cli/devices.c:1740
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
-msgstr "Помилка: невдала спроба від’єднання «%s» (%s): %s"
+msgstr "Помилка: невдала спроба від’єднання «%s» (%s): %s\n"
 
 #: ../clients/cli/devices.c:1807 ../clients/cli/devices.c:1929
 #, c-format
 msgid "Warning: argument '%s' is duplicated.\n"
-msgstr ""
+msgstr "Попередження: аргумент «%s» дубльовано.\n"
 
 #: ../clients/cli/devices.c:1809 ../clients/cli/devices.c:1931
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "Помилка: не знайдено пристрій «%s»."
+msgstr "Помилка: не знайдено пристрій «%s».\n"
 
 #: ../clients/cli/devices.c:1810 ../clients/cli/devices.c:1932
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices found."
-msgstr "Помилка: не знайдено відповідних пристроїв."
+msgstr "Помилка: знайдено не усі пристрої."
 
 #: ../clients/cli/devices.c:1820 ../clients/cli/devices.c:1942
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no valid device provided."
-msgstr "Помилка: не надано аргументів."
+msgstr "Помилка: не надано коректного пристрою."
 
 #: ../clients/cli/devices.c:1864
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices deleted."
-msgstr "Помилка: не знайдено відповідних пристроїв."
+msgstr "Помилка: вилучено не усі пристрої."
 
 #: ../clients/cli/devices.c:1865
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
-msgstr "Помилка: помилка під час спроби вилучення пристрою «%s» (%s): %s"
+msgstr "Помилка: помилка під час спроби вилучення пристрою «%s» (%s): %s\n"
 
 #: ../clients/cli/devices.c:1923
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' is a hardware device. It can't be deleted.\n"
-msgstr "Помилка: пристрій «%s» є апаратним. Його не можна вилучити."
+msgstr "Помилка: пристрій «%s» є апаратним. Його не можна вилучити.\n"
 
 #: ../clients/cli/devices.c:1925
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices valid."
-msgstr "Помилка: не знайдено відповідних пристроїв."
+msgstr "Помилка: коректними є не усі пристрої."
 
 #: ../clients/cli/devices.c:2023
 msgid "Wi-Fi scan list"
@@ -4107,11 +4098,13 @@ msgid "Error: Access point with bssid '%s' not found."
 msgstr "Помилка: не знайдено точки доступу з bssid «%s»."
 
 #: ../clients/cli/devices.c:2130
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
 "NetworkManager Wi-Fi plugin."
-msgstr "Помилка: пристрій «%s» не є пристроєм Wi-Fi."
+msgstr ""
+"Помилка: пристрій «%s» не розпізнано як пристрій Wi-Fi, перевірте, чи працює "
+"додаток Wi-Fi NetworkManager."
 
 #: ../clients/cli/devices.c:2132 ../clients/cli/devices.c:2464
 #: ../clients/cli/devices.c:2695
@@ -4163,9 +4156,9 @@ msgid "Error: No Wi-Fi device found."
 msgstr "Помилка: не знайдено жодного пристрою Wi-Fi."
 
 #: ../clients/cli/devices.c:2486
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
-msgstr "Помилка: не вдалося встановити параметри ведення журналу: %s"
+msgstr "Помилка: неможливо виконати сканування прихованого SSID: %s."
 
 #: ../clients/cli/devices.c:2511
 #, c-format
@@ -4182,15 +4175,17 @@ msgstr "Помилка: не знайдено точки доступу з BSSID
 msgid ""
 "Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
 msgstr ""
+"Попередження: «%s» має бути SSID для прихованих точок доступу; втім, "
+"здається, маємо BSSID.\n"
 
 #: ../clients/cli/devices.c:2569
 msgid "Password: "
 msgstr "Пароль: "
 
 #: ../clients/cli/devices.c:2664
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' cannot repeat."
-msgstr "Помилка: немає параметра «%s»\n"
+msgstr "Помилка: не можна повторювати «%s»."
 
 #: ../clients/cli/devices.c:2743
 #, c-format
@@ -4944,19 +4939,19 @@ msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (увімкнено, перевага тимчасового IP)"
 
 #: ../clients/cli/settings.c:786
-#, fuzzy, c-format
+#, c-format
 msgid "%d (no)"
-msgstr "%d (невідомо)"
+msgstr "%d (ні)"
 
 #: ../clients/cli/settings.c:788
-#, fuzzy, c-format
+#, c-format
 msgid "%d (yes)"
-msgstr "%d (ключ)"
+msgstr "%d (так)"
 
 #: ../clients/cli/settings.c:791
-#, fuzzy, c-format
+#, c-format
 msgid "%d (default)"
-msgstr "(типово)"
+msgstr "%d (типово)"
 
 #: ../clients/cli/settings.c:804
 msgid "0 (none)"
@@ -5009,10 +5004,12 @@ msgid ""
 "invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
 "'none'"
 msgstr ""
+"некоректний параметр «%s», скористайтеся комбінацією [%s] або «ignore», "
+"«default» чи «none»"
 
 #: ../clients/cli/settings.c:1574
 msgid "'default' and 'ignore' are incompatible with other flags"
-msgstr ""
+msgstr "«default» і «ignore» є несумісними із іншими прапорцями"
 
 #: ../clients/cli/settings.c:1750
 #, c-format
@@ -5066,9 +5063,9 @@ msgid "'%u' is not valid; use <%u-%u>"
 msgstr "«%u» є некоректним; скористайтеся значенням у діапазоні <%u-%u>"
 
 #: ../clients/cli/settings.c:2136
-#, fuzzy, c-format
+#, c-format
 msgid "'%u' flags are not valid; use combination of %s"
-msgstr "«%s» не є коректним значенням; мало бути [%s] або [%s]"
+msgstr "прапорці «%u» не є коректними; скористайтеся комбінацією з %s"
 
 #: ../clients/cli/settings.c:2203
 #, c-format
@@ -5108,10 +5105,9 @@ msgstr ""
 "номерів)"
 
 #: ../clients/cli/settings.c:2409
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid value; use -1, 0 or 1"
-msgstr ""
-"«%s» не є коректним значенням; можна використовувати лише значення 0, 1, 2"
+msgstr "«%s» не є коректним значенням; мало бути -1, 0 або 1"
 
 #: ../clients/cli/settings.c:2441
 #, c-format
@@ -5237,6 +5233,13 @@ msgid ""
 "'false','no','off' to set the connection as not metered\n"
 "'unknown' to let NetworkManager choose a value using some heuristics\n"
 msgstr ""
+"Вкажіть значення, яке визначатиме, чи є з’єднання об’єктом\n"
+"квотування даних, вартості використання та інших обмежень.\n"
+"Прийнятними параметрами є такі:\n"
+"«true», «yes», «on» — встановити з’єднання як вимірюване\n"
+"«false», «no», «off» — встановити з’єднання як невимірюване\n"
+"«unknown» — дозволити NetworkManager вибирати значення за допомогою "
+"евристики\n"
 
 #: ../clients/cli/settings.c:2948
 msgid "private key password not provided"
@@ -5254,6 +5257,11 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/cacert.crt\n"
 msgstr ""
+"Вкажіть шлях до файла сертифіката CA (з необов’язковим префіксом file://).\n"
+"  [file://]<шлях до файла>\n"
+"Зауважте, що у nmcli не передбачено підтримки визначення сертифікатів у "
+"форматі простого масиву даних.\n"
+"Приклад: /home/cimrman/cacert.crt\n"
 
 #: ../clients/cli/settings.c:3012
 #, c-format
@@ -5267,6 +5275,12 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/jara.crt\n"
 msgstr ""
+"Вкажіть шлях до файла клієнтського сертифіката (з необов’язковим префіксом "
+"file://)\n"
+"  [file://]<шлях до файла>\n"
+"Зауважте, що у nmcli не передбачено підтримки визначення сертифікатів у "
+"форматі простого масиву даних.\n"
+"Приклад: /home/cimrman/jara.crt\n"
 
 #: ../clients/cli/settings.c:3040
 msgid ""
@@ -5277,6 +5291,12 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/ca-zweite-phase.crt\n"
 msgstr ""
+"Вкажіть шлях до файла сертифіката CA для внутрішнього розпізнавання (з "
+"необов’язковим префіксом file://)\n"
+"  [file://]<шлях до файла>\n"
+"Зауважте, що у nmcli не передбачено підтримки визначення сертифікатів у "
+"форматі простого масиву даних.\n"
+"Приклад: /home/cimrman/ca-zweite-phase.crt\n"
 
 #: ../clients/cli/settings.c:3060
 #, c-format
@@ -5294,9 +5314,14 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/jara-zweite-phase.crt\n"
 msgstr ""
+"Вкажіть шлях до файла клієнтського сертифіката для внутрішнього "
+"розпізнавання (з необов’язковим префіксом file://)\n"
+"  [file://]<шлях до файла>\n"
+"Зауважте, що у nmcli не передбачено підтримки визначення сертифікатів у "
+"форматі простого масиву даних.\n"
+"Приклад: /home/cimrman/jara-zweite-phase.crt\n"
 
 #: ../clients/cli/settings.c:3096
-#, fuzzy
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5305,7 +5330,9 @@ msgid ""
 msgstr ""
 "Вкажіть шлях до закритого ключа і пароль до ключа (якщо його ще не "
 "встановлено):\n"
-"  <шлях до ключа> [<пароль>]\n"
+"  [file://]<шлях до ключа> [<пароль>]\n"
+"Зауважте, що у nmcli не передбачено підтримки задання закритого ключа у "
+"форматі простого масиву даних.\n"
 "Приклад: /home/cimrman/jara-priv-key Dardanely\n"
 
 #: ../clients/cli/settings.c:3167
@@ -5584,9 +5611,9 @@ msgid "the property doesn't contain mapping '%s'"
 msgstr "властивість не містить прив’язки «%s»"
 
 #: ../clients/cli/settings.c:4160
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' cannot be empty"
-msgstr "параметр «%s» є порожнім"
+msgstr "Не можна вказувати порожнє значення «%s»"
 
 #: ../clients/cli/settings.c:4234 ../clients/cli/settings.c:4401
 #: ../libnm-core/nm-setting-wired.c:646 ../libnm-core/nm-setting-wireless.c:784
@@ -5603,26 +5630,24 @@ msgid "the property doesn't contain MAC address '%s'"
 msgstr "властивість не містить адреси MAC «%s»"
 
 #: ../clients/cli/settings.c:4259
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
-msgstr "«%s» не є коректним значенням; слід вказати 3 рядки"
+msgstr "«%s» не є коректним значенням; слід вказати 2 або 3 рядки"
 
 #: ../clients/cli/settings.c:4273
-#, fuzzy
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
 "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 msgstr ""
-"Вкажіть список з трьох каналів (записи слід відокремлювати комою або "
-"пробілом).\n"
+"Вкажіть список підканалів (записи слід відокремлювати комою або пробілом).\n"
 "\n"
 "Приклад: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
 #: ../clients/cli/settings.c:4295
 #, c-format
 msgid "'%s' string value should consist of 1 - 199 characters"
-msgstr ""
+msgstr "Рядок значення «%s» має складатися з від 1 до 199 символів"
 
 #: ../clients/cli/settings.c:4327
 #, c-format
@@ -5792,9 +5817,9 @@ msgstr "Помилка під час спроби перетворення ад�
 #. * the user, the second %s a list of compatible values.
 #.
 #: ../clients/cli/utils.c:413 ../clients/cli/utils.c:444
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is ambiguous (%s)"
-msgstr "«%s» є неоднозначним (%s x %s)"
+msgstr "«%s» є неоднозначним (%s)"
 
 #: ../clients/cli/utils.c:423
 #, c-format
@@ -5802,9 +5827,9 @@ msgid "'%s' is not valid; use [%s] or [%s]"
 msgstr "«%s» не є коректним значенням; мало бути [%s] або [%s]"
 
 #: ../clients/cli/utils.c:456
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; use [%s], [%s] or [%s]"
-msgstr "«%s» не є коректним значенням; мало бути [%s] або [%s]"
+msgstr "«%s» не є коректним значенням; мало бути [%s], [%s] або [%s]"
 
 #: ../clients/cli/utils.c:555
 #, c-format
@@ -5957,15 +5982,13 @@ msgid "A password is required to connect to '%s'."
 msgstr "Для встановлення з’єднання з «%s» слід вказати пароль."
 
 #: ../clients/common/nm-secret-agent-simple.c:554
-#, fuzzy
 msgid "VPN password required"
-msgstr "Потрібен PIN-код"
+msgstr "Потрібен пароль до VPN"
 
 #: ../clients/common/nm-vpn-helpers.c:236
 #: ../clients/common/nm-vpn-helpers.c:239
-#, fuzzy
 msgid "Group password"
-msgstr "Показати фразу пароля"
+msgstr "Пароль групи"
 
 #: ../clients/common/nm-vpn-helpers.c:241 ../clients/tui/nmt-page-ip4.c:146
 #: ../clients/tui/nmt-page-ip6.c:146
@@ -5974,12 +5997,11 @@ msgstr "Шлюз"
 
 #: ../clients/common/nm-vpn-helpers.c:242
 msgid "Cookie"
-msgstr ""
+msgstr "Кука"
 
 #: ../clients/common/nm-vpn-helpers.c:243
-#, fuzzy
 msgid "Gateway certificate hash"
-msgstr "некоректний формат сертифіката"
+msgstr "Хеш сертифіката шлюзу"
 
 #: ../clients/nm-online.c:96
 msgid "Connecting"
@@ -6417,7 +6439,7 @@ msgstr "Ніколи не використовувати цю мережу дл�
 
 #: ../clients/tui/nmt-page-ip4.c:182 ../clients/tui/nmt-page-ip6.c:180
 msgid "Ignore automatically obtained routes"
-msgstr ""
+msgstr "Ігнорувати автоматично отримані маршрути"
 
 #: ../clients/tui/nmt-page-ip4.c:190
 msgid "Require IPv4 addressing for this connection"
@@ -6673,21 +6695,23 @@ msgid ""
 "openconnect will be run to authenticate.\n"
 "It will return to nmtui when completed."
 msgstr ""
+"Для розпізнавання буде запущено openconnect.\n"
+"Після завершення розпізнавання керування буде передано nmtui."
 
 #: ../clients/tui/nmtui-connect.c:72
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s"
-msgstr "Помилка: не вдалося вилучити з’єднання: %s"
+msgstr "Помилка: не вдалося виконати openconnect: %s"
 
 #: ../clients/tui/nmtui-connect.c:79
-#, fuzzy, c-format
+#, c-format
 msgid "openconnect failed with status %d"
-msgstr "Помилка редактора з кодом стану %d"
+msgstr "виконання openconnect завершилося невдало зі станом %d"
 
 #: ../clients/tui/nmtui-connect.c:83
-#, fuzzy, c-format
+#, c-format
 msgid "openconnect failed with signal %d"
-msgstr "Помилка редактора з сигналом %d"
+msgstr "виконання openconnect завершилося невдало із сигналом %d"
 
 #: ../clients/tui/nmtui-connect.c:182
 msgid "Activation failed"
@@ -7198,186 +7222,184 @@ msgstr "не вказано властивості"
 
 #: ../libnm-core/nm-keyfile-reader.c:141
 msgid "ignoring missing number"
-msgstr ""
+msgstr "ігноруємо пропущене число"
 
 #: ../libnm-core/nm-keyfile-reader.c:150
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid number '%s'"
-msgstr "некоректна метрика, «%s»"
+msgstr "ігноруємо некоректне число «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:170
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s address: %s"
-msgstr "некоректна адреса IP: %s"
+msgstr "ігноруємо некоректну адресу %s: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:210
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
-msgstr ""
+msgstr "ігноруємо некоректний шлюз «%s» для маршруту %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:230
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s route: %s"
-msgstr "некоректний маршрут: %s"
+msgstr "ігноруємо некоректний маршрут %s: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:348
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
-msgstr ""
+msgstr "неочікуваний символ «%c» для адреси %s: «%s» (позиція %td)"
 
 #: ../libnm-core/nm-keyfile-reader.c:358
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
-msgstr ""
+msgstr "неочікуваний символ «%c» для %s: «%s» (позиція %td)"
 
 #: ../libnm-core/nm-keyfile-reader.c:367
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
-msgstr ""
+msgstr "неочікуваний символ «%c» у префіксі довжини для %s: «%s» (позиція %td)"
 
 #: ../libnm-core/nm-keyfile-reader.c:378
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
-msgstr ""
+msgstr "зайві дані наприкінці значення %s: «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:384
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
-msgstr ""
+msgstr "застаріла крапка з комою наприкінці значення %s: «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:399
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
-msgstr ""
+msgstr "некоректний префікс довжини для %s «%s», повертаємося до типового, %d"
 
 #: ../libnm-core/nm-keyfile-reader.c:406
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
-msgstr ""
+msgstr "пропущено префікс довжини для %s «%s», повертаємося до типового, %d"
 
 #: ../libnm-core/nm-keyfile-reader.c:509
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv4 address '%s'"
-msgstr "некоректна адреса IPv4, «%s»"
+msgstr "ігноруємо некоректну адресу IPv4 сервера DNS «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:548
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv6 address '%s'"
-msgstr "некоректна адреса IPv6, «%s»"
+msgstr "ігноруємо некоректну адресу IPv6 сервера DNS «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:611 ../libnm-core/nm-keyfile-reader.c:752
 #: ../libnm-core/nm-keyfile-reader.c:1423
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
+"ігноруємо некоректний байтовий елемент «%d» (не у діапазоні від 0 до 255, "
+"включно)"
 
 #: ../libnm-core/nm-keyfile-reader.c:625
-#, fuzzy
 msgid "ignoring invalid MAC address"
-msgstr "не є коректною MAC-адресою"
+msgstr "ігноруємо некоректну MAC-адресу"
 
 #: ../libnm-core/nm-keyfile-reader.c:741
-#, fuzzy
 msgid "ignoring invalid binary property"
-msgstr "Помилка: некоректна властивість: %s\n"
+msgstr "ігноруємо некоректну двійкову властивість"
 
 #: ../libnm-core/nm-keyfile-reader.c:784
 msgid "ignoring invalid SSID"
-msgstr ""
+msgstr "ігноруємо некоректний SSID"
 
 #: ../libnm-core/nm-keyfile-reader.c:800
 msgid "ignoring invalid raw password"
-msgstr ""
+msgstr "ігноруємо некоректний необроблений пароль"
 
 #: ../libnm-core/nm-keyfile-reader.c:875 ../libnm-core/nm-keyfile-reader.c:1041
-#, fuzzy, c-format
+#, c-format
 msgid "certificate or key file '%s' does not exist"
-msgstr "Помилка: з’єднання «%s» не існує."
+msgstr "файла сертифіката або ключа «%s» не існує"
 
 #: ../libnm-core/nm-keyfile-reader.c:880
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key/cert value path \"%s\""
-msgstr "некоректний «%s» або його значення «%s»"
+msgstr "некоректний шлях до ключа/сертифіката, «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:918
 msgid "invalid key/cert value data:;base64, is not base64"
-msgstr ""
+msgstr "некоректні дані значення ключа/сертифіката data:;base64, не є base64"
 
 #: ../libnm-core/nm-keyfile-reader.c:931
 msgid "invalid key/cert value data:;base64,file://"
-msgstr ""
+msgstr "некоректне значення ключа/сертифіката data:;base64,file://"
 
 #: ../libnm-core/nm-keyfile-reader.c:1078
-#, fuzzy
 msgid "invalid key/cert value is not a valid blob"
-msgstr "значення «%s» не є коректним UUID"
+msgstr ""
+"некоректне значення ключа/сертифіката, не є коректним значення «%s» не є "
+"коректним великим бінарним об’єктом"
 
 #: ../libnm-core/nm-keyfile-reader.c:1083
-#, fuzzy
 msgid "invalid key/cert value"
-msgstr "некоректний «%s» або його значення «%s»"
+msgstr "некоректне значення ключа/сертифіката"
 
 #: ../libnm-core/nm-keyfile-reader.c:1130
-#, fuzzy, c-format
+#, c-format
 msgid "invalid parity value '%s'"
-msgstr "некоректний «%s» або його значення «%s»"
+msgstr "некоректне значення парності, «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:1324
-#, fuzzy, c-format
+#, c-format
 msgid "error loading setting value: %s"
-msgstr "Помилка: некоректна назва параметра; %s\n"
+msgstr "помилка під час завантаження значення параметра: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:1356
-#, fuzzy, c-format
+#, c-format
 msgid "invalid negative value (%i)"
-msgstr "некоректна адреса шлюзу, «%s»"
+msgstr "некоректне від’ємне значення (%i)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1377
-#, fuzzy, c-format
+#, c-format
 msgid "invalid char value (%i)"
-msgstr "некоректний маршрут: %s"
+msgstr "некоректне символьне значення (%i)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1400
-#, fuzzy, c-format
+#, c-format
 msgid "invalid int64 value (%s)"
-msgstr "некоректний «%s» або його значення «%s»"
+msgstr "некоректне значення int64 (%s)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1459
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
-msgstr ""
+msgstr "надто велике значення властивості FLAGS «%s» (%llu)"
 
 #: ../libnm-core/nm-keyfile-reader.c:1472
-#, fuzzy, c-format
+#, c-format
 msgid "unhandled setting property type '%s'"
-msgstr "Помилка: некоректний аргумент <параметр>.<властивість>, «%s»."
+msgstr "непридатний до обробки тип властивості параметра «%s»"
 
 #: ../libnm-core/nm-keyfile-reader.c:1503
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting name '%s'"
-msgstr "Помилка: некоректна назва параметра; %s\n"
+msgstr "некоректна назва параметра, «%s»"
 
 #: ../libnm-core/nm-setting-8021x.c:412
-#, fuzzy
 msgid "data missing"
-msgstr "пропущено властивість"
+msgstr "пропущено дані"
 
 #: ../libnm-core/nm-setting-8021x.c:444
 msgid "binary data missing"
-msgstr ""
+msgstr "не вистачає двійкових даних"
 
 #: ../libnm-core/nm-setting-8021x.c:461
 msgid "file:// URI not NUL terminated"
-msgstr ""
+msgstr "Адреса file:// не завершується NUL"
 
 #: ../libnm-core/nm-setting-8021x.c:470
 msgid "file:// URI is empty"
-msgstr ""
+msgstr "Адреса file:// є порожньою"
 
 #: ../libnm-core/nm-setting-8021x.c:478
-#, fuzzy
 msgid "file:// URI is not valid UTF-8"
-msgstr "індекс «%s» є некоректним"
+msgstr "Адресу file:// вказано не у кодуванні UTF-8"
 
 #: ../libnm-core/nm-setting-8021x.c:677 ../libnm-util/nm-setting-8021x.c:640
 msgid "CA certificate must be in X.509 format"
@@ -7438,9 +7460,9 @@ msgid "has to match '%s' property for PKCS#12"
 msgstr "має відповідати властивості «%s» для PKCS#12"
 
 #: ../libnm-core/nm-setting-8021x.c:2687
-#, fuzzy, c-format
+#, c-format
 msgid "certificate is invalid: %s"
-msgstr "шлюз є некоректним"
+msgstr "некоректний сертифікат: %s"
 
 #: ../libnm-core/nm-setting-8021x.c:2722
 #: ../libnm-core/nm-setting-bluetooth.c:130
@@ -7563,9 +7585,9 @@ msgid "'%s' option is only valid with mode '%s'"
 msgstr "параметр «%s» є коректним лише у режимі «%s»"
 
 #: ../libnm-core/nm-setting-bond.c:653
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option should be string"
-msgstr "параметр «%s» є порожнім"
+msgstr "параметр «%s» має бути рядком"
 
 #: ../libnm-core/nm-setting-bridge-port.c:125
 #: ../libnm-core/nm-setting-bridge-port.c:137
@@ -7632,9 +7654,9 @@ msgid "Cannot set '%s' without '%s'"
 msgstr "Не можна встановити «%s» без «%s»"
 
 #: ../libnm-core/nm-setting-connection.c:949
-#, fuzzy, c-format
+#, c-format
 msgid "metered value %d is not valid"
-msgstr "значення «%s» не є коректним UUID"
+msgstr "лічильне значення %d є некоректним"
 
 #: ../libnm-core/nm-setting-connection.c:970
 #, c-format
@@ -7733,14 +7755,14 @@ msgid "mtu for transport mode '%s' can be at most %d but it is %d"
 msgstr "mtu для режиму передавання «%s» має не перевищувати %d, але маємо %d"
 
 #: ../libnm-core/nm-setting-ip-config.c:77
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv4 address"
-msgstr "некоректна адреса IPv4, «%s»"
+msgstr "Не вказано адреси IPv4"
 
 #: ../libnm-core/nm-setting-ip-config.c:77
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv6 address"
-msgstr "некоректна адреса IPv6, «%s»"
+msgstr "Не вказано адреси IPv6"
 
 #: ../libnm-core/nm-setting-ip-config.c:82
 #, c-format
@@ -7803,7 +7825,7 @@ msgstr "%d. Некоректний маршрут"
 #: ../libnm-core/nm-setting-ip-config.c:1947
 #, c-format
 msgid "%d. route cannot be a default route"
-msgstr ""
+msgstr "%d. Маршрут не може бути типовим."
 
 #: ../libnm-core/nm-setting-ip4-config.c:123
 #: ../libnm-core/nm-setting-ip6-config.c:121
@@ -7923,10 +7945,13 @@ msgstr "некоректний «%s» або його значення «%s»"
 #: ../libnm-core/nm-setting-wired.c:704
 msgid "Wake-on-LAN mode 'default' and 'ignore' are exclusive flags"
 msgstr ""
+"Прапорці режиму Wake-on-LAN «default» і «ignore» не можна використовувати "
+"одночасно"
 
 #: ../libnm-core/nm-setting-wired.c:713
 msgid "Wake-on-LAN password can only be used with magic packet mode"
 msgstr ""
+"Пароль до Wake-on-LAN можна використовувати лише у режимі магічних пакетів"
 
 #: ../libnm-core/nm-setting-wireless-security.c:883
 #: ../libnm-util/nm-setting-wireless-security.c:913
@@ -7978,7 +8003,7 @@ msgstr "«%s» потребує встановлення властивості 
 #: ../libnm-core/nm-setting.c:833
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
-msgstr ""
+msgstr "не вдалося встановити властивість типу «%s» зі значення типу «%s»"
 
 #: ../libnm-core/nm-setting.c:1548
 msgid "secret not found"
@@ -7991,7 +8016,7 @@ msgstr "пароль не встановлено"
 #: ../libnm-core/nm-utils.c:2480 ../libnm-util/nm-utils.c:1828
 #, c-format
 msgid "Could not find \"%s\" binary"
-msgstr ""
+msgstr "Не вдалося знайти виконуваний файл «%s»"
 
 #: ../libnm-glib/nm-device.c:1793 ../libnm/nm-device.c:1638
 msgid "Bluetooth"
@@ -8068,14 +8093,14 @@ msgid "%d. route has invalid prefix"
 msgstr "%d. Маршрут має некоректний префікс"
 
 #: ../libnm-util/nm-setting-ip6-config.c:912
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IPv6 address is invalid"
-msgstr "%d. Адреса IPv4 є некоректною"
+msgstr "%d. Адреса IPv6 є некоректною"
 
 #: ../libnm-util/nm-setting-ip6-config.c:922
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IPv6 address has invalid prefix"
-msgstr "%d. Адреса IPv4 має некоректний префікс"
+msgstr "%d. Адреса IPv6 має некоректний префікс"
 
 #: ../libnm-util/nm-setting-vpn.c:583
 #, c-format
@@ -8345,9 +8370,9 @@ msgid "%s %d"
 msgstr "%s %d"
 
 #: ../src/main.c:240
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to read configuration: %s\n"
-msgstr "Не вдалося прочитати налаштування: (%d) %s\n"
+msgstr "Не вдалося прочитати налаштування: %s\n"
 
 #. Logging/debugging
 #: ../src/main.c:255 ../src/nm-iface-helper.c:300
@@ -8389,9 +8414,8 @@ msgid "State file location"
 msgstr "Розташування файла стану"
 
 #: ../src/main.c:266
-#, fuzzy
 msgid "Print NetworkManager configuration and exit"
-msgstr "Вивести дані щодо версії NetworkManager і завершити роботу"
+msgstr "Вивести дані щодо налаштувань NetworkManager і завершити роботу"
 
 #: ../src/main.c:276
 msgid ""
@@ -8457,9 +8481,9 @@ msgid "Closing %s failed: %s\n"
 msgstr "Не вдалося завершити роботу %s: %s\n"
 
 #: ../src/main-utils.c:125
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot create '%s': %s"
-msgstr "Не можна встановити «%s» без «%s»"
+msgstr "Не вдалося створити «%s»: %s"
 
 #: ../src/main-utils.c:177
 #, c-format
@@ -8790,15 +8814,16 @@ msgstr "Розташування каталогу налаштувань"
 #: ../src/nm-config.c:465
 msgid "State file for no-auto-default devices"
 msgstr ""
+"Файл станів для пристроїв без автоматичних типових параметрів (no-auto-"
+"default)"
 
 #: ../src/nm-config.c:466
 msgid "List of plugins separated by ','"
 msgstr "Список додатків, відокремлених комами («,»)"
 
 #: ../src/nm-config.c:467
-#, fuzzy
 msgid "Quit after initial configuration"
-msgstr "Поточне налаштування nmcli:\n"
+msgstr "Вийти після початкового налаштовування"
 
 #. These three are hidden for now, and should eventually just go away.
 #: ../src/nm-config.c:470
@@ -8863,23 +8888,20 @@ msgid "barbar"
 msgstr "щосьщось"
 
 #: ../src/nm-iface-helper.c:295
-#, fuzzy
 msgid "Route priority for IPv4"
-msgstr "Пріоритет маршруту"
+msgstr "Пріоритет маршруту для IPv4"
 
 #: ../src/nm-iface-helper.c:295
-#, fuzzy
 msgid "0"
-msgstr "10"
+msgstr "0"
 
 #: ../src/nm-iface-helper.c:296
-#, fuzzy
 msgid "Route priority for IPv6"
-msgstr "Пріоритет маршруту"
+msgstr "Пріоритет маршруту для IPv6"
 
 #: ../src/nm-iface-helper.c:296
 msgid "1024"
-msgstr ""
+msgstr "1024"
 
 #: ../src/nm-iface-helper.c:297
 msgid "Hex-encoded Interface Identifier"
@@ -8899,9 +8921,9 @@ msgid "An interface name and UUID are required\n"
 msgstr "Потрібні назва і UUID інтерфейсу\n"
 
 #: ../src/nm-iface-helper.c:370
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to find interface index for %s (%s)\n"
-msgstr "Не вдалося знайти покажчик інтерфейсу для %s\n"
+msgstr "Не вдалося знайти покажчик інтерфейсу для %s (%s)\n"
 
 #: ../src/nm-iface-helper.c:430
 #, c-format

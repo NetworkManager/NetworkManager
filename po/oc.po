@@ -95,34 +95,34 @@ msgstr ""
 #: ../clients/cli/common.c:62 ../clients/cli/common.c:74
 #: ../clients/cli/connections.c:173 ../clients/cli/connections.c:195
 msgid "GROUP"
-msgstr ""
+msgstr "GROP"
 
 #. 0
 #: ../clients/cli/common.c:42 ../clients/cli/common.c:63
 msgid "ADDRESS"
-msgstr ""
+msgstr "ADREÇA"
 
 #. 1
 #. 2
 #: ../clients/cli/common.c:43 ../clients/cli/common.c:64
 #: ../clients/cli/connections.c:198
 msgid "GATEWAY"
-msgstr ""
+msgstr "PALANCA"
 
 #. 2
 #: ../clients/cli/common.c:44 ../clients/cli/common.c:65
 msgid "ROUTE"
-msgstr ""
+msgstr "ROTA"
 
 #. 3
 #: ../clients/cli/common.c:45 ../clients/cli/common.c:66
 msgid "DNS"
-msgstr ""
+msgstr "DNS (Servidor de Nom de Domeni)"
 
 #. 4
 #: ../clients/cli/common.c:46 ../clients/cli/common.c:67
 msgid "DOMAIN"
-msgstr ""
+msgstr "DOMENI"
 
 #. 5
 #: ../clients/cli/common.c:47
@@ -132,7 +132,7 @@ msgstr ""
 #. 0
 #: ../clients/cli/common.c:55 ../clients/cli/common.c:75
 msgid "OPTION"
-msgstr ""
+msgstr "OPCION"
 
 #: ../clients/cli/common.c:379 ../clients/cli/common.c:439
 #, c-format
@@ -167,31 +167,31 @@ msgstr ""
 
 #: ../clients/cli/common.c:497
 msgid "unmanaged"
-msgstr ""
+msgstr "pas gerit"
 
 #: ../clients/cli/common.c:499
 msgid "unavailable"
-msgstr ""
+msgstr "indisponible"
 
 #: ../clients/cli/common.c:501 ../clients/cli/general.c:260
 msgid "disconnected"
-msgstr ""
+msgstr "desconnectat"
 
 #: ../clients/cli/common.c:503
 msgid "connecting (prepare)"
-msgstr ""
+msgstr "connexion (preparar)"
 
 #: ../clients/cli/common.c:505
 msgid "connecting (configuring)"
-msgstr ""
+msgstr "connexion (configuracion)"
 
 #: ../clients/cli/common.c:507
 msgid "connecting (need authentication)"
-msgstr ""
+msgstr "connexion (autentificacion requesida)"
 
 #: ../clients/cli/common.c:509
 msgid "connecting (getting IP configuration)"
-msgstr ""
+msgstr "connexion (obtencion de la configuracion IP)"
 
 #: ../clients/cli/common.c:511
 msgid "connecting (checking IP connectivity)"
@@ -203,15 +203,15 @@ msgstr ""
 
 #: ../clients/cli/common.c:515 ../clients/cli/general.c:256
 msgid "connected"
-msgstr ""
+msgstr "connectat"
 
 #: ../clients/cli/common.c:517 ../clients/cli/connections.c:544
 msgid "deactivating"
-msgstr ""
+msgstr "desactivacion"
 
 #: ../clients/cli/common.c:519
 msgid "connection failed"
-msgstr ""
+msgstr "fracàs de la connexion"
 
 #: ../clients/cli/common.c:521 ../clients/cli/common.c:538
 #: ../clients/cli/connections.c:549 ../clients/cli/connections.c:572
@@ -224,7 +224,7 @@ msgstr ""
 #: ../clients/cli/utils.c:1200 ../src/main.c:241 ../src/main.c:386
 #: ../src/main.c:436
 msgid "unknown"
-msgstr ""
+msgstr "desconegut"
 
 #. "CAPABILITIES"
 #: ../clients/cli/common.c:530 ../clients/cli/connections.c:819
@@ -243,7 +243,7 @@ msgstr ""
 #: ../clients/cli/devices.c:933 ../clients/cli/devices.c:935
 #: ../clients/cli/general.c:421 ../clients/cli/settings.c:2834
 msgid "yes"
-msgstr ""
+msgstr "òc"
 
 #: ../clients/cli/common.c:532 ../clients/cli/connections.c:819
 #: ../clients/cli/connections.c:821 ../clients/cli/connections.c:823
@@ -261,7 +261,7 @@ msgstr ""
 #: ../clients/cli/devices.c:935 ../clients/cli/general.c:423
 #: ../clients/cli/settings.c:2836
 msgid "no"
-msgstr ""
+msgstr "non"
 
 #: ../clients/cli/common.c:534
 msgid "yes (guessed)"
@@ -529,7 +529,7 @@ msgstr ""
 #: ../clients/cli/common.c:737 ../clients/cli/devices.c:628
 #: ../libnm-glib/nm-device.c:1813 ../libnm/nm-device.c:1658
 msgid "Unknown"
-msgstr ""
+msgstr "Desconegut"
 
 #: ../clients/cli/common.c:779
 #, c-format
@@ -619,13 +619,13 @@ msgstr ""
 #: ../clients/cli/devices.c:192 ../clients/cli/devices.c:201
 #: ../clients/cli/devices.c:211
 msgid "NAME"
-msgstr ""
+msgstr "NOM"
 
 #. 0
 #. 1
 #: ../clients/cli/connections.c:62 ../clients/cli/connections.c:175
 msgid "UUID"
-msgstr ""
+msgstr "UUID"
 
 #. 1
 #. 0
@@ -635,23 +635,23 @@ msgstr ""
 #: ../clients/cli/devices.c:44 ../clients/cli/devices.c:60
 #: ../clients/cli/devices.c:180
 msgid "TYPE"
-msgstr ""
+msgstr "TIPE"
 
 #. 2
 #: ../clients/cli/connections.c:64
 msgid "TIMESTAMP"
-msgstr ""
+msgstr "TIMESTAMP"
 
 #. 3
 #: ../clients/cli/connections.c:65
 msgid "TIMESTAMP-REAL"
-msgstr ""
+msgstr "TIMESTAMP-REAL"
 
 #. 4
 #. 16
 #: ../clients/cli/connections.c:66 ../clients/cli/devices.c:75
 msgid "AUTOCONNECT"
-msgstr ""
+msgstr "AUTOCONNECT"
 
 #. 5
 #: ../clients/cli/connections.c:67
@@ -661,7 +661,7 @@ msgstr ""
 #. 6
 #: ../clients/cli/connections.c:68
 msgid "READONLY"
-msgstr ""
+msgstr "READONLY"
 
 #. 7
 #. 8
@@ -680,7 +680,7 @@ msgstr ""
 #: ../clients/cli/connections.c:70 ../clients/cli/devices.c:165
 #: ../clients/cli/devices.c:182
 msgid "ACTIVE"
-msgstr ""
+msgstr "ACTIU"
 
 #. 9
 #. 0
@@ -690,7 +690,7 @@ msgstr ""
 #: ../clients/cli/devices.c:59 ../clients/cli/devices.c:164
 #: ../clients/cli/devices.c:181
 msgid "DEVICE"
-msgstr ""
+msgstr "PERIFERIC"
 
 #. 10
 #. 3
@@ -701,7 +701,7 @@ msgstr ""
 #: ../clients/cli/devices.c:45 ../clients/cli/devices.c:69
 #: ../clients/cli/general.c:37
 msgid "STATE"
-msgstr ""
+msgstr "ESTAT"
 
 #. 11
 #: ../clients/cli/connections.c:73
@@ -711,12 +711,12 @@ msgstr ""
 #. 2
 #: ../clients/cli/connections.c:176
 msgid "DEVICES"
-msgstr ""
+msgstr "PERIFERICS"
 
 #. 4
 #: ../clients/cli/connections.c:178
 msgid "DEFAULT"
-msgstr ""
+msgstr "PER DEFAUT"
 
 #. 5
 #: ../clients/cli/connections.c:179
@@ -726,7 +726,7 @@ msgstr ""
 #. 6
 #: ../clients/cli/connections.c:180
 msgid "SPEC-OBJECT"
-msgstr ""
+msgstr "SPEC-OBJECT"
 
 #. 7
 #. 4
@@ -735,7 +735,7 @@ msgstr ""
 #: ../clients/cli/connections.c:3863 ../clients/tui/nm-editor-utils.c:234
 #: ../clients/tui/nmt-connect-connection-list.c:406
 msgid "VPN"
-msgstr ""
+msgstr "VPN"
 
 #. 9
 #. 5
@@ -773,35 +773,35 @@ msgstr ""
 #. 5
 #: ../clients/cli/connections.c:201
 msgid "CFG"
-msgstr ""
+msgstr "CFG"
 
 #: ../clients/cli/connections.c:214 ../clients/cli/devices.c:226
 msgid "GENERAL"
-msgstr ""
+msgstr "GENERAL"
 
 #. 0
 #. 6
 #: ../clients/cli/connections.c:215 ../clients/cli/devices.c:233
 msgid "IP4"
-msgstr ""
+msgstr "IP4"
 
 #. 1
 #. 7
 #: ../clients/cli/connections.c:216 ../clients/cli/devices.c:234
 msgid "DHCP4"
-msgstr ""
+msgstr "DHCP4"
 
 #. 2
 #. 8
 #: ../clients/cli/connections.c:217 ../clients/cli/devices.c:235
 msgid "IP6"
-msgstr ""
+msgstr "IP6"
 
 #. 3
 #. 9
 #: ../clients/cli/connections.c:218 ../clients/cli/devices.c:236
 msgid "DHCP6"
-msgstr ""
+msgstr "DHCP6"
 
 #: ../clients/cli/connections.c:253
 #, c-format
@@ -1089,43 +1089,43 @@ msgstr ""
 
 #: ../clients/cli/connections.c:540
 msgid "activating"
-msgstr ""
+msgstr "activacion"
 
 #: ../clients/cli/connections.c:542
 msgid "activated"
-msgstr ""
+msgstr "activat"
 
 #: ../clients/cli/connections.c:546
 msgid "deactivated"
-msgstr ""
+msgstr "desactivat"
 
 #: ../clients/cli/connections.c:558
 msgid "VPN connecting (prepare)"
-msgstr ""
+msgstr "Connexion VPN (preparacion)"
 
 #: ../clients/cli/connections.c:560
 msgid "VPN connecting (need authentication)"
-msgstr ""
+msgstr "Connexion VPN (autentificacion requesida)"
 
 #: ../clients/cli/connections.c:562
 msgid "VPN connecting"
-msgstr ""
+msgstr "Connexion VPN"
 
 #: ../clients/cli/connections.c:564
 msgid "VPN connecting (getting IP configuration)"
-msgstr ""
+msgstr "Connexion VPN (obtencion de la configuracion IP)"
 
 #: ../clients/cli/connections.c:566
 msgid "VPN connected"
-msgstr ""
+msgstr "VPN connectat"
 
 #: ../clients/cli/connections.c:568
 msgid "VPN connection failed"
-msgstr ""
+msgstr "Fracàs de la connexion VPN"
 
 #: ../clients/cli/connections.c:570
 msgid "VPN disconnected"
-msgstr ""
+msgstr "VPN desconnectat"
 
 #: ../clients/cli/connections.c:640
 #, c-format
@@ -1143,7 +1143,7 @@ msgstr ""
 
 #: ../clients/cli/connections.c:818
 msgid "never"
-msgstr ""
+msgstr "pas jamai"
 
 #: ../clients/cli/connections.c:1069
 msgid "Activate connection details"
@@ -1181,7 +1181,7 @@ msgstr ""
 #: ../clients/cli/devices.c:2795 ../clients/cli/devices.c:2802
 #, c-format
 msgid "Error: %s argument is missing."
-msgstr ""
+msgstr "Error&nbsp;: l'argument %s es mancant."
 
 #: ../clients/cli/connections.c:1439
 #, c-format
@@ -1197,7 +1197,7 @@ msgstr ""
 #: ../clients/cli/general.c:822
 #, c-format
 msgid "Error: %s."
-msgstr ""
+msgstr "Error&nbsp;: %s."
 
 #: ../clients/cli/connections.c:1594
 #, c-format
@@ -1220,15 +1220,15 @@ msgstr ""
 
 #: ../clients/cli/connections.c:1688
 msgid "unknown reason"
-msgstr ""
+msgstr "rason desconeguda"
 
 #: ../clients/cli/connections.c:1690 ../clients/cli/general.c:272
 msgid "none"
-msgstr ""
+msgstr "pas cap"
 
 #: ../clients/cli/connections.c:1692
 msgid "the user was disconnected"
-msgstr ""
+msgstr "l'utilizaire es estat desconnectat"
 
 #: ../clients/cli/connections.c:1694
 msgid "the base network connection was interrupted"
@@ -1260,7 +1260,7 @@ msgstr ""
 
 #: ../clients/cli/connections.c:1708
 msgid "invalid VPN secrets"
-msgstr ""
+msgstr "secrets VPN invalids"
 
 #: ../clients/cli/connections.c:1710
 msgid "the connection was removed"
@@ -1347,7 +1347,7 @@ msgstr ""
 #: ../clients/cli/devices.c:2682 ../clients/cli/devices.c:2808
 #, c-format
 msgid "Unknown parameter: %s\n"
-msgstr ""
+msgstr "Paramètre desconegut&nbsp;: %s\n"
 
 #: ../clients/cli/connections.c:2235
 msgid "preparing"
@@ -1475,7 +1475,7 @@ msgstr[1] ""
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3225
 msgid "ethernet"
-msgstr ""
+msgstr "ethernet"
 
 #: ../clients/cli/connections.c:3230 ../clients/cli/connections.c:3278
 #: ../clients/cli/connections.c:3412 ../clients/cli/connections.c:3491
@@ -1514,7 +1514,7 @@ msgstr ""
 #: ../clients/cli/connections.c:3351 ../clients/tui/nm-editor-utils.c:155
 #: ../libnm-glib/nm-device.c:1791 ../libnm/nm-device.c:1636
 msgid "Wi-Fi"
-msgstr ""
+msgstr "Wi-Fi"
 
 #: ../clients/cli/connections.c:3359
 #, c-format
@@ -1525,12 +1525,12 @@ msgstr ""
 #: ../clients/cli/connections.c:3379 ../libnm-glib/nm-device.c:1797
 #: ../libnm/nm-device.c:1642
 msgid "WiMAX"
-msgstr ""
+msgstr "WiMAX"
 
 #. Ask for optional 'pppoe' arguments.
 #: ../clients/cli/connections.c:3402
 msgid "PPPoE"
-msgstr ""
+msgstr "PPPoE"
 
 #: ../clients/cli/connections.c:3406 ../clients/cli/connections.c:3444
 #: ../clients/cli/connections.c:3917
@@ -1553,7 +1553,7 @@ msgstr ""
 #. Ask for optional 'bluetooth' arguments.
 #: ../clients/cli/connections.c:3457
 msgid "bluetooth"
-msgstr ""
+msgstr "bluetooth"
 
 #: ../clients/cli/connections.c:3464
 #, c-format
@@ -1572,7 +1572,7 @@ msgstr ""
 #: ../libnm-core/nm-connection.c:1612 ../libnm-glib/nm-device.c:1809
 #: ../libnm-util/nm-connection.c:1601 ../libnm/nm-device.c:1654
 msgid "VLAN"
-msgstr ""
+msgstr "VLAN"
 
 #: ../clients/cli/connections.c:3502
 msgid "VLAN flags (<0-7>) [none]: "
@@ -1873,7 +1873,7 @@ msgstr ""
 
 #: ../clients/cli/connections.c:4438
 msgid "APN: "
-msgstr ""
+msgstr "APN : "
 
 #: ../clients/cli/connections.c:4441
 msgid "Error: 'apn' is required."
@@ -2831,7 +2831,7 @@ msgstr ""
 #. 5
 #: ../clients/cli/devices.c:64
 msgid "DRIVER"
-msgstr ""
+msgstr "PILÒT"
 
 #. 6
 #: ../clients/cli/devices.c:65
@@ -2846,7 +2846,7 @@ msgstr ""
 #. 8
 #: ../clients/cli/devices.c:67
 msgid "HWADDR"
-msgstr ""
+msgstr "HWADDR"
 
 #. 9
 #: ../clients/cli/devices.c:68 ../clients/tui/nmt-page-ethernet.c:86
@@ -2909,48 +2909,48 @@ msgstr ""
 #. 0
 #: ../clients/cli/devices.c:102
 msgid "CARRIER-DETECT"
-msgstr ""
+msgstr "DETECCION-OPERATOR"
 
 #. 1
 #: ../clients/cli/devices.c:103
 msgid "SPEED"
-msgstr ""
+msgstr "VELOCITAT"
 
 #. 0
 #: ../clients/cli/devices.c:113
 msgid "CARRIER"
-msgstr ""
+msgstr "OPERATOR"
 
 #. 0
 #: ../clients/cli/devices.c:122 ../clients/cli/devices.c:557
 msgid "WEP"
-msgstr ""
+msgstr "WEP"
 
 #. 1
 #: ../clients/cli/devices.c:123
 msgid "WPA"
-msgstr ""
+msgstr "WPA"
 
 #. 2
 #: ../clients/cli/devices.c:124 ../clients/cli/devices.c:565
 msgid "WPA2"
-msgstr ""
+msgstr "WPA2"
 
 #. 3
 #: ../clients/cli/devices.c:125
 msgid "TKIP"
-msgstr ""
+msgstr "TKIP"
 
 #. 4
 #: ../clients/cli/devices.c:126
 msgid "CCMP"
-msgstr ""
+msgstr "CCMP"
 
 #. 5
 #. 2
 #: ../clients/cli/devices.c:127 ../clients/cli/devices.c:229
 msgid "AP"
-msgstr ""
+msgstr "PA"
 
 #. 6
 #: ../clients/cli/devices.c:128
@@ -2995,7 +2995,7 @@ msgstr ""
 #. 0
 #: ../clients/cli/devices.c:152 ../clients/tui/nmt-page-wifi.c:227
 msgid "SSID"
-msgstr ""
+msgstr "SSID"
 
 #. 1
 #: ../clients/cli/devices.c:153
@@ -3005,12 +3005,12 @@ msgstr ""
 #. 2
 #: ../clients/cli/devices.c:154 ../clients/tui/nmt-page-wifi.c:361
 msgid "BSSID"
-msgstr ""
+msgstr "BSSID"
 
 #. 3
 #: ../clients/cli/devices.c:155
 msgid "MODE"
-msgstr ""
+msgstr "MÒDE"
 
 #. 4
 #: ../clients/cli/devices.c:156
@@ -3020,38 +3020,38 @@ msgstr ""
 #. 5
 #: ../clients/cli/devices.c:157
 msgid "FREQ"
-msgstr ""
+msgstr "FREQ"
 
 #. 6
 #: ../clients/cli/devices.c:158
 msgid "RATE"
-msgstr ""
+msgstr "DEBIT"
 
 #. 7
 #. 1
 #: ../clients/cli/devices.c:159 ../clients/cli/devices.c:179
 msgid "SIGNAL"
-msgstr ""
+msgstr "SENHAL"
 
 #. 8
 #: ../clients/cli/devices.c:160
 msgid "BARS"
-msgstr ""
+msgstr "BARRAS"
 
 #. 9
 #: ../clients/cli/devices.c:161
 msgid "SECURITY"
-msgstr ""
+msgstr "SEGURETAT"
 
 #. 10
 #: ../clients/cli/devices.c:162
 msgid "WPA-FLAGS"
-msgstr ""
+msgstr "BANDIÈRAS-WPA"
 
 #. 11
 #: ../clients/cli/devices.c:163
 msgid "RSN-FLAGS"
-msgstr ""
+msgstr "BANDIÈRAS-RSN"
 
 #. 14
 #: ../clients/cli/devices.c:166
@@ -3077,22 +3077,22 @@ msgstr ""
 #. 1
 #: ../clients/cli/devices.c:203
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. 0
 #: ../clients/cli/devices.c:212 ../clients/cli/devices.c:227
 msgid "CAPABILITIES"
-msgstr ""
+msgstr "CAPACITATS"
 
 #. 1
 #: ../clients/cli/devices.c:228
 msgid "WIFI-PROPERTIES"
-msgstr ""
+msgstr "PROPRIETATS-WIFI"
 
 #. 3
 #: ../clients/cli/devices.c:230
 msgid "WIRED-PROPERTIES"
-msgstr ""
+msgstr "PROPRIETATS-CABLADAS"
 
 #. 4
 #: ../clients/cli/devices.c:231
@@ -3122,7 +3122,7 @@ msgstr ""
 #. 15
 #: ../clients/cli/devices.c:242
 msgid "CONNECTIONS"
-msgstr ""
+msgstr "CONNEXIONS"
 
 #: ../clients/cli/devices.c:266
 #, c-format
@@ -3283,12 +3283,12 @@ msgstr ""
 
 #: ../clients/cli/devices.c:477 ../clients/cli/devices.c:668
 msgid "(none)"
-msgstr ""
+msgstr "(pas cap)"
 
 #: ../clients/cli/devices.c:545
 #, c-format
 msgid "%u MHz"
-msgstr ""
+msgstr "%u MHz"
 
 #: ../clients/cli/devices.c:546
 #, c-format
@@ -3297,19 +3297,19 @@ msgstr ""
 
 #: ../clients/cli/devices.c:561
 msgid "WPA1"
-msgstr ""
+msgstr "WPA1"
 
 #: ../clients/cli/devices.c:570
 msgid "802.1X"
-msgstr ""
+msgstr "802.1X"
 
 #: ../clients/cli/devices.c:586
 msgid "Ad-Hoc"
-msgstr ""
+msgstr "Ad-Hoc"
 
 #: ../clients/cli/devices.c:587
 msgid "Infra"
-msgstr ""
+msgstr "Infra"
 
 #: ../clients/cli/devices.c:588
 msgid "N/A"
@@ -3338,20 +3338,20 @@ msgstr ""
 
 #: ../clients/cli/devices.c:847 ../clients/cli/devices.c:850
 msgid "(unknown)"
-msgstr ""
+msgstr "(desconegut)"
 
 #: ../clients/cli/devices.c:891
 #, c-format
 msgid "%u Mb/s"
-msgstr ""
+msgstr "%u Mio/s"
 
 #: ../clients/cli/devices.c:981
 msgid "on"
-msgstr ""
+msgstr "activat"
 
 #: ../clients/cli/devices.c:981
 msgid "off"
-msgstr ""
+msgstr "desactivat"
 
 #: ../clients/cli/devices.c:1255
 #, c-format
@@ -3624,12 +3624,12 @@ msgstr ""
 
 #: ../clients/cli/general.c:35
 msgid "RUNNING"
-msgstr ""
+msgstr "EN CORS D'EXECUCION"
 
 #. 0
 #: ../clients/cli/general.c:36
 msgid "VERSION"
-msgstr ""
+msgstr "VERSION"
 
 #. 2
 #: ../clients/cli/general.c:38
@@ -3639,7 +3639,7 @@ msgstr ""
 #. 3
 #: ../clients/cli/general.c:39
 msgid "CONNECTIVITY"
-msgstr ""
+msgstr "CONNECTIVITAT"
 
 #. 4
 #: ../clients/cli/general.c:40
@@ -3649,41 +3649,41 @@ msgstr ""
 #. 5
 #: ../clients/cli/general.c:41
 msgid "WIFI-HW"
-msgstr ""
+msgstr "WIFI-HW"
 
 #. 6
 #: ../clients/cli/general.c:42
 msgid "WIFI"
-msgstr ""
+msgstr "WIFI"
 
 #. 7
 #: ../clients/cli/general.c:43
 msgid "WWAN-HW"
-msgstr ""
+msgstr "WWAN-HW"
 
 #. 8
 #: ../clients/cli/general.c:44
 msgid "WWAN"
-msgstr ""
+msgstr "WWAN"
 
 #. 9
 #: ../clients/cli/general.c:45
 msgid "WIMAX-HW"
-msgstr ""
+msgstr "WIMAX-HW"
 
 #. 10
 #: ../clients/cli/general.c:46
 msgid "WIMAX"
-msgstr ""
+msgstr "WIMAX"
 
 #: ../clients/cli/general.c:68
 msgid "PERMISSION"
-msgstr ""
+msgstr "PERMISSION"
 
 #. 0
 #: ../clients/cli/general.c:69
 msgid "VALUE"
-msgstr ""
+msgstr "VALOR"
 
 #: ../clients/cli/general.c:77
 msgid "LEVEL"
@@ -3692,7 +3692,7 @@ msgstr ""
 #. 0
 #: ../clients/cli/general.c:78
 msgid "DOMAINS"
-msgstr ""
+msgstr "DOMENIS"
 
 #: ../clients/cli/general.c:92
 #, c-format
@@ -3868,11 +3868,11 @@ msgstr ""
 
 #: ../clients/cli/general.c:248
 msgid "asleep"
-msgstr ""
+msgstr "velha"
 
 #: ../clients/cli/general.c:250
 msgid "connecting"
-msgstr ""
+msgstr "connexion"
 
 #: ../clients/cli/general.c:252
 msgid "connected (local only)"
@@ -3908,22 +3908,22 @@ msgstr ""
 #: ../clients/cli/general.c:340 ../clients/cli/general.c:342
 #: ../clients/cli/general.c:343
 msgid "enabled"
-msgstr ""
+msgstr "activat"
 
 #: ../clients/cli/general.c:336 ../clients/cli/general.c:337
 #: ../clients/cli/general.c:338 ../clients/cli/general.c:339
 #: ../clients/cli/general.c:340 ../clients/cli/general.c:342
 #: ../clients/cli/general.c:343
 msgid "disabled"
-msgstr ""
+msgstr "desactivat"
 
 #: ../clients/cli/general.c:346
 msgid "NetworkManager status"
-msgstr ""
+msgstr "Estat de NetworkManager"
 
 #: ../clients/cli/general.c:351
 msgid "running"
-msgstr ""
+msgstr "en cors d'execucion"
 
 #: ../clients/cli/general.c:354
 msgid "starting"
@@ -4101,7 +4101,7 @@ msgstr ""
 #: ../clients/cli/nmcli.c:257
 #, c-format
 msgid "nmcli tool, version %s\n"
-msgstr ""
+msgstr "aisina nmcli, version %s\n"
 
 #: ../clients/cli/nmcli.c:263
 #, c-format
@@ -4132,7 +4132,7 @@ msgstr ""
 
 #: ../clients/cli/nmcli.c:508
 msgid "Success"
-msgstr ""
+msgstr "Succès"
 
 #: ../clients/cli/polkit-agent.c:82
 #, c-format
@@ -4249,7 +4249,7 @@ msgstr ""
 #: ../clients/cli/settings.c:1240 ../clients/cli/settings.c:1517
 #: ../clients/cli/settings.c:1619
 msgid "auto"
-msgstr ""
+msgstr "automatic"
 
 #: ../clients/cli/settings.c:1253
 msgid "default"
@@ -4983,7 +4983,7 @@ msgstr ""
 #: ../clients/common/nm-secret-agent-simple.c:331
 #: ../clients/tui/nmt-page-dsl.c:69 ../clients/tui/nmt-page-wifi.c:335
 msgid "Username"
-msgstr ""
+msgstr "Nom d'utilizaire"
 
 #: ../clients/common/nm-secret-agent-simple.c:233
 #: ../clients/common/nm-secret-agent-simple.c:276
@@ -4998,11 +4998,11 @@ msgstr ""
 #: ../clients/tui/nmt-page-wifi.c:280 ../clients/tui/nmt-page-wifi.c:311
 #: ../clients/tui/nmt-page-wifi.c:344
 msgid "Password"
-msgstr ""
+msgstr "Senhal"
 
 #: ../clients/common/nm-secret-agent-simple.c:244
 msgid "Identity"
-msgstr ""
+msgstr "Identitat"
 
 #: ../clients/common/nm-secret-agent-simple.c:251
 msgid "Private key password"
@@ -5011,12 +5011,12 @@ msgstr ""
 #: ../clients/common/nm-secret-agent-simple.c:292
 #: ../clients/tui/nmt-page-wifi.c:292
 msgid "Key"
-msgstr ""
+msgstr "Clau"
 
 #: ../clients/common/nm-secret-agent-simple.c:338
 #: ../clients/tui/nmt-page-dsl.c:81
 msgid "Service"
-msgstr ""
+msgstr "Servici"
 
 #: ../clients/common/nm-secret-agent-simple.c:465
 msgid "Authentication required by wireless network"
@@ -5291,7 +5291,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-editor.c:335
 msgid "Device"
-msgstr ""
+msgstr "Periferic"
 
 #. And finally the bottom widgets
 #: ../clients/tui/nmt-editor.c:393
@@ -5326,7 +5326,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-bond.c:89
 msgid "XOR"
-msgstr ""
+msgstr "XOR"
 
 #: ../clients/tui/nmt-page-bond.c:90
 msgid "Broadcast"
@@ -5334,7 +5334,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-bond.c:91
 msgid "802.3ad"
-msgstr ""
+msgstr "802.3ad"
 
 #: ../clients/tui/nmt-page-bond.c:92
 msgid "Adaptive Transmit Load Balancing (tlb)"
@@ -5373,7 +5373,7 @@ msgstr ""
 #: ../clients/tui/nmt-page-bond.c:402 ../clients/tui/nmt-page-bond.c:409
 msgctxt "milliseconds"
 msgid "ms"
-msgstr ""
+msgstr "ms"
 
 #: ../clients/tui/nmt-page-bond.c:389 ../clients/tui/nmt-page-bond.c:410
 msgid "Monitoring frequency"
@@ -5495,7 +5495,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:139 ../clients/tui/nmt-page-ip6.c:139
 msgid "Addresses"
-msgstr ""
+msgstr "Adreças"
 
 #: ../clients/tui/nmt-page-ip4.c:153 ../clients/tui/nmt-page-ip6.c:153
 msgid "DNS servers"
@@ -5603,7 +5603,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-vlan.c:102
 msgid "Parent"
-msgstr ""
+msgstr "Parent"
 
 #: ../clients/tui/nmt-page-vlan.c:117
 msgid "VLAN id"
@@ -5612,7 +5612,7 @@ msgstr ""
 #: ../clients/tui/nmt-page-wifi.c:67
 msgctxt "Wi-Fi"
 msgid "Client"
-msgstr ""
+msgstr "Client"
 
 #: ../clients/tui/nmt-page-wifi.c:68
 msgid "Access Point"
@@ -5625,7 +5625,7 @@ msgstr ""
 #: ../clients/tui/nmt-page-wifi.c:74
 msgctxt "Wi-Fi"
 msgid "Automatic"
-msgstr ""
+msgstr "Automatic"
 
 #. 802.11a Wi-Fi network
 #: ../clients/tui/nmt-page-wifi.c:76
@@ -5640,7 +5640,7 @@ msgstr ""
 #: ../clients/tui/nmt-page-wifi.c:83
 msgctxt "Wi-Fi security"
 msgid "None"
-msgstr ""
+msgstr "Pas cap"
 
 #: ../clients/tui/nmt-page-wifi.c:84
 msgid "WPA & WPA2 Personal"
@@ -5664,7 +5664,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:89
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: ../clients/tui/nmt-page-wifi.c:94
 msgctxt "WEP key index"
@@ -5674,17 +5674,17 @@ msgstr ""
 #: ../clients/tui/nmt-page-wifi.c:95
 msgctxt "WEP key index"
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../clients/tui/nmt-page-wifi.c:96
 msgctxt "WEP key index"
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../clients/tui/nmt-page-wifi.c:97
 msgctxt "WEP key index"
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../clients/tui/nmt-page-wifi.c:102
 msgid "Open System"
@@ -5696,15 +5696,15 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:217
 msgid "WI-FI"
-msgstr ""
+msgstr "WI-FI"
 
 #: ../clients/tui/nmt-page-wifi.c:259
 msgid "Channel"
-msgstr ""
+msgstr "Canal"
 
 #: ../clients/tui/nmt-page-wifi.c:264
 msgid "Security"
-msgstr ""
+msgstr "Seguretat"
 
 #. "wpa-enterprise"
 #. FIXME
@@ -5718,7 +5718,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:303 ../clients/tui/nmt-page-wifi.c:322
 msgid "Authentication"
-msgstr ""
+msgstr "Autentificacion"
 
 #. "dynamic-wep"
 #. FIXME
@@ -5740,7 +5740,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-route-table.c:192
 msgid "Prefix"
-msgstr ""
+msgstr "Prefix"
 
 #: ../clients/tui/nmt-route-table.c:201
 msgid "Next Hop"
@@ -5760,7 +5760,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-widget-list.c:141
 msgid "Add..."
-msgstr ""
+msgstr "Apondre..."
 
 #: ../clients/tui/nmt-widget-list.c:204
 msgid "Remove"
@@ -5793,7 +5793,7 @@ msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:237
 msgid "Connecting..."
-msgstr ""
+msgstr "Connexion..."
 
 #: ../clients/tui/nmtui-connect.c:272 ../clients/tui/nmtui-connect.c:303
 #, c-format
@@ -5802,16 +5802,16 @@ msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:363 ../clients/tui/nmtui-connect.c:412
 msgid "Activate"
-msgstr ""
+msgstr "Activar"
 
 #: ../clients/tui/nmtui-connect.c:365
 msgid "Deactivate"
-msgstr ""
+msgstr "Desactivar"
 
 #: ../clients/tui/nmtui-connect.c:417 ../clients/tui/nmtui-edit.c:121
 #: ../clients/tui/nmtui.c:111
 msgid "Quit"
-msgstr ""
+msgstr "Quitar"
 
 #: ../clients/tui/nmtui-connect.c:440
 #, c-format
@@ -5824,7 +5824,7 @@ msgstr ""
 
 #: ../clients/tui/nmtui-edit.c:226
 msgid "Create"
-msgstr ""
+msgstr "Crear"
 
 #: ../clients/tui/nmtui-edit.c:368
 msgid "Select the type of connection you wish to create."
@@ -5922,47 +5922,47 @@ msgstr ""
 #: ../libnm-core/crypto.c:120 ../libnm-util/crypto.c:133
 #, c-format
 msgid "PEM key file had no end tag '%s'."
-msgstr ""
+msgstr "Lo fichièr de clau PEM a pas de balisa de fin « %s »."
 
 #: ../libnm-core/crypto.c:133 ../libnm-util/crypto.c:146
 #, c-format
 msgid "Doesn't look like a PEM private key file."
-msgstr ""
+msgstr "Sembla qu'aquò es pas un fichièr de clau privada PEM."
 
 #: ../libnm-core/crypto.c:150 ../libnm-util/crypto.c:163
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
-msgstr ""
+msgstr "Fichièr PEM incorrècte : Proc-Type es pas la primièra balisa."
 
 #: ../libnm-core/crypto.c:158 ../libnm-util/crypto.c:171
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
-msgstr ""
+msgstr "Fichièr PEM incorrècte : etiqueta Proc-Type « %s » desconeguda."
 
 #: ../libnm-core/crypto.c:168 ../libnm-util/crypto.c:181
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
-msgstr ""
+msgstr "Fichièr PEM incorrècte : DEK-Info es pas la segonda balisa."
 
 #: ../libnm-core/crypto.c:179 ../libnm-util/crypto.c:192
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
-msgstr ""
+msgstr "Fichièr PEM incorrècte : cap d'IV pas trobat dins la balisa DEK-Info."
 
 #: ../libnm-core/crypto.c:186 ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr ""
+msgstr "Fichièr PEM incorrècte : format d'IV invalid dins la balisa DEK-Info."
 
 #: ../libnm-core/crypto.c:201 ../libnm-util/crypto.c:214
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr ""
+msgstr "Fichièr PEM incorrècte : chifra de clau privada « %s » desconegut."
 
 #: ../libnm-core/crypto.c:220 ../libnm-util/crypto.c:233
 #, c-format
 msgid "Could not decode private key."
-msgstr ""
+msgstr "Impossible de desencodar la clau privada."
 
 #: ../libnm-core/crypto.c:274 ../libnm-util/crypto.c:285
 msgid "Failed to find expected PKCS#8 start tag."
@@ -5980,12 +5980,12 @@ msgstr ""
 #: ../libnm-core/crypto.c:343 ../libnm-util/crypto.c:354
 #, c-format
 msgid "IV must be an even number of bytes in length."
-msgstr ""
+msgstr "La longor en octets d'IV deu èsser para."
 
 #: ../libnm-core/crypto.c:357 ../libnm-util/crypto.c:368
 #, c-format
 msgid "IV contains non-hexadecimal digits."
-msgstr ""
+msgstr "IV conten de chifras non-exadecimals."
 
 #: ../libnm-core/crypto.c:397 ../libnm-core/crypto_gnutls.c:93
 #: ../libnm-core/crypto_gnutls.c:214 ../libnm-core/crypto_nss.c:115
@@ -5994,12 +5994,12 @@ msgstr ""
 #: ../libnm-util/crypto_nss.c:165 ../libnm-util/crypto_nss.c:326
 #, c-format
 msgid "Private key cipher '%s' was unknown."
-msgstr ""
+msgstr "La chifra « %s » de la clau privada es desconegut."
 
 #: ../libnm-core/crypto.c:496 ../libnm-util/crypto.c:518
 #, c-format
 msgid "Unable to determine private key type."
-msgstr ""
+msgstr "Impossible de determinar lo tipe de clau privada."
 
 #: ../libnm-core/crypto.c:504
 #, c-format
@@ -6019,16 +6019,16 @@ msgstr ""
 #: ../libnm-core/crypto.c:584 ../libnm-util/crypto.c:600
 #, c-format
 msgid "Failed to decode certificate."
-msgstr ""
+msgstr "Impossible de desencodar lo certificat."
 
 #: ../libnm-core/crypto_gnutls.c:51 ../libnm-util/crypto_gnutls.c:51
 msgid "Failed to initialize the crypto engine."
-msgstr ""
+msgstr "L'inicializacion del motor de chiframent a fracassat."
 
 #: ../libnm-core/crypto_gnutls.c:101 ../libnm-util/crypto_gnutls.c:154
 #, c-format
 msgid "Invalid IV length (must be at least %zd)."
-msgstr ""
+msgstr "Longor IV invalida (al minimum %zd)."
 
 #: ../libnm-core/crypto_gnutls.c:112 ../libnm-util/crypto_gnutls.c:165
 #, c-format
@@ -6039,11 +6039,12 @@ msgstr ""
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr ""
+"La definicion de la clau simetrica pel deschiframent a fracassat : %s / %s."
 
 #: ../libnm-core/crypto_gnutls.c:130 ../libnm-util/crypto_gnutls.c:183
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
-msgstr ""
+msgstr "La definicion d'IV pel deschiframent a fracassat : %s / %s."
 
 #: ../libnm-core/crypto_gnutls.c:139 ../libnm-util/crypto_gnutls.c:192
 #, c-format
@@ -6055,12 +6056,13 @@ msgstr ""
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr ""
+"Fracàs de deschiframent de la clau privada : longor d'emplenatge imprevista."
 
 #: ../libnm-core/crypto_gnutls.c:160 ../libnm-core/crypto_nss.c:216
 #: ../libnm-util/crypto_gnutls.c:213 ../libnm-util/crypto_nss.c:266
 #, c-format
 msgid "Failed to decrypt the private key."
-msgstr ""
+msgstr "Lo deschiframent de la clau privada a fracassat."
 
 #: ../libnm-core/crypto_gnutls.c:236 ../libnm-util/crypto_gnutls.c:285
 #, c-format
@@ -6070,7 +6072,7 @@ msgstr ""
 #: ../libnm-core/crypto_gnutls.c:245 ../libnm-util/crypto_gnutls.c:294
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
-msgstr ""
+msgstr "Impossible de definir la clau simetrica pel chiframent : %s / %s."
 
 #: ../libnm-core/crypto_gnutls.c:255 ../libnm-util/crypto_gnutls.c:304
 #, c-format
@@ -6085,27 +6087,27 @@ msgstr ""
 #: ../libnm-core/crypto_gnutls.c:307 ../libnm-util/crypto_gnutls.c:353
 #, c-format
 msgid "Error initializing certificate data: %s"
-msgstr ""
+msgstr "Error al moment de l'inicializacion de las donadas del certificat : %s"
 
 #: ../libnm-core/crypto_gnutls.c:329 ../libnm-util/crypto_gnutls.c:375
 #, c-format
 msgid "Couldn't decode certificate: %s"
-msgstr ""
+msgstr "Impossible de desencodar lo certificat : %s"
 
 #: ../libnm-core/crypto_gnutls.c:357 ../libnm-util/crypto_gnutls.c:399
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
-msgstr ""
+msgstr "Impossible d'inicializar lo desencodador PKCS#12[npsb]: %s"
 
 #: ../libnm-core/crypto_gnutls.c:370 ../libnm-util/crypto_gnutls.c:412
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
-msgstr ""
+msgstr "Impossible de desencodar lo fichièr PKCS#12[npsb]: %s"
 
 #: ../libnm-core/crypto_gnutls.c:382 ../libnm-util/crypto_gnutls.c:424
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
-msgstr ""
+msgstr "Impossible de verificar lo fichièr PKCS#12[npsb]: %s"
 
 #: ../libnm-core/crypto_gnutls.c:414 ../libnm-util/crypto_gnutls.c:452
 #, c-format
@@ -6120,82 +6122,85 @@ msgstr ""
 #: ../libnm-core/crypto_nss.c:57 ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
-msgstr ""
+msgstr "L'inicializacion del motor de chiframent a fracassat : %d."
 
 #: ../libnm-core/crypto_nss.c:123 ../libnm-util/crypto_nss.c:173
 #, c-format
 msgid "Invalid IV length (must be at least %d)."
-msgstr ""
+msgstr "Longor IV invalida (al minimum %d)."
 
 #: ../libnm-core/crypto_nss.c:134 ../libnm-util/crypto_nss.c:184
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr ""
+"L'inicializacion de l'emplaçament de la chifra de deschiframent a fracassat."
 
 #: ../libnm-core/crypto_nss.c:144 ../libnm-util/crypto_nss.c:194
 #, c-format
 msgid "Failed to set symmetric key for decryption."
-msgstr ""
+msgstr "La definicion de la clau simetrica pel deschiframent a fracassat."
 
 #: ../libnm-core/crypto_nss.c:154 ../libnm-util/crypto_nss.c:204
 #, c-format
 msgid "Failed to set IV for decryption."
-msgstr ""
+msgstr "La definicion de IV pel deschiframent a fracassat."
 
 #: ../libnm-core/crypto_nss.c:162 ../libnm-util/crypto_nss.c:212
 #, c-format
 msgid "Failed to initialize the decryption context."
-msgstr ""
+msgstr "L'inicializacion del contèxte de deschiframent a fracassat."
 
 #: ../libnm-core/crypto_nss.c:175 ../libnm-util/crypto_nss.c:225
 #, c-format
 msgid "Failed to decrypt the private key: %d."
-msgstr ""
+msgstr "Lo deschiframent de la clau privada a fracassat : %d."
 
 #: ../libnm-core/crypto_nss.c:183 ../libnm-util/crypto_nss.c:233
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
+"Fracàs de deschiframent de la clau privada : donadas deschifradas tròp "
+"grandas."
 
 #: ../libnm-core/crypto_nss.c:194 ../libnm-util/crypto_nss.c:244
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
-msgstr ""
+msgstr "La finalizacion del deschiframent de la clau privada a fracassat : %d."
 
 #: ../libnm-core/crypto_nss.c:302 ../libnm-util/crypto_nss.c:348
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
-msgstr ""
+msgstr "Fracàs d'inicializacion de l'emplaçament de chiframent."
 
 #: ../libnm-core/crypto_nss.c:310 ../libnm-util/crypto_nss.c:356
 #, c-format
 msgid "Failed to set symmetric key for encryption."
-msgstr ""
+msgstr "Impossible de definir la clau simetrica pel chiframent."
 
 #: ../libnm-core/crypto_nss.c:318 ../libnm-util/crypto_nss.c:364
 #, c-format
 msgid "Failed to set IV for encryption."
-msgstr ""
+msgstr "Impossible de definir IV pel chiframent."
 
 #: ../libnm-core/crypto_nss.c:326 ../libnm-util/crypto_nss.c:372
 #, c-format
 msgid "Failed to initialize the encryption context."
-msgstr ""
+msgstr "Fracàs d'inicializacion del contèxte de chiframent."
 
 #: ../libnm-core/crypto_nss.c:334 ../libnm-util/crypto_nss.c:380
 #, c-format
 msgid "Failed to encrypt: %d."
-msgstr ""
+msgstr "Fracàs de chiframent : %d."
 
 #: ../libnm-core/crypto_nss.c:342 ../libnm-util/crypto_nss.c:388
 #, c-format
 msgid "Unexpected amount of data after encrypting."
-msgstr ""
+msgstr "Quantitat de donadas imprevista aprèp lo chiframent."
 
 #: ../libnm-core/crypto_nss.c:385 ../libnm-util/crypto_nss.c:428
 #, c-format
 msgid "Couldn't decode certificate: %d"
-msgstr ""
+msgstr "Impossible de desencodar lo certificat : %d"
 
 #: ../libnm-core/crypto_nss.c:423
 #, c-format
@@ -6205,21 +6210,21 @@ msgstr ""
 #: ../libnm-core/crypto_nss.c:453 ../libnm-util/crypto_nss.c:491
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
-msgstr ""
+msgstr "Impossible d'inicializar lo desencodador PKCS#12[npsb]: %d"
 
 #: ../libnm-core/crypto_nss.c:462 ../libnm-util/crypto_nss.c:500
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
-msgstr ""
+msgstr "Impossible de desencodar lo fichièr PKCS#12[npsb]: %d"
 
 #: ../libnm-core/crypto_nss.c:471 ../libnm-util/crypto_nss.c:509
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
-msgstr ""
+msgstr "Impossible de verificar lo fichièr PKCS#12[npsb]: %d"
 
 #: ../libnm-core/crypto_nss.c:522 ../libnm-util/crypto_nss.c:553
 msgid "Could not generate random data."
-msgstr ""
+msgstr "Impossible de generar de donadas aleatòrias."
 
 #: ../libnm-core/nm-connection.c:226
 msgid "wrong type; should be a list of strings."
@@ -7111,12 +7116,12 @@ msgstr ""
 #: ../libnm-util/crypto_nss.c:102
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
-msgstr ""
+msgstr "L'inicializacion del contèxte MD5 a fracassat : %d."
 
 #: ../libnm-util/crypto_nss.c:463
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
-msgstr ""
+msgstr "Impossible de convertir lo senhal en UCS2 : %d"
 
 #: ../libnm-util/nm-setting-bluetooth.c:187
 #, c-format
@@ -7356,19 +7361,23 @@ msgstr ""
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:13
 msgid "Connection sharing via a protected WiFi network"
-msgstr ""
+msgstr "Partiment de connexion via una ret WiFi protegida"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:14
 msgid "System policy prevents sharing connections via a protected WiFi network"
 msgstr ""
+"La politica de seguretat del sistèma empacha lo partiment de las connexions "
+"via una ret WiFi protegida"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:15
 msgid "Connection sharing via an open WiFi network"
-msgstr ""
+msgstr "Partiment de connexion via una ret WiFi dobèrta"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:16
 msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr ""
+"La politica de seguretat del sistèma empacha lo partiment de las connexions "
+"via una ret WiFi dobèrta"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Modify personal network connections"
@@ -7388,11 +7397,13 @@ msgstr ""
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:21
 msgid "Modify persistent system hostname"
-msgstr ""
+msgstr "Modificacion permanenta del nom de l'ordenador"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:22
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr ""
+"La politica de seguretat del sistèma empacha la modificacion permanenta del "
+"nom de l'ordenador"
 
 #. Translators: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
@@ -7518,7 +7529,7 @@ msgstr ""
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:210
 msgid "# Created by NetworkManager\n"
-msgstr ""
+msgstr "# Creat per NetworkManager\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:217
 #, c-format
@@ -7526,6 +7537,8 @@ msgid ""
 "# Merged from %s\n"
 "\n"
 msgstr ""
+"# Fusionat dempuèi %s\n"
+"\n"
 
 #: ../src/dhcp-manager/nm-dhcp-manager.c:130
 #, c-format
@@ -7539,10 +7552,12 @@ msgstr ""
 #: ../src/dns-manager/nm-dns-manager.c:364
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
+"NÒTA : es possible que lo solvidor libc prenga pas en carga mai de 3 "
+"servidors de noms."
 
 #: ../src/dns-manager/nm-dns-manager.c:366
 msgid "The nameservers listed below may not be recognized."
-msgstr ""
+msgstr "Los servidors de noms listats çaijós pòdon pas èsser reconeguts."
 
 #: ../src/devices/adsl/nm-device-adsl.c:137
 msgid "ADSL connection"
@@ -7932,4 +7947,4 @@ msgstr ""
 
 #: ../src/settings/plugins/ifcfg-rh/reader.c:112
 msgid "System"
-msgstr ""
+msgstr "Sistèma"

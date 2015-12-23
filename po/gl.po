@@ -5219,9 +5219,8 @@ msgid "Gateway certificate hash"
 msgstr "Produciuse un erro ao iniciar a certificación dos datos: %s"
 
 #: ../clients/nm-online.c:96
-#, fuzzy
 msgid "Connecting"
-msgstr "\rConectando"
+msgstr "Conectando"
 
 #: ../clients/nm-online.c:149
 #, fuzzy

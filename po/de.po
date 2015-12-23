@@ -38,6 +38,10 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
+"Usage: nmcli agent { BEFEHL | help }\n"
+"\n"
+"BEFEHL := { secret | polkit | all }\n"
+"\n"
 
 #: ../clients/cli/agent.c:50
 #, c-format
@@ -153,9 +157,9 @@ msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr "ungültiger Präfix »%s«. <1-%d> ist erlaubt"
 
 #: ../clients/cli/common.c:387
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "Ungültige IPv4-Adresse »%s«"
+msgstr "Ungültige IP-Adresse: %s"
 
 #: ../clients/cli/common.c:451
 #, c-format
@@ -172,9 +176,9 @@ msgid "invalid metric '%s'"
 msgstr "Ungültige Metrik »%s«"
 
 #: ../clients/cli/common.c:468
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "Ungültige IPv4-Route »%s«"
+msgstr "Ungültige Route: %s"
 
 #: ../clients/cli/common.c:480
 msgid "default route cannot be added (NetworkManager handles it by itself)"
@@ -282,11 +286,11 @@ msgstr "nein"
 
 #: ../clients/cli/common.c:534
 msgid "yes (guessed)"
-msgstr ""
+msgstr "ja (geraten)"
 
 #: ../clients/cli/common.c:536
 msgid "no (guessed)"
-msgstr ""
+msgstr "nein (geraten)"
 
 #: ../clients/cli/common.c:547
 msgid "No reason given"
@@ -633,9 +637,8 @@ msgid "Connection (name, UUID, or path): "
 msgstr "Verbindung (Name, UUID oder Pfad): "
 
 #: ../clients/cli/connections.c:53
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
-msgstr "Verbindung (Name, UUID oder Pfad): "
+msgstr "Verbindung(en) (Name, UUID oder Pfad): "
 
 #. 0
 #: ../clients/cli/connections.c:61 ../clients/cli/connections.c:174
@@ -682,9 +685,8 @@ msgstr "AUTO-VERBINDEN"
 
 #. 5
 #: ../clients/cli/connections.c:67
-#, fuzzy
 msgid "AUTOCONNECT-PRIORITY"
-msgstr "AUTO-VERBINDEN"
+msgstr "AUTOVERBINDEN-PRIORITÄT"
 
 #. 6
 #: ../clients/cli/connections.c:68
@@ -940,7 +942,7 @@ msgstr ""
 "werden stattdessen die Verbindungsdetails angezeigt.\n"
 
 #: ../clients/cli/connections.c:295
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection up { ARGUMENTS | help }\n"
 "\n"
@@ -965,26 +967,29 @@ msgid ""
 msgstr ""
 "Aufruf: nmcli connection up { ARGUMENTE | help }\n"
 "\n"
-"ARGUMENTE := [id | uuid | path] <Kennung> [ifname <ifname>] [ap <BSSID>] "
-"[nsp <name>]\n"
+"ARGUMENTE := [id | uuid | path] <Kennung> [ifname <Schnittstellenname>] [ap "
+"<BSSID>] [nsp <Name>] [passwd-file <Datei mit Passwörtern>]\n"
 "\n"
-"Eine Verbindung auf einem Gerät aktivieren. Das zu aktivierende Profile wird "
+"Eine Verbindung auf einem Gerät aktivieren. Das zu aktivierende Profil wird\n"
 "durch den Namen, die UUID oder den D-Bus-Pfad identifiziert.\n"
 "\n"
-"ARGUMENTE := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
+"ARGUMENTE := ifname <Schnittstellenname> [ap <BSSID>] [nsp <name>] [passwd-"
+"file <Datei mit Passwörtern>]\n"
 "\n"
-"Ein Gerät mit einer Verbindung aktivieren. Das Verbindungsprofil wird durch "
-"NetworkManager automatisch gewählt.\n"
+"Ein Gerät mit einer Verbindung aktivieren. Das Verbindungsprofil\n"
+"wird durch NetworkManager automatisch gewählt.\n"
 "\n"
-"ifname - spezifiziert das Gerät auf dem die Verbindung aktiviert werden "
+"ifname      - spezifiziert das Gerät auf dem die Verbindung aktiviert werden "
 "soll\n"
-"ap     - spezifiziert den zu verbindenden Zugangspunkt (nur gültig für "
+"ap          - spezifiziert den zu verbindenden Zugangspunkt (nur gültig für "
 "Drahtlosnetzwerke)\n"
-"nsp    - spezifiert den Netzwerkdienstanbieter (nur gültig für WiMAX)\n"
+"nsp         - spezifiziert den Netzwerkdienstanbieter (nur gültig für "
+"WiMAX)\n"
+"passwd-file - Datei mit Passwörtern zum Aktivieren der Verbindung\n"
 "\n"
 
 #: ../clients/cli/connections.c:316
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
 "\n"
@@ -1570,17 +1575,17 @@ msgstr "Fehler: Entfernen des Wertes »%s« ist fehlgeschlagen: %s\n"
 #: ../clients/cli/connections.c:2000
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
-msgstr ""
+msgstr "Fehlender Doppelpunkt im Passwort-Eintrag »%s«"
 
 #: ../clients/cli/connections.c:2008
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
-msgstr ""
+msgstr "Fehlender Punkt im Passwort-Eintrag »%s«"
 
 #: ../clients/cli/connections.c:2021
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
-msgstr ""
+msgstr "Ungültiger Einstellungsname im Passwort-Eintrag »%s«"
 
 #: ../clients/cli/connections.c:2068 ../clients/cli/connections.c:2227
 msgid "unknown error"
@@ -1596,9 +1601,9 @@ msgid "neither a valid connection nor device given"
 msgstr "weder eine gültige Verbindung noch ein Gerät angegeben"
 
 #: ../clients/cli/connections.c:2165
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection '%s' does not exist."
-msgstr "Fehler: Verbindung ist ungültig: %s\n"
+msgstr "Fehler: Verbindung »%s« ist nicht vorhanden."
 
 #: ../clients/cli/connections.c:2211 ../clients/cli/devices.c:1238
 #: ../clients/cli/devices.c:2042 ../clients/cli/devices.c:2436
@@ -1612,14 +1617,15 @@ msgid "preparing"
 msgstr "Vorbereitung läuft"
 
 #: ../clients/cli/connections.c:2259
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Verbindung »%s« (%s) erfolgreich aktualisiert.\n"
+msgstr "Verbindung »%s« (%s) erfolgreich gelöscht.\n"
 
 #: ../clients/cli/connections.c:2275
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "Verbindung wurde erfolgreich aktiviert (aktiver D-Bus-Pfad: %s)\n"
+msgstr ""
+"Verbindung »%s« wurde erfolgreich deaktiviert (aktiver D-Bus-Pfad: %s)\n"
 
 #: ../clients/cli/connections.c:2347 ../clients/cli/connections.c:9006
 #: ../clients/cli/connections.c:9111
@@ -1628,19 +1634,19 @@ msgid "Error: No connection specified."
 msgstr "Fehler: Keine Verbindung angegeben."
 
 #: ../clients/cli/connections.c:2379
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "Fehler: »%s« ist keine aktive Verbindung."
+msgstr "Fehler: »%s« ist keine aktive Verbindung.\n"
 
 #: ../clients/cli/connections.c:2380 ../clients/cli/connections.c:9035
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all active connections found."
-msgstr "Fehler: »%s« ist keine aktive Verbindung."
+msgstr "Fehler: Es wurden nicht alle aktiven Verbindungen gefunden."
 
 #: ../clients/cli/connections.c:2389
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no active connection provided."
-msgstr "Fehler: Verbindungsprofil %s existiert nicht."
+msgstr "Fehler: Keine aktive Verbindung angegeben."
 
 #: ../clients/cli/connections.c:2708 ../clients/cli/utils.c:569
 #, c-format
@@ -1680,14 +1686,13 @@ msgid "Error: 'p-key': '%s' is not a valid InfiniBand P_KEY."
 msgstr "Fehler: »p-key«: »%s« ist kein gültiger InfiniBand »P_KEY«."
 
 #: ../clients/cli/connections.c:2890
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not a valid %s %s."
-msgstr "Fehler: »%s«: »%s« ist ungültig; %s "
+msgstr "Fehler: »%s«: »%s« ist kein gültiges %s %s."
 
 #: ../clients/cli/connections.c:2903
-#, fuzzy
 msgid "Wi-Fi mode"
-msgstr "Wi-Fi"
+msgstr "WLAN-Modus"
 
 #: ../clients/cli/connections.c:2912
 #, fuzzy
@@ -1778,9 +1783,9 @@ msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
 #: ../clients/cli/connections.c:3359
-#, fuzzy, c-format
+#, c-format
 msgid "Mode %s"
-msgstr "Modus"
+msgstr "Modus %s"
 
 #. Ask for optional 'wimax' arguments.
 #: ../clients/cli/connections.c:3379 ../libnm-glib/nm-device.c:1797
@@ -2054,24 +2059,22 @@ msgid "ADSL encapsulation %s"
 msgstr "ADSL-Verbindung %d"
 
 #: ../clients/cli/connections.c:3963
-#, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]: "
-msgstr "IPv4-Adresse (IP[/plen] [Gateway]) [keine]: "
+msgstr "IPv4-Adresse (IP[/plen]) [keine]: "
 
 #: ../clients/cli/connections.c:3965
-#, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]: "
-msgstr "IPv6-Adresse (IP[/plen] [Gateway]) [keine]: "
+msgstr "IPv6-Adresse (IP[/plen]) [keine]: "
 
 #: ../clients/cli/connections.c:3979
-#, fuzzy, c-format
+#, c-format
 msgid "  Address successfully added: %s\n"
-msgstr "  Adresse erfolgreich hinzugefügt: %s %s\n"
+msgstr "  Adresse erfolgreich hinzugefügt: %s\n"
 
 #: ../clients/cli/connections.c:3981
-#, fuzzy, c-format
+#, c-format
 msgid "  Warning: address already present: %s\n"
-msgstr "  Warnung: Adresse ist bereits vorhanden: %s %s\n"
+msgstr "  Warnung: Adresse ist bereits vorhanden: %s\n"
 
 #: ../clients/cli/connections.c:3983
 #, c-format
@@ -2085,19 +2088,17 @@ msgid "Error: "
 msgstr "Fehler: "
 
 #: ../clients/cli/connections.c:4005
-#, fuzzy
 msgid "IPv4 gateway [none]: "
-msgstr "IPv4-Adresse (IP[/plen] [Gateway]) [keine]: "
+msgstr "IPv4-Gateway [keines]: "
 
 #: ../clients/cli/connections.c:4008
-#, fuzzy
 msgid "IPv6 gateway [none]: "
-msgstr "IPv6-Adresse (IP[/plen] [Gateway]) [keine]: "
+msgstr "IPv6-Gateway [keines]: "
 
 #: ../clients/cli/connections.c:4028
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid gateway address '%s'\n"
-msgstr "Fehler: Ungültiges Argument »%s«\n"
+msgstr "Fehler: Ungültige Gateway-Adresse »%s«\n"
 
 #. Ask for IP addresses
 #: ../clients/cli/connections.c:4041
@@ -2269,7 +2270,7 @@ msgstr "Fehler: »%s« ist kein gültiger Verbindungstyp."
 #: ../clients/cli/connections.c:5413
 #, c-format
 msgid "Error: IPv4 gateway specified without IPv4 addresses"
-msgstr ""
+msgstr "Fehler: IPv4-Gateway wurde ohne IPv4-Adresse angegeben"
 
 #: ../clients/cli/connections.c:5417
 #, fuzzy, c-format
@@ -2277,14 +2278,14 @@ msgid "Error: multiple IPv4 gateways specified"
 msgstr "Fehler: Es muss eine Schnittstelle angegeben werden."
 
 #: ../clients/cli/connections.c:5421
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid IPv4 gateway '%s'"
-msgstr "Ungültiges Gateway »%s«"
+msgstr "Fehler: Ungültiges IPv4-Gateway »%s«"
 
 #: ../clients/cli/connections.c:5446
 #, c-format
 msgid "Error: IPv6 gateway specified without IPv6 addresses"
-msgstr ""
+msgstr "Fehler: IPv6-Gateway wurde ohne IPv6-Adresse angegeben"
 
 #: ../clients/cli/connections.c:5450
 #, fuzzy, c-format
@@ -2292,14 +2293,14 @@ msgid "Error: multiple IPv6 gateways specified"
 msgstr "Fehler: Es muss eine Schnittstelle angegeben werden."
 
 #: ../clients/cli/connections.c:5454
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid IPv6 gateway '%s'"
-msgstr "Ungültiges Gateway »%s«"
+msgstr "Fehler: Ungültiges IPv6-Gateway »%s«"
 
 #: ../clients/cli/connections.c:5514
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to add '%s' connection: %s"
-msgstr "Fehler: Verbindung »%s« konnte nicht hinzugefügt werden: (%d) %s"
+msgstr "Fehler: Verbindung »%s« konnte nicht hinzugefügt werden: %s"
 
 #: ../clients/cli/connections.c:5519
 #, c-format
@@ -2350,11 +2351,12 @@ msgstr "Fehler: »ifname«: »%s« ist weder eine gültige Schnittstelle noch »
 msgid "['%s' setting values]\n"
 msgstr "['%s' Werte werden gesetzt]\n"
 
+# Ausrichtung mit Leerzeichen an der zweitlängsten Zeile.
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
 #: ../clients/cli/connections.c:6794
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "---[ Main menu ]---\n"
 "goto     [<setting> | <prop>]        :: go to a setting or property\n"
@@ -2372,21 +2374,22 @@ msgid ""
 "quit                                 :: exit nmcli\n"
 msgstr ""
 "---[ Hauptmenü ]---\n"
-"goto     [<Einstellung> | <Eigenschaft>]        :: zu einer Einstellung oder "
+"goto     [<Einstellung> | <Eigenschaft>]       :: zu einer Einstellung oder "
 "Eigenschaft wechseln\n"
 "remove   <Einstellung>[.<Eigenschaft>] | <Eigenschaft> :: Einstellung "
 "entfernen oder Eigenschaftswert zurücksetzen\n"
 "set      [<Einstellung>.<Eigenschaft> <Wert>]  :: Eigenschaftswert "
 "festlegen\n"
-"describe [<Einstellung>.<Eigenschaft>]          :: Eigenschaft beschreiben\n"
-"print    [all | <Einstellung>[.<Eigenschaft>]]  :: Die Verbindung ausgeben\n"
-"verify   [all]                       :: Die Verbindung prüfen\n"
-"save     [persistent|temporary]        :: Die Verbindung speichern\n"
-"activate [<Schnittstelle>] [/<ap>|<nsp>]    :: Die Verbindung aktivieren\n"
-"back                                 :: Eine Ebene nach oben gehen (zurück)\n"
-"help/?   [<Befehl>]                  :: Diese Hilfe ausgeben\n"
-"nmcli    <conf-option> <Wert>        :: nmcli-Konfiguration\n"
-"quit                                 :: nmcli beenden\n"
+"describe [<Einstellung>.<Eigenschaft>]         :: Eigenschaft beschreiben\n"
+"print    [all | <Einstellung>[.<Eigenschaft>]] :: Die Verbindung ausgeben\n"
+"verify   [all | fix]                           :: Die Verbindung prüfen\n"
+"save     [persistent|temporary]                :: Die Verbindung speichern\n"
+"activate [<Schnittstelle>] [/<ap>|<nsp>]       :: Die Verbindung aktivieren\n"
+"back                                           :: Eine Ebene nach oben gehen "
+"(zurück)\n"
+"help/?   [<Befehl>]                            :: Diese Hilfe ausgeben\n"
+"nmcli    <conf-option> <Wert>                  :: nmcli-Konfiguration\n"
+"quit                                           :: nmcli beenden\n"
 
 #: ../clients/cli/connections.c:6821
 #, c-format
@@ -2474,7 +2477,7 @@ msgstr ""
 "Beispiel: nmcli ipv4> print all\n"
 
 #: ../clients/cli/connections.c:6850
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
 "\n"
@@ -2487,12 +2490,16 @@ msgid ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 msgstr ""
-"verify [all] :: Die Verbindung oder Verbindungsgültigkeit prüfen\n"
+"verify [all | fix] :: Die Verbindung oder Einstellung prüfen\n"
 "\n"
 "Prüft, ob die Einstellung oder Verbindung gültig ist und später gespeichert "
-"werden kann. Ungültige Werte werden bei Fehler hervorgehoben.\n"
+"werden kann.\n"
+"Ungültige Werte werden bei Fehler angedeutet. Einige Fehler werden "
+"gegebenenfalls\n"
+"automatisch mit der Option »fix« behoben.\n"
 "\n"
 "Beispiele: nmcli> verify\n"
+"           nmcli> verify fix\n"
 "           nmcli bond> verify\n"
 
 #: ../clients/cli/connections.c:6859
@@ -2986,7 +2993,7 @@ msgstr "Verbindung überprüfen: %s\n"
 #: ../clients/cli/connections.c:8147
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
-msgstr ""
+msgstr "Der Fehler kann nicht automatisch behoben werden.\n"
 
 #: ../clients/cli/connections.c:8164
 #, c-format
@@ -2994,9 +3001,9 @@ msgid "Error: invalid argument '%s'\n"
 msgstr "Fehler: Ungültiges Argument »%s«\n"
 
 #: ../clients/cli/connections.c:8197
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
-msgstr "Fehler: Speichern von »%s« (%s) ist fehlgeschlagen: (%d) %s\n"
+msgstr "Fehler: Speichern von »%s« (%s) ist fehlgeschlagen: %s\n"
 
 #: ../clients/cli/connections.c:8204
 #, c-format
@@ -3039,10 +3046,9 @@ msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Fehler: Verbindung kann nicht aktiviert werden: %s.\n"
 
 #: ../clients/cli/connections.c:8286
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
-msgstr ""
-"Fehler: Aktivieren der Verbindung »%s« (%s) ist fehlgeschlagen: (%d) %s\n"
+msgstr "Fehler: Aktivieren der Verbindung »%s« (%s) ist fehlgeschlagen: %s\n"
 
 #: ../clients/cli/connections.c:8292
 #, c-format
@@ -3062,9 +3068,9 @@ msgid "Error: save-confirmation: %s\n"
 msgstr "Fehler: Speicherbestätigung: %s\n"
 
 #: ../clients/cli/connections.c:8346
-#, fuzzy, c-format
+#, c-format
 msgid "Error: show-secrets: %s\n"
-msgstr "Fehler: »show active«: %s"
+msgstr "Fehler: »show-secrets«: %s\n"
 
 #: ../clients/cli/connections.c:8354
 #, c-format
@@ -3146,9 +3152,9 @@ msgstr ""
 "Eigenschaftenbeschreibung."
 
 #: ../clients/cli/connections.c:8766
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to modify connection '%s': %s"
-msgstr "Fehler: Ändern der Verbindung »%s« ist fehlgeschlagen: (%d) %s"
+msgstr "Fehler: Ändern der Verbindung »%s« ist fehlgeschlagen: %s"
 
 #: ../clients/cli/connections.c:8773
 #, c-format
@@ -3417,12 +3423,12 @@ msgstr "ADHOC"
 #. 7
 #: ../clients/cli/devices.c:129
 msgid "2GHZ"
-msgstr ""
+msgstr "2GHZ"
 
 #. 8
 #: ../clients/cli/devices.c:130
 msgid "5GHZ"
-msgstr ""
+msgstr "5GHZ"
 
 #. 0
 #: ../clients/cli/devices.c:139
@@ -3574,7 +3580,7 @@ msgstr "Bridge"
 #. 14
 #: ../clients/cli/devices.c:241
 msgid "BLUETOOTH"
-msgstr ""
+msgstr "BLUETOOTH"
 
 #. 15
 #: ../clients/cli/devices.c:242
@@ -3716,7 +3722,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:328
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -3727,9 +3733,9 @@ msgid ""
 "further connections without user/manual intervention.\n"
 "\n"
 msgstr ""
-"Aufruf: nmcli device disconnect { PARAMETER | help }\n"
+"Aufruf: nmcli device disconnect { ARGUMENTE | help }\n"
 "\n"
-"PARAMETER := <Schnittstellenname>\n"
+"ARGUMENTE := <Schnittstellenname> …\n"
 "\n"
 "Trennt die Verbindung des Geräts.\n"
 "Der Befehl trennt die Verbindung des Geräts und hindert es daran, sich ohne\n"
@@ -3737,7 +3743,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:340
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -3749,14 +3755,14 @@ msgid ""
 "command.\n"
 "\n"
 msgstr ""
-"Aufruf: nmcli device delete { PARAMETER | help }\n"
+"Aufruf: nmcli device delete { ARGUMENTE | help }\n"
 "\n"
-"PARAMETER := <Schnittstellenname>\n"
+"ARGUMENTE := <Schnittstellenname>\n"
 "\n"
 "Löscht das Software-Gerät.\n"
-"Der Befehl entfernt die Schnittstelle. Funktioniert nur für Software-Geräte "
-"(z.B. Bündelung und Brücken). Hardware-Geräte können mit diesem Befehl nicht "
-"entfernt werden.\n"
+"Der Befehl entfernt die Schnittstelle. Funktioniert nur für\n"
+"Software-Geräte (z.B. Bündelungen und Brücken). Hardware-Geräte\n"
+"können mit diesem Befehl nicht entfernt werden.\n"
 "\n"
 
 #: ../clients/cli/devices.c:353
@@ -3962,16 +3968,14 @@ msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "Gerät »%s« wurde erfolgreich mit »%s« aktiviert.\n"
 
 #: ../clients/cli/devices.c:1394
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection activation failed: (%d) %s.\n"
-msgstr "Fehler: Aktivierung der Verbindung ist gescheitert: (%d) %s."
+msgstr "Fehler: Aktivierung der Verbindung ist gescheitert: (%d) %s.\n"
 
 #: ../clients/cli/devices.c:1428
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to add/activate new connection: %s"
-msgstr ""
-"Fehler: Neue Verbindung konnte nicht hinzugefügt und aktiviert werden: (%d) "
-"%s"
+msgstr "Fehler: Neue Verbindung konnte nicht hinzugefügt/aktiviert werden: %s"
 
 #: ../clients/cli/devices.c:1437
 #, c-format
@@ -4015,24 +4019,24 @@ msgstr "Fehler: Zusätzlicher Parameter nicht erlaubt: »%s«."
 
 #: ../clients/cli/devices.c:1676 ../clients/cli/devices.c:1691
 #: ../clients/cli/devices.c:1755
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully disconnected.\n"
-msgstr "Erfolg: Gerät »%s« wurde erfolgreich getrennt."
+msgstr "Gerät »%s« wurde erfolgreich getrennt.\n"
 
 #: ../clients/cli/devices.c:1679
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully removed.\n"
-msgstr "Gerät »%s« wurde erfolgreich mit »%s« aktiviert.\n"
+msgstr "Gerät »%s« wurde erfolgreich entfernt.\n"
 
 #: ../clients/cli/devices.c:1739
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices disconnected."
-msgstr "Fehler: Aktivierung des Geräts ist gescheitert: Gerät war getrennt."
+msgstr "Fehler: Es wurden nicht alle Geräte getrennt."
 
 #: ../clients/cli/devices.c:1740
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
-msgstr "Fehler: Trennung des Gerätes »%s« (%s) ist gescheitert: %s"
+msgstr "Fehler: Trennung des Gerätes »%s« (%s) ist gescheitert: %s\n"
 
 #: ../clients/cli/devices.c:1807 ../clients/cli/devices.c:1929
 #, c-format
@@ -4040,24 +4044,24 @@ msgid "Warning: argument '%s' is duplicated.\n"
 msgstr ""
 
 #: ../clients/cli/devices.c:1809 ../clients/cli/devices.c:1931
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "Fehler: Gerät »%s« wurde nicht gefunden."
+msgstr "Fehler: Gerät »%s« wurde nicht gefunden.\n"
 
 #: ../clients/cli/devices.c:1810 ../clients/cli/devices.c:1932
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices found."
-msgstr "Fehler: Es wurde kein passendes Gerät gefunden."
+msgstr "Fehler: Es wurden nicht alle Geräte gefunden."
 
 #: ../clients/cli/devices.c:1820 ../clients/cli/devices.c:1942
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no valid device provided."
-msgstr "Fehler: Es wurden keine Argumente angegeben."
+msgstr "Fehler: es wurde kein gültiges Gerät angegeben."
 
 #: ../clients/cli/devices.c:1864
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices deleted."
-msgstr "Fehler: Es wurde kein passendes Gerät gefunden."
+msgstr "Fehler: Es wurden nicht alle Geräte gelöscht."
 
 #: ../clients/cli/devices.c:1865
 #, fuzzy, c-format
@@ -4071,9 +4075,9 @@ msgstr ""
 "Fehler: Gerät »%s« ist ein Hardware-Gerät und kann nicht entfernt werden."
 
 #: ../clients/cli/devices.c:1925
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices valid."
-msgstr "Fehler: Es wurde kein passendes Gerät gefunden."
+msgstr "Fehler: Nicht alle Geräte sind gültig."
 
 #: ../clients/cli/devices.c:2023
 msgid "Wi-Fi scan list"
@@ -4652,9 +4656,9 @@ msgid "NetworkManager logging"
 msgstr "Protokollierung in NetworkManager"
 
 #: ../clients/cli/general.c:546
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set hostname: %s"
-msgstr "Fehler: Festlegen des Rechnernamens schlug fehl: (%d) %s"
+msgstr "Fehler: Festlegen des Rechnernamens schlug fehl: %s"
 
 #: ../clients/cli/general.c:659
 #, fuzzy, c-format
@@ -4865,9 +4869,9 @@ msgid "Authentication message: %s\n"
 msgstr "Legitimierung"
 
 #: ../clients/cli/polkit-agent.c:88
-#, fuzzy, c-format
+#, c-format
 msgid "Authentication error: %s\n"
-msgstr "Legitimierung"
+msgstr "Legitimationsfehler: %s\n"
 
 #: ../clients/cli/polkit-agent.c:134
 #, fuzzy, c-format
@@ -4921,19 +4925,19 @@ msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (aktiviert, temporäre IP bevorzugen)"
 
 #: ../clients/cli/settings.c:786
-#, fuzzy, c-format
+#, c-format
 msgid "%d (no)"
-msgstr "%d (unbekannt)"
+msgstr "%d (nein)"
 
 #: ../clients/cli/settings.c:788
-#, fuzzy, c-format
+#, c-format
 msgid "%d (yes)"
-msgstr "%d (Schlüssel)"
+msgstr "%d (ja)"
 
 #: ../clients/cli/settings.c:791
-#, fuzzy, c-format
+#, c-format
 msgid "%d (default)"
-msgstr "(Vorgabe)"
+msgstr "%d (Vorgabe)"
 
 #: ../clients/cli/settings.c:804
 msgid "0 (none)"
@@ -5015,9 +5019,8 @@ msgid "Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"
 msgstr ""
 
 #: ../clients/cli/settings.c:1934
-#, fuzzy
 msgid "Do you want to remove them? [yes] "
-msgstr "Möchten Sie diese zur Verfügung stellen? (yes/no) [yes] "
+msgstr "Möchten Sie diese entfernen? [ja] "
 
 #: ../clients/cli/settings.c:2030 ../clients/cli/settings.c:2425
 #: ../clients/cli/settings.c:4572
@@ -5036,9 +5039,9 @@ msgid "'%lld' is not valid; use <%lld-%lld>"
 msgstr "»%d« ist ungültig. Verwenden Sie <%d-%d>"
 
 #: ../clients/cli/settings.c:2097
-#, fuzzy, c-format
+#, c-format
 msgid "'%u' is not valid; use <%u-%u>"
-msgstr "»%u« ist ungültig. Verwenden Sie <%d-%d>"
+msgstr "»%u« ist ungültig. Verwenden Sie <%u-%u>"
 
 #: ../clients/cli/settings.c:2136
 #, fuzzy, c-format
@@ -5266,7 +5269,6 @@ msgid ""
 msgstr ""
 
 #: ../clients/cli/settings.c:3096
-#, fuzzy
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5275,8 +5277,8 @@ msgid ""
 msgstr ""
 "Geben Sie den Pfad zu einem privaten Schlüssel und das Schlüsselpasswort\n"
 "ein (wenn noch nicht festgelegt):\n"
-"  <Dateipfad> [<Passwort>]\n"
-"Beispiel: /home/cimrman/jara-priv-key Dardanely\n"
+"  [file://]<Dateipfad> [<Passwort>]\n"
+"Beispiel: /home/MaxMustermann/jara-priv-key StrengGeheim\n"
 
 #: ../clients/cli/settings.c:3167
 msgid ""
@@ -5377,7 +5379,6 @@ msgid "the property doesn't contain IP address '%s'"
 msgstr "die Eigenschaft enthält nicht die IP-Adresse »%s«"
 
 #: ../clients/cli/settings.c:3557
-#, fuzzy
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5385,16 +5386,16 @@ msgid ""
 "\n"
 "Example: 192.168.1.5/24, 10.0.0.11/24\n"
 msgstr ""
-"Geben Sie eine Liste von IPv4-Adressen nach folgenden Format an:\n"
-"  IP[/Präfix] [Gateway], IP[/Präfix] [Gateway], …\n"
+"Geben Sie eine Liste von IPv4-Adressen nach folgendem Format an:\n"
+"  IP[/Präfix], IP[/Präfix], …\n"
 "Ein fehlendes Präfix wird mit 32 angenommen.\n"
 "\n"
-"Beispiel: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
+"Beispiel: 192.168.1.5/24, 10.0.0.11/24\n"
 
 #: ../clients/cli/settings.c:3573 ../clients/cli/settings.c:3848
-#, fuzzy, c-format
+#, c-format
 msgid "invalid gateway address '%s'"
-msgstr "Ungültiges Gateway »%s«"
+msgstr "Ungültige Gateway-Adresse »%s«"
 
 #: ../clients/cli/settings.c:3628 ../clients/cli/settings.c:3903
 #, c-format
@@ -5402,7 +5403,6 @@ msgid "the property doesn't contain route '%s'"
 msgstr "Die Eigenschaft enthält nicht die Route »%s«"
 
 #: ../clients/cli/settings.c:3641
-#, fuzzy
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5415,15 +5415,15 @@ msgid ""
 "          10.1.2.0/24\n"
 msgstr ""
 "Geben Sie eine Liste von IPv4-Routen nach folgendem Format ein:\n"
-"  ip/[Präfix] [next-hop] [Metrik],... \n"
+"  ip/[Präfix] [next-hop] [Metrik], …\n"
 "\n"
 "Ein fehlendes Präfix wird als Präfix 32 angenommen.\n"
 "Ein fehlender next-hop wird als 0.0.0.0 angenommen.\n"
-"Eine fehlende Metrik oder 0 wird als voreingestellte Metrik angenommen (NM/"
-"kernel legen einen Vorgabewert fest).\n"
+"Eine fehlende Metrik wird als voreingestellte Metrik angenommen (NM/kernel "
+"legen einen Vorgabewert fest).\n"
 "\n"
 "Beispiele: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
-"          10.1.2.0/24\n"
+"           10.1.2.0/24\n"
 
 #: ../clients/cli/settings.c:3687 ../clients/cli/settings.c:3706
 #, c-format
@@ -5451,7 +5451,6 @@ msgstr ""
 "Beispiel: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
 #: ../clients/cli/settings.c:3832
-#, fuzzy
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5459,15 +5458,13 @@ msgid ""
 "\n"
 "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 msgstr ""
-"Geben Sie eine Liste von IPv6-Adressen nach folgenden Format an:\n"
-"  IP[/Präfix] [Gateway], IP[/Präfix] [Gateway], …\n"
+"Geben Sie eine Liste von IPv6-Adressen nach folgendem Format an:\n"
+"  IP[/Präfix], IP[/Präfix], …\n"
 "Ein fehlendes Präfix wird als 128 angenommen.\n"
 "\n"
-"Beispiel: 2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, "
-"1050:0:0:0:5:600:300c:326b\n"
+"Beispiel: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
 #: ../clients/cli/settings.c:3916
-#, fuzzy
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5481,16 +5478,16 @@ msgid ""
 "          abbe::/64 55\n"
 msgstr ""
 "Geben Sie eine Liste von IPv6-Routen nach folgendem Format ein:\n"
-"  ip/[Präfix] [next-hop] [Metrik],... \n"
+"  ip/[Präfix] [next-hop] [Metrik], … \n"
 "\n"
 "Fehlendes Präfix wird als Präfix 128 angenommen.\n"
-"Fehlender next-hop wird als »::« angenommen\n"
-"Fehlende Metrik oder 0 wird als Vorgane-Metrik angenommen (NM/kernel legen "
-"einen Vorgabewert fest).\n"
+"Fehlender next-hop wird als »::« angenommen.\n"
+"Fehlende Metrik wird als Vorgabe-Metrik angenommen (NM/kernel legen einen "
+"Vorgabewert fest).\n"
 "\n"
 "Beispiele: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
 "db8:beef::3 2\n"
-"          abbe::/64 55\n"
+"           abbe::/64 55\n"
 
 #: ../clients/cli/settings.c:3933 ../libnm-core/nm-setting-gsm.c:308
 #: ../libnm-util/nm-setting-gsm.c:365
@@ -5573,9 +5570,9 @@ msgid "the property doesn't contain MAC address '%s'"
 msgstr "die Eigenschaft enthält nicht die MAC-Adresse »%s«"
 
 #: ../clients/cli/settings.c:4259
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
-msgstr "»%s« ist ungültig. 3 Zeichenketten müssen angegeben werden"
+msgstr "»%s« ist ungültig. 2 oder 3 Zeichenketten müssen angegeben werden"
 
 #: ../clients/cli/settings.c:4273
 #, fuzzy
@@ -5732,7 +5729,7 @@ msgstr "[nmcli-spezifische Beschreibung]"
 #. ----------------------------------------------------------------------------
 #: ../clients/cli/settings.c:6831
 msgid "<hidden>"
-msgstr ""
+msgstr "<verborgen>"
 
 #: ../clients/cli/utils.c:127
 #, c-format
@@ -5763,9 +5760,9 @@ msgstr "Fehler beim Umwandeln der IPv6-Adresse »%s« in eine Textform"
 #. * the user, the second %s a list of compatible values.
 #.
 #: ../clients/cli/utils.c:413 ../clients/cli/utils.c:444
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is ambiguous (%s)"
-msgstr "»%s« ist mehrdeutig (%s x %s)"
+msgstr "»%s« ist mehrdeutig (%s)"
 
 #: ../clients/cli/utils.c:423
 #, c-format
@@ -5773,9 +5770,9 @@ msgid "'%s' is not valid; use [%s] or [%s]"
 msgstr "»%s« ist ungültig. Verwenden Sie [%s] oder [%s]."
 
 #: ../clients/cli/utils.c:456
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; use [%s], [%s] or [%s]"
-msgstr "»%s« ist ungültig. Verwenden Sie [%s] oder [%s]."
+msgstr "»%s« ist ungültig. Verwenden Sie [%s], [%s] oder [%s]."
 
 #: ../clients/cli/utils.c:555
 #, c-format
@@ -6152,9 +6149,8 @@ msgid "Profile name"
 msgstr "Profilname"
 
 #: ../clients/tui/nmt-editor.c:333
-#, fuzzy
 msgid "Ethernet device"
-msgstr "Ethernet"
+msgstr "Ethernet-Gerät"
 
 #: ../clients/tui/nmt-editor.c:335
 msgid "Device"
@@ -6405,64 +6401,60 @@ msgid "Require IPv6 addressing for this connection"
 msgstr "Eine IPv6-Adressierung für diese Verbindung verlangen"
 
 #: ../clients/tui/nmt-page-ppp.c:134
-#, fuzzy
 msgid "PPP CONFIGURATION"
-msgstr "IPv4-Konfiguration"
+msgstr "PPP-KONFIGURATION"
 
 #: ../clients/tui/nmt-page-ppp.c:143
-#, fuzzy
 msgid "Allowed authentication methods:"
-msgstr "Legitimierung"
+msgstr "Zulässige Legitimierungsmethoden:"
 
 #: ../clients/tui/nmt-page-ppp.c:150
-#, fuzzy
 msgid "EAP"
-msgstr "LEAP"
+msgstr "EAP"
 
 #: ../clients/tui/nmt-page-ppp.c:158
-#, fuzzy
 msgid "PAP"
-msgstr "AP"
+msgstr "PAP"
 
 #: ../clients/tui/nmt-page-ppp.c:166
 msgid "CHAP"
-msgstr ""
+msgstr "CHAP"
 
 #: ../clients/tui/nmt-page-ppp.c:174
 msgid "MSCHAPv2"
-msgstr ""
+msgstr "MSCHAPv2"
 
 #: ../clients/tui/nmt-page-ppp.c:182
 msgid "MSCHAP"
-msgstr ""
+msgstr "MSCHAP"
 
 #: ../clients/tui/nmt-page-ppp.c:198
 msgid "Use point-to-point encryption (MPPE)"
-msgstr ""
+msgstr "Point-to-Point Verschlüsselung (MPPE) verwenden"
 
 #: ../clients/tui/nmt-page-ppp.c:210
 msgid "Require 128-bit encryption"
-msgstr ""
+msgstr "128-Bit-Verschlüsselung verlangen"
 
 #: ../clients/tui/nmt-page-ppp.c:220
 msgid "Use stateful MPPE"
-msgstr ""
+msgstr "Stateful MPPE verwenden"
 
 #: ../clients/tui/nmt-page-ppp.c:232
 msgid "Allow BSD data compression"
-msgstr ""
+msgstr "BSD-Datenkomprimierung erlauben"
 
 #: ../clients/tui/nmt-page-ppp.c:240
 msgid "Allow Deflate data compression"
-msgstr ""
+msgstr "Deflate-Datenkomprimierung erlauben"
 
 #: ../clients/tui/nmt-page-ppp.c:248
 msgid "Use TCP header compression"
-msgstr ""
+msgstr "TCP-Header-Komprimierung verwenden"
 
 #: ../clients/tui/nmt-page-ppp.c:258
 msgid "Send PPP echo packets"
-msgstr ""
+msgstr "PPP-Echo Pakete senden"
 
 #: ../clients/tui/nmt-page-team-port.c:95
 msgid "TEAM PORT"
@@ -6720,9 +6712,9 @@ msgid "Unable to delete connection: %s"
 msgstr "Verbindung kann nicht gelöscht werden: %s"
 
 #: ../clients/tui/nmtui-edit.c:506
-#, fuzzy, c-format
+#, c-format
 msgid "Could not delete connection '%s': %s"
-msgstr "Verbindung konnte nicht gelöscht werden: %s"
+msgstr "Verbindung »%s« konnte nicht gelöscht werden: %s"
 
 #: ../clients/tui/nmtui-edit.c:528
 #, c-format
@@ -7087,7 +7079,7 @@ msgstr "Das Zertifikat konnte nicht entschlüsselt werden: %d"
 #: ../libnm-core/crypto_nss.c:423
 #, c-format
 msgid "Password must be UTF-8"
-msgstr ""
+msgstr "Passwort muss in UTF-8 vorliegen"
 
 #: ../libnm-core/crypto_nss.c:453 ../libnm-util/crypto_nss.c:491
 #, c-format
@@ -7113,13 +7105,12 @@ msgid "wrong type; should be a list of strings."
 msgstr ""
 
 #: ../libnm-core/nm-connection.c:281
-#, fuzzy
 msgid "unknown setting name"
-msgstr "Fehler: Unbekannte Einstellung »%s«\n"
+msgstr "Unbekannter Einstellungsname"
 
 #: ../libnm-core/nm-connection.c:805
 msgid "setting not found"
-msgstr ""
+msgstr "Einstellung nicht gefunden"
 
 #: ../libnm-core/nm-connection.c:869
 #, fuzzy
@@ -7184,17 +7175,17 @@ msgstr "Eigenschaft fehlt"
 
 #: ../libnm-core/nm-keyfile-reader.c:141
 msgid "ignoring missing number"
-msgstr ""
+msgstr "fehlende Zahl wird ignoriert"
 
 #: ../libnm-core/nm-keyfile-reader.c:150
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid number '%s'"
-msgstr "Ungültige Metrik »%s«"
+msgstr "Ungültige Zahl »%s« wird ignoriert"
 
 #: ../libnm-core/nm-keyfile-reader.c:170
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s address: %s"
-msgstr "Ungültige IPv4-Adresse »%s«"
+msgstr "Ungültige %s-Adresse wird ignoriert: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:210
 #, fuzzy, c-format
@@ -7202,9 +7193,9 @@ msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "Ungültiges Gateway »%s«"
 
 #: ../libnm-core/nm-keyfile-reader.c:230
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s route: %s"
-msgstr "Ungültige IPv4-Route »%s«"
+msgstr "Ungültige %s-Route wird ignoriert: %s"
 
 #: ../libnm-core/nm-keyfile-reader.c:348
 #, c-format
@@ -7242,14 +7233,14 @@ msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr ""
 
 #: ../libnm-core/nm-keyfile-reader.c:509
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv4 address '%s'"
-msgstr "Ungültige IPv4-Adresse »%s«"
+msgstr "Ungültige DNS-Server IPv4-Adresse »%s« wird ignoriert"
 
 #: ../libnm-core/nm-keyfile-reader.c:548
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv6 address '%s'"
-msgstr "Ungültige IPv6-Adresse »%s«"
+msgstr "Ungültige DNS-Server IPv6-Adresse »%s« wird ignoriert"
 
 #: ../libnm-core/nm-keyfile-reader.c:611 ../libnm-core/nm-keyfile-reader.c:752
 #: ../libnm-core/nm-keyfile-reader.c:1423
@@ -7258,9 +7249,8 @@ msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
 
 #: ../libnm-core/nm-keyfile-reader.c:625
-#, fuzzy
 msgid "ignoring invalid MAC address"
-msgstr "ist keine gültige MAC-Adresse"
+msgstr "Ungültige MAC-Adresse wird ignoriert"
 
 #: ../libnm-core/nm-keyfile-reader.c:741
 #, fuzzy
@@ -7269,7 +7259,7 @@ msgstr "Fehler: Ungültige Eigenschaft: %s\n"
 
 #: ../libnm-core/nm-keyfile-reader.c:784
 msgid "ignoring invalid SSID"
-msgstr ""
+msgstr "ungültige SSID wird ignoriert"
 
 #: ../libnm-core/nm-keyfile-reader.c:800
 msgid "ignoring invalid raw password"
@@ -7344,9 +7334,8 @@ msgid "invalid setting name '%s'"
 msgstr "Fehler: Ungültiger Einstellungsname: %s\n"
 
 #: ../libnm-core/nm-setting-8021x.c:412
-#, fuzzy
 msgid "data missing"
-msgstr "Eigenschaft fehlt"
+msgstr "Daten fehlen"
 
 #: ../libnm-core/nm-setting-8021x.c:444
 msgid "binary data missing"
@@ -7354,11 +7343,11 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-8021x.c:461
 msgid "file:// URI not NUL terminated"
-msgstr ""
+msgstr "Adresse file:// ist nicht mit NUL terminiert"
 
 #: ../libnm-core/nm-setting-8021x.c:470
 msgid "file:// URI is empty"
-msgstr ""
+msgstr "Adresse file:// ist leer"
 
 #: ../libnm-core/nm-setting-8021x.c:478
 #, fuzzy
@@ -7424,9 +7413,9 @@ msgid "has to match '%s' property for PKCS#12"
 msgstr "muss mit der Eigenschaft »%s« für PKCS#12 übereinstimmen"
 
 #: ../libnm-core/nm-setting-8021x.c:2687
-#, fuzzy, c-format
+#, c-format
 msgid "certificate is invalid: %s"
-msgstr "Eigenschaft ist ungültig"
+msgstr "Zertifikat ist ungültig: %s"
 
 #: ../libnm-core/nm-setting-8021x.c:2722
 #: ../libnm-core/nm-setting-bluetooth.c:130
@@ -7549,9 +7538,9 @@ msgid "'%s' option is only valid with mode '%s'"
 msgstr "Option »%s« ist nur gültig für »%s=%s«."
 
 #: ../libnm-core/nm-setting-bond.c:653
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option should be string"
-msgstr "Option »%s« ist leer"
+msgstr "Option »%s« sollte eine Zeichenkette sein"
 
 #: ../libnm-core/nm-setting-bridge-port.c:125
 #: ../libnm-core/nm-setting-bridge-port.c:137
@@ -7563,9 +7552,9 @@ msgstr "»%d« ist kein gültiger Wert für die Eigenschaft (sollte <= %d sein)"
 
 #: ../libnm-core/nm-setting-bridge-port.c:155
 #: ../libnm-core/nm-setting-team-port.c:98
-#, fuzzy, c-format
+#, c-format
 msgid "missing setting"
-msgstr "fehlende Option"
+msgstr "fehlende Einstellung"
 
 #: ../libnm-core/nm-setting-bridge-port.c:166
 #: ../libnm-core/nm-setting-team-port.c:109
@@ -7595,9 +7584,9 @@ msgstr ""
 "festgelegt ist"
 
 #: ../libnm-core/nm-setting-connection.c:869
-#, fuzzy, c-format
+#, c-format
 msgid "connection type '%s' is not valid"
-msgstr "Index »%s« ist ungültig"
+msgstr "Verbindungstyp »%s« ist ungültig"
 
 #: ../libnm-core/nm-setting-connection.c:904
 #: ../libnm-util/nm-setting-connection.c:878
@@ -7717,17 +7706,17 @@ msgid "mtu for transport mode '%s' can be at most %d but it is %d"
 msgstr ""
 
 #: ../libnm-core/nm-setting-ip-config.c:77
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv4 address"
-msgstr "Ungültige IPv4-Adresse »%s«"
+msgstr "Fehlende IPv4-Adresse"
 
 #: ../libnm-core/nm-setting-ip-config.c:77
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv6 address"
-msgstr "Ungültige IPv6-Adresse »%s«"
+msgstr "Fehlende IPv6-Adresse"
 
 #: ../libnm-core/nm-setting-ip-config.c:82
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv4 address '%s'"
 msgstr "Ungültige IPv4-Adresse »%s«"
 
@@ -7757,9 +7746,9 @@ msgid "%d. DNS server address is invalid"
 msgstr "%d. IPv4-Adresse ist ungültig"
 
 #: ../libnm-core/nm-setting-ip-config.c:1880
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address is invalid"
-msgstr "%d. IPv4-Adresse ist ungültig"
+msgstr "%d. IP-Adresse ist ungültig"
 
 #: ../libnm-core/nm-setting-ip-config.c:1892
 #, fuzzy, c-format
@@ -7776,9 +7765,8 @@ msgid "gateway cannot be set if there are no addresses configured"
 msgstr ""
 
 #: ../libnm-core/nm-setting-ip-config.c:1924
-#, fuzzy
 msgid "gateway is invalid"
-msgstr "Eigenschaft ist ungültig"
+msgstr "Gateway ist ungültig"
 
 #: ../libnm-core/nm-setting-ip-config.c:1938
 #, c-format
@@ -7957,9 +7945,9 @@ msgid "'%s' is not a valid band"
 msgstr "»%s« ist kein gültiges Band"
 
 #: ../libnm-core/nm-setting-wireless.c:732
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' requires setting '%s' property"
-msgstr "erfordert eine Festlegung der Eigenschaft »%s«"
+msgstr "»%s« erfordert eine Festlegung der Eigenschaft »%s«"
 
 #: ../libnm-core/nm-setting.c:833
 #, c-format
@@ -8054,14 +8042,14 @@ msgid "%d. route has invalid prefix"
 msgstr "%d. Pfadwahl hat ein ungültiges Präfix"
 
 #: ../libnm-util/nm-setting-ip6-config.c:912
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IPv6 address is invalid"
-msgstr "%d. IPv4-Adresse ist ungültig"
+msgstr "%d. IPv6-Adresse ist ungültig"
 
 #: ../libnm-util/nm-setting-ip6-config.c:922
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IPv6 address has invalid prefix"
-msgstr "%d. IPv4-Adresse hat ein ungültiges Präfix"
+msgstr "%d. IPv6-Adresse hat ein ungültiges Präfix"
 
 #: ../libnm-util/nm-setting-vpn.c:583
 #, c-format
@@ -8079,24 +8067,21 @@ msgid "requires setting '%s' property"
 msgstr "erfordert eine Festlegung der Eigenschaft »%s«"
 
 #: ../libnm/nm-device-adsl.c:73
-#, fuzzy
 msgid "The connection was not an ADSL connection."
-msgstr "wird verbunden (Zweitverbindungen werden gestartet)"
+msgstr "Die Verbindung war keine ADSL-Verbindung."
 
 #: ../libnm/nm-device-bond.c:115
-#, fuzzy
 msgid "The connection was not a bond connection."
-msgstr "wird verbunden (Zweitverbindungen werden gestartet)"
+msgstr "Die Verbindung war keine gebündelte Verbindung."
 
 #: ../libnm/nm-device-bridge.c:115
-#, fuzzy
 msgid "The connection was not a bridge connection."
-msgstr "wird verbunden (Zweitverbindungen werden gestartet)"
+msgstr "Die Verbindung war keine Brückenverbindung."
 
 #: ../libnm/nm-device-bt.c:140
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not a Bluetooth connection."
-msgstr "Es gibt 1 optionales Argument für den Verbindungstyp »bluetooth«.\n"
+msgstr "Die Verbindung war keine Bluetooth-Verbindung."
 
 #: ../libnm/nm-device-bt.c:149
 msgid "Invalid device Bluetooth address."
@@ -8112,15 +8097,13 @@ msgid ""
 msgstr ""
 
 #: ../libnm/nm-device-ethernet.c:138
-#, fuzzy
 msgid "The connection was not an Ethernet or PPPoE connection."
-msgstr "Es gibt 4 optionale Argumente für den Verbindungstyp »PPPoE«.\n"
+msgstr "Die Verbindung war keine Ethernet- oder PPPoE-Verbindung."
 
 #: ../libnm/nm-device-ethernet.c:154 ../libnm/nm-device-infiniband.c:105
 #: ../libnm/nm-device-wifi.c:598 ../libnm/nm-device-wimax.c:311
-#, fuzzy
 msgid "Invalid device MAC address."
-msgstr "ist keine gültige MAC-Adresse"
+msgstr "Ungültige MAC-Adresse des Geräts."
 
 #: ../libnm/nm-device-ethernet.c:160 ../libnm/nm-device-infiniband.c:113
 #: ../libnm/nm-device-wifi.c:605 ../libnm/nm-device-wimax.c:318
@@ -8128,9 +8111,8 @@ msgid "The MACs of the device and the connection didn't match."
 msgstr ""
 
 #: ../libnm/nm-device-generic.c:92
-#, fuzzy
 msgid "The connection was not a generic connection."
-msgstr "wird verbunden (Zweitverbindungen werden gestartet)"
+msgstr "Die Verbindung war keine allgemeine Verbindung."
 
 #: ../libnm/nm-device-generic.c:99
 #, fuzzy
@@ -8140,19 +8122,16 @@ msgstr ""
 "Schnittstellennamen"
 
 #: ../libnm/nm-device-infiniband.c:97
-#, fuzzy
 msgid "The connection was not an InfiniBand connection."
-msgstr "Es gibt 5 optionale Argumente für den Verbindungstyp »InfiniBand«.\n"
+msgstr "Die Verbindung war keine InfiniBand-Verbindung."
 
 #: ../libnm/nm-device-modem.c:123
-#, fuzzy
 msgid "The connection was not a modem connection."
-msgstr "Die Verbindung wurde entfernt"
+msgstr "Die Verbindung war keine Modem-Verbindung."
 
 #: ../libnm/nm-device-modem.c:131
-#, fuzzy
 msgid "The connection was not a valid modem connection."
-msgstr "wird verbunden (Zweitverbindungen werden gestartet)"
+msgstr "Die Verbindung war keine gültige Modem-Verbindung."
 
 #: ../libnm/nm-device-modem.c:138
 msgid "The device is lacking capabilities required by the connection."
@@ -8169,9 +8148,8 @@ msgid "The connection was not a team connection."
 msgstr "Die Verbindung wurde entfernt"
 
 #: ../libnm/nm-device-vlan.c:131
-#, fuzzy
 msgid "The connection was not a VLAN connection."
-msgstr "Es gibt 4 optionale Argumente für den Verbindungstyp »VLAN«.\n"
+msgstr "Die Verbindung war keine VLAN-Verbindung."
 
 #: ../libnm/nm-device-vlan.c:138
 msgid "The VLAN identifiers of the device and the connection didn't match."
@@ -8194,14 +8172,13 @@ msgid "The device is lacking WPA2/RSN capabilities required by the connection."
 msgstr ""
 
 #: ../libnm/nm-device-wimax.c:302
-#, fuzzy
 msgid "The connection was not a WiMAX connection."
-msgstr "Es gibt 1 optionales Argument für den Verbindungstyp »WiMax«.\n"
+msgstr "Die Verbindung war keine WiMAX-Verbindung."
 
 #: ../libnm/nm-device.c:2174
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not valid: %s"
-msgstr "Fehler: Verbindung ist ungültig: %s\n"
+msgstr "Die Verbindung war ungültig: %s"
 
 #: ../libnm/nm-device.c:2183
 #, c-format
@@ -8209,14 +8186,12 @@ msgid "The interface names of the device and the connection didn't match."
 msgstr ""
 
 #: ../libnm/nm-manager.c:861
-#, fuzzy
 msgid "Active connection could not be attached to the device"
-msgstr "Keine aktive Verbindung oder Gerät"
+msgstr "Die aktive Verbindung konnte nicht mit dem Gerät verbunden werden"
 
 #: ../libnm/nm-manager.c:1085
-#, fuzzy
 msgid "Active connection removed before it was initialized"
-msgstr "Verbindungsdetails aktivieren"
+msgstr "Die aktive Verbindung wurde entfernt, bevor sie initialisiert wurde"
 
 #: ../libnm/nm-object.c:1442 ../libnm/nm-object.c:1588
 msgid "Caller did not specify D-Bus path for object"
@@ -8349,10 +8324,10 @@ msgstr ""
 #. * that is combined with the first argument to create a unique
 #. * connection id.
 #: ../src/NetworkManagerUtils.c:1660
-#, fuzzy, c-format
+#, c-format
 msgctxt "connection id fallback"
 msgid "%s %d"
-msgstr "%s %s"
+msgstr "%s %d"
 
 #: ../src/main.c:240
 #, fuzzy, c-format
@@ -8465,20 +8440,19 @@ msgid "Closing %s failed: %s\n"
 msgstr "Schließen von %s fehlgeschlagen: %s\n"
 
 #: ../src/main-utils.c:125
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot create '%s': %s"
-msgstr "' kann nicht gesetzt werden"
+msgstr "»%s« kann nicht erstellt werden: %s"
 
 #: ../src/main-utils.c:177
-#, fuzzy, c-format
+#, c-format
 msgid "%s is already running (pid %ld)\n"
-msgstr "NetworkManager läuft bereits (pid %ld)\n"
+msgstr "%s läuft bereits (pid %ld)\n"
 
 #: ../src/main-utils.c:187
-#, fuzzy, c-format
+#, c-format
 msgid "You must be root to run %s!\n"
-msgstr ""
-"Sie müssen Systemverwaltungsrechte besitzen, um NetworkManager auszuführen!\n"
+msgstr "Sie müssen als root angemeldet sein, um %s auszuführen.\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:210
 msgid "# Created by NetworkManager\n"
@@ -8513,9 +8487,8 @@ msgid "The nameservers listed below may not be recognized."
 msgstr "Die nachfolgend gelisteten Nameserver werden eventuell nicht erkannt."
 
 #: ../src/devices/adsl/nm-device-adsl.c:137
-#, fuzzy
 msgid "ADSL connection"
-msgstr "ADSL-Verbindung %d"
+msgstr "ADSL-Verbindung"
 
 #: ../src/devices/bluetooth/nm-bluez-device.c:201
 #, c-format
@@ -8531,9 +8504,8 @@ msgid "PAN connections cannot specify GSM, CDMA, or serial settings"
 msgstr ""
 
 #: ../src/devices/bluetooth/nm-device-bt.c:278
-#, fuzzy
 msgid "PAN connection"
-msgstr "PAN-Verbindung %d"
+msgstr "PAN-Verbindung"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:285
 msgid "DUN requested, but Bluetooth device does not support DUN"
@@ -8545,15 +8517,13 @@ msgstr ""
 
 #: ../src/devices/bluetooth/nm-device-bt.c:305
 #: ../src/devices/wwan/nm-modem-broadband.c:540
-#, fuzzy
 msgid "GSM connection"
-msgstr "GSM-Verbindung %d"
+msgstr "GSM-Verbindung"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:309
 #: ../src/devices/wwan/nm-modem-broadband.c:563
-#, fuzzy
 msgid "CDMA connection"
-msgstr "CDMA-Verbindung %d"
+msgstr "CDMA-Verbindung"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:317
 msgid "Unknown/unhandled Bluetooth connection type"
@@ -8569,24 +8539,20 @@ msgid "connection does not match device"
 msgstr "Keine aktive Verbindung oder Gerät"
 
 #: ../src/devices/nm-device-bond.c:124
-#, fuzzy
 msgid "Bond connection"
-msgstr "Gebündelte Verbindung %d"
+msgstr "Bündel-Verbindung"
 
 #: ../src/devices/nm-device-bridge.c:130
-#, fuzzy
 msgid "Bridge connection"
-msgstr "Brückenverbindung %d"
+msgstr "Brückenverbindung"
 
 #: ../src/devices/nm-device-ethernet.c:1427
-#, fuzzy
 msgid "PPPoE connection"
-msgstr "PPPoE-Verbindung %d"
+msgstr "PPPoE-Verbindung"
 
 #: ../src/devices/nm-device-ethernet.c:1427
-#, fuzzy
 msgid "Wired connection"
-msgstr "Kabelgebundene Verbindung %d"
+msgstr "Kabelgebundene Verbindung"
 
 #: ../src/devices/nm-device-ethernet-utils.c:40
 #, c-format
@@ -8594,24 +8560,20 @@ msgid "Wired connection %d"
 msgstr "Kabelgebundene Verbindung %d"
 
 #: ../src/devices/nm-device-infiniband.c:186
-#, fuzzy
 msgid "InfiniBand connection"
-msgstr "InfiniBand-Verbindung %d"
+msgstr "InfiniBand-Verbindung"
 
 #: ../src/devices/nm-device-vlan.c:343
-#, fuzzy
 msgid "VLAN connection"
-msgstr "VLAN-Verbindung %d"
+msgstr "VLAN-Verbindung"
 
 #: ../src/devices/team/nm-device-team.c:134
-#, fuzzy
 msgid "Team connection"
-msgstr "Gebündelte Verbindung %d"
+msgstr "Netzwerk-Team"
 
 #: ../src/devices/wifi/nm-device-olpc-mesh.c:151
-#, fuzzy
 msgid "Mesh"
-msgstr "Maschennetz %d‬"
+msgstr "Maschennetz"
 
 #: ../src/devices/wifi/nm-device-wifi.c:1081
 msgid "WPA Ad-Hoc disabled due to kernel bugs"
@@ -8665,9 +8627,8 @@ msgid "a connection using '%s' authentication cannot specific a WPA password"
 msgstr ""
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:242
-#, fuzzy
 msgid "Dynamic WEP requires an 802.1x setting"
-msgstr "Dynamisches WEP (802.1x)"
+msgstr "Dynamisches WEP erfordert eine 802.1x-Einstellung"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:252
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:280
@@ -8736,11 +8697,11 @@ msgstr ""
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:498
 msgid "Ad-Hoc mode is incompatible with LEAP security"
-msgstr ""
+msgstr "Ad-hoc-Modus ist nicht kompatibel mit LEAP-Sicherheit"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:508
 msgid "Ad-Hoc mode requires 'open' authentication"
-msgstr ""
+msgstr "Ad-hoc-Modus erfordert »offene« Legitimierung"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:518
 msgid ""
@@ -8795,9 +8756,8 @@ msgid "List of plugins separated by ','"
 msgstr "Mit »,« getrennte Liste von Erweiterungen"
 
 #: ../src/nm-config.c:467
-#, fuzzy
 msgid "Quit after initial configuration"
-msgstr "Aktuelle nmcli-Konfiguration:\n"
+msgstr "Nach Erstkonfiguration beenden"
 
 #. These three are hidden for now, and should eventually just go away.
 #: ../src/nm-config.c:470
@@ -8820,16 +8780,15 @@ msgstr "Übergeordnete Schnittstelle [keine]: "
 
 #: ../src/nm-iface-helper.c:286
 msgid "eth0"
-msgstr ""
+msgstr "eth0"
 
 #: ../src/nm-iface-helper.c:287
-#, fuzzy
 msgid "Connection UUID"
-msgstr "Verbindung"
+msgstr "Verbindungs-UUID"
 
 #: ../src/nm-iface-helper.c:287
 msgid "661e8cd0-b618-46b8-9dc9-31a52baaa16b"
-msgstr ""
+msgstr "661e8cd0-b618-46b8-9dc9-31a52baaa16b"
 
 #: ../src/nm-iface-helper.c:288
 msgid "Whether to manage IPv6 SLAAC"
@@ -8844,9 +8803,8 @@ msgid "Use an IPv6 temporary privacy address"
 msgstr ""
 
 #: ../src/nm-iface-helper.c:291
-#, fuzzy
 msgid "Current DHCPv4 address"
-msgstr "Geklonte MAC-Adresse"
+msgstr "Aktuelle DHCPv4-Adresse"
 
 #: ../src/nm-iface-helper.c:292
 msgid "Whether DHCPv4 must be successful"
@@ -8872,7 +8830,7 @@ msgstr "Keine Priorität zum Entfernen"
 
 #: ../src/nm-iface-helper.c:295
 msgid "0"
-msgstr ""
+msgstr "0"
 
 #: ../src/nm-iface-helper.c:296
 #, fuzzy
@@ -8881,7 +8839,7 @@ msgstr "Keine Priorität zum Entfernen"
 
 #: ../src/nm-iface-helper.c:296
 msgid "1024"
-msgstr ""
+msgstr "1024"
 
 #: ../src/nm-iface-helper.c:297
 msgid "Hex-encoded Interface Identifier"
@@ -8919,9 +8877,8 @@ msgid "Unknown log domain '%s'"
 msgstr "Unbekannte Protokolldomäne »%s«"
 
 #: ../src/nm-manager.c:3423
-#, fuzzy
 msgid "VPN connection"
-msgstr "VPN wird verbunden"
+msgstr "VPN-Verbindung"
 
 #: ../src/nm-sleep-monitor-systemd.c:115
 msgid "NetworkManager needs to turn off networks"
