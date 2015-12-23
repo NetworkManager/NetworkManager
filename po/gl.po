@@ -45,7 +45,7 @@ msgid ""
 "and if a password is required asks the user for it.\n"
 "\n"
 msgstr ""
-"Uso: nmcli agenc secret { help }\n"
+"Uso: nmcli agent secret { help }\n"
 "\n"
 "Executa nmcli como o axente secreto de NetworkMnager. Cando NetworkManager "
 "require\n"
@@ -1846,7 +1846,7 @@ msgstr "bridge"
 #: ../clients/cli/connections.c:4027
 #, c-format
 msgid "Enable STP %s"
-msgstr "Activar sTP %s"
+msgstr "Activar STP %s"
 
 #: ../clients/cli/connections.c:4032
 #, c-format
