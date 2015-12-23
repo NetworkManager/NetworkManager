@@ -4447,6 +4447,17 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 }
 
 static void
+dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
+{
+	if (success)
+		nm_device_activate_schedule_ip4_config_result (self, configs[1]);
+	else {
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+	}
+}
+
+static void
 dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
@@ -4456,6 +4467,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIP4Config *manual, **configs;
+	NMConnection *connection;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
 	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
@@ -4475,9 +4488,21 @@ dhcp4_state_changed (NMDhcpClient *client,
 		nm_dhcp4_config_set_options (priv->dhcp4_config, options);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
 
-		if (priv->ip4_state == IP_CONF)
-			nm_device_activate_schedule_ip4_config_result (self, ip4_config);
-		else if (priv->ip4_state == IP_DONE) {
+		if (priv->ip4_state == IP_CONF) {
+			connection = nm_device_get_applied_connection (self);
+			g_assert (connection);
+
+			manual = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
+			nm_ip4_config_merge_setting (manual,
+			                             nm_connection_get_setting_ip4_config (connection),
+			                             nm_device_get_ip4_route_metric (self));
+
+			configs = g_new0 (NMIP4Config *, 3);
+			configs[0] = manual;
+			configs[1] = g_object_ref (ip4_config);
+
+			ipv4_dad_start (self, configs, dhcp4_dad_cb);
+		} else if (priv->ip4_state == IP_DONE) {
 			dhcp4_lease_change (self, ip4_config);
 			nm_device_update_metered (self);
 		}
