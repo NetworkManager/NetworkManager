@@ -26,7 +26,13 @@
 #include "NetworkManager.h"
 #include "nm-dbus-compat.h"
 
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+#include "nm-dbus-glib-types.h"
+#endif
+
 #include "nm-test-libnm-utils.h"
+
+/*****************************************************************************/
 
 static gboolean
 name_exists (GDBusConnection *c, const char *name)
@@ -94,6 +100,11 @@ nmtstc_service_init (void)
 	                                     NULL, &error);
 	g_assert_no_error (error);
 
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+	info->libdbus.bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+	g_assert (info->libdbus.bus);
+#endif
 	return info;
 }
 
@@ -115,6 +126,10 @@ nmtstc_service_cleanup (NMTstcServiceInfo *info)
 
 	g_object_unref (info->bus);
 	close (info->keepalive_fd);
+
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+	g_clear_pointer (&info->libdbus.bus, dbus_g_connection_unref);
+#endif
 
 	memset (info, 0, sizeof (*info));
 	g_free (info);

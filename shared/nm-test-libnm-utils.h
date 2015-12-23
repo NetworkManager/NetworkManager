@@ -29,6 +29,11 @@ typedef struct {
 	GDBusProxy *proxy;
 	GPid pid;
 	int keepalive_fd;
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+	struct {
+		DBusGConnection *bus;
+	} libdbus;
+#endif
 } NMTstcServiceInfo;
 
 NMTstcServiceInfo *nmtstc_service_init (void);
