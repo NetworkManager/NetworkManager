@@ -868,6 +868,17 @@ __define_nmtst_static(02, 1024)
 __define_nmtst_static(03, 1024)
 #undef __define_nmtst_static
 
+inline static const char *
+nmtst_uuid_generate (void)
+{
+	static char u[37];
+	gs_free char *m = NULL;
+
+	m = nm_utils_uuid_generate ();
+	g_assert (m && strlen (m) == sizeof (u) - 1);
+	memcpy (u, m, sizeof (u));
+	return u;
+}
 
 #define NMTST_SWAP(x,y) \
 	G_STMT_START { \
