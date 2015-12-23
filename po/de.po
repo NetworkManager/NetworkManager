@@ -3846,7 +3846,7 @@ msgstr "IP-IFACE"
 #. 2
 #: ../clients/cli/devices.c:71 ../clients/cli/devices.c:103
 msgid "IS-SOFTWARE"
-msgstr ""
+msgstr "IS-SOFTWARE"
 
 #. 15
 #: ../clients/cli/devices.c:72
@@ -6010,9 +6010,9 @@ msgid ""
 msgstr ""
 
 #: ../clients/cli/settings.c:3415
-#, fuzzy, c-format
+#, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
-msgstr "die Eigenschaft enthält kein alternative Themen passend zu »%s«"
+msgstr "die Eigenschaft enthält keine alternativen Themen passend zu »%s«"
 
 #: ../clients/cli/settings.c:3431
 msgid ""
@@ -6033,9 +6033,10 @@ msgid ""
 msgstr ""
 
 #: ../clients/cli/settings.c:3463
-#, fuzzy, c-format
+#, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
-msgstr "die Eigenschaft enthält nicht die Berechtigung »%s«"
+msgstr ""
+"die Eigenschaft enthält nicht »phase2«, alternative Themen passend zu »%s«"
 
 #: ../clients/cli/settings.c:3479
 msgid ""
@@ -7584,9 +7585,9 @@ msgid "Could not parse arguments"
 msgstr "Parameter konnten nicht verarbeitet werden"
 
 #: ../clients/tui/nmtui.c:235
-#, fuzzy, c-format
+#, c-format
 msgid "Could not contact NetworkManager: %s.\n"
-msgstr "Verbindungen konnte nicht aktiviert werden: %s"
+msgstr "NetworkManager konnte nicht erreicht werden: %s.\n"
 
 #: ../clients/tui/nmtui.c:240
 msgid "NetworkManager is not running."
@@ -9250,7 +9251,7 @@ msgstr "Die aktive Verbindung wurde entfernt, bevor sie initialisiert wurde"
 
 #: ../libnm/nm-object.c:1511 ../libnm/nm-object.c:1657
 msgid "Caller did not specify D-Bus path for object"
-msgstr ""
+msgstr "Aufrufer gab keinen D-Bus-Pfad für Objekt an"
 
 #: ../libnm/nm-remote-settings.c:261
 msgid "Connection removed before it was initialized"

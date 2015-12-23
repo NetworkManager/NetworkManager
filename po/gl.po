@@ -29,6 +29,10 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
+"Uso: nmcli agent { ORDE | help}\n"
+"\n"
+"ORDE := { secret | polkit | all}\n"
+"\n"
 
 #: ../clients/cli/agent.c:49
 #, c-format
@@ -41,6 +45,13 @@ msgid ""
 "and if a password is required asks the user for it.\n"
 "\n"
 msgstr ""
+"Uso: nmcli agenc secret { help }\n"
+"\n"
+"Executa nmcli como o axente secreto de NetworkMnager. Cando NetworkManager "
+"require\n"
+"un contrasinal pregunta por axentes rexistrados por el. Esta orde mantén "
+"nmcli \n"
+"executándose e se se require un contrsinal pregúntalle ao usuario por ela.\n"
 
 #: ../clients/cli/agent.c:59
 #, c-format
@@ -53,6 +64,13 @@ msgid ""
 "the response back to polkit.\n"
 "\n"
 msgstr ""
+"Uso: nmcli agent polkit { help }\n"
+"\n"
+"Rexistra nmcli como unha acción de polkit para a sesión do usuario.\n"
+"Cando un daemon de polkit require autorización, nmcli preguntaralle ao "
+"usuario\n"
+"e daralle a resposta de volta a polkit.\n"
+"\n"
 
 #: ../clients/cli/agent.c:69
 #, c-format
@@ -62,26 +80,30 @@ msgid ""
 "Runs nmcli as both NetworkManager secret and a polkit agent.\n"
 "\n"
 msgstr ""
+"Uso: nmcli agent all { help }\n"
+"\n"
+"Executa nmcli como un axente secreto e un polkit de NetworkManager.\n"
+"\n"
 
 #: ../clients/cli/agent.c:151
 #, c-format
 msgid "nmcli successfully registered as a NetworkManager's secret agent.\n"
-msgstr ""
+msgstr "nmcli rexistrado con éxito como axente secreto de NetworkManager.\n"
 
 #: ../clients/cli/agent.c:153
-#, fuzzy, c-format
+#, c-format
 msgid "Error: secret agent initialization failed"
-msgstr "Fallou a inicialización do módem"
+msgstr "Erro: produciuse un fallo ao iniciar do axente secreto"
 
 #: ../clients/cli/agent.c:168
-#, fuzzy, c-format
+#, c-format
 msgid "Error: polkit agent initialization failed: %s"
-msgstr "Erro: Produciuse un fallo ao activar a conexión: %s"
+msgstr "Erro: produciuse un fallo ao iiniciar o xecte de plkit: %s"
 
 #: ../clients/cli/agent.c:176
 #, c-format
 msgid "nmcli successfully registered as a polkit agent.\n"
-msgstr ""
+msgstr "nmcli rexistrado con éxito como un axente de polkit.\n"
 
 #: ../clients/cli/agent.c:208 ../clients/cli/connections.c:10953
 #: ../clients/cli/devices.c:3552 ../clients/cli/general.c:344
@@ -91,9 +113,9 @@ msgid "Error: NetworkManager is not running."
 msgstr "Erro: NetworkManager non está a funcionar."
 
 #: ../clients/cli/agent.c:244
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'agent' command '%s' is not valid."
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: a orde «agent» «%s» non é válida."
 
 #: ../clients/cli/common.c:40 ../clients/cli/common.c:53
 #: ../clients/cli/common.c:61 ../clients/cli/common.c:73
@@ -141,12 +163,12 @@ msgstr "OPCIÓN"
 #: ../clients/cli/common.c:378 ../clients/cli/common.c:438
 #, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
-msgstr ""
+msgstr "prefixo «%s» non válido: <1-%d> permitido"
 
 #: ../clients/cli/common.c:386
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "segredos VPN non válidos"
+msgstr "enderezo IP non válido: %s"
 
 #: ../clients/cli/common.c:450
 #, c-format
@@ -156,18 +178,19 @@ msgid ""
 msgstr ""
 
 #: ../clients/cli/common.c:459
-#, fuzzy, c-format
+#, c-format
 msgid "invalid metric '%s'"
-msgstr "campo «%s» non válido"
+msgstr "métrica «%s» non válida"
 
 #: ../clients/cli/common.c:467
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "campo «%s» non válido"
+msgstr "ruta non válida: %s"
 
 #: ../clients/cli/common.c:479
 msgid "default route cannot be added (NetworkManager handles it by itself)"
 msgstr ""
+"a ruta por omisión non puido engadirse (NetworkManager xestionase a si mesmo)"
 
 #: ../clients/cli/common.c:496
 msgid "unmanaged"
@@ -271,11 +294,11 @@ msgstr "non"
 
 #: ../clients/cli/common.c:533
 msgid "yes (guessed)"
-msgstr ""
+msgstr "sí (adiviñado)"
 
 #: ../clients/cli/common.c:535
 msgid "no (guessed)"
-msgstr ""
+msgstr "non (adiviñado)"
 
 #: ../clients/cli/common.c:546
 msgid "No reason given"
@@ -503,41 +526,35 @@ msgstr "Fallou a conexión secundaria da conexión base"
 
 #: ../clients/cli/common.c:711
 msgid "DCB or FCoE setup failed"
-msgstr ""
+msgstr "Fallou a configuración de DCB ou FCoE "
 
 #: ../clients/cli/common.c:714
-#, fuzzy
 msgid "teamd control failed"
-msgstr "produciuse un fallo na conexión"
+msgstr "Fallou o control de teamd"
 
 #: ../clients/cli/common.c:717
-#, fuzzy
 msgid "Modem failed or no longer available"
-msgstr "ModemManager non está dispoñíbel"
+msgstr "Fallou o modem ou non está dispoñíbel"
 
 #: ../clients/cli/common.c:720
-#, fuzzy
 msgid "Modem now ready and available"
-msgstr "ModemManager non está dispoñíbel"
+msgstr "O módem está agora listo e dispoñíbel"
 
 #: ../clients/cli/common.c:723
 msgid "SIM PIN was incorrect"
-msgstr ""
+msgstr "O PIN da SIM é incorrecto"
 
 #: ../clients/cli/common.c:726
-#, fuzzy
 msgid "New connection activation was enqueued"
-msgstr "Erro: A activación da conexión fallou."
+msgstr "A nova activación de conexión foi engadida á cola"
 
 #: ../clients/cli/common.c:729
-#, fuzzy
 msgid "The device's parent changed"
-msgstr "O dispositivo eliminouse"
+msgstr "O pai do dispositivo cambiou"
 
 #: ../clients/cli/common.c:732
-#, fuzzy
 msgid "The device parent's management changed"
-msgstr "O dispositivo eliminouse"
+msgstr "A xestión do pai do dispositivo cambiou"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #: ../clients/cli/common.c:736 ../libnm-glib/nm-device.c:1874
@@ -546,19 +563,19 @@ msgid "Unknown"
 msgstr "Descoñecido"
 
 #: ../clients/cli/common.c:778
-#, fuzzy, c-format
+#, c-format
 msgid "invalid priority map '%s'"
-msgstr "campo «%s» non válido"
+msgstr "mapa de prioridade «%s» non válida"
 
 #: ../clients/cli/common.c:785 ../clients/cli/common.c:791
-#, fuzzy, c-format
+#, c-format
 msgid "priority '%s' is not valid (<0-%ld>)"
-msgstr "Erro: O valor do tempo de espera máximo «%s» non é válido."
+msgstr "a prioridade «%s» non é válida (<0-%ld>)"
 
 #: ../clients/cli/common.c:858
 #, c-format
 msgid "'%s' is not a valid team configuration or file name."
-msgstr ""
+msgstr "«%s» non é unha configuración de equipo ou nome de ficheiro válido"
 
 #: ../clients/cli/common.c:960
 #, fuzzy, c-format
@@ -581,30 +598,30 @@ msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
 "without '--ask' option.\n"
 msgstr ""
+"Aviso: o contrasinal para «%s» non está fornecido en «passwd-file» e nmcli "
+"non pode preguntar sen unha opción «--ask».\n"
 
 #. define some prompts for connection editor
 #: ../clients/cli/connections.c:42
 msgid "Setting name? "
-msgstr ""
+msgstr "Nome da preferencia?"
 
 #: ../clients/cli/connections.c:43
 msgid "Property name? "
-msgstr ""
+msgstr "Nome da propiedade?"
 
 #: ../clients/cli/connections.c:44
-#, fuzzy
 msgid "Enter connection type: "
-msgstr "Estado da conexión activa: %s\n"
+msgstr "Introduza o tipo de conexión:"
 
 #. define some other prompts
 #: ../clients/cli/connections.c:47
-#, fuzzy
 msgid "Connection type: "
-msgstr "Lista de conexións"
+msgstr "Tipo de conexión:"
 
 #: ../clients/cli/connections.c:48
 msgid "VPN type: "
-msgstr ""
+msgstr "Tipo de VPN:"
 
 #: ../clients/cli/connections.c:49
 msgid "Master: "
@@ -612,7 +629,7 @@ msgstr ""
 
 #: ../clients/cli/connections.c:50
 msgid "Connection (name, UUID, or path): "
-msgstr ""
+msgstr "Conexión (nome, UUID ou ruta):"
 
 #: ../clients/cli/connections.c:51
 #, fuzzy
@@ -621,7 +638,7 @@ msgstr "Conectándose á VPN (preparando)"
 
 #: ../clients/cli/connections.c:52
 msgid "Connection(s) (name, UUID, or path): "
-msgstr ""
+msgstr "Conexión(s) (nome, UUID ou ruta):"
 
 #: ../clients/cli/connections.c:53
 msgid "Connection(s) (name, UUID, path or apath): "
@@ -680,9 +697,8 @@ msgstr "AUTOCONECTAR"
 
 #. 5
 #: ../clients/cli/connections.c:80
-#, fuzzy
 msgid "AUTOCONNECT-PRIORITY"
-msgstr "AUTOCONECTAR"
+msgstr "AUTOCONECTAR-PRIORIDADE"
 
 #. 6
 #: ../clients/cli/connections.c:81
@@ -732,9 +748,8 @@ msgstr "ESTADO"
 
 #. 11
 #: ../clients/cli/connections.c:86
-#, fuzzy
 msgid "ACTIVE-PATH"
-msgstr "RUTA-MASTER"
+msgstr "RUTA-ACTIVA"
 
 #. 2
 #: ../clients/cli/connections.c:196
@@ -1253,14 +1268,13 @@ msgid "VPN disconnected"
 msgstr "Desconectado á VPN"
 
 #: ../clients/cli/connections.c:745
-#, fuzzy, c-format
+#, c-format
 msgid "Error updating secrets for %s: %s\n"
-msgstr "produciuse un erro ao actualizar a caché de ligazóns: %s"
+msgstr "Produciuse un erro ao actualizar os segredos para %s: %s\n"
 
 #: ../clients/cli/connections.c:765
-#, fuzzy
 msgid "Connection profile details"
-msgstr "Detalles da conexión"
+msgstr "Detalles do perfíl da conexión"
 
 #: ../clients/cli/connections.c:777 ../clients/cli/connections.c:1170
 #, fuzzy, c-format
@@ -1272,30 +1286,27 @@ msgid "never"
 msgstr "nunca"
 
 #: ../clients/cli/connections.c:1158
-#, fuzzy
 msgid "Activate connection details"
-msgstr "Detalles da conexión activa"
+msgstr "Activar detalles da conexión"
 
 #: ../clients/cli/connections.c:1394
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
-msgstr ""
+msgstr "campo «%s» non válido: campos permitidos: %s e %s, ou %s,%s"
 
 #: ../clients/cli/connections.c:1409 ../clients/cli/connections.c:1417
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' has to be alone"
-msgstr "o campo «%s» ten que estar só"
+msgstr "«%s» ten que estar só"
 
 #. Add headers
 #: ../clients/cli/connections.c:1632
-#, fuzzy
 msgid "NetworkManager active profiles"
-msgstr "Estado de NetworkManager"
+msgstr "O perfiles de NetworkManager activos"
 
 #: ../clients/cli/connections.c:1633
-#, fuzzy
 msgid "NetworkManager connection profiles"
-msgstr "NetworkManager púxose a durmir"
+msgstr "Perfiles de conexión de NetworkManager"
 
 #: ../clients/cli/connections.c:1679 ../clients/cli/connections.c:2387
 #: ../clients/cli/connections.c:2409 ../clients/cli/connections.c:2418
@@ -1318,9 +1329,9 @@ msgid "Error: %s argument is missing."
 msgstr "Erro: falta o argumento %s"
 
 #: ../clients/cli/connections.c:1694
-#, fuzzy, c-format
+#, c-format
 msgid "Error: %s - no such connection profile."
-msgstr "Erro: %s - non existe dita conexión."
+msgstr "Erro: %s - non existe o perfíl de conexión."
 
 #: ../clients/cli/connections.c:1753 ../clients/cli/connections.c:2450
 #: ../clients/cli/connections.c:11065 ../clients/cli/devices.c:3169
@@ -1407,11 +1418,13 @@ msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "Conexión activada con éxito (ruta activa de D-Bus: %s)\n"
 
 #: ../clients/cli/connections.c:1974
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Connection successfully activated (master waiting for slaves) (D-Bus active "
 "path: %s)\n"
-msgstr "Conexión activada con éxito (ruta activa de D-Bus: %s)\n"
+msgstr ""
+"Conexión activada con éxito (mestre agardando polos escravos) (ruta activa "
+"de D-Bus: %s)\n"
 
 #: ../clients/cli/connections.c:1978 ../clients/cli/connections.c:2000
 #, c-format
@@ -1441,42 +1454,40 @@ msgstr "Erro: Produciuse un fallo ao activar a conexión: %s"
 #: ../clients/cli/connections.c:2223
 #, c-format
 msgid "failed to read passwd-file '%s': %s"
-msgstr ""
+msgstr "produciuse un fallo ao ler o ficheiro passwd «%s»: %s"
 
 #: ../clients/cli/connections.c:2235
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
-msgstr ""
+msgstr "falta o punto e coma na entrada «password» «%s»"
 
 #: ../clients/cli/connections.c:2243
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
-msgstr ""
+msgstr "falta un punto na entrada «password» «%s»"
 
 #: ../clients/cli/connections.c:2256
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
-msgstr ""
+msgstr "nome de configuración non válido na entrada «password» «%s»"
 
 #: ../clients/cli/connections.c:2303 ../clients/cli/connections.c:2451
-#, fuzzy
 msgid "unknown error"
-msgstr "Erro descoñecido"
+msgstr "erro descoñecido"
 
 #: ../clients/cli/connections.c:2312
-#, fuzzy, c-format
+#, c-format
 msgid "unknown device '%s'."
-msgstr "Nivel de rexistro «%s» descoñecido"
+msgstr "dispositivo descoñecido «%s»"
 
 #: ../clients/cli/connections.c:2317
-#, fuzzy
 msgid "neither a valid connection nor device given"
-msgstr "non hai conexións activas ou dispositivo"
+msgstr "non se forneceu unha conexión válida nin un dispositivo"
 
 #: ../clients/cli/connections.c:2400
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection '%s' does not exist."
-msgstr "Erro: «con» a orde «%s» non é válida"
+msgstr "Erro: A conexión «%s» non existe."
 
 #: ../clients/cli/connections.c:2435 ../clients/cli/devices.c:1312
 #: ../clients/cli/devices.c:2235 ../clients/cli/devices.c:2629
@@ -1487,12 +1498,12 @@ msgstr "Parámetros descoñecidos: %s\n"
 
 #: ../clients/cli/connections.c:2460
 msgid "preparing"
-msgstr ""
+msgstr "preparando"
 
 #: ../clients/cli/connections.c:2481
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Éxito: O dispositivo «%s» desconectouse correctamente."
+msgstr "Conexión «%s» (%s) eliminada con éxito.\n"
 
 #: ../clients/cli/connections.c:2497
 #, fuzzy, c-format
@@ -1523,29 +1534,29 @@ msgstr "non hai conexións activas ou dispositivo"
 #: ../clients/cli/connections.c:2967 ../clients/cli/utils.c:698
 #, c-format
 msgid "'%s' not among [%s]"
-msgstr ""
+msgstr "'%s' non entre [%s]"
 
 #: ../clients/cli/connections.c:3046
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not a valid %s MAC address."
-msgstr "Error: o dispositivo «%s» non é un dispositivo WiMAX."
+msgstr "Error: «%s»: «%s» non é un enderezo MAC válido %s."
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3047 ../clients/cli/connections.c:3579
 #: ../clients/tui/nm-editor-utils.c:164 ../libnm-core/nm-connection.c:1646
 #: ../libnm-glib/nm-device.c:1862 ../libnm/nm-device.c:1813
 msgid "InfiniBand"
-msgstr ""
+msgstr "InfiniBand"
 
 #: ../clients/cli/connections.c:3047 ../clients/tui/nm-editor-utils.c:147
 #: ../libnm-glib/nm-device.c:1850 ../libnm/nm-device.c:1801
 msgid "Ethernet"
-msgstr ""
+msgstr "Ethernet"
 
 #: ../clients/cli/connections.c:3067
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'mtu': '%s' is not a valid MTU."
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «mtu»: o MTU «%s» non é válido."
 
 #: ../clients/cli/connections.c:3083
 #, fuzzy, c-format
@@ -1563,27 +1574,25 @@ msgid "Error: '%s' is not a valid UID/GID."
 msgstr "Erro: «nm» a orde «%s» non é válida."
 
 #: ../clients/cli/connections.c:3163
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not a valid %s %s."
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «%s» «%s» non é un %s %s válido."
 
 #: ../clients/cli/connections.c:3176
 msgid "Wi-Fi mode"
-msgstr ""
+msgstr "Modo Wifi"
 
 #: ../clients/cli/connections.c:3185
-#, fuzzy
 msgid "InfiniBand transport mode"
-msgstr "Conexión InfiniBand %d"
+msgstr "Modo de transporte InfiniBand"
 
 #: ../clients/cli/connections.c:3197
 msgid "ADSL protocol"
-msgstr ""
+msgstr "Protocolo do ADSL"
 
 #: ../clients/cli/connections.c:3208
-#, fuzzy
 msgid "ADSL encapsulation"
-msgstr "Conexión ADSL %d"
+msgstr "Conexión ADSL"
 
 #: ../clients/cli/connections.c:3217
 #, fuzzy
@@ -1591,14 +1600,14 @@ msgid "TUN device mode"
 msgstr "O dispositivo eliminouse"
 
 #: ../clients/cli/connections.c:3230
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'flags': '%s' is not valid; use <0-7>."
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «bandeiras»: «%s» non é válida; use <0-7>."
 
 #: ../clients/cli/connections.c:3252
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not valid; %s "
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «%s»: «%s» non é válida; %s."
 
 #: ../clients/cli/connections.c:3430
 #, c-format
@@ -1606,57 +1615,57 @@ msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 
 #: ../clients/cli/connections.c:3455
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not valid; use <%u-%u>."
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «%s»: «%s» non é válida; use <%u-%u>."
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:3511
-#, fuzzy, c-format
+#, c-format
 msgid "There is %d optional argument for '%s' connection type.\n"
 msgid_plural "There are %d optional arguments for '%s' connection type.\n"
-msgstr[0] "Erro: falta o argumento para a opción «%s»."
-msgstr[1] "Erro: falta o argumento para a opción «%s»."
+msgstr[0] "Hai %d argumento opcional para o tipo de conexión «%s».\n"
+msgstr[1] "Hai %d argumentos opcionais para o tipo de conexión «%s».\n"
 
 #: ../clients/cli/connections.c:3514
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Desexa fornecelo? %s"
+msgstr[1] "Desexa fornecelos? %s"
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3531
 msgid "ethernet"
-msgstr ""
+msgstr "ethernet"
 
 #: ../clients/cli/connections.c:3536 ../clients/cli/connections.c:3584
 #: ../clients/cli/connections.c:3718 ../clients/cli/connections.c:3797
 msgid "MTU [auto]: "
-msgstr ""
+msgstr "MTU [auto]: "
 
 #: ../clients/cli/connections.c:3547 ../clients/cli/connections.c:3595
 #: ../clients/cli/connections.c:3690 ../clients/cli/connections.c:3729
 #: ../clients/cli/connections.c:4115
 msgid "MAC [none]: "
-msgstr ""
+msgstr "MAC [ningunha]: "
 
 #: ../clients/cli/connections.c:3558
 msgid "Cloned MAC [none]: "
-msgstr ""
+msgstr "MAC clonada [ningunha]: "
 
 #: ../clients/cli/connections.c:3606
 #, c-format
 msgid "Transport mode %s"
-msgstr ""
+msgstr "Modo de transporte %s"
 
 #: ../clients/cli/connections.c:3619
 msgid "Parent interface [none]: "
-msgstr ""
+msgstr "Interface pai [ningunha]:"
 
 #: ../clients/cli/connections.c:3630
 msgid "P_KEY [none]: "
-msgstr ""
+msgstr "P_KEY [ningunha]: "
 
 #: ../clients/cli/connections.c:3640
 #, c-format
@@ -1667,56 +1676,56 @@ msgstr ""
 #: ../clients/cli/connections.c:3657 ../clients/tui/nm-editor-utils.c:155
 #: ../libnm-glib/nm-device.c:1852 ../libnm/nm-device.c:1803
 msgid "Wi-Fi"
-msgstr ""
+msgstr "Wifi"
 
 #: ../clients/cli/connections.c:3665 ../clients/cli/connections.c:6069
 #, c-format
 msgid "Mode %s"
-msgstr ""
+msgstr "Modo %s"
 
 #. Ask for optional 'wimax' arguments.
 #: ../clients/cli/connections.c:3685 ../libnm-glib/nm-device.c:1858
 #: ../libnm/nm-device.c:1809
 msgid "WiMAX"
-msgstr ""
+msgstr "WiMAX"
 
 #. Ask for optional 'pppoe' arguments.
 #: ../clients/cli/connections.c:3708
 msgid "PPPoE"
-msgstr ""
+msgstr "PPPoE"
 
 #: ../clients/cli/connections.c:3712 ../clients/cli/connections.c:3750
 #: ../clients/cli/connections.c:4237
 msgid "Password [none]: "
-msgstr ""
+msgstr "Contrasinal [ningunha]: "
 
 #: ../clients/cli/connections.c:3714
 msgid "Service [none]: "
-msgstr ""
+msgstr "Servizo [ningún]: "
 
 #. Ask for optional 'gsm' or 'cdma' arguments.
 #: ../clients/cli/connections.c:3744
 msgid "mobile broadband"
-msgstr ""
+msgstr "banda larga móbil"
 
 #: ../clients/cli/connections.c:3748 ../clients/cli/connections.c:4187
 msgid "Username [none]: "
-msgstr ""
+msgstr "Nome de usuario [ningún]: "
 
 #. Ask for optional 'bluetooth' arguments.
 #: ../clients/cli/connections.c:3763
 msgid "bluetooth"
-msgstr ""
+msgstr "bluetooth"
 
 #: ../clients/cli/connections.c:3770
 #, c-format
 msgid "Bluetooth type %s"
-msgstr ""
+msgstr "Bluetooth tipo %s"
 
 #: ../clients/cli/connections.c:3776
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'bt-type': '%s' is not a valid bluetooth type.\n"
-msgstr "Erro: «dev» a orde «%s» non é válida."
+msgstr "Erro: «bt-type»: «%s» non é un tipo de bluetooth válido.\n"
 
 #. Ask for optional 'vlan' arguments.
 #. 13
@@ -1729,104 +1738,101 @@ msgstr "VLAN"
 
 #: ../clients/cli/connections.c:3808
 msgid "VLAN flags (<0-7>) [none]: "
-msgstr ""
+msgstr "Bandeiras de VLAN (<0-7>) [ningún]: "
 
 #: ../clients/cli/connections.c:3819
 msgid "Ingress priority maps [none]: "
-msgstr ""
+msgstr "Mapas de prioridade de ingreso [ningún]:"
 
 #: ../clients/cli/connections.c:3830
 msgid "Egress priority maps [none]: "
-msgstr ""
+msgstr "Mapas de prioridade de egreso [ningún]:"
 
 #: ../clients/cli/connections.c:3841
 msgid "Bonding mode [balance-rr]: "
-msgstr ""
+msgstr "Modo de bonding [balance-rr]:"
 
 #. Ask for optional 'bond' arguments.
 #: ../clients/cli/connections.c:3857
 msgid "bond"
-msgstr ""
+msgstr "bond"
 
 #: ../clients/cli/connections.c:3879
 msgid "Bonding primary interface [none]: "
-msgstr ""
+msgstr "Interface primario do bonding [ningún]:"
 
 #: ../clients/cli/connections.c:3882
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'primary': '%s' is not a valid interface name.\n"
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «primary»: «%s» non é un nome de interface válido.\n"
 
 #: ../clients/cli/connections.c:3890
 #, c-format
 msgid "Bonding monitoring mode %s"
-msgstr ""
+msgstr "Modo de monitorización de bonding %s"
 
 #: ../clients/cli/connections.c:3896
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
-msgstr "Erro: «%s» non é un argumento válido para a opción «%s»."
+msgstr "Erro: «%s» non é un modo de monitorización válido; use «%s» ou «%s».\n"
 
 #: ../clients/cli/connections.c:3905
 msgid "Bonding miimon [100]: "
-msgstr ""
+msgstr "Bonding miimon [100]: "
 
 #: ../clients/cli/connections.c:3908
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'miimon': '%s' is not a valid number <0-%u>.\n"
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «miimon»: «%s» non é un número <0-%u> válido.\n"
 
 #: ../clients/cli/connections.c:3916
 msgid "Bonding downdelay [0]: "
-msgstr ""
+msgstr "Bonding downdelay [0]: "
 
 #: ../clients/cli/connections.c:3919
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"
-msgstr "Erro: «dev» a orde «%s» non é válida."
+msgstr "Erro: «downdelay»: «%s» non é un número <0-%u> válido.\n"
 
 #: ../clients/cli/connections.c:3927
 msgid "Bonding updelay [0]: "
-msgstr ""
+msgstr "Bonding updelay [0]: "
 
 #: ../clients/cli/connections.c:3930
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'updelay': '%s' is not a valid number <0-%u>.\n"
-msgstr "Erro: «dev» a orde «%s» non é válida."
+msgstr "Erro: «updelay»: «%s» non é un número <0-%u> válido.\n"
 
 #: ../clients/cli/connections.c:3939
 msgid "Bonding arp-interval [0]: "
-msgstr ""
+msgstr "Bonding arp-interval [0]: "
 
 #: ../clients/cli/connections.c:3942
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"
-msgstr "Erro: O valor do argumento bssid «%s» non é un BSSID válido."
+msgstr "Erro: «arp-interval»: «%s» non é un número <0-%u> válido.\n"
 
 #. FIXME: verify the string
 #: ../clients/cli/connections.c:3950
 msgid "Bonding arp-ip-target [none]: "
-msgstr ""
+msgstr "Bonding arp-ip-target [ningún]: "
 
 #: ../clients/cli/connections.c:3957
 msgid "LACP rate ('slow' or 'fast') [slow]: "
-msgstr ""
+msgstr "Taxa LACP («slow» ou «fast») [slow]:"
 
 #: ../clients/cli/connections.c:3963
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'lacp_rate': '%s' is invalid ('slow' or 'fast').\n"
-msgstr ""
-"Erro: o valor do argumento wep-key-type «%s» non é válido, use «key» ou "
-"«phrase»"
+msgstr "Erro: «lacp_rate»: «%s» non é válido ('slow' ou 'fast').\n"
 
 #: ../clients/cli/connections.c:3986
-#, fuzzy
 msgid "Team JSON configuration [none]: "
-msgstr "A configuración IP xa non é válida"
+msgstr "Configuración JSON de equipo [ningunha]:"
 
 #: ../clients/cli/connections.c:4003
 msgid "team"
-msgstr ""
+msgstr "equipo"
 
 #: ../clients/cli/connections.c:4009
 msgid "team-slave"
@@ -1834,28 +1840,27 @@ msgstr ""
 
 #. Ask for optional 'bridge' arguments.
 #: ../clients/cli/connections.c:4021
-#, fuzzy
 msgid "bridge"
-msgstr "Bridge"
+msgstr "bridge"
 
 #: ../clients/cli/connections.c:4027
 #, c-format
 msgid "Enable STP %s"
-msgstr ""
+msgstr "Activar sTP %s"
 
 #: ../clients/cli/connections.c:4032
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'stp': %s.\n"
-msgstr "Erro: 'con list': %s"
+msgstr "Erro: 'stp': %s.\n"
 
 #: ../clients/cli/connections.c:4040
 msgid "STP priority [32768]: "
-msgstr ""
+msgstr "Prioridade STP [32768]: "
 
 #: ../clients/cli/connections.c:4044
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'priority': '%s' is not a valid number <0-%d>.\n"
-msgstr "Erro: «con» a orde «%s» non é válida"
+msgstr "Erro: «priority»: «%s» non é un número <0-%d> válido.\n"
 
 #: ../clients/cli/connections.c:4052
 msgid "Forward delay [15]: "
@@ -1868,30 +1873,30 @@ msgstr "Erro: «nm» a orde «%s» non é válida."
 
 #: ../clients/cli/connections.c:4065
 msgid "Hello time [2]: "
-msgstr ""
+msgstr "Hello time [2]: "
 
 #: ../clients/cli/connections.c:4069
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'hello-time': '%s' is not a valid number <1-10>.\n"
-msgstr "Erro: O valor do tempo de espera máximo «%s» non é válido."
+msgstr "Erro: «hello-time»: «%s» non é un número <0-10> válido.\n"
 
 #: ../clients/cli/connections.c:4077
 msgid "Max age [20]: "
-msgstr ""
+msgstr "Idade máxima [20]:"
 
 #: ../clients/cli/connections.c:4081
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'max-age': '%s' is not a valid number <6-40>.\n"
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «max-age»: «%s» non é un número <6-40> válido.\n"
 
 #: ../clients/cli/connections.c:4089
 msgid "MAC address ageing time [300]: "
-msgstr ""
+msgstr "Tempo de envellecemento do enderezo MAC [300]:"
 
 #: ../clients/cli/connections.c:4093
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"
-msgstr "Erro: O valor do argumento bssid «%s» non é un BSSID válido."
+msgstr "Erro: «ageing-time»: «%s» non é un número <0-1000000> válido.\n"
 
 #: ../clients/cli/connections.c:4102
 #, c-format
@@ -1906,11 +1911,11 @@ msgstr "Erro:«'nm status»: %s"
 #. Ask for optional 'bridge-slave' arguments.
 #: ../clients/cli/connections.c:4134
 msgid "bridge-slave"
-msgstr ""
+msgstr "bridge-slave"
 
 #: ../clients/cli/connections.c:4139
 msgid "Bridge port priority [32]: "
-msgstr ""
+msgstr "Prioridade do porto do Bridge [32]:"
 
 #: ../clients/cli/connections.c:4152
 msgid "Bridge port STP path cost [100]: "
@@ -1919,42 +1924,42 @@ msgstr ""
 #: ../clients/cli/connections.c:4166
 #, c-format
 msgid "Hairpin %s"
-msgstr ""
+msgstr "%s de Hairpin"
 
 #: ../clients/cli/connections.c:4171
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'hairpin': %s.\n"
-msgstr "Erro: «dev wifi»: %s"
+msgstr "Erro: 'hairpin': %s.\n"
 
 #. Ask for optional 'olpc' arguments.
 #: ../clients/cli/connections.c:4198 ../libnm-glib/nm-device.c:1856
 #: ../libnm/nm-device.c:1807
 msgid "OLPC Mesh"
-msgstr ""
+msgstr "OLPC Mesh"
 
 #: ../clients/cli/connections.c:4203
 msgid "OLPC Mesh channel [1]: "
-msgstr ""
+msgstr "Canle de OLPC Mesh [1]:"
 
 #: ../clients/cli/connections.c:4206
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'channel': '%s' is not a valid number <1-13>.\n"
-msgstr "Erro: «nm» a orde «%s» non é válida."
+msgstr "Erro: «channel»: «%s» non é un número <013> válido.\n"
 
 #: ../clients/cli/connections.c:4214
 msgid "DHCP anycast MAC address [none]: "
-msgstr ""
+msgstr "Enderezo MAC de anycast de DHCP [ningún]:"
 
 #. Ask for optional 'adsl' arguments.
 #: ../clients/cli/connections.c:4233 ../libnm-glib/nm-device.c:1872
 #: ../libnm/nm-device.c:1823
 msgid "ADSL"
-msgstr ""
+msgstr "ADSL"
 
 #: ../clients/cli/connections.c:4241
-#, fuzzy, c-format
+#, c-format
 msgid "ADSL encapsulation %s"
-msgstr "Conexión ADSL %d"
+msgstr "Encapsulado %s de ADSL"
 
 #. Ask for optional 'macvlan' arguments.
 #: ../clients/cli/connections.c:4259
@@ -2023,41 +2028,40 @@ msgstr "Erro: «dev wifi» a orde «%s» non é válida."
 
 #: ../clients/cli/connections.c:4388
 msgid "IPv4 address (IP[/plen]) [none]: "
-msgstr ""
+msgstr "Enderezo IPv4 (IP[/plen]) [ningún]: "
 
 #: ../clients/cli/connections.c:4390
 msgid "IPv6 address (IP[/plen]) [none]: "
-msgstr ""
+msgstr "Enderezo IPv6 (IP[/plen]) [ningún]: "
 
 #: ../clients/cli/connections.c:4404
 #, c-format
 msgid "  Address successfully added: %s\n"
-msgstr ""
+msgstr "  Enderezo engadido con éxitoÑ %s\n"
 
 #: ../clients/cli/connections.c:4406
 #, c-format
 msgid "  Warning: address already present: %s\n"
-msgstr ""
+msgstr "  Aviso: o enderezo xa está presente: %s\n"
 
 #: ../clients/cli/connections.c:4408
 #, c-format
 msgid "  Warning: ignoring garbage at the end: '%s'\n"
-msgstr ""
+msgstr "  Aviso: ignorando o lixo ao final: «%s»\n"
 
 #: ../clients/cli/connections.c:4410 ../clients/cli/connections.c:5591
 #: ../clients/cli/connections.c:6451 ../clients/cli/connections.c:6577
 #: ../clients/cli/connections.c:6610
-#, fuzzy
 msgid "Error: "
-msgstr "Erro: %s."
+msgstr "Erro:"
 
 #: ../clients/cli/connections.c:4430
 msgid "IPv4 gateway [none]: "
-msgstr ""
+msgstr "Porta de enlace IPv4 [ningún]:"
 
 #: ../clients/cli/connections.c:4433
 msgid "IPv6 gateway [none]: "
-msgstr ""
+msgstr "Porta de enlace IPv6 [ningún]:"
 
 #: ../clients/cli/connections.c:4453
 #, fuzzy, c-format
@@ -2068,12 +2072,12 @@ msgstr "Erro: parámetro «wwan» non válido: «%s»."
 #: ../clients/cli/connections.c:4466
 #, c-format
 msgid "Do you want to add IP addresses? %s"
-msgstr ""
+msgstr "DEsexa engadir enderezos IP? %s"
 
 #: ../clients/cli/connections.c:4474
 #, c-format
 msgid "Press <Enter> to finish adding addresses.\n"
-msgstr ""
+msgstr "Prema <Intro> para rematar de engadir enderezos.\n"
 
 #. Ask for optional 'tun' arguments.
 #: ../clients/cli/connections.c:4518
@@ -3319,11 +3323,11 @@ msgstr "Erro: «%s» non é unha conexión activa."
 #. define some prompts
 #: ../clients/cli/devices.c:36
 msgid "Interface: "
-msgstr ""
+msgstr "Interface: "
 
 #: ../clients/cli/devices.c:37
 msgid "Interface(s): "
-msgstr ""
+msgstr "Interface(s): "
 
 #. 3
 #. 20
@@ -3334,15 +3338,13 @@ msgstr "CONEXIÓN"
 #. 4
 #. 21
 #: ../clients/cli/devices.c:46 ../clients/cli/devices.c:78
-#, fuzzy
 msgid "CON-UUID"
-msgstr "UUID"
+msgstr "CON-UUID"
 
 #. 2
 #: ../clients/cli/devices.c:59
-#, fuzzy
 msgid "NM-TYPE"
-msgstr "TIPO"
+msgstr "NM-TYPE"
 
 #. 3
 #: ../clients/cli/devices.c:60
@@ -3379,7 +3381,7 @@ msgstr "ENDEREZO-HARDWARE"
 #: ../clients/tui/nmt-page-infiniband.c:95 ../clients/tui/nmt-page-vlan.c:129
 #: ../clients/tui/nmt-page-wifi.c:371
 msgid "MTU"
-msgstr ""
+msgstr "MTU"
 
 #. 11
 #: ../clients/cli/devices.c:68
@@ -3400,7 +3402,7 @@ msgstr "IP-IFACE"
 #. 2
 #: ../clients/cli/devices.c:71 ../clients/cli/devices.c:103
 msgid "IS-SOFTWARE"
-msgstr ""
+msgstr "É-SOFTWARE"
 
 #. 15
 #: ../clients/cli/devices.c:72
@@ -3420,23 +3422,22 @@ msgstr ""
 #. 19
 #: ../clients/cli/devices.c:76
 msgid "PHYS-PORT-ID"
-msgstr ""
+msgstr "ID-PORTO-PHYS"
 
 #. 23
 #: ../clients/cli/devices.c:80
 msgid "METERED"
-msgstr ""
+msgstr "METERED"
 
 #. 0
 #: ../clients/cli/devices.c:91
 msgid "AVAILABLE-CONNECTION-PATHS"
-msgstr ""
+msgstr "RUTAS-DE-CONEXIÓN-DISPOÑÍBEIS"
 
 #. 1
 #: ../clients/cli/devices.c:92
-#, fuzzy
 msgid "AVAILABLE-CONNECTIONS"
-msgstr "CONEXIÓN"
+msgstr "CONEXIÓNS-DISPOÑÍBEIS"
 
 #. 0
 #: ../clients/cli/devices.c:101
@@ -3492,17 +3493,17 @@ msgstr "AP"
 #. 6
 #: ../clients/cli/devices.c:128
 msgid "ADHOC"
-msgstr ""
+msgstr "ADHOC"
 
 #. 7
 #: ../clients/cli/devices.c:129
 msgid "2GHZ"
-msgstr ""
+msgstr "2GHZ"
 
 #. 8
 #: ../clients/cli/devices.c:130
 msgid "5GHZ"
-msgstr ""
+msgstr "5GHZ"
 
 #. 0
 #: ../clients/cli/devices.c:139
@@ -3536,9 +3537,8 @@ msgstr "SSID"
 
 #. 1
 #: ../clients/cli/devices.c:153
-#, fuzzy
 msgid "SSID-HEX"
-msgstr "SSID"
+msgstr "SSID-HEX"
 
 #. 2
 #: ../clients/cli/devices.c:154 ../clients/tui/nmt-page-wifi.c:359
@@ -3553,7 +3553,7 @@ msgstr "MODO"
 #. 4
 #: ../clients/cli/devices.c:156
 msgid "CHAN"
-msgstr ""
+msgstr "CHAN"
 
 #. 5
 #: ../clients/cli/devices.c:157
@@ -3574,7 +3574,7 @@ msgstr "SINAL"
 #. 8
 #: ../clients/cli/devices.c:160
 msgid "BARS"
-msgstr ""
+msgstr "BARS"
 
 #. 9
 #: ../clients/cli/devices.c:161
@@ -3594,7 +3594,7 @@ msgstr "OPCIONS-RSN"
 #. 14
 #: ../clients/cli/devices.c:166
 msgid "*"
-msgstr ""
+msgstr "*"
 
 #. 0
 #. 5
@@ -3610,7 +3610,7 @@ msgstr "ESCLAVOS"
 #. 0
 #: ../clients/cli/devices.c:202
 msgid "PARENT"
-msgstr ""
+msgstr "PAI"
 
 #. 1
 #: ../clients/cli/devices.c:203
@@ -3645,23 +3645,22 @@ msgstr "BOND"
 #. 11
 #: ../clients/cli/devices.c:238 ../clients/tui/nmt-page-team.c:146
 msgid "TEAM"
-msgstr ""
+msgstr "TEAM"
 
 #. 12
 #: ../clients/cli/devices.c:239 ../clients/tui/nmt-page-bridge.c:75
 msgid "BRIDGE"
-msgstr ""
+msgstr "BRIDGE"
 
 #. 14
 #: ../clients/cli/devices.c:241
 msgid "BLUETOOTH"
-msgstr ""
+msgstr "BLUETOOTH"
 
 #. 15
 #: ../clients/cli/devices.c:242
-#, fuzzy
 msgid "CONNECTIONS"
-msgstr "CONEXIÓN"
+msgstr "CONEXIÓNS"
 
 #. 1
 #: ../clients/cli/devices.c:254
@@ -3991,11 +3990,11 @@ msgstr "%u Mbit/s"
 
 #: ../clients/cli/devices.c:722
 msgid "WPA1"
-msgstr ""
+msgstr "WPA1"
 
 #: ../clients/cli/devices.c:731
 msgid "802.1X"
-msgstr ""
+msgstr "802.1X"
 
 #: ../clients/cli/devices.c:747
 msgid "Ad-Hoc"
@@ -4003,7 +4002,7 @@ msgstr "Ad-Hoc"
 
 #: ../clients/cli/devices.c:748
 msgid "Infra"
-msgstr ""
+msgstr "Infra"
 
 #: ../clients/cli/devices.c:749
 msgid "N/A"
@@ -4014,9 +4013,9 @@ msgid "Device details"
 msgstr "Detalles do dispositivo"
 
 #: ../clients/cli/devices.c:915
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device show': %s"
-msgstr "Erro: «dev list»: %s"
+msgstr "Erro: «dev show»: %s"
 
 #: ../clients/cli/devices.c:967 ../clients/cli/devices.c:970
 msgid "(unknown)"
@@ -4036,9 +4035,9 @@ msgid "off"
 msgstr "desactivado"
 
 #: ../clients/cli/devices.c:1329
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device status': %s"
-msgstr "Erro: «dev status»: %s"
+msgstr "Erro: «device status»: %s"
 
 #. Add headers
 #: ../clients/cli/devices.c:1336
@@ -4046,9 +4045,9 @@ msgid "Status of devices"
 msgstr "Estado dos dispositivos"
 
 #: ../clients/cli/devices.c:1367 ../clients/cli/devices.c:3396
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid extra argument '%s'."
-msgstr "Erro: parámetro «wwan» non válido: «%s»."
+msgstr "Erro: parámetro adicional non válido: «%s»."
 
 #: ../clients/cli/devices.c:1384 ../clients/cli/devices.c:1694
 #: ../clients/cli/devices.c:2003 ../clients/cli/devices.c:2273
@@ -4058,9 +4057,9 @@ msgid "Error: Device '%s' not found."
 msgstr "Erro: Non é posíbel encontrar o dispositivo %s."
 
 #: ../clients/cli/devices.c:1462
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
-msgstr "Éxito: O dispositivo «%s» desconectouse correctamente."
+msgstr "Éxito: «%s» activado con éxito con «%s».\n"
 
 #: ../clients/cli/devices.c:1468
 #, fuzzy, c-format
@@ -4236,9 +4235,9 @@ msgstr ""
 "«phrase»"
 
 #: ../clients/cli/devices.c:2610 ../clients/cli/devices.c:2623
-#, fuzzy, c-format
+#, c-format
 msgid "Error: %s: %s."
-msgstr "Erro: %s."
+msgstr "Erro: %s: %s."
 
 #: ../clients/cli/devices.c:2638
 #, c-format
@@ -4380,24 +4379,22 @@ msgstr "VERSIÓN"
 #. 2
 #: ../clients/cli/general.c:38
 msgid "STARTUP"
-msgstr ""
+msgstr "INICIO"
 
 #. 3
 #: ../clients/cli/general.c:39
-#, fuzzy
 msgid "CONNECTIVITY"
-msgstr "CONEXIÓN"
+msgstr "CONECTIVIDADE"
 
 #. 4
 #: ../clients/cli/general.c:40
 msgid "NETWORKING"
-msgstr ""
+msgstr "REDE"
 
 #. 5
 #: ../clients/cli/general.c:41
-#, fuzzy
 msgid "WIFI-HW"
-msgstr "WIFI"
+msgstr "WIFI-HW"
 
 #. 6
 #: ../clients/cli/general.c:42
@@ -4406,9 +4403,8 @@ msgstr "WIFI"
 
 #. 7
 #: ../clients/cli/general.c:43
-#, fuzzy
 msgid "WWAN-HW"
-msgstr "WWAN"
+msgstr "WWAN-HW"
 
 #. 8
 #: ../clients/cli/general.c:44
@@ -4417,9 +4413,8 @@ msgstr "WWAN"
 
 #. 9
 #: ../clients/cli/general.c:45
-#, fuzzy
 msgid "WIMAX-HW"
-msgstr "WIMAX"
+msgstr "WIMAX-HW"
 
 #. 10
 #: ../clients/cli/general.c:46
@@ -4437,13 +4432,12 @@ msgstr "VALOR"
 
 #: ../clients/cli/general.c:71
 msgid "LEVEL"
-msgstr ""
+msgstr "NIVEL"
 
 #. 0
 #: ../clients/cli/general.c:72
-#, fuzzy
 msgid "DOMAINS"
-msgstr "DOMINIO"
+msgstr "DOMINIOS"
 
 #: ../clients/cli/general.c:86
 #, fuzzy, c-format
@@ -4654,15 +4648,15 @@ msgstr "desconectando"
 
 #: ../clients/cli/general.c:280
 msgid "portal"
-msgstr ""
+msgstr "Portal"
 
 #: ../clients/cli/general.c:282
 msgid "limited"
-msgstr ""
+msgstr "limitado"
 
 #: ../clients/cli/general.c:284
 msgid "full"
-msgstr ""
+msgstr "completo"
 
 #: ../clients/cli/general.c:335
 #, fuzzy, c-format
@@ -4684,7 +4678,7 @@ msgstr "activando"
 
 #: ../clients/cli/general.c:369
 msgid "started"
-msgstr ""
+msgstr "iniciado"
 
 #: ../clients/cli/general.c:371 ../clients/cli/general.c:372
 #: ../clients/cli/general.c:373 ../clients/cli/general.c:374
@@ -4703,23 +4697,22 @@ msgid "auth"
 msgstr "auth"
 
 #: ../clients/cli/general.c:476
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'general permissions': %s"
-msgstr "Erro: «'nm permission»: %s"
+msgstr "Erro: «permisos xerais»: %s"
 
 #: ../clients/cli/general.c:490
 msgid "NetworkManager permissions"
 msgstr "Permisos de NetworkManager"
 
 #: ../clients/cli/general.c:531
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'general logging': %s"
-msgstr "Erro: 'con list': %s"
+msgstr "Erro: 'rexistro xeral': %s"
 
 #: ../clients/cli/general.c:546
-#, fuzzy
 msgid "NetworkManager logging"
-msgstr "Permisos de NetworkManager"
+msgstr "Rexistro de NetworkManager"
 
 #: ../clients/cli/general.c:568
 #, fuzzy, c-format
@@ -4773,12 +4766,12 @@ msgstr ""
 #. no argument, show current WiFi state
 #: ../clients/cli/general.c:867
 msgid "Wi-Fi radio switch"
-msgstr ""
+msgstr "Conmutador da radio da Wifi"
 
 #. no argument, show current WWAN (mobile broadband) state
 #: ../clients/cli/general.c:883
 msgid "WWAN radio switch"
-msgstr ""
+msgstr "Conmutador da radio do WWAN"
 
 #: ../clients/cli/general.c:894
 #, fuzzy, c-format
@@ -5034,55 +5027,51 @@ msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (activado, prefire IP temporal)"
 
 #: ../clients/cli/settings.c:919
-#, fuzzy, c-format
+#, c-format
 msgid "%d (no)"
-msgstr "%d (descoñecido)"
+msgstr "%d (non)"
 
 #: ../clients/cli/settings.c:921
 #, c-format
 msgid "%d (yes)"
-msgstr ""
+msgstr "%d (sí)"
 
 #: ../clients/cli/settings.c:924
-#, fuzzy, c-format
+#, c-format
 msgid "%d (default)"
-msgstr "%d (desactivado)"
+msgstr "%d (por omisión)"
 
 #: ../clients/cli/settings.c:937
-#, fuzzy
 msgid "0 (none)"
-msgstr "(ningún)"
+msgstr "0 (ningún)"
 
 #: ../clients/cli/settings.c:943
 msgid "agent-owned, "
 msgstr ""
 
 #: ../clients/cli/settings.c:945
-#, fuzzy
 msgid "not saved, "
-msgstr "non definido"
+msgstr "non gardado,"
 
 #: ../clients/cli/settings.c:947
 msgid "not required, "
-msgstr ""
+msgstr "non requirido,"
 
 #: ../clients/cli/settings.c:996 ../clients/tui/nmt-mtu-entry.c:84
 msgid "(default)"
-msgstr ""
+msgstr "(por omisión)"
 
 #: ../clients/cli/settings.c:1264
-#, fuzzy
 msgid "0 (disabled)"
-msgstr "%d (desactivado)"
+msgstr "0 (desactivado)"
 
 #: ../clients/cli/settings.c:1270
-#, fuzzy
 msgid "enabled, "
-msgstr "activado"
+msgstr "activado,"
 
 #: ../clients/cli/settings.c:1272
 msgid "advertise, "
-msgstr ""
+msgstr "publicitar,"
 
 #: ../clients/cli/settings.c:1274
 msgid "willing, "
@@ -5090,7 +5079,7 @@ msgstr ""
 
 #: ../clients/cli/settings.c:1302
 msgid "-1 (unset)"
-msgstr ""
+msgstr "-1 (sen estabelecer)"
 
 #: ../clients/cli/settings.c:1434 ../clients/cli/settings.c:1716
 #: ../clients/cli/settings.c:1856
@@ -5099,7 +5088,7 @@ msgstr "automático"
 
 #: ../clients/cli/settings.c:1447 ../clients/cli/settings.c:1882
 msgid "default"
-msgstr ""
+msgstr "por omisión"
 
 #: ../clients/cli/settings.c:1762
 #, c-format
@@ -5880,9 +5869,8 @@ msgstr ""
 #: ../clients/common/nm-secret-agent-simple.c:224
 #: ../clients/common/nm-secret-agent-simple.c:329
 #: ../clients/tui/nmt-page-dsl.c:67 ../clients/tui/nmt-page-wifi.c:333
-#, fuzzy
 msgid "Username"
-msgstr "nome-de-ficheiro"
+msgstr "Nome de usuario"
 
 #: ../clients/common/nm-secret-agent-simple.c:231
 #: ../clients/common/nm-secret-agent-simple.c:274
@@ -5897,29 +5885,29 @@ msgstr "nome-de-ficheiro"
 #: ../clients/tui/nmt-page-wifi.c:278 ../clients/tui/nmt-page-wifi.c:309
 #: ../clients/tui/nmt-page-wifi.c:342
 msgid "Password"
-msgstr ""
+msgstr "Contrasinal"
 
 #: ../clients/common/nm-secret-agent-simple.c:242
 msgid "Identity"
-msgstr ""
+msgstr "Identidade"
 
 #: ../clients/common/nm-secret-agent-simple.c:249
 msgid "Private key password"
-msgstr ""
+msgstr "Contrasinal da chave privada"
 
 #: ../clients/common/nm-secret-agent-simple.c:290
 #: ../clients/tui/nmt-page-wifi.c:290
 msgid "Key"
-msgstr ""
+msgstr "Chave"
 
 #: ../clients/common/nm-secret-agent-simple.c:336
 #: ../clients/tui/nmt-page-dsl.c:79
 msgid "Service"
-msgstr ""
+msgstr "Servizo"
 
 #: ../clients/common/nm-secret-agent-simple.c:449
 msgid "Authentication required by wireless network"
-msgstr ""
+msgstr "A rede sen fíos require autenticación"
 
 #: ../clients/common/nm-secret-agent-simple.c:450
 #, c-format
@@ -5988,7 +5976,7 @@ msgstr ""
 #: ../clients/common/nm-vpn-helpers.c:110 ../clients/tui/nmt-page-ip4.c:144
 #: ../clients/tui/nmt-page-ip6.c:144
 msgid "Gateway"
-msgstr ""
+msgstr "Pasarela"
 
 #: ../clients/common/nm-vpn-helpers.c:111
 msgid "Cookie"
@@ -6082,22 +6070,21 @@ msgstr "Conexión InfiniBand %d"
 #: ../clients/tui/nm-editor-utils.c:173 ../libnm-glib/nm-device.c:1860
 #: ../libnm/nm-device.c:1811
 msgid "Mobile Broadband"
-msgstr ""
+msgstr "Banda larga móbil"
 
 #: ../clients/tui/nm-editor-utils.c:176
-#, fuzzy, c-format
+#, c-format
 msgid "Mobile broadband connection %d"
-msgstr "Conexión Bond %d"
+msgstr "Conexión de banda larga móbil %d"
 
 #: ../clients/tui/nm-editor-utils.c:182 ../clients/tui/nmt-page-dsl.c:63
-#, fuzzy
 msgid "DSL"
-msgstr "DNS"
+msgstr "DSL"
 
 #: ../clients/tui/nm-editor-utils.c:186
-#, fuzzy, c-format
+#, c-format
 msgid "DSL connection %d"
-msgstr "Conexión ADSL %d"
+msgstr "Conexión DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1638
 #: ../libnm-glib/nm-device.c:1864 ../libnm-util/nm-connection.c:1594
@@ -6125,12 +6112,12 @@ msgstr "Conexión Bridge %d"
 #: ../libnm-glib/nm-device.c:1866 ../libnm-util/nm-connection.c:1596
 #: ../libnm/nm-device.c:1817 ../src/settings/plugins/ifcfg-rh/reader.c:4266
 msgid "Team"
-msgstr ""
+msgstr "Team"
 
 #: ../clients/tui/nm-editor-utils.c:214
-#, fuzzy, c-format
+#, c-format
 msgid "Team connection %d"
-msgstr "Conexión cableada %d"
+msgstr "Conexión Team %d"
 
 #: ../clients/tui/nm-editor-utils.c:222
 #, c-format
@@ -6144,30 +6131,30 @@ msgstr "Conexión VPN %d"
 
 #: ../clients/tui/nmt-device-entry.c:370
 msgid "Select..."
-msgstr ""
+msgstr "Seleccionar…"
 
 #: ../clients/tui/nmt-edit-connection-list.c:110
 msgid "Add"
-msgstr ""
+msgstr "Engadir"
 
 #: ../clients/tui/nmt-edit-connection-list.c:113
 #: ../clients/tui/nmt-page-ip4.c:170 ../clients/tui/nmt-page-ip6.c:168
 #: ../clients/tui/nmt-page-team-port.c:110 ../clients/tui/nmt-page-team.c:174
 msgid "Edit..."
-msgstr ""
+msgstr "Editar…"
 
 #: ../clients/tui/nmt-edit-connection-list.c:116
 #: ../clients/tui/nmtui-edit.c:526
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
 #: ../clients/tui/nmt-editor-section.c:103
 msgid "Hide"
-msgstr ""
+msgstr "Ocultar"
 
 #: ../clients/tui/nmt-editor-section.c:103
 msgid "Show"
-msgstr ""
+msgstr "Mostrar"
 
 #: ../clients/tui/nmt-editor.c:98
 #, c-format
@@ -6201,51 +6188,50 @@ msgstr "nome-de-ficheiro"
 
 #: ../clients/tui/nmt-editor.c:332
 msgid "Ethernet device"
-msgstr ""
+msgstr "Dispositivo Ethernet"
 
 #: ../clients/tui/nmt-editor.c:334
-#, fuzzy
 msgid "Device"
-msgstr "Detalles do dispositivo"
+msgstr "Dispositivo"
 
 #. And finally the bottom widgets
 #: ../clients/tui/nmt-editor.c:392
 msgid "Automatically connect"
-msgstr ""
+msgstr "Conectar automaticamente"
 
 #: ../clients/tui/nmt-editor.c:398
 msgid "Available to all users"
-msgstr ""
+msgstr "Dispoñíbel para todos os usuarios"
 
 #: ../clients/tui/nmt-editor.c:413 ../clients/tui/nmt-password-dialog.c:171
 #: ../clients/tui/nmt-route-editor.c:116 ../clients/tui/nmtui-edit.c:217
 #: ../clients/tui/nmtui-edit.c:525 ../clients/tui/nmtui-hostname.c:67
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: ../clients/tui/nmt-mtu-entry.c:86 ../clients/tui/nmt-mtu-entry.c:117
 msgid "bytes"
-msgstr ""
+msgstr "bytes"
 
 #: ../clients/tui/nmt-page-bond.c:85
 msgid "Round-robin"
-msgstr ""
+msgstr "Round-robin"
 
 #: ../clients/tui/nmt-page-bond.c:86
 msgid "Active Backup"
-msgstr ""
+msgstr "Respaldo activo"
 
 #: ../clients/tui/nmt-page-bond.c:87
 msgid "XOR"
-msgstr ""
+msgstr "XOR"
 
 #: ../clients/tui/nmt-page-bond.c:88
 msgid "Broadcast"
-msgstr ""
+msgstr "Broadcast"
 
 #: ../clients/tui/nmt-page-bond.c:89
 msgid "802.3ad"
-msgstr ""
+msgstr "802.3ad"
 
 #: ../clients/tui/nmt-page-bond.c:90
 msgid "Adaptive Transmit Load Balancing (tlb)"
@@ -6257,39 +6243,38 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-bond.c:97
 msgid "MII (recommended)"
-msgstr ""
+msgstr "MII (recomendado)"
 
 #: ../clients/tui/nmt-page-bond.c:98
-#, fuzzy
 msgid "ARP"
-msgstr "AP"
+msgstr "ARP"
 
 #: ../clients/tui/nmt-page-bond.c:356 ../clients/tui/nmt-page-bridge.c:79
 #: ../clients/tui/nmt-page-team.c:153
 msgid "Slaves"
-msgstr ""
+msgstr "Escravos"
 
 #: ../clients/tui/nmt-page-bond.c:368 ../clients/tui/nmt-page-wifi.c:231
 msgid "Mode"
-msgstr ""
+msgstr "Modo"
 
 #: ../clients/tui/nmt-page-bond.c:374
 msgid "Primary"
-msgstr ""
+msgstr "Primario"
 
 #: ../clients/tui/nmt-page-bond.c:380
 msgid "Link monitoring"
-msgstr ""
+msgstr "Monitorización da ligazón"
 
 #: ../clients/tui/nmt-page-bond.c:386 ../clients/tui/nmt-page-bond.c:393
 #: ../clients/tui/nmt-page-bond.c:400 ../clients/tui/nmt-page-bond.c:407
 msgctxt "milliseconds"
 msgid "ms"
-msgstr ""
+msgstr "ms"
 
 #: ../clients/tui/nmt-page-bond.c:387 ../clients/tui/nmt-page-bond.c:408
 msgid "Monitoring frequency"
-msgstr ""
+msgstr "Monitorizar frecuencia"
 
 #: ../clients/tui/nmt-page-bond.c:394
 msgid "Link up delay"
@@ -6323,11 +6308,11 @@ msgstr ""
 #: ../clients/tui/nmt-page-bridge.c:89 ../clients/tui/nmt-page-bridge.c:120
 #: ../clients/tui/nmt-page-bridge.c:130 ../clients/tui/nmt-page-bridge.c:140
 msgid "seconds"
-msgstr ""
+msgstr "segundos"
 
 #: ../clients/tui/nmt-page-bridge.c:90
 msgid "Aging time"
-msgstr ""
+msgstr "Tempo de envecellamento"
 
 #: ../clients/tui/nmt-page-bridge.c:92
 msgid "Enable IGMP snooping"
@@ -6335,7 +6320,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-bridge.c:98
 msgid "Enable STP (Spanning Tree Protocol)"
-msgstr ""
+msgstr "Activar STP (Spanning Tree Protocol)"
 
 #: ../clients/tui/nmt-page-bridge.c:121
 msgid "Forward delay"
@@ -6343,58 +6328,56 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-bridge.c:131
 msgid "Hello time"
-msgstr ""
+msgstr "Hello time"
 
 #: ../clients/tui/nmt-page-bridge.c:141
 msgid "Max age"
-msgstr ""
+msgstr "Idade máxima"
 
 #: ../clients/tui/nmt-page-ethernet.c:71
 msgid "ETHERNET"
-msgstr ""
+msgstr "ETHERNET"
 
 #: ../clients/tui/nmt-page-ethernet.c:78 ../clients/tui/nmt-page-vlan.c:123
 #: ../clients/tui/nmt-page-wifi.c:365
 msgid "Cloned MAC address"
-msgstr ""
+msgstr "Clonar enderezo MAC"
 
 #: ../clients/tui/nmt-page-infiniband.c:48
 msgid "Datagram"
-msgstr ""
+msgstr "Datagrama"
 
 #: ../clients/tui/nmt-page-infiniband.c:49
-#, fuzzy
 msgid "Connected"
-msgstr "conectado"
+msgstr "Conectado"
 
 #: ../clients/tui/nmt-page-infiniband.c:82
 msgid "INFINIBAND"
-msgstr ""
+msgstr "INFINIBAND"
 
 #: ../clients/tui/nmt-page-infiniband.c:89
 msgid "Transport mode"
-msgstr ""
+msgstr "Modo de transporte"
 
 #: ../clients/tui/nmt-page-ip4.c:39
-#, fuzzy
 msgid "Disabled"
-msgstr "desactivado"
+msgstr "Desactivado"
 
 #: ../clients/tui/nmt-page-ip4.c:40 ../clients/tui/nmt-page-ip6.c:40
 msgid "Automatic"
-msgstr ""
+msgstr "Automático"
 
 #: ../clients/tui/nmt-page-ip4.c:41 ../clients/tui/nmt-page-ip6.c:42
 msgid "Link-Local"
-msgstr ""
+msgstr "Ligazón-local"
 
 #: ../clients/tui/nmt-page-ip4.c:42 ../clients/tui/nmt-page-ip6.c:43
 msgid "Manual"
-msgstr ""
+msgstr "Manual"
 
 #: ../clients/tui/nmt-page-ip4.c:43
 msgid "Shared"
-msgstr ""
+msgstr "Compartido"
 
 #: ../clients/tui/nmt-page-ip4.c:83 ../clients/tui/nmt-page-ip6.c:83
 msgid "(No custom routes)"
@@ -6404,8 +6387,8 @@ msgstr ""
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Unha ruta personalizada"
+msgstr[1] "%d rutas personalizadas"
 
 #: ../clients/tui/nmt-page-ip4.c:129
 msgid "IPv4 CONFIGURATION"
@@ -6413,27 +6396,27 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:137 ../clients/tui/nmt-page-ip6.c:137
 msgid "Addresses"
-msgstr ""
+msgstr "Enderezos"
 
 #: ../clients/tui/nmt-page-ip4.c:151 ../clients/tui/nmt-page-ip6.c:151
 msgid "DNS servers"
-msgstr ""
+msgstr "Servidores DNS"
 
 #: ../clients/tui/nmt-page-ip4.c:157 ../clients/tui/nmt-page-ip6.c:157
 msgid "Search domains"
-msgstr ""
+msgstr "Dominios de busca"
 
 #: ../clients/tui/nmt-page-ip4.c:172 ../clients/tui/nmt-page-ip6.c:170
 msgid "Routing"
-msgstr ""
+msgstr "Enrutado"
 
 #: ../clients/tui/nmt-page-ip4.c:174 ../clients/tui/nmt-page-ip6.c:172
 msgid "Never use this network for default route"
-msgstr ""
+msgstr "Nunca usar esta rede para a ruta por omisión"
 
 #: ../clients/tui/nmt-page-ip4.c:180 ../clients/tui/nmt-page-ip6.c:178
 msgid "Ignore automatically obtained routes"
-msgstr ""
+msgstr "Igorar automaticamente as rutas obtidas"
 
 #: ../clients/tui/nmt-page-ip4.c:188
 msgid "Require IPv4 addressing for this connection"
@@ -6441,15 +6424,15 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-ip6.c:39
 msgid "Ignore"
-msgstr ""
+msgstr "Ignorar"
 
 #: ../clients/tui/nmt-page-ip6.c:41
 msgid "Automatic (DHCP-only)"
-msgstr ""
+msgstr "Automático (só DHCP)"
 
 #: ../clients/tui/nmt-page-ip6.c:129
 msgid "IPv6 CONFIGURATION"
-msgstr ""
+msgstr "CONFIGURACIÓN IPv6"
 
 #: ../clients/tui/nmt-page-ip6.c:186
 msgid "Require IPv6 addressing for this connection"
@@ -6457,33 +6440,31 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-ppp.c:132
 msgid "PPP CONFIGURATION"
-msgstr ""
+msgstr "CONFIGURACIÓN PPP"
 
 #: ../clients/tui/nmt-page-ppp.c:141
 msgid "Allowed authentication methods:"
-msgstr ""
+msgstr "Métodos de autenticación permitidos:"
 
 #: ../clients/tui/nmt-page-ppp.c:148
-#, fuzzy
 msgid "EAP"
-msgstr "AP"
+msgstr "EAP"
 
 #: ../clients/tui/nmt-page-ppp.c:156
-#, fuzzy
 msgid "PAP"
-msgstr "AP"
+msgstr "PAP"
 
 #: ../clients/tui/nmt-page-ppp.c:164
 msgid "CHAP"
-msgstr ""
+msgstr "CHAP"
 
 #: ../clients/tui/nmt-page-ppp.c:172
 msgid "MSCHAPv2"
-msgstr ""
+msgstr "MSCHAPv2"
 
 #: ../clients/tui/nmt-page-ppp.c:180
 msgid "MSCHAP"
-msgstr ""
+msgstr "MSCHAP"
 
 #: ../clients/tui/nmt-page-ppp.c:196
 msgid "Use point-to-point encryption (MPPE)"
@@ -6523,55 +6504,52 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-vlan.c:100
 msgid "Parent"
-msgstr ""
+msgstr "Pai"
 
 #: ../clients/tui/nmt-page-vlan.c:115
-#, fuzzy
 msgid "VLAN id"
-msgstr "VLAN"
+msgstr "VLAN id"
 
 #: ../clients/tui/nmt-page-wifi.c:65
 msgctxt "Wi-Fi"
 msgid "Client"
-msgstr ""
+msgstr "Cliente"
 
 #: ../clients/tui/nmt-page-wifi.c:66
 msgid "Access Point"
-msgstr ""
+msgstr "Punto de acceso"
 
 #: ../clients/tui/nmt-page-wifi.c:67
-#, fuzzy
 msgid "Ad-Hoc Network"
-msgstr "Ad-Hoc"
+msgstr "Rede Ad-Hoc"
 
 #: ../clients/tui/nmt-page-wifi.c:72
 msgctxt "Wi-Fi"
 msgid "Automatic"
-msgstr ""
+msgstr "Automático"
 
 #. 802.11a Wi-Fi network
 #: ../clients/tui/nmt-page-wifi.c:74
 msgid "A (5 GHz)"
-msgstr ""
+msgstr "A (5 GHz)"
 
 #. 802.11b / 802.11g Wi-Fi network
 #: ../clients/tui/nmt-page-wifi.c:76
 msgid "B/G (2.4 GHz)"
-msgstr ""
+msgstr "B/G (2.4 GHz)"
 
 #: ../clients/tui/nmt-page-wifi.c:81
 msgctxt "Wi-Fi security"
 msgid "None"
-msgstr ""
+msgstr "Ningunha"
 
 #: ../clients/tui/nmt-page-wifi.c:82
 msgid "WPA & WPA2 Personal"
-msgstr ""
+msgstr "Personal WPA & WPA2"
 
 #: ../clients/tui/nmt-page-wifi.c:83
-#, fuzzy
 msgid "WPA & WPA2 Enterprise"
-msgstr "Empresa "
+msgstr "WPA & WPA2 Empresarial"
 
 #: ../clients/tui/nmt-page-wifi.c:84
 msgid "WEP 40/128-bit Key (Hex or ASCII)"
@@ -6588,48 +6566,47 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:87
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: ../clients/tui/nmt-page-wifi.c:92
 msgctxt "WEP key index"
 msgid "1 (Default)"
-msgstr ""
+msgstr "1 (Predeterminada)"
 
 #: ../clients/tui/nmt-page-wifi.c:93
 msgctxt "WEP key index"
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../clients/tui/nmt-page-wifi.c:94
 msgctxt "WEP key index"
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../clients/tui/nmt-page-wifi.c:95
 msgctxt "WEP key index"
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../clients/tui/nmt-page-wifi.c:100
-#, fuzzy
 msgid "Open System"
-msgstr "Sistema"
+msgstr "Sistema aberto"
 
 #: ../clients/tui/nmt-page-wifi.c:101
 msgid "Shared Key"
-msgstr ""
+msgstr "Chave compartida"
 
 #: ../clients/tui/nmt-page-wifi.c:215
 msgid "WI-FI"
-msgstr ""
+msgstr "WIFI"
 
 #: ../clients/tui/nmt-page-wifi.c:257
 msgid "Channel"
-msgstr ""
+msgstr "Canle"
 
 #: ../clients/tui/nmt-page-wifi.c:262
 msgid "Security"
-msgstr ""
+msgstr "Seguranza"
 
 #. "wpa-enterprise"
 #. FIXME
@@ -6638,13 +6615,12 @@ msgid "(No support for wpa-enterprise yet...)"
 msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:293 ../clients/tui/nmt-page-wifi.c:312
-#, fuzzy
 msgid "WEP index"
-msgstr "WEP "
+msgstr "Índice WEP "
 
 #: ../clients/tui/nmt-page-wifi.c:301 ../clients/tui/nmt-page-wifi.c:320
 msgid "Authentication"
-msgstr ""
+msgstr "Autenticación"
 
 #. "dynamic-wep"
 #. FIXME
@@ -6654,43 +6630,43 @@ msgstr ""
 
 #: ../clients/tui/nmt-password-fields.c:128
 msgid "Ask for this password every time"
-msgstr ""
+msgstr "Preguntar por esta contrasinal cada vez"
 
 #: ../clients/tui/nmt-password-fields.c:129
 msgid "Show password"
-msgstr ""
+msgstr "Mostrar contrasinal"
 
 #: ../clients/tui/nmt-route-table.c:191
 msgid "Destination"
-msgstr ""
+msgstr "Destino"
 
 #: ../clients/tui/nmt-route-table.c:191
 msgid "Prefix"
-msgstr ""
+msgstr "Prefixo"
 
 #: ../clients/tui/nmt-route-table.c:200
 msgid "Next Hop"
-msgstr ""
+msgstr "Seguinte Hop"
 
 #: ../clients/tui/nmt-route-table.c:208
 msgid "Metric"
-msgstr ""
+msgstr "Métrica"
 
 #: ../clients/tui/nmt-route-table.c:228
 msgid "No custom routes are defined."
-msgstr ""
+msgstr "Non se definiron rutas personalizadas."
 
 #: ../clients/tui/nmt-slave-list.c:136
 msgid "Select the type of slave connection you wish to add."
-msgstr ""
+msgstr "Seleccoine o tipo de conexión escrava que quere engadir."
 
 #: ../clients/tui/nmt-widget-list.c:139
 msgid "Add..."
-msgstr ""
+msgstr "Engadir…"
 
 #: ../clients/tui/nmt-widget-list.c:202
 msgid "Remove"
-msgstr ""
+msgstr "Eliminar"
 
 #: ../clients/tui/nmtui-connect.c:54
 msgid ""
@@ -6714,52 +6690,47 @@ msgid "openconnect failed with signal %d"
 msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:178
-#, fuzzy
 msgid "Activation failed"
-msgstr "produciuse un fallo na conexión"
+msgstr "Produciuse un fallo na activación"
 
 #: ../clients/tui/nmtui-connect.c:233
-#, fuzzy
 msgid "Connecting..."
-msgstr "Conectando"
+msgstr "Conectando…"
 
 #: ../clients/tui/nmtui-connect.c:268 ../clients/tui/nmtui-connect.c:299
-#, fuzzy, c-format
+#, c-format
 msgid "Could not activate connection: %s"
-msgstr "non hai conexións activas no dispositivo «%s»"
+msgstr "Non foi posíbel activar a conexión: %s"
 
 #: ../clients/tui/nmtui-connect.c:359 ../clients/tui/nmtui-connect.c:408
-#, fuzzy
 msgid "Activate"
-msgstr "activada"
+msgstr "Activado"
 
 #: ../clients/tui/nmtui-connect.c:361
-#, fuzzy
 msgid "Deactivate"
-msgstr "activada"
+msgstr "Desactivado"
 
 #: ../clients/tui/nmtui-connect.c:413 ../clients/tui/nmtui-edit.c:120
 #: ../clients/tui/nmtui.c:109
 msgid "Quit"
-msgstr ""
+msgstr "Saír"
 
 #: ../clients/tui/nmtui-connect.c:436
-#, fuzzy, c-format
+#, c-format
 msgid "No such connection '%s'"
-msgstr "Conexión PAN %d"
+msgstr "Non existe a conexión «%s»"
 
 #: ../clients/tui/nmtui-connect.c:438
-#, fuzzy
 msgid "Connection is already active"
-msgstr "Conexión activada\n"
+msgstr "A conexión xa está activa"
 
 #: ../clients/tui/nmtui-edit.c:225
 msgid "Create"
-msgstr ""
+msgstr "Crear"
 
 #: ../clients/tui/nmtui-edit.c:367
 msgid "Select the type of connection you wish to create."
-msgstr ""
+msgstr "Seleccoine o tipo de conexión que quere crear."
 
 #: ../clients/tui/nmtui-edit.c:375
 msgid ""
@@ -6768,38 +6739,37 @@ msgid ""
 msgstr ""
 
 #: ../clients/tui/nmtui-edit.c:411 ../clients/tui/nmtui-edit.c:427
-#, fuzzy
 msgid "New Connection"
-msgstr "Conectando"
+msgstr "Nova conexión"
 
 #: ../clients/tui/nmtui-edit.c:466
-#, fuzzy, c-format
+#, c-format
 msgid "Unable to delete connection: %s"
-msgstr "non é posíbel conectar coa ligazón de rede: %s"
+msgstr "Non foi posíbel eliminar a conexión: %s"
 
 #: ../clients/tui/nmtui-edit.c:505
-#, fuzzy, c-format
+#, c-format
 msgid "Could not delete connection '%s': %s"
-msgstr "non foi posíbel encontrar un dispositivo para a conexión «%s»"
+msgstr "Non foi posíbel eliminar a conexión «%s»: %s"
 
 #: ../clients/tui/nmtui-edit.c:527
 #, c-format
 msgid "Are you sure you want to delete the connection '%s'?"
-msgstr ""
+msgstr "Ten certeza que quere eliminar a conexión «%s»?"
 
 #: ../clients/tui/nmtui-hostname.c:45
 msgid "Set Hostname"
-msgstr ""
+msgstr "Estabelecer o nome do equipo"
 
 #: ../clients/tui/nmtui-hostname.c:53
 msgid "Hostname"
-msgstr ""
+msgstr "Nome do equipo"
 
 #. Translators: this indicates the result. ie, "I have set the hostname to ..."
 #: ../clients/tui/nmtui-hostname.c:116
 #, c-format
 msgid "Set hostname to '%s'"
-msgstr ""
+msgstr "Nome do equipo estabelecido a «%s»"
 
 #: ../clients/tui/nmtui-hostname.c:118
 #, fuzzy, c-format
@@ -6807,55 +6777,49 @@ msgid "Unable to set hostname: %s"
 msgstr "non é posíbel conectar coa ligazón de rede: %s"
 
 #: ../clients/tui/nmtui.c:54 ../clients/tui/nmtui.c:57
-#, fuzzy
 msgid "connection"
-msgstr "conectando"
+msgstr "conexión"
 
 #: ../clients/tui/nmtui.c:55
-#, fuzzy
 msgid "Edit a connection"
-msgstr "desconectando"
+msgstr "Editar unha conexión"
 
 #: ../clients/tui/nmtui.c:58
-#, fuzzy
 msgid "Activate a connection"
-msgstr "Conexións activas"
+msgstr "Activar unha conexión"
 
 #: ../clients/tui/nmtui.c:60
 msgid "new hostname"
-msgstr ""
+msgstr "novo nome de equipo"
 
 #: ../clients/tui/nmtui.c:61
-#, fuzzy
 msgid "Set system hostname"
-msgstr "Modificar o nome persistente do anfitrión do sistema"
+msgstr "Estabelecer o nome do equipo do sisetma"
 
 #: ../clients/tui/nmtui.c:84
-#, fuzzy
 msgid "NetworkManager TUI"
-msgstr "Estado de NetworkManager"
+msgstr "NetworkManager TUI"
 
 #: ../clients/tui/nmtui.c:92
 msgid "Please select an option"
-msgstr ""
+msgstr "Seleccione unha opción"
 
 #: ../clients/tui/nmtui.c:144
 msgid "Usage"
-msgstr ""
+msgstr "Uso"
 
 #: ../clients/tui/nmtui.c:225
 msgid "Could not parse arguments"
-msgstr ""
+msgstr "Non foi posíbel analizar os argumentos"
 
 #: ../clients/tui/nmtui.c:235
-#, fuzzy, c-format
+#, c-format
 msgid "Could not contact NetworkManager: %s.\n"
-msgstr "Debe ser superusuario para executar NetworkManager!\n"
+msgstr "Non foi posíbel contactar con NetworkManager: %s.\n"
 
 #: ../clients/tui/nmtui.c:240
-#, fuzzy
 msgid "NetworkManager is not running."
-msgstr "Erro: NetworkManager non está a funcionar."
+msgstr "NetworkManager non está executándose."
 
 #: ../libnm-core/crypto.c:119 ../libnm-util/crypto.c:132
 #, c-format
@@ -6943,7 +6907,7 @@ msgstr "Non foi posíbel determinar o tipo de chave privada"
 #: ../libnm-core/crypto.c:503
 #, c-format
 msgid "Password provided, but key was not encrypted."
-msgstr ""
+msgstr "Contrasinal fornecido, máis a chave non está cifrada."
 
 #: ../libnm-core/crypto.c:556 ../libnm-util/crypto.c:572
 #, c-format
@@ -7126,7 +7090,7 @@ msgstr "Non foi posíbel decodificar o certificado: %d"
 #: ../libnm-core/crypto_nss.c:421
 #, c-format
 msgid "Password must be UTF-8"
-msgstr ""
+msgstr "O contrasinal de estar en UTF-8"
 
 #: ../libnm-core/crypto_nss.c:451 ../libnm-util/crypto_nss.c:489
 #, c-format
@@ -7149,15 +7113,15 @@ msgstr "Non foi posíbel xerar datos aleatorios."
 
 #: ../libnm-core/nm-connection.c:224
 msgid "wrong type; should be a list of strings."
-msgstr ""
+msgstr "tipo incorrecto; debería ser unha lista de cadeas."
 
 #: ../libnm-core/nm-connection.c:279
 msgid "unknown setting name"
-msgstr ""
+msgstr "nome da configuración descoñecido"
 
 #: ../libnm-core/nm-connection.c:803
 msgid "setting not found"
-msgstr ""
+msgstr "configuración non atopada"
 
 #: ../libnm-core/nm-connection.c:867
 #, fuzzy

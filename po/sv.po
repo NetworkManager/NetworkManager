@@ -577,19 +577,19 @@ msgid "'%s' is not a valid team configuration or file name."
 msgstr "”%s” är inte en giltig teamkonfiguration eller ett giltigt filnamn."
 
 #: ../clients/cli/common.c:960
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr "Fel: verifiering av anslutning misslyckades: %s\n"
+msgstr "Fel: openconnect misslyckades: %s\n"
 
 #: ../clients/cli/common.c:967
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with status %d\n"
-msgstr "Redigare misslyckades med status %d"
+msgstr "Fel: openconnect misslyckades med status %d\n"
 
 #: ../clients/cli/common.c:969
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr "Redigare misslyckades med signal %d"
+msgstr "Fel: openconnect misslyckades med signal %d\n"
 
 #: ../clients/cli/common.c:1047
 #, c-format
@@ -1843,12 +1843,11 @@ msgstr "InfiniBand transportläge"
 
 #: ../clients/cli/connections.c:3197
 msgid "ADSL protocol"
-msgstr ""
+msgstr "ADSL-protokoll"
 
 #: ../clients/cli/connections.c:3208
-#, fuzzy
 msgid "ADSL encapsulation"
-msgstr "DSL-autentisering"
+msgstr "ADSL-inkapsling"
 
 #: ../clients/cli/connections.c:3217
 #, fuzzy
@@ -2214,9 +2213,9 @@ msgid "ADSL"
 msgstr "ADSL"
 
 #: ../clients/cli/connections.c:4241
-#, fuzzy, c-format
+#, c-format
 msgid "ADSL encapsulation %s"
-msgstr "DSL-anslutning %d"
+msgstr "ADSL-inkapsling %s"
 
 #. Ask for optional 'macvlan' arguments.
 #: ../clients/cli/connections.c:4259
@@ -2565,19 +2564,17 @@ msgid "Error: 'channel': '%s' is not valid; use <1-13>."
 msgstr "Fel: ”channel”: ”%s” är inte giltigt; använd <1-13>."
 
 #: ../clients/cli/connections.c:5906
-#, fuzzy
 msgid "Username: "
-msgstr "Användarnamn"
+msgstr "Användarnamn: "
 
 #: ../clients/cli/connections.c:5915
 #, c-format
 msgid "Protocol %s"
-msgstr ""
+msgstr "Protokoll %s"
 
 #: ../clients/cli/connections.c:5918
-#, fuzzy
 msgid "Error: 'protocol' is required."
-msgstr "Fel: ”nsp” krävs."
+msgstr "Fel: ”protocol” krävs."
 
 #: ../clients/cli/connections.c:5975
 #, fuzzy
@@ -2766,7 +2763,7 @@ msgstr "Fel: ”ifname”-argument krävs."
 #: ../clients/cli/connections.c:7010
 #, c-format
 msgid "Error: mandatory 'ifname' not seen before '%s'."
-msgstr ""
+msgstr "Fel: obligatoriskt ”ifname” inte sett innan ”%s”."
 
 #: ../clients/cli/connections.c:7019
 #, c-format
@@ -4781,9 +4778,9 @@ msgid "Error: No Wi-Fi device found."
 msgstr "Fel: Ingen trådlös enhet hittades."
 
 #: ../clients/cli/devices.c:2679
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
-msgstr "Fel: misslyckades att sätta loggning: %s"
+msgstr "Fel: Misslyckades att söka av dolt SSID: %s."
 
 #: ../clients/cli/devices.c:2704
 #, c-format
@@ -4800,6 +4797,8 @@ msgstr "Fel: Ingen accesspunkt med BSSID ”%s” hittades."
 msgid ""
 "Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
 msgstr ""
+"Varning: ”%s” borde vara SSID för dolda accesspunkter, men det ser ut som "
+"ett BSSID.\n"
 
 #: ../clients/cli/devices.c:2762
 msgid "Password: "
@@ -4857,10 +4856,11 @@ msgstr "Fel: Enheten ”%s” är inte en trådlös enhet."
 msgid "Error: Invalid 'password': %s."
 msgstr "Fel: ogiltig egenskap ”%s”: %s."
 
+# flaggan "ssid" kan upprepas
 #: ../clients/cli/devices.c:3195
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' cannot repeat."
-msgstr "Fel: ”nsp” krävs."
+msgstr "Fel: ”%s” kan inte upprepas."
 
 #: ../clients/cli/devices.c:3276
 #, c-format
@@ -5697,10 +5697,12 @@ msgid ""
 "invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
 "'none'"
 msgstr ""
+"ogiltig flagga ”%s”, använd en kombination av [%s] eller ”ignore”, ”default” "
+"eller ”none”"
 
 #: ../clients/cli/settings.c:1773
 msgid "'default' and 'ignore' are incompatible with other flags"
-msgstr ""
+msgstr "”default” och ”ignore” är inkompatibla med andra flaggor"
 
 #: ../clients/cli/settings.c:1809
 #, fuzzy, c-format
@@ -5935,6 +5937,13 @@ msgid ""
 "'false','no','off' to set the connection as not metered\n"
 "'unknown' to let NetworkManager choose a value using some heuristics\n"
 msgstr ""
+"Ange ett värde som indikerar huruvida anslutningen har en datakvot,\n"
+"kostnader för användning eller andra begränsningar. Accepterade alternativ "
+"är:\n"
+"”true”,”yes”,”on” för att ange att anslutningen är uppmätt\n"
+"”false”,”no”,”off” för att ange att anslutningen ej är uppmätt\n"
+"”unknown” för att låta Nätverkshanteraren välja ett värde enligt någon "
+"heuristik\n"
 
 #: ../clients/cli/settings.c:3351
 msgid "private key password not provided"
@@ -6298,9 +6307,9 @@ msgid "the property doesn't contain mapping '%s'"
 msgstr "egenskapen stöder inte mappningen ”%s”"
 
 #: ../clients/cli/settings.c:4669
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' cannot be empty"
-msgstr "”%s”-alternativet är tomt"
+msgstr "”%s” kan inte vara tomt"
 
 #: ../clients/cli/settings.c:4743 ../clients/cli/settings.c:4910
 #: ../libnm-core/nm-setting-wired.c:651 ../libnm-core/nm-setting-wireless.c:820
@@ -6334,7 +6343,7 @@ msgstr ""
 #: ../clients/cli/settings.c:4804
 #, c-format
 msgid "'%s' string value should consist of 1 - 199 characters"
-msgstr ""
+msgstr "strängvärdet för ”%s” bör bestå av 1 - 199 tecken"
 
 #: ../clients/cli/settings.c:4836
 #, c-format
@@ -6682,9 +6691,8 @@ msgid "A password is required to connect to '%s'."
 msgstr "Ett lösenord krävs för att ansluta till ”%s”."
 
 #: ../clients/common/nm-secret-agent-simple.c:538
-#, fuzzy
 msgid "VPN password required"
-msgstr "PIN-kod krävs"
+msgstr "VPN-lösenord krävs"
 
 #: ../clients/common/nm-vpn-helpers.c:63
 msgid "could not get VPN plugin info"
@@ -6692,9 +6700,8 @@ msgstr ""
 
 #: ../clients/common/nm-vpn-helpers.c:105
 #: ../clients/common/nm-vpn-helpers.c:108
-#, fuzzy
 msgid "Group password"
-msgstr "Visa lösenord"
+msgstr "Grupplösenord"
 
 #: ../clients/common/nm-vpn-helpers.c:110 ../clients/tui/nmt-page-ip4.c:144
 #: ../clients/tui/nmt-page-ip6.c:144
@@ -6703,12 +6710,11 @@ msgstr "Gateway"
 
 #: ../clients/common/nm-vpn-helpers.c:111
 msgid "Cookie"
-msgstr ""
+msgstr "Kaka"
 
 #: ../clients/common/nm-vpn-helpers.c:112
-#, fuzzy
 msgid "Gateway certificate hash"
-msgstr "ogiltigt certifikatformat"
+msgstr "Certifikathash för gateway"
 
 #: ../clients/nm-online.c:96
 msgid "Connecting"
@@ -7139,7 +7145,7 @@ msgstr "Använd aldrig detta nätverk för standardrutten"
 
 #: ../clients/tui/nmt-page-ip4.c:180 ../clients/tui/nmt-page-ip6.c:178
 msgid "Ignore automatically obtained routes"
-msgstr ""
+msgstr "Ignorera automatiskt erhållna rutter"
 
 #: ../clients/tui/nmt-page-ip4.c:188
 msgid "Require IPv4 addressing for this connection"
@@ -7395,21 +7401,23 @@ msgid ""
 "openconnect will be run to authenticate.\n"
 "It will return to nmtui when completed."
 msgstr ""
+"openconnect kommer köras för att autentisera.\n"
+"Det kommer återgå till nmtui då det är klart."
 
 #: ../clients/tui/nmtui-connect.c:68
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s"
-msgstr "Fel: Borttagning av anslutningen misslyckades: %s"
+msgstr "Fel: openconnect misslyckades: %s"
 
 #: ../clients/tui/nmtui-connect.c:75
-#, fuzzy, c-format
+#, c-format
 msgid "openconnect failed with status %d"
-msgstr "Redigare misslyckades med status %d"
+msgstr "openconnect misslyckades med status %d"
 
 #: ../clients/tui/nmtui-connect.c:79
-#, fuzzy, c-format
+#, c-format
 msgid "openconnect failed with signal %d"
-msgstr "Redigare misslyckades med signal %d"
+msgstr "openconnect misslyckades med signal %d"
 
 #: ../clients/tui/nmtui-connect.c:178
 msgid "Activation failed"
@@ -8450,14 +8458,14 @@ msgid "mtu for transport mode '%s' can be at most %d but it is %d"
 msgstr "mtu för transportläge ”%s” kan som mest vara %d men är %d"
 
 #: ../libnm-core/nm-setting-ip-config.c:94
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv4 address"
-msgstr "ogiltig IPv4-adress ”%s”"
+msgstr "Saknar IPv4-adress"
 
 #: ../libnm-core/nm-setting-ip-config.c:94
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv6 address"
-msgstr "ogiltig IPv6-adress ”%s”"
+msgstr "Saknar IPv6-adress"
 
 #: ../libnm-core/nm-setting-ip-config.c:99
 #, c-format
@@ -8710,10 +8718,11 @@ msgstr "ogiltig ”%s” eller dess värde ”%s"
 #: ../libnm-core/nm-setting-wired.c:709
 msgid "Wake-on-LAN mode 'default' and 'ignore' are exclusive flags"
 msgstr ""
+"Wake-on-LAN-lägena ”default” och ”ignore” går ej kombinera med andra flaggor"
 
 #: ../libnm-core/nm-setting-wired.c:718
 msgid "Wake-on-LAN password can only be used with magic packet mode"
-msgstr ""
+msgstr "Wake-on-LAN-lösenord kan bara användas med magiskt-paket-läge"
 
 #: ../libnm-core/nm-setting-wireless-security.c:882
 #: ../libnm-util/nm-setting-wireless-security.c:912
@@ -9325,9 +9334,9 @@ msgid "%s %d"
 msgstr "%s %d"
 
 #: ../src/main.c:226
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to read configuration: %s\n"
-msgstr "Misslyckades med att läsa konfiguration: (%d) %s\n"
+msgstr "Misslyckades med att läsa konfiguration: %s\n"
 
 #. Logging/debugging
 #: ../src/main.c:241 ../src/nm-iface-helper.c:303
@@ -9361,9 +9370,8 @@ msgid "State file location"
 msgstr "Plats för tillståndsfil"
 
 #: ../src/main.c:251
-#, fuzzy
 msgid "Print NetworkManager configuration and exit"
-msgstr "Skriv ut version för Nätverkshanteraren och avsluta"
+msgstr "Skriv ut konfiguration för Nätverkshanteraren och avsluta"
 
 #: ../src/main.c:261
 msgid ""
