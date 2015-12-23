@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-12-16 21:49+0100\n"
+"POT-Creation-Date: 2015-12-23 14:29+0100\n"
 "PO-Revision-Date: 2015-12-16 21:50+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
@@ -1849,7 +1849,7 @@ msgstr "Błąd: \"bt-type\": \"%s\" nie jest prawidłowym typem Bluetooth.\n"
 #: ../clients/cli/connections.c:3486 ../clients/cli/devices.c:240
 #: ../clients/tui/nm-editor-utils.c:218 ../clients/tui/nmt-page-vlan.c:97
 #: ../libnm-core/nm-connection.c:1612 ../libnm-glib/nm-device.c:1809
-#: ../libnm-util/nm-connection.c:1614 ../libnm/nm-device.c:1654
+#: ../libnm-util/nm-connection.c:1601 ../libnm/nm-device.c:1654
 msgid "VLAN"
 msgstr "VLAN"
 
@@ -6073,7 +6073,7 @@ msgid "DSL connection %d"
 msgstr "Połączenie DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1606
-#: ../libnm-glib/nm-device.c:1803 ../libnm-util/nm-connection.c:1608
+#: ../libnm-glib/nm-device.c:1803 ../libnm-util/nm-connection.c:1595
 #: ../libnm/nm-device.c:1648 ../src/settings/plugins/ifcfg-rh/reader.c:4059
 msgid "Bond"
 msgstr "Wiązane"
@@ -6084,7 +6084,7 @@ msgid "Bond connection %d"
 msgstr "Połączenie wiązane %d"
 
 #: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1610
-#: ../libnm-glib/nm-device.c:1807 ../libnm-util/nm-connection.c:1612
+#: ../libnm-glib/nm-device.c:1807 ../libnm-util/nm-connection.c:1599
 #: ../libnm/nm-device.c:1652 ../src/settings/plugins/ifcfg-rh/reader.c:4350
 msgid "Bridge"
 msgstr "Mostek"
@@ -6095,7 +6095,7 @@ msgid "Bridge connection %d"
 msgstr "Połączenie mostkowane %d"
 
 #: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1608
-#: ../libnm-glib/nm-device.c:1805 ../libnm-util/nm-connection.c:1610
+#: ../libnm-glib/nm-device.c:1805 ../libnm-util/nm-connection.c:1597
 #: ../libnm/nm-device.c:1650 ../src/settings/plugins/ifcfg-rh/reader.c:4165
 msgid "Team"
 msgstr "Zespół"
@@ -8564,7 +8564,7 @@ msgstr "Połączenie przewodowe %d"
 msgid "InfiniBand connection"
 msgstr "Połączenie InfiniBand"
 
-#: ../src/devices/nm-device-vlan.c:339
+#: ../src/devices/nm-device-vlan.c:343
 msgid "VLAN connection"
 msgstr "Połączenie VLAN"
 
