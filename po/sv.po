@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
-"POT-Creation-Date: 2015-11-18 13:58+0000\n"
-"PO-Revision-Date: 2015-11-19 20:42+0100\n"
+"POT-Creation-Date: 2015-12-23 13:48+0100\n"
+"PO-Revision-Date: 2015-12-17 15:33+0100\n"
 "Last-Translator: Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
@@ -106,8 +106,7 @@ msgstr "Fel: Initiering av polkit-agent misslyckades: %s"
 msgid "nmcli successfully registered as a polkit agent.\n"
 msgstr "nmcli registrerade en polkit-agent.\n"
 
-#: ../clients/cli/agent.c:209 ../clients/cli/connections.c:9091
-#: ../clients/cli/connections.c:9117 ../clients/cli/connections.c:9258
+#: ../clients/cli/agent.c:209 ../clients/cli/connections.c:9246
 #: ../clients/cli/devices.c:3060 ../clients/cli/general.c:325
 #: ../clients/cli/general.c:463
 #, c-format
@@ -119,60 +118,60 @@ msgstr "Fel: Nätverkshanteraren är inte igång."
 msgid "Error: 'agent' command '%s' is not valid."
 msgstr "Fel: ”agent”-kommandot ”%s” är inte giltigt."
 
-#: ../clients/cli/common.c:40 ../clients/cli/common.c:53
-#: ../clients/cli/common.c:61 ../clients/cli/common.c:73
+#: ../clients/cli/common.c:41 ../clients/cli/common.c:54
+#: ../clients/cli/common.c:62 ../clients/cli/common.c:74
 #: ../clients/cli/connections.c:173 ../clients/cli/connections.c:195
 msgid "GROUP"
 msgstr "GRUPP"
 
 #. 0
-#: ../clients/cli/common.c:41 ../clients/cli/common.c:62
+#: ../clients/cli/common.c:42 ../clients/cli/common.c:63
 msgid "ADDRESS"
 msgstr "ADRESS"
 
 #. 1
 #. 2
-#: ../clients/cli/common.c:42 ../clients/cli/common.c:63
+#: ../clients/cli/common.c:43 ../clients/cli/common.c:64
 #: ../clients/cli/connections.c:198
 msgid "GATEWAY"
 msgstr "GATEWAY"
 
 #. 2
-#: ../clients/cli/common.c:43 ../clients/cli/common.c:64
+#: ../clients/cli/common.c:44 ../clients/cli/common.c:65
 msgid "ROUTE"
 msgstr "RUTT"
 
 #. 3
-#: ../clients/cli/common.c:44 ../clients/cli/common.c:65
+#: ../clients/cli/common.c:45 ../clients/cli/common.c:66
 msgid "DNS"
 msgstr "DNS"
 
 #. 4
-#: ../clients/cli/common.c:45 ../clients/cli/common.c:66
+#: ../clients/cli/common.c:46 ../clients/cli/common.c:67
 msgid "DOMAIN"
 msgstr "DOMÄN"
 
 #. 5
-#: ../clients/cli/common.c:46
+#: ../clients/cli/common.c:47
 msgid "WINS"
 msgstr "WINS"
 
 #. 0
-#: ../clients/cli/common.c:54 ../clients/cli/common.c:74
+#: ../clients/cli/common.c:55 ../clients/cli/common.c:75
 msgid "OPTION"
 msgstr "FLAGGA"
 
-#: ../clients/cli/common.c:378 ../clients/cli/common.c:438
+#: ../clients/cli/common.c:379 ../clients/cli/common.c:439
 #, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr "ogiltigt prefix ”%s”; <1-%d> tillåtet"
 
-#: ../clients/cli/common.c:386
+#: ../clients/cli/common.c:387
 #, c-format
 msgid "invalid IP address: %s"
 msgstr "ogiltig IP-adress ”%s”"
 
-#: ../clients/cli/common.c:450
+#: ../clients/cli/common.c:451
 #, c-format
 msgid ""
 "the second component of route ('%s') is neither a next hop address nor a "
@@ -181,70 +180,70 @@ msgstr ""
 "andra komponenten på rutten (”%s”) är varken nästa hoppadress eller ett "
 "mätvärde"
 
-#: ../clients/cli/common.c:459
+#: ../clients/cli/common.c:460
 #, c-format
 msgid "invalid metric '%s'"
 msgstr "ogiltigt mätvärde ”%s”"
 
-#: ../clients/cli/common.c:467
+#: ../clients/cli/common.c:468
 #, c-format
 msgid "invalid route: %s"
 msgstr "ogiltig rutt: ”%s”"
 
-#: ../clients/cli/common.c:479
+#: ../clients/cli/common.c:480
 msgid "default route cannot be added (NetworkManager handles it by itself)"
 msgstr ""
 "standardrutten kan inte läggas till (Nätverkshanteraren klarar det själv)"
 
-#: ../clients/cli/common.c:496
+#: ../clients/cli/common.c:497
 msgid "unmanaged"
 msgstr "ohanterad"
 
-#: ../clients/cli/common.c:498
+#: ../clients/cli/common.c:499
 msgid "unavailable"
 msgstr "otillgänglig"
 
-#: ../clients/cli/common.c:500 ../clients/cli/general.c:260
+#: ../clients/cli/common.c:501 ../clients/cli/general.c:260
 msgid "disconnected"
 msgstr "frånkopplad"
 
-#: ../clients/cli/common.c:502
+#: ../clients/cli/common.c:503
 msgid "connecting (prepare)"
 msgstr "ansluter (förbereder)"
 
-#: ../clients/cli/common.c:504
+#: ../clients/cli/common.c:505
 msgid "connecting (configuring)"
 msgstr "ansluter (konfigurerar)"
 
-#: ../clients/cli/common.c:506
+#: ../clients/cli/common.c:507
 msgid "connecting (need authentication)"
 msgstr "ansluter (behöver autentisering)"
 
-#: ../clients/cli/common.c:508
+#: ../clients/cli/common.c:509
 msgid "connecting (getting IP configuration)"
 msgstr "ansluter (hämtar IP-konfiguration)"
 
-#: ../clients/cli/common.c:510
+#: ../clients/cli/common.c:511
 msgid "connecting (checking IP connectivity)"
 msgstr "ansluter (kontrollerar IP-anslutning)"
 
-#: ../clients/cli/common.c:512
+#: ../clients/cli/common.c:513
 msgid "connecting (starting secondary connections)"
 msgstr "ansluter (startar sekundära anslutningar)"
 
-#: ../clients/cli/common.c:514 ../clients/cli/general.c:256
+#: ../clients/cli/common.c:515 ../clients/cli/general.c:256
 msgid "connected"
 msgstr "ansluten"
 
-#: ../clients/cli/common.c:516 ../clients/cli/connections.c:544
+#: ../clients/cli/common.c:517 ../clients/cli/connections.c:544
 msgid "deactivating"
 msgstr "inaktiverar"
 
-#: ../clients/cli/common.c:518
+#: ../clients/cli/common.c:519
 msgid "connection failed"
 msgstr "anslutningen misslyckades"
 
-#: ../clients/cli/common.c:520 ../clients/cli/common.c:537
+#: ../clients/cli/common.c:521 ../clients/cli/common.c:538
 #: ../clients/cli/connections.c:549 ../clients/cli/connections.c:572
 #: ../clients/cli/connections.c:1712 ../clients/cli/devices.c:891
 #: ../clients/cli/devices.c:932 ../clients/cli/devices.c:934
@@ -252,12 +251,13 @@ msgstr "anslutningen misslyckades"
 #: ../clients/cli/general.c:411 ../clients/cli/general.c:427
 #: ../clients/cli/settings.c:732 ../clients/cli/settings.c:817
 #: ../clients/cli/settings.c:1118 ../clients/cli/settings.c:2839
-#: ../clients/cli/utils.c:1200 ../src/main.c:362 ../src/main.c:412
+#: ../clients/cli/utils.c:1200 ../src/main.c:241 ../src/main.c:386
+#: ../src/main.c:436
 msgid "unknown"
 msgstr "okänd"
 
 #. "CAPABILITIES"
-#: ../clients/cli/common.c:529 ../clients/cli/connections.c:819
+#: ../clients/cli/common.c:530 ../clients/cli/connections.c:819
 #: ../clients/cli/connections.c:821 ../clients/cli/connections.c:823
 #: ../clients/cli/connections.c:855 ../clients/cli/connections.c:922
 #: ../clients/cli/connections.c:923 ../clients/cli/connections.c:925
@@ -275,7 +275,7 @@ msgstr "okänd"
 msgid "yes"
 msgstr "ja"
 
-#: ../clients/cli/common.c:531 ../clients/cli/connections.c:819
+#: ../clients/cli/common.c:532 ../clients/cli/connections.c:819
 #: ../clients/cli/connections.c:821 ../clients/cli/connections.c:823
 #: ../clients/cli/connections.c:922 ../clients/cli/connections.c:923
 #: ../clients/cli/connections.c:925 ../clients/cli/connections.c:3159
@@ -293,292 +293,307 @@ msgstr "ja"
 msgid "no"
 msgstr "nej"
 
-#: ../clients/cli/common.c:533
+#: ../clients/cli/common.c:534
 msgid "yes (guessed)"
 msgstr "ja (gissat)"
 
-#: ../clients/cli/common.c:535
+#: ../clients/cli/common.c:536
 msgid "no (guessed)"
 msgstr "nej (gissat)"
 
-#: ../clients/cli/common.c:546
+#: ../clients/cli/common.c:547
 msgid "No reason given"
 msgstr "Ingen anledning angiven"
 
-#: ../clients/cli/common.c:549 ../clients/cli/connections.c:2729
+#: ../clients/cli/common.c:550 ../clients/cli/connections.c:2729
 #, c-format
 msgid "Unknown error"
 msgstr "Okänt fel"
 
-#: ../clients/cli/common.c:552
+#: ../clients/cli/common.c:553
 msgid "Device is now managed"
 msgstr "Enheten är nu hanterad"
 
-#: ../clients/cli/common.c:555
+#: ../clients/cli/common.c:556
 msgid "Device is now unmanaged"
 msgstr "Enheten är nu ohanterad"
 
-#: ../clients/cli/common.c:558
+#: ../clients/cli/common.c:559
 msgid "The device could not be readied for configuration"
 msgstr "Enheten kunde inte göras redo för konfiguration"
 
-#: ../clients/cli/common.c:561
+#: ../clients/cli/common.c:562
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
 msgstr ""
 "IP-konfigurationen kunde inte reserveras (ingen tillgänglig adress, "
 "tidsgräns, etc.)"
 
-#: ../clients/cli/common.c:564
+#: ../clients/cli/common.c:565
 msgid "The IP configuration is no longer valid"
 msgstr "IP-konfigurationen är inte längre giltig"
 
-#: ../clients/cli/common.c:567
+#: ../clients/cli/common.c:568
 msgid "Secrets were required, but not provided"
 msgstr "Hemligheter krävdes men tillhandahölls ej"
 
-#: ../clients/cli/common.c:570
+#: ../clients/cli/common.c:571
 msgid "802.1X supplicant disconnected"
 msgstr "802.1X-supplikanten kopplade från"
 
-#: ../clients/cli/common.c:573
+#: ../clients/cli/common.c:574
 msgid "802.1X supplicant configuration failed"
 msgstr "Konfiguration av 802.1X-supplikanten misslyckades"
 
-#: ../clients/cli/common.c:576
+#: ../clients/cli/common.c:577
 msgid "802.1X supplicant failed"
 msgstr "802.1X-supplikanten misslyckades"
 
-#: ../clients/cli/common.c:579
+#: ../clients/cli/common.c:580
 msgid "802.1X supplicant took too long to authenticate"
 msgstr "802.1X-supplikanten tog för lång tid att autentisera"
 
-#: ../clients/cli/common.c:582
+#: ../clients/cli/common.c:583
 msgid "PPP service failed to start"
 msgstr "PPP-tjänsten misslyckades med att starta"
 
-#: ../clients/cli/common.c:585
+#: ../clients/cli/common.c:586
 msgid "PPP service disconnected"
 msgstr "PPP-tjänsten kopplades från"
 
-#: ../clients/cli/common.c:588
+#: ../clients/cli/common.c:589
 msgid "PPP failed"
 msgstr "PPP misslyckades"
 
-#: ../clients/cli/common.c:591
+#: ../clients/cli/common.c:592
 msgid "DHCP client failed to start"
 msgstr "DHCP-klienten misslyckades med att starta"
 
-#: ../clients/cli/common.c:594
+#: ../clients/cli/common.c:595
 msgid "DHCP client error"
 msgstr "Fel i DHCP-klienten"
 
-#: ../clients/cli/common.c:597
+#: ../clients/cli/common.c:598
 msgid "DHCP client failed"
 msgstr "DHCP-klienten misslyckades"
 
-#: ../clients/cli/common.c:600
+#: ../clients/cli/common.c:601
 msgid "Shared connection service failed to start"
 msgstr "Tjänsten för delad anslutning misslyckades med att starta"
 
-#: ../clients/cli/common.c:603
+#: ../clients/cli/common.c:604
 msgid "Shared connection service failed"
 msgstr "Tjänsten för delad anslutning misslyckades"
 
-#: ../clients/cli/common.c:606
+#: ../clients/cli/common.c:607
 msgid "AutoIP service failed to start"
 msgstr "AutoIP-tjänsten misslyckades med att starta"
 
-#: ../clients/cli/common.c:609
+#: ../clients/cli/common.c:610
 msgid "AutoIP service error"
 msgstr "Fel i AutoIP-tjänsten"
 
-#: ../clients/cli/common.c:612
+#: ../clients/cli/common.c:613
 msgid "AutoIP service failed"
 msgstr "AutoIP-tjänsten misslyckades"
 
-#: ../clients/cli/common.c:615
+#: ../clients/cli/common.c:616
 msgid "The line is busy"
 msgstr "Linjen är upptagen"
 
-#: ../clients/cli/common.c:618
+#: ../clients/cli/common.c:619
 msgid "No dial tone"
 msgstr "Ingen rington"
 
-#: ../clients/cli/common.c:621
+#: ../clients/cli/common.c:622
 msgid "No carrier could be established"
 msgstr "Ingen bärare kunde etableras"
 
-#: ../clients/cli/common.c:624
+#: ../clients/cli/common.c:625
 msgid "The dialing request timed out"
 msgstr "Uppringningsbegäran översteg tidsgränsen"
 
-#: ../clients/cli/common.c:627
+#: ../clients/cli/common.c:628
 msgid "The dialing attempt failed"
 msgstr "Uppringningsförsöket misslyckades"
 
-#: ../clients/cli/common.c:630
+#: ../clients/cli/common.c:631
 msgid "Modem initialization failed"
 msgstr "Initiering av modem misslyckades"
 
-#: ../clients/cli/common.c:633
+#: ../clients/cli/common.c:634
 msgid "Failed to select the specified APN"
 msgstr "Misslyckades med att välja angiven APN"
 
-#: ../clients/cli/common.c:636
+#: ../clients/cli/common.c:637
 msgid "Not searching for networks"
 msgstr "Söker inte efter nätverk"
 
-#: ../clients/cli/common.c:639
+#: ../clients/cli/common.c:640
 msgid "Network registration denied"
 msgstr "Nätverksregistreringen nekades"
 
-#: ../clients/cli/common.c:642
+#: ../clients/cli/common.c:643
 msgid "Network registration timed out"
 msgstr "Tidsgränsen för nätverksregistrering överstegs"
 
-#: ../clients/cli/common.c:645
+#: ../clients/cli/common.c:646
 msgid "Failed to register with the requested network"
 msgstr "Misslyckades med att registrera mot det begärda nätverket"
 
-#: ../clients/cli/common.c:648
+#: ../clients/cli/common.c:649
 msgid "PIN check failed"
 msgstr "Kontroll av PIN-kod misslyckades"
 
-#: ../clients/cli/common.c:651
+#: ../clients/cli/common.c:652
 msgid "Necessary firmware for the device may be missing"
 msgstr "Nödvändig fast programvara för enheten kanske saknas"
 
-#: ../clients/cli/common.c:654
+#: ../clients/cli/common.c:655
 msgid "The device was removed"
 msgstr "Enheten togs bort"
 
-#: ../clients/cli/common.c:657
+#: ../clients/cli/common.c:658
 msgid "NetworkManager went to sleep"
 msgstr "Nätverkshanteraren somnade"
 
-#: ../clients/cli/common.c:660
+#: ../clients/cli/common.c:661
 msgid "The device's active connection disappeared"
 msgstr "Enhetens aktiva anslutning försvann"
 
-#: ../clients/cli/common.c:663
+#: ../clients/cli/common.c:664
 msgid "Device disconnected by user or client"
 msgstr "Enheten kopplades från av användare eller klient"
 
-#: ../clients/cli/common.c:666
+#: ../clients/cli/common.c:667
 msgid "Carrier/link changed"
 msgstr "Bärare/länk ändrades"
 
-#: ../clients/cli/common.c:669
+#: ../clients/cli/common.c:670
 msgid "The device's existing connection was assumed"
 msgstr "Enhetens befintliga anslutning antogs"
 
-#: ../clients/cli/common.c:672
+#: ../clients/cli/common.c:673
 msgid "The supplicant is now available"
 msgstr "Supplikanten finns nu tillgänglig"
 
-#: ../clients/cli/common.c:675
+#: ../clients/cli/common.c:676
 msgid "The modem could not be found"
 msgstr "Modemet kunde inte hittas"
 
-#: ../clients/cli/common.c:678
+#: ../clients/cli/common.c:679
 msgid "The Bluetooth connection failed or timed out"
 msgstr "Bluetoothanslutningen misslyckades eller översteg tidsgränsen"
 
-#: ../clients/cli/common.c:681
+#: ../clients/cli/common.c:682
 msgid "GSM Modem's SIM card not inserted"
 msgstr "SIM-kortet i GSM-modemet är inte anslutet"
 
-#: ../clients/cli/common.c:684
+#: ../clients/cli/common.c:685
 msgid "GSM Modem's SIM PIN required"
 msgstr "PIN-kod för SIM-kortet i GSM-modemet krävs"
 
-#: ../clients/cli/common.c:687
+#: ../clients/cli/common.c:688
 msgid "GSM Modem's SIM PUK required"
 msgstr "PUK-kod för SIM-kortet i GSM-modemet krävs"
 
-#: ../clients/cli/common.c:690
+#: ../clients/cli/common.c:691
 msgid "GSM Modem's SIM wrong"
 msgstr "SIM-kortet i GSM-modemet är felaktigt"
 
-#: ../clients/cli/common.c:693
+#: ../clients/cli/common.c:694
 msgid "InfiniBand device does not support connected mode"
 msgstr "InfiniBand-enheten saknar stöd för anslutet läge"
 
-#: ../clients/cli/common.c:696
+#: ../clients/cli/common.c:697
 msgid "A dependency of the connection failed"
 msgstr "Ett beroende till anslutningen misslyckades"
 
-#: ../clients/cli/common.c:699
+#: ../clients/cli/common.c:700
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
 msgstr "Ett problem med RFC 2684 över ADSL-brygga"
 
-#: ../clients/cli/common.c:702
+#: ../clients/cli/common.c:703
 msgid "ModemManager is unavailable"
 msgstr "ModemManager är inte tillgängligt"
 
-#: ../clients/cli/common.c:705
+#: ../clients/cli/common.c:706
 msgid "The Wi-Fi network could not be found"
 msgstr "Trådlösa nätverket kunde inte hittas"
 
-#: ../clients/cli/common.c:708
+#: ../clients/cli/common.c:709
 msgid "A secondary connection of the base connection failed"
 msgstr "En sekundär anslutning för basanslutningen misslyckades"
 
-#: ../clients/cli/common.c:711
+#: ../clients/cli/common.c:712
 msgid "DCB or FCoE setup failed"
 msgstr "DCB eller FCoE-inställning misslyckades"
 
-#: ../clients/cli/common.c:714
+#: ../clients/cli/common.c:715
 msgid "teamd control failed"
 msgstr "teamd-kontroll misslyckades"
 
-#: ../clients/cli/common.c:717
+#: ../clients/cli/common.c:718
 msgid "Modem failed or no longer available"
 msgstr "Modemet misslyckades eller är inte tillgängligt längre"
 
-#: ../clients/cli/common.c:720
+#: ../clients/cli/common.c:721
 msgid "Modem now ready and available"
 msgstr "Modemet redo och tillgängligt"
 
-#: ../clients/cli/common.c:723
+#: ../clients/cli/common.c:724
 msgid "SIM PIN was incorrect"
 msgstr "SIM PIN var felaktig"
 
-#: ../clients/cli/common.c:726
+#: ../clients/cli/common.c:727
 msgid "New connection activation was enqueued"
 msgstr "Aktivering av ny anslutning köades"
 
-#: ../clients/cli/common.c:729
+#: ../clients/cli/common.c:730
 msgid "The device's parent changed"
 msgstr "Den överordnade enheten ändrades"
 
-#: ../clients/cli/common.c:732
+#: ../clients/cli/common.c:733
 msgid "The device parent's management changed"
 msgstr "Den överordnade enhetens hantering ändrades"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
-#: ../clients/cli/common.c:736 ../clients/cli/devices.c:628
+#: ../clients/cli/common.c:737 ../clients/cli/devices.c:628
 #: ../libnm-glib/nm-device.c:1813 ../libnm/nm-device.c:1658
 msgid "Unknown"
 msgstr "Okänd"
 
-#: ../clients/cli/common.c:778
+#: ../clients/cli/common.c:779
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "ogiltig prioritetshash ”%s”"
 
-#: ../clients/cli/common.c:785 ../clients/cli/common.c:791
+#: ../clients/cli/common.c:786 ../clients/cli/common.c:792
 #, c-format
 msgid "priority '%s' is not valid (<0-%ld>)"
 msgstr "prioriteten ”%s” är inte giltig (<0-%ld>)"
 
-#: ../clients/cli/common.c:858
+#: ../clients/cli/common.c:859
 #, c-format
 msgid "'%s' is not a valid team configuration or file name."
 msgstr "”%s” är inte en giltig teamkonfiguration eller ett giltigt filnamn."
 
-#: ../clients/cli/common.c:959
+#: ../clients/cli/common.c:961
+#, c-format
+msgid "Error: openconnect failed: %s\n"
+msgstr "Fel: openconnect misslyckades: %s\n"
+
+#: ../clients/cli/common.c:968
+#, c-format
+msgid "Error: openconnect failed with status %d\n"
+msgstr "Fel: openconnect misslyckades med status %d\n"
+
+#: ../clients/cli/common.c:970
+#, c-format
+msgid "Error: openconnect failed with signal %d\n"
+msgstr "Fel: openconnect misslyckades med signal %d\n"
+
+#: ../clients/cli/common.c:1047
 #, c-format
 msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
@@ -1450,7 +1465,7 @@ msgid "Error: %s - no such connection profile."
 msgstr "Fel: %s - inga sådana anslutningsprofiler."
 
 #: ../clients/cli/connections.c:1498 ../clients/cli/connections.c:2226
-#: ../clients/cli/connections.c:9331 ../clients/cli/devices.c:2636
+#: ../clients/cli/connections.c:9319 ../clients/cli/devices.c:2636
 #: ../clients/cli/devices.c:3149 ../clients/cli/general.c:518
 #: ../clients/cli/general.c:567 ../clients/cli/general.c:584
 #: ../clients/cli/general.c:623 ../clients/cli/general.c:637
@@ -1627,7 +1642,7 @@ msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "Anslutningen ”%s” inaktiverades (aktiv sökväg för D-Bus: %s)\n"
 
 #: ../clients/cli/connections.c:2347 ../clients/cli/connections.c:9006
-#: ../clients/cli/connections.c:9123
+#: ../clients/cli/connections.c:9111
 #, c-format
 msgid "Error: No connection specified."
 msgstr "Fel: Ingen anslutning angiven."
@@ -1833,7 +1848,7 @@ msgstr "Fel: ”bt-type”: ”%s” är inte en giltig Bluetoothtyp.\n"
 #: ../clients/cli/connections.c:3486 ../clients/cli/devices.c:240
 #: ../clients/tui/nm-editor-utils.c:218 ../clients/tui/nmt-page-vlan.c:97
 #: ../libnm-core/nm-connection.c:1612 ../libnm-glib/nm-device.c:1809
-#: ../libnm-util/nm-connection.c:1614 ../libnm/nm-device.c:1654
+#: ../libnm-util/nm-connection.c:1601 ../libnm/nm-device.c:1654
 msgid "VLAN"
 msgstr "VLAN"
 
@@ -3210,22 +3225,22 @@ msgstr "Fel: ingen anslutning tillhandahållen."
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Fel: kan inte ta bort okänd(a) anslutning(ar): %s."
 
-#: ../clients/cli/connections.c:9097
+#: ../clients/cli/connections.c:9091
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Fel: Misslyckades med att läsa om anslutningar: %s."
 
-#: ../clients/cli/connections.c:9136
+#: ../clients/cli/connections.c:9124
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Fel: misslyckades med att läsa in anslutningen: %s."
 
-#: ../clients/cli/connections.c:9144
+#: ../clients/cli/connections.c:9132
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Kunde inte läsa in filen: ”%s”\n"
 
-#: ../clients/cli/connections.c:9323
+#: ../clients/cli/connections.c:9311
 #, c-format
 msgid "Error: '%s' is not valid 'connection' command."
 msgstr "Fel: ”%s” är inte ett giltigt ”connection”-kommando."
@@ -4994,7 +5009,7 @@ msgid "Do you want to remove them? [yes] "
 msgstr "Vill du ta bort dem? [ja] "
 
 #: ../clients/cli/settings.c:2030 ../clients/cli/settings.c:2425
-#: ../clients/cli/settings.c:4548
+#: ../clients/cli/settings.c:4572
 #, c-format
 msgid "'%s' is not valid"
 msgstr "”%s” är inte giltigt"
@@ -5541,7 +5556,12 @@ msgstr "Varning: endast en mappning åt gången stöds; tar den första (%s)\n"
 msgid "the property doesn't contain mapping '%s'"
 msgstr "egenskapen stöder inte mappningen ”%s”"
 
-#: ../clients/cli/settings.c:4221 ../clients/cli/settings.c:4377
+#: ../clients/cli/settings.c:4160
+#, c-format
+msgid "'%s' cannot be empty"
+msgstr "”%s” kan inte vara tomt"
+
+#: ../clients/cli/settings.c:4234 ../clients/cli/settings.c:4401
 #: ../libnm-core/nm-setting-wired.c:646 ../libnm-core/nm-setting-wireless.c:784
 #: ../libnm-core/nm-setting-wireless.c:796 ../libnm-util/nm-setting-wired.c:647
 #: ../libnm-util/nm-setting-wireless.c:842
@@ -5550,17 +5570,17 @@ msgstr "egenskapen stöder inte mappningen ”%s”"
 msgid "'%s' is not a valid MAC address"
 msgstr "”%s” är inte en giltig MAC-adress"
 
-#: ../clients/cli/settings.c:4227 ../clients/cli/settings.c:4383
+#: ../clients/cli/settings.c:4240 ../clients/cli/settings.c:4407
 #, c-format
 msgid "the property doesn't contain MAC address '%s'"
 msgstr "egenskapen innehåller inte MAC-adress ”%s”"
 
-#: ../clients/cli/settings.c:4246
+#: ../clients/cli/settings.c:4259
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "”%s” är ogiltig; Två eller tre strängar ska anges"
 
-#: ../clients/cli/settings.c:4260
+#: ../clients/cli/settings.c:4273
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5570,7 +5590,12 @@ msgstr ""
 "\n"
 "Exempel: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/cli/settings.c:4303
+#: ../clients/cli/settings.c:4295
+#, c-format
+msgid "'%s' string value should consist of 1 - 199 characters"
+msgstr "strängvärdet för ”%s” bör bestå av 1 - 199 tecken"
+
+#: ../clients/cli/settings.c:4327
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -5581,23 +5606,23 @@ msgstr ""
 "  option = <värde>, option = <värde>,…\n"
 "Giltiga val är: %s\n"
 
-#: ../clients/cli/settings.c:4349
+#: ../clients/cli/settings.c:4373
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "”%s” är inte en giltig kanal"
 
-#: ../clients/cli/settings.c:4355
+#: ../clients/cli/settings.c:4379
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "”%ld” är en ogiltig kanal"
 
-#: ../clients/cli/settings.c:4442 ../clients/cli/settings.c:4480
-#: ../clients/cli/settings.c:4518
+#: ../clients/cli/settings.c:4466 ../clients/cli/settings.c:4504
+#: ../clients/cli/settings.c:4542
 #, c-format
 msgid "the property doesn't contain protocol '%s'"
 msgstr "egenskapen innehåller inte protokollet ”%s”"
 
-#: ../clients/cli/settings.c:4557
+#: ../clients/cli/settings.c:4581
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -5605,23 +5630,23 @@ msgid ""
 msgstr ""
 "”%s” är inte kompatibel med %s  ”%s”, ändra nyckeln eller sätt rätt %s först."
 
-#: ../clients/cli/settings.c:4565
+#: ../clients/cli/settings.c:4589
 #, c-format
 msgid "WEP key is guessed to be of '%s'\n"
 msgstr "WEP-nyckel antas vara ”%s”\n"
 
-#: ../clients/cli/settings.c:4567
+#: ../clients/cli/settings.c:4591
 #, c-format
 msgid "WEP key index set to '%d'\n"
 msgstr "index för WEP-nyckel satt till ”%d”\n"
 
-#: ../clients/cli/settings.c:4590
+#: ../clients/cli/settings.c:4614
 #, c-format
 msgid "'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"
 msgstr "”%s” inte bland [0 (okänd), 1 (nyckel), 2 (lösenfras)]"
 
-#: ../clients/cli/settings.c:4606 ../clients/cli/settings.c:4609
-#: ../clients/cli/settings.c:4612 ../clients/cli/settings.c:4615
+#: ../clients/cli/settings.c:4630 ../clients/cli/settings.c:4633
+#: ../clients/cli/settings.c:4636 ../clients/cli/settings.c:4639
 #, c-format
 msgid ""
 "Warning: '%s' is not compatible with '%s' type, please change or delete the "
@@ -5629,7 +5654,7 @@ msgid ""
 msgstr ""
 "Varning:”%s” är inte kompatibel med ”%s”-typ, ändra eller ta bort nyckeln.\n"
 
-#: ../clients/cli/settings.c:4628
+#: ../clients/cli/settings.c:4652
 #, c-format
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
@@ -5638,36 +5663,36 @@ msgstr ""
 "Ange typ på WEP-nycklarna. Accepterade värden är: 0 eller okänd, 1 eller "
 "nyckel, 2 eller lösenfras.\n"
 
-#: ../clients/cli/settings.c:4641
+#: ../clients/cli/settings.c:4665
 #, c-format
 msgid "'%s' is not a valid PSK"
 msgstr "”%s” inte en giltig PSK"
 
-#: ../clients/cli/settings.c:4685
+#: ../clients/cli/settings.c:4709
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "”%s” är inte en giltig DCB-flagga"
 
-#: ../clients/cli/settings.c:4708
+#: ../clients/cli/settings.c:4732
 #, c-format
 msgid "'%s' is not a DCB app priority"
 msgstr "”%s” är inte en giltig DCB-programprioritet"
 
-#: ../clients/cli/settings.c:4734
+#: ../clients/cli/settings.c:4758
 msgid "must contain 8 comma-separated numbers"
 msgstr "måste innehålla 8 kommaseparerade siffror"
 
-#: ../clients/cli/settings.c:4751
+#: ../clients/cli/settings.c:4775
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "”%s” inte en siffra mellan 0 och %u (inklusive) eller %u"
 
-#: ../clients/cli/settings.c:4754
+#: ../clients/cli/settings.c:4778
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "”%s” inte en siffra mellan 0 och %u (inklusive)"
 
-#: ../clients/cli/settings.c:4776
+#: ../clients/cli/settings.c:4800
 #, c-format
 msgid ""
 "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
@@ -5677,33 +5702,33 @@ msgstr ""
 "(aktiverad)\n"
 "\n"
 
-#: ../clients/cli/settings.c:4829
+#: ../clients/cli/settings.c:4853
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "summan för bandbreddsprocenten måste vara 100%%"
 
-#: ../clients/cli/settings.c:6551
+#: ../clients/cli/settings.c:6575
 msgid "don't know how to get the property value"
 msgstr "vet inte hur egenskapsvärdet ska hämtas"
 
-#: ../clients/cli/settings.c:6604 ../clients/cli/settings.c:6644
+#: ../clients/cli/settings.c:6628 ../clients/cli/settings.c:6668
 msgid "the property can't be changed"
 msgstr "egenskapen kan inte ändras"
 
-#: ../clients/cli/settings.c:6728
+#: ../clients/cli/settings.c:6752
 msgid "(not available)"
 msgstr "(ej tillgänglig)"
 
-#: ../clients/cli/settings.c:6753
+#: ../clients/cli/settings.c:6777
 msgid "[NM property description]"
 msgstr "[NH egenskapsbeskrivning]"
 
-#: ../clients/cli/settings.c:6758
+#: ../clients/cli/settings.c:6782
 msgid "[nmcli specific description]"
 msgstr "[nmcli specifik beskrivning]"
 
 #. ----------------------------------------------------------------------------
-#: ../clients/cli/settings.c:6807
+#: ../clients/cli/settings.c:6831
 msgid "<hidden>"
 msgstr "<dold>"
 
@@ -5806,47 +5831,50 @@ msgstr "En autentiseringssession är redan igång."
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
-#: ../clients/common/nm-secret-agent-simple.c:209
-#: ../clients/common/nm-secret-agent-simple.c:300
+#: ../clients/common/nm-secret-agent-simple.c:226
+#: ../clients/common/nm-secret-agent-simple.c:331
 #: ../clients/tui/nmt-page-dsl.c:69 ../clients/tui/nmt-page-wifi.c:335
 msgid "Username"
 msgstr "Användarnamn"
 
-#: ../clients/common/nm-secret-agent-simple.c:214
-#: ../clients/common/nm-secret-agent-simple.c:251
-#: ../clients/common/nm-secret-agent-simple.c:277
-#: ../clients/common/nm-secret-agent-simple.c:310
-#: ../clients/common/nm-secret-agent-simple.c:379
-#: ../clients/common/nm-secret-agent-simple.c:392
-#: ../clients/common/nm-secret-agent-simple.c:408
-#: ../clients/tui/nmt-page-dsl.c:78 ../clients/tui/nmt-page-wifi.c:280
-#: ../clients/tui/nmt-page-wifi.c:311 ../clients/tui/nmt-page-wifi.c:344
+#: ../clients/common/nm-secret-agent-simple.c:233
+#: ../clients/common/nm-secret-agent-simple.c:276
+#: ../clients/common/nm-secret-agent-simple.c:306
+#: ../clients/common/nm-secret-agent-simple.c:345
+#: ../clients/common/nm-secret-agent-simple.c:509
+#: ../clients/common/nm-secret-agent-simple.c:524
+#: ../clients/common/nm-secret-agent-simple.c:542
+#: ../clients/common/nm-vpn-helpers.c:234
+#: ../clients/common/nm-vpn-helpers.c:235
+#: ../clients/common/nm-vpn-helpers.c:238 ../clients/tui/nmt-page-dsl.c:78
+#: ../clients/tui/nmt-page-wifi.c:280 ../clients/tui/nmt-page-wifi.c:311
+#: ../clients/tui/nmt-page-wifi.c:344
 msgid "Password"
 msgstr "Lösenord"
 
-#: ../clients/common/nm-secret-agent-simple.c:223
+#: ../clients/common/nm-secret-agent-simple.c:244
 msgid "Identity"
 msgstr "Identitet"
 
-#: ../clients/common/nm-secret-agent-simple.c:228
+#: ../clients/common/nm-secret-agent-simple.c:251
 msgid "Private key password"
 msgstr "Lösenord för privat nyckel"
 
-#: ../clients/common/nm-secret-agent-simple.c:265
+#: ../clients/common/nm-secret-agent-simple.c:292
 #: ../clients/tui/nmt-page-wifi.c:292
 msgid "Key"
 msgstr "Nyckel"
 
-#: ../clients/common/nm-secret-agent-simple.c:305
+#: ../clients/common/nm-secret-agent-simple.c:338
 #: ../clients/tui/nmt-page-dsl.c:81
 msgid "Service"
 msgstr "Tjänst"
 
-#: ../clients/common/nm-secret-agent-simple.c:339
+#: ../clients/common/nm-secret-agent-simple.c:465
 msgid "Authentication required by wireless network"
 msgstr "Autentisering krävs av trådlösa nätverket"
 
-#: ../clients/common/nm-secret-agent-simple.c:340
+#: ../clients/common/nm-secret-agent-simple.c:466
 #, c-format
 msgid ""
 "Passwords or encryption keys are required to access the wireless network "
@@ -5855,42 +5883,65 @@ msgstr ""
 "Lösenord eller krypteringsnycklar krävs för åtkomst till trådlösa nätverket "
 "”%s”."
 
-#: ../clients/common/nm-secret-agent-simple.c:348
+#: ../clients/common/nm-secret-agent-simple.c:474
 msgid "Wired 802.1X authentication"
 msgstr "Trådbunden 802.1X-autentisering"
 
-#: ../clients/common/nm-secret-agent-simple.c:351
+#: ../clients/common/nm-secret-agent-simple.c:477
 msgid "Network name"
 msgstr "Nätverksnamn"
 
-#: ../clients/common/nm-secret-agent-simple.c:358
+#: ../clients/common/nm-secret-agent-simple.c:486
 msgid "DSL authentication"
 msgstr "DSL-autentisering"
 
-#: ../clients/common/nm-secret-agent-simple.c:366
+#: ../clients/common/nm-secret-agent-simple.c:494
 msgid "PIN code required"
 msgstr "PIN-kod krävs"
 
-#: ../clients/common/nm-secret-agent-simple.c:367
+#: ../clients/common/nm-secret-agent-simple.c:495
 msgid "PIN code is needed for the mobile broadband device"
 msgstr "Det krävs PIN-kod för den mobila bredbandsenheten"
 
-#: ../clients/common/nm-secret-agent-simple.c:369
+#: ../clients/common/nm-secret-agent-simple.c:497
 msgid "PIN"
 msgstr "PIN"
 
-#: ../clients/common/nm-secret-agent-simple.c:375
-#: ../clients/common/nm-secret-agent-simple.c:388
-#: ../clients/common/nm-secret-agent-simple.c:404
+#: ../clients/common/nm-secret-agent-simple.c:505
+#: ../clients/common/nm-secret-agent-simple.c:520
+#: ../clients/common/nm-secret-agent-simple.c:538
 msgid "Mobile broadband network password"
 msgstr "Nätverkslösenord för mobilt bredband"
 
-#: ../clients/common/nm-secret-agent-simple.c:376
-#: ../clients/common/nm-secret-agent-simple.c:389
-#: ../clients/common/nm-secret-agent-simple.c:405
+#: ../clients/common/nm-secret-agent-simple.c:506
+#: ../clients/common/nm-secret-agent-simple.c:521
+#: ../clients/common/nm-secret-agent-simple.c:539
+#: ../clients/common/nm-secret-agent-simple.c:559
 #, c-format
 msgid "A password is required to connect to '%s'."
 msgstr "Ett lösenord krävs för att ansluta till ”%s”."
+
+#: ../clients/common/nm-secret-agent-simple.c:554
+msgid "VPN password required"
+msgstr "VPN-lösenord krävs"
+
+#: ../clients/common/nm-vpn-helpers.c:236
+#: ../clients/common/nm-vpn-helpers.c:239
+msgid "Group password"
+msgstr "Grupplösenord"
+
+#: ../clients/common/nm-vpn-helpers.c:241 ../clients/tui/nmt-page-ip4.c:146
+#: ../clients/tui/nmt-page-ip6.c:146
+msgid "Gateway"
+msgstr "Gateway"
+
+#: ../clients/common/nm-vpn-helpers.c:242
+msgid "Cookie"
+msgstr "Kaka"
+
+#: ../clients/common/nm-vpn-helpers.c:243
+msgid "Gateway certificate hash"
+msgstr "Certifikathash för gateway"
 
 #: ../clients/nm-online.c:96
 msgid "Connecting"
@@ -5927,7 +5978,7 @@ msgstr ""
 "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor."
 
 #: ../clients/tui/newt/nmt-newt-utils.c:180 ../clients/tui/nmt-editor.c:417
-#: ../clients/tui/nmt-password-dialog.c:174
+#: ../clients/tui/nmt-password-dialog.c:176
 #: ../clients/tui/nmt-route-editor.c:125 ../clients/tui/nmtui-hostname.c:71
 #: ../clients/tui/nmtui.c:117
 msgid "OK"
@@ -5994,7 +6045,7 @@ msgid "DSL connection %d"
 msgstr "DSL-anslutning %d"
 
 #: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1606
-#: ../libnm-glib/nm-device.c:1803 ../libnm-util/nm-connection.c:1608
+#: ../libnm-glib/nm-device.c:1803 ../libnm-util/nm-connection.c:1595
 #: ../libnm/nm-device.c:1648 ../src/settings/plugins/ifcfg-rh/reader.c:4059
 msgid "Bond"
 msgstr "Kombinera"
@@ -6005,7 +6056,7 @@ msgid "Bond connection %d"
 msgstr "Kombinationsanslutning %d"
 
 #: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1610
-#: ../libnm-glib/nm-device.c:1807 ../libnm-util/nm-connection.c:1612
+#: ../libnm-glib/nm-device.c:1807 ../libnm-util/nm-connection.c:1599
 #: ../libnm/nm-device.c:1652 ../src/settings/plugins/ifcfg-rh/reader.c:4350
 msgid "Bridge"
 msgstr "Brygga"
@@ -6016,7 +6067,7 @@ msgid "Bridge connection %d"
 msgstr "Brygganslutning %d"
 
 #: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1608
-#: ../libnm-glib/nm-device.c:1805 ../libnm-util/nm-connection.c:1610
+#: ../libnm-glib/nm-device.c:1805 ../libnm-util/nm-connection.c:1597
 #: ../libnm/nm-device.c:1650 ../src/settings/plugins/ifcfg-rh/reader.c:4165
 msgid "Team"
 msgstr "Grupp"
@@ -6108,7 +6159,7 @@ msgstr "Anslut automatiskt"
 msgid "Available to all users"
 msgstr "Tillgänglig för alla användare"
 
-#: ../clients/tui/nmt-editor.c:414 ../clients/tui/nmt-password-dialog.c:171
+#: ../clients/tui/nmt-editor.c:414 ../clients/tui/nmt-password-dialog.c:173
 #: ../clients/tui/nmt-route-editor.c:118 ../clients/tui/nmtui-edit.c:218
 #: ../clients/tui/nmtui-edit.c:526 ../clients/tui/nmtui-hostname.c:69
 msgid "Cancel"
@@ -6302,10 +6353,6 @@ msgstr "IPv4-KONFIGURATION"
 #: ../clients/tui/nmt-page-ip4.c:139 ../clients/tui/nmt-page-ip6.c:139
 msgid "Addresses"
 msgstr "Adresser"
-
-#: ../clients/tui/nmt-page-ip4.c:146 ../clients/tui/nmt-page-ip6.c:146
-msgid "Gateway"
-msgstr "Gateway"
 
 #: ../clients/tui/nmt-page-ip4.c:153 ../clients/tui/nmt-page-ip6.c:153
 msgid "DNS servers"
@@ -6576,38 +6623,61 @@ msgstr "Lägg till…"
 msgid "Remove"
 msgstr "Ta bort"
 
-#: ../clients/tui/nmtui-connect.c:92
+#: ../clients/tui/nmtui-connect.c:58
+msgid ""
+"openconnect will be run to authenticate.\n"
+"It will return to nmtui when completed."
+msgstr ""
+"openconnect kommer köras för att autentisera.\n"
+"Det kommer återgå till nmtui då det är klart."
+
+#: ../clients/tui/nmtui-connect.c:72
+#, c-format
+msgid "Error: openconnect failed: %s"
+msgstr "Fel: openconnect misslyckades: %s"
+
+#: ../clients/tui/nmtui-connect.c:79
+#, c-format
+msgid "openconnect failed with status %d"
+msgstr "openconnect misslyckades med status %d"
+
+#: ../clients/tui/nmtui-connect.c:83
+#, c-format
+msgid "openconnect failed with signal %d"
+msgstr "openconnect misslyckades med signal %d"
+
+#: ../clients/tui/nmtui-connect.c:182
 msgid "Activation failed"
 msgstr "Aktivering misslyckades"
 
-#: ../clients/tui/nmtui-connect.c:147
+#: ../clients/tui/nmtui-connect.c:237
 msgid "Connecting..."
 msgstr "Ansluter…"
 
-#: ../clients/tui/nmtui-connect.c:182 ../clients/tui/nmtui-connect.c:213
+#: ../clients/tui/nmtui-connect.c:272 ../clients/tui/nmtui-connect.c:303
 #, c-format
 msgid "Could not activate connection: %s"
 msgstr "Kunde inte aktivera anslutningen: %s"
 
-#: ../clients/tui/nmtui-connect.c:273 ../clients/tui/nmtui-connect.c:322
+#: ../clients/tui/nmtui-connect.c:363 ../clients/tui/nmtui-connect.c:412
 msgid "Activate"
 msgstr "Aktivera"
 
-#: ../clients/tui/nmtui-connect.c:275
+#: ../clients/tui/nmtui-connect.c:365
 msgid "Deactivate"
 msgstr "Inaktivera"
 
-#: ../clients/tui/nmtui-connect.c:327 ../clients/tui/nmtui-edit.c:121
+#: ../clients/tui/nmtui-connect.c:417 ../clients/tui/nmtui-edit.c:121
 #: ../clients/tui/nmtui.c:111
 msgid "Quit"
 msgstr "Avsluta"
 
-#: ../clients/tui/nmtui-connect.c:350
+#: ../clients/tui/nmtui-connect.c:440
 #, c-format
 msgid "No such connection '%s'"
 msgstr "Ingen sådan anslutning ”%s”"
 
-#: ../clients/tui/nmtui-connect.c:352
+#: ../clients/tui/nmtui-connect.c:442
 msgid "Connection is already active"
 msgstr "Anslutningen är redan aktiv"
 
@@ -8228,42 +8298,51 @@ msgctxt "connection id fallback"
 msgid "%s %d"
 msgstr "%s %d"
 
+#: ../src/main.c:240
+#, c-format
+msgid "Failed to read configuration: %s\n"
+msgstr "Misslyckades med att läsa konfiguration: %s\n"
+
 #. Logging/debugging
-#: ../src/main.c:235 ../src/nm-iface-helper.c:300
+#: ../src/main.c:255 ../src/nm-iface-helper.c:300
 msgid "Print NetworkManager version and exit"
 msgstr "Skriv ut version för Nätverkshanteraren och avsluta"
 
-#: ../src/main.c:236 ../src/nm-iface-helper.c:301
+#: ../src/main.c:256 ../src/nm-iface-helper.c:301
 msgid "Don't become a daemon"
 msgstr "Bli inte en demon"
 
-#: ../src/main.c:237 ../src/nm-iface-helper.c:302
+#: ../src/main.c:257 ../src/nm-iface-helper.c:302
 msgid "Don't become a daemon, and log to stderr"
 msgstr "Bli inte en demon, och logga till stderr"
 
-#: ../src/main.c:238 ../src/nm-iface-helper.c:303
+#: ../src/main.c:258 ../src/nm-iface-helper.c:303
 #, c-format
 msgid "Log level: one of [%s]"
 msgstr "Loggnivå: en av [%s]"
 
-#: ../src/main.c:240 ../src/nm-iface-helper.c:305
+#: ../src/main.c:260 ../src/nm-iface-helper.c:305
 #, c-format
 msgid "Log domains separated by ',': any combination of [%s]"
 msgstr "Logga domäner separerade med ”,”: vilken kombination som helst av [%s]"
 
-#: ../src/main.c:242 ../src/nm-iface-helper.c:307
+#: ../src/main.c:262 ../src/nm-iface-helper.c:307
 msgid "Make all warnings fatal"
 msgstr "Gör alla varningar till ödesdigra"
 
-#: ../src/main.c:243
+#: ../src/main.c:263
 msgid "Specify the location of a PID file"
 msgstr "Ange platsen för en PID-fil"
 
-#: ../src/main.c:244
+#: ../src/main.c:264
 msgid "State file location"
 msgstr "Plats för tillståndsfil"
 
-#: ../src/main.c:255
+#: ../src/main.c:266
+msgid "Print NetworkManager configuration and exit"
+msgstr "Skriv ut konfiguration för Nätverkshanteraren och avsluta"
+
+#: ../src/main.c:276
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -8275,62 +8354,62 @@ msgstr ""
 "att användaren anger trådlösa accesspunkter som trådlösa nätverks-\n"
 "kort i datorn ska associeras med."
 
-#: ../src/main.c:345 ../src/main-utils.c:246 ../src/nm-iface-helper.c:384
+#: ../src/main.c:369 ../src/main-utils.c:249 ../src/nm-iface-helper.c:383
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  Använd --help för att se en lista över giltiga flaggor.\n"
 
-#: ../src/main.c:350 ../src/nm-iface-helper.c:389
+#: ../src/main.c:374 ../src/nm-iface-helper.c:388
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr "Ignorerar okända loggdomän(en|er) ”%s” given via kommandoraden.\n"
 
-#: ../src/main.c:360
+#: ../src/main.c:384
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "Misslyckades med att läsa konfiguration: (%d) %s\n"
 
-#: ../src/main.c:376
+#: ../src/main.c:400
 #, c-format
 msgid "Error in configuration file: %s.\n"
 msgstr "Fel i konfigurationsfilen: %s.\n"
 
-#: ../src/main.c:381
+#: ../src/main.c:405
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
 msgstr "Ignorerar okända loggdomän(en|er) ”%s” från konfigurationsfiler.\n"
 
-#: ../src/main.c:392 ../src/nm-iface-helper.c:399
+#: ../src/main.c:416 ../src/nm-iface-helper.c:398
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Kunde inte bli demon: %s [fel %u]\n"
 
-#: ../src/main-utils.c:101
+#: ../src/main-utils.c:104
 #, c-format
 msgid "Opening %s failed: %s\n"
 msgstr "Öppnandet av %s misslyckades: %s\n"
 
-#: ../src/main-utils.c:107
+#: ../src/main-utils.c:110
 #, c-format
 msgid "Writing to %s failed: %s\n"
 msgstr "Skrivning till %s misslyckades: %s\n"
 
-#: ../src/main-utils.c:112
+#: ../src/main-utils.c:115
 #, c-format
 msgid "Closing %s failed: %s\n"
 msgstr "Stängning av %s misslyckades: %s\n"
 
-#: ../src/main-utils.c:122
+#: ../src/main-utils.c:125
 #, c-format
 msgid "Cannot create '%s': %s"
 msgstr "Kan inte skapa ”%s”: %s"
 
-#: ../src/main-utils.c:174
+#: ../src/main-utils.c:177
 #, c-format
 msgid "%s is already running (pid %ld)\n"
 msgstr "%s är redan igång (pid %ld)\n"
 
-#: ../src/main-utils.c:184
+#: ../src/main-utils.c:187
 #, c-format
 msgid "You must be root to run %s!\n"
 msgstr "Du måste vara root för att köra %s!\n"
@@ -8366,7 +8445,7 @@ msgstr ""
 msgid "The nameservers listed below may not be recognized."
 msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 
-#: ../src/devices/adsl/nm-device-adsl.c:129
+#: ../src/devices/adsl/nm-device-adsl.c:137
 msgid "ADSL connection"
 msgstr "ADSL-anslutning"
 
@@ -8413,7 +8492,7 @@ msgstr "Okänd/ohanterad Bluetooth-anslutningstyp"
 #: ../src/devices/bluetooth/nm-device-bt.c:337
 #: ../src/devices/nm-device-ethernet.c:1446
 #: ../src/devices/nm-device-infiniband.c:204
-#: ../src/devices/wifi/nm-device-wifi.c:1112
+#: ../src/devices/wifi/nm-device-wifi.c:1113
 #: ../src/devices/wimax/nm-device-wimax.c:454
 msgid "connection does not match device"
 msgstr "anslutning matchar inte enhet"
@@ -8443,7 +8522,7 @@ msgstr "Trådbunden anslutning %d"
 msgid "InfiniBand connection"
 msgstr "InfiniBand-anslutning"
 
-#: ../src/devices/nm-device-vlan.c:339
+#: ../src/devices/nm-device-vlan.c:343
 msgid "VLAN connection"
 msgstr "VLAN-anslutning"
 
@@ -8455,7 +8534,7 @@ msgstr "Gruppanslutning"
 msgid "Mesh"
 msgstr "Mesh"
 
-#: ../src/devices/wifi/nm-device-wifi.c:1080
+#: ../src/devices/wifi/nm-device-wifi.c:1081
 msgid "WPA Ad-Hoc disabled due to kernel bugs"
 msgstr "WPA Ad-Hoc inaktiverad på grund av kärnfel"
 
@@ -8734,17 +8813,17 @@ msgstr ""
 "nm-iface-helper är en liten fristående process som hanterar ett enstaka "
 "nätverksgränssnitt."
 
-#: ../src/nm-iface-helper.c:365
+#: ../src/nm-iface-helper.c:364
 #, c-format
 msgid "An interface name and UUID are required\n"
 msgstr "Kräver ett gränssnittsnamn och UUID\n"
 
-#: ../src/nm-iface-helper.c:371
+#: ../src/nm-iface-helper.c:370
 #, c-format
 msgid "Failed to find interface index for %s (%s)\n"
 msgstr "Misslyckades med att hitta gränssnittsindex för %s (%s)\n"
 
-#: ../src/nm-iface-helper.c:431
+#: ../src/nm-iface-helper.c:430
 #, c-format
 msgid "(%s): Invalid IID %s\n"
 msgstr "(%s): Ogiltig IID %s\n"
