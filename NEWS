@@ -1,4 +1,27 @@
 ===============================================
+NetworkManager-1.0.10
+Overview of changes since NetworkManager-1.0.8
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Added support for handling VPN secrets to nmtui and nmcli agent.
+
+* Fixed a regression that caused NetworkManager to ignore external deletion of
+  a device with master.
+
+* Fixed glitches with older versions of glib (prior to 2.36.0).
+
+* Fixed build with most recent versions of libsoup.
+
+* Fixed busy retry loop on non-transient errors from wpa_supplicant.
+
+* Improvements to testing infrastructure.
+
+* Updates to German, Galician, Occitan, Turkish, Ukrainian, Brazilian, Swedish,
+  Polish and Italian translations.
+
+===============================================
 NetworkManager-1.0.8
 Overview of changes since NetworkManager-1.0.6
 ===============================================
