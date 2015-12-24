@@ -43,7 +43,7 @@
           out in a .ini-style format in <filename>/etc/NetworkManager/system-connections/</filename>.
           This plugin is always enabled and will automatically be used to store
           any connections that are not supported by any other active plugin.
-          For security, it will ignore files that are readable or writeable by any user
+          For security, it will ignore files that are readable or writable by any user
           or group other than 'root' since private keys and passphrases may be stored
           in plaintext inside the file.
         </para>

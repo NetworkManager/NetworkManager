@@ -1032,7 +1032,7 @@ removes the specified IP address from (static) profile ABC.
 .SH NOTES
 \fInmcli\fP accepts abbreviations, as long as they are a unique prefix in the set
 of possible options. As new options get added, these abbreviations are not guaranteed
-to stay unique. For scripting and long term compatiblity it is therefore strongly
+to stay unique. For scripting and long term compatibility it is therefore strongly
 advised to spell out the full option names.
 
 .SH BUGS

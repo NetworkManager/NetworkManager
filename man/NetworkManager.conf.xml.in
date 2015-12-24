@@ -592,7 +592,7 @@ ipv6.ip6-privacy=1
 	    The stored connection file may contain passwords and
 	    private keys, so it will be made readable only to root,
 	    and the plugin will ignore files that are readable or
-	    writeable by any user or group other than root.
+	    writable by any user or group other than root.
 	  </para>
 	  <para>
 	    This plugin is always active, and will automatically be
@@ -715,7 +715,7 @@ ipv6.ip6-privacy=1
         </varlistentry>
         <varlistentry>
           <term>SPEC[,;]SPEC</term>
-          <listitem><para>Multiple specs can be concatenated with comman or semicolon. The order does not matter as
+          <listitem><para>Multiple specs can be concatenated with commas or semicolons. The order does not matter as
              matches are either positive (inclusive) or negative, with negative matches having higher priority.</para>
             <para>Backslash is supported to escape the separators ';' and ',', and to express special
             characters such as newline ('\n'), tabulator ('\t'), whitespace ('\s') and backslash ('\\'). The globbing of
