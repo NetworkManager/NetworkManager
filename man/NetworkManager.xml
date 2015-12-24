@@ -309,7 +309,7 @@
       <varlistentry>
 	<term><option>--pid-file</option> | <option>-p</option></term>
 	<listitem><para>Specify location of a PID file.  The PID file
-	is used for storing PID of the running proccess and prevents
+	is used for storing PID of the running process and prevents
 	running multiple instances.
 	</para></listitem>
       </varlistentry>
@@ -363,7 +363,7 @@
       <varlistentry>
         <term><option>--print-config</option></term>
         <listitem><para>
-          Print the NetworkMangager configuration to stdout and exit.
+          Print the NetworkManager configuration to stdout and exit.
         </para></listitem>
       </varlistentry>
     </variablelist>

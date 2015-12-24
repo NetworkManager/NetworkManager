@@ -323,7 +323,7 @@ The default sorting order is equivalent to "--order active:name:path".
 .sp
 <order spec> := category:category:...
 .br
-categogy := [+-]active | [+-]name | [+-]type | [+-]path
+category := [+-]active | [+-]name | [+-]type | [+-]path
 .br
 \fI+\fP or no prefix means sorting in ascending order (alphabetically or in numbers).
 .br
@@ -1267,7 +1267,7 @@ exports NetworkManager VPN profile corp-vpnc as standard Cisco (vpnc) configurat
 .SH NOTES
 \fInmcli\fP accepts abbreviations, as long as they are a unique prefix in the set
 of possible options. As new options get added, these abbreviations are not guaranteed
-to stay unique. For scripting and long term compatiblity it is therefore strongly
+to stay unique. For scripting and long term compatibility it is therefore strongly
 advised to spell out the full option names.
 
 .SH BUGS

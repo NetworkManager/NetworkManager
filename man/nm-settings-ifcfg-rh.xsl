@@ -228,7 +228,7 @@ DEVICETYPE=TeamPort
               <listitem><para>
                 NetworkManager has introduced some new variable, not present in initscripts,
                 to be able to store data for its new features. The variables are marked
-                as extensions in the tables bellows.
+                as extensions in the tables below.
               </para></listitem>
             </varlistentry>
             <varlistentry>
@@ -284,7 +284,7 @@ DEVICETYPE=TeamPort
             <emphasis>flags</emphasis> property that describes how to handle that secret.
             In the <emphasis>fcfg-rh</emphasis> plugin variables for secret flags have a
             <emphasis>_FLAGS</emphasis> suffix. The variables contain one or more of the
-            folowing values (space separated). Missing (or empty) *_FLAGS variable means
+            following values (space separated). Missing (or empty) *_FLAGS variable means
             that the password is owned by NetworkManager.
           </para>
           <itemizedlist>
@@ -353,7 +353,7 @@ DEVICETYPE=TeamPort
 
       <xsl:if test="@name = 'dcb'">
         <para>
-          All DCB related configuration is a NetworkManager extention. DCB=yes must be
+          All DCB related configuration is a NetworkManager extension. DCB=yes must be
           used explicitly to enable DCB so that the rest of the DCB_* variables can apply.
         </para>
       </xsl:if>
