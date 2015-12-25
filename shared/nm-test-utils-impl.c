@@ -59,6 +59,26 @@ name_exists (GDBusConnection *c, const char *name)
 	return exists;
 }
 
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+
+static DBusGProxy *
+_libdbus_create_proxy_test (DBusGConnection *bus)
+{
+	DBusGProxy *proxy;
+
+	proxy = dbus_g_proxy_new_for_name (bus,
+	                                   NM_DBUS_SERVICE,
+	                                   NM_DBUS_PATH,
+	                                   "org.freedesktop.NetworkManager.LibnmGlibTest");
+	g_assert (proxy);
+
+	dbus_g_proxy_set_default_timeout (proxy, G_MAXINT);
+
+	return proxy;
+}
+
+#endif
+
 NMTstcServiceInfo *
 nmtstc_service_init (void)
 {
@@ -251,6 +271,145 @@ nmtstc_service_add_wired_device (NMTstcServiceInfo *sinfo, NMClient *client,
 }
 
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
+
+void
+nmtstc_service_add_connection (NMTstcServiceInfo *sinfo,
+                               NMConnection *connection,
+                               gboolean verify_connection,
+                               char **out_path)
+{
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+	gs_unref_hashtable GHashTable *new_settings = NULL;
+	gboolean success;
+	gs_free_error GError *error = NULL;
+	gs_free char *path = NULL;
+	gs_unref_object DBusGProxy *proxy = NULL;
+
+	g_assert (sinfo);
+	g_assert (NM_IS_CONNECTION (connection));
+
+	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+	proxy = _libdbus_create_proxy_test (sinfo->libdbus.bus);
+
+	success = dbus_g_proxy_call (proxy,
+	                             "AddConnection",
+	                             &error,
+	                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
+	                             G_TYPE_BOOLEAN, verify_connection,
+	                             G_TYPE_INVALID,
+	                             DBUS_TYPE_G_OBJECT_PATH, &path,
+	                             G_TYPE_INVALID);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (path && *path);
+
+	if (out_path)
+		*out_path = g_strdup (path);
+#else
+	nmtstc_service_add_connection_variant (sinfo,
+	                                       nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+	                                       verify_connection,
+	                                       out_path);
+#endif
+}
+
+void
+nmtstc_service_add_connection_variant (NMTstcServiceInfo *sinfo,
+                                       GVariant *connection,
+                                       gboolean verify_connection,
+                                       char **out_path)
+{
+	GVariant *result;
+	GError *error = NULL;
+
+	g_assert (sinfo);
+	g_assert (G_IS_DBUS_PROXY (sinfo->proxy));
+	g_assert (g_variant_is_of_type (connection, G_VARIANT_TYPE ("a{sa{sv}}")));
+
+	result = g_dbus_proxy_call_sync (sinfo->proxy,
+	                                 "AddConnection",
+	                                 g_variant_new ("(vb)", connection, verify_connection),
+	                                 G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                                 3000,
+	                                 NULL,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (g_variant_is_of_type (result, G_VARIANT_TYPE ("(o)")));
+	if (out_path)
+		g_variant_get (result, "(o)", out_path);
+	g_variant_unref (result);
+}
+
+void
+nmtstc_service_update_connection (NMTstcServiceInfo *sinfo,
+                                  const char *path,
+                                  NMConnection *connection,
+                                  gboolean verify_connection)
+{
+	if (!path)
+		path = nm_connection_get_path (connection);
+	g_assert (path);
+
+#if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
+	{
+		gs_unref_hashtable GHashTable *new_settings = NULL;
+		gboolean success;
+		gs_free_error GError *error = NULL;
+		gs_unref_object DBusGProxy *proxy = NULL;
+
+		g_assert (sinfo);
+		g_assert (NM_IS_CONNECTION (connection));
+
+		new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+		proxy = _libdbus_create_proxy_test (sinfo->libdbus.bus);
+
+		success = dbus_g_proxy_call (proxy,
+		                             "UpdateConnection",
+		                             &error,
+		                             DBUS_TYPE_G_OBJECT_PATH, path,
+		                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
+		                             G_TYPE_BOOLEAN, verify_connection,
+		                             G_TYPE_INVALID,
+		                             G_TYPE_INVALID);
+		g_assert_no_error (error);
+		g_assert (success);
+	}
+#else
+	nmtstc_service_update_connection_variant (sinfo,
+	                                          path,
+	                                          nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+	                                          verify_connection);
+#endif
+}
+
+void
+nmtstc_service_update_connection_variant (NMTstcServiceInfo *sinfo,
+                                          const char *path,
+                                          GVariant *connection,
+                                          gboolean verify_connection)
+{
+	GVariant *result;
+	GError *error = NULL;
+
+	g_assert (sinfo);
+	g_assert (G_IS_DBUS_PROXY (sinfo->proxy));
+	g_assert (g_variant_is_of_type (connection, G_VARIANT_TYPE ("a{sa{sv}}")));
+	g_assert (path && path[0] == '/');
+
+	result = g_dbus_proxy_call_sync (sinfo->proxy,
+	                                 "UpdateConnection",
+	                                 g_variant_new ("(ovb)", path, connection, verify_connection),
+	                                 G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                                 3000,
+	                                 NULL,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (g_variant_is_of_type (result, G_VARIANT_TYPE ("()")));
+	g_variant_unref (result);
+}
 
 /*****************************************************************************/
 

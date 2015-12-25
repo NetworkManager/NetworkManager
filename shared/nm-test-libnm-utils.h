@@ -79,3 +79,23 @@ NMRemoteSettings *nmtstc_nm_remote_settings_new (void);
 
 #endif /* NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY */
 
+void nmtstc_service_add_connection (NMTstcServiceInfo *sinfo,
+                                    NMConnection *connection,
+                                    gboolean verify_connection,
+                                    char **out_path);
+
+void nmtstc_service_add_connection_variant (NMTstcServiceInfo *sinfo,
+                                            GVariant *connection,
+                                            gboolean verify_connection,
+                                            char **out_path);
+
+void nmtstc_service_update_connection (NMTstcServiceInfo *sinfo,
+                                       const char *path,
+                                       NMConnection *connection,
+                                       gboolean verify_connection);
+
+void nmtstc_service_update_connection_variant (NMTstcServiceInfo *sinfo,
+                                               const char *path,
+                                               GVariant *connection,
+                                               gboolean verify_connection);
+
