@@ -1,11 +1,12 @@
 if ENABLE_TESTS
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
 	$(GLIB_CFLAGS) \
@@ -23,8 +24,8 @@ TESTS = test-nm-client test-remote-settings-client
 ####### NMClient and non-settings tests #######
 
 test_nm_client_SOURCES = \
-	common.c \
-	common.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-nm-client.c
 
 test_nm_client_LDADD = \
@@ -36,8 +37,8 @@ test_nm_client_LDADD = \
 ####### remote settings client test #######
 
 test_remote_settings_client_SOURCES = \
-	common.c \
-	common.h \
+	$(top_builddir)/shared/nm-test-utils-impl.c \
+	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-remote-settings-client.c
 
 test_remote_settings_client_LDADD = \

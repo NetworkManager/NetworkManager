@@ -3,8 +3,8 @@ include $(GLIB_MAKEFILE)
 SUBDIRS = . tests
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
 	-I$(top_builddir)/introspection \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
@@ -26,7 +26,7 @@ lib_LTLIBRARIES = libnm.la
 libnmincludedir = $(includedir)/libnm
 
 libnminclude_hfiles =			\
-	$(top_builddir)/include/nm-version-macros.h \
+	$(top_builddir)/shared/nm-version-macros.h \
 	NetworkManager.h		\
 	nm-access-point.h		\
 	nm-active-connection.h		\

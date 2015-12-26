@@ -496,6 +496,9 @@ updated_get_settings_cb (DBusGProxy *proxy,
 		priv->visible = FALSE;
 		g_signal_emit (self, signals[VISIBLE], 0, FALSE);
 	} else {
+		gs_unref_object NMConnection *self_alive = NULL;
+
+		self_alive = g_object_ref (self);
 		replace_settings (self, new_settings);
 		g_hash_table_destroy (new_settings);
 
@@ -618,6 +621,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
 	GHashTable *hash;
+	gs_unref_object NMConnection *self_alive = NULL;
 
 	if (!dbus_g_proxy_call (priv->proxy, "GetSettings", error,
 	                        G_TYPE_INVALID,
@@ -625,6 +629,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                        G_TYPE_INVALID))
 		return FALSE;
 	priv->visible = TRUE;
+	self_alive = g_object_ref (initable);
 	replace_settings (NM_REMOTE_CONNECTION (initable), hash);
 	g_hash_table_destroy (hash);
 
@@ -688,6 +693,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->connection);
 	GHashTable *settings;
 	GError *error = NULL;
+	gs_unref_object NMConnection *self_alive = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
@@ -698,6 +704,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	}
 
 	priv->visible = TRUE;
+	self_alive = g_object_ref (init_data->connection);
 	replace_settings (init_data->connection, settings);
 	g_hash_table_destroy (settings);
 

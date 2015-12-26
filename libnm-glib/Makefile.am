@@ -3,12 +3,12 @@ include $(GLIB_MAKEFILE)
 SUBDIRS = . tests
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-DG_LOG_DOMAIN=\""libnm-glib"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS)

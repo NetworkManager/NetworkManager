@@ -27,47 +27,18 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <NetworkManager.h>
 #include "nm-default.h"
 #include "nm-client.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wimax.h"
+#include "nm-connection.h"
+#include "nm-setting.h"
 
-#include "nm-test-utils.h"
-
-#include "common.h"
+#include "nm-test-libnm-utils.h"
 
 static GMainLoop *loop = NULL;
-static NMTestServiceInfo *sinfo;
-
-/*******************************************************************/
-
-static NMClient *
-test_client_new (void)
-{
-	NMClient *client;
-	DBusGConnection *bus;
-	GError *error = NULL;
-	gboolean success;
-
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-	g_assert_no_error (error);
-
-	client = g_object_new (NM_TYPE_CLIENT,
-	                       NM_OBJECT_DBUS_CONNECTION, bus,
-	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
-	                       NULL);
-	g_assert (client != NULL);
-
-	dbus_g_connection_unref (bus);
-
-	success = g_initable_init (G_INITABLE (client), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
-
-	return client;
-}
+static NMTstcServiceInfo *sinfo;
 
 /*******************************************************************/
 
@@ -184,8 +155,8 @@ test_device_added (void)
 	NMDevice *device;
 	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
 
-	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	sinfo = nmtstc_service_init ();
+	client = nmtstc_nm_client_new ();
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices == NULL);
@@ -224,7 +195,7 @@ test_device_added (void)
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -341,8 +312,8 @@ test_wifi_ap_added_removed (void)
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	sinfo = nmtstc_service_init ();
+	client = nmtstc_nm_client_new ();
 
 	/*************************************/
 	/* Add the wifi device */
@@ -447,7 +418,7 @@ test_wifi_ap_added_removed (void)
 	g_free (expected_path);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -564,8 +535,8 @@ test_wimax_nsp_added_removed (void)
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	sinfo = nmtstc_service_init ();
+	client = nmtstc_nm_client_new ();
 
 	/*************************************/
 	/* Add the wimax device */
@@ -670,7 +641,7 @@ test_wimax_nsp_added_removed (void)
 	g_free (expected_path);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 /*******************************************************************/
@@ -749,8 +720,8 @@ test_devices_array (void)
 	GError *error = NULL;
 	GVariant *ret;
 
-	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	sinfo = nmtstc_service_init ();
+	client = nmtstc_nm_client_new ();
 
 	/*************************************/
 	/* Add some devices */
@@ -833,7 +804,7 @@ test_devices_array (void)
 	g_free (paths[2]);
 
 	g_object_unref (client);
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
 static void
@@ -855,7 +826,7 @@ test_client_manager_running (void)
 	int running_changed = 0;
 	GError *error = NULL;
 
-	client1 = test_client_new ();
+	client1 = nmtstc_nm_client_new ();
 
 	g_assert (!nm_client_get_manager_running (client1));
 	g_assert_cmpstr (nm_client_get_version (client1), ==, NULL);
@@ -871,8 +842,8 @@ test_client_manager_running (void)
 	g_clear_error (&error);
 
 	/* Now start the test service. */
-	sinfo = nm_test_service_init ();
-	client2 = test_client_new ();
+	sinfo = nmtstc_service_init ();
+	client2 = nmtstc_nm_client_new ();
 
 	/* client2 should know that NM is running, but the previously-created
 	 * client1 hasn't gotten the news yet.
@@ -889,7 +860,7 @@ test_client_manager_running (void)
 	g_source_remove (quit_id);
 
 	/* And kill it */
-	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 
 	g_assert (nm_client_get_manager_running (client1));
 
@@ -901,6 +872,263 @@ test_client_manager_running (void)
 
 	g_object_unref (client1);
 	g_object_unref (client2);
+}
+
+/*******************************************************************/
+
+static GPtrArray *
+_slist_to_array (GPtrArray **connections, GSList *list)
+{
+	GPtrArray *array;
+	const GSList *iter;
+
+	if (!*connections)
+		*connections = array = g_ptr_array_new ();
+	else {
+		array = *connections;
+		g_ptr_array_set_size (array, 0);
+	}
+	for (iter = list; iter; iter = iter->next)
+		g_ptr_array_add (array, iter->data);
+	g_slist_free (list);
+	return array;
+}
+
+static gboolean
+_test_connection_invalid_find_connections (gpointer element, gpointer needle, gpointer user_data)
+{
+	NMRemoteConnection *con = NM_REMOTE_CONNECTION (element);
+	const char *path = needle;
+
+	g_assert (NM_IS_REMOTE_CONNECTION (con));
+	g_assert (path && *path);
+
+	return strcmp (path, nm_connection_get_path ((NMConnection *) con)) == 0;
+}
+
+#define ASSERT_IDX(i) \
+	g_assert_cmpint (idx[i], >=, 0); \
+	g_assert (path##i && *path##i); \
+	g_assert (NM_IS_REMOTE_CONNECTION (connections->pdata[idx[i]])); \
+	g_assert_cmpstr (nm_connection_get_path (connections->pdata[idx[i]]), ==, path##i);
+
+static void
+test_connection_invalid (void)
+{
+	NMTSTC_SERVICE_INFO_SETUP (my_sinfo)
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	gs_unref_object NMRemoteSettings *settings = NULL;
+	gs_unref_ptrarray GPtrArray *connections = NULL;
+	gs_free char *path0 = NULL;
+	gs_free char *path1 = NULL;
+	gs_free char *path2 = NULL;
+	gs_free char *uuid2 = NULL;
+	gsize n_found;
+	gssize idx[3];
+
+	/**************************************************************************
+	 * Add two connection before starting libnm. One valid, one invalid.
+	 *************************************************************************/
+
+	connection = nmtst_create_minimal_connection ("test-connection-invalid-0", NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+	nmtst_connection_normalize (connection);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_UUID, nmtst_uuid_generate (),
+	              NULL);
+	nmtstc_service_add_connection (my_sinfo,
+	                               connection,
+	                               TRUE,
+	                               &path0);
+
+	nm_connection_remove_setting (connection, NM_TYPE_SETTING_WIRED);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "test-connection-invalid-1",
+	              NM_SETTING_CONNECTION_TYPE, "invalid-type-1",
+	              NM_SETTING_CONNECTION_UUID, nmtst_uuid_generate (),
+	              NULL);
+	nmtstc_service_add_connection (my_sinfo,
+	                               connection,
+	                               FALSE,
+	                               &path1);
+
+	nmtst_main_loop_run (loop, 100);
+
+	settings = nmtstc_nm_remote_settings_new ();
+
+	g_test_expect_message ("libnm-glib", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection*");
+
+	nmtst_main_loop_run (loop, 100);
+
+	g_test_assert_expected_messages ();
+
+	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
+
+	g_assert_cmpint (connections->len, ==, 2);
+	n_found = nmtst_find_all_indexes (connections->pdata,
+	                                  connections->len,
+	                                  (gpointer *) ((const char *[]) { path0, path1 }),
+	                                  2,
+	                                  _test_connection_invalid_find_connections,
+	                                  NULL,
+	                                  idx);
+	g_assert_cmpint (n_found, ==, 2);
+	ASSERT_IDX (0);
+	ASSERT_IDX (1);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
+	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
+
+	/**************************************************************************
+	 * After having the client up and running, add another invalid connection
+	 *************************************************************************/
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "test-connection-invalid-2",
+	              NM_SETTING_CONNECTION_TYPE, "invalid-type-2",
+	              NM_SETTING_CONNECTION_UUID, (uuid2 = g_strdup (nmtst_uuid_generate ())),
+	              NULL);
+	nmtstc_service_add_connection (my_sinfo,
+	                               connection,
+	                               FALSE,
+	                               &path2);
+
+	g_test_expect_message ("libnm-glib", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection*");
+
+	nmtst_main_loop_run (loop, 100);
+
+	g_test_assert_expected_messages ();
+
+	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
+
+	g_assert_cmpint (connections->len, ==, 3);
+	n_found = nmtst_find_all_indexes (connections->pdata,
+	                                  connections->len,
+	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
+	                                  3,
+	                                  _test_connection_invalid_find_connections,
+	                                  NULL,
+	                                  idx);
+	g_assert_cmpint (n_found, ==, 3);
+	ASSERT_IDX (0);
+	ASSERT_IDX (1);
+	ASSERT_IDX (2);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
+	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
+	nmtst_assert_connection_unnormalizable (connections->pdata[idx[2]], 0, 0);
+
+	/**************************************************************************
+	 * Modify the invalid connection. Connection disappears
+	 *************************************************************************/
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "test-connection-invalid-2x",
+	              NULL);
+	nmtstc_service_update_connection (my_sinfo,
+	                                  path2,
+	                                  connection,
+	                                  FALSE);
+
+	g_test_expect_message ("libnm-glib", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection*");
+
+	nmtst_main_loop_run (loop, 100);
+
+	g_test_assert_expected_messages ();
+
+	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
+
+	g_assert_cmpint (connections->len, ==, 2);
+	n_found = nmtst_find_all_indexes (connections->pdata,
+	                                  connections->len,
+	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
+	                                  3,
+	                                  _test_connection_invalid_find_connections,
+	                                  NULL,
+	                                  idx);
+	g_assert_cmpint (n_found, ==, 2);
+	ASSERT_IDX (0);
+	ASSERT_IDX (1);
+	g_assert_cmpint (idx[2], ==, -1);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
+	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
+
+	/**************************************************************************
+	 * Modify the invalid connection again. Note that the connection stays
+	 * invisible (although it exists, and is valid).
+	 *************************************************************************/
+
+	g_clear_object (&connection);
+	connection = nmtst_create_minimal_connection ("test-connection-invalid-2", NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+	nmtst_connection_normalize (connection);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "test-connection-invalid-2z",
+	              NM_SETTING_CONNECTION_TYPE, "802-3-ethernet",
+	              NM_SETTING_CONNECTION_UUID, uuid2,
+	              NULL);
+
+	nmtstc_service_update_connection (my_sinfo,
+	                                  path2,
+	                                  connection,
+	                                  FALSE);
+
+	nmtst_main_loop_run (loop, 100);
+
+	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
+
+	g_assert_cmpint (connections->len, ==, 2);
+	n_found = nmtst_find_all_indexes (connections->pdata,
+	                                  connections->len,
+	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
+	                                  3,
+	                                  _test_connection_invalid_find_connections,
+	                                  NULL,
+	                                  idx);
+	g_assert_cmpint (n_found, ==, 2);
+	ASSERT_IDX (0);
+	ASSERT_IDX (1);
+	g_assert_cmpint (idx[2], ==, -1);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
+	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
+
+
+	/**************************************************************************
+	 * Modify the invalid connection and make it valid
+	 *************************************************************************/
+
+	g_clear_object (&connection);
+	connection = nmtst_create_minimal_connection ("test-connection-invalid-1", NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+	nmtst_connection_normalize (connection);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "test-connection-invalid-1x",
+	              NM_SETTING_CONNECTION_TYPE, "802-3-ethernet",
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connections->pdata[idx[1]]),
+	              NULL);
+
+	nmtstc_service_update_connection (my_sinfo,
+	                                  path1,
+	                                  connection,
+	                                  FALSE);
+
+	nmtst_main_loop_run (loop, 100);
+
+	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
+
+	g_assert_cmpint (connections->len, ==, 2);
+	n_found = nmtst_find_all_indexes (connections->pdata,
+	                                  connections->len,
+	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
+	                                  3,
+	                                  _test_connection_invalid_find_connections,
+	                                  NULL,
+	                                  idx);
+	g_assert_cmpint (n_found, ==, 2);
+	ASSERT_IDX (0);
+	ASSERT_IDX (1);
+	g_assert_cmpint (idx[2], ==, -1);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[1]]);
+	g_assert_cmpstr ("test-connection-invalid-1x", ==, nm_connection_get_id (connections->pdata[idx[1]]));
+
+#undef ASSERT_IDX
 }
 
 /*******************************************************************/
@@ -919,6 +1147,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm-glib/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
 	g_test_add_func ("/libnm-glib/devices-array", test_devices_array);
 	g_test_add_func ("/libnm-glib/client-manager-running", test_client_manager_running);
+	g_test_add_func ("/libnm/connection/invalid", test_connection_invalid);
 
 	return g_test_run ();
 }

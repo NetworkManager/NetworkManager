@@ -4,11 +4,11 @@ SUBDIRS = . tests
 
 AM_CPPFLAGS = \
 	-I${top_srcdir} \
-	-I${top_srcdir}/include \
-	-I$(top_builddir)/include \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
 	-DG_LOG_DOMAIN=\""libnm-util"\" \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
@@ -25,7 +25,7 @@ endif
 lib_LTLIBRARIES=libnm-util.la
 
 libnm_util_include_HEADERS = 		\
-	$(top_builddir)/include/nm-version-macros.h \
+	$(top_builddir)/shared/nm-version-macros.h \
 	NetworkManager.h		\
 	NetworkManagerVPN.h		\
 	nm-connection.h			\

@@ -24,13 +24,9 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <NetworkManager.h>
 #include <nm-secret-agent-old.h>
 
-#include "nm-default.h"
-#include "common.h"
-
-#include "nm-test-utils.h"
+#include "nm-test-libnm-utils.h"
 
 /*******************************************************************/
 
@@ -183,7 +179,7 @@ test_secret_agent_new (void)
 /*******************************************************************/
 
 typedef struct {
-	NMTestServiceInfo *sinfo;
+	NMTstcServiceInfo *sinfo;
 	NMClient *client;
 
 	NMSecretAgentOld *agent;
@@ -250,7 +246,7 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	NMSetting *s_wsec;
 	GError *error = NULL;
 
-	sadata->sinfo = nm_test_service_init ();
+	sadata->sinfo = nmtstc_service_init ();
 	sadata->client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -262,8 +258,8 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	counter++;
 
 	/* Create the device */
-	sadata->device = nm_test_service_add_device (sadata->sinfo, sadata->client,
-	                                             "AddWifiDevice", sadata->ifname);
+	sadata->device = nmtstc_service_add_device (sadata->sinfo, sadata->client,
+	                                            "AddWifiDevice", sadata->ifname);
 
 	/* Create the connection */
 	connection = nmtst_create_minimal_connection (sadata->con_id, NULL, NM_SETTING_WIRELESS_SETTING_NAME, &s_con);
@@ -336,7 +332,7 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 	g_object_unref (sadata->connection);
 	g_object_unref (sadata->client);
 
-	nm_test_service_cleanup (sadata->sinfo);
+	nmtstc_service_cleanup (sadata->sinfo);
 
 	g_source_remove (sadata->timeout_id);
 	g_main_loop_unref (sadata->loop);
@@ -583,12 +579,12 @@ registered_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 static void
 test_secret_agent_auto_register (void)
 {
-	NMTestServiceInfo *sinfo;
+	NMTstcServiceInfo *sinfo;
 	NMSecretAgentOld *agent;
 	GMainLoop *loop;
 	GError *error = NULL;
 
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	loop = g_main_loop_new (NULL, FALSE);
 
 	agent = test_secret_agent_new ();
@@ -604,17 +600,17 @@ test_secret_agent_auto_register (void)
 	g_assert (nm_secret_agent_old_get_registered (agent));
 
 	/* Shut down test service */
-	nm_test_service_cleanup (sinfo);
+	nmtstc_service_cleanup (sinfo);
 	g_main_loop_run (loop);
 	g_assert (!nm_secret_agent_old_get_registered (agent));
 
 	/* Restart test service */
-	sinfo = nm_test_service_init ();
+	sinfo = nmtstc_service_init ();
 	g_main_loop_run (loop);
 	g_assert (nm_secret_agent_old_get_registered (agent));
 
 	/* Shut down test service again */
-	nm_test_service_cleanup (sinfo);
+	nmtstc_service_cleanup (sinfo);
 	g_main_loop_run (loop);
 	g_assert (!nm_secret_agent_old_get_registered (agent));
 

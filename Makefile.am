@@ -2,7 +2,7 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS = \
 	. \
-	include \
+	shared \
 	introspection \
 	libnm-core \
 	libnm \
@@ -67,6 +67,6 @@ pkgconfig_DATA = NetworkManager.pc
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
 
 cscope:
-	cscope -b -q -R -Iinclude -ssrc -slibnm-core -slibnm -slibnm-glib -slibnm-util -sclients;
+	cscope -b -q -R -sshared -ssrc -slibnm-core -slibnm -slibnm-glib -slibnm-util -sclients;
 
 .PHONY: cscope

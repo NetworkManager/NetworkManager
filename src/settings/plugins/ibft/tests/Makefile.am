@@ -5,8 +5,8 @@ if ENABLE_TESTS
 AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src/ \

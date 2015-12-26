@@ -733,6 +733,45 @@ nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize
 	return dst;
 }
 
+/*****************************************************************************/
+
+inline static gboolean
+_nmtst_main_loop_run_timeout (gpointer user_data)
+{
+	GMainLoop **p_loop = user_data;
+
+	g_assert (p_loop);
+	g_assert (*p_loop);
+
+	g_main_loop_quit (*p_loop);
+	*p_loop = NULL;
+
+	return G_SOURCE_REMOVE;
+}
+
+inline static gboolean
+nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
+{
+	GSource *source = NULL;
+	guint id = 0;
+	GMainLoop *loopx = loop;
+
+	if (timeout_ms > 0) {
+		source = g_timeout_source_new (timeout_ms);
+		g_source_set_callback (source, _nmtst_main_loop_run_timeout, &loopx, NULL);
+		id = g_source_attach (source, g_main_loop_get_context (loop));
+		g_assert (id);
+		g_source_unref (source);
+	}
+
+	g_main_loop_run (loop);
+
+	/* if the timeout was reached, return FALSE. */
+	return loopx != NULL;
+}
+
+/*****************************************************************************/
+
 inline static const char *
 nmtst_get_sudo_cmd (void)
 {
@@ -768,6 +807,49 @@ nmtst_reexec_sudo (void)
 	g_error (">> exec %s failed: %d - %s", __nmtst_internal.sudo_cmd, errsv, strerror (errsv));
 }
 
+/*****************************************************************************/
+
+inline static gsize
+nmtst_find_all_indexes (gpointer *elements,
+                        gsize n_elements,
+                        gpointer *needles,
+                        gsize n_needles,
+                        gboolean (*equal_fcn) (gpointer element, gpointer needle, gpointer user_data),
+                        gpointer user_data,
+                        gssize *out_idx)
+{
+	gsize i, j, k;
+	gsize found = 0;
+
+	for (i = 0; i < n_needles; i++) {
+		gssize idx = -1;
+
+		for (j = 0; j < n_elements; j++) {
+
+			/* no duplicates */
+			for (k = 0; k < i; k++) {
+				if (out_idx[k] == j)
+					goto next;
+			}
+
+			if (equal_fcn (elements[j], needles[i], user_data)) {
+				idx = j;
+				break;
+			}
+next:
+			;
+		}
+
+		out_idx[i] = idx;
+		if (idx >= 0)
+			found++;
+	}
+
+	return found;
+}
+
+/*****************************************************************************/
+
 #define __define_nmtst_static(NUM,SIZE) \
 inline static const char * \
 nmtst_static_##SIZE##_##NUM (const char *str) \
@@ -786,6 +868,17 @@ __define_nmtst_static(02, 1024)
 __define_nmtst_static(03, 1024)
 #undef __define_nmtst_static
 
+inline static const char *
+nmtst_uuid_generate (void)
+{
+	static char u[37];
+	gs_free char *m = NULL;
+
+	m = nm_utils_uuid_generate ();
+	g_assert (m && strlen (m) == sizeof (u) - 1);
+	memcpy (u, m, sizeof (u));
+	return u;
+}
 
 #define NMTST_SWAP(x,y) \
 	G_STMT_START { \
@@ -1168,7 +1261,7 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
-#if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)
+#if (defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)) || (defined(NM_CONNECTION_H))
 
 inline static NMConnection *
 nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)
@@ -1186,7 +1279,13 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 		uuid = uuid_free = nm_utils_uuid_generate ();
 
 	if (type) {
-		GType type_g = nm_setting_lookup_type (type);
+		GType type_g;
+
+#if defined(__NM_SIMPLE_CONNECTION_H__)
+		type_g = nm_setting_lookup_type (type);
+#else
+		type_g = nm_connection_lookup_setting_type (type);
+#endif
 
 		g_assert (type_g != G_TYPE_INVALID);
 
@@ -1194,7 +1293,12 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 		g_assert (NM_IS_SETTING (s_base));
 	}
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
 	con = nm_simple_connection_new ();
+#else
+	con = nm_connection_new ();
+#endif
+
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
 	g_object_set (s_con,
@@ -1265,7 +1369,11 @@ _nmtst_connection_duplicate_and_normalize (NMConnection *connection, ...)
 
 	g_assert (NM_IS_CONNECTION (connection));
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
 	connection = nm_simple_connection_new_clone (connection);
+#else
+	connection = nm_connection_duplicate (connection);
+#endif
 
 	va_start (args, connection);
 	was_modified = _nmtst_connection_normalize_v (connection, args);
@@ -1347,7 +1455,11 @@ nmtst_assert_connection_verifies_without_normalization (NMConnection *con)
 
 	g_assert (NM_IS_CONNECTION (con));
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
 	clone = nm_simple_connection_new_clone (con);
+#else
+	clone = nm_connection_duplicate (con);
+#endif
 
 	success = nm_connection_verify (con, &error);
 	g_assert_no_error (error);

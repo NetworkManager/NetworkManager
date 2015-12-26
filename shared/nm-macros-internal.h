@@ -84,11 +84,11 @@
 
 #if defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define NM_PRAGMA_WARNING_DISABLE(warning) \
-        _Pragma("GCC diagnostic push"); \
+        _Pragma("GCC diagnostic push") \
         _Pragma(_NM_PRAGMA_WARNING_DO(warning))
 #elif defined (__clang__)
 #define NM_PRAGMA_WARNING_DISABLE(warning) \
-        _Pragma("clang diagnostic push"); \
+        _Pragma("clang diagnostic push") \
         _Pragma(_NM_PRAGMA_WARNING_DO(warning))
 #else
 #define NM_PRAGMA_WARNING_DISABLE(warning)
