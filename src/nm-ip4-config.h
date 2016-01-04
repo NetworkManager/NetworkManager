@@ -31,8 +31,13 @@
 #define NM_IS_IP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP4_CONFIG))
 #define NM_IP4_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
 
+struct _NMIP4ConfigPrivate;
+
 struct _NMIP4Config {
 	NMExportedObject parent;
+
+	/* private */
+	struct _NMIP4ConfigPrivate *priv;
 };
 
 typedef struct {
