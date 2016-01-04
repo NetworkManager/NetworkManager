@@ -1031,10 +1031,7 @@ dcb_carrier_cleanup (NMDevice *device)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 
-	if (priv->dcb_carrier_id) {
-		g_signal_handler_disconnect (device, priv->dcb_carrier_id);
-		priv->dcb_carrier_id = 0;
-	}
+	nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
 }
 
 static void dcb_state (NMDevice *device, gboolean timeout);

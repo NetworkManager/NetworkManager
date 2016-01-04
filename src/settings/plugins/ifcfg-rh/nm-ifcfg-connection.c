@@ -277,10 +277,7 @@ path_watch_stop (NMIfcfgConnection *self)
 
 	ih = _get_inotify_helper (priv);
 
-	if (priv->ih_event_id) {
-		g_signal_handler_disconnect (ih, priv->ih_event_id);
-		priv->ih_event_id = 0;
-	}
+	nm_clear_g_signal_handler (ih, &priv->ih_event_id);
 
 	if (priv->file_wd >= 0) {
 		nm_inotify_helper_remove_watch (ih, priv->file_wd);
@@ -516,11 +513,7 @@ dispose (GObject *object)
 
 	path_watch_stop (NM_IFCFG_CONNECTION (object));
 
-	if (priv->devtimeout_link_changed_handler) {
-		g_signal_handler_disconnect (nm_platform_get (),
-		                             priv->devtimeout_link_changed_handler);
-		priv->devtimeout_link_changed_handler = 0;
-	}
+	nm_clear_g_signal_handler (nm_platform_get(), &priv->devtimeout_link_changed_handler);
 	nm_clear_g_source (&priv->devtimeout_timeout_id);
 
 	g_clear_object (&priv->inotify_helper);

@@ -211,14 +211,8 @@ dispose (GObject *object)
 {
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (object);
 
-	if (priv->new_conn_id) {
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->new_conn_id);
-		priv->new_conn_id = 0;
-	}
-	if (priv->dis_conn_id) {
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->dis_conn_id);
-		priv->dis_conn_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->new_conn_id);
+	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->dis_conn_id);
 	priv->dbus_mgr = NULL;
 
 	g_clear_pointer (&priv->signal_handlers, g_hash_table_destroy);

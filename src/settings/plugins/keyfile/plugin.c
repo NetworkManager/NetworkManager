@@ -589,10 +589,7 @@ dispose (GObject *object)
 	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (object);
 
 	if (priv->monitor) {
-		if (priv->monitor_id) {
-			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
-			priv->monitor_id = 0;
-		}
+		nm_clear_g_signal_handler (priv->monitor, &priv->monitor_id);
 
 		g_file_monitor_cancel (priv->monitor);
 		g_clear_object (&priv->monitor);
