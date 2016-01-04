@@ -298,7 +298,8 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 
 				route.ifindex = ifindex;
 				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
-				route.network = nm_utils_ip4_address_clear_host_address (addr->address, addr->plen);
+				route.network = nm_utils_ip4_address_clear_host_address (addr->peer_address ? : addr->address,
+				                                                         addr->plen);
 				route.plen = addr->plen;
 				route.pref_src = addr->address;
 				route.metric = default_route_metric;
