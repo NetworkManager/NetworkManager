@@ -22,12 +22,17 @@
 #include "nm-sd-adapt.h"
 
 #include <errno.h>
+#include <fnmatch.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "alloc-util.h"
 #include "escape.h"
+#if 0 /* NM_IGNORED */
+#include "extract-word.h"
+#endif /* NM_IGNORED */
 #include "string-util.h"
 #include "strv.h"
 #include "util.h"

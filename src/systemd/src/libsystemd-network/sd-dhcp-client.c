@@ -556,7 +556,7 @@ static int client_append_fqdn_option(DHCPMessage *message, size_t optlen, size_t
         buffer[1] = 0;                 /* RCODE1 (deprecated) */
         buffer[2] = 0;                 /* RCODE2 (deprecated) */
 
-        r = dns_name_to_wire_format(fqdn, buffer + 3, sizeof(buffer) - 3);
+        r = dns_name_to_wire_format(fqdn, buffer + 3, sizeof(buffer) - 3, false);
         if (r > 0)
                 r = dhcp_option_append(message, optlen, optoffset, 0,
                                        DHCP_OPTION_FQDN, 3 + r, buffer);
@@ -606,7 +606,7 @@ static int client_send_discover(sd_dhcp_client *client) {
                    their messages MUST NOT also send the Host Name option". Just send
                    one of the two depending on the hostname type.
                 */
-                if (dns_name_single_label(client->hostname)) {
+                if (dns_name_is_single_label(client->hostname)) {
                         /* it is unclear from RFC 2131 if client should send hostname in
                            DHCPDISCOVER but dhclient does and so we do as well
                         */
@@ -721,7 +721,7 @@ static int client_send_request(sd_dhcp_client *client) {
         }
 
         if (client->hostname) {
-                if (dns_name_single_label(client->hostname))
+                if (dns_name_is_single_label(client->hostname))
                         r = dhcp_option_append(&request->dhcp, optlen, &optoffset, 0,
                                                DHCP_OPTION_HOST_NAME,
                                                strlen(client->hostname), client->hostname);
@@ -1069,7 +1069,7 @@ static int client_timeout_t1(sd_event_source *s, uint64_t usec,
 
 static int client_handle_offer(sd_dhcp_client *client, DHCPMessage *offer,
                                size_t len) {
-        _cleanup_dhcp_lease_unref_ sd_dhcp_lease *lease = NULL;
+        _cleanup_(sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
         int r;
 
         r = dhcp_lease_new(&lease);
@@ -1084,7 +1084,7 @@ static int client_handle_offer(sd_dhcp_client *client, DHCPMessage *offer,
                         return r;
         }
 
-        r = dhcp_option_parse(offer, len, dhcp_lease_parse_options, lease);
+        r = dhcp_option_parse(offer, len, dhcp_lease_parse_options, lease, NULL);
         if (r != DHCP_OFFER) {
                 log_dhcp_client(client, "received message was not an OFFER, ignoring");
                 return -ENOMSG;
@@ -1123,7 +1123,7 @@ static int client_handle_forcerenew(sd_dhcp_client *client, DHCPMessage *force,
                                     size_t len) {
         int r;
 
-        r = dhcp_option_parse(force, len, NULL, NULL);
+        r = dhcp_option_parse(force, len, NULL, NULL, NULL);
         if (r != DHCP_FORCERENEW)
                 return -ENOMSG;
 
@@ -1134,7 +1134,8 @@ static int client_handle_forcerenew(sd_dhcp_client *client, DHCPMessage *force,
 
 static int client_handle_ack(sd_dhcp_client *client, DHCPMessage *ack,
                              size_t len) {
-        _cleanup_dhcp_lease_unref_ sd_dhcp_lease *lease = NULL;
+        _cleanup_(sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
+        _cleanup_free_ char *error_message = NULL;
         int r;
 
         r = dhcp_lease_new(&lease);
@@ -1149,9 +1150,9 @@ static int client_handle_ack(sd_dhcp_client *client, DHCPMessage *ack,
                         return r;
         }
 
-        r = dhcp_option_parse(ack, len, dhcp_lease_parse_options, lease);
+        r = dhcp_option_parse(ack, len, dhcp_lease_parse_options, lease, &error_message);
         if (r == DHCP_NAK) {
-                log_dhcp_client(client, "NAK");
+                log_dhcp_client(client, "NAK: %s", strna(error_message));
                 return -EADDRNOTAVAIL;
         }
 
@@ -1515,9 +1516,8 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
 
         r = ioctl(fd, FIONREAD, &buflen);
         if (r < 0)
-                return r;
-
-        if (buflen < 0)
+                return -errno;
+        else if (buflen < 0)
                 /* this can't be right */
                 return -EIO;
 
@@ -1527,26 +1527,28 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
 
         len = read(fd, message, buflen);
         if (len < 0) {
-                log_dhcp_client(client, "could not receive message from UDP "
-                                "socket: %m");
-                return 0;
+                if (errno == EAGAIN || errno == EINTR)
+                        return 0;
+
+                log_dhcp_client(client, "Could not receive message from UDP socket: %m");
+                return -errno;
         } else if ((size_t)len < sizeof(DHCPMessage)) {
-                log_dhcp_client(client, "too small to be a DHCP message: ignoring");
+                log_dhcp_client(client, "Too small to be a DHCP message: ignoring");
                 return 0;
         }
 
         if (be32toh(message->magic) != DHCP_MAGIC_COOKIE) {
-                log_dhcp_client(client, "not a DHCP message: ignoring");
+                log_dhcp_client(client, "Not a DHCP message: ignoring");
                 return 0;
         }
 
         if (message->op != BOOTREPLY) {
-                log_dhcp_client(client, "not a BOOTREPLY message: ignoring");
+                log_dhcp_client(client, "Not a BOOTREPLY message: ignoring");
                 return 0;
         }
 
         if (message->htype != client->arp_type) {
-                log_dhcp_client(client, "packet type does not match client type");
+                log_dhcp_client(client, "Packet type does not match client type");
                 return 0;
         }
 
@@ -1560,13 +1562,12 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
         }
 
         if (message->hlen != expected_hlen) {
-                log_dhcp_client(client, "unexpected packet hlen %d", message->hlen);
+                log_dhcp_client(client, "Unexpected packet hlen %d", message->hlen);
                 return 0;
         }
 
         if (memcmp(&message->chaddr[0], expected_chaddr, ETH_ALEN)) {
-                log_dhcp_client(client, "received chaddr does not match "
-                                "expected: ignoring");
+                log_dhcp_client(client, "Received chaddr does not match expected: ignoring");
                 return 0;
         }
 
@@ -1574,8 +1575,7 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
             be32toh(message->xid) != client->xid) {
                 /* in BOUND state, we may receive FORCERENEW with xid set by server,
                    so ignore the xid in this case */
-                log_dhcp_client(client, "received xid (%u) does not match "
-                                "expected (%u): ignoring",
+                log_dhcp_client(client, "Received xid (%u) does not match expected (%u): ignoring",
                                 be32toh(message->xid), client->xid);
                 return 0;
         }
@@ -1604,9 +1604,8 @@ static int client_receive_message_raw(sd_event_source *s, int fd,
 
         r = ioctl(fd, FIONREAD, &buflen);
         if (r < 0)
-                return r;
-
-        if (buflen < 0)
+                return -errno;
+        else if (buflen < 0)
                 /* this can't be right */
                 return -EIO;
 
@@ -1619,9 +1618,12 @@ static int client_receive_message_raw(sd_event_source *s, int fd,
 
         len = recvmsg(fd, &msg, 0);
         if (len < 0) {
-                log_dhcp_client(client, "could not receive message from raw "
-                                "socket: %m");
-                return 0;
+                if (errno == EAGAIN || errno == EINTR)
+                        return 0;
+
+                log_dhcp_client(client, "Could not receive message from raw socket: %m");
+
+                return -errno;
         } else if ((size_t)len < sizeof(DHCPPacket))
                 return 0;
 
@@ -1751,7 +1753,7 @@ sd_dhcp_client *sd_dhcp_client_unref(sd_dhcp_client *client) {
 }
 
 int sd_dhcp_client_new(sd_dhcp_client **ret) {
-        _cleanup_dhcp_client_unref_ sd_dhcp_client *client = NULL;
+        _cleanup_(sd_dhcp_client_unrefp) sd_dhcp_client *client = NULL;
 
         assert_return(ret, -EINVAL);
 

@@ -24,6 +24,8 @@
 #include "nm-sd-adapt.h"
 
 #include <netinet/in.h>
+#include <stddef.h>
+#include <sys/socket.h>
 
 #include "macro.h"
 #include "util.h"
@@ -35,6 +37,7 @@ union in_addr_union {
 
 int in_addr_is_null(int family, const union in_addr_union *u);
 int in_addr_is_link_local(int family, const union in_addr_union *u);
+int in_addr_is_localhost(int family, const union in_addr_union *u);
 int in_addr_equal(int family, const union in_addr_union *a, const union in_addr_union *b);
 int in_addr_prefix_intersect(int family, const union in_addr_union *a, unsigned aprefixlen, const union in_addr_union *b, unsigned bprefixlen);
 int in_addr_prefix_next(int family, union in_addr_union *u, unsigned prefixlen);

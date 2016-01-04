@@ -46,15 +46,14 @@
 #include "nm-sd-adapt.h"
 
 #include <errno.h>
-#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "alloc-util.h"
 #include "hexdecoct.h"
+#include "macro.h"
 #include "utf8.h"
-#include "util.h"
 
 bool unichar_is_valid(uint32_t ch) {
 

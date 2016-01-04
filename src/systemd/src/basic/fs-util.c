@@ -21,6 +21,16 @@
 
 #include "nm-sd-adapt.h"
 
+#include <dirent.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "alloc-util.h"
 #if 0 /* NM_IGNORED */
 #include "dirent-util.h"
@@ -28,13 +38,17 @@
 #include "fd-util.h"
 #include "fileio.h"
 #include "fs-util.h"
+#include "log.h"
+#include "macro.h"
 #if 0 /* NM_IGNORED */
+#include "missing.h"
 #include "mkdir.h"
 #endif /* NM_IGNORED */
 #include "parse-util.h"
 #include "path-util.h"
 #include "string-util.h"
 #include "strv.h"
+#include "time-util.h"
 #if 0 /* NM_IGNORED */
 #include "user-util.h"
 #endif /* NM_IGNORED */

@@ -19,16 +19,18 @@
 
 #include "nm-sd-adapt.h"
 
+#include <elf.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <sys/time.h>
 #include <linux/random.h>
 #include <stdint.h>
+
 #ifdef HAVE_SYS_AUXV_H
 #include <sys/auxv.h>
 #endif
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
 
 #include "fd-util.h"
 #include "io-util.h"
@@ -37,7 +39,6 @@
 #endif
 #include "random-util.h"
 #include "time-util.h"
-#include "util.h"
 
 int dev_urandom(void *p, size_t n) {
 #if 0 /* NM_IGNORED */

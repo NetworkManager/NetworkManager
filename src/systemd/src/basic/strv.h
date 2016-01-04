@@ -26,10 +26,13 @@
 #include <fnmatch.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 
+#include "alloc-util.h"
 #if 0 /* NM_IGNORED */
 #include "extract-word.h"
 #endif /* NM_IGNORED */
+#include "macro.h"
 #include "util.h"
 
 char *strv_find(char **l, const char *name) _pure_;

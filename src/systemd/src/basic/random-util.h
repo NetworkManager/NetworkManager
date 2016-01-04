@@ -21,6 +21,7 @@
 
 #include "nm-sd-adapt.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 int dev_urandom(void *p, size_t n);

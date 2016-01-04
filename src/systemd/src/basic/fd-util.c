@@ -21,13 +21,20 @@
 
 #include "nm-sd-adapt.h"
 
-#if 0 /* NM_IGNORED */
-#include "dirent-util.h"
-#endif /* NM_IGNORED */
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/resource.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "fd-util.h"
+#include "macro.h"
 #if 0 /* NM_IGNORED */
-#include "parse-util.h"
+#include "missing.h"
 #endif /* NM_IGNORED */
+#include "parse-util.h"
+#include "path-util.h"
 #include "socket-util.h"
 #include "util.h"
 

@@ -21,13 +21,21 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
+#include <inttypes.h>
+#include <locale.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <xlocale.h>
+
 #include "alloc-util.h"
 #if 0 /* NM_IGNORED */
 #include "extract-word.h"
 #endif /* NM_IGNORED */
+#include "macro.h"
 #include "parse-util.h"
 #include "string-util.h"
-#include "util.h"
 
 int parse_boolean(const char *v) {
         assert(v);

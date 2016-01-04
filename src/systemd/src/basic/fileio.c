@@ -21,6 +21,15 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "alloc-util.h"
@@ -30,6 +39,8 @@
 #include "fileio.h"
 #include "fs-util.h"
 #include "hexdecoct.h"
+#include "log.h"
+#include "macro.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "random-util.h"
@@ -38,9 +49,9 @@
 #endif /* NM_IGNORED */
 #include "string-util.h"
 #include "strv.h"
+#include "time-util.h"
 #include "umask-util.h"
 #include "utf8.h"
-#include "util.h"
 
 int write_string_stream(FILE *f, const char *line, bool enforce_newline) {
 

@@ -22,6 +22,9 @@
 
 #include "nm-sd-adapt.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "macro.h"
 #include "mempool.h"
 #include "util.h"

@@ -3,6 +3,8 @@
 #include "nm-sd-adapt.h"
 
 #include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 struct siphash {

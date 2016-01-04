@@ -359,17 +359,15 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
 #endif
 #endif
 
-#if 0 /* NM_IGNORED */
 /* Define C11 noreturn without <stdnoreturn.h> and even on older gcc
  * compiler versions */
 #ifndef noreturn
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #define noreturn _Noreturn
 #else
 #define noreturn __attribute__((noreturn))
 #endif
 #endif
-#endif /* NM_IGNORED */
 
 #define DEFINE_TRIVIAL_CLEANUP_FUNC(type, func)                 \
         static inline void func##p(type *p) {                   \

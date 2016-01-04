@@ -23,7 +23,9 @@
 
 #include "nm-sd-adapt.h"
 
+#include <alloca.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 
 #include "macro.h"

@@ -21,22 +21,28 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/timerfd.h>
 #include <sys/timex.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "alloc-util.h"
 #include "fd-util.h"
 #include "fileio.h"
-#if 0 /* NM_IGNORED */
 #include "fs-util.h"
+#include "log.h"
+#include "macro.h"
 #include "parse-util.h"
-#endif /* NM_IGNORED */
 #include "path-util.h"
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
-#include "util.h"
 
 usec_t now(clockid_t clock_id) {
         struct timespec ts;

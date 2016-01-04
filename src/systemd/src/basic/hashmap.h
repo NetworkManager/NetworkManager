@@ -24,7 +24,9 @@
 
 #include "nm-sd-adapt.h"
 
+#include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "macro.h"
 #include "siphash24.h"

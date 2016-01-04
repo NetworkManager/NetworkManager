@@ -60,7 +60,6 @@ noinst_LTLIBRARIES = \
 SYSTEMD_NM_CFLAGS_PATHS = \
 	-I$(top_srcdir)/src/systemd/src/systemd \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
-	-I$(top_srcdir)/src/systemd/src/libsystemd/sd-event \
 	-I$(top_srcdir)/src/systemd/src/basic \
 	-I$(top_srcdir)/src/systemd
 
@@ -143,7 +142,6 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd-network/lldp-tlv.h \
 	systemd/src/libsystemd-network/lldp-port.c \
 	systemd/src/libsystemd-network/lldp-port.h \
-	systemd/src/libsystemd-network/lldp-util.h \
 	systemd/src/libsystemd-network/lldp-internal.h \
 	systemd/src/libsystemd-network/lldp-internal.c \
 	systemd/src/libsystemd-network/network-internal.c \
@@ -156,7 +154,6 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd-network/sd-ipv4ll.c \
 	systemd/src/libsystemd-network/sd-lldp.c \
 	systemd/src/libsystemd/sd-id128/sd-id128.c \
-	systemd/src/libsystemd/sd-event/event-util.h \
 	systemd/src/shared/dns-domain.c \
 	systemd/src/shared/dns-domain.h \
 	systemd/src/systemd/_sd-common.h \
@@ -166,7 +163,6 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/systemd/sd-dhcp6-lease.h \
 	systemd/src/systemd/sd-lldp.h \
 	systemd/src/systemd/sd-event.h \
-	systemd/src/systemd/sd-icmp6-nd.h \
 	systemd/src/systemd/sd-id128.h \
 	systemd/src/systemd/sd-ipv4acd.h \
 	systemd/src/systemd/sd-ipv4ll.h \

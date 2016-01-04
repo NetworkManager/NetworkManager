@@ -21,10 +21,17 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "alloc-util.h"
 #if 0 /* NM_IGNORED */
 #include "gunicode.h"
 #endif /* NM_IGNORED */
+#include "macro.h"
 #include "string-util.h"
 #include "utf8.h"
 #include "util.h"

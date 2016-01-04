@@ -24,6 +24,9 @@
 #include "nm-sd-adapt.h"
 
 #include <inttypes.h>
+#include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "macro.h"

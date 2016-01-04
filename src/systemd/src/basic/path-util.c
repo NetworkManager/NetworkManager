@@ -22,11 +22,11 @@
 #include "nm-sd-adapt.h"
 
 #include <errno.h>
-#include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/statvfs.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 /* When we include libgen.h because we need dirname() we immediately
@@ -37,23 +37,21 @@
 
 #include "alloc-util.h"
 #if 0 /* NM_IGNORED */
-#include "fd-util.h"
-#include "fileio.h"
+#include "extract-word.h"
+#endif /* NM_IGNORED */
 #include "fs-util.h"
 #include "log.h"
 #include "macro.h"
+#if 0 /* NM_IGNORED */
 #include "missing.h"
-#include "parse-util.h"
 #endif /* NM_IGNORED */
 #include "path-util.h"
 #if 0 /* NM_IGNORED */
 #include "stat-util.h"
 #endif /* NM_IGNORED */
 #include "string-util.h"
-#if 0 /* NM_IGNORED */
 #include "strv.h"
-#endif /* NM_IGNORED */
-#include "util.h"
+#include "time-util.h"
 
 #if 0 /* NM_IGNORED */
 bool path_is_absolute(const char *p) {

@@ -24,6 +24,7 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>

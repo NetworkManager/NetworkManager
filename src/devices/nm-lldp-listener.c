@@ -451,7 +451,7 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
 err:
 	sd_lldp_detach_event (priv->lldp_handle);
 err_free:
-	sd_lldp_free (priv->lldp_handle);
+	sd_lldp_unref (priv->lldp_handle);
 	priv->lldp_handle = NULL;
 	return FALSE;
 }
@@ -468,7 +468,7 @@ nm_lldp_listener_stop (NMLldpListener *self)
 	if (priv->lldp_handle) {
 		sd_lldp_stop (priv->lldp_handle);
 		sd_lldp_detach_event (priv->lldp_handle);
-		sd_lldp_free (priv->lldp_handle);
+		sd_lldp_unref (priv->lldp_handle);
 		g_clear_pointer (&priv->iface, g_free);
 		priv->lldp_handle = NULL;
 

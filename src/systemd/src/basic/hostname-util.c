@@ -21,14 +21,19 @@
 
 #include "nm-sd-adapt.h"
 
-#include <ctype.h>
+#include <bits/local_lim.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 
 #include "fd-util.h"
 #include "fileio.h"
 #include "hostname-util.h"
+#include "macro.h"
 #include "string-util.h"
-#include "util.h"
 
 bool hostname_is_set(void) {
         struct utsname u;
