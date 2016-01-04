@@ -2057,6 +2057,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	g_clear_pointer (&priv->initial_hw_addr, g_free);
 
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
+	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
+		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
 
 	priv->real = FALSE;
