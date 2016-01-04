@@ -433,6 +433,18 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
+                            const char *specific_object)
+{
+	if (!nm_device_is_real (device))
+		return TRUE;
+
+	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_available (device, connection, flags, specific_object);
+}
+
+static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
@@ -691,6 +703,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->notify_new_device_added = notify_new_device_added;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 	parent_class->update_connection = update_connection;
 
