@@ -222,10 +222,7 @@ remove_timeout_handler (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
-	if (priv->ppp_timeout_handler) {
-		g_source_remove (priv->ppp_timeout_handler);
-		priv->ppp_timeout_handler = 0;
-	}
+	nm_clear_g_source (&priv->ppp_timeout_handler);
 }
 
 static void
@@ -1125,10 +1122,7 @@ _ppp_cleanup (NMPPPManager *manager)
 
 	cancel_get_secrets (manager);
 
-	if (priv->monitor_id) {
-		g_source_remove (priv->monitor_id);
-		priv->monitor_id = 0;
-	}
+	nm_clear_g_source (&priv->monitor_id);
 
 	if (priv->monitor_fd >= 0) {
 		/* Get the stats one last time */
@@ -1137,15 +1131,8 @@ _ppp_cleanup (NMPPPManager *manager)
 		priv->monitor_fd = -1;
 	}
 
-	if (priv->ppp_timeout_handler) {
-		g_source_remove (priv->ppp_timeout_handler);
-		priv->ppp_timeout_handler = 0;
-	}
-
-	if (priv->ppp_watch_id) {
-		g_source_remove (priv->ppp_watch_id);
-		priv->ppp_watch_id = 0;
-	}
+	nm_clear_g_source (&priv->ppp_timeout_handler);
+	nm_clear_g_source (&priv->ppp_watch_id);
 }
 
 /***********************************************************/

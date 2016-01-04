@@ -194,10 +194,7 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 	gchar *name_owner;
 
 	/* Quit poking, if any */
-	if (self->priv->mm_launch_id) {
-		g_source_remove (self->priv->mm_launch_id);
-		self->priv->mm_launch_id = 0;
-	}
+	nm_clear_g_source (&self->priv->mm_launch_id);
 
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (modem_manager));
 	if (!name_owner) {
@@ -435,10 +432,7 @@ dispose (GObject *object)
 {
 	NMModemManager *self = NM_MODEM_MANAGER (object);
 
-	if (self->priv->mm_launch_id) {
-		g_source_remove (self->priv->mm_launch_id);
-		self->priv->mm_launch_id = 0;
-	}
+	nm_clear_g_source (&self->priv->mm_launch_id);
 
 	modem_manager_clear_signals (self);
 	g_clear_object (&self->priv->modem_manager);

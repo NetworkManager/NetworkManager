@@ -457,15 +457,8 @@ remove_supplicant_timeouts (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	if (priv->supplicant.con_timeout_id) {
-		g_source_remove (priv->supplicant.con_timeout_id);
-		priv->supplicant.con_timeout_id = 0;
-	}
-
-	if (priv->supplicant_timeout_id) {
-		g_source_remove (priv->supplicant_timeout_id);
-		priv->supplicant_timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->supplicant.con_timeout_id);
+	nm_clear_g_source (&priv->supplicant_timeout_id);
 }
 
 static void
@@ -1030,10 +1023,7 @@ dcb_timeout_cleanup (NMDevice *device)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 
-	if (priv->dcb_timeout_id) {
-		g_source_remove (priv->dcb_timeout_id);
-		priv->dcb_timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->dcb_timeout_id);
 }
 
 static void
@@ -1393,10 +1383,7 @@ deactivate (NMDevice *device)
 	/* Clear wired secrets tries when deactivating */
 	clear_secrets_tries (device);
 
-	if (priv->pppoe_wait_id) {
-		g_source_remove (priv->pppoe_wait_id);
-		priv->pppoe_wait_id = 0;
-	}
+	nm_clear_g_source (&priv->pppoe_wait_id);
 
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
@@ -1635,10 +1622,7 @@ dispose (GObject *object)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	if (priv->pppoe_wait_id) {
-		g_source_remove (priv->pppoe_wait_id);
-		priv->pppoe_wait_id = 0;
-	}
+	nm_clear_g_source (&priv->pppoe_wait_id);
 
 	dcb_timeout_cleanup (NM_DEVICE (self));
 	dcb_carrier_cleanup (NM_DEVICE (self));

@@ -355,10 +355,7 @@ dispose (GObject *object)
 	NMLNDPRDisc *rdisc = NM_LNDP_RDISC (object);
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
-	if (priv->event_id) {
-		g_source_remove (priv->event_id);
-		priv->event_id = 0;
-	}
+	nm_clear_g_source (&priv->event_id);
 	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
 
 	if (priv->ndp) {

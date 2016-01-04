@@ -500,10 +500,7 @@ deactivate (NMDevice *device)
 	int ifindex = nm_device_get_ifindex (device);
 	NM80211Mode old_mode = priv->mode;
 
-	if (priv->periodic_source_id) {
-		g_source_remove (priv->periodic_source_id);
-		priv->periodic_source_id = 0;
-	}
+	nm_clear_g_source (&priv->periodic_source_id);
 
 	cleanup_association_attempt (self, TRUE);
 
@@ -1428,10 +1425,7 @@ cancel_pending_scan (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->pending_scan_id) {
-		g_source_remove (priv->pending_scan_id);
-		priv->pending_scan_id = 0;
-	}
+	nm_clear_g_source (&priv->pending_scan_id);
 }
 
 static void
@@ -1646,15 +1640,8 @@ remove_supplicant_timeouts (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->sup_timeout_id) {
-		g_source_remove (priv->sup_timeout_id);
-		priv->sup_timeout_id = 0;
-	}
-
-	if (priv->link_timeout_id) {
-		g_source_remove (priv->link_timeout_id);
-		priv->link_timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->sup_timeout_id);
+	nm_clear_g_source (&priv->link_timeout_id);
 }
 
 static void
@@ -2811,10 +2798,7 @@ device_state_changed (NMDevice *device,
 		if (priv->sup_iface)
 			supplicant_interface_release (self);
 
-		if (priv->periodic_source_id) {
-			g_source_remove (priv->periodic_source_id);
-			priv->periodic_source_id = 0;
-		}
+		nm_clear_g_source (&priv->periodic_source_id);
 
 		cleanup_association_attempt (self, TRUE);
 		cleanup_supplicant_failures (self);
@@ -2947,10 +2931,7 @@ dispose (GObject *object)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->periodic_source_id) {
-		g_source_remove (priv->periodic_source_id);
-		priv->periodic_source_id = 0;
-	}
+	nm_clear_g_source (&priv->periodic_source_id);
 
 	cleanup_association_attempt (self, TRUE);
 	supplicant_interface_release (self);

@@ -521,10 +521,7 @@ dispose (GObject *object)
 		                             priv->devtimeout_link_changed_handler);
 		priv->devtimeout_link_changed_handler = 0;
 	}
-	if (priv->devtimeout_timeout_id) {
-		g_source_remove (priv->devtimeout_timeout_id);
-		priv->devtimeout_timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->devtimeout_timeout_id);
 
 	g_clear_object (&priv->inotify_helper);
 

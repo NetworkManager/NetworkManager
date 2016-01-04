@@ -1748,10 +1748,7 @@ dispose (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-	if (priv->notify_id) {
-		g_source_remove (priv->notify_id);
-		priv->notify_id = 0;
-	}
+	nm_clear_g_source (&priv->notify_id);
 
 	g_slist_free_full (priv->notify_items, (GDestroyNotify) notify_item_free);
 	priv->notify_items = NULL;

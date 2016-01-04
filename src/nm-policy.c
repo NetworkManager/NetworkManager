@@ -1911,10 +1911,7 @@ dispose (GObject *object)
 	connections = nm_manager_get_active_connections (priv->manager);
 	g_assert (connections == NULL);
 
-	if (priv->reset_retries_id) {
-		g_source_remove (priv->reset_retries_id);
-		priv->reset_retries_id = 0;
-	}
+	nm_clear_g_source (&priv->reset_retries_id);
 
 	g_clear_pointer (&priv->orig_hostname, g_free);
 	g_clear_pointer (&priv->cur_hostname, g_free);

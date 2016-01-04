@@ -5149,10 +5149,7 @@ linklocal6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->linklocal6_timeout_id) {
-		g_source_remove (priv->linklocal6_timeout_id);
-		priv->linklocal6_timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->linklocal6_timeout_id);
 }
 
 static void
@@ -6471,10 +6468,7 @@ arp_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->arp_round2_id) {
-		g_source_remove (priv->arp_round2_id);
-		priv->arp_round2_id = 0;
-	}
+	nm_clear_g_source (&priv->arp_round2_id);
 }
 
 static void
@@ -10216,15 +10210,8 @@ dispose (GObject *object)
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	if (priv->recheck_assume_id) {
-		g_source_remove (priv->recheck_assume_id);
-		priv->recheck_assume_id = 0;
-	}
-
-	if (priv->recheck_available.call_id) {
-		g_source_remove (priv->recheck_available.call_id);
-		priv->recheck_available.call_id = 0;
-	}
+	nm_clear_g_source (&priv->recheck_assume_id);
+	nm_clear_g_source (&priv->recheck_available.call_id);
 
 	link_disconnect_action_cancel (self);
 

@@ -243,10 +243,7 @@ _reschedule_periodic_checks (NMConnectivity *self, gboolean force_reschedule)
 			priv->initial_check_obsoleted = FALSE;
 		}
 	} else {
-		if (priv->check_id) {
-			g_source_remove (priv->check_id);
-			priv->check_id = 0;
-		}
+		nm_clear_g_source (&priv->check_id);
 	}
 	if (priv->check_id)
 		return;
