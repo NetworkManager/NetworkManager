@@ -1526,12 +1526,13 @@ device_ip_link_changed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const NMPlatformLink *pllink;
-	int ip_ifindex;
 
 	priv->device_ip_link_changed_id = 0;
 
-	ip_ifindex = nm_device_get_ip_ifindex (self);
-	pllink = nm_platform_link_get (NM_PLATFORM_GET, ip_ifindex);
+	if (!priv->ip_ifindex)
+		return G_SOURCE_REMOVE;
+
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, priv->ip_ifindex);
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
