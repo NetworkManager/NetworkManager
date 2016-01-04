@@ -102,7 +102,13 @@ if [[ -n "$BUILD_ID" ]]; then
             --with-consolekit=yes
 
         make -j4
-        make check -k
+        if ! make check -k ; then
+            find -regex '.*/tests/[^/]+.log$$' -exec sh -c 'echo ">>>> $$1"; cat "$$1"' '--' '{}' ';'
+            echo ">> test failed"
+            NMTST_DEBUG=TRACE,no-expect-messages make check -k || :
+            find -regex '.*/tests/[^/]+.log$$' -exec sh -c 'echo ">>>> $$1"; cat "$$1"' '--' '{}' ';'
+            exit 57
+        fi
     fi
 
     ./contrib/fedora/rpm/build_clean.sh -c
