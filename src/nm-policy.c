@@ -73,7 +73,7 @@ typedef struct {
 	NMDnsManager *dns_manager;
 	gulong config_changed_id;
 
-	gint reset_retries_id;  /* idle handler for resetting the retries count */
+	guint reset_retries_id;  /* idle handler for resetting the retries count */
 
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
