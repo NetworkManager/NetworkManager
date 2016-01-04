@@ -433,10 +433,11 @@ set_ip_config_common (NMPPPManager *self,
 	applied_connection = nm_act_request_get_applied_connection (priv->act_req);
 	g_object_set_data (G_OBJECT (applied_connection), PPP_MANAGER_SECRET_TRIES, NULL);
 
-	/* Get any custom MTU */
-	s_ppp = nm_connection_get_setting_ppp (applied_connection);
-	if (s_ppp && out_mtu)
-		*out_mtu = nm_setting_ppp_get_mtu (s_ppp);
+	if (out_mtu) {
+		/* Get any custom MTU */
+		s_ppp = nm_connection_get_setting_ppp (applied_connection);
+		*out_mtu = s_ppp ? nm_setting_ppp_get_mtu (s_ppp) : 0;
+	}
 
 	monitor_stats (self);
 	return TRUE;
