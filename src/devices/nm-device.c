@@ -174,7 +174,7 @@ typedef struct {
 	NMDevice *slave;
 	gboolean slave_is_enslaved;
 	gboolean configure;
-	guint watch_id;
+	gulong watch_id;
 } SlaveInfo;
 
 typedef struct {
@@ -354,7 +354,7 @@ typedef struct _NMDevicePrivate {
 	NMDevice *      master;
 	gboolean        is_enslaved;
 	gboolean        master_ready_handled;
-	guint           master_ready_id;
+	gulong          master_ready_id;
 
 	/* slave management */
 	gboolean        is_master;

@@ -71,8 +71,8 @@ typedef struct Supplicant {
 	NMSupplicantInterface *iface;
 
 	/* signal handler ids */
-	guint iface_error_id;
-	guint iface_state_id;
+	gulong iface_error_id;
+	gulong iface_state_id;
 
 	/* Timeouts and idles */
 	guint iface_con_error_cb_id;
@@ -117,7 +117,7 @@ typedef struct {
 	/* DCB */
 	DcbWait       dcb_wait;
 	guint         dcb_timeout_id;
-	guint         dcb_carrier_id;
+	gulong        dcb_carrier_id;
 } NMDeviceEthernetPrivate;
 
 enum {

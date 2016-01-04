@@ -49,8 +49,8 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 
 typedef struct {
 	NMDevice *parent;
-	guint parent_state_id;
-	guint parent_hwaddr_id;
+	gulong parent_state_id;
+	gulong parent_hwaddr_id;
 	int vlan_id;
 } NMDeviceVlanPrivate;
 

@@ -39,8 +39,8 @@
 
 typedef struct {
 	NMBusManager *      dbus_mgr;
-	guint               new_conn_id;
-	guint               dis_conn_id;
+	gulong              new_conn_id;
+	gulong              dis_conn_id;
 	GHashTable *        signal_handlers;
 } NMDhcpListenerPrivate;
 

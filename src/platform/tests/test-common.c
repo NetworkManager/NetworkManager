@@ -322,7 +322,7 @@ nmtstp_wait_for_signal (guint timeout_ms)
 {
 	WaitForSignalData data = { 0 };
 
-	guint id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
+	gulong id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
 
 	data.loop = g_main_loop_new (NULL, FALSE);
 

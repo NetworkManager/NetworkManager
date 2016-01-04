@@ -1726,20 +1726,20 @@ static void
 _connect_manager_signal (NMPolicy *policy, const char *name, gpointer callback)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	guint id;
+	gulong id;
 
 	id = g_signal_connect (priv->manager, name, callback, policy);
-	priv->manager_ids = g_slist_prepend (priv->manager_ids, GUINT_TO_POINTER (id));
+	priv->manager_ids = g_slist_prepend (priv->manager_ids, (gpointer) id);
 }
 
 static void
 _connect_settings_signal (NMPolicy *policy, const char *name, gpointer callback)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	guint id;
+	gulong id;
 
 	id = g_signal_connect (priv->settings, name, callback, policy);
-	priv->settings_ids = g_slist_prepend (priv->settings_ids, GUINT_TO_POINTER (id));
+	priv->settings_ids = g_slist_prepend (priv->settings_ids, (gpointer) id);
 }
 
 NMPolicy *
@@ -1889,11 +1889,11 @@ dispose (GObject *object)
 	}
 
 	for (iter = priv->manager_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (priv->manager, GPOINTER_TO_UINT (iter->data));
+		g_signal_handler_disconnect (priv->manager, (gulong) iter->data);
 	g_clear_pointer (&priv->manager_ids, g_slist_free);
 
 	for (iter = priv->settings_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (priv->settings, GPOINTER_TO_UINT (iter->data));
+		g_signal_handler_disconnect (priv->settings, (gulong) iter->data);
 	g_clear_pointer (&priv->settings_ids, g_slist_free);
 
 	for (iter = priv->dev_ids; iter; iter = g_slist_next (iter)) {

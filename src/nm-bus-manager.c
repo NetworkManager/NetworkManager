@@ -61,7 +61,7 @@ typedef struct {
 
 	GDBusProxy *proxy;
 
-	guint bus_closed_id;
+	gulong bus_closed_id;
 	guint reconnect_id;
 } NMBusManagerPrivate;
 

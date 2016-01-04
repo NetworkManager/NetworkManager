@@ -56,7 +56,7 @@ typedef struct {
 
 	gboolean initialized;
 	GFileMonitor *monitor;
-	guint monitor_id;
+	gulong monitor_id;
 
 	NMConfig *config;
 } SettingsPluginKeyfilePrivate;

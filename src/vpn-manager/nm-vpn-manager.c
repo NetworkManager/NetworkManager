@@ -40,8 +40,8 @@ typedef struct {
 	GSList *plugins;
 	GFileMonitor *monitor_etc;
 	GFileMonitor *monitor_lib;
-	guint monitor_id_etc;
-	guint monitor_id_lib;
+	gulong monitor_id_etc;
+	gulong monitor_id_lib;
 
 	/* This is only used for services that don't support multiple
 	 * connections, to guard access to them. */

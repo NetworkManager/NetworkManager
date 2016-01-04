@@ -89,14 +89,14 @@ typedef struct {
 		GDBusConnection *connection;
 		GDBusInterfaceSkeleton *interface;
 		GCancellable *cancellable;
-		guint signal_id;
+		gulong signal_id;
 	} dbus;
 
 	GHashTable *connections;  /* uuid::connection */
 	gboolean initialized;
 
 	GFileMonitor *ifcfg_monitor;
-	guint ifcfg_monitor_id;
+	gulong ifcfg_monitor_id;
 } SettingsPluginIfcfgPrivate;
 
 static SettingsPluginIfcfg *settings_plugin_ifcfg_get (void);
