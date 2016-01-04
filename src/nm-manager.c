@@ -4330,7 +4330,7 @@ nm_manager_start (NMManager *self, GError **error)
 	if (!nm_settings_start (priv->settings, error))
 		return FALSE;
 
-	g_signal_connect (nm_platform_get (),
+	g_signal_connect (NM_PLATFORM_GET,
 	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                  G_CALLBACK (platform_link_cb),
 	                  self);

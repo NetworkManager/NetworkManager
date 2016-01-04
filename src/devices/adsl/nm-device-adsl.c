@@ -267,7 +267,7 @@ pppoe_vcc_config (NMDeviceAdsl *self)
 		return FALSE;
 
 	/* Watch for the 'nas' interface going away */
-	g_signal_connect (nm_platform_get (), NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                  G_CALLBACK (link_changed_cb),
 	                  self);
 
@@ -508,7 +508,7 @@ adsl_cleanup (NMDeviceAdsl *self)
 		nm_exported_object_clear_and_unexport (&priv->ppp_manager);
 	}
 
-	g_signal_handlers_disconnect_by_func (nm_platform_get (), G_CALLBACK (link_changed_cb), self);
+	g_signal_handlers_disconnect_by_func (NM_PLATFORM_GET, G_CALLBACK (link_changed_cb), self);
 
 	if (priv->brfd >= 0) {
 		close (priv->brfd);
