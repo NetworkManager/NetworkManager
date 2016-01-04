@@ -22,7 +22,11 @@
 ***/
 
 #include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
+
+#include "string-util.h"
 
 /* What characters are special in the shell? */
 /* must be escaped outside and inside double-quotes */
@@ -35,6 +39,7 @@ typedef enum UnescapeFlags {
 } UnescapeFlags;
 
 char *cescape(const char *s);
+char *cescape_length(const char *s, size_t n);
 size_t cescape_char(char c, char *buf);
 
 int cunescape(const char *s, UnescapeFlags flags, char **ret);

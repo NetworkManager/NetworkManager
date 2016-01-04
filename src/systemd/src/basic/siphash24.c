@@ -17,10 +17,9 @@
     coding style)
 */
 
+#include "macro.h"
 #include "siphash24.h"
-#include "sparse-endian.h"
 #include "unaligned.h"
-#include "util.h"
 
 static inline uint64_t rotate_left(uint64_t x, uint8_t b) {
         assert(b < 64);

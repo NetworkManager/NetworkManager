@@ -21,8 +21,9 @@
 ***/
 
 #include <errno.h>
-#include <pthread.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "alloc-util.h"
 #include "hashmap.h"
@@ -36,6 +37,7 @@
 #include "util.h"
 
 #ifdef ENABLE_DEBUG_HASHMAP
+#include <pthread.h>
 #include "list.h"
 #endif
 

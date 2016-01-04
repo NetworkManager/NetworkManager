@@ -661,7 +661,7 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const void *option, void
                 break;
 
         default:
-                log_debug("Ignoring option DHCP option %i while parsing.", code);
+                log_debug("Ignoring option DHCP option %"PRIu8" while parsing.", code);
                 break;
         }
 
@@ -865,7 +865,7 @@ fail:
 
 int dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
 
-        _cleanup_dhcp_lease_unref_ sd_dhcp_lease *lease = NULL;
+        _cleanup_(sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
         _cleanup_free_ char
                 *address = NULL,
                 *router = NULL,
