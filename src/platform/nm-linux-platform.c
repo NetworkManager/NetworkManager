@@ -5903,36 +5903,34 @@ constructed (GObject *_object)
 
 	_LOGD ("create");
 
-	{
-		priv->nlh = nl_socket_alloc ();
-		g_assert (priv->nlh);
+	priv->nlh = nl_socket_alloc ();
+	g_assert (priv->nlh);
 
-		nle = nl_connect (priv->nlh, NETLINK_ROUTE);
-		g_assert (!nle);
-		nle = nl_socket_set_passcred (priv->nlh, 1);
-		g_assert (!nle);
+	nle = nl_connect (priv->nlh, NETLINK_ROUTE);
+	g_assert (!nle);
+	nle = nl_socket_set_passcred (priv->nlh, 1);
+	g_assert (!nle);
 
-		/* No blocking for event socket, so that we can drain it safely. */
-		nle = nl_socket_set_nonblocking (priv->nlh);
-		g_assert (!nle);
+	/* No blocking for event socket, so that we can drain it safely. */
+	nle = nl_socket_set_nonblocking (priv->nlh);
+	g_assert (!nle);
 
-		/* The default buffer size wasn't enough for the testsuites. It might just
-		 * as well happen with NetworkManager itself. For now let's hope 128KB is
-		 * good enough.
-		 *
-		 * FIXME: it's unclear that this is still actually needed. The testsuite
-		 * certainly doesn't fail for me. Maybe it can be removed.
-		 */
-		nle = nl_socket_set_buffer_size (priv->nlh, 131072, 0);
-		g_assert (!nle);
+	/* The default buffer size wasn't enough for the testsuites. It might just
+	 * as well happen with NetworkManager itself. For now let's hope 128KB is
+	 * good enough.
+	 *
+	 * FIXME: it's unclear that this is still actually needed. The testsuite
+	 * certainly doesn't fail for me. Maybe it can be removed.
+	 */
+	nle = nl_socket_set_buffer_size (priv->nlh, 131072, 0);
+	g_assert (!nle);
 
-		nle = nl_socket_add_memberships (priv->nlh,
-		                                 RTNLGRP_LINK,
-		                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
-		                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
-		                                 0);
-		g_assert (!nle);
-	}
+	nle = nl_socket_add_memberships (priv->nlh,
+	                                 RTNLGRP_LINK,
+	                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
+	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
+	                                 0);
+	g_assert (!nle);
 	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
 	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh));
