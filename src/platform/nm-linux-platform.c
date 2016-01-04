@@ -3309,9 +3309,10 @@ _nl_send_auto_with_seq (NMPlatform *platform,
 
 	nle = nl_send_auto (priv->nlh, nlmsg);
 
-	if (nle >= 0)
+	if (nle >= 0) {
+		nle = 0;
 		delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result);
-	else
+	} else
 		_LOGD ("netlink: send: failed sending message: %s (%d)", nl_geterror (nle), nle);
 
 	return nle;
