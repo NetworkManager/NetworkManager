@@ -800,6 +800,7 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	nm_log_dbg (LOGD_PPP, "pppd pid %d cleaned up", priv->pid);
 	priv->pid = 0;
+	priv->ppp_watch_id = 0;
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
 }
 
