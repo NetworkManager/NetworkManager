@@ -150,6 +150,9 @@ test_ip6_address_general (void)
 	/* Remove address again */
 	nmtstp_ip6_address_del (EX, ifindex, addr, IP6_PLEN);
 
+	/* ensure no pending signal. */
+	accept_signals (address_changed, 0, 1);
+
 	free_signal (address_added);
 	free_signal (address_changed);
 	free_signal (address_removed);
