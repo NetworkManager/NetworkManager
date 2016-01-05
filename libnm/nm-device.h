@@ -138,6 +138,21 @@ GPtrArray *          nm_device_get_lldp_neighbors    (NMDevice *device);
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 
+gboolean             nm_device_reapply              (NMDevice *device,
+                                                     NMConnection *connection,
+                                                     guint flags,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
+void                 nm_device_reapply_async        (NMDevice *device,
+                                                     NMConnection *connection,
+                                                     guint flags,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
+                                                     gpointer user_data);
+gboolean             nm_device_reapply_finish       (NMDevice *device,
+                                                     GAsyncResult *result,
+                                                     GError **error);
+
 gboolean             nm_device_disconnect           (NMDevice *device,
                                                      GCancellable *cancellable,
                                                      GError **error);
