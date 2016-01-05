@@ -82,7 +82,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMSettingInfiniband *s_infiniband;
 	const char *transport_mode;
 	char *mode_path;
-	gboolean ok;
+	gboolean ok, no_firmware = FALSE;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -113,8 +113,11 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		}
 	}
 
+	/* With some drivers the interface must be down to set transport mode */
+	nm_device_take_down (dev, TRUE);
 	ok = nm_platform_sysctl_set (NM_PLATFORM_GET, mode_path, transport_mode);
 	g_free (mode_path);
+	nm_device_bring_up (dev, TRUE, &no_firmware);
 
 	if (!ok) {
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
