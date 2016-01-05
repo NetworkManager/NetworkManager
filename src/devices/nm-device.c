@@ -6829,6 +6829,56 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	addrconf6_cleanup (self);
 }
 
+static gboolean
+reapply_ip4_config (NMDevice *self,
+                    NMConnection *old,
+                    gboolean reconfigure,
+                    GError **error)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMSettingsConnection *connection = nm_device_get_settings_connection (self);
+	NMSettingIPConfig *s_ip4 = nm_connection_get_setting_ip4_config (NM_CONNECTION (connection));
+	NMSettingIPConfig *s_ip4_applied = nm_connection_get_setting_ip4_config (old);
+	const char *method;
+	const char *method_applied;
+
+	if (!s_ip4 || !s_ip4_applied || priv->ip4_state == IP_NONE) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     "No IPv4 configuration to update");
+		return FALSE;
+	}
+
+	if (!reconfigure)
+		return TRUE;
+
+	method = nm_setting_ip_config_get_method (s_ip4);
+	method_applied = nm_setting_ip_config_get_method (s_ip4_applied);
+
+	g_clear_object (&priv->con_ip4_config);
+	priv->con_ip4_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
+	nm_ip4_config_merge_setting (priv->con_ip4_config,
+	                             nm_connection_get_setting_ip4_config (NM_CONNECTION (connection)),
+	                             nm_device_get_ip4_route_metric (self));
+
+	if (strcmp (method, method_applied)) {
+		_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
+		priv->ip4_state = IP_WAIT;
+		if (!nm_device_activate_stage3_ip4_start (self)) {
+			g_set_error_literal (error,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     "Failed to apply IPv4 configuration");
+			return FALSE;
+		}
+	} else {
+		ip4_config_merge_and_apply (self, NULL, TRUE, NULL);
+	}
+
+	return TRUE;
+}
+
 /* reapply_connection:
  * @connection: the new connection settings to be applied
  * @flags: always zero
@@ -6852,6 +6902,7 @@ reapply_connection (NMDevice *self,
 	GHashTable *diffs = NULL;
 	GHashTableIter iter;
 	const char *setting;
+	gboolean success = FALSE;
 
 	/* No flags supported as of now. */
 	if (flags != 0) {
@@ -6878,18 +6929,23 @@ reapply_connection (NMDevice *self,
 
 	g_hash_table_iter_init (&iter, diffs);
 	while (g_hash_table_iter_next (&iter, (gpointer *)&setting, NULL)) {
-		g_set_error (error,
-		             NM_DEVICE_ERROR,
-		             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		             "Can't reapply changes to '%s' settings",
-		             setting);
-		return FALSE;
+		if (strcmp (setting, NM_SETTING_IP4_CONFIG_SETTING_NAME) == 0) {
+			if (!reapply_ip4_config (self, old, reconfigure, error))
+				goto done;
+		} else {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply changes to '%s' settings",
+			             setting);
+			goto done;
+		}
 	}
 
-	if (reconfigure)
-		nm_connection_replace_settings_from_connection (applied, NM_CONNECTION (connection));
-
-	return TRUE;
+	success = TRUE;
+done:
+	g_object_unref (old);
+	return success;
 }
 
 typedef struct {
