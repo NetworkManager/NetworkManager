@@ -6929,6 +6929,60 @@ reapply_ip6_config (NMDevice *self,
 	return TRUE;
 }
 
+static gboolean
+reapply_connection_setting (NMDevice *self,
+                            NMConnection *old,
+                            gboolean reconfigure,
+                            GError **error)
+{
+	NMConnection *applied_connection;
+	NMSettingConnection *s_con_settings;
+	NMSettingConnection *s_con_applied;
+	const char *zone;
+	NMMetered metered;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	applied_connection = nm_device_get_applied_connection (self);
+
+	s_con_settings = nm_connection_get_setting_connection (old);
+	s_con_applied = nm_connection_get_setting_connection (applied_connection);
+
+	if (!reconfigure) {
+		GHashTable *results = NULL;
+
+		nm_setting_diff (NM_SETTING (s_con_settings),
+		                 NM_SETTING (s_con_applied),
+		                 NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP |
+		                 NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS |
+		                 NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY,
+		                 FALSE,
+		                 &results);
+		if (!results)
+			return TRUE;
+
+		g_hash_table_destroy (results);
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     "The 'connection' settings have changes that can't be reapplied");
+		return FALSE;
+	}
+
+	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
+	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
+		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s", NM_PRINT_FMT_QUOTE_STRING (zone));
+		nm_device_update_firewall_zone (self);
+	}
+
+	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
+		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d", (int) metered);
+		nm_device_update_metered (self);
+	}
+
+	return TRUE;
+}
+
 /* reapply_connection:
  * @connection: the new connection settings to be applied
  * @flags: always zero
@@ -6985,6 +7039,9 @@ reapply_connection (NMDevice *self,
 		} else if (strcmp (setting, NM_SETTING_IP6_CONFIG_SETTING_NAME) == 0) {
 			if (!reapply_ip6_config (self, old, reconfigure, error))
 				goto done;
+		} else if (strcmp (setting, NM_SETTING_CONNECTION_SETTING_NAME) == 0) {
+			if (!reapply_connection_setting (self, old, reconfigure, error))
+				goto done;
 		} else {
 			g_set_error (error,
 			             NM_DEVICE_ERROR,
@@ -6997,6 +7054,7 @@ reapply_connection (NMDevice *self,
 
 	success = TRUE;
 done:
+	g_hash_table_destroy (diffs);
 	g_object_unref (old);
 	return success;
 }
@@ -8793,13 +8851,9 @@ nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 void
 nm_device_reapply_settings_immediately (NMDevice *self)
 {
-	NMConnection *applied_connection;
+	NMConnection *applied_connection, *old_applied;
 	NMSettingsConnection *settings_connection;
 	NMDeviceState state;
-	NMSettingConnection *s_con_settings;
-	NMSettingConnection *s_con_applied;
-	const char *zone;
-	NMMetered metered;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -8816,31 +8870,10 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	                                                               NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY))
 		return;
 
-	s_con_settings = nm_connection_get_setting_connection ((NMConnection *) settings_connection);
-	s_con_applied = nm_connection_get_setting_connection (applied_connection);
-
-	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
-	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
-
-		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s", NM_PRINT_FMT_QUOTE_STRING (zone));
-
-		g_object_set (G_OBJECT (s_con_applied),
-		              NM_SETTING_CONNECTION_ZONE, zone,
-		              NULL);
-
-		nm_device_update_firewall_zone (self);
-	}
-
-	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
-
-		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d", (int) metered);
-
-		g_object_set (G_OBJECT (s_con_applied),
-		              NM_SETTING_CONNECTION_METERED, metered,
-		              NULL);
-
-		nm_device_update_metered (self);
-	}
+	old_applied  = nm_simple_connection_new_clone (applied_connection);
+	nm_connection_replace_settings_from_connection (applied_connection, NM_CONNECTION (settings_connection));
+	reapply_connection_setting (self, old_applied, TRUE, NULL);
+	g_object_unref (old_applied);
 }
 
 void
