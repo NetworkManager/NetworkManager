@@ -431,22 +431,13 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 {
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-	GObjectClass *klass;
-	NMDeviceOlpcMesh *self;
-	NMDeviceOlpcMeshPrivate *priv;
+	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
-	klass = G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class);
-	object = klass->constructor (type, n_construct_params, construct_params);
-	g_return_val_if_fail (object, NULL);
-
-	self = NM_DEVICE_OLPC_MESH (object);
-	priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->constructed (object);
 
 	priv->manager = g_object_ref (nm_manager_get ());
 
@@ -455,7 +446,6 @@ constructor (GType type,
 
 	/* shorter timeout for mesh connectivity */
 	nm_device_set_dhcp_timeout (NM_DEVICE (self), 20);
-	return object;
 }
 
 static void
@@ -516,7 +506,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OLPC_MESH_SETTING_NAME, NM_LINK_TYPE_OLPC_MESH)
 
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
