@@ -440,21 +440,13 @@ constructor (GType type,
 	GObjectClass *klass;
 	NMDeviceOlpcMesh *self;
 	NMDeviceOlpcMeshPrivate *priv;
-	NMDeviceWifiCapabilities caps;
 
 	klass = G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class);
 	object = klass->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
+	g_return_val_if_fail (object, NULL);
 
 	self = NM_DEVICE_OLPC_MESH (object);
 	priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-
-	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), &caps)) {
-		_LOGW (LOGD_HW | LOGD_OLPC, "failed to initialize WiFi driver");
-		g_object_unref (object);
-		return NULL;
-	}
 
 	priv->manager = g_object_ref (nm_manager_get ());
 
