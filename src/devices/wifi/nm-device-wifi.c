@@ -104,13 +104,13 @@ struct _NMDeviceWifiPrivate {
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             ap_dump_id;
-	gboolean          requested_scan;
+	bool              requested_scan;
 
 	NMSupplicantManager   *sup_mgr;
 	NMSupplicantInterface *sup_iface;
 	guint                  sup_timeout_id; /* supplicant association timeout */
 
-	gboolean          ssid_found;
+	bool              ssid_found;
 	NM80211Mode       mode;
 
 	guint             periodic_source_id;
