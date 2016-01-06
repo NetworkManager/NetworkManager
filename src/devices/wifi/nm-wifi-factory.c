@@ -29,6 +29,8 @@
 #include "nm-device-olpc-mesh.h"
 #include "nm-settings-connection.h"
 #include "nm-platform.h"
+#include "nm-macros-internal.h"
+#include "nm-logging.h"
 
 #define NM_TYPE_WIFI_FACTORY (nm_wifi_factory_get_type ())
 #define NM_WIFI_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_WIFI_FACTORY, NMWifiFactory))
@@ -61,11 +63,22 @@ nm_device_factory_create (GError **error)
 static NMDevice *
 new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
+	NMDeviceWifiCapabilities capabilities;
+
+	g_return_val_if_fail (plink != NULL, NULL);
+	g_return_val_if_fail (NM_IN_SET (plink->type, NM_LINK_TYPE_WIFI, NM_LINK_TYPE_OLPC_MESH), NULL);
+
+	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET,
+	                                        plink->ifindex,
+	                                        &capabilities)) {
+		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s) failed to initialize Wi-Fi driver for ifindex %d", plink->name, plink->ifindex);
+		return NULL;
+	}
+
 	if (plink->type == NM_LINK_TYPE_WIFI)
-		return nm_device_wifi_new (plink);
-	else if (plink->type == NM_LINK_TYPE_OLPC_MESH)
+		return nm_device_wifi_new (plink, capabilities);
+	else
 		return nm_device_olpc_mesh_new (plink);
-	g_assert_not_reached ();
 }
 
 NM_DEVICE_FACTORY_DECLARE_TYPES (

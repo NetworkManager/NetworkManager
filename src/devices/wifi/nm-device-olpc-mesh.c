@@ -77,6 +77,7 @@ enum {
 
 struct _NMDeviceOlpcMeshPrivate {
 	NMDevice *companion;
+	NMManager *manager;
 	gboolean  stage1_waiting;
 };
 
@@ -397,7 +398,7 @@ find_companion (NMDeviceOlpcMesh *self)
 	nm_device_add_pending_action (NM_DEVICE (self), "waiting for companion", TRUE);
 
 	/* Try to find the companion if it's already known to the NMManager */
-	for (list = nm_manager_get_devices (nm_manager_get ()); list ; list = g_slist_next (list)) {
+	for (list = nm_manager_get_devices (priv->manager); list ; list = g_slist_next (list)) {
 		if (check_companion (self, NM_DEVICE (list->data))) {
 			nm_device_queue_recheck_available (NM_DEVICE (self),
 			                                   NM_DEVICE_STATE_REASON_NONE,
@@ -437,35 +438,21 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 {
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-	GObjectClass *klass;
-	NMDeviceOlpcMesh *self;
-	NMDeviceWifiCapabilities caps;
+	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
-	klass = G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class);
-	object = klass->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->constructed (object);
 
-	self = NM_DEVICE_OLPC_MESH (object);
+	priv->manager = g_object_ref (nm_manager_get ());
 
-	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), &caps)) {
-		_LOGW (LOGD_HW | LOGD_OLPC, "failed to initialize WiFi driver");
-		g_object_unref (object);
-		return NULL;
-	}
-
-	g_signal_connect (nm_manager_get (), "device-added", G_CALLBACK (device_added_cb), self);
-	g_signal_connect (nm_manager_get (), "device-removed", G_CALLBACK (device_removed_cb), self);
+	g_signal_connect (priv->manager, "device-added", G_CALLBACK (device_added_cb), self);
+	g_signal_connect (priv->manager, "device-removed", G_CALLBACK (device_removed_cb), self);
 
 	/* shorter timeout for mesh connectivity */
 	nm_device_set_dhcp_timeout (NM_DEVICE (self), 20);
-	return object;
 }
 
 static void
@@ -506,10 +493,15 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
 	companion_cleanup (self);
-	g_signal_handlers_disconnect_by_func (nm_manager_get (), G_CALLBACK (device_added_cb), self);
-	g_signal_handlers_disconnect_by_func (nm_manager_get (), G_CALLBACK (device_removed_cb), self);
+
+	if (priv->manager) {
+		g_signal_handlers_disconnect_by_func (priv->manager, G_CALLBACK (device_added_cb), self);
+		g_signal_handlers_disconnect_by_func (priv->manager, G_CALLBACK (device_removed_cb), self);
+		g_clear_object (&priv->manager);
+	}
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 }
@@ -522,7 +514,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceOlpcMeshPrivate));
 
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;

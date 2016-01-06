@@ -189,39 +189,19 @@ static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
 
 /*****************************************************************/
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-	GObjectClass *klass;
-	NMDeviceWifi *self;
-	NMDeviceWifiPrivate *priv;
+	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	klass = G_OBJECT_CLASS (nm_device_wifi_parent_class);
-	object = klass->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
-
-	self = NM_DEVICE_WIFI (object);
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET,
-	                                        nm_device_get_ifindex (NM_DEVICE (self)),
-	                                        &priv->capabilities)) {
-		_LOGW (LOGD_HW | LOGD_WIFI, "failed to initialize WiFi driver");
-		g_object_unref (object);
-		return NULL;
-	}
+	G_OBJECT_CLASS (nm_device_wifi_parent_class)->constructed (object);
 
 	if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP)
 		_LOGI (LOGD_HW | LOGD_WIFI, "driver supports Access Point (AP) mode");
 
 	/* Connect to the supplicant manager */
 	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
-
-	return object;
 }
 
 static gboolean
@@ -3196,7 +3176,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 /********************************************************************/
 
 NMDevice *
-nm_device_wifi_new (NMPlatformLink *platform_device)
+nm_device_wifi_new (NMPlatformLink *platform_device, NMDeviceWifiCapabilities capabilities)
 {
 	g_return_val_if_fail (platform_device != NULL, NULL);
 
@@ -3205,6 +3185,7 @@ nm_device_wifi_new (NMPlatformLink *platform_device)
 	                                  NM_DEVICE_TYPE_DESC, "802.11 WiFi",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
+	                                  NM_DEVICE_WIFI_CAPABILITIES, (guint) capabilities,
 	                                  NULL);
 }
 
@@ -3296,7 +3277,14 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
+	NMDeviceWifi *device = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+
 	switch (prop_id) {
+	case PROP_CAPABILITIES:
+		/* construct-only */
+		priv->capabilities = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3312,7 +3300,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceWifiPrivate));
 
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
@@ -3381,7 +3369,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		(object_class, PROP_CAPABILITIES,
 		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES, "", "",
 		                    0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
-		                    G_PARAM_READABLE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
