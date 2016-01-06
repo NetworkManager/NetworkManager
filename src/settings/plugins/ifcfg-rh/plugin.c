@@ -704,7 +704,7 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	ifcfg_path = utils_detect_ifcfg_path (path, TRUE);
+	ifcfg_path = utils_detect_ifcfg_path (in_ifcfg, TRUE);
 	if (!ifcfg_path) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,
