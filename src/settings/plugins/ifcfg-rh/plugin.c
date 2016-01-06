@@ -694,6 +694,7 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 	NMSettingConnection *s_con;
 	const char *uuid;
 	const char *path;
+	gs_free char *ifcfg_path = NULL;
 
 	if (!g_path_is_absolute (in_ifcfg)) {
 		g_dbus_method_invocation_return_error (context,
@@ -703,7 +704,16 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	connection = find_by_path (plugin, in_ifcfg);
+	ifcfg_path = utils_detect_ifcfg_path (path, TRUE);
+	if (!ifcfg_path) {
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_SETTINGS_ERROR,
+		                                       NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                                       "ifcfg path '%s' is not an ifcfg base file", in_ifcfg);
+		return;
+	}
+
+	connection = find_by_path (plugin, ifcfg_path);
 	if (   !connection
 	    || nm_ifcfg_connection_get_unmanaged_spec (connection)
 	    || nm_ifcfg_connection_get_unrecognized_spec (connection)) {
