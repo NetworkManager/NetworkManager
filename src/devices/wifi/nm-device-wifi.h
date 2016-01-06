@@ -73,7 +73,7 @@ struct _NMDeviceWifiClass
 
 GType nm_device_wifi_get_type (void);
 
-NMDevice * nm_device_wifi_new (const char *iface);
+NMDevice * nm_device_wifi_new (const char *iface, NMDeviceWifiCapabilities capabilities);
 
 G_END_DECLS
 
