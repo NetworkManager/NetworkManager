@@ -252,15 +252,8 @@ teamd_cleanup (NMDevice *device, gboolean free_tdc)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
 
-	if (priv->teamd_process_watch) {
-		g_source_remove (priv->teamd_process_watch);
-		priv->teamd_process_watch = 0;
-	}
-
-	if (priv->teamd_timeout) {
-		g_source_remove (priv->teamd_timeout);
-		priv->teamd_timeout = 0;
-	}
+	nm_clear_g_source (&priv->teamd_process_watch);
+	nm_clear_g_source (&priv->teamd_timeout);
 
 	if (priv->teamd_pid > 0) {
 		nm_utils_kill_child_async (priv->teamd_pid, SIGTERM, LOGD_TEAM, "teamd", 2000, NULL, NULL);

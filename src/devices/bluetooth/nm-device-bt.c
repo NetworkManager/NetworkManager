@@ -632,10 +632,7 @@ component_added (NMDevice *device, GObject *component)
 	g_free (base);
 
 	/* Got the modem */
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 
 	/* Can only accept the modem in stage2, but since the interface matched
 	 * what we were expecting, don't let anything else claim the modem either.
@@ -703,10 +700,7 @@ check_connect_continue (NMDeviceBt *self)
 	       dun ? "DUN" : (pan ? "PAN" : "unknown"));
 
 	/* Kill the connect timeout since we're connected now */
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 
 	if (pan) {
 		/* Bluez says we're connected now.  Start IP config. */
@@ -911,10 +905,7 @@ deactivate (NMDevice *device)
 	if (priv->bt_type != NM_BT_CAPABILITY_NONE)
 		nm_bluez_device_disconnect (priv->bt_device);
 
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 
 	priv->bt_type = NM_BT_CAPABILITY_NONE;
 
@@ -1104,10 +1095,7 @@ dispose (GObject *object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 
 	g_signal_handlers_disconnect_matched (priv->bt_device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, object);
 

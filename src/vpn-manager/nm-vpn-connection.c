@@ -1171,10 +1171,7 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *self,
 		}
 	}
 
-	if (priv->connect_timeout) {
-		g_source_remove (priv->connect_timeout);
-		priv->connect_timeout = 0;
-	}
+	nm_clear_g_source (&priv->connect_timeout);
 
 	if (success) {
 		print_vpn_config (self);
@@ -2433,10 +2430,7 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
 
-	if (priv->connect_timeout) {
-		g_source_remove (priv->connect_timeout);
-		priv->connect_timeout = 0;
-	}
+	nm_clear_g_source (&priv->connect_timeout);
 
 	dispatcher_cleanup (self);
 

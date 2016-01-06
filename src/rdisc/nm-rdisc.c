@@ -623,10 +623,7 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 	guint32 never = G_MAXINT32;
 	guint32 nextevent = never;
 
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 
 	clean_gateways (rdisc, now, &changed, &nextevent);
 	clean_addresses (rdisc, now, &changed, &nextevent);
@@ -701,10 +698,7 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->send_rs_id);
 	g_clear_pointer (&priv->last_send_rs_error, g_free);
 
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 
 	G_OBJECT_CLASS (nm_rdisc_parent_class)->dispose (object);
 }

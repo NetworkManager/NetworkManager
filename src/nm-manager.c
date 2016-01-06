@@ -4330,7 +4330,7 @@ nm_manager_start (NMManager *self, GError **error)
 	if (!nm_settings_start (priv->settings, error))
 		return FALSE;
 
-	g_signal_connect (nm_platform_get (),
+	g_signal_connect (NM_PLATFORM_GET,
 	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                  G_CALLBACK (platform_link_cb),
 	                  self);
@@ -5347,10 +5347,7 @@ dispose (GObject *object)
 
 	g_assert (priv->devices == NULL);
 
-	if (priv->ac_cleanup_id) {
-		g_source_remove (priv->ac_cleanup_id);
-		priv->ac_cleanup_id = 0;
-	}
+	nm_clear_g_source (&priv->ac_cleanup_id);
 
 	while (priv->active_connections)
 		active_connection_remove (manager, NM_ACTIVE_CONNECTION (priv->active_connections->data));
@@ -5403,10 +5400,7 @@ dispose (GObject *object)
 	if (priv->fw_monitor) {
 		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, manager);
 
-		if (priv->fw_changed_id) {
-			g_source_remove (priv->fw_changed_id);
-			priv->fw_changed_id = 0;
-		}
+		nm_clear_g_source (&priv->fw_changed_id);
 
 		g_file_monitor_cancel (priv->fw_monitor);
 		g_clear_object (&priv->fw_monitor);
@@ -5419,10 +5413,7 @@ dispose (GObject *object)
 
 	nm_device_factory_manager_for_each_factory (_deinit_device_factory, manager);
 	
-	if (priv->timestamp_update_id) {
-		g_source_remove (priv->timestamp_update_id);
-		priv->timestamp_update_id = 0;
-	}
+	nm_clear_g_source (&priv->timestamp_update_id);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }

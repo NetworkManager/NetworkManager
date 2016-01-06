@@ -39,9 +39,9 @@
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate))
+#define NM_IP4_CONFIG_GET_PRIVATE(o) ((o)->priv)
 
-typedef struct {
+typedef struct _NMIP4ConfigPrivate {
 	gboolean never_default;
 	guint32 gateway;
 	gboolean has_gateway;
@@ -2120,7 +2120,10 @@ nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b)
 static void
 nm_ip4_config_init (NMIP4Config *config)
 {
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	NMIP4ConfigPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (config, NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate);
+	config->priv = priv;
 
 	priv->addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
 	priv->routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
@@ -2136,7 +2139,8 @@ nm_ip4_config_init (NMIP4Config *config)
 static void
 finalize (GObject *object)
 {
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+	NMIP4Config *self = NM_IP4_CONFIG (object);
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
@@ -2156,7 +2160,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMIP4Config *config = NM_IP4_CONFIG (object);
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
@@ -2322,7 +2326,8 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+	NMIP4Config *self = NM_IP4_CONFIG (object);
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_IFINDEX:

@@ -174,7 +174,7 @@ typedef struct {
 	NMDevice *slave;
 	gboolean slave_is_enslaved;
 	gboolean configure;
-	guint watch_id;
+	gulong watch_id;
 } SlaveInfo;
 
 typedef struct {
@@ -354,7 +354,7 @@ typedef struct _NMDevicePrivate {
 	NMDevice *      master;
 	gboolean        is_enslaved;
 	gboolean        master_ready_handled;
-	guint           master_ready_id;
+	gulong          master_ready_id;
 
 	/* slave management */
 	gboolean        is_master;
@@ -3920,10 +3920,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	if (priv->dhcp4_client) {
 		/* Stop any ongoing DHCP transaction on this device */
-		if (priv->dhcp4_state_sigid) {
-			g_signal_handler_disconnect (priv->dhcp4_client, priv->dhcp4_state_sigid);
-			priv->dhcp4_state_sigid = 0;
-		}
+		nm_clear_g_signal_handler (priv->dhcp4_client, &priv->dhcp4_state_sigid);
 
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
 
@@ -4614,10 +4611,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	nm_clear_g_source (&priv->dhcp6_restart_id);
 
 	if (priv->dhcp6_client) {
-		if (priv->dhcp6_state_sigid) {
-			g_signal_handler_disconnect (priv->dhcp6_client, priv->dhcp6_state_sigid);
-			priv->dhcp6_state_sigid = 0;
-		}
+		nm_clear_g_signal_handler (priv->dhcp6_client, &priv->dhcp6_state_sigid);
 
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
@@ -5149,10 +5143,7 @@ linklocal6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->linklocal6_timeout_id) {
-		g_source_remove (priv->linklocal6_timeout_id);
-		priv->linklocal6_timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->linklocal6_timeout_id);
 }
 
 static void
@@ -5640,15 +5631,8 @@ addrconf6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->rdisc_changed_id) {
-		g_signal_handler_disconnect (priv->rdisc, priv->rdisc_changed_id);
-		priv->rdisc_changed_id = 0;
-	}
-
-	if (priv->rdisc_timeout_id) {
-		g_signal_handler_disconnect (priv->rdisc, priv->rdisc_timeout_id);
-		priv->rdisc_timeout_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->rdisc, &priv->rdisc_changed_id);
+	nm_clear_g_signal_handler (priv->rdisc, &priv->rdisc_timeout_id);
 
 	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
@@ -6471,10 +6455,7 @@ arp_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->arp_round2_id) {
-		g_source_remove (priv->arp_round2_id);
-		priv->arp_round2_id = 0;
-	}
+	nm_clear_g_source (&priv->arp_round2_id);
 }
 
 static void
@@ -6727,10 +6708,7 @@ dnsmasq_cleanup (NMDevice *self)
 	if (!priv->dnsmasq_manager)
 		return;
 
-	if (priv->dnsmasq_state_id) {
-		g_signal_handler_disconnect (priv->dnsmasq_manager, priv->dnsmasq_state_id);
-		priv->dnsmasq_state_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->dnsmasq_manager, &priv->dnsmasq_state_id);
 
 	nm_dnsmasq_manager_stop (priv->dnsmasq_manager);
 	g_object_unref (priv->dnsmasq_manager);
@@ -10216,15 +10194,8 @@ dispose (GObject *object)
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	if (priv->recheck_assume_id) {
-		g_source_remove (priv->recheck_assume_id);
-		priv->recheck_assume_id = 0;
-	}
-
-	if (priv->recheck_available.call_id) {
-		g_source_remove (priv->recheck_available.call_id);
-		priv->recheck_available.call_id = 0;
-	}
+	nm_clear_g_source (&priv->recheck_assume_id);
+	nm_clear_g_source (&priv->recheck_available.call_id);
 
 	link_disconnect_action_cancel (self);
 

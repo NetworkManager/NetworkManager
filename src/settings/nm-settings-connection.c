@@ -2616,10 +2616,7 @@ dispose (GObject *object)
 		}
 	}
 
-	if (priv->updated_idle_id) {
-		g_source_remove (priv->updated_idle_id);
-		priv->updated_idle_id = 0;
-	}
+	nm_clear_g_source (&priv->updated_idle_id);
 
 	/* Disconnect handlers.
 	 * changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),

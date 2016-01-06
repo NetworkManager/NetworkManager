@@ -144,7 +144,7 @@ devtimeout_expired (gpointer user_data)
 	nm_log_info (LOGD_SETTINGS, "Device for connection '%s' did not appear before timeout",
 	             nm_connection_get_id (NM_CONNECTION (self)));
 
-	g_signal_handler_disconnect (nm_platform_get (), priv->devtimeout_link_changed_handler);
+	g_signal_handler_disconnect (NM_PLATFORM_GET, priv->devtimeout_link_changed_handler);
 	priv->devtimeout_link_changed_handler = 0;
 	priv->devtimeout_timeout_id = 0;
 
@@ -188,7 +188,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	             devtimeout, ifname, nm_connection_get_id (NM_CONNECTION (self)));
 
 	priv->devtimeout_link_changed_handler =
-		g_signal_connect (nm_platform_get (), NM_PLATFORM_SIGNAL_LINK_CHANGED,
+		g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED,
 		                  G_CALLBACK (link_changed), self);
 	priv->devtimeout_timeout_id = g_timeout_add_seconds (devtimeout, devtimeout_expired, self);
 }
@@ -277,10 +277,7 @@ path_watch_stop (NMIfcfgConnection *self)
 
 	ih = _get_inotify_helper (priv);
 
-	if (priv->ih_event_id) {
-		g_signal_handler_disconnect (ih, priv->ih_event_id);
-		priv->ih_event_id = 0;
-	}
+	nm_clear_g_signal_handler (ih, &priv->ih_event_id);
 
 	if (priv->file_wd >= 0) {
 		nm_inotify_helper_remove_watch (ih, priv->file_wd);
@@ -516,15 +513,8 @@ dispose (GObject *object)
 
 	path_watch_stop (NM_IFCFG_CONNECTION (object));
 
-	if (priv->devtimeout_link_changed_handler) {
-		g_signal_handler_disconnect (nm_platform_get (),
-		                             priv->devtimeout_link_changed_handler);
-		priv->devtimeout_link_changed_handler = 0;
-	}
-	if (priv->devtimeout_timeout_id) {
-		g_source_remove (priv->devtimeout_timeout_id);
-		priv->devtimeout_timeout_id = 0;
-	}
+	nm_clear_g_signal_handler (NM_PLATFORM_GET, &priv->devtimeout_link_changed_handler);
+	nm_clear_g_source (&priv->devtimeout_timeout_id);
 
 	g_clear_object (&priv->inotify_helper);
 

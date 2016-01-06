@@ -38,9 +38,9 @@
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP6_CONFIG, NMIP6ConfigPrivate))
+#define NM_IP6_CONFIG_GET_PRIVATE(o) ((o)->priv)
 
-typedef struct {
+typedef struct _NMIP6ConfigPrivate {
 	gboolean never_default;
 	struct in6_addr gateway;
 	GArray *addresses;
@@ -1874,7 +1874,10 @@ nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 static void
 nm_ip6_config_init (NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	NMIP6ConfigPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (config, NM_TYPE_IP6_CONFIG, NMIP6ConfigPrivate);
+	config->priv = priv;
 
 	priv->addresses = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Address));
 	priv->routes = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Route));
@@ -1888,7 +1891,8 @@ nm_ip6_config_init (NMIP6Config *config)
 static void
 finalize (GObject *object)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
+	NMIP6Config *self = NM_IP6_CONFIG (object);
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
@@ -1925,7 +1929,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMIP6Config *config = NM_IP6_CONFIG (object);
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
@@ -2074,7 +2078,8 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
+	NMIP6Config *config = NM_IP6_CONFIG (object);
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	switch (prop_id) {
 	case PROP_IFINDEX:

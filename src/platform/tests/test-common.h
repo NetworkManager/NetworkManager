@@ -39,7 +39,7 @@
 /*********************************************************************************************/
 
 typedef struct {
-	int handler_id;
+	gulong handler_id;
 	const char *name;
 	NMPlatformSignalChangeType change_type;
 	gint received_count;

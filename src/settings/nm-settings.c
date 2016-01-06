@@ -152,8 +152,8 @@ typedef struct {
 		char *file;
 		GFileMonitor *monitor;
 		GFileMonitor *dhcp_monitor;
-		guint monitor_id;
-		guint dhcp_monitor_id;
+		gulong monitor_id;
+		gulong dhcp_monitor_id;
 		GDBusProxy *hostnamed_proxy;
 	} hostname;
 } NMSettingsPrivate;

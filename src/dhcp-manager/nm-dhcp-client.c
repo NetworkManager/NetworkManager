@@ -238,10 +238,7 @@ timeout_cleanup (NMDhcpClient *self)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	if (priv->timeout_id) {
-		g_source_remove (priv->timeout_id);
-		priv->timeout_id = 0;
-	}
+	nm_clear_g_source (&priv->timeout_id);
 }
 
 static void
@@ -249,10 +246,7 @@ watch_cleanup (NMDhcpClient *self)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	if (priv->watch_id) {
-		g_source_remove (priv->watch_id);
-		priv->watch_id = 0;
-	}
+	nm_clear_g_source (&priv->watch_id);
 }
 
 void

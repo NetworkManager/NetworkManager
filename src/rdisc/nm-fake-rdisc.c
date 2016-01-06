@@ -367,10 +367,7 @@ dispose (GObject *object)
 {
 	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (object);
 
-	if (priv->receive_ra_id) {
-		g_source_remove (priv->receive_ra_id);
-		priv->receive_ra_id = 0;
-	}
+	nm_clear_g_source (&priv->receive_ra_id);
 
 	g_slist_free_full (priv->ras, fake_ra_free);
 	priv->ras = NULL;

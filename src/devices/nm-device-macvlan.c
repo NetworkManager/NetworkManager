@@ -47,7 +47,7 @@ G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE)
 
 typedef struct {
 	int parent_ifindex;
-	guint parent_state_id;
+	gulong parent_state_id;
 	NMDevice *parent;
 	NMPlatformLnkMacvlan props;
 } NMDeviceMacvlanPrivate;

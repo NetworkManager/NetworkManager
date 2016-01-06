@@ -73,7 +73,7 @@ typedef struct {
 	NMBusManager *bus_mgr;
 	GDBusConnection *connection;
 	gboolean connection_is_private;
-	guint on_disconnected_id;
+	gulong on_disconnected_id;
 
 	GHashTable *requests;
 } NMSecretAgentPrivate;

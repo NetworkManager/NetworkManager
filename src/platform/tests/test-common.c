@@ -35,7 +35,7 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 	data->name = name;
 	data->change_type = change_type;
 	data->received_count = 0;
-	data->handler_id = g_signal_connect (nm_platform_get (), name, callback, data);
+	data->handler_id = g_signal_connect (NM_PLATFORM_GET, name, callback, data);
 	data->ifindex = ifindex;
 	data->ifname = ifname;
 
@@ -104,7 +104,7 @@ _free_signal (const char *file, int line, const char *func, SignalData *data)
 	if (data->received_count != 0)
 		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to free non-accepted signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 
-	g_signal_handler_disconnect (nm_platform_get (), data->handler_id);
+	g_signal_handler_disconnect (NM_PLATFORM_GET, data->handler_id);
 	g_free (data);
 }
 
@@ -322,7 +322,7 @@ nmtstp_wait_for_signal (guint timeout_ms)
 {
 	WaitForSignalData data = { 0 };
 
-	guint id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
+	gulong id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
 
 	data.loop = g_main_loop_new (NULL, FALSE);
 
@@ -1549,6 +1549,6 @@ main (int argc, char **argv)
 
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 
-	g_object_unref (nm_platform_get ());
+	g_object_unref (NM_PLATFORM_GET);
 	return result;
 }

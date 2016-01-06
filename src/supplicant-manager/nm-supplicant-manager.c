@@ -345,10 +345,7 @@ dispose (GObject *object)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (object);
 
-	if (priv->die_count_reset_id) {
-		g_source_remove (priv->die_count_reset_id);
-		priv->die_count_reset_id = 0;
-	}
+	nm_clear_g_source (&priv->die_count_reset_id);
 
 	if (priv->cancellable) {
 		g_cancellable_cancel (priv->cancellable);

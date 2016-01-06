@@ -189,10 +189,7 @@ nm_dns_plugin_child_kill (NMDnsPlugin *self)
 {
 	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
 
-	if (priv->watch_id) {
-		g_source_remove (priv->watch_id);
-		priv->watch_id = 0;
-	}
+	nm_clear_g_source (&priv->watch_id);
 
 	if (priv->pid) {
 		nm_utils_kill_child_sync (priv->pid, SIGTERM, LOGD_DNS, priv->progname, NULL, 1000, 0);

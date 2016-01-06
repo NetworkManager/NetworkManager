@@ -385,10 +385,7 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 
 	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
 
-	if (priv->dm_watch_id) {
-		g_source_remove (priv->dm_watch_id);
-		priv->dm_watch_id = 0;
-	}
+	nm_clear_g_source (&priv->dm_watch_id);
 
 	if (priv->pid) {
 		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_SHARING, "dnsmasq", 2000, NULL, NULL);
