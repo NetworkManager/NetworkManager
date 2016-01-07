@@ -89,7 +89,6 @@ enum {
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
-	LINK_INITIALIZED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -402,8 +401,6 @@ static void _set_state_full (NMDevice *self,
                              NMDeviceState state,
                              NMDeviceStateReason reason,
                              gboolean quitting);
-
-static void nm_device_update_hw_address (NMDevice *self);
 
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
@@ -1589,9 +1586,6 @@ device_link_changed (NMDevice *self)
 		}
 	}
 
-	if (just_initialized)
-		g_signal_emit (self, signals[LINK_INITIALIZED], 0);
-
 	device_recheck_slave_status (self, &info);
 	return G_SOURCE_REMOVE;
 }
@@ -1904,27 +1898,7 @@ setup_start (NMDevice *self, const NMPlatformLink *plink)
 	priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 
 	nm_device_update_hw_address (self);
-
-	if (priv->hw_addr_len) {
-		priv->initial_hw_addr = g_strdup (priv->hw_addr);
-		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
-
-		if (priv->ifindex > 0) {
-			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-			size_t len = 0;
-
-			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
-				g_warn_if_fail (len == priv->hw_addr_len);
-				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
-				       priv->perm_hw_addr);
-			} else {
-				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
-				priv->perm_hw_addr = g_strdup (priv->hw_addr);
-			}
-		}
-	}
+	nm_device_update_initial_hw_address (self);
 
 	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
@@ -9883,18 +9857,23 @@ nm_device_get_hw_address (NMDevice *self)
 	return priv->hw_addr_len ? priv->hw_addr : NULL;
 }
 
-static void
+void
 nm_device_update_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ifindex (self);
 	const guint8 *hwaddr;
 	gsize hwaddrlen = 0;
+	static const guint8 zero_hwaddr[ETH_ALEN];
 
 	if (ifindex <= 0)
 		return;
 
 	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddrlen);
+
+	if (   priv->type == NM_DEVICE_TYPE_ETHERNET
+	    && nm_utils_hwaddr_matches (hwaddr, hwaddrlen, zero_hwaddr, sizeof (zero_hwaddr)))
+		hwaddrlen = 0;
 
 	if (hwaddrlen) {
 		priv->hw_addr_len = hwaddrlen;
@@ -9913,6 +9892,33 @@ nm_device_update_hw_address (NMDevice *self)
 			_LOGD (LOGD_HW | LOGD_DEVICE,
 			       "previous hardware address is no longer valid");
 			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
+		}
+	}
+}
+
+void
+nm_device_update_initial_hw_address (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->hw_addr_len) {
+		priv->initial_hw_addr = g_strdup (priv->hw_addr);
+		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
+
+		if (priv->ifindex > 0) {
+			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+			size_t len = 0;
+
+			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
+				g_warn_if_fail (len == priv->hw_addr_len);
+				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
+				       priv->perm_hw_addr);
+			} else {
+				/* Fall back to current address */
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
+				priv->perm_hw_addr = g_strdup (priv->hw_addr);
+			}
 		}
 	}
 }
@@ -10892,13 +10898,6 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	signals[RECHECK_ASSUME] =
 		g_signal_new (NM_DEVICE_RECHECK_ASSUME,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
-
-	signals[LINK_INITIALIZED] =
-		g_signal_new (NM_DEVICE_LINK_INITIALIZED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,

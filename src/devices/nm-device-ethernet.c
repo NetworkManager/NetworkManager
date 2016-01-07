@@ -1607,10 +1607,44 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	static const guint8 zero_hwaddr[ETH_ALEN];
+	const guint8 *hwaddr;
+	gsize hwaddrlen = 0;
 
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
 	if (!priv->subchan1 && info->initialized)
 		_update_s390_subchannels (self);
+
+	if (!nm_device_get_initial_hw_address (device)) {
+		hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET,
+		                                       nm_device_get_ifindex (self),
+		                                       &hwaddrlen);
+		if (!nm_utils_hwaddr_matches (hwaddr, hwaddrlen, zero_hwaddr, ETH_ALEN)) {
+			_LOGD (LOGD_DEVICE, "device got a valid hw address");
+			nm_device_update_hw_address (self);
+			nm_device_update_initial_hw_address (self);
+			if (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE) {
+				/*
+				 * If the device is UNAVAILABLE, any previous try to
+				 * bring it up probably has failed because of the
+				 * invalid hardware address; try again.
+				 */
+				nm_device_bring_up (self, TRUE, NULL);
+				nm_device_queue_recheck_available (device,
+				                                   NM_DEVICE_STATE_REASON_NONE,
+				                                   NM_DEVICE_STATE_REASON_NONE);
+			}
+		}
+	}
+}
+
+static gboolean
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
+{
+	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->is_available (device, flags))
+		return FALSE;
+
+	return !!nm_device_get_initial_hw_address (device);
 }
 
 static void
@@ -1711,6 +1745,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->update_connection = update_connection;
 	parent_class->carrier_changed = carrier_changed;
 	parent_class->link_changed = link_changed;
+	parent_class->is_available = is_available;
 
 	parent_class->state_changed = device_state_changed;
 

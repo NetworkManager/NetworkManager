@@ -567,6 +567,9 @@ void nm_device_reapply_settings_immediately (NMDevice *self);
 void nm_device_update_firewall_zone (NMDevice *self);
 void nm_device_update_metered (NMDevice *self);
 
+void nm_device_update_hw_address (NMDevice *self);
+void nm_device_update_initial_hw_address (NMDevice *self);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_H */
