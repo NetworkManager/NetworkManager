@@ -165,15 +165,27 @@ nm_audit_log (NMAuditManager *self, GPtrArray *fields, const char *file,
 static void
 _audit_log_helper (NMAuditManager *self, GPtrArray *fields, const char *file,
                    guint line, const char *func, const char *op, gboolean result,
-                   NMAuthSubject *subject, const char *reason)
+                   gpointer subject_context, const char *reason)
 {
 	AuditField op_field = { }, pid_field = { }, uid_field = { };
 	AuditField result_field = { }, reason_field = { };
 	gulong pid, uid;
+	NMAuthSubject *subject = NULL;
+	gs_unref_object NMAuthSubject *subject_free = NULL;
 
 	_audit_field_init_string (&op_field, "op", op, FALSE, BACKEND_ALL);
 	g_ptr_array_insert (fields, 0, &op_field);
 
+	if (subject_context) {
+		if (NM_IS_AUTH_SUBJECT (subject_context))
+			subject = subject_context;
+		else if (G_IS_DBUS_METHOD_INVOCATION (subject_context)) {
+			GDBusMethodInvocation *context = subject_context;
+
+			subject = subject_free = nm_auth_subject_new_unix_process_from_context (context);
+		} else
+			g_warn_if_reached ();
+	}
 	if (subject && nm_auth_subject_is_unix_process (subject)) {
 		pid = nm_auth_subject_get_unix_process_pid (subject);
 		uid = nm_auth_subject_get_unix_process_uid (subject);
@@ -215,7 +227,7 @@ nm_audit_manager_audit_enabled (NMAuditManager *self)
 void
 _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, guint line,
                                      const char *func, const char *op, NMSettingsConnection *connection,
-                                     gboolean result, NMAuthSubject *subject, const char *reason)
+                                     gboolean result, gpointer subject_context, const char *reason)
 {
 	gs_unref_ptrarray GPtrArray *fields = NULL;
 	AuditField uuid_field = { }, name_field = { };
@@ -234,13 +246,13 @@ _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, gui
 		g_ptr_array_add (fields, &name_field);
 	}
 
-	_audit_log_helper (self, fields, file, line, func, op, result, subject, reason);
+	_audit_log_helper (self, fields, file, line, func, op, result, subject_context, reason);
 }
 
 void
 _nm_audit_manager_log_control_op (NMAuditManager *self, const char *file, guint line,
                                   const char *func, const char *op, const char *arg,
-                                  gboolean result, NMAuthSubject *subject,
+                                  gboolean result, gpointer subject_context,
                                   const char *reason)
 {
 	gs_unref_ptrarray GPtrArray *fields = NULL;
@@ -254,13 +266,13 @@ _nm_audit_manager_log_control_op (NMAuditManager *self, const char *file, guint 
 	_audit_field_init_string (&arg_field, "arg", arg, TRUE, BACKEND_ALL);
 	g_ptr_array_add (fields, &arg_field);
 
-	_audit_log_helper (self, fields, file, line, func, op, result, subject, reason);
+	_audit_log_helper (self, fields, file, line, func, op, result, subject_context, reason);
 }
 
 void
 _nm_audit_manager_log_device_op (NMAuditManager *self, const char *file, guint line,
                                  const char *func, const char *op, NMDevice *device,
-                                 gboolean result, NMAuthSubject *subject,
+                                 gboolean result, gpointer subject_context,
                                  const char *reason)
 {
 	gs_unref_ptrarray GPtrArray *fields = NULL;
@@ -282,7 +294,7 @@ _nm_audit_manager_log_device_op (NMAuditManager *self, const char *file, guint l
 		g_ptr_array_add (fields, &ifindex_field);
 	}
 
-	_audit_log_helper (self, fields, file, line, func, op, result, subject, reason);
+	_audit_log_helper (self, fields, file, line, func, op, result, subject_context, reason);
 }
 
 #if HAVE_LIBAUDIT
