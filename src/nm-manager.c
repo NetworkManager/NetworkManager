@@ -81,8 +81,6 @@ static gboolean find_master (NMManager *self,
 
 static void nm_manager_update_state (NMManager *manager);
 
-#define SSD_POKE_INTERVAL 120
-#define ORIGDEV_TAG "originating-device"
 #define TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE "act-con-add-and-activate"
 
 typedef struct {
