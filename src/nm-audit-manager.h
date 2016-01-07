@@ -61,6 +61,7 @@ typedef struct {
 #define NM_AUDIT_OP_DEVICE_DISCONNECT       "device-disconnect"
 #define NM_AUDIT_OP_DEVICE_DELETE           "device-delete"
 #define NM_AUDIT_OP_DEVICE_MANAGED          "device-managed"
+#define NM_AUDIT_OP_DEVICE_REAPPLY          "device-reapply"
 
 GType nm_audit_manager_get_type (void);
 NMAuditManager *nm_audit_manager_get (void);

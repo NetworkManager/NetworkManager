@@ -6829,164 +6829,77 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	addrconf6_cleanup (self);
 }
 
+G_GNUC_NULL_TERMINATED
 static gboolean
-reapply_ip4_config (NMDevice *self,
-                    NMConnection *old,
-                    gboolean reconfigure,
-                    GError **error)
+_hash_check_invalid_keys (GHashTable *hash, const char *setting_name, GError **error, ...)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingsConnection *connection = nm_device_get_settings_connection (self);
-	NMSettingIPConfig *s_ip4 = nm_connection_get_setting_ip4_config (NM_CONNECTION (connection));
-	NMSettingIPConfig *s_ip4_applied = nm_connection_get_setting_ip4_config (old);
-	const char *method;
-	const char *method_applied;
+	va_list ap;
+	const char *key;
+	guint found_keys = 0;
 
-	if (!s_ip4 || !s_ip4_applied || priv->ip4_state == IP_NONE) {
-		g_set_error_literal (error,
-		                     NM_DEVICE_ERROR,
-		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		                     "No IPv4 configuration to update");
-		return FALSE;
+#if NM_MORE_ASSERTS > 10
+	/* Assert that the keys are unique. */
+	{
+		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+
+		va_start (ap, error);
+		while ((key = va_arg (ap, const char *))) {
+			if (!g_hash_table_add (check_dups, (char *) key))
+				nm_assert (FALSE);
+		}
+		va_end (ap);
+		nm_assert (g_hash_table_size (check_dups) > 0);
 	}
+#endif
 
-	if (!reconfigure)
+	if (!hash || g_hash_table_size (hash) == 0)
 		return TRUE;
 
-	method = nm_setting_ip_config_get_method (s_ip4);
-	method_applied = nm_setting_ip_config_get_method (s_ip4_applied);
+	va_start (ap, error);
+	while ((key = va_arg (ap, const char *))) {
+		if (g_hash_table_contains (hash, key))
+			found_keys++;
+	}
+	va_end (ap);
 
-	g_clear_object (&priv->con_ip4_config);
-	priv->con_ip4_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
-	nm_ip4_config_merge_setting (priv->con_ip4_config,
-	                             nm_connection_get_setting_ip4_config (NM_CONNECTION (connection)),
-	                             nm_device_get_ip4_route_metric (self));
+	if (found_keys != g_hash_table_size (hash)) {
+		GHashTableIter iter;
+		const char *k = NULL;
+		const char *first_invalid_key = NULL;
 
-	if (strcmp (method, method_applied)) {
-		_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
-		priv->ip4_state = IP_WAIT;
-		if (!nm_device_activate_stage3_ip4_start (self)) {
-			g_set_error_literal (error,
-			                     NM_DEVICE_ERROR,
-			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-			                     "Failed to apply IPv4 configuration");
+		if (!error)
 			return FALSE;
+
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
+			va_start (ap, error);
+			while ((key = va_arg (ap, const char *))) {
+				if (!strcmp (key, k)) {
+					first_invalid_key = k;
+					break;
+				}
+			}
+			va_end (ap);
+			if (first_invalid_key)
+				break;
 		}
-	} else {
-		ip4_config_merge_and_apply (self, NULL, TRUE, NULL);
-	}
-
-	return TRUE;
-}
-
-static gboolean
-reapply_ip6_config (NMDevice *self,
-                    NMConnection *old,
-                    gboolean reconfigure,
-                    GError **error)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingsConnection *connection = nm_device_get_settings_connection (self);
-	NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (NM_CONNECTION (connection));
-	NMSettingIPConfig *s_ip6_applied = nm_connection_get_setting_ip6_config (old);
-	const char *method;
-	const char *method_applied;
-
-	if (!s_ip6 || !s_ip6_applied || priv->ip6_state == IP_NONE) {
-		g_set_error_literal (error,
-		                     NM_DEVICE_ERROR,
-		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		                     "No IPv6 configuration to update");
+		g_set_error (error,
+		             NM_DEVICE_ERROR,
+		             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		             "Can't reapply changes to '%s%s%s' setting",
+		             setting_name ? : "",
+		             setting_name ? "." : "",
+		             first_invalid_key ? : "<UNKNOWN>");
+		g_return_val_if_fail (first_invalid_key, FALSE);
 		return FALSE;
-	}
-
-	if (!reconfigure)
-		return TRUE;
-
-	method = nm_setting_ip_config_get_method (s_ip6);
-	method_applied = nm_setting_ip_config_get_method (s_ip6_applied);
-
-	g_clear_object (&priv->con_ip6_config);
-	priv->con_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
-	nm_ip6_config_merge_setting (priv->con_ip6_config,
-	                             nm_connection_get_setting_ip6_config (NM_CONNECTION (connection)),
-	                             nm_device_get_ip6_route_metric (self));
-
-	if (strcmp (method, method_applied)) {
-		_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
-		priv->ip6_state = IP_WAIT;
-		if (!nm_device_activate_stage3_ip6_start (self)) {
-			g_set_error_literal (error,
-			                     NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-			                     "Failed to apply IPv6 configuration");
-			return FALSE;
-		}
-	} else {
-		ip6_config_merge_and_apply (self, TRUE, NULL);
-	}
-
-	return TRUE;
-}
-
-static gboolean
-reapply_connection_setting (NMDevice *self,
-                            NMConnection *old,
-                            gboolean reconfigure,
-                            GError **error)
-{
-	NMConnection *applied_connection;
-	NMSettingConnection *s_con_settings;
-	NMSettingConnection *s_con_applied;
-	const char *zone;
-	NMMetered metered;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-
-	applied_connection = nm_device_get_applied_connection (self);
-
-	s_con_settings = nm_connection_get_setting_connection (old);
-	s_con_applied = nm_connection_get_setting_connection (applied_connection);
-
-	if (!reconfigure) {
-		GHashTable *results = NULL;
-
-		nm_setting_diff (NM_SETTING (s_con_settings),
-		                 NM_SETTING (s_con_applied),
-		                 NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP |
-		                 NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS |
-		                 NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY,
-		                 FALSE,
-		                 &results);
-		if (!results)
-			return TRUE;
-
-		g_hash_table_destroy (results);
-		g_set_error_literal (error,
-		                     NM_DEVICE_ERROR,
-		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		                     "The 'connection' settings have changes that can't be reapplied");
-		return FALSE;
-	}
-
-	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
-	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
-		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s", NM_PRINT_FMT_QUOTE_STRING (zone));
-		nm_device_update_firewall_zone (self);
-	}
-
-	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
-		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d", (int) metered);
-		nm_device_update_metered (self);
 	}
 
 	return TRUE;
 }
 
 /* reapply_connection:
- * @connection: the new connection settings to be applied
- * @flags: always zero
- * @reconfigure: %FALSE if this is a dry-run, %TRUE for an actual action
+ * @connection: the new connection settings to be applied or %NULL to reapply
+ *   the current settings connection
  * @error: the error if %FALSE is returned
  *
  * Change configuration of an already configured device if possible.
@@ -6997,23 +6910,21 @@ reapply_connection_setting (NMDevice *self,
 static gboolean
 reapply_connection (NMDevice *self,
                     NMConnection *connection,
-                    guint flags,
-                    gboolean reconfigure,
                     GError **error)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *applied = nm_device_get_applied_connection (self);
-	NMConnection *old;
-	GHashTable *diffs = NULL;
-	GHashTableIter iter;
-	const char *setting;
-	gboolean success = FALSE;
+	gs_unref_object NMConnection *applied_clone = NULL;
+	gs_unref_hashtable GHashTable *diffs = NULL;
+	NMConnection *con_old, *con_new;
+	NMSettingIPConfig *s_ip4_old, *s_ip4_new;
+	NMSettingIPConfig *s_ip6_old, *s_ip6_new;
 
-	/* No flags supported as of now. */
-	if (flags != 0) {
-		g_set_error (error,
-		             NM_DEVICE_ERROR,
-		             NM_DEVICE_ERROR_FAILED,
-		             "Invalid flags specified");
+	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_NOT_ACTIVE,
+		                     "Device is not activated");
 		return FALSE;
 	}
 
@@ -7023,46 +6934,85 @@ reapply_connection (NMDevice *self,
 	                    NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS,
 	                    &diffs);
 
-	/* Everything set. */
-	if (!diffs)
-		return TRUE;
+	/**************************************************************************
+	 * check for unsupported changes and reject to reapply
+	 *************************************************************************/
+	if (!_hash_check_invalid_keys (diffs, NULL, error,
+	                               NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                               NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                               NM_SETTING_CONNECTION_SETTING_NAME,
+	                               NULL))
+		return FALSE;
 
-	old  = nm_simple_connection_new_clone (applied);
-	if (reconfigure)
+	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
+	                               NM_SETTING_CONNECTION_SETTING_NAME,
+	                               error,
+	                               NM_SETTING_CONNECTION_ZONE,
+	                               NM_SETTING_CONNECTION_METERED,
+	                               NULL))
+		return FALSE;
+
+	_LOGD (LOGD_DEVICE, "reapply");
+
+	/**************************************************************************
+	 * Update applied connection
+	 *************************************************************************/
+
+	if (diffs) {
+		con_old = applied_clone  = nm_simple_connection_new_clone (applied);
+		con_new = applied;
 		nm_connection_replace_settings_from_connection (applied, connection);
+	} else
+		con_old = con_new = applied;
 
-	g_hash_table_iter_init (&iter, diffs);
-	while (g_hash_table_iter_next (&iter, (gpointer *)&setting, NULL)) {
-		if (strcmp (setting, NM_SETTING_IP4_CONFIG_SETTING_NAME) == 0) {
-			if (!reapply_ip4_config (self, old, reconfigure, error))
-				goto done;
-		} else if (strcmp (setting, NM_SETTING_IP6_CONFIG_SETTING_NAME) == 0) {
-			if (!reapply_ip6_config (self, old, reconfigure, error))
-				goto done;
-		} else if (strcmp (setting, NM_SETTING_CONNECTION_SETTING_NAME) == 0) {
-			if (!reapply_connection_setting (self, old, reconfigure, error))
-				goto done;
-		} else {
-			g_set_error (error,
-			             NM_DEVICE_ERROR,
-			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-			             "Can't reapply changes to '%s' settings",
-			             setting);
-			goto done;
-		}
+	s_ip4_new = nm_connection_get_setting_ip4_config (con_new);
+	s_ip4_old = nm_connection_get_setting_ip4_config (con_old);
+	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
+	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
+
+	/**************************************************************************
+	 * Reapply changes
+	 *************************************************************************/
+
+	nm_device_update_firewall_zone (self);
+	nm_device_update_metered (self);
+
+	if (priv->ip4_state != IP_NONE) {
+		g_clear_object (&priv->con_ip4_config);
+		priv->con_ip4_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
+		nm_ip4_config_merge_setting (priv->con_ip4_config,
+		                             s_ip4_new,
+		                             nm_device_get_ip4_route_metric (self));
+
+		if (strcmp (nm_setting_ip_config_get_method (s_ip4_new),
+		            nm_setting_ip_config_get_method (s_ip4_old))) {
+			_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
+			priv->ip4_state = IP_WAIT;
+			if (!nm_device_activate_stage3_ip4_start (self))
+				_LOGW (LOGD_IP4, "Failed to apply IPv4 configuration");
+		} else
+			ip4_config_merge_and_apply (self, NULL, TRUE, NULL);
 	}
 
-	success = TRUE;
-done:
-	g_hash_table_destroy (diffs);
-	g_object_unref (old);
-	return success;
-}
+	if (priv->ip6_state != IP_NONE) {
+		g_clear_object (&priv->con_ip6_config);
+		priv->con_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+		nm_ip6_config_merge_setting (priv->con_ip6_config,
+		                             s_ip6_new,
+		                             nm_device_get_ip6_route_metric (self));
 
-typedef struct {
-	NMConnection *connection;
-	guint flags;
-} ReapplyInfo;
+		if (strcmp (nm_setting_ip_config_get_method (s_ip6_new),
+		            nm_setting_ip_config_get_method (s_ip6_old))) {
+			_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
+			priv->ip6_state = IP_WAIT;
+			if (!nm_device_activate_stage3_ip6_start (self))
+				_LOGW (LOGD_IP6, "Failed to apply IPv6 configuration");
+		} else
+			ip6_config_merge_and_apply (self, TRUE, NULL);
+	}
+
+	return TRUE;
+}
 
 static void
 reapply_cb (NMDevice *self,
@@ -7071,46 +7021,25 @@ reapply_cb (NMDevice *self,
             GError *error,
             gpointer user_data)
 {
-	ReapplyInfo *info = (ReapplyInfo *)user_data;
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_unref_object NMConnection *connection = NM_CONNECTION (user_data);
 	GError *local = NULL;
 
 	if (error) {
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, error->message);
 		g_dbus_method_invocation_return_gerror (context, error);
-		goto out;
-	}
-
-	/* Authorized */
-	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
-		local = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ACTIVE,
-		                             "Device is not activated");
-		g_dbus_method_invocation_return_gerror (context, local);
-		g_error_free (local);
-		goto out;
+		return;
 	}
 
 	if (!reapply_connection (self,
-	                         info->connection,
-	                         info->flags,
-	                         FALSE,
+	                         connection ? : (NMConnection *) nm_device_get_settings_connection (self),
 	                         &local)) {
-		/* The dry-run check failed, pityfully. */
-		g_dbus_method_invocation_return_gerror (context, local);
-		g_error_free (local);
-		goto out;
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, local->message);
+		g_dbus_method_invocation_take_error (context, local);
+		local = NULL;
+	} else {
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, subject, NULL);
+		g_dbus_method_invocation_return_value (context, NULL);
 	}
-
-	reapply_connection (self,
-	                    info->connection,
-	                    info->flags,
-	                    TRUE,
-	                    &local);
-	g_dbus_method_invocation_return_value (context, NULL);
-
-out:
-	g_object_unref (info->connection);
-	g_slice_free (ReapplyInfo, info);
 }
 
 static void
@@ -7119,17 +7048,27 @@ impl_device_reapply (NMDevice *self,
                      GVariant *settings,
                      guint flags)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 	GError *error = NULL;
-	ReapplyInfo *info;
 
-	if (NM_DEVICE_GET_PRIVATE (self)->act_request == NULL) {
+	/* No flags supported as of now. */
+	if (flags != 0) {
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_NOT_ACTIVE,
-		                             "This device is not active");
-		g_dbus_method_invocation_return_gerror (context, error);
-		g_error_free (error);
+		                             "Invalid flags specified");
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "Device is not activated");
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
+		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
 
@@ -7141,19 +7080,12 @@ impl_device_reapply (NMDevice *self,
 		connection = nm_simple_connection_new_from_dbus (settings, &error);
 		if (!connection) {
 			g_prefix_error (&error, "The settings specified are invalid: ");
-			g_dbus_method_invocation_return_gerror (context, error);
-			g_error_free (error);
+			nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
+			g_dbus_method_invocation_take_error (context, error);
 			return;
 		}
 		nm_connection_clear_secrets (connection);
-	} else {
-		/* Just reuse whatever is active already. */
-		connection = NM_CONNECTION (g_object_ref (settings_connection));
 	}
-
-	info = g_slice_new0 (ReapplyInfo);
-	info->connection = connection;
-	info->flags = flags;
 
 	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
@@ -7162,7 +7094,7 @@ impl_device_reapply (NMDevice *self,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
 	               reapply_cb,
-	               info);
+	               connection);
 }
 
 static void
@@ -8851,9 +8783,13 @@ nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 void
 nm_device_reapply_settings_immediately (NMDevice *self)
 {
-	NMConnection *applied_connection, *old_applied;
+	NMConnection *applied_connection;
 	NMSettingsConnection *settings_connection;
 	NMDeviceState state;
+	NMSettingConnection *s_con_settings;
+	NMSettingConnection *s_con_applied;
+	const char *zone;
+	NMMetered metered;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -8870,10 +8806,31 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	                                                               NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY))
 		return;
 
-	old_applied  = nm_simple_connection_new_clone (applied_connection);
-	nm_connection_replace_settings_from_connection (applied_connection, NM_CONNECTION (settings_connection));
-	reapply_connection_setting (self, old_applied, TRUE, NULL);
-	g_object_unref (old_applied);
+	s_con_settings = nm_connection_get_setting_connection ((NMConnection *) settings_connection);
+	s_con_applied = nm_connection_get_setting_connection (applied_connection);
+
+	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
+	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
+
+		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s", NM_PRINT_FMT_QUOTE_STRING (zone));
+
+		g_object_set (G_OBJECT (s_con_applied),
+		              NM_SETTING_CONNECTION_ZONE, zone,
+		              NULL);
+
+		nm_device_update_firewall_zone (self);
+	}
+
+	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
+
+		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d", (int) metered);
+
+		g_object_set (G_OBJECT (s_con_applied),
+		              NM_SETTING_CONNECTION_METERED, metered,
+		              NULL);
+
+		nm_device_update_metered (self);
+	}
 }
 
 void
