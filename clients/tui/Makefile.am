@@ -27,12 +27,12 @@ links = nmtui-edit nmtui-connect nmtui-hostname
 
 install-exec-hook:
 	for link in $(links); do \
-		cd $(DESTDIR)$(bindir) && $(LN_S) -f nmtui $$link; \
+		$(LN_S) -f nmtui "$(DESTDIR)$(bindir)/$$link"; \
 	done
 
 uninstall-hook:
 	for link in $(links); do \
-		rm -f $(DESTDIR)$(bindir)/$$link; \
+		rm -f "$(DESTDIR)$(bindir)/$$link"; \
 	done
 
 nmtui_SOURCES = \
