@@ -81,6 +81,9 @@ static gboolean find_master (NMManager *self,
 
 static void nm_manager_update_state (NMManager *manager);
 
+static void connection_changed (NMSettings *settings, NMConnection *connection,
+                                NMManager *manager);
+
 #define TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE "act-con-add-and-activate"
 
 typedef struct {
@@ -1098,11 +1101,29 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 }
 
 static void
+retry_connections_for_parent_device (NMManager *self, NMDevice *device)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *connections, *iter;
+
+	g_return_if_fail (device);
+
+	connections = nm_settings_get_connections (priv->settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = iter->data;
+		NMDevice *parent;
+
+		parent = find_parent_device_for_connection (self, candidate);
+		if (parent == device)
+			connection_changed (priv->settings, candidate, self);
+	}
+}
+
+static void
 connection_changed (NMSettings *settings,
                     NMConnection *connection,
                     NMManager *manager)
 {
-	GSList *connections, *iter;
 	NMDevice *device;
 
 	if (!nm_connection_is_virtual (connection))
@@ -1115,16 +1136,7 @@ connection_changed (NMSettings *settings,
 	/* Maybe the device that was created was needed by some other
 	 * connection's device (parent of a VLAN). Let the connections
 	 * can use the newly created device as a parent know. */
-	connections = nm_settings_get_connections (settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = iter->data;
-		NMDevice *parent;
-
-		parent = find_parent_device_for_connection (manager, candidate);
-		if (parent == device)
-			connection_changed (settings, candidate, manager);
-	}
-
+	retry_connections_for_parent_device (manager, device);
 }
 
 static void
@@ -1739,6 +1751,18 @@ device_ip_iface_changed (NMDevice *device,
 }
 
 static void
+device_iface_changed (NMDevice *device,
+                      GParamSpec *pspec,
+                      NMManager *self)
+{
+	/* Virtual connections may refer to the new device name as
+	 * parent device, retry to activate them.
+	 */
+	retry_connections_for_parent_device (self, device);
+}
+
+
+static void
 device_realized (NMDevice *device,
                  GParamSpec *pspec,
                  NMManager *self)
@@ -1832,6 +1856,11 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	g_signal_connect (device, "notify::" NM_DEVICE_IP_IFACE,
 	                  G_CALLBACK (device_ip_iface_changed),
 	                  self);
+
+	g_signal_connect (device, "notify::" NM_DEVICE_IFACE,
+	                  G_CALLBACK (device_iface_changed),
+	                  self);
+
 	g_signal_connect (device, "notify::" NM_DEVICE_REAL,
 	                  G_CALLBACK (device_realized),
 	                  self);
@@ -1882,6 +1911,11 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 		if (d != device)
 			nm_device_notify_new_device_added (d, device);
 	}
+
+	/* Virtual connections may refer to the new device as
+	 * parent device, retry to activate them.
+	 */
+	retry_connections_for_parent_device (self, device);
 
 	return TRUE;
 }
