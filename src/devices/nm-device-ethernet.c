@@ -305,9 +305,9 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 }
 
 static void
-setup_start (NMDevice *device, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->setup_start (device, plink);
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->realize_start_notify (device, plink);
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
 }
@@ -1731,7 +1731,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->setup_start = setup_start;
+	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->new_default_connection = new_default_connection;

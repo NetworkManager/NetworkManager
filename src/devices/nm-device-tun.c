@@ -242,9 +242,9 @@ realize (NMDevice *device, NMPlatformLink *plink, GError **error)
 }
 
 static void
-setup_start (NMDevice *device, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->setup_start (device, plink);
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->realize_start_notify (device, plink);
 	reload_tun_properties (device);
 }
 
@@ -447,7 +447,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->realize = realize;
-	device_class->setup_start = setup_start;
+	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize = unrealize;
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;

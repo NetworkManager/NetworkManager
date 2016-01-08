@@ -1840,14 +1840,40 @@ check_carrier (NMDevice *self)
 }
 
 static void
-setup_start (NMDevice *self, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *self, const NMPlatformLink *plink)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	/* Stub implementation for realize_start_notify(). It does nothing,
+	 * but allows derived classes to uniformly invoke the parent
+	 * implementation. */
+}
+
+/**
+ * realize_start_setup():
+ * @self: the #NMDevice
+ * @plink: the #NMPlatformLink if backed by a kernel netdevice
+ *
+ * Update the device from backing resource properties (like hardware
+ * addresses, carrier states, driver/firmware info, etc).  This function
+ * should only change properties for this device, and should not perform
+ * any tasks that affect other interfaces (like master/slave or parent/child
+ * stuff).
+ */
+static void
+realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
+{
+	NMDevicePrivate *priv;
+	NMDeviceClass *klass;
 	static guint32 id = 0;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* The device should not be realized */
 	g_return_if_fail (priv->ip_ifindex <= 0);
 	g_return_if_fail (priv->ip_iface == NULL);
+
+	klass = NM_DEVICE_GET_CLASS (self);
 
 	/* Balanced by a thaw in nm_device_setup_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
@@ -1858,7 +1884,7 @@ setup_start (NMDevice *self, const NMPlatformLink *plink)
 	}
 
 	if (priv->ifindex > 0) {
-		_LOGD (LOGD_DEVICE, "setup_start(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
+		_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
 
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
@@ -1885,8 +1911,8 @@ setup_start (NMDevice *self, const NMPlatformLink *plink)
 			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ifindex);
 	}
 
-	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
-		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
+	if (klass->get_generic_capabilities)
+		priv->capabilities |= klass->get_generic_capabilities (self);
 
 	if (!priv->udi) {
 		/* Use a placeholder UDI until we get a real one */
@@ -1924,14 +1950,8 @@ setup_start (NMDevice *self, const NMPlatformLink *plink)
 	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
 
 	priv->real = TRUE;
-}
 
-static void
-realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
-{
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	NM_DEVICE_GET_CLASS (self)->setup_start (self, plink);
+	klass->realize_start_notify (self, plink);
 }
 
 /**
@@ -1958,7 +1978,7 @@ nm_device_setup_finish (NMDevice *self, const NMPlatformLink *plink)
 
 	nm_device_recheck_available_connections (self);
 
-	/* Balanced by a freeze in setup_start() */
+	/* Balanced by a freeze in realize_start_setup() */
 	g_object_thaw_notify (G_OBJECT (self));
 }
 
@@ -10868,7 +10888,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
-	klass->setup_start = setup_start;
+	klass->realize_start_notify = realize_start_notify;
 	klass->unrealize = unrealize;
 	klass->is_up = is_up;
 	klass->bring_up = bring_up;

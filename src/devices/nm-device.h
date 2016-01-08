@@ -189,17 +189,14 @@ typedef struct {
 	                                       GError **error);
 
 	/**
-	 * setup_start():
+	 * realize_start_notify():
 	 * @self: the #NMDevice
 	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
-	 * Update the device from backing resource properties (like hardware
-	 * addresses, carrier states, driver/firmware info, etc).  This function
-	 * should only change properties for this device, and should not perform
-	 * any tasks that affect other interfaces (like master/slave or parent/child
-	 * stuff).
+	 * Hook for derived classes to be notfied during realize_start_setup()
+	 * and perform additional setup.
 	 */
-	void        (*setup_start) (NMDevice *self, const NMPlatformLink *plink);
+	void        (*realize_start_notify) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
 	 * unrealize():
