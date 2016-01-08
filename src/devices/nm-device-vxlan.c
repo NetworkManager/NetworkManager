@@ -237,16 +237,6 @@ create_and_realize (NMDevice *device,
 }
 
 static gboolean
-realize (NMDevice *device, NMPlatformLink *plink, GError **error)
-{
-	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
-
-	update_properties (device);
-
-	return TRUE;
-}
-
-static gboolean
 match_parent (NMDeviceVxlan *self, const char *parent)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
@@ -670,7 +660,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	device_class->unrealize = unrealize;
 	device_class->connection_type = NM_SETTING_VXLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
-	device_class->realize = realize;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->update_connection = update_connection;

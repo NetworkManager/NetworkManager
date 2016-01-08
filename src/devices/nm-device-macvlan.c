@@ -210,13 +210,6 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 static gboolean
-realize (NMDevice *device, NMPlatformLink *plink, GError **error)
-{
-	update_properties (device);
-	return TRUE;
-}
-
-static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
@@ -652,7 +645,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	device_class->is_available = is_available;
 	device_class->link_changed = link_changed;
 	device_class->notify_new_device_added = notify_new_device_added;
-	device_class->realize = realize;
 	device_class->realize_start_notify = realize_start_notify;
 	device_class->update_connection = update_connection;
 

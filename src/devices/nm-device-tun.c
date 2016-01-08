@@ -234,13 +234,6 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
-realize (NMDevice *device, NMPlatformLink *plink, GError **error)
-{
-	reload_tun_properties (NM_DEVICE_TUN (device));
-	return TRUE;
-}
-
 static void
 realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
@@ -446,7 +439,6 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->complete_connection = complete_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
-	device_class->realize = realize;
 	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize = unrealize;
 	device_class->update_connection = update_connection;
