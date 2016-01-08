@@ -1934,21 +1934,24 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	NM_DEVICE_GET_CLASS (self)->setup_start (self, plink);
 }
 
-static void
-setup_finish (NMDevice *self, const NMPlatformLink *plink)
-{
-	if (plink) {
-		update_device_from_platform_link (self, plink);
-		device_recheck_slave_status (self, plink);
-	}
-}
-
+/**
+ * nm_device_setup_finish():
+ * @self: the #NMDevice
+ * @plink: the #NMPlatformLink if backed by a kernel netdevice
+ *
+ * Update the device's master/slave or parent/child relationships from
+ * backing resource properties.  After this function finishes, the device
+ * is ready for network connectivity.
+ */
 void
 nm_device_setup_finish (NMDevice *self, const NMPlatformLink *plink)
 {
 	g_return_if_fail (!plink || link_type_compatible (self, plink->type, NULL, NULL));
 
-	NM_DEVICE_GET_CLASS (self)->setup_finish (self, plink);
+	if (plink) {
+		update_device_from_platform_link (self, plink);
+		device_recheck_slave_status (self, plink);
+	}
 
 	NM_DEVICE_GET_PRIVATE (self)->real = TRUE;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
@@ -10866,7 +10869,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->check_connection_available = check_connection_available;
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
 	klass->setup_start = setup_start;
-	klass->setup_finish = setup_finish;
 	klass->unrealize = unrealize;
 	klass->is_up = is_up;
 	klass->bring_up = bring_up;

@@ -202,17 +202,6 @@ typedef struct {
 	void        (*setup_start) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
-	 * setup_finish():
-	 * @self: the #NMDevice
-	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
-	 *
-	 * Update the device's master/slave or parent/child relationships from
-	 * backing resource properties.  After this function finishes, the device
-	 * is ready for network connectivity.
-	 */
-	void        (*setup_finish) (NMDevice *self, const NMPlatformLink *plink);
-
-	/**
 	 * unrealize():
 	 * @self: the #NMDevice
 	 * @remove_resources: if %TRUE remove backing resources
