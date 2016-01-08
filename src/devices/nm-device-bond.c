@@ -518,13 +518,13 @@ create_device (NMDeviceFactory *factory,
                gboolean *out_ignore)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
-		                              NM_DEVICE_IFACE, iface,
-		                              NM_DEVICE_DRIVER, "bonding",
-		                              NM_DEVICE_TYPE_DESC, "Bond",
-		                              NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
-		                              NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_BOND,
-		                              NM_DEVICE_IS_MASTER, TRUE,
-		                              NULL);
+	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_DRIVER, "bonding",
+	                                  NM_DEVICE_TYPE_DESC, "Bond",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_BOND,
+	                                  NM_DEVICE_IS_MASTER, TRUE,
+	                                  NULL);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (BOND, Bond, bond,

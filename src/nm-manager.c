@@ -1086,7 +1086,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		/* Create any backing resources the device needs */
 		if (!nm_device_create_and_realize (device, connection, parent, &error)) {
 			nm_log_warn (LOGD_DEVICE, "(%s) couldn't create the device: %s",
-				     nm_connection_get_id (connection), error->message);
+			             nm_connection_get_id (connection), error->message);
 			g_error_free (error);
 			remove_device (self, device, FALSE, TRUE);
 			return NULL;
