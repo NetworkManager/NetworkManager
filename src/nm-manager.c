@@ -1042,22 +1042,22 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		factory = nm_device_factory_manager_find_factory_for_connection (connection);
 		if (!factory) {
 			nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
-				    nm_connection_get_id (connection), iface,
-				    nm_connection_get_connection_type (connection));
+			            nm_connection_get_id (connection), iface,
+			            nm_connection_get_connection_type (connection));
 			return NULL;
 		}
 
 		device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, &error);
 		if (!device) {
 			nm_log_warn (LOGD_DEVICE, "(%s) factory can't create the device: %s",
-				     nm_connection_get_id (connection), error->message);
+			             nm_connection_get_id (connection), error->message);
 			g_error_free (error);
 			return NULL;
 		}
 
 		if (!add_device (self, device, &error)) {
 			nm_log_warn (LOGD_DEVICE, "(%s) can't register the device with manager: %s",
-				     nm_connection_get_id (connection), error->message);
+			             nm_connection_get_id (connection), error->message);
 			g_error_free (error);
 			g_object_unref (device);
 			return NULL;
