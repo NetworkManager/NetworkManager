@@ -412,7 +412,8 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
-ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
+ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
+ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/
 
 mkdir -p %{buildroot}%{_datadir}/gnome-vpn-properties
 
@@ -478,6 +479,7 @@ fi
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
+%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
 %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dnsmasq.d
 %dir %{_sysconfdir}/%{name}/VPN

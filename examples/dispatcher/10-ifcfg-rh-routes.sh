@@ -8,6 +8,9 @@
 # This should be installed in both dispatcher.d/ and
 # dispatcher.d/pre-up.d/
 
+# pre-up scripts delay activation of the device. To reduce the delay,
+# it is adviced to install the script as symlink to no-wait.d directory.
+
 if [ "$2" != "pre-up" -a "$2" != "down" ]; then
     exit 0
 fi
