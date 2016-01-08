@@ -75,6 +75,7 @@ static gboolean ip_config_valid (NMDeviceState state);
 static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, NMDeviceStateReason *reason);
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
 static void nm_device_start_ip_check (NMDevice *self);
+static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
@@ -1737,7 +1738,7 @@ nm_device_realize (NMDevice *self,
 			return FALSE;
 	}
 
-	NM_DEVICE_GET_CLASS (self)->setup_start (self, plink);
+	realize_start_setup (self, plink);
 
 	return TRUE;
 }
@@ -1775,7 +1776,7 @@ nm_device_create_and_realize (NMDevice *self,
 		plink = &plink_copy;
 	}
 
-	NM_DEVICE_GET_CLASS (self)->setup_start (self, plink);
+	realize_start_setup (self, plink);
 	nm_device_setup_finish (self, plink);
 
 	g_return_val_if_fail (nm_device_check_connection_compatible (self, connection), TRUE);
@@ -1923,6 +1924,14 @@ setup_start (NMDevice *self, const NMPlatformLink *plink)
 	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
 
 	priv->real = TRUE;
+}
+
+static void
+realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
+{
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	NM_DEVICE_GET_CLASS (self)->setup_start (self, plink);
 }
 
 static void
