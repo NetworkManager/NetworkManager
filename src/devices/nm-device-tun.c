@@ -337,14 +337,14 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-unrealize (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device, gboolean remove_resources)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 	GParamSpec **properties;
 	guint n_properties, i;
 
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->unrealize (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->unrealize_notify (device, remove_resources);
 
 	memset (&priv->props, 0, sizeof (NMPlatformTunProperties));
 
@@ -440,7 +440,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->realize_start_notify = realize_start_notify;
-	device_class->unrealize = unrealize;
+	device_class->unrealize_notify = unrealize_notify;
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;

@@ -790,9 +790,9 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-unrealize (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device, gboolean remove_resources)
 {
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize_notify (device, remove_resources);
 
 	update_properties_from_ifindex (device, 0);
 }
@@ -879,7 +879,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->create_and_realize = create_and_realize;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->realize_start_notify = realize_start_notify;
-	device_class->unrealize = unrealize;
+	device_class->unrealize_notify = unrealize_notify;
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
 	                               NM_SETTING_IP_TUNNEL_SETTING_NAME,

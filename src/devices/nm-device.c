@@ -1977,7 +1977,7 @@ nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 }
 
 static void
-unrealize (NMDevice *self, gboolean remove_resources)
+unrealize_notify (NMDevice *self, gboolean remove_resources)
 {
 	int ifindex;
 
@@ -2021,8 +2021,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	g_object_freeze_notify (G_OBJECT (self));
 
-	if (NM_DEVICE_GET_CLASS (self)->unrealize)
-		NM_DEVICE_GET_CLASS (self)->unrealize (self, remove_resources);
+	if (NM_DEVICE_GET_CLASS (self)->unrealize_notify)
+		NM_DEVICE_GET_CLASS (self)->unrealize_notify (self, remove_resources);
 
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;
@@ -10883,7 +10883,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->check_connection_available = check_connection_available;
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
 	klass->realize_start_notify = realize_start_notify;
-	klass->unrealize = unrealize;
+	klass->unrealize_notify = unrealize_notify;
 	klass->is_up = is_up;
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;

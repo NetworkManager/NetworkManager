@@ -155,14 +155,14 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 }
 
 static void
-unrealize (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device, gboolean remove_resources)
 {
 	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
 	GParamSpec **properties;
 	guint n_properties, i;
 
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize_notify (device, remove_resources);
 
 	memset (&priv->props, 0, sizeof (NMPlatformLnkVxlan));
 
@@ -657,7 +657,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	device_class->link_changed = link_changed;
 	device_class->realize_start_notify = realize_start_notify;
-	device_class->unrealize = unrealize;
+	device_class->unrealize_notify = unrealize_notify;
 	device_class->connection_type = NM_SETTING_VXLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
 	device_class->check_connection_compatible = check_connection_compatible;
