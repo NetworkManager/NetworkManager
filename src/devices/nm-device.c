@@ -1700,23 +1700,23 @@ link_type_compatible (NMDevice *self,
 }
 
 /**
- * nm_device_realize():
+ * nm_device_realize_start():
  * @self: the #NMDevice
  * @plink: an existing platform link or %NULL
  * @out_compatible: %TRUE on return if @self is compatible with @plink
  * @error: location to store error, or %NULL
  *
  * Initializes and sets up the device using existing backing resources. Before
- * the device is ready for use nm_device_setup_finish() must be called.
+ * the device is ready for use nm_device_realize_finish() must be called.
  * @out_compatible will only be set if @plink is not %NULL, and
  *
  * Returns: %TRUE on success, %FALSE on error
  */
 gboolean
-nm_device_realize (NMDevice *self,
-                   NMPlatformLink *plink,
-                   gboolean *out_compatible,
-                   GError **error)
+nm_device_realize_start (NMDevice *self,
+                         NMPlatformLink *plink,
+                         gboolean *out_compatible,
+                         GError **error)
 {
 	NM_SET_OUT (out_compatible, TRUE);
 
@@ -1771,7 +1771,7 @@ nm_device_create_and_realize (NMDevice *self,
 	}
 
 	realize_start_setup (self, plink);
-	nm_device_setup_finish (self, plink);
+	nm_device_realize_finish (self, plink);
 
 	g_return_val_if_fail (nm_device_check_connection_compatible (self, connection), TRUE);
 	return TRUE;
@@ -1869,7 +1869,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	klass = NM_DEVICE_GET_CLASS (self);
 
-	/* Balanced by a thaw in nm_device_setup_finish() */
+	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
 
 	if (plink) {
@@ -1949,7 +1949,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 }
 
 /**
- * nm_device_setup_finish():
+ * nm_device_realize_finish():
  * @self: the #NMDevice
  * @plink: the #NMPlatformLink if backed by a kernel netdevice
  *
@@ -1958,7 +1958,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
  * is ready for network connectivity.
  */
 void
-nm_device_setup_finish (NMDevice *self, const NMPlatformLink *plink)
+nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 {
 	g_return_if_fail (!plink || link_type_compatible (self, plink->type, NULL, NULL));
 

@@ -467,16 +467,16 @@ gboolean nm_device_get_is_nm_owned (NMDevice *device);
 
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
-gboolean nm_device_realize            (NMDevice *device,
+gboolean nm_device_realize_start      (NMDevice *device,
                                        NMPlatformLink *plink,
                                        gboolean *out_compatible,
                                        GError **error);
+void     nm_device_realize_finish     (NMDevice *self,
+                                       const NMPlatformLink *plink);
 gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMConnection *connection,
                                        NMDevice *parent,
                                        GError **error);
-void     nm_device_setup_finish       (NMDevice *self,
-                                       const NMPlatformLink *plink);
 gboolean nm_device_unrealize          (NMDevice *device,
                                        gboolean remove_resources,
                                        GError **error);

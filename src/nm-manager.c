@@ -1895,9 +1895,9 @@ factory_device_added_cb (NMDeviceFactory *factory,
 {
 	GError *error = NULL;
 
-	if (nm_device_realize (device, NULL, NULL, &error)) {
+	if (nm_device_realize_start (device, NULL, NULL, &error)) {
 		add_device (NM_MANAGER (user_data), device, NULL);
-		nm_device_setup_finish (device, NULL);
+		nm_device_realize_finish (device, NULL);
 	} else {
 		nm_log_warn (LOGD_DEVICE, "(%s): failed to realize device: %s",
 		             nm_device_get_iface (device), error->message);
@@ -1967,9 +1967,9 @@ platform_link_added (NMManager *self,
 			 * device with the link's name.
 			 */
 			return;
-		} else if (nm_device_realize (candidate, plink, &compatible, &error)) {
+		} else if (nm_device_realize_start (candidate, plink, &compatible, &error)) {
 			/* Success */
-			nm_device_setup_finish (candidate, plink);
+			nm_device_realize_finish (candidate, plink);
 			return;
 		}
 
@@ -2016,9 +2016,9 @@ platform_link_added (NMManager *self,
 	if (device) {
 		if (nm_plugin_missing)
 			nm_device_set_nm_plugin_missing (device, TRUE);
-		if (nm_device_realize (device, plink, NULL, &error)) {
+		if (nm_device_realize_start (device, plink, NULL, &error)) {
 			add_device (self, device, NULL);
-			nm_device_setup_finish (device, plink);
+			nm_device_realize_finish (device, plink);
 		} else {
 			nm_log_warn (LOGD_DEVICE, "%s: failed to realize device: %s",
 			             plink->name, error->message);
