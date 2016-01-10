@@ -183,18 +183,12 @@ realize (NMDevice *device,
 		return FALSE;
 	}
 
-	if (plnk->id < 0) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		             "(%s): VLAN ID invalid", plink->name);
-		return FALSE;
-	}
-
 	if (plink->parent != NM_PLATFORM_LINK_OTHER_NETNS) {
 		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->parent);
 		if (!parent) {
 			nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		                     "(%s): VLAN parent interface unknown", plink->name);
+			             "(%s): VLAN parent interface unknown", plink->name);
 			return FALSE;
 		}
 	} else
