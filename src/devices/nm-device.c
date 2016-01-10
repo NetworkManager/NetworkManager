@@ -1714,7 +1714,7 @@ link_type_compatible (NMDevice *self,
  */
 gboolean
 nm_device_realize_start (NMDevice *self,
-                         NMPlatformLink *plink,
+                         const NMPlatformLink *plink,
                          gboolean *out_compatible,
                          GError **error)
 {

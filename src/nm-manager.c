@@ -1941,7 +1941,7 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 static void
 platform_link_added (NMManager *self,
                      int ifindex,
-                     NMPlatformLink *plink)
+                     const NMPlatformLink *plink)
 {
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;

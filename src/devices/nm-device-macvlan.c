@@ -691,7 +691,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {

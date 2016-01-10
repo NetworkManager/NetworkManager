@@ -468,7 +468,7 @@ gboolean nm_device_get_is_nm_owned (NMDevice *device);
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
 gboolean nm_device_realize_start      (NMDevice *device,
-                                       NMPlatformLink *plink,
+                                       const NMPlatformLink *plink,
                                        gboolean *out_compatible,
                                        GError **error);
 void     nm_device_realize_finish     (NMDevice *self,

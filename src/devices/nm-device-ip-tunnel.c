@@ -980,7 +980,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {

@@ -792,7 +792,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {

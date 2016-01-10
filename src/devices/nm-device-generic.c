@@ -111,7 +111,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 /**************************************************************/
 
 NMDevice *
-nm_device_generic_new (NMPlatformLink *plink)
+nm_device_generic_new (const NMPlatformLink *plink)
 {
 	g_return_val_if_fail (plink != NULL, NULL);
 

@@ -721,7 +721,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {
