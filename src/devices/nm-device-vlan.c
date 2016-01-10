@@ -51,7 +51,7 @@ typedef struct {
 	NMDevice *parent;
 	gulong parent_state_id;
 	gulong parent_hwaddr_id;
-	int vlan_id;
+	guint vlan_id;
 } NMDeviceVlanPrivate;
 
 enum {
@@ -152,53 +152,47 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 }
 
 static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
+update_properties (NMDevice *device)
 {
-	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+	NMDeviceVlanPrivate *priv;
+	const NMPlatformLink *plink = NULL;
+	const NMPlatformLnkVlan *plnk = NULL;
+	NMDevice *parent = NULL;
+	int ifindex;
+	guint vlan_id;
 
-	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->realize_start_notify (device, plink);
+	g_return_if_fail (NM_IS_DEVICE_VLAN (device));
 
-	_LOGI (LOGD_HW | LOGD_VLAN, "VLAN ID %d with parent %s",
-	       priv->vlan_id, nm_device_get_iface (priv->parent));
-}
+	priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 
-static gboolean
-realize (NMDevice *device,
-         NMPlatformLink *plink,
-         GError **error)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
-	NMDevice *parent;
-	const NMPlatformLnkVlan *plnk;
+	ifindex = nm_device_get_ifindex (device);
 
-	g_return_val_if_fail (plink, FALSE);
+	if (ifindex > 0)
+		plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, &plink);
+	if (   plnk
+	    && plink->parent
+	    && plink->parent != NM_PLATFORM_LINK_OTHER_NETNS)
+		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->parent);
 
-	g_assert (plink->type == NM_LINK_TYPE_VLAN);
+	g_object_freeze_notify ((GObject *) device);
 
-	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, plink->ifindex, NULL);
-	if (!plnk) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		             "(%s): failed to get VLAN properties", plink->name);
-		return FALSE;
+	nm_device_vlan_set_parent ((NMDeviceVlan *) device, parent);
+
+	vlan_id = plnk ? plnk->id : 0;
+	if (vlan_id != priv->vlan_id) {
+		priv->vlan_id = vlan_id;
+		g_object_notify ((GObject *) device, NM_DEVICE_VLAN_ID);
 	}
 
-	if (plink->parent != NM_PLATFORM_LINK_OTHER_NETNS) {
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->parent);
-		if (!parent) {
-			nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
-			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-			             "(%s): VLAN parent interface unknown", plink->name);
-			return FALSE;
-		}
-	} else
-		parent = NULL;
+	g_object_thaw_notify ((GObject *) device);
+}
 
-	g_warn_if_fail (priv->parent == NULL);
-	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
-	priv->vlan_id = plnk->id;
+static void
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
+{
+	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->realize_start_notify (device, plink);
 
-	return TRUE;
+	update_properties (device);
 }
 
 static gboolean
@@ -211,7 +205,8 @@ create_and_realize (NMDevice *device,
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	const char *iface = nm_device_get_iface (device);
 	NMSettingVlan *s_vlan;
-	int parent_ifindex, vlan_id;
+	int parent_ifindex;
+	guint vlan_id;
 	NMPlatformError plerr;
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
@@ -247,7 +242,10 @@ create_and_realize (NMDevice *device,
 
 	g_warn_if_fail (priv->parent == NULL);
 	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
-	priv->vlan_id = vlan_id;
+	if (vlan_id != priv->vlan_id) {
+		priv->vlan_id = vlan_id;
+		g_object_notify ((GObject *) device, NM_DEVICE_VLAN_ID);
+	}
 
 	return TRUE;
 }
@@ -311,10 +309,8 @@ notify_new_device_added (NMDevice *device, NMDevice *new_device)
 		return;
 
 	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
-	if (!plnk) {
-		_LOGW (LOGD_VLAN, "failed to get VLAN interface info while checking added component.");
+	if (!plnk)
 		return;
-	}
 
 	if (   plink->parent <= 0
 	    || nm_device_get_ifindex (new_device) != plink->parent)
@@ -478,15 +474,14 @@ complete_connection (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
 	int ifindex = nm_device_get_ifindex (device);
-	NMDevice *parent;
 	const char *setting_parent, *new_parent;
 	const NMPlatformLink *plink;
 	const NMPObject *polnk;
-	nm_auto_nmpobj NMPObject *polnk_ref = NULL;
+	guint vlan_id;
+	guint vlan_flags;
 
 	if (!s_vlan) {
 		s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
@@ -494,36 +489,27 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	polnk = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, NM_LINK_TYPE_VLAN, &plink);
-	if (!polnk) {
-		_LOGW (LOGD_VLAN, "failed to get VLAN interface info while updating connection.");
-		return;
-	}
-	polnk_ref = nmp_object_ref ((NMPObject *) polnk);
 
-	if (priv->vlan_id != polnk->lnk_vlan.id) {
-		priv->vlan_id = polnk->lnk_vlan.id;
-		g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_ID);
-	}
-
-	if (polnk->lnk_vlan.id != nm_setting_vlan_get_id (s_vlan))
-		g_object_set (s_vlan, NM_SETTING_VLAN_ID, priv->vlan_id, NULL);
-
-	if (plink->parent != NM_PLATFORM_LINK_OTHER_NETNS)
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->parent);
+	if (polnk)
+		vlan_id = polnk->lnk_vlan.id;
 	else
-		parent = NULL;
-	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
+		vlan_id = priv->vlan_id;
+	if (vlan_id != nm_setting_vlan_get_id (s_vlan))
+		g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
 
 	/* Update parent in the connection; default to parent's interface name */
-	if (parent) {
-		new_parent = nm_device_get_iface (parent);
+	if (   priv->parent
+	    && polnk
+	    && plink->parent > 0
+	    && nm_device_get_ifindex (priv->parent) == plink->parent) {
+		new_parent = nm_device_get_iface (priv->parent);
 		setting_parent = nm_setting_vlan_get_parent (s_vlan);
 		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
 			NMConnection *parent_connection;
 
 			/* Don't change a parent specified by UUID if it's still valid */
 			parent_connection = nm_connection_provider_get_connection_by_uuid (nm_connection_provider_get (), setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection))
+			if (parent_connection && nm_device_check_connection_compatible (priv->parent, parent_connection))
 				new_parent = NULL;
 		}
 		if (new_parent)
@@ -531,15 +517,24 @@ update_connection (NMDevice *device, NMConnection *connection)
 	} else
 		g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, NULL, NULL);
 
-	if (polnk->lnk_vlan.flags != nm_setting_vlan_get_flags (s_vlan))
-		g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, (NMVlanFlags) polnk->lnk_vlan.flags, NULL);
+	if (polnk)
+		vlan_flags = polnk->lnk_vlan.flags;
+	else
+		vlan_flags = NM_VLAN_FLAG_REORDER_HEADERS;
+	if (vlan_flags != nm_setting_vlan_get_flags (s_vlan))
+		g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, (NMVlanFlags) vlan_flags, NULL);
 
-	_nm_setting_vlan_set_priorities (s_vlan, NM_VLAN_INGRESS_MAP,
-	                                 polnk->_lnk_vlan.ingress_qos_map,
-	                                 polnk->_lnk_vlan.n_ingress_qos_map);
-	_nm_setting_vlan_set_priorities (s_vlan, NM_VLAN_EGRESS_MAP,
-	                                 polnk->_lnk_vlan.egress_qos_map,
-	                                 polnk->_lnk_vlan.n_egress_qos_map);
+	if (polnk) {
+		_nm_setting_vlan_set_priorities (s_vlan, NM_VLAN_INGRESS_MAP,
+		                                 polnk->_lnk_vlan.ingress_qos_map,
+		                                 polnk->_lnk_vlan.n_ingress_qos_map);
+		_nm_setting_vlan_set_priorities (s_vlan, NM_VLAN_EGRESS_MAP,
+		                                 polnk->_lnk_vlan.egress_qos_map,
+		                                 polnk->_lnk_vlan.n_egress_qos_map);
+	} else {
+		_nm_setting_vlan_set_priorities (s_vlan, NM_VLAN_INGRESS_MAP, NULL, 0);
+		_nm_setting_vlan_set_priorities (s_vlan, NM_VLAN_EGRESS_MAP, NULL, 0);
+	}
 }
 
 static NMActStageReturn
@@ -685,7 +680,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->dispose = dispose;
 
 	parent_class->create_and_realize = create_and_realize;
-	parent_class->realize = realize;
 	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->unrealize = unrealize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
