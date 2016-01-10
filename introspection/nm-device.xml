@@ -169,6 +169,27 @@
       </tp:docstring>
     </property>
 
+    <method name="Reapply">
+      <arg name="connection" type="a{sa{sv}}" direction="in">
+        <tp:docstring>
+          The effective connection settings and properties to use. If empty, the connection
+          settings from the connection that is active on the device will be used.
+        </tp:docstring>
+      </arg>
+      <arg name="flags" type="u" direction="in">
+        <tp:docstring>
+          Flags which would modify the behavior of the Reapply call.
+          There are no flags defined currently and the users should use the value of 0.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Attempts to update the configuration of a device without deactivating it.
+        You can either modify the configuration by passing the desired setup via "connection"
+        argument or just omit the argument to bring it in sync with the connection that
+        has been activated but could have been modified  since.
+      </tp:docstring>
+    </method>
+
     <method name="Disconnect">
       <tp:docstring>
         Disconnects a device and prevents the device from automatically activating further connections without user intervention.

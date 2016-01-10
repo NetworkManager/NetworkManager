@@ -2165,6 +2165,128 @@ nm_device_is_software (NMDevice *device)
 }
 
 /**
+ * nm_device_reapply:
+ * @device: a #NMDevice
+ * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
+ * @flags: always set this to zero
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Attempts to update device with changes to the currently active connection
+ * made since it was last applied.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_device_reapply (NMDevice *device,
+                   NMConnection *connection,
+                   guint flags,
+                   GCancellable *cancellable,
+                   GError **error)
+{
+	GVariant *dict = NULL;
+	gboolean ret;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	if (connection)
+		dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	if (!dict)
+		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+
+	ret = nmdbus_device_call_reapply_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                       dict, flags, cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
+}
+
+static void
+device_reapply_cb (GObject *proxy,
+                   GAsyncResult *result,
+                   gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nmdbus_device_call_reapply_finish (NMDBUS_DEVICE (proxy), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else {
+		g_dbus_error_strip_remote_error (error);
+		g_simple_async_result_take_error (simple, error);
+	}
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_device_reapply_async:
+ * @device: a #NMDevice
+ * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
+ * @flags: always set this to zero
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the reapply operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Asynchronously begins an attempt to update device with changes to the
+ * currently active connection made since it was last applied.
+ **/
+void
+nm_device_reapply_async (NMDevice *device,
+                         NMConnection *connection,
+                         guint flags,
+                         GCancellable *cancellable,
+                         GAsyncReadyCallback callback,
+                         gpointer user_data)
+{
+	GVariant *dict = NULL;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	if (connection)
+		dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	if (!dict)
+		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
+	                                    nm_device_reapply_async);
+
+	nmdbus_device_call_reapply (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                            dict, flags, cancellable,
+	                            device_reapply_cb, simple);
+}
+
+/**
+ * nm_device_reapply_finish:
+ * @device: a #NMDevice
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_device_reapply_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error
+ * will be set.
+ **/
+gboolean
+nm_device_reapply_finish (NMDevice *device,
+                          GAsyncResult *result,
+                          GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_reapply_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+/**
  * nm_device_disconnect:
  * @device: a #NMDevice
  * @cancellable: a #GCancellable, or %NULL

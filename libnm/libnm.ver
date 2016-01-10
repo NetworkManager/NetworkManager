@@ -1037,4 +1037,7 @@ global:
 	nm_vpn_service_plugin_set_ip4_config;
 	nm_vpn_service_plugin_set_ip6_config;
 	nm_vpn_service_plugin_set_login_banner;
+	nm_device_reapply;
+	nm_device_reapply_async;
+	nm_device_reapply_finish;
 } libnm_1_0_0;

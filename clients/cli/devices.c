@@ -282,11 +282,12 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli device { COMMAND | help }\n\n"
-	              "COMMAND := { status | show | connect | disconnect | delete | monitor | wifi | lldp }\n\n"
+	              "COMMAND := { status | show | connect | reapply | disconnect | delete | monitor | wifi | lldp }\n\n"
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
 	              "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
 	              "  connect <ifname>\n\n"
+	              "  reapply <ifname> ...\n\n"
 	              "  disconnect <ifname> ...\n\n"
 	              "  delete <ifname> ...\n\n"
 	              "  monitor <ifname> ...\n\n"
@@ -335,6 +336,17 @@ usage_device_connect (void)
 	              "Connect the device.\n"
 	              "NetworkManager will try to find a suitable connection that will be activated.\n"
 	              "It will also consider connections that are not set to auto-connect.\n\n"));
+}
+
+static void
+usage_device_reapply (void)
+{
+	g_printerr (_("Usage: nmcli device reapply { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := <ifname> ...\n"
+	              "\n"
+	              "Attempts to update device with changes to the currently active connection\n"
+                      "made since it was last applied.\n\n"));
 }
 
 static void
@@ -1811,6 +1823,116 @@ device_cb_info_finish (DeviceCbInfo *info, NMDevice *device)
 	g_signal_handlers_disconnect_by_func (info->nmc->client, device_removed_cb, info);
 	g_slice_free (DeviceCbInfo, info);
 	quit ();
+}
+
+static void
+reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (object);
+	DeviceCbInfo *info = (DeviceCbInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	GError *error = NULL;
+
+	if (!nm_device_reapply_finish (device, result, &error)) {
+		g_string_printf (nmc->return_text, _("Error: not all connections reapplied."));
+		g_printerr (_("Error: Reapplying connection to device '%s' (%s) failed: %s\n"),
+		            nm_device_get_iface (device),
+		            nm_object_get_path (NM_OBJECT (device)),
+		            error->message);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
+		device_cb_info_finish (info, device);
+	} else {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			nmc_terminal_erase_line ();
+		g_print (_("Connection successfully reapplied to device '%s'.\n"),
+			 nm_device_get_iface (device));
+		device_cb_info_finish (info, device);
+	}
+}
+
+static NMCResultCode
+do_device_reapply (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice **devices;
+	NMDevice *device;
+	DeviceCbInfo *info = NULL;
+	GSList *queue = NULL, *iter;
+	char **arg_arr = NULL;
+	char **arg_ptr = argv;
+	int arg_num = argc;
+	int i;
+
+	/* Set default timeout for reapply operation. */
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
+
+	if (argc == 0) {
+		if (nmc->ask) {
+			char *line = nmc_readline (PROMPT_INTERFACES);
+			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
+			g_free (line);
+			arg_ptr = arg_arr;
+		}
+		if (arg_num == 0) {
+			g_string_printf (nmc->return_text, _("Error: No interface specified."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+	}
+
+	devices = get_devices_sorted (nmc->client);
+	while (arg_num > 0) {
+		device = NULL;
+		for (i = 0; devices[i]; i++) {
+			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
+				device = devices[i];
+				break;
+			}
+		}
+
+		if (device) {
+			if (!g_slist_find (queue, device))
+				queue = g_slist_prepend (queue, device);
+			else
+				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
+		} else {
+			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
+			g_string_printf (nmc->return_text, _("Error: not all devices found."));
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		}
+
+		/* Take next argument */
+		next_arg (&arg_num, &arg_ptr);
+	}
+	g_free (devices);
+
+	if (!queue) {
+		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto error;
+	}
+	queue = g_slist_reverse (queue);
+
+	info = g_slice_new0 (DeviceCbInfo);
+	info->nmc = nmc;
+
+	nmc->nowait_flag = (nmc->timeout == 0);
+	nmc->should_wait = TRUE;
+
+	for (iter = queue; iter; iter = g_slist_next (iter)) {
+		device = iter->data;
+
+		info->queue = g_slist_prepend (info->queue, g_object_ref (device));
+
+		/* Now reapply the connection to the device */
+		nm_device_reapply_async (device, NULL, 0, NULL, reapply_device_cb, info);
+	}
+
+error:
+	g_strfreev (arg_arr);
+	g_slist_free (queue);
+	return nmc->return_value;
 }
 
 static void
@@ -3592,6 +3714,13 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				goto usage_exit;
 			}
 			nmc->return_value = do_device_connect (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "reapply") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_reapply ();
+				goto usage_exit;
+			}
+			nmc->return_value = do_device_reapply (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "disconnect") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
