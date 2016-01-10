@@ -1977,16 +1977,11 @@ nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 }
 
 static void
-unrealize_notify (NMDevice *self, gboolean remove_resources)
+unrealize_notify (NMDevice *self)
 {
-	int ifindex;
-
-	if (remove_resources) {
-		ifindex = nm_device_get_ifindex (self);
-		if (   ifindex > 0
-		    && nm_device_is_software (self))
-			nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
-	}
+	/* Stub implementation for unrealize_notify(). It does nothing,
+	 * but allows derived classes to uniformly invoke the parent
+	 * implementation. */
 }
 
 /**
@@ -2004,6 +1999,7 @@ gboolean
 nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 {
 	NMDevicePrivate *priv;
+	int ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -2021,8 +2017,13 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	g_object_freeze_notify (G_OBJECT (self));
 
-	if (NM_DEVICE_GET_CLASS (self)->unrealize_notify)
-		NM_DEVICE_GET_CLASS (self)->unrealize_notify (self, remove_resources);
+	if (remove_resources) {
+		ifindex = nm_device_get_ifindex (self);
+		if (ifindex > 0)
+			nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
+	}
+
+	NM_DEVICE_GET_CLASS (self)->unrealize_notify (self);
 
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;

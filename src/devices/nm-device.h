@@ -180,13 +180,11 @@ typedef struct {
 	/**
 	 * unrealize_notify():
 	 * @self: the #NMDevice
-	 * @remove_resources: if %TRUE remove backing resources
-	 * @error: location to store error, or %NULL
 	 *
-	 * Clears any properties that depend on backing resources (kernel devices,
-	 * etc) and removes those resources if @remove_resources is %TRUE.
+	 * Hook for derived classes to clear any properties that depend on backing resources
+	 * (kernel devices, etc). This is called by nm_device_unrealize() during unrealization.
 	 */
-	void            (*unrealize_notify)  (NMDevice *self, gboolean remove_resources);
+	void            (*unrealize_notify)  (NMDevice *self);
 
 	/* Hardware state (IFF_UP) */
 	gboolean        (*can_unmanaged_external_down)  (NMDevice *self);

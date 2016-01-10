@@ -337,14 +337,14 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-unrealize_notify (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 	GParamSpec **properties;
 	guint n_properties, i;
 
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->unrealize_notify (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->unrealize_notify (device);
 
 	memset (&priv->props, 0, sizeof (NMPlatformTunProperties));
 

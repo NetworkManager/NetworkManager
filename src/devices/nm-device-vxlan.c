@@ -155,14 +155,14 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 }
 
 static void
-unrealize_notify (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device)
 {
 	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
 	GParamSpec **properties;
 	guint n_properties, i;
 
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize_notify (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize_notify (device);
 
 	memset (&priv->props, 0, sizeof (NMPlatformLnkVxlan));
 
