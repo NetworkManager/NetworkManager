@@ -1732,12 +1732,6 @@ nm_device_realize (NMDevice *self,
 			return FALSE;
 	}
 
-	/* Try to realize the device from existing resources */
-	if (NM_DEVICE_GET_CLASS (self)->realize) {
-		if (!NM_DEVICE_GET_CLASS (self)->realize (self, plink, error))
-			return FALSE;
-	}
-
 	realize_start_setup (self, plink);
 
 	return TRUE;

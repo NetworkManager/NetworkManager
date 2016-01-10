@@ -145,27 +145,6 @@ typedef struct {
 	void            (* link_changed) (NMDevice *self, NMPlatformLink *info);
 
 	/**
-	 * realize():
-	 * @self: the #NMDevice
-	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
-	 * @error: location to store error, or %NULL
-	 *
-	 * Realize the device from existing backing resources.  No resources
-	 * should be created as a side-effect of this function.  This function
-	 * should only fail if critical device properties/resources (eg, VLAN ID)
-	 * fail to be read or initialized, that would cause the device to be
-	 * unusable.  For example, for any properties required to realize the device
-	 * during create_and_realize(), if reading those properties in realize()
-	 * should fail, this function should probably return %FALSE and an error.
-	 *
-	 * Returns: %TRUE on success, %FALSE if some error ocurred when realizing
-	 * the device from backing resources
-	 */
-	gboolean        (*realize) (NMDevice *self,
-	                            NMPlatformLink *plink,
-	                            GError **error);
-
-	/**
 	 * create_and_realize():
 	 * @self: the #NMDevice
 	 * @connection: the #NMConnection being activated
