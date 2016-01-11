@@ -242,11 +242,11 @@ typedef struct {
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self,
 	                                             NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage3_ip4_config_start) (NMDevice *self,
-														 NMIP4Config **out_config,
-														 NMDeviceStateReason *reason);
+	                                                     NMIP4Config **out_config,
+	                                                     NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage3_ip6_config_start) (NMDevice *self,
-														 NMIP6Config **out_config,
-														 NMDeviceStateReason *reason);
+	                                                     NMIP6Config **out_config,
+	                                                     NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip4_config_timeout)	(NMDevice *self,
 	                                                         NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip6_config_timeout)	(NMDevice *self,
