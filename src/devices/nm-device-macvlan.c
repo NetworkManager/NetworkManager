@@ -210,13 +210,6 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 static gboolean
-realize (NMDevice *device, NMPlatformLink *plink, GError **error)
-{
-	update_properties (device);
-	return TRUE;
-}
-
-static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
@@ -558,9 +551,9 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-setup_start (NMDevice *device, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
-	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->setup_start (device, plink);
+	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->realize_start_notify (device, plink);
 
 	update_properties (device);
 }
@@ -652,8 +645,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	device_class->is_available = is_available;
 	device_class->link_changed = link_changed;
 	device_class->notify_new_device_added = notify_new_device_added;
-	device_class->realize = realize;
-	device_class->setup_start = setup_start;
+	device_class->realize_start_notify = realize_start_notify;
 	device_class->update_connection = update_connection;
 
 	/* properties */
@@ -699,7 +691,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {

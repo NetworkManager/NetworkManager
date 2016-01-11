@@ -449,13 +449,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-realize (NMDevice *self, NMPlatformLink *plink, GError **error)
-{
-	update_properties (self);
-	return TRUE;
-}
-
-static gboolean
 match_parent (NMDevice *dev_parent, const char *setting_parent)
 {
 	g_return_val_if_fail (setting_parent, FALSE);
@@ -771,9 +764,9 @@ create_and_realize (NMDevice *device,
 }
 
 static void
-setup_start (NMDevice *device, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->setup_start (device, plink);
+	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->realize_start_notify (device, plink);
 
 	update_properties (device);
 }
@@ -797,9 +790,9 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 }
 
 static void
-unrealize (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device)
 {
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize_notify (device);
 
 	update_properties_from_ifindex (device, 0);
 }
@@ -885,9 +878,8 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	device_class->realize = realize;
-	device_class->setup_start = setup_start;
-	device_class->unrealize = unrealize;
+	device_class->realize_start_notify = realize_start_notify;
+	device_class->unrealize_notify = unrealize_notify;
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
 	                               NM_SETTING_IP_TUNNEL_SETTING_NAME,
@@ -988,7 +980,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {

@@ -145,27 +145,6 @@ typedef struct {
 	void            (* link_changed) (NMDevice *self, NMPlatformLink *info);
 
 	/**
-	 * realize():
-	 * @self: the #NMDevice
-	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
-	 * @error: location to store error, or %NULL
-	 *
-	 * Realize the device from existing backing resources.  No resources
-	 * should be created as a side-effect of this function.  This function
-	 * should only fail if critical device properties/resources (eg, VLAN ID)
-	 * fail to be read or initialized, that would cause the device to be
-	 * unusable.  For example, for any properties required to realize the device
-	 * during create_and_realize(), if reading those properties in realize()
-	 * should fail, this function should probably return %FALSE and an error.
-	 *
-	 * Returns: %TRUE on success, %FALSE if some error ocurred when realizing
-	 * the device from backing resources
-	 */
-	gboolean        (*realize) (NMDevice *self,
-	                            NMPlatformLink *plink,
-	                            GError **error);
-
-	/**
 	 * create_and_realize():
 	 * @self: the #NMDevice
 	 * @connection: the #NMConnection being activated
@@ -189,39 +168,23 @@ typedef struct {
 	                                       GError **error);
 
 	/**
-	 * setup_start():
+	 * realize_start_notify():
 	 * @self: the #NMDevice
 	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
-	 * Update the device from backing resource properties (like hardware
-	 * addresses, carrier states, driver/firmware info, etc).  This function
-	 * should only change properties for this device, and should not perform
-	 * any tasks that affect other interfaces (like master/slave or parent/child
-	 * stuff).
+	 * Hook for derived classes to be notfied during realize_start_setup()
+	 * and perform additional setup.
 	 */
-	void        (*setup_start) (NMDevice *self, const NMPlatformLink *plink);
+	void        (*realize_start_notify) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
-	 * setup_finish():
+	 * unrealize_notify():
 	 * @self: the #NMDevice
-	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
-	 * Update the device's master/slave or parent/child relationships from
-	 * backing resource properties.  After this function finishes, the device
-	 * is ready for network connectivity.
+	 * Hook for derived classes to clear any properties that depend on backing resources
+	 * (kernel devices, etc). This is called by nm_device_unrealize() during unrealization.
 	 */
-	void        (*setup_finish) (NMDevice *self, const NMPlatformLink *plink);
-
-	/**
-	 * unrealize():
-	 * @self: the #NMDevice
-	 * @remove_resources: if %TRUE remove backing resources
-	 * @error: location to store error, or %NULL
-	 *
-	 * Clears any properties that depend on backing resources (kernel devices,
-	 * etc) and removes those resources if @remove_resources is %TRUE.
-	 */
-	void            (*unrealize)  (NMDevice *self, gboolean remove_resources);
+	void            (*unrealize_notify)  (NMDevice *self);
 
 	/* Hardware state (IFF_UP) */
 	gboolean        (*can_unmanaged_external_down)  (NMDevice *self);
@@ -502,16 +465,16 @@ gboolean nm_device_get_is_nm_owned (NMDevice *device);
 
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
-gboolean nm_device_realize            (NMDevice *device,
-                                       NMPlatformLink *plink,
+gboolean nm_device_realize_start      (NMDevice *device,
+                                       const NMPlatformLink *plink,
                                        gboolean *out_compatible,
                                        GError **error);
+void     nm_device_realize_finish     (NMDevice *self,
+                                       const NMPlatformLink *plink);
 gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMConnection *connection,
                                        NMDevice *parent,
                                        GError **error);
-void     nm_device_setup_finish       (NMDevice *self,
-                                       const NMPlatformLink *plink);
 gboolean nm_device_unrealize          (NMDevice *device,
                                        gboolean remove_resources,
                                        GError **error);

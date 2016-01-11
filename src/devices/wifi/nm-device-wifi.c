@@ -404,9 +404,9 @@ periodic_update_cb (gpointer user_data)
 }
 
 static void
-setup_start (NMDevice *device, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
-	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->setup_start (device, plink);
+	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->realize_start_notify (device, plink);
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS);
 }
@@ -3016,7 +3016,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	parent_class->setup_start = setup_start;
+	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->bring_up = bring_up;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;

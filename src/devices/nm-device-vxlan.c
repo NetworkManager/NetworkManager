@@ -145,24 +145,24 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 static void
-setup_start (NMDevice *device, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
 	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
 
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->setup_start (device, plink);
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->realize_start_notify (device, plink);
 
 	update_properties (device);
 }
 
 static void
-unrealize (NMDevice *device, gboolean remove_resources)
+unrealize_notify (NMDevice *device)
 {
 	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
 	GParamSpec **properties;
 	guint n_properties, i;
 
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize (device, remove_resources);
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->unrealize_notify (device);
 
 	memset (&priv->props, 0, sizeof (NMPlatformLnkVxlan));
 
@@ -232,16 +232,6 @@ create_and_realize (NMDevice *device,
 		             nm_platform_error_to_string (plerr));
 		return FALSE;
 	}
-
-	return TRUE;
-}
-
-static gboolean
-realize (NMDevice *device, NMPlatformLink *plink, GError **error)
-{
-	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
-
-	update_properties (device);
 
 	return TRUE;
 }
@@ -666,11 +656,10 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	object_class->dispose = dispose;
 
 	device_class->link_changed = link_changed;
-	device_class->setup_start = setup_start;
-	device_class->unrealize = unrealize;
+	device_class->realize_start_notify = realize_start_notify;
+	device_class->unrealize_notify = unrealize_notify;
 	device_class->connection_type = NM_SETTING_VXLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
-	device_class->realize = realize;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->update_connection = update_connection;
@@ -803,7 +792,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,
-               NMPlatformLink *plink,
+               const NMPlatformLink *plink,
                NMConnection *connection,
                gboolean *out_ignore)
 {
