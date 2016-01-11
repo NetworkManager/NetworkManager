@@ -36,6 +36,7 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
+#include <gio/gio.h>
 
 #include "nm-utils.h"
 #include "nm-dns-manager.h"
