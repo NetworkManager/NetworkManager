@@ -529,6 +529,12 @@ void nm_device_reapply_settings_immediately (NMDevice *self);
 
 void nm_device_update_firewall_zone (NMDevice *self);
 void nm_device_update_metered (NMDevice *self);
+void nm_device_reactivate_ip4_config (NMDevice *device,
+                                      NMSettingIPConfig *s_ip4_old,
+                                      NMSettingIPConfig *s_ip4_new);
+void nm_device_reactivate_ip6_config (NMDevice *device,
+                                      NMSettingIPConfig *s_ip6_old,
+                                      NMSettingIPConfig *s_ip6_new);
 
 void nm_device_update_hw_address (NMDevice *self);
 void nm_device_update_initial_hw_address (NMDevice *self);
