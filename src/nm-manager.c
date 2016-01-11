@@ -717,6 +717,7 @@ manager_device_state_changed (NMDevice *device,
                               gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -729,6 +730,10 @@ manager_device_state_changed (NMDevice *device,
 	default:
 		break;
 	}
+
+	if (   new_state == NM_DEVICE_STATE_UNAVAILABLE
+	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
+		nm_settings_device_added (priv->settings, device);
 }
 
 static void device_has_pending_action_changed (NMDevice *device,
@@ -850,14 +855,6 @@ static void
 device_removed_cb (NMDevice *device, gpointer user_data)
 {
 	remove_device (NM_MANAGER (user_data), device, FALSE, TRUE);
-}
-
-static void
-device_link_initialized_cb (NMDevice *device, gpointer user_data)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (user_data);
-
-	nm_settings_device_added (priv->settings, device);
 }
 
 static void
@@ -1819,10 +1816,6 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 
 	g_signal_connect (device, NM_DEVICE_REMOVED,
 	                  G_CALLBACK (device_removed_cb),
-	                  self);
-
-	g_signal_connect (device, NM_DEVICE_LINK_INITIALIZED,
-	                  G_CALLBACK (device_link_initialized_cb),
 	                  self);
 
 	g_signal_connect (device, "notify::" NM_DEVICE_IP_IFACE,
