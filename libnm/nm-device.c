@@ -2176,6 +2176,8 @@ nm_device_is_software (NMDevice *device)
  * made since it was last applied.
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ *
+ * Since: 1.2
  **/
 gboolean
 nm_device_reapply (NMDevice *device,
@@ -2232,6 +2234,8 @@ device_reapply_cb (GObject *proxy,
  *
  * Asynchronously begins an attempt to update device with changes to the
  * currently active connection made since it was last applied.
+ *
+ * Since: 1.2
  **/
 void
 nm_device_reapply_async (NMDevice *device,
@@ -2269,6 +2273,8 @@ nm_device_reapply_async (NMDevice *device,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error
  * will be set.
+ *
+ * Since: 1.2
  **/
 gboolean
 nm_device_reapply_finish (NMDevice *device,
