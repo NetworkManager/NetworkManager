@@ -858,14 +858,15 @@ libnm_1_0_6 {
 libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
+	nm_client_get_all_devices;
 	nm_connection_get_setting_ip_tunnel;
 	nm_connection_get_setting_macvlan;
 	nm_connection_get_setting_vxlan;
 	nm_connection_verify_secrets;
 	nm_device_ethernet_get_s390_subchannels;
-	nm_client_get_all_devices;
 	nm_device_get_lldp_neighbors;
 	nm_device_get_metered;
+	nm_device_get_nm_plugin_missing;
 	nm_device_ip_tunnel_get_encapsulation_limit;
 	nm_device_ip_tunnel_get_flow_label;
 	nm_device_ip_tunnel_get_input_key;
@@ -878,14 +879,16 @@ global:
 	nm_device_ip_tunnel_get_tos;
 	nm_device_ip_tunnel_get_ttl;
 	nm_device_ip_tunnel_get_type;
+	nm_device_is_real;
 	nm_device_macvlan_get_hw_address;
 	nm_device_macvlan_get_mode;
 	nm_device_macvlan_get_no_promisc;
 	nm_device_macvlan_get_parent;
 	nm_device_macvlan_get_tap;
 	nm_device_macvlan_get_type;
-	nm_device_get_nm_plugin_missing;
-	nm_device_is_real;
+	nm_device_reapply;
+	nm_device_reapply_async;
+	nm_device_reapply_finish;
 	nm_device_set_managed;
 	nm_device_tun_get_group;
 	nm_device_tun_get_hw_address;
@@ -1037,7 +1040,4 @@ global:
 	nm_vpn_service_plugin_set_ip4_config;
 	nm_vpn_service_plugin_set_ip6_config;
 	nm_vpn_service_plugin_set_login_banner;
-	nm_device_reapply;
-	nm_device_reapply_async;
-	nm_device_reapply_finish;
 } libnm_1_0_0;
