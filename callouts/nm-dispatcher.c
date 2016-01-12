@@ -346,8 +346,8 @@ complete_script (ScriptInfo *script)
 		 * requests. However, if this was the last "no-wait" script and
 		 * there are "wait" scripts ready to run, launch them.
 		 */
-		if (   script->request->num_scripts_nowait == 0
-		    && handler->current_request == script->request) {
+		if (   handler->current_request == script->request
+		    && script->request->num_scripts_nowait == 0) {
 
 			if (dispatch_one_script (script->request))
 				return;
