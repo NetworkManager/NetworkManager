@@ -3257,9 +3257,9 @@ _activation_auth_done (NMActiveConnection *active,
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
-			g_dbus_method_invocation_return_value (
-				context,
-				g_variant_new ("(o)", nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
+			g_dbus_method_invocation_return_value (context,
+			                                       g_variant_new ("(o)",
+			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE,
 			                            subject, NULL);
 			g_object_unref (active);
@@ -3267,8 +3267,8 @@ _activation_auth_done (NMActiveConnection *active,
 		}
 	} else {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
-			                         NM_MANAGER_ERROR_PERMISSION_DENIED,
-			                         error_desc);
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
 	}
 
 	g_assert (error);
