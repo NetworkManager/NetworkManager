@@ -89,6 +89,7 @@ parent_hwaddr_changed (NMDevice *parent,
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	const char *cloned_mac = NULL, *new_mac;
+	NMSettingIPConfig *s_ip6;
 
 	/* Never touch assumed devices */
 	if (nm_device_uses_assumed_connection (self))
@@ -110,6 +111,11 @@ parent_hwaddr_changed (NMDevice *parent,
 		if (new_mac) {
 			nm_device_set_hw_addr (self, nm_device_get_hw_address (parent),
 			                       "set", LOGD_VLAN);
+			/* When changing the hw address the interface is taken down,
+			 * removing the IPv6 configuration; reapply it.
+			 */
+			s_ip6 = nm_connection_get_setting_ip6_config (connection);
+			nm_device_reactivate_ip6_config (NM_DEVICE (self), s_ip6, s_ip6);
 		}
 	}
 }
