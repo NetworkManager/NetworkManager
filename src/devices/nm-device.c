@@ -583,6 +583,8 @@ nm_device_is_software (NMDevice *self)
 gboolean
 nm_device_is_real (NMDevice *self)
 {
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
 	return NM_DEVICE_GET_PRIVATE (self)->real;
 }
 
@@ -1710,6 +1712,9 @@ link_type_compatible (NMDevice *self,
  * the device is ready for use nm_device_realize_finish() must be called.
  * @out_compatible will only be set if @plink is not %NULL, and
  *
+ * Important: if nm_device_realize_start() returns %TRUE, the caller MUST
+ * also call nm_device_realize_finish() to balance g_object_freeze_notify().
+ *
  * Returns: %TRUE on success, %FALSE on error
  */
 gboolean
@@ -1866,6 +1871,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* The device should not be realized */
+	g_return_if_fail (!priv->real);
 	g_return_if_fail (priv->ip_ifindex <= 0);
 	g_return_if_fail (priv->ip_iface == NULL);
 
@@ -1945,8 +1951,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
 
-	priv->real = TRUE;
-
 	klass->realize_start_notify (self, plink);
 }
 
@@ -1962,14 +1966,21 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 void
 nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 {
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (!plink || link_type_compatible (self, plink->type, NULL, NULL));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->real);
 
 	if (plink) {
 		update_device_from_platform_link (self, plink);
 		device_recheck_slave_status (self, plink);
 	}
 
-	NM_DEVICE_GET_PRIVATE (self)->real = TRUE;
+	priv->real = TRUE;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
 
 	nm_device_recheck_available_connections (self);
@@ -2016,6 +2027,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	g_return_val_if_fail (priv->iface != NULL, FALSE);
+	g_return_val_if_fail (priv->real, FALSE);
 
 	g_object_freeze_notify (G_OBJECT (self));
 
@@ -10885,7 +10897,7 @@ get_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_REAL:
-		g_value_set_boolean (value, priv->real);
+		g_value_set_boolean (value, nm_device_is_real (self));
 		break;
 	case PROP_SLAVES: {
 		GSList *slave_iter;
