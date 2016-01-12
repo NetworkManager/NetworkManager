@@ -2555,7 +2555,7 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 
 		if (   candidate->address == address->address
 		    && candidate->plen == address->plen
-		    && ((candidate->peer_address & address->peer_address) & nm_utils_ip4_prefix_to_netmask (address->plen)) == 0) {
+		    && ((candidate->peer_address ^ address->peer_address) & nm_utils_ip4_prefix_to_netmask (address->plen)) == 0) {
 			guint32 lifetime, preferred;
 
 			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
