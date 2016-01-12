@@ -1762,6 +1762,8 @@ nm_device_create_and_realize (NMDevice *self,
 	/* Must be set before device is realized */
 	priv->is_nm_owned = !nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
 
+	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", priv->is_nm_owned ? "" : "not ");
+
 	/* Create any resources the device needs */
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
 		if (!NM_DEVICE_GET_CLASS (self)->create_and_realize (self, connection, parent, &plink, error))
@@ -1867,6 +1869,8 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	g_return_if_fail (priv->ip_ifindex <= 0);
 	g_return_if_fail (priv->ip_iface == NULL);
 
+	_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), plink ? plink->ifindex : 0);
+
 	klass = NM_DEVICE_GET_CLASS (self);
 
 	/* Balanced by a thaw in nm_device_realize_finish() */
@@ -1878,8 +1882,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	}
 
 	if (priv->ifindex > 0) {
-		_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
-
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
 
@@ -2017,8 +2019,11 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	g_object_freeze_notify (G_OBJECT (self));
 
+	ifindex = nm_device_get_ifindex (self);
+
+	_LOGD (LOGD_DEVICE, "unrealize (ifindex %d)", ifindex > 0 ? ifindex : 0);
+
 	if (remove_resources) {
-		ifindex = nm_device_get_ifindex (self);
 		if (ifindex > 0)
 			nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
 	}

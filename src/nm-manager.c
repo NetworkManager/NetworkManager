@@ -1886,8 +1886,6 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
 
-	nm_log_info (LOGD_HW, "(%s): new %s device", iface, type_desc);
-
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	nm_device_set_unmanaged_flags_initial (device,
 	                                       NM_UNMANAGED_USER,
@@ -1897,7 +1895,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                                       manager_sleeping (self));
 
 	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
-	nm_log_dbg (LOGD_DEVICE, "(%s): exported as %s", nm_device_get_iface (device), dbus_path);
+	nm_log_info (LOGD_DEVICE, "(%s): new %s device (%s)", iface, type_desc, dbus_path);
 
 	nm_device_finish_init (device);
 
