@@ -1202,9 +1202,12 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	guint32 i, tmp;
 	const char *str;
 
-	g_return_if_fail (config != NULL);
-
 	g_message ("--------- NMIP4Config %p (%s)", config, detail);
+
+	if (config == NULL) {
+		g_message (" (null)");
+		return;
+	}
 
 	str = nm_exported_object_get_path (NM_EXPORTED_OBJECT (config));
 	if (str)
