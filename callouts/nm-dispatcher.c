@@ -323,21 +323,25 @@ static void
 complete_script (ScriptInfo *script)
 {
 	Handler *handler;
+	Request *request;
 	gboolean wait = script->wait;
+
+	request = script->request;
 
 	if (wait) {
 		/* for "wait" scripts, try to schedule the next blocking script.
 		 * If that is successful, return (as we must wait for its completion). */
-		if (dispatch_one_script (script->request))
+		if (dispatch_one_script (request))
 			return;
 	}
 
-	handler = script->request->handler;
+	handler = request->handler;
 
-	nm_assert (!wait || handler->current_request == script->request);
+	nm_assert (!wait || handler->current_request == request);
 
-	/* Try to complete the request. */
-	complete_request (script->request);
+	/* Try to complete the request. @request will be possibly free'd,
+	 * making @script and @request a dangling pointer. */
+	complete_request (request);
 
 	if (!wait) {
 		/* this was a "no-wait" script. We either completed the request,
@@ -346,20 +350,18 @@ complete_script (ScriptInfo *script)
 		 * requests. However, if this was the last "no-wait" script and
 		 * there are "wait" scripts ready to run, launch them.
 		 */
-		if (   handler->current_request == script->request
-		    && script->request->num_scripts_nowait == 0) {
+		if (   handler->current_request == request
+		    && handler->current_request->num_scripts_nowait == 0) {
 
-			if (dispatch_one_script (script->request))
+			if (dispatch_one_script (handler->current_request))
 				return;
 
-			complete_request (script->request);
+			complete_request (handler->current_request);
 		} else
 			return;
 	}
 
 	while (next_request (handler, NULL)) {
-		Request *request;
-
 		request = handler->current_request;
 
 		if (dispatch_one_script (request))
