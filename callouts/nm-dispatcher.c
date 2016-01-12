@@ -359,6 +359,17 @@ complete_script (ScriptInfo *script)
 			complete_request (handler->current_request);
 		} else
 			return;
+	} else {
+		/* if the script is a "wait" script, we already tried above to
+		 * dispatch the next script. As we didn't do that, it means we
+		 * just completed the last script of @request and we can continue
+		 * with the next request...
+		 *
+		 * Also, it cannot be that there is another request currently being
+		 * processed because only requests with "wait" scripts can become
+		 * @current_request. As there can only be one "wait" script running
+		 * at any time, it means complete_request() above completed @request. */
+		nm_assert (!handler->current_request);
 	}
 
 	while (next_request (handler, NULL)) {
