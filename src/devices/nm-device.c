@@ -2654,7 +2654,11 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	GValue instance = G_VALUE_INIT;
 	GValue retval = G_VALUE_INIT;
 
-	if (priv->state < NM_DEVICE_STATE_DISCONNECTED || !priv->autoconnect)
+	if (!priv->autoconnect)
+		return FALSE;
+
+	/* Unrealized devices can always autoconnect. */
+	if (nm_device_is_real (self) && priv->state < NM_DEVICE_STATE_DISCONNECTED)
 		return FALSE;
 
 	/* The 'autoconnect-allowed' signal is emitted on a device to allow
