@@ -853,9 +853,9 @@ remove_device (NMManager *manager,
 
 		if (unmanage) {
 			if (quitting)
-				nm_device_set_unmanaged_quitting (device);
+				nm_device_set_unmanaged_by_quitting (device);
 			else
-				nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+				nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
 		} else if (quitting && nm_config_get_configure_and_quit (nm_config_get ())) {
 			nm_device_spawn_iface_helper (device);
 		}
@@ -1171,7 +1171,7 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	for (iter = priv->devices; iter; iter = g_slist_next (iter))
-		nm_device_set_unmanaged_flags_by_device_spec (NM_DEVICE (iter->data), unmanaged_specs);
+		nm_device_set_unmanaged_by_user_config (NM_DEVICE (iter->data), unmanaged_specs);
 }
 
 static void
@@ -3809,7 +3809,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 			if (suspending && device_is_wake_on_lan (device))
 				continue;
 
-			nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
+			nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 		}
 	} else {
 		nm_log_info (LOGD_SUSPEND, "%s...", waking_from_suspend ? "waking up" : "re-enabling");
@@ -3824,7 +3824,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 				if (nm_device_is_software (device))
 					continue;
 				if (device_is_wake_on_lan (device))
-					nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
+					nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 			}
 		}
 
@@ -3860,7 +3860,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 
 			nm_device_set_autoconnect (device, TRUE);
 
-			nm_device_set_unmanaged_flags (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+			nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
 	}
 
