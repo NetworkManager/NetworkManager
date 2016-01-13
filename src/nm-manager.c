@@ -2736,17 +2736,6 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		return FALSE;
 	}
 
-	/* If this is an autoconnect request, but the device isn't allowing autoconnect
-	 * right now, we reject it.
-	 */
-	if (!nm_active_connection_get_user_requested (active) &&
-	    !nm_device_autoconnect_allowed (device)) {
-		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
-		             "%s does not allow automatic connections at this time",
-		             nm_device_get_iface (device));
-		return FALSE;
-	}
-
 	/* Create any backing resources the device needs */
 	if (!nm_device_is_real (device)) {
 		NMDevice *parent;
