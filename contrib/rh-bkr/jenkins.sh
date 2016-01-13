@@ -72,6 +72,8 @@ python -u \
     --var "ARCH=$ARCH" \
     --var "RESERVE=$RESERVE" \
     --var "SELINUX=$SELINUX" \
+    --var "DISTRO_TAG=$DISTRO_TAG" \
+    --var "DISTRO_NAME=$DISTRO_NAME" \
     "${PROFILE[@]}" \
     "${HOSTTYPE[@]}" \
     --var "TESTS=$TESTS" \

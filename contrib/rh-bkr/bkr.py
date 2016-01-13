@@ -764,7 +764,7 @@ class CmdSubmit(CmdBase):
 
     def _get_var_for_DISTRO_TAG(self, key):
         v = self._get_var('DISTRO_TAG')
-        if v is not None:
+        if v:
             return v
         target_branch = self.__process_line_get_GIT_TEST_BRANCH_detect("DISTRO_TAG")
         if target_branch == 'rhel-7.0':
@@ -779,14 +779,17 @@ class CmdSubmit(CmdBase):
         v = self._get_var('DISTROREQUIRES')
         if v is not None:
             return v
-        v = self._get_var('DISTRO_TAG', False)
-        if v is None:
-            v = self._get_var('DISTRO_NAME', False)
-            if v is not None:
-                return '<distro_name op="=" value="%s"/>' % (v)
-        v = self._get_var ('DISTRO_TAG')
-        if v is not None:
-            return '<distro_family op="=" value="%s"/><distro_tag op="=" value="%s"/>' % (self._get_var('DISTRO_FAMILY'), v)
+        vt = self._get_var('DISTRO_TAG', False)
+        vn = self._get_var('DISTRO_NAME', False)
+        if vt:
+            vn = None
+        elif vn:
+            vt = None
+        if vn is not None:
+            return '<distro_name op="=" value="%s"/>' % (vn)
+        if vt is not None:
+            vt = self._get_var('DISTRO_TAG', True)
+            return '<distro_family op="=" value="%s"/><distro_tag op="=" value="%s"/>' % (self._get_var('DISTRO_FAMILY'), vt)
         return None
 
     def _get_var_for_RESERVESYS(self, key):
