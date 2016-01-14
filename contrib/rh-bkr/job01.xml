@@ -53,79 +53,6 @@ if [[ -n "$RPM_LIST" ]]; then
     yum install -y $RPM_LIST
 
 fi
-
-if [[ -n "$BUILD_ID" ]]; then
-
-    yum install -y git rpm-build valgrind dbus-devel dbus-glib-devel wireless-tools-devel glib2-devel gobject-introspection-devel gettext-devel pkgconfig libnl3-devel 'perl(XML::Parser)' 'perl(YAML)' automake ppp-devel nss-devel dhclient readline-devel audit-libs-devel gtk-doc libudev-devel libuuid-devel libgudev1-devel vala-tools iptables bluez-libs-devel systemd libsoup-devel libndp-devel ModemManager-glib-devel newt-devel /usr/bin/dbus-launch pygobject3-base dbus-python libselinux-devel polkit-devel teamd-devel
-
-    mkdir /root/nm-build
-    cd /root/nm-build
-
-    git clone "$BUILD_REPO"
-    cd "./NetworkManager/"
-    git checkout "$BUILD_ID"
-
-    # for the tests, let's load some modules:
-    modprobe ip_gre
-
-    if [[ "$BUILD_TEST" != "" ]]; then
-        NOCONFIGURE=yes ./autogen.sh
-
-        ./configure \
-            --enable-maintainer-mode \
-            --enable-more-warnings=error \
-            --prefix=/opt/test \
-            --sysconfdir=/etc \
-            --enable-gtk-doc \
-            --enable-more-asserts \
-            --with-more-asserts=100 \
-            --enable-more-logging \
-            --enable-compile-warnings=yes\
-            --with-valgrind=no \
-            --enable-concheck \
-            --enable-ifcfg-rh \
-            --enable-ifcfg-suse \
-            --enable-ifupdown \
-            --enable-ifnet \
-            --enable-vala=yes \
-            --enable-polkit=yes \
-            --with-nmtui=yes \
-            --with-modem-manager-1 \
-            --with-suspend-resume=systemd \
-            --enable-teamdctl=yes \
-            --enable-tests=root \
-            --with-netconfig=yes \
-            --with-crypto=nss \
-            --with-session-tracking=systemd \
-            --with-consolekit=yes \
-            --with-systemd-logind=yes \
-            --with-consolekit=yes
-
-        make -j4
-        if ! make check -k ; then
-            find -regex '.*/tests/[^/]+.log$$' -exec sh -c 'echo ">>>> $$1"; cat "$$1"' '--' '{}' ';'
-            echo ">> test failed"
-            NMTST_DEBUG=TRACE,no-expect-messages make check -k || :
-            find -regex '.*/tests/[^/]+.log$$' -exec sh -c 'echo ">>>> $$1"; cat "$$1"' '--' '{}' ';'
-            exit 57
-        fi
-    fi
-
-    ./contrib/fedora/rpm/build_clean.sh -c
-
-    pushd "./contrib/fedora/rpm/latest/RPMS/$ARCH/"
-        for p in $$(ls -1 ./*.rpm | sed 's#.*\(NetworkManager.*\)-1\.[0-9]\..*#\1#'); do
-            rpm -e --nodeps $$p || true
-        done
-        yum install -y ./*.rpm
-    popd
-
-    # ensure that the expected NM is installed.
-    COMMIT_ID="$$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/')"
-    yum list installed NetworkManager | grep -q -e "\.$$COMMIT_ID\."
-
-    echo "BUILD '$BUILD_ID' COMPLETE"
-fi
 %end
 ]]>
 				</ks_append>
@@ -156,6 +83,11 @@ fi
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
 					<param name="PKGARGNAME" value="python-setuptools python-netaddr pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark git firewalld psmisc bridge-utils"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="test -n '$BUILD_ID' || exit 0; wget 'http://cgit.freedesktop.org/NetworkManager/NetworkManager/plain/contrib/rh-bkr/build-from-source.sh?id=automation' -O /tmp/nm-build-from-source.sh &amp;&amp; BUILD_ID='$BUILD_ID' ARCH='$ARCH' sh /tmp/nm-build-from-source.sh"/>
 				</params>
 			</task>
 			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
