@@ -9173,29 +9173,40 @@ nm_device_get_available_connections (NMDevice *self, const char *specific_object
 static void
 cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
-	if (_try_add_available_connection (NM_DEVICE (user_data), connection))
-		_signal_available_connections_changed (NM_DEVICE (user_data));
+	NMDevice *self = user_data;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (_try_add_available_connection (self, connection))
+		_signal_available_connections_changed (self);
 }
 
 static void
 cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
-	if (_del_available_connection (NM_DEVICE (user_data), connection))
-		_signal_available_connections_changed (NM_DEVICE (user_data));
+	NMDevice *self = user_data;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (_del_available_connection (self, connection))
+		_signal_available_connections_changed (self);
 }
 
 static void
 cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
+	NMDevice *self = user_data;
 	gboolean added, deleted;
 
+	g_return_if_fail (NM_IS_DEVICE (self));
+
 	/* FIXME: don't remove it from the hash if it's just going to get re-added */
-	deleted = _del_available_connection (NM_DEVICE (user_data), connection);
-	added = _try_add_available_connection (NM_DEVICE (user_data), connection);
+	deleted = _del_available_connection (self, connection);
+	added = _try_add_available_connection (self, connection);
 
 	/* Only signal if the connection was removed OR added, but not both */
 	if (added != deleted)
-		_signal_available_connections_changed (NM_DEVICE (user_data));
+		_signal_available_connections_changed (self);
 }
 
 gboolean
