@@ -51,6 +51,7 @@ typedef struct {
 	guint teamd_process_watch;
 	guint teamd_timeout;
 	guint teamd_dbus_watch;
+	gboolean teamd_dbus_name_owned;
 } NMDeviceTeamPrivate;
 
 static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
@@ -160,12 +161,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
-	if (priv->tdc) {
+	if (ensure_teamd_connection (device)) {
 		const char *config = NULL;
 		int err;
 
-		err = teamdctl_config_get_raw_direct (NM_DEVICE_TEAM_GET_PRIVATE (device)->tdc,
-		                                      (char **)&config);
+		err = teamdctl_config_get_raw_direct (priv->tdc, (char **)&config);
 		if (err == 0)
 			g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, config, NULL);
 		else
@@ -296,6 +296,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	gboolean success;
 
 	g_return_if_fail (priv->teamd_dbus_watch);
+	priv->teamd_dbus_name_owned = TRUE;
 
 	_LOGI (LOGD_TEAM, "teamd appeared on D-Bus");
 	nm_device_queue_recheck_assume (device);
@@ -349,7 +350,7 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
-	if (!priv->tdc) {
+	if (!priv->teamd_dbus_name_owned) {
 		/* g_bus_watch_name will always raise an initial signal, to indicate whether the
 		 * name exists/not exists initially. Do not take this as a failure if it hadn't
 		 * previously appeared.
@@ -357,6 +358,8 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 		_LOGD (LOGD_TEAM, "teamd not on D-Bus (ignored)");
 		return;
 	}
+
+	priv->teamd_dbus_name_owned = FALSE;
 
 	_LOGI (LOGD_TEAM, "teamd vanished from D-Bus");
 	teamd_cleanup (device, TRUE);
