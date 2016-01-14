@@ -6633,20 +6633,23 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 	}
 
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
-		/* If IPv6 wasn't the first IP to complete, and DHCP was used,
-		 * then ensure dispatcher scripts get the DHCP lease information.
-		 */
-		if (   priv->dhcp6_client
-		    && nm_device_activate_ip6_state_in_conf (self)
-		    && (nm_device_get_state (self) > NM_DEVICE_STATE_IP_CONFIG)) {
-			/* Notify dispatcher scripts of new DHCP6 config */
-			nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
-			                    nm_device_get_settings_connection (self),
-			                    nm_device_get_applied_connection (self),
-			                    self,
-			                    NULL,
-			                    NULL,
-			                    NULL);
+		if (   priv->dhcp6_mode != NM_RDISC_DHCP_LEVEL_NONE
+		    && priv->ip6_state == IP_CONF) {
+			if (priv->dhcp6_ip6_config) {
+				/* If IPv6 wasn't the first IP to complete, and DHCP was used,
+				 * then ensure dispatcher scripts get the DHCP lease information.
+				 */
+				nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
+						    nm_device_get_settings_connection (self),
+						    nm_device_get_applied_connection (self),
+						    self,
+						    NULL,
+						    NULL,
+						    NULL);
+			} else {
+				/* still waiting for first dhcp6 lease. */
+				return;
+			}
 		}
 
 		/* Enter the IP_CHECK state if this is the first method to complete */
