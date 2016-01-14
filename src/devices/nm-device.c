@@ -5492,18 +5492,21 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 			       "Activation: Stage 3 of 5 (IP Configure Start) starting DHCPv6"
 			       " as requested by IPv6 router...");
 			if (!dhcp6_start (self, FALSE, &reason)) {
-				if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED)
+				if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
 					nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+					return;
+				}
 			}
-			return;
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdisc->hop_limit);
+	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_NONE) {
+		if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
+			nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdisc->hop_limit);
 
-	if (changed & NM_RDISC_CONFIG_MTU)
-		priv->ip6_mtu = rdisc->mtu;
+		if (changed & NM_RDISC_CONFIG_MTU)
+			priv->ip6_mtu = rdisc->mtu;
+	}
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }
