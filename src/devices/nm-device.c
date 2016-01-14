@@ -8800,15 +8800,18 @@ void
 nm_device_set_unmanaged_quitting (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean need_deactivate = nm_device_is_activating (self) ||
+	                           priv->state == NM_DEVICE_STATE_ACTIVATED;
 
 	/* It's OK to block here because we're quitting */
-	if (nm_device_is_activating (self) || priv->state == NM_DEVICE_STATE_ACTIVATED)
+	if (need_deactivate)
 		_set_state_full (self, NM_DEVICE_STATE_DEACTIVATING, NM_DEVICE_STATE_REASON_NOW_UNMANAGED, TRUE);
 
 	nm_device_set_unmanaged_flags (self,
 	                               NM_UNMANAGED_INTERNAL,
 	                               TRUE,
-	                               NM_DEVICE_STATE_REASON_REMOVED);
+	                               need_deactivate ? NM_DEVICE_STATE_REASON_REMOVED
+	                                               : NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 }
 
 /*****************************************************************************/
