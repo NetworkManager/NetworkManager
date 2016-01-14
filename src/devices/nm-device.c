@@ -8808,7 +8808,7 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
 	nm_device_set_unmanaged_flags (self,
 	                               NM_UNMANAGED_INTERNAL,
 	                               TRUE,
-	                               NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+	                               NM_DEVICE_STATE_REASON_REMOVED);
 }
 
 /*****************************************************************************/
