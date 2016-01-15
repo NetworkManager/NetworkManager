@@ -5500,13 +5500,11 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		}
 	}
 
-	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_NONE) {
-		if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
-			nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdisc->hop_limit);
+	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
+		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdisc->hop_limit);
 
-		if (changed & NM_RDISC_CONFIG_MTU)
-			priv->ip6_mtu = rdisc->mtu;
-	}
+	if (changed & NM_RDISC_CONFIG_MTU)
+		priv->ip6_mtu = rdisc->mtu;
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }
