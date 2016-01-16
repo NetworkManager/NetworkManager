@@ -3456,6 +3456,9 @@ nm_platform_route_scope2str (int scope, char *buf, gsize len)
 	case 254:
 		g_snprintf (buf, len, "host");
 		break;
+	case 253:
+		g_snprintf (buf, len, "link");
+		break;
 	case 200:
 		g_snprintf (buf, len, "site");
 		break;
