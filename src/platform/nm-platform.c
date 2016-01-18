@@ -2739,6 +2739,36 @@ nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRoute
 	return klass->ip6_route_get_all (self, ifindex, flags);
 }
 
+/**
+ * nm_platform_ip4_route_add:
+ * @self:
+ * @ifindex:
+ * @source:
+ * network:
+ * plen:
+ * gateway:
+ * pref_src:
+ * metric:
+ * mss:
+ *
+ * For kernel, a gateway can be either explicitly set or left
+ * at zero (0.0.0.0). In addition, there is the scope of the IPv4
+ * route.
+ * When adding a route with
+ *   $ ip route add default dev $IFNAME
+ * the resulting route will have gateway 0.0.0.0 and scope "link".
+ * Contrary to
+ *   $ ip route add default via 0.0.0.0 dev $IFNAME
+ * which adds the route with scope "global".
+ *
+ * NetworkManager's Platform can currently only add on-link-routes with scope
+ * "link" (and gateway 0.0.0.0) or gateway-routes with scope "global" (and
+ * gateway not 0.0.0.0).
+ *
+ * It does not support adding globally scoped routes via 0.0.0.0.
+ *
+ * Returns: %TRUE in case of success.
+ */
 gboolean
 nm_platform_ip4_route_add (NMPlatform *self,
                            int ifindex, NMIPConfigSource source,

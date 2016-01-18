@@ -1335,6 +1335,16 @@ nm_ip4_config_unset_gateway (NMIP4Config *config)
 	}
 }
 
+/**
+ * nm_ip4_config_has_gateway:
+ * @config: the #NMIP4Config object
+ *
+ * NetworkManager's handling of default-routes is limited and usually a default-route
+ * cannot have gateway 0.0.0.0. For peer-to-peer routes, we still want to
+ * support that, so we need to differenciate between no-default-route and a
+ * on-link-default route. Hence nm_ip4_config_has_gateway().
+ *
+ * Returns: whether the object has a gateway explicitly set. */
 gboolean
 nm_ip4_config_has_gateway (const NMIP4Config *config)
 {
