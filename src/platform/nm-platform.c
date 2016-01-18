@@ -3440,27 +3440,11 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_platform_link_flags2str, unsigned,
 	NM_UTILS_FLAGS2STR (IFF_ECHO, "echo"),
 );
 
-const char *
-nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len)
-{
-	nm_utils_to_string_buffer_init (&buf, &len);
-
-	switch (mode) {
-	case NM_IN6_ADDR_GEN_MODE_NONE:
-		g_snprintf (buf, len, "none");
-		break;
-	case NM_IN6_ADDR_GEN_MODE_EUI64:
-		g_snprintf (buf, len, "eui64");
-		break;
-	case NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY:
-		g_snprintf (buf, len, "stable-privacy");
-		break;
-	default:
-		g_snprintf (buf, len, "%u", (unsigned) mode);
-		break;
-	}
-	return buf;
-}
+NM_UTILS_ENUM2STR_DEFINE (nm_platform_link_inet6_addrgenmode2str, guint8,
+	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_NONE, "none"),
+	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_EUI64, "eui64"),
+	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY, "stable-privacy"),
+);
 
 NM_UTILS_FLAGS2STR_DEFINE (nm_platform_addr_flags2str, unsigned,
 	NM_UTILS_FLAGS2STR (IFA_F_SECONDARY, "secondary"),
@@ -3474,33 +3458,13 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_platform_addr_flags2str, unsigned,
 	NM_UTILS_FLAGS2STR (IFA_F_NOPREFIXROUTE, "noprefixroute"),
 );
 
-const char *
-nm_platform_route_scope2str (int scope, char *buf, gsize len)
-{
-	nm_utils_to_string_buffer_init (&buf, &len);
-
-	switch (scope) {
-	case RT_SCOPE_NOWHERE:
-		g_snprintf (buf, len, "nowhere");
-		break;
-	case RT_SCOPE_HOST:
-		g_snprintf (buf, len, "host");
-		break;
-	case RT_SCOPE_LINK:
-		g_snprintf (buf, len, "link");
-		break;
-	case RT_SCOPE_SITE:
-		g_snprintf (buf, len, "site");
-		break;
-	case RT_SCOPE_UNIVERSE:
-		g_snprintf (buf, len, "global");
-		break;
-	default:
-		g_snprintf (buf, len, "%d", scope);
-		break;
-	}
-	return buf;
-}
+NM_UTILS_ENUM2STR_DEFINE (nm_platform_route_scope2str, int,
+	NM_UTILS_ENUM2STR (RT_SCOPE_NOWHERE, "nowhere"),
+	NM_UTILS_ENUM2STR (RT_SCOPE_HOST, "host"),
+	NM_UTILS_ENUM2STR (RT_SCOPE_LINK, "link"),
+	NM_UTILS_ENUM2STR (RT_SCOPE_SITE, "site"),
+	NM_UTILS_ENUM2STR (RT_SCOPE_UNIVERSE, "global"),
+);
 
 /**
  * nm_platform_ip6_address_to_string:
