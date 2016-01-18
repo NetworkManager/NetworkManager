@@ -1997,6 +1997,16 @@ unrealize_notify (NMDevice *self)
 	 * implementation. */
 }
 
+static void
+available_connection_check_delete_unrealized (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+	if (   g_hash_table_size (priv->available_connections) == 0
+	    && !nm_device_is_real (self))
+		g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
+}
+
 /**
  * nm_device_unrealize():
  * @self: the #NMDevice
@@ -2094,6 +2104,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	/* Garbage-collect unneeded unrealized devices. */
 	nm_device_recheck_available_connections (self);
+	available_connection_check_delete_unrealized (self);
 
 	return TRUE;
 }
@@ -9096,16 +9107,6 @@ _del_available_connection (NMDevice *self, NMConnection *connection)
 	return g_hash_table_remove (NM_DEVICE_GET_PRIVATE (self)->available_connections, connection);
 }
 
-static void
-available_connection_check_delete_unrealized (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-
-	if (   g_hash_table_size (priv->available_connections) == 0
-	    && !nm_device_is_real (self))
-		g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
-}
-
 static gboolean
 check_connection_available (NMDevice *self,
                             NMConnection *connection,
@@ -9152,8 +9153,6 @@ nm_device_recheck_available_connections (NMDevice *self)
 
 		_signal_available_connections_changed (self);
 	}
-
-	available_connection_check_delete_unrealized (self);
 }
 
 /**
