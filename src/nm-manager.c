@@ -5067,8 +5067,13 @@ nm_manager_setup (const char *state_file,
 
 	/* Can only be called once */
 	g_assert (singleton_instance == NULL);
-	singleton_instance = self = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
-	g_assert (singleton_instance);
+
+	self = g_object_new (NM_TYPE_MANAGER,
+	                     NM_MANAGER_NETWORKING_ENABLED, initial_net_enabled,
+	                     NULL);
+
+	nm_assert (NM_IS_MANAGER (self));
+	singleton_instance = self;
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
@@ -5112,8 +5117,6 @@ nm_manager_setup (const char *state_file,
 	                  G_CALLBACK (connectivity_changed), self);
 
 	priv->state_file = g_strdup (state_file);
-
-	priv->net_enabled = initial_net_enabled;
 
 	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = initial_wifi_enabled;
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
@@ -5323,7 +5326,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_NETWORKING_ENABLED:
-		/* Construct only for now */
+		/* construct-only */
 		priv->net_enabled = g_value_get_boolean (value);
 		break;
 	case PROP_WIRELESS_ENABLED:
