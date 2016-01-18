@@ -229,6 +229,37 @@ const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
+typedef struct {
+	int value;
+	const char *name;
+} NMUtilsEnum2StrDesc;
+
+#define NM_UTILS_ENUM2STR(v, n) { .value = v, .name = ""n, }
+
+#define _NM_UTILS_ENUM2STR_DEFINE(scope, fcn_name, enum_type, ...) \
+scope const char * \
+fcn_name (enum_type val, char *buf, gsize len) \
+{ \
+	static const NMUtilsEnum2StrDesc descs[] = { \
+		__VA_ARGS__ \
+	}; \
+	G_STATIC_ASSERT (sizeof (enum_type) <= sizeof (int)); \
+	return nm_utils_enum2str (descs, G_N_ELEMENTS (descs), val, buf, len); \
+}
+
+#define NM_UTILS_ENUM2STR_DEFINE(fcn_name, enum_type, ...) \
+	_NM_UTILS_ENUM2STR_DEFINE (, fcn_name, enum_type, __VA_ARGS__)
+#define NM_UTILS_ENUM2STR_DEFINE_STATIC(fcn_name, enum_type, ...) \
+	_NM_UTILS_ENUM2STR_DEFINE (static, fcn_name, enum_type, __VA_ARGS__)
+
+const char *nm_utils_enum2str (const NMUtilsEnum2StrDesc *descs,
+                               gsize n_descs,
+                               int val,
+                               char *buf,
+                               gsize len);
+
+/*****************************************************************************/
+
 #define _NM_UTILS_STRING_LOOKUP_TABLE_DEFINE(scope, fcn_name, lookup_type, unknown_val, ...) \
 scope const char * \
 fcn_name (lookup_type idx) \
