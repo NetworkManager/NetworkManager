@@ -3480,19 +3480,19 @@ nm_platform_route_scope2str (int scope, char *buf, gsize len)
 	nm_utils_to_string_buffer_init (&buf, &len);
 
 	switch (scope) {
-	case 255:
+	case RT_SCOPE_NOWHERE:
 		g_snprintf (buf, len, "nowhere");
 		break;
-	case 254:
+	case RT_SCOPE_HOST:
 		g_snprintf (buf, len, "host");
 		break;
-	case 253:
+	case RT_SCOPE_LINK:
 		g_snprintf (buf, len, "link");
 		break;
-	case 200:
+	case RT_SCOPE_SITE:
 		g_snprintf (buf, len, "site");
 		break;
-	case 0:
+	case RT_SCOPE_UNIVERSE:
 		g_snprintf (buf, len, "global");
 		break;
 	default:
