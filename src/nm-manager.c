@@ -169,6 +169,7 @@ enum {
 	PROP_0,
 	PROP_VERSION,
 	PROP_STATE,
+	PROP_STATE_FILE,
 	PROP_STARTUP,
 	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
@@ -5062,20 +5063,34 @@ nm_manager_setup (const char *state_file,
                   gboolean initial_wwan_enabled)
 {
 	NMManager *self;
-	NMManagerPrivate *priv;
-	NMConfigData *config_data;
 
-	/* Can only be called once */
 	g_assert (singleton_instance == NULL);
 
 	self = g_object_new (NM_TYPE_MANAGER,
 	                     NM_MANAGER_NETWORKING_ENABLED, initial_net_enabled,
+	                     NM_MANAGER_WIRELESS_ENABLED, initial_wifi_enabled,
+	                     NM_MANAGER_WWAN_ENABLED, initial_wwan_enabled,
+	                     NM_MANAGER_STATE_FILE, state_file,
 	                     NULL);
-
 	nm_assert (NM_IS_MANAGER (self));
 	singleton_instance = self;
 
-	priv = NM_MANAGER_GET_PRIVATE (self);
+	nm_singleton_instance_register ();
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMManager", singleton_instance);
+
+	nm_exported_object_export ((NMExportedObject *) self);
+
+	return self;
+}
+
+static void
+constructed (GObject *object)
+{
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMConfigData *config_data;
+
+	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
 
 	_set_prop_filter (self, nm_bus_manager_get_connection (priv->dbus_mgr));
 
@@ -5116,13 +5131,6 @@ nm_manager_setup (const char *state_file,
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), self);
 
-	priv->state_file = g_strdup (state_file);
-
-	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = initial_wifi_enabled;
-	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
-
-	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
-
 	priv->rfkill_mgr = nm_rfkill_manager_new ();
 	g_signal_connect (priv->rfkill_mgr,
 	                  "rfkill-changed",
@@ -5134,13 +5142,8 @@ nm_manager_setup (const char *state_file,
 	 * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
 	 * rfkill.
 	 */
-	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
-	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
-
-	nm_singleton_instance_register ();
-	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMManager", singleton_instance);
-
-	return self;
+	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, priv->radio_states[RFKILL_TYPE_WLAN].user_enabled);
+	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, priv->radio_states[RFKILL_TYPE_WWAN].user_enabled);
 }
 
 static void
@@ -5317,7 +5320,7 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -5325,19 +5328,33 @@ set_property (GObject *object, guint prop_id,
 	GError *error = NULL;
 
 	switch (prop_id) {
+	case PROP_STATE_FILE:
+		/* construct-only */
+		priv->state_file = g_value_dup_string (value);
+		break;
 	case PROP_NETWORKING_ENABLED:
 		/* construct-only */
 		priv->net_enabled = g_value_get_boolean (value);
 		break;
 	case PROP_WIRELESS_ENABLED:
-		manager_radio_user_toggled (NM_MANAGER (object),
-		                            &priv->radio_states[RFKILL_TYPE_WLAN],
-		                            g_value_get_boolean (value));
+		if (!priv->rfkill_mgr) {
+			/* called during object construction. */
+			priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = g_value_get_boolean (value);
+		} else {
+			manager_radio_user_toggled (NM_MANAGER (object),
+			                            &priv->radio_states[RFKILL_TYPE_WLAN],
+			                            g_value_get_boolean (value));
+		}
 		break;
 	case PROP_WWAN_ENABLED:
-		manager_radio_user_toggled (NM_MANAGER (object),
-		                            &priv->radio_states[RFKILL_TYPE_WWAN],
-		                            g_value_get_boolean (value));
+		if (!priv->rfkill_mgr) {
+			/* called during object construction. */
+			priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = g_value_get_boolean (value);
+		} else {
+			manager_radio_user_toggled (NM_MANAGER (object),
+			                            &priv->radio_states[RFKILL_TYPE_WWAN],
+			                            g_value_get_boolean (value));
+		}
 		break;
 	case PROP_WIMAX_ENABLED:
 		/* WIMAX is depreacted. This does nothing. */
@@ -5415,7 +5432,7 @@ dispose (GObject *object)
 		g_clear_object (&priv->settings);
 	}
 
-	g_free (priv->state_file);
+	g_clear_pointer (&priv->state_file, g_free);
 	g_clear_object (&priv->vpn_manager);
 
 	/* Unregister property filter */
@@ -5446,7 +5463,7 @@ dispose (GObject *object)
 	}
 
 	nm_device_factory_manager_for_each_factory (_deinit_device_factory, manager);
-	
+
 	nm_clear_g_source (&priv->timestamp_update_id);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
@@ -5463,6 +5480,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	exported_object_class->export_path = NM_DBUS_PATH;
 
 	/* virtual methods */
+	object_class->constructed = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
@@ -5474,6 +5492,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                      NULL,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property (object_class,
+	                                 PROP_STATE_FILE,
+	                                 g_param_spec_string (NM_MANAGER_STATE_FILE, "", "",
+	                                                      NULL,
+	                                                      G_PARAM_WRITABLE |
+	                                                      G_PARAM_CONSTRUCT_ONLY |
+	                                                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
@@ -5501,6 +5527,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED, "", "",
 		                       TRUE,
 		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
@@ -5515,6 +5542,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		 g_param_spec_boolean (NM_MANAGER_WWAN_ENABLED, "", "",
 		                       TRUE,
 		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property

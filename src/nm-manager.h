@@ -55,6 +55,7 @@
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
 #define NM_MANAGER_SLEEPING "sleeping"
+#define NM_MANAGER_STATE_FILE "state-file"
 
 /* Internal signals */
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
