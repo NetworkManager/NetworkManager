@@ -583,6 +583,8 @@ nm_device_is_software (NMDevice *self)
 gboolean
 nm_device_is_real (NMDevice *self)
 {
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
 	return NM_DEVICE_GET_PRIVATE (self)->real;
 }
 
@@ -1710,6 +1712,9 @@ link_type_compatible (NMDevice *self,
  * the device is ready for use nm_device_realize_finish() must be called.
  * @out_compatible will only be set if @plink is not %NULL, and
  *
+ * Important: if nm_device_realize_start() returns %TRUE, the caller MUST
+ * also call nm_device_realize_finish() to balance g_object_freeze_notify().
+ *
  * Returns: %TRUE on success, %FALSE on error
  */
 gboolean
@@ -1761,6 +1766,8 @@ nm_device_create_and_realize (NMDevice *self,
 
 	/* Must be set before device is realized */
 	priv->is_nm_owned = !nm_platform_link_get_by_ifname (NM_PLATFORM_GET, priv->iface);
+
+	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", priv->is_nm_owned ? "" : "not ");
 
 	/* Create any resources the device needs */
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
@@ -1864,8 +1871,11 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* The device should not be realized */
+	g_return_if_fail (!priv->real);
 	g_return_if_fail (priv->ip_ifindex <= 0);
 	g_return_if_fail (priv->ip_iface == NULL);
+
+	_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), plink ? plink->ifindex : 0);
 
 	klass = NM_DEVICE_GET_CLASS (self);
 
@@ -1878,8 +1888,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	}
 
 	if (priv->ifindex > 0) {
-		_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
-
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
 
@@ -1943,8 +1951,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
 
-	priv->real = TRUE;
-
 	klass->realize_start_notify (self, plink);
 }
 
@@ -1960,14 +1966,21 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 void
 nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 {
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (!plink || link_type_compatible (self, plink->type, NULL, NULL));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->real);
 
 	if (plink) {
 		update_device_from_platform_link (self, plink);
 		device_recheck_slave_status (self, plink);
 	}
 
-	NM_DEVICE_GET_PRIVATE (self)->real = TRUE;
+	priv->real = TRUE;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
 
 	nm_device_recheck_available_connections (self);
@@ -2014,11 +2027,15 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	g_return_val_if_fail (priv->iface != NULL, FALSE);
+	g_return_val_if_fail (priv->real, FALSE);
 
 	g_object_freeze_notify (G_OBJECT (self));
 
+	ifindex = nm_device_get_ifindex (self);
+
+	_LOGD (LOGD_DEVICE, "unrealize (ifindex %d)", ifindex > 0 ? ifindex : 0);
+
 	if (remove_resources) {
-		ifindex = nm_device_get_ifindex (self);
 		if (ifindex > 0)
 			nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
 	}
@@ -2077,8 +2094,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	/* Garbage-collect unneeded unrealized devices. */
 	nm_device_recheck_available_connections (self);
-	if (g_hash_table_size (priv->available_connections) == 0)
-		g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
 
 	return TRUE;
 }
@@ -9081,6 +9096,16 @@ _del_available_connection (NMDevice *self, NMConnection *connection)
 	return g_hash_table_remove (NM_DEVICE_GET_PRIVATE (self)->available_connections, connection);
 }
 
+static void
+available_connection_check_delete_unrealized (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+	if (   g_hash_table_size (priv->available_connections) == 0
+	    && !nm_device_is_real (self))
+		g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
+}
+
 static gboolean
 check_connection_available (NMDevice *self,
                             NMConnection *connection,
@@ -9127,6 +9152,8 @@ nm_device_recheck_available_connections (NMDevice *self)
 
 		_signal_available_connections_changed (self);
 	}
+
+	available_connection_check_delete_unrealized (self);
 }
 
 /**
@@ -9168,29 +9195,44 @@ nm_device_get_available_connections (NMDevice *self, const char *specific_object
 static void
 cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
-	if (_try_add_available_connection (NM_DEVICE (user_data), connection))
-		_signal_available_connections_changed (NM_DEVICE (user_data));
+	NMDevice *self = user_data;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (_try_add_available_connection (self, connection))
+		_signal_available_connections_changed (self);
 }
 
 static void
 cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
-	if (_del_available_connection (NM_DEVICE (user_data), connection))
-		_signal_available_connections_changed (NM_DEVICE (user_data));
+	NMDevice *self = user_data;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (_del_available_connection (self, connection)) {
+		_signal_available_connections_changed (self);
+		available_connection_check_delete_unrealized (self);
+	}
 }
 
 static void
 cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
+	NMDevice *self = user_data;
 	gboolean added, deleted;
 
+	g_return_if_fail (NM_IS_DEVICE (self));
+
 	/* FIXME: don't remove it from the hash if it's just going to get re-added */
-	deleted = _del_available_connection (NM_DEVICE (user_data), connection);
-	added = _try_add_available_connection (NM_DEVICE (user_data), connection);
+	deleted = _del_available_connection (self, connection);
+	added = _try_add_available_connection (self, connection);
 
 	/* Only signal if the connection was removed OR added, but not both */
-	if (added != deleted)
-		_signal_available_connections_changed (NM_DEVICE (user_data));
+	if (added != deleted) {
+		_signal_available_connections_changed (self);
+		available_connection_check_delete_unrealized (self);
+	}
 }
 
 gboolean
@@ -10855,7 +10897,7 @@ get_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_REAL:
-		g_value_set_boolean (value, priv->real);
+		g_value_set_boolean (value, nm_device_is_real (self));
 		break;
 	case PROP_SLAVES: {
 		GSList *slave_iter;

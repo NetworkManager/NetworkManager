@@ -1886,8 +1886,6 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
 
-	nm_log_info (LOGD_HW, "(%s): new %s device", iface, type_desc);
-
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	nm_device_set_unmanaged_flags_initial (device,
 	                                       NM_UNMANAGED_USER,
@@ -1897,7 +1895,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                                       manager_sleeping (self));
 
 	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
-	nm_log_dbg (LOGD_DEVICE, "(%s): exported as %s", nm_device_get_iface (device), dbus_path);
+	nm_log_info (LOGD_DEVICE, "(%s): new %s device (%s)", iface, type_desc, dbus_path);
 
 	nm_device_finish_init (device);
 
@@ -2090,7 +2088,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 
 		device = nm_manager_get_device_by_ifindex (self, data->ifindex);
 		if (device) {
-			if (nm_device_is_software (device) && nm_device_get_is_nm_owned (device)) {
+			if (nm_device_is_software (device)) {
 				/* Our software devices stick around until their connection is removed */
 				if (!nm_device_unrealize (device, FALSE, &error)) {
 					nm_log_warn (LOGD_DEVICE, "(%s): failed to unrealize: %s",
@@ -3257,9 +3255,9 @@ _activation_auth_done (NMActiveConnection *active,
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
-			g_dbus_method_invocation_return_value (
-				context,
-				g_variant_new ("(o)", nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
+			g_dbus_method_invocation_return_value (context,
+			                                       g_variant_new ("(o)",
+			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE,
 			                            subject, NULL);
 			g_object_unref (active);
@@ -3267,8 +3265,8 @@ _activation_auth_done (NMActiveConnection *active,
 		}
 	} else {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
-			                         NM_MANAGER_ERROR_PERMISSION_DENIED,
-			                         error_desc);
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
 	}
 
 	g_assert (error);
