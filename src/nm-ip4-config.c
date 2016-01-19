@@ -66,8 +66,7 @@ typedef struct _NMIP4ConfigPrivate {
 G_STATIC_ASSERT (sizeof (uint) >= sizeof (guint32));
 G_STATIC_ASSERT (G_MAXUINT >= 0xFFFFFFFF);
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMIP4Config,
 	PROP_IFINDEX,
 	PROP_ADDRESS_DATA,
 	PROP_ADDRESSES,
@@ -79,11 +78,7 @@ enum {
 	PROP_SEARCHES,
 	PROP_DNS_OPTIONS,
 	PROP_WINS_SERVERS,
-
-	LAST_PROP
-};
-static GParamSpec *obj_properties[LAST_PROP] = { NULL, };
-#define _NOTIFY(config, prop)    G_STMT_START { g_object_notify_by_pspec (G_OBJECT (config), obj_properties[prop]); } G_STMT_END
+);
 
 NMIP4Config *
 nm_ip4_config_new (int ifindex)
@@ -257,17 +252,17 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	 */
 	if (priv->addresses->len && priv->has_gateway && capture_resolv_conf) {
 		if (nm_ip4_config_capture_resolv_conf (priv->nameservers, priv->dns_options, NULL))
-			_NOTIFY (config, PROP_NAMESERVERS);
+			_notify (config, PROP_NAMESERVERS);
 	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
-	_NOTIFY (config, PROP_ADDRESS_DATA);
-	_NOTIFY (config, PROP_ROUTE_DATA);
-	_NOTIFY (config, PROP_ADDRESSES);
-	_NOTIFY (config, PROP_ROUTES);
+	_notify (config, PROP_ADDRESS_DATA);
+	_notify (config, PROP_ROUTE_DATA);
+	_notify (config, PROP_ADDRESSES);
+	_notify (config, PROP_ROUTES);
 	if (   priv->gateway != old_gateway
 	    || priv->has_gateway != old_has_gateway)
-		_NOTIFY (config, PROP_GATEWAY);
+		_notify (config, PROP_GATEWAY);
 
 	return config;
 }
@@ -1319,7 +1314,7 @@ nm_ip4_config_set_gateway (NMIP4Config *config, guint32 gateway)
 	if (priv->gateway != gateway || !priv->has_gateway) {
 		priv->gateway = gateway;
 		priv->has_gateway = TRUE;
-		_NOTIFY (config, PROP_GATEWAY);
+		_notify (config, PROP_GATEWAY);
 	}
 }
 
@@ -1331,7 +1326,7 @@ nm_ip4_config_unset_gateway (NMIP4Config *config)
 	if (priv->has_gateway) {
 		priv->gateway = 0;
 		priv->has_gateway = FALSE;
-		_NOTIFY (config, PROP_GATEWAY);
+		_notify (config, PROP_GATEWAY);
 	}
 }
 
@@ -1378,8 +1373,8 @@ nm_ip4_config_reset_addresses (NMIP4Config *config)
 
 	if (priv->addresses->len != 0) {
 		g_array_set_size (priv->addresses, 0);
-		_NOTIFY (config, PROP_ADDRESS_DATA);
-		_NOTIFY (config, PROP_ADDRESSES);
+		_notify (config, PROP_ADDRESS_DATA);
+		_notify (config, PROP_ADDRESSES);
 	}
 }
 
@@ -1436,8 +1431,8 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 
 	g_array_append_val (priv->addresses, *new);
 NOTIFY:
-	_NOTIFY (config, PROP_ADDRESS_DATA);
-	_NOTIFY (config, PROP_ADDRESSES);
+	_notify (config, PROP_ADDRESS_DATA);
+	_notify (config, PROP_ADDRESSES);
 }
 
 void
@@ -1448,8 +1443,8 @@ nm_ip4_config_del_address (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->addresses->len);
 
 	g_array_remove_index (priv->addresses, i);
-	_NOTIFY (config, PROP_ADDRESS_DATA);
-	_NOTIFY (config, PROP_ADDRESSES);
+	_notify (config, PROP_ADDRESS_DATA);
+	_notify (config, PROP_ADDRESSES);
 }
 
 guint
@@ -1484,8 +1479,8 @@ nm_ip4_config_reset_routes (NMIP4Config *config)
 
 	if (priv->routes->len != 0) {
 		g_array_set_size (priv->routes, 0);
-		_NOTIFY (config, PROP_ROUTE_DATA);
-		_NOTIFY (config, PROP_ROUTES);
+		_notify (config, PROP_ROUTE_DATA);
+		_notify (config, PROP_ROUTES);
 	}
 }
 
@@ -1528,8 +1523,8 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 	g_array_append_val (priv->routes, *new);
 	g_array_index (priv->routes, NMPlatformIP4Route, priv->routes->len - 1).ifindex = priv->ifindex;
 NOTIFY:
-	_NOTIFY (config, PROP_ROUTE_DATA);
-	_NOTIFY (config, PROP_ROUTES);
+	_notify (config, PROP_ROUTE_DATA);
+	_notify (config, PROP_ROUTES);
 }
 
 void
@@ -1540,8 +1535,8 @@ nm_ip4_config_del_route (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->routes->len);
 
 	g_array_remove_index (priv->routes, i);
-	_NOTIFY (config, PROP_ROUTE_DATA);
-	_NOTIFY (config, PROP_ROUTES);
+	_notify (config, PROP_ROUTE_DATA);
+	_notify (config, PROP_ROUTES);
 }
 
 guint
@@ -1599,7 +1594,7 @@ nm_ip4_config_reset_nameservers (NMIP4Config *config)
 
 	if (priv->nameservers->len != 0) {
 		g_array_set_size (priv->nameservers, 0);
-		_NOTIFY (config, PROP_NAMESERVERS);
+		_notify (config, PROP_NAMESERVERS);
 	}
 }
 
@@ -1616,7 +1611,7 @@ nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 new)
 			return;
 
 	g_array_append_val (priv->nameservers, new);
-	_NOTIFY (config, PROP_NAMESERVERS);
+	_notify (config, PROP_NAMESERVERS);
 }
 
 void
@@ -1627,7 +1622,7 @@ nm_ip4_config_del_nameserver (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->nameservers->len);
 
 	g_array_remove_index (priv->nameservers, i);
-	_NOTIFY (config, PROP_NAMESERVERS);
+	_notify (config, PROP_NAMESERVERS);
 }
 
 guint32
@@ -1655,7 +1650,7 @@ nm_ip4_config_reset_domains (NMIP4Config *config)
 
 	if (priv->domains->len != 0) {
 		g_ptr_array_set_size (priv->domains, 0);
-		_NOTIFY (config, PROP_DOMAINS);
+		_notify (config, PROP_DOMAINS);
 	}
 }
 
@@ -1673,7 +1668,7 @@ nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 			return;
 
 	g_ptr_array_add (priv->domains, g_strdup (domain));
-	_NOTIFY (config, PROP_DOMAINS);
+	_notify (config, PROP_DOMAINS);
 }
 
 void
@@ -1684,7 +1679,7 @@ nm_ip4_config_del_domain (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->domains->len);
 
 	g_ptr_array_remove_index (priv->domains, i);
-	_NOTIFY (config, PROP_DOMAINS);
+	_notify (config, PROP_DOMAINS);
 }
 
 guint32
@@ -1712,7 +1707,7 @@ nm_ip4_config_reset_searches (NMIP4Config *config)
 
 	if (priv->searches->len != 0) {
 		g_ptr_array_set_size (priv->searches, 0);
-		_NOTIFY (config, PROP_SEARCHES);
+		_notify (config, PROP_SEARCHES);
 	}
 }
 
@@ -1745,7 +1740,7 @@ nm_ip4_config_add_search (NMIP4Config *config, const char *new)
 	}
 
 	g_ptr_array_add (priv->searches, search);
-	_NOTIFY (config, PROP_SEARCHES);
+	_notify (config, PROP_SEARCHES);
 }
 
 void
@@ -1756,7 +1751,7 @@ nm_ip4_config_del_search (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->searches->len);
 
 	g_ptr_array_remove_index (priv->searches, i);
-	_NOTIFY (config, PROP_SEARCHES);
+	_notify (config, PROP_SEARCHES);
 }
 
 guint32
@@ -1784,7 +1779,7 @@ nm_ip4_config_reset_dns_options (NMIP4Config *config)
 
 	if (priv->dns_options->len != 0) {
 		g_ptr_array_set_size (priv->dns_options, 0);
-		_NOTIFY (config, PROP_DNS_OPTIONS);
+		_notify (config, PROP_DNS_OPTIONS);
 	}
 }
 
@@ -1802,7 +1797,7 @@ nm_ip4_config_add_dns_option (NMIP4Config *config, const char *new)
 			return;
 
 	g_ptr_array_add (priv->dns_options, g_strdup (new));
-	_NOTIFY (config, PROP_DNS_OPTIONS);
+	_notify (config, PROP_DNS_OPTIONS);
 }
 
 void
@@ -1813,7 +1808,7 @@ nm_ip4_config_del_dns_option(NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->dns_options->len);
 
 	g_ptr_array_remove_index (priv->dns_options, i);
-	_NOTIFY (config, PROP_DNS_OPTIONS);
+	_notify (config, PROP_DNS_OPTIONS);
 }
 
 guint32
@@ -1925,7 +1920,7 @@ nm_ip4_config_reset_wins (NMIP4Config *config)
 
 	if (priv->wins->len != 0) {
 		g_array_set_size (priv->wins, 0);
-		_NOTIFY (config, PROP_WINS_SERVERS);
+		_notify (config, PROP_WINS_SERVERS);
 	}
 }
 
@@ -1942,7 +1937,7 @@ nm_ip4_config_add_wins (NMIP4Config *config, guint32 wins)
 			return;
 
 	g_array_append_val (priv->wins, wins);
-	_NOTIFY (config, PROP_WINS_SERVERS);
+	_notify (config, PROP_WINS_SERVERS);
 }
 
 void
@@ -1953,7 +1948,7 @@ nm_ip4_config_del_wins (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->wins->len);
 
 	g_array_remove_index (priv->wins, i);
-	_NOTIFY (config, PROP_WINS_SERVERS);
+	_notify (config, PROP_WINS_SERVERS);
 }
 
 guint32
@@ -2430,7 +2425,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
 	                                        NMDBUS_TYPE_IP4_CONFIG_SKELETON,
