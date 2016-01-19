@@ -196,6 +196,23 @@
 
 /*****************************************************************************/
 
+#define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
+typedef enum { \
+	_PROPERTY_ENUMS_0, \
+	__VA_ARGS__ \
+	_PROPERTY_ENUMS_LAST, \
+} _PropertyEnums; \
+static GParamSpec *obj_properties[_PROPERTY_ENUMS_LAST] = { NULL, }; \
+static inline void \
+_notify (obj_type *obj, _PropertyEnums prop) \
+{ \
+	nm_assert (G_IS_OBJECT (obj)); \
+	nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
+	g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+}
+
+/*****************************************************************************/
+
 static inline gboolean
 nm_clear_g_source (guint *id)
 {
