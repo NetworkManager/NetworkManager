@@ -95,7 +95,7 @@ GType nm_config_get_type (void);
 
 NMConfig *nm_config_get (void);
 
-char *nm_config_change_flags_to_string (NMConfigChangeFlags flags);
+const char *nm_config_change_flags_to_string (NMConfigChangeFlags flags, char *buf, gsize len);
 
 NMConfigData *nm_config_get_data (NMConfig *config);
 NMConfigData *nm_config_get_data_orig (NMConfig *config);

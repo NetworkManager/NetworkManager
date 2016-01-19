@@ -1707,56 +1707,20 @@ nm_config_reload (NMConfig *self, int signal)
 	_set_config_data (self, new_data, signal);
 }
 
-static const char *
-_change_flags_one_to_string (NMConfigChangeFlags flag)
-{
-	switch (flag) {
-	case NM_CONFIG_CHANGE_SIGHUP:
-		return "SIGHUP";
-	case NM_CONFIG_CHANGE_SIGUSR1:
-		return "SIGUSR1";
-	case NM_CONFIG_CHANGE_SIGUSR2:
-		return "SIGUSR2";
-	case NM_CONFIG_CHANGE_CONFIG_FILES:
-		return "config-files";
-	case NM_CONFIG_CHANGE_VALUES:
-		return "values";
-	case NM_CONFIG_CHANGE_VALUES_USER:
-		return "values-user";
-	case NM_CONFIG_CHANGE_VALUES_INTERN:
-		return "values-intern";
-	case NM_CONFIG_CHANGE_CONNECTIVITY:
-		return "connectivity";
-	case NM_CONFIG_CHANGE_NO_AUTO_DEFAULT:
-		return "no-auto-default";
-	case NM_CONFIG_CHANGE_DNS_MODE:
-		return "dns-mode";
-	case NM_CONFIG_CHANGE_RC_MANAGER:
-		return "rc-manager";
-	case NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG:
-		return "global-dns-config";
-	default:
-		g_return_val_if_reached ("unknown");
-	}
-}
-
-char *
-nm_config_change_flags_to_string (NMConfigChangeFlags flags)
-{
-	GString *str = g_string_new ("");
-	NMConfigChangeFlags s = 0x01;
-
-	while (flags) {
-		if (NM_FLAGS_HAS (flags, s)) {
-			if (str->len)
-				g_string_append_c (str, ',');
-			g_string_append (str, _change_flags_one_to_string (s));
-		}
-		flags = flags & ~s;
-		s <<= 1;
-	}
-	return g_string_free (str, FALSE);
-}
+NM_UTILS_FLAGS2STR_DEFINE (nm_config_change_flags_to_string, NMConfigChangeFlags,
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_SIGHUP, "SIGHUP"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_SIGUSR1, "SIGUSR1"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_SIGUSR2, "SIGUSR2"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CONFIG_FILES, "config-files"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_VALUES, "values"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_VALUES_USER, "values-user"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_VALUES_INTERN, "values-intern"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CONNECTIVITY, "connectivity"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_NO_AUTO_DEFAULT, "no-auto-default"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_DNS_MODE, "dns-mode"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_RC_MANAGER, "rc-manager"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG, "global-dns-config"),
+);
 
 static void
 _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
@@ -1764,7 +1728,6 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	NMConfigData *old_data = priv->config_data;
 	NMConfigChangeFlags changes, changes_diff;
-	gs_free char *log_str = NULL;
 	gboolean had_new_data = !!new_data;
 
 	switch (signal) {
@@ -1795,13 +1758,13 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 
 	if (new_data) {
 		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
-		             (log_str = nm_config_change_flags_to_string (changes)));
+		             nm_config_change_flags_to_string (changes, NULL, 0));
 		nm_config_data_log (new_data, "CONFIG: ", "  ", NULL);
 		priv->config_data = new_data;
 	} else if (had_new_data)
-		nm_log_info (LOGD_CORE, "config: signal %s (no changes from disk)", (log_str = nm_config_change_flags_to_string (changes)));
+		nm_log_info (LOGD_CORE, "config: signal %s (no changes from disk)", nm_config_change_flags_to_string (changes, NULL, 0));
 	else
-		nm_log_info (LOGD_CORE, "config: signal %s", (log_str = nm_config_change_flags_to_string (changes)));
+		nm_log_info (LOGD_CORE, "config: signal %s", nm_config_change_flags_to_string (changes, NULL, 0));
 	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0,
 	               new_data ? new_data : old_data,
 	               changes, old_data);
