@@ -139,8 +139,7 @@ nm_device_macvlan_set_parent (NMDeviceMacvlan *self, NMDevice *parent)
 	if (parent == priv->parent)
 		return;
 
-	if (priv->parent_state_id)
-		nm_clear_g_signal_handler (priv->parent, &priv->parent_state_id);
+	nm_clear_g_signal_handler (priv->parent, &priv->parent_state_id);
 
 	g_clear_object (&priv->parent);
 
@@ -621,6 +620,14 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
+dispose (GObject *object)
+{
+	nm_device_macvlan_set_parent (NM_DEVICE_MACVLAN (object), NULL);
+
+	G_OBJECT_CLASS (nm_device_macvlan_parent_class)->dispose (object);
+}
+
+static void
 nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -630,6 +637,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP)
 
+	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
