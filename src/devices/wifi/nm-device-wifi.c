@@ -146,8 +146,6 @@ static gboolean check_scanning_allowed (NMDeviceWifi *self);
 
 static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
 
-static void cancel_pending_scan (NMDeviceWifi *self);
-
 static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
 
@@ -261,7 +259,7 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	cancel_pending_scan (self);
+	nm_clear_g_source (&priv->pending_scan_id);
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
 	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
@@ -734,7 +732,7 @@ deactivate (NMDevice *device)
 
 	/* Ensure we trigger a scan after deactivating a Hotspot */
 	if (old_mode == NM_802_11_MODE_AP) {
-		cancel_pending_scan (self);
+		nm_clear_g_source (&priv->pending_scan_id);
 		request_wireless_scan (self, NULL);
 	}
 }
@@ -1237,6 +1235,7 @@ request_scan_cb (NMDevice *device,
                  gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv;
 	GError *local = NULL;
 	gs_unref_hashtable GHashTable *new_scan_options = user_data;
 
@@ -1254,7 +1253,9 @@ request_scan_cb (NMDevice *device,
 		return;
 	}
 
-	cancel_pending_scan (self);
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->pending_scan_id);
 	request_wireless_scan (self, new_scan_options);
 	dbus_g_method_return (context);
 }
@@ -1554,7 +1555,7 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 	/* Cancel the pending scan if it would happen later than (now + the scan_interval) */
 	if (priv->pending_scan_id) {
 		if (now + priv->scan_interval < priv->scheduled_scan_time)
-			cancel_pending_scan (self);
+			nm_clear_g_source (&priv->pending_scan_id);
 	}
 
 	if (!priv->pending_scan_id) {
@@ -1584,18 +1585,6 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 
 		_LOGD (LOGD_WIFI_SCAN, "scheduled scan in %d seconds (interval now %d seconds)",
 		       next_scan, priv->scan_interval);
-	}
-}
-
-
-static void
-cancel_pending_scan (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (priv->pending_scan_id) {
-		g_source_remove (priv->pending_scan_id);
-		priv->pending_scan_id = 0;
 	}
 }
 
@@ -3115,7 +3104,7 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Kick off a scan to get latest results */
 		priv->scan_interval = SCAN_INTERVAL_MIN;
-		cancel_pending_scan (self);
+		nm_clear_g_source (&priv->pending_scan_id);
 		request_wireless_scan (self, NULL);
 		break;
 	default:
