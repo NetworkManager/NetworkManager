@@ -133,8 +133,6 @@ gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
-const char * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
-
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
 gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self, const GPtrArray *ssids);
