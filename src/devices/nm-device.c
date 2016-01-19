@@ -364,6 +364,8 @@ typedef struct _NMDevicePrivate {
 
 	NMConnectionProvider *con_provider;
 	NMLldpListener *lldp_listener;
+
+	guint check_delete_unrealized_id;
 } NMDevicePrivate;
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
@@ -1997,14 +1999,36 @@ unrealize_notify (NMDevice *self)
 	 * implementation. */
 }
 
-static void
-available_connection_check_delete_unrealized (NMDevice *self)
+static gboolean
+available_connection_check_delete_unrealized_on_idle (gpointer user_data)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->check_delete_unrealized_id = 0;
 
 	if (   g_hash_table_size (priv->available_connections) == 0
 	    && !nm_device_is_real (self))
-		g_signal_emit_by_name (self, NM_DEVICE_REMOVED);
+		g_signal_emit (self, signals[REMOVED], 0);
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+available_connection_check_delete_unrealized (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* always rescheadule the remove signal. */
+	nm_clear_g_source (&priv->check_delete_unrealized_id);
+
+	if (   g_hash_table_size (priv->available_connections) == 0
+	    && !nm_device_is_real (self))
+		priv->check_delete_unrealized_id = g_idle_add (available_connection_check_delete_unrealized_on_idle, self);
 }
 
 /**
@@ -2104,7 +2128,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	/* Garbage-collect unneeded unrealized devices. */
 	nm_device_recheck_available_connections (self);
-	available_connection_check_delete_unrealized (self);
 
 	return TRUE;
 }
@@ -9153,6 +9176,8 @@ nm_device_recheck_available_connections (NMDevice *self)
 
 		_signal_available_connections_changed (self);
 	}
+
+	available_connection_check_delete_unrealized (self);
 }
 
 /**
@@ -10592,6 +10617,8 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->recheck_assume_id);
 	nm_clear_g_source (&priv->recheck_available.call_id);
+
+	nm_clear_g_source (&priv->check_delete_unrealized_id);
 
 	link_disconnect_action_cancel (self);
 
