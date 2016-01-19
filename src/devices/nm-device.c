@@ -1272,7 +1272,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!nm_device_get_managed (self))
+	if (priv->state <= NM_DEVICE_STATE_UNMANAGED)
 		return;
 
 	nm_device_recheck_available_connections (self);
@@ -1304,8 +1304,6 @@ carrier_changed (NMDevice *self, gboolean carrier)
 	}
 
 	if (carrier) {
-		g_warn_if_fail (priv->state >= NM_DEVICE_STATE_UNAVAILABLE);
-
 		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
 			nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED,
 			                       NM_DEVICE_STATE_REASON_CARRIER);
@@ -1324,8 +1322,6 @@ carrier_changed (NMDevice *self, gboolean carrier)
 			update_dynamic_ip_setup (self);
 		}
 	} else {
-		g_return_if_fail (priv->state >= NM_DEVICE_STATE_UNAVAILABLE);
-
 		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
 			if (nm_device_queued_state_peek (self) >= NM_DEVICE_STATE_DISCONNECTED)
 				nm_device_queued_state_clear (self);
