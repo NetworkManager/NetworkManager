@@ -208,13 +208,12 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	g_return_val_if_fail (self != NULL, FALSE);
-	/* interface already acquired? */
-	g_return_val_if_fail (priv->sup_iface == NULL, TRUE);
+	g_return_val_if_fail (!priv->sup_iface, TRUE);
 
-	priv->sup_iface = nm_supplicant_manager_iface_get (priv->sup_mgr,
-	                                                   nm_device_get_iface (NM_DEVICE (self)),
-	                                                   TRUE);
-	if (priv->sup_iface == NULL) {
+	priv->sup_iface = nm_supplicant_manager_create_interface (priv->sup_mgr,
+	                                                          nm_device_get_iface (NM_DEVICE (self)),
+	                                                          TRUE);
+	if (!priv->sup_iface) {
 		_LOGE (LOGD_WIFI, "Couldn't initialize supplicant interface");
 		return FALSE;
 	}
@@ -278,8 +277,7 @@ supplicant_interface_release (NMDeviceWifi *self)
 		/* Tell the supplicant to disconnect from the current AP */
 		nm_supplicant_interface_disconnect (priv->sup_iface);
 
-		nm_supplicant_manager_iface_release (priv->sup_mgr, priv->sup_iface);
-		priv->sup_iface = NULL;
+		g_clear_object (&priv->sup_iface);
 	}
 }
 
@@ -2472,7 +2470,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 
-	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (priv->sup_iface, NULL);
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
