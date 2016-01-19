@@ -59,6 +59,17 @@ die_count_exceeded (guint32 count)
 	return count > 2;
 }
 
+static gboolean
+is_available (NMSupplicantManager *self)
+{
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	return    priv->running
+	       && !die_count_exceeded (priv->die_count);
+}
+
+/********************************************************************/
+
 NMSupplicantInterface *
 nm_supplicant_manager_iface_get (NMSupplicantManager * self,
                                  const char *ifname,
@@ -66,7 +77,6 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 {
 	NMSupplicantManagerPrivate *priv;
 	NMSupplicantInterface *iface = NULL;
-	gboolean start_now;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
 	g_return_val_if_fail (ifname != NULL, NULL);
@@ -75,22 +85,22 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 
 	iface = g_hash_table_lookup (priv->ifaces, ifname);
 	if (!iface) {
+		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
+		iface = nm_supplicant_interface_new (ifname,
+		                                     is_wireless,
+		                                     priv->fast_supported,
+		                                     priv->ap_support);
+		g_hash_table_insert (priv->ifaces,
+		                     (char *) nm_supplicant_interface_get_ifname (iface),
+		                     iface);
+
 		/* If we're making the supplicant take a time out for a bit, don't
 		 * let the supplicant interface start immediately, just let it hang
 		 * around in INIT state until we're ready to talk to the supplicant
 		 * again.
 		 */
-		start_now = !die_count_exceeded (priv->die_count);
-
-		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
-		iface = nm_supplicant_interface_new (ifname,
-		                                     is_wireless,
-		                                     priv->fast_supported,
-		                                     priv->ap_support,
-		                                     start_now);
-		g_hash_table_insert (priv->ifaces,
-		                     (char *) nm_supplicant_interface_get_ifname (iface),
-		                     iface);
+		if (is_available (self))
+			nm_supplicant_interface_set_supplicant_available (iface, TRUE);
 	} else {
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): returning existing supplicant interface", ifname);
 	}
@@ -201,16 +211,6 @@ availability_changed (NMSupplicantManager *self, gboolean available)
 	for (iter = ifaces; iter; iter = iter->next)
 		nm_supplicant_interface_set_supplicant_available (NM_SUPPLICANT_INTERFACE (iter->data), available);
 	g_list_free_full (ifaces, g_object_unref);
-}
-
-static gboolean
-is_available (NMSupplicantManager *self)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
-
-	if (die_count_exceeded (NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->die_count))
-		return FALSE;
-	return NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->running;
 }
 
 static void
