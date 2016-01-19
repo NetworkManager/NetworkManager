@@ -718,6 +718,11 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	g_slist_free (sorted_scripts);
 
 	_LOG_R_I (request, "new request (%u scripts)", request->scripts->len);
+	if (   _LOG_R_D_enabled (request)
+	    && request->envp) {
+		for (p = request->envp; *p; p++)
+			_LOG_R_D (request, "environment: %s", *p);
+	}
 
 	if (error_message || request->scripts->len == 0) {
 		GVariant *results;
@@ -732,11 +737,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		request->num_scripts_done = request->scripts->len;
 		request_free (request);
 		return TRUE;
-	}
-
-	if (_LOG_R_D_enabled (request)) {
-		for (p = request->envp; *p; p++)
-			_LOG_R_D (request, "environment: %s", *p);
 	}
 
 	nm_clear_g_source (&quit_id);
