@@ -453,21 +453,14 @@ device_get_setting (NMDevice *device, GType setting_type)
 /* 802.1X */
 
 static void
-remove_supplicant_timeouts (NMDeviceEthernet *self)
+supplicant_interface_clear_handlers (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->supplicant.con_timeout_id);
 	nm_clear_g_source (&priv->supplicant_timeout_id);
-}
-
-static void
-remove_supplicant_interface_error_handler (NMDeviceEthernet *self)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_error_id);
+	nm_clear_g_source (&priv->supplicant.con_timeout_id);
 	nm_clear_g_source (&priv->supplicant.iface_con_error_cb_id);
+	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_error_id);
 }
 
 static void
@@ -475,8 +468,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	remove_supplicant_timeouts (self);
-	remove_supplicant_interface_error_handler (self);
+	supplicant_interface_clear_handlers (self);
 
 	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_state_id);
 
@@ -646,8 +638,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
-		remove_supplicant_interface_error_handler (self);
-		remove_supplicant_timeouts (self);
+		supplicant_interface_clear_handlers (self);
 
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
@@ -667,7 +658,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
 		supplicant_interface_release (self);
-		remove_supplicant_timeouts (self);
 
 		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
 			nm_device_state_changed (device,
