@@ -55,7 +55,12 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
 /* Properties */
+#define NM_SUPPLICANT_INTERFACE_IFACE            "iface"
+#define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
+#define NM_SUPPLICANT_INTERFACE_IS_WIRELESS      "is-wireless"
+#define NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED   "fast-supported"
+#define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
 
 /* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"

@@ -59,21 +59,22 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 
 /* Properties */
-enum {
-	PROP_0 = 0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
+	PROP_IFACE,
 	PROP_SCANNING,
 	PROP_CURRENT_BSS,
-	LAST_PROP
-};
-
+	PROP_IS_WIRELESS,
+	PROP_FAST_SUPPORTED,
+	PROP_AP_SUPPORT,
+);
 
 typedef struct {
 	char *         dev;
-	gboolean       is_wireless;
+	bool           is_wireless;
+	bool           fast_supported;
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
 	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
 	NMSupplicantFeature mac_randomization_support;
-	gboolean       fast_supported;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
 
@@ -315,7 +316,7 @@ set_scanning (NMSupplicantInterface *self, gboolean new_scanning)
 		if (priv->scanning == FALSE)
 			priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-		g_object_notify (G_OBJECT (self), "scanning");
+		_notify (self, PROP_SCANNING);
 	}
 }
 
@@ -665,7 +666,7 @@ props_changed_cb (GDBusProxy *proxy,
 		if (g_strcmp0 (s, priv->current_bss) != 0) {
 			g_free (priv->current_bss);
 			priv->current_bss = g_strdup (s);
-			g_object_notify (G_OBJECT (self), NM_SUPPLICANT_INTERFACE_CURRENT_BSS);
+			_notify (self, PROP_CURRENT_BSS);
 		}
 	}
 
@@ -1427,20 +1428,14 @@ nm_supplicant_interface_new (const char *ifname,
                              gboolean fast_supported,
                              NMSupplicantFeature ap_support)
 {
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-
 	g_return_val_if_fail (ifname != NULL, NULL);
 
-	self = g_object_new (NM_TYPE_SUPPLICANT_INTERFACE, NULL);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->dev = g_strdup (ifname);
-	priv->is_wireless = !!is_wireless;
-	priv->fast_supported = fast_supported;
-	priv->ap_support = ap_support;
-
-	return self;
+	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
+	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
+	                     NM_SUPPLICANT_INTERFACE_IS_WIRELESS, is_wireless,
+	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED, fast_supported,
+	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
+	                     NULL);
 }
 
 static void
@@ -1458,7 +1453,30 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_IFACE:
+		/* construct-only */
+		priv->dev = g_value_dup_string (value);
+		g_return_if_fail (priv->dev);
+		break;
+	case PROP_IS_WIRELESS:
+		/* construct-only */
+		priv->is_wireless = g_value_get_boolean (value);
+		break;
+	case PROP_FAST_SUPPORTED:
+		/* construct-only */
+		priv->fast_supported = g_value_get_boolean (value);
+		break;
+	case PROP_AP_SUPPORT:
+		/* construct-only */
+		priv->ap_support = g_value_get_int (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -1525,19 +1543,44 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	object_class->get_property = get_property;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_SCANNING,
-		 g_param_spec_boolean ("scanning", "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SCANNING] =
+	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_SCANNING, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CURRENT_BSS] =
+	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_CURRENT_BSS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IFACE] =
+	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_IFACE, "", "",
+	                         NULL,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IS_WIRELESS] =
+	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_IS_WIRELESS, "", "",
+	                          TRUE,
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_FAST_SUPPORTED] =
+	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED, "", "",
+	                          TRUE,
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_AP_SUPPORT] =
+	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_AP_SUPPORT, "", "",
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      NM_SUPPLICANT_FEATURE_YES,
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CURRENT_BSS,
-		 g_param_spec_string (NM_SUPPLICANT_INTERFACE_CURRENT_BSS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
 	signals[STATE] =
