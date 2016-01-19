@@ -444,15 +444,8 @@ remove_supplicant_interface_error_handler (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	if (priv->supplicant.iface_error_id != 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_error_id);
-		priv->supplicant.iface_error_id = 0;
-	}
-
-	if (priv->supplicant.iface_con_error_cb_id > 0) {
-		g_source_remove (priv->supplicant.iface_con_error_cb_id);
-		priv->supplicant.iface_con_error_cb_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_error_id);
+	nm_clear_g_source (&priv->supplicant.iface_con_error_cb_id);
 }
 
 static void
@@ -463,10 +456,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 	remove_supplicant_timeouts (self);
 	remove_supplicant_interface_error_handler (self);
 
-	if (priv->supplicant.iface_state_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_state_id);
-		priv->supplicant.iface_state_id = 0;
-	}
+	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_state_id);
 
 	if (priv->supplicant.iface) {
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
