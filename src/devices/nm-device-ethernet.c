@@ -474,8 +474,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 
 	if (priv->supplicant.iface) {
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
-		nm_supplicant_manager_iface_release (priv->supplicant.mgr, priv->supplicant.iface);
-		priv->supplicant.iface = NULL;
+		g_clear_object (&priv->supplicant.iface);
 	}
 }
 
@@ -784,14 +783,15 @@ supplicant_interface_init (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	/* Create supplicant interface */
-	priv->supplicant.iface = nm_supplicant_manager_iface_get (priv->supplicant.mgr,
-	                                                          nm_device_get_iface (NM_DEVICE (self)),
-	                                                          FALSE);
+	supplicant_interface_release (self);
+
+	priv->supplicant.iface = nm_supplicant_manager_create_interface (priv->supplicant.mgr,
+	                                                                 nm_device_get_iface (NM_DEVICE (self)),
+	                                                                 FALSE);
+
 	if (!priv->supplicant.iface) {
 		_LOGE (LOGD_DEVICE | LOGD_ETHER,
 		       "Couldn't initialize supplicant interface");
-		supplicant_interface_release (self);
 		return FALSE;
 	}
 
@@ -1632,6 +1632,8 @@ dispose (GObject *object)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	supplicant_interface_release (self);
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
