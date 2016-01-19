@@ -8831,7 +8831,7 @@ nm_device_queued_state_clear (NMDevice *self)
 	if (priv->queued_state.id) {
 		_LOGD (LOGD_DEVICE, "clearing queued state transition (id %d)",
 		       priv->queued_state.id);
-		g_source_remove (priv->queued_state.id);
+		nm_clear_g_source (&priv->queued_state.id);
 		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
 	}
 	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
@@ -9273,6 +9273,13 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->device_ip_link_changed_id);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
+
+	if (nm_clear_g_source (&priv->queued_state.id)) {
+		/* FIXME: we'd expect the queud_state to be alredy cleared and this statement
+		 * not being necessary. Add this check here to hopefully investigate crash
+		 * rh#1270247. */
+		g_return_if_reached ();
+	}
 }
 
 static void
