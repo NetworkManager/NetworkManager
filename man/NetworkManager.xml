@@ -397,6 +397,37 @@
   </refsect1>
 
   <refsect1>
+    <title>SIGNALS</title>
+    <para>
+      NetworkManager process handles the following signals:
+      <variablelist>
+        <varlistentry>
+          <term><varname>SIGHUP</varname></term>
+          <listitem><para>
+          The signal causes a reload of NetworkManager's configuration.
+          Note that not all configuration parameters can be changed at
+          runtime and therefore some changes may be applied only after
+          the next restart of the daemon. The signal also forces a
+          rewrite of DNS configuration.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>SIGUSR1</varname></term>
+          <listitem><para>
+            The signal forces a rewrite of DNS configuration.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>SIGUSR2</varname></term>
+          <listitem><para>
+            The signal has no effect at the moment.
+          </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
     <title>DEBUGGING</title>
     <para>
       The following environment variables are supported to help
