@@ -272,8 +272,6 @@ supplicant_interface_release (NMDeviceWifi *self)
 	}
 
 	if (priv->sup_iface) {
-		remove_supplicant_interface_error_handler (self);
-
 		/* Clear supplicant interface signal handlers */
 		g_signal_handlers_disconnect_by_data (priv->sup_iface, self);
 
