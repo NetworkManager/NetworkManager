@@ -87,11 +87,9 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 		                                     priv->fast_supported,
 		                                     priv->ap_support,
 		                                     start_now);
-		if (iface) {
-			g_hash_table_insert (priv->ifaces,
-			                     (char *) nm_supplicant_interface_get_ifname (iface),
-			                     iface);
-		}
+		g_hash_table_insert (priv->ifaces,
+		                     (char *) nm_supplicant_interface_get_ifname (iface),
+		                     iface);
 	} else {
 		/* nm_supplicant_manager_iface_get() and release() implements no form of ref-counting
 		 * to properly handle reusing a cached instance. It's also unclear whether that is
