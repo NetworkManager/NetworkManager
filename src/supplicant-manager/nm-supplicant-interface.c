@@ -1252,8 +1252,7 @@ NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
                              gboolean is_wireless,
                              gboolean fast_supported,
-                             ApSupport ap_support,
-                             gboolean start_now)
+                             ApSupport ap_support)
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
@@ -1267,9 +1266,6 @@ nm_supplicant_interface_new (const char *ifname,
 	priv->is_wireless = !!is_wireless;
 	priv->fast_supported = fast_supported;
 	priv->ap_support = ap_support;
-
-	if (start_now)
-		interface_add (self);
 
 	return self;
 }
