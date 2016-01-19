@@ -1394,14 +1394,6 @@ nm_supplicant_interface_state_to_string (guint32 state)
 }
 
 const char *
-nm_supplicant_interface_get_device (NMSupplicantInterface * self)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
-
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
-}
-
-const char *
 nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
