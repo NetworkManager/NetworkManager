@@ -368,7 +368,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 			 */
 			priv->max_scan_ssids = CLAMP (max_scan_ssids, 0, 5);
 			nm_log_info (LOGD_SUPPLICANT, "(%s) supports %d scan SSIDs",
-				         priv->dev, priv->max_scan_ssids);
+			             priv->dev, priv->max_scan_ssids);
 		}
 	}
 }
@@ -822,7 +822,7 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 }
 
 static void
-interface_add (NMSupplicantInterface *self, gboolean is_wireless)
+interface_add (NMSupplicantInterface *self)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
@@ -830,8 +830,6 @@ interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
 
 	nm_log_dbg (LOGD_SUPPLICANT, "(%s): adding interface to supplicant", priv->dev);
-
-	priv->is_wireless = is_wireless;
 
 	/* Move to starting to prevent double-calls of interface_add() */
 	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_STARTING);
@@ -856,14 +854,18 @@ void
 nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                   gboolean available)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (available) {
 		/* This can happen if the supplicant couldn't be activated but
 		 * for some reason was started after the activation failure.
 		 */
 		if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT)
-			interface_add (self, priv->is_wireless);
+			interface_add (self);
 	} else {
 		/* The supplicant stopped; so we must tear down the interface */
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -1262,12 +1264,12 @@ nm_supplicant_interface_new (const char *ifname,
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->dev = g_strdup (ifname);
-	priv->is_wireless = is_wireless;
+	priv->is_wireless = !!is_wireless;
 	priv->fast_supported = fast_supported;
 	priv->ap_support = ap_support;
 
 	if (start_now)
-		interface_add (self, priv->is_wireless);
+		interface_add (self);
 
 	return self;
 }
