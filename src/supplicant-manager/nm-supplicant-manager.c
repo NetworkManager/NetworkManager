@@ -199,8 +199,10 @@ availability_changed (NMSupplicantManager *self, gboolean available)
 	/* priv->ifaces may be modified if availability changes; can't use GHashTableIter */
 	ifaces = g_hash_table_get_values (priv->ifaces);
 	for (iter = ifaces; iter; iter = iter->next)
+		g_object_ref (iter->data);
+	for (iter = ifaces; iter; iter = iter->next)
 		nm_supplicant_interface_set_supplicant_available (NM_SUPPLICANT_INTERFACE (iter->data), available);
-	g_list_free (ifaces);
+	g_list_free_full (ifaces, g_object_unref);
 }
 
 static gboolean
