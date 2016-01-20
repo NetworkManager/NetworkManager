@@ -79,6 +79,7 @@ nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
 
 /**
  * nm_setting_olpc_mesh_get_ssid:
+ * @setting: the #NMSettingOlpcMesh
  *
  * Returns: (transfer none):
  */
