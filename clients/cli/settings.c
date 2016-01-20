@@ -1420,7 +1420,7 @@ nmc_property_ip_tunnel_allowed_mode (NMSetting *setting, const char *prop)
 
 	if (!words)
 		words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-		                                  NM_IP_TUNNEL_MODE_UKNOWN + 1,
+		                                  NM_IP_TUNNEL_MODE_UNKNOWN + 1,
 		                                  G_MAXINT);
 	return words;
 }
@@ -1825,7 +1825,7 @@ nmc_property_ip_tunnel_set_mode (NMSetting *setting, const char *prop,
 		gs_free char *values_str = NULL;
 
 		values = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-		                                   NM_IP_TUNNEL_MODE_UKNOWN + 1,
+		                                   NM_IP_TUNNEL_MODE_UNKNOWN + 1,
 		                                   G_MAXINT);
 		values_str = g_strjoinv (",", (char **) values);
 		g_set_error (error, 1, 0, _("invalid mode '%s', use one of %s"),

@@ -6184,7 +6184,7 @@ cleanup_tun:
 			gs_free char *values_str = NULL;
 
 			values = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-			                                   NM_IP_TUNNEL_MODE_UKNOWN + 1,
+			                                   NM_IP_TUNNEL_MODE_UNKNOWN + 1,
 			                                   G_MAXINT);
 			values_str = g_strjoinv (",", (char **) values);
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6787,7 +6787,7 @@ gen_func_ip_tunnel_mode (const char *text, int state)
 	gs_free const char **words = NULL;
 
 	words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-	                                  NM_IP_TUNNEL_MODE_UKNOWN + 1,
+	                                  NM_IP_TUNNEL_MODE_UNKNOWN + 1,
 	                                  G_MAXINT);
 	return nmc_rl_gen_func_basic (text, state, words);
 }

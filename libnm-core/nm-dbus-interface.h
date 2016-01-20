@@ -692,7 +692,7 @@ typedef enum /*< flags >*/ {
  * Since: 1.2
  */
 typedef enum {
-	NM_IP_TUNNEL_MODE_UKNOWN      = 0,
+	NM_IP_TUNNEL_MODE_UNKNOWN     = 0,
 	NM_IP_TUNNEL_MODE_IPIP        = 1,
 	NM_IP_TUNNEL_MODE_GRE         = 2,
 	NM_IP_TUNNEL_MODE_SIT         = 3,
