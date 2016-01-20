@@ -673,7 +673,7 @@ nm_setting_wireless_get_hidden (NMSettingWireless *setting)
 guint32
 nm_setting_wireless_get_powersave (NMSettingWireless *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 1);
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
 
 	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->powersave;
 }
@@ -883,9 +883,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_wireless_init (NMSettingWireless *setting)
 {
-	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-
-	priv->powersave = 1;
 }
 
 static void
@@ -1284,7 +1281,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_POWERSAVE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_POWERSAVE, "", "",
-		                    0, G_MAXUINT32, 1,
+		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
 }
