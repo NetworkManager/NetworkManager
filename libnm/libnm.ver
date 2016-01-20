@@ -937,7 +937,6 @@ global:
 	nm_lldp_neighbor_new;
 	nm_lldp_neighbor_ref;
 	nm_lldp_neighbor_unref;
-	nm_manager_get_all_devices;
 	nm_metered_get_type;
 	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;
