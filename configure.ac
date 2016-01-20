@@ -277,7 +277,7 @@ fi
 AM_CONDITIONAL(HAVE_DBUS_GLIB_100, test "${have_dbus_glib_100}" = "yes")
 
 PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
-	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh'),
+	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh')
 	 AC_SUBST(AM_TESTS_FD_REDIRECT, '--tap')],
 	[PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.32 gmodule-2.0)
 	 AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/test-driver')])
