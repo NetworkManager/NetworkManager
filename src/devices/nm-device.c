@@ -2010,7 +2010,7 @@ unrealize_notify (NMDevice *self)
 }
 
 static gboolean
-available_connection_check_delete_unrealized_on_idle (gpointer user_data)
+available_connections_check_delete_unrealized_on_idle (gpointer user_data)
 {
 	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
@@ -2029,7 +2029,7 @@ available_connection_check_delete_unrealized_on_idle (gpointer user_data)
 }
 
 static void
-available_connection_check_delete_unrealized (NMDevice *self)
+available_connections_check_delete_unrealized (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -2038,7 +2038,7 @@ available_connection_check_delete_unrealized (NMDevice *self)
 
 	if (   g_hash_table_size (priv->available_connections) == 0
 	    && !nm_device_is_real (self))
-		priv->check_delete_unrealized_id = g_idle_add (available_connection_check_delete_unrealized_on_idle, self);
+		priv->check_delete_unrealized_id = g_idle_add (available_connections_check_delete_unrealized_on_idle, self);
 }
 
 /**
@@ -9283,21 +9283,21 @@ nm_device_check_connection_available (NMDevice *self,
 }
 
 static void
-_signal_available_connections_changed (NMDevice *self)
+available_connections_notify (NMDevice *self)
 {
 	g_object_notify (G_OBJECT (self), NM_DEVICE_AVAILABLE_CONNECTIONS);
 }
 
 static void
-_clear_available_connections (NMDevice *self, gboolean do_signal)
+available_connections_del_all (NMDevice *self, gboolean do_signal)
 {
 	g_hash_table_remove_all (NM_DEVICE_GET_PRIVATE (self)->available_connections);
 	if (do_signal == TRUE)
-		_signal_available_connections_changed (self);
+		available_connections_notify (self);
 }
 
 static gboolean
-_try_add_available_connection (NMDevice *self, NMConnection *connection)
+available_connections_update (NMDevice *self, NMConnection *connection)
 {
 	if (nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL)) {
 		g_hash_table_add (NM_DEVICE_GET_PRIVATE (self)->available_connections,
@@ -9351,16 +9351,16 @@ nm_device_recheck_available_connections (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE(self);
 
 	if (priv->con_provider) {
-		_clear_available_connections (self, FALSE);
+		available_connections_del_all (self, FALSE);
 
 		connections = nm_connection_provider_get_connections (priv->con_provider);
 		for (iter = connections; iter; iter = g_slist_next (iter))
-			_try_add_available_connection (self, NM_CONNECTION (iter->data));
+			available_connections_update (self, NM_CONNECTION (iter->data));
 
-		_signal_available_connections_changed (self);
+		available_connections_notify (self);
 	}
 
-	available_connection_check_delete_unrealized (self);
+	available_connections_check_delete_unrealized (self);
 }
 
 /**
@@ -9406,8 +9406,8 @@ cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointe
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	if (_try_add_available_connection (self, connection))
-		_signal_available_connections_changed (self);
+	if (available_connections_update (self, connection))
+		available_connections_notify (self);
 }
 
 static void
@@ -9418,8 +9418,8 @@ cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpoin
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (_del_available_connection (self, connection)) {
-		_signal_available_connections_changed (self);
-		available_connection_check_delete_unrealized (self);
+		available_connections_notify (self);
+		available_connections_check_delete_unrealized (self);
 	}
 }
 
@@ -9433,12 +9433,12 @@ cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpoin
 
 	/* FIXME: don't remove it from the hash if it's just going to get re-added */
 	deleted = _del_available_connection (self, connection);
-	added = _try_add_available_connection (self, connection);
+	added = available_connections_update (self, connection);
 
 	/* Only signal if the connection was removed OR added, but not both */
 	if (added != deleted) {
-		_signal_available_connections_changed (self);
-		available_connection_check_delete_unrealized (self);
+		available_connections_notify (self);
+		available_connections_check_delete_unrealized (self);
 	}
 }
 
@@ -10058,7 +10058,7 @@ _set_state_full (NMDevice *self,
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
 
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
-		_clear_available_connections (self, TRUE);
+		available_connections_del_all (self, TRUE);
 		_clear_queued_act_request (priv);
 	}
 
