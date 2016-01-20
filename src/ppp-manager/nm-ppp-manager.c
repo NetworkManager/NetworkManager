@@ -66,8 +66,8 @@ typedef struct {
 	NMActRequestGetSecretsCallId secrets_id;
 	const char *secrets_setting_name;
 
-	guint32 ppp_watch_id;
-	guint32 ppp_timeout_handler;
+	guint ppp_watch_id;
+	guint ppp_timeout_handler;
 
 	/* Monitoring */
 	char *ip_iface;

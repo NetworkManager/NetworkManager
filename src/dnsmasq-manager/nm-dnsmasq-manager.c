@@ -38,7 +38,7 @@ typedef struct {
 	char *iface;
 	char *pidfile;
 	GPid pid;
-	guint32 dm_watch_id;
+	guint dm_watch_id;
 } NMDnsMasqManagerPrivate;
 
 #define NM_DNSMASQ_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNSMASQ_MANAGER, NMDnsMasqManagerPrivate))
@@ -170,7 +170,7 @@ dm_exit_code (guint dm_exit_status)
 	case 4:
 		msg = "Memory allocation failure";
 		break;
-	case 5: 
+	case 5:
 		msg = "Other problem";
 		break;
 	default:
@@ -200,7 +200,7 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 	} else {
 		nm_log_warn (LOGD_SHARING, "dnsmasq died from an unknown cause");
 	}
-  
+
 	priv->pid = 0;
 	priv->dm_watch_id = 0;
 
