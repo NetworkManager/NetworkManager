@@ -129,6 +129,11 @@ nm_vpn_plugin_old_get_connection (NMVpnPluginOld *plugin)
 	return connection;
 }
 
+/**
+ * nm_vpn_plugin_old_get_state:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 NMVpnServiceState
 nm_vpn_plugin_old_get_state (NMVpnPluginOld *plugin)
 {
@@ -137,6 +142,11 @@ nm_vpn_plugin_old_get_state (NMVpnPluginOld *plugin)
 	return NM_VPN_PLUGIN_OLD_GET_PRIVATE (plugin)->state;
 }
 
+/**
+ * nm_vpn_plugin_old_set_state:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 void
 nm_vpn_plugin_old_set_state (NMVpnPluginOld *plugin,
                              NMVpnServiceState state)
@@ -152,6 +162,11 @@ nm_vpn_plugin_old_set_state (NMVpnPluginOld *plugin,
 	}
 }
 
+/**
+ * nm_vpn_plugin_old_set_login_banner:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 void
 nm_vpn_plugin_old_set_login_banner (NMVpnPluginOld *plugin,
                                     const char *banner)
@@ -162,6 +177,11 @@ nm_vpn_plugin_old_set_login_banner (NMVpnPluginOld *plugin,
 	g_signal_emit (plugin, signals[LOGIN_BANNER], 0, banner);
 }
 
+/**
+ * nm_vpn_plugin_old_failure:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 void
 nm_vpn_plugin_old_failure (NMVpnPluginOld *plugin,
                            NMVpnPluginFailure reason)
@@ -171,6 +191,11 @@ nm_vpn_plugin_old_failure (NMVpnPluginOld *plugin,
 	g_signal_emit (plugin, signals[FAILURE], 0, reason);
 }
 
+/**
+ * nm_vpn_plugin_old_disconnect:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 gboolean
 nm_vpn_plugin_old_disconnect (NMVpnPluginOld *plugin, GError **err)
 {
@@ -277,6 +302,11 @@ schedule_fail_stop (NMVpnPluginOld *plugin)
 	priv->fail_stop_id = g_idle_add (fail_stop, plugin);
 }
 
+/**
+ * nm_vpn_plugin_old_set_config:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 void
 nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
                               GVariant *config)
@@ -316,6 +346,11 @@ nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
 }
 
+/**
+ * nm_vpn_plugin_old_set_ip4_config:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 void
 nm_vpn_plugin_old_set_ip4_config (NMVpnPluginOld *plugin,
                                   GVariant *ip4_config)
@@ -371,6 +406,11 @@ nm_vpn_plugin_old_set_ip4_config (NMVpnPluginOld *plugin,
 		nm_vpn_plugin_old_set_state (plugin, NM_VPN_SERVICE_STATE_STARTED);
 }
 
+/**
+ * nm_vpn_plugin_old_set_ip6_config:
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ */
 void
 nm_vpn_plugin_old_set_ip6_config (NMVpnPluginOld *plugin,
                                   GVariant *ip6_config)

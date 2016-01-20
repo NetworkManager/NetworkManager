@@ -821,6 +821,17 @@ global:
 	nm_vpn_plugin_error_get_type;
 	nm_vpn_plugin_error_quark;
 	nm_vpn_plugin_failure_get_type;
+	nm_vpn_plugin_old_disconnect;
+	nm_vpn_plugin_old_failure;
+	nm_vpn_plugin_old_get_connection;
+	nm_vpn_plugin_old_get_secret_flags;
+	nm_vpn_plugin_old_get_state;
+	nm_vpn_plugin_old_get_type;
+	nm_vpn_plugin_old_read_vpn_details;
+	nm_vpn_plugin_old_secrets_required;
+	nm_vpn_plugin_old_set_ip4_config;
+	nm_vpn_plugin_old_set_login_banner;
+	nm_vpn_plugin_old_set_state;
 	nm_vpn_service_state_get_type;
 	nm_wep_key_type_get_type;
 	nm_wimax_nsp_connection_valid;

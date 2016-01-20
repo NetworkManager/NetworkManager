@@ -54,7 +54,6 @@ IGNORE_HFILES= \
 	nm-setting-private.h \
 	nm-types.h \
 	nm-utils-private.h \
-	nm-vpn-plugin-old.h \
 	nm-vpn-service-plugin.h \
 	nm-core-tests-enum-types.h
 
