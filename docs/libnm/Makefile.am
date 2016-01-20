@@ -54,8 +54,10 @@ IGNORE_HFILES= \
 	nm-setting-private.h \
 	nm-types.h \
 	nm-utils-private.h \
-	nm-vpn-service-plugin.h \
-	nm-core-tests-enum-types.h
+	nm-core-tests-enum-types.h \
+	nm-keyfile-internal.h \
+	nm-keyfile-utils.h \
+	test-general-enums.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = libnm.png
