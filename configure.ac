@@ -272,7 +272,7 @@ AC_CHECK_LIB([dl], [dladdr], LIBDL="-ldl", LIBDL="")
 AC_SUBST(LIBDL)
 
 PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
-	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh'),
+	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh')
 	 AC_SUBST(AM_TESTS_FD_REDIRECT, '--tap')],
 	[PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.32 gmodule-2.0)
 	 AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/test-driver')])
