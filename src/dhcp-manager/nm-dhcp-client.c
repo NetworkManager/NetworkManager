@@ -361,6 +361,9 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	guint64 log_domain;
 	guint ip_ver;
 
+	g_return_if_fail (priv->watch_id);
+	priv->watch_id = 0;
+
 	log_domain = priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
 	ip_ver = priv->ipv6 ? 6 : 4;
 
@@ -402,7 +405,7 @@ nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid)
 	priv->timeout_id = g_timeout_add_seconds (priv->timeout,
 	                                          daemon_timeout,
 	                                          self);
-	g_assert (priv->watch_id == 0);
+	g_return_if_fail (priv->watch_id == 0);
 	priv->watch_id = g_child_watch_add (pid, daemon_watch_cb, self);
 }
 
