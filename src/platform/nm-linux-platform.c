@@ -732,13 +732,19 @@ _linktype_get_type (NMPlatform *platform,
 		if (wifi_utils_is_wifi (ifname, sysfs_path))
 			return NM_LINK_TYPE_WIFI;
 
-		/* Standard wired ethernet interfaces don't report an rtnl_link_type, so
-		 * only allow fallback to Ethernet if no type is given.  This should
-		 * prevent future virtual network drivers from being treated as Ethernet
-		 * when they should be Generic instead.
-		 */
-		if (arptype == ARPHRD_ETHER && !kind && !devtype)
-			return NM_LINK_TYPE_ETHERNET;
+		if (arptype == ARPHRD_ETHER) {
+			/* Standard wired ethernet interfaces don't report an rtnl_link_type, so
+			 * only allow fallback to Ethernet if no type is given.  This should
+			 * prevent future virtual network drivers from being treated as Ethernet
+			 * when they should be Generic instead.
+			 */
+			if (!kind && !devtype)
+				return NM_LINK_TYPE_ETHERNET;
+			/* The USB gadget interfaces behave and look like ordinary ethernet devices
+			 * aside from the DEVTYPE. */
+			if (!g_strcmp0 (devtype, "gadget"))
+				return NM_LINK_TYPE_ETHERNET;
+		}
 	}
 
 	return NM_LINK_TYPE_UNKNOWN;
