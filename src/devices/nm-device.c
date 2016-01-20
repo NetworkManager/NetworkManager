@@ -9412,7 +9412,7 @@ nm_device_get_available_connections (NMDevice *self, const char *specific_object
 			 * compatible with it.
 			 */
 			if (   !specific_object /* << Optimization: we know that the connection is available without @specific_object.  */
-			    || nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, specific_object))
+			    || nm_device_check_connection_available (self, connection, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, specific_object))
 				g_ptr_array_add (array, connection);
 		}
 	}
@@ -9430,7 +9430,7 @@ cp_connection_added_or_updated (NMConnectionProvider *cp, NMConnection *connecti
 
 	if (nm_device_check_connection_available (self,
 	                                          connection,
-	                                          NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
+	                                          _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
 	                                          NULL))
 		changed = available_connections_add (self, connection);
 	else
