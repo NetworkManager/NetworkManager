@@ -130,6 +130,8 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_IS_SETTING_IP_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_IP_CONFIG))
 #define NM_SETTING_IP_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigClass))
 
+#define NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX     30000
+
 #define NM_SETTING_IP_CONFIG_METHOD             "method"
 #define NM_SETTING_IP_CONFIG_DNS                "dns"
 #define NM_SETTING_IP_CONFIG_DNS_SEARCH         "dns-search"
@@ -144,6 +146,7 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME "dhcp-send-hostname"
 #define NM_SETTING_IP_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
+#define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
 
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
@@ -245,6 +248,8 @@ gboolean      nm_setting_ip_config_get_dhcp_send_hostname     (NMSettingIPConfig
 
 gboolean      nm_setting_ip_config_get_never_default          (NMSettingIPConfig *setting);
 gboolean      nm_setting_ip_config_get_may_fail               (NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_2
+gint          nm_setting_ip_config_get_dad_timeout            (NMSettingIPConfig *setting);
 
 G_END_DECLS
 

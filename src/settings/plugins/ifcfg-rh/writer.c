@@ -1947,7 +1947,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint32 j;
 	guint32 i, n, num;
 	gint64 route_metric;
-	int dhcp_timeout;
+	int timeout;
 	GString *searches;
 	gboolean success = FALSE;
 	gboolean fake_ip4 = FALSE;
@@ -2156,8 +2156,8 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (value)
 			svSetValue (ifcfg, "DHCP_CLIENT_ID", value, FALSE);
 
-		dhcp_timeout = nm_setting_ip4_config_get_dhcp_timeout (NM_SETTING_IP4_CONFIG (s_ip4));
-		tmp = dhcp_timeout ? g_strdup_printf ("%d", dhcp_timeout) : NULL;
+		timeout = nm_setting_ip4_config_get_dhcp_timeout (NM_SETTING_IP4_CONFIG (s_ip4));
+		tmp = timeout ? g_strdup_printf ("%d", timeout) : NULL;
 		svSetValue (ifcfg, "IPV4_DHCP_TIMEOUT", tmp, FALSE);
 		g_free (tmp);
 	}
@@ -2246,6 +2246,16 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (route_path);
 		if (error && *error)
 			goto out;
+	}
+
+	timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
+	if (timeout < 0)
+		svSetValue (ifcfg, "ARPING_WAIT", NULL, FALSE);
+	else if (timeout == 0)
+		svSetValue (ifcfg, "ARPING_WAIT", "0", FALSE);
+	else {
+		/* Round the value up to next integer */
+		svSetValueInt64 (ifcfg, "ARPING_WAIT", (timeout - 1) / 1000 + 1);
 	}
 
 	success = TRUE;

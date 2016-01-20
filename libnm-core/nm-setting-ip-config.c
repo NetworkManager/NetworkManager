@@ -1093,6 +1093,7 @@ typedef struct {
 	gboolean dhcp_send_hostname;
 	gboolean never_default;
 	gboolean may_fail;
+	gint dad_timeout;
 } NMSettingIPConfigPrivate;
 
 enum {
@@ -1111,6 +1112,7 @@ enum {
 	PROP_DHCP_SEND_HOSTNAME,
 	PROP_NEVER_DEFAULT,
 	PROP_MAY_FAIL,
+	PROP_DAD_TIMEOUT,
 
 	LAST_PROP
 };
@@ -2055,6 +2057,22 @@ nm_setting_ip_config_get_may_fail (NMSettingIPConfig *setting)
 	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->may_fail;
 }
 
+/**
+ * nm_setting_ip_config_get_dad_timeout:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the #NMSettingIPConfig:dad-timeout property.
+ *
+ * Since: 1.2
+ **/
+gint
+nm_setting_ip_config_get_dad_timeout (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dad_timeout;
+}
+
 static gboolean
 verify_label (const char *label)
 {
@@ -2315,6 +2333,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MAY_FAIL:
 		priv->may_fail = g_value_get_boolean (value);
 		break;
+	case PROP_DAD_TIMEOUT:
+		priv->dad_timeout = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2374,6 +2395,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MAY_FAIL:
 		g_value_set_boolean (value, priv->may_fail);
+		break;
+	case PROP_DAD_TIMEOUT:
+		g_value_set_int (value, nm_setting_ip_config_get_dad_timeout (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2656,4 +2680,25 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dad-timeout:
+	 *
+	 * Timeout in milliseconds used to check for the presence of duplicate IP
+	 * addresses on the network.  If an address conflict is detected, the
+	 * activation will fail.  A zero value means that no duplicate address
+	 * detection is performed, -1 means the default value (either configuration
+	 * ipvx.dad-timeout override or 3 seconds).  A value greater than zero is a
+	 * timeout in milliseconds.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DAD_TIMEOUT,
+		 g_param_spec_int (NM_SETTING_IP_CONFIG_DAD_TIMEOUT, "", "",
+		                    -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -1,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
 }
