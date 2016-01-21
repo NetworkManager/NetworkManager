@@ -13,8 +13,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Added support for Wi-Fi powersave, configured with POWERSAVE key in ifcfg
     files.
 * Added support for creation of more types of software devices: tun & tap,
-    maxvlan, vxlan and ip tunnels (ipip, gre, sit, isatap, vti, ip6ip6, ipip6,
-    ip6gre and vti6).
+    macvlan, vxlan and ip tunnels (ipip, gre, sit, ip6ip6 and ipip6).
 * The software devices (bond, bridge, vlan, team, ...) can now be stacked
     arbitrarily.  The nmcli interface for creating master-slave relationships
     has been significantly improved by the use of 'master' argument to
@@ -22,7 +21,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * RFC7217 stable privacy addressing is now used by default to protect from
     address-based host tracking. The IPv6 addressing mode is configured with
     IPV6_ADDR_GEN_MODE key in ifcfg files.
-* Improved route management code to avoid clases between conflicting
+* Improved route management code to avoid clashes between conflicting
     routes in multiple connections.
 * Refactored platform code resulting in more robust interface to platform,
     less overhead and reduced memory footprint.
@@ -33,7 +32,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
     devices are now only created when the device is activated.  This makes it
     possible for connections with device of same name not to clash unless
     they're activated concurrently.  The links are now not unnecessarily present
-    unless the connection is active, avoiding pollution of the link name space.
+    unless the connection is active, avoiding pollution of the link namespace.
 * NetworkManager now correctly manages connectivity in namespace-based
     containers such as LXC and Docker.
 * Support for configuring ethernet Wake-On-Lan has been added.
@@ -43,7 +42,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The command line client now utilizes colors for its output.
 * The command line client now sorts the devices and properties for better
     clarity.
-* Numerous impovement to Bash command completion for nmcli.
+* Numerous improvements to Bash command completion for nmcli.
 * NetworkManager relies on less external libraries.  The use of dbus-glib
     has been replaced with gio's native D-Bus support and libnl-route is no
     longer used.
@@ -53,13 +52,13 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Hostname is now managed via systemd-hostnamed on systemd-based systems.
 * Management of resolv.conf management can be changed at runtime, private
     resolv.conf is always written in /run.
-* DNS options in resolv.conf are now honored.
+* NetworkManager can now write DNS options to resolv.conf.
 * Updated version of systemd network library used for internal DHCP and
     IPv4 link-local support.
 * Support for event logging via audit subsystem has been added.
 * Support for native logging via systemd-journald has been added taking
     advantage of its structured logging.
-* Live reconfiguration in IP configuration after changing the settings without
+* Live reconfiguration of IP configuration after changing the settings without
     reactivation of the device with "nmcli device reapply" command and via
     D-Bus API.
 * The API for VPN plugins now supports multiple simultaneous connections.
@@ -68,6 +67,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fair amount of bugs was fixed and robustness was generally improved.
 * New DHCP_FQDN key in ifcfg files to configure the full FQDN to be sent to
     the DHCP servers.
+* The timeout for DHCP requests can now be modified using the
+    'ipv4.dhcp-timeout' property.
 * Added multicast_snooping option to BRIDGING_OPTS ifcfg key.
 
 The following features were backported to 1.0.x releases from 1.0.0 to 1.0.8
@@ -76,18 +77,18 @@ are also present in NetworkManager-1.2:
 * Added support for handling VPN secrets to nmtui and nmcli agent.
 * The team devices can now properly be enslaved to bridges.
 * Failed DHCP attempts for assumed connections are now retried after
-    a timeout. Configured with DHCP_TIMEOUT ifcfg option.
+    a timeout.
 * Default wired connection is now created after udev registers the device.
 * Support for Bluetooth DUN devices with Bluez 5 has been fixed.
 * The 'ipv6.ignore-auto-dns' property is now properly honored making it
     possible to override automatically obtained name servers.
-* Invalid permanent MAC adddresses as reported by some devices are now
+* Invalid permanent MAC addresses as reported by some devices are now
     ignored.
 * Device links reported by more recent versions of Linux kernel that reside
     in different network namespaces are no longer confused with links in
     the namespace NetworkManager runs in.
-* MAC address changes of VLANs enslaved to a bond are now properly
-    propagated to the master device.
+* MAC address changes of bond or team devices are now properly propagated
+    to VLANs created on the device.
 * Fixed error handling for teaming devices with invalid configuration.
 * Wi-Fi AP list is now updated correctly after AP mode has been used.
 * The error handling for VPN secret agents is now significantly more robust.
@@ -117,9 +118,10 @@ are also present in NetworkManager-1.2:
     daemon. Notably, this applies to 'dns', 'connectivity' and
     'ignore-carrier' settings.
 * The connection activation was made more robust. If an active connection
-    is reactivated, the device it's active on takes precedence. If an attempt
-    is made to activate a connection on a different device than it is active on,
-    the activation proceeds removing the connection from the active device.
+    is reactivated, the device it is active on takes precedence. If an attempt
+    is made to activate a connection on a different device than the one it is
+    active on, the activation proceeds removing the connection from the active
+    device.
 * The device specifiers in configuration files now support negation via
     'except:' match.
 * Devices that only have IPv6 link-local address are no longer assumed to
@@ -138,7 +140,7 @@ are also present in NetworkManager-1.2:
 * Activating a Bond, Bridge or Team device can now optionally activate the
     slave connections as well. The behavior is controlled with
     'connection.autoconnect-slaves' property and AUTOCONNECT-SLAVES key in
-    ifcfg files..
+    ifcfg files.
 * The platform support code has been refactored, resulting in better
     scalability in large configurations.
 * Changes to network interfaces configuration done outside NetworkManager
