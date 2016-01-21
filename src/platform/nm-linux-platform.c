@@ -5530,6 +5530,8 @@ continue_reading:
 
 	if (!handle_events) {
 		/* we read until failure or there is nothing to read (EAGAIN). */
+		g_clear_pointer (&buf, free);
+		g_clear_pointer (&creds, free);
 		goto continue_reading;
 	}
 
