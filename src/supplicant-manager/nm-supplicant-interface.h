@@ -122,8 +122,7 @@ GType nm_supplicant_interface_get_type (void);
 NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
                                                      gboolean is_wireless,
                                                      gboolean fast_supported,
-                                                     ApSupport ap_support,
-                                                     gboolean start_now);
+                                                     ApSupport ap_support);
 
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                        gboolean available);
@@ -132,8 +131,6 @@ gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
                                              NMSupplicantConfig * cfg);
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
-
-const char * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
