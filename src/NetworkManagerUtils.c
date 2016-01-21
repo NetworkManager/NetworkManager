@@ -3416,7 +3416,7 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 		int urandom = open ("/dev/urandom", O_RDONLY);
 		mode_t key_mask;
 
-		if (!urandom) {
+		if (urandom == -1) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 			             "Can't open /dev/urandom: %s", strerror (errno));
 			return FALSE;
