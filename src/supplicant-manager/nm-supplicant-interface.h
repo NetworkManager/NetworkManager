@@ -55,7 +55,12 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
 /* Properties */
+#define NM_SUPPLICANT_INTERFACE_IFACE            "iface"
+#define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
+#define NM_SUPPLICANT_INTERFACE_IS_WIRELESS      "is-wireless"
+#define NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED   "fast-supported"
+#define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
 
 /* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
@@ -119,8 +124,7 @@ GType nm_supplicant_interface_get_type (void);
 NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
                                                      gboolean is_wireless,
                                                      gboolean fast_supported,
-                                                     NMSupplicantFeature ap_support,
-                                                     gboolean start_now);
+                                                     NMSupplicantFeature ap_support);
 
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                        gboolean available);
@@ -130,8 +134,6 @@ gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
                                              GError **error);
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
-
-const char * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
