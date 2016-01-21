@@ -274,7 +274,7 @@ nm_act_request_add_share_rule (NMActRequest *req,
 	rule = g_malloc0 (sizeof (ShareRule));
 	rule->table = g_strdup (table);
 	rule->rule = g_strdup (table_rule);
-	priv->share_rules = g_slist_append (priv->share_rules, rule);
+	priv->share_rules = g_slist_prepend (priv->share_rules, rule);
 }
 
 /********************************************************************/
