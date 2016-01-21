@@ -101,6 +101,7 @@ test_device_added (void)
 	/* Try deleting the device via the ordinary NM interface, which should fail */
 	nm_device_delete (device, NULL, &error);
 	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_SOFTWARE);
+	g_clear_error (&error);
 
 	g_object_unref (client);
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
