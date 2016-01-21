@@ -5735,9 +5735,10 @@ after_read:
 				i++;
 
 				if (   data_next.seq_number == 0
-				    || data_next.timeout_abs_ns > data->timeout_abs_ns)
+				    || data_next.timeout_abs_ns > data->timeout_abs_ns) {
 					data_next.seq_number = data->seq_number;
 					data_next.timeout_abs_ns = data->timeout_abs_ns;
+				}
 			}
 		}
 
