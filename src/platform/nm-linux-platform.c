@@ -4827,6 +4827,7 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
 	if (out_link)
 		*out_link = obj ? &obj->link : NULL;
 
+	close (fd);
 	return !!obj;
 }
 
