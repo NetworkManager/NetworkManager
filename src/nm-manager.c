@@ -974,15 +974,6 @@ get_virtual_iface_name (NMManager *self,
 	if (out_parent)
 		*out_parent = NULL;
 
-	if (!nm_connection_is_virtual (connection)) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "NetworkManager plugin for '%s' unavailable",
-		             nm_connection_get_connection_type (connection));
-		return NULL;
-	}
-
 	factory = nm_device_factory_manager_find_factory_for_connection (connection);
 	if (!factory) {
 		g_set_error (error,
@@ -996,14 +987,10 @@ get_virtual_iface_name (NMManager *self,
 	parent = find_parent_device_for_connection (self, connection);
 	iface = nm_device_factory_get_virtual_iface_name (factory,
 	                                                  connection,
-	                                                  parent ? nm_device_get_ip_iface (parent) : NULL);
-	if (!iface) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "failed to determine virtual interface name");
+	                                                  parent ? nm_device_get_ip_iface (parent) : NULL,
+	                                                  error);
+	if (!iface)
 		return NULL;
-	}
 
 	if (out_parent)
 		*out_parent = parent;

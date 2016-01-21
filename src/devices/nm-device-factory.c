@@ -29,6 +29,7 @@
 #include "nm-device-factory.h"
 #include "nm-default.h"
 #include "nm-platform.h"
+#include "nm-utils.h"
 
 const NMLinkType _nm_device_factory_no_default_links[] = { NM_LINK_TYPE_NONE };
 const char *_nm_device_factory_no_default_settings[] = { NULL };
@@ -174,17 +175,54 @@ get_virtual_iface_name (NMDeviceFactory *factory,
 char *
 nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
                                           NMConnection *connection,
-                                          const char *parent_iface)
+                                          const char *parent_iface,
+                                          GError **error)
 {
+	char *ifname;
+
 	g_return_val_if_fail (factory != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
-	if (!nm_connection_is_virtual (connection))
+	if (!nm_connection_is_virtual (connection)) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "failed to determine virtual interface name: connection type '%s' is not a software device",
+		             nm_connection_get_connection_type (connection));
 		return NULL;
+	}
 
-	if (NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name)
-		return NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name (factory, connection, parent_iface);
-	return NULL;
+	if (!NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "failed to determine virtual interface name: cannot generate name for %s",
+		             nm_connection_get_connection_type (connection));
+		return NULL;
+	}
+
+	ifname = NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name (factory, connection, parent_iface);
+	if (!ifname) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "failed to determine virtual interface name: error generating name for %s",
+		             nm_connection_get_connection_type (connection));
+		return NULL;
+	}
+
+	if (!nm_utils_iface_valid_name (ifname)) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "failed to determine virtual interface name: invalid name \"%s\" generated",
+		             ifname);
+		g_free (ifname);
+		return NULL;
+	}
+
+	return ifname;
 }
 
 /*******************************************************************/

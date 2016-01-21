@@ -177,7 +177,8 @@ const char *nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
 
 char *     nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
                                                      NMConnection *connection,
-                                                     const char *parent_iface);
+                                                     const char *parent_iface,
+                                                     GError **error);
 
 void       nm_device_factory_start       (NMDeviceFactory *factory);
 
