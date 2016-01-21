@@ -93,7 +93,10 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 			                     iface);
 		}
 	} else {
-		nm_log_dbg (LOGD_SUPPLICANT, "(%s): returning existing supplicant interface", ifname);
+		/* nm_supplicant_manager_iface_get() and release() implements no form of ref-counting
+		 * to properly handle reusing a cached instance. It's also unclear whether that is
+		 * even necessary or desired. Assert here and error out (rh #1298007). */
+		g_return_val_if_reached (NULL);
 	}
 
 	return iface;
