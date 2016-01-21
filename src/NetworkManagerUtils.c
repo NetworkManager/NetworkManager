@@ -2141,8 +2141,32 @@ nm_utils_complete_generic (NMConnection *connection,
 char *
 nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id)
 {
-	/* Basically VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD */
-	return g_strdup_printf ("%s.%d", parent_iface, vlan_id);
+	guint id_len;
+	gsize parent_len;
+	char *ifname;
+
+	g_return_val_if_fail (parent_iface && *parent_iface, NULL);
+
+	if (vlan_id < 10) {
+		g_return_val_if_fail (vlan_id > 0, NULL);
+		id_len = 2;
+	} else if (vlan_id < 100)
+		id_len = 3;
+	else if (vlan_id < 1000)
+		id_len = 4;
+	else {
+		g_return_val_if_fail (vlan_id < 4096, NULL);
+		id_len = 5;
+	}
+
+	ifname = g_new (char, IFNAMSIZ);
+
+	parent_len = strlen (parent_iface);
+	parent_len = MIN (parent_len, IFNAMSIZ - 1 - id_len);
+	memcpy (ifname, parent_iface, parent_len);
+	g_snprintf (&ifname[parent_len], IFNAMSIZ - parent_len, ".%u", vlan_id);
+
+	return ifname;
 }
 
 /**
