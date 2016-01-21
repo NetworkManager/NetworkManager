@@ -1025,7 +1025,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
-	GSList *connections, *iter;
+	gs_free_slist GSList *connections = NULL;
+	GSList *iter;
 	gs_free char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
 	GError *error = NULL;
@@ -1137,6 +1138,8 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 		if (parent == device)
 			connection_changed (priv->settings, candidate, self);
 	}
+
+	g_slist_free (connections);
 }
 
 static void
