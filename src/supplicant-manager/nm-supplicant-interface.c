@@ -99,7 +99,27 @@ typedef struct {
 	NMSupplicantConfig *cfg;
 } NMSupplicantInterfacePrivate;
 
-/***************************************************************/
+/*********************************************************************************************/
+
+#define _NMLOG_DOMAIN           LOGD_SUPPLICANT
+#define _NMLOG_PREFIX_NAME      "sup-iface"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+         char _sbuf[64]; \
+         \
+         nm_log ((level), _NMLOG_DOMAIN, \
+                 "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                 _NMLOG_PREFIX_NAME, \
+                 ((self) \
+                      ? nm_sprintf_buf (_sbuf, \
+                                        "[%p,%s]", \
+                                        (self), \
+                                        NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev) \
+                      : "") \
+                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+/*********************************************************************************************/
 
 static void
 emit_error_helper (NMSupplicantInterface *self, GError *error)
