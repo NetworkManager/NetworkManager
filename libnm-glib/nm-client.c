@@ -344,6 +344,8 @@ get_permissions_reply (DBusGProxy *proxy,
 	                       G_TYPE_INVALID);
 	NM_CLIENT_GET_PRIVATE (self)->perm_call = NULL;
 	update_permissions (NM_CLIENT (user_data), error ? NULL : permissions);
+	if (permissions)
+		g_hash_table_destroy (permissions);
 	g_clear_error (&error);
 }
 
