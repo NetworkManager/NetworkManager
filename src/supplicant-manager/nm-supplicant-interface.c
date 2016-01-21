@@ -183,8 +183,9 @@ on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			nm_log_dbg (LOGD_SUPPLICANT, "Failed to acquire BSS proxy: (%s)", error->message);
-			g_hash_table_remove (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data)->bss_proxies,
+			self = NM_SUPPLICANT_INTERFACE (user_data);
+			_LOGD ("failed to acquire BSS proxy: (%s)", error->message);
+			g_hash_table_remove (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->bss_proxies,
 			                     g_dbus_proxy_get_object_path (proxy));
 		}
 		return;
@@ -309,7 +310,6 @@ wpas_state_string_to_enum (const char *str_state)
 	else if (!strcmp (str_state, "completed"))
 		return NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
 
-	nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant state '%s'", str_state);
 	return -1;
 }
 
@@ -319,9 +319,11 @@ set_state_from_string (NMSupplicantInterface *self, const char *new_state)
 	int state;
 
 	state = wpas_state_string_to_enum (new_state);
-	g_warn_if_fail (state > 0);
-	if (state > 0)
-		set_state (self, (guint32) state);
+	if (state == -1) {
+		_LOGW ("unknown supplicant state '%s'", new_state);
+		return;
+	}
+	set_state (self, (guint32) state);
 }
 
 static void
@@ -400,8 +402,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 			 * list, we'll limit to 5.
 			 */
 			priv->max_scan_ssids = CLAMP (max_scan_ssids, 0, 5);
-			nm_log_info (LOGD_SUPPLICANT, "(%s) supports %d scan SSIDs",
-			             priv->dev, priv->max_scan_ssids);
+			_LOGI ("supports %d scan SSIDs", priv->max_scan_ssids);
 		}
 	}
 }
@@ -477,8 +478,8 @@ iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	if (variant || _nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs"))
 		priv->has_credreq = TRUE;
 
-	nm_log_dbg (LOGD_SUPPLICANT, "Supplicant %s network credentials requests",
-	            priv->has_credreq ? "supports" : "does not support");
+	_LOGD ("supplicant %s network credentials requests",
+	       priv->has_credreq ? "supports" : "does not support");
 
 	iface_check_ready (self);
 }
@@ -511,6 +512,7 @@ nm_supplicant_interface_get_mac_randomization_support (NMSupplicantInterface *se
 static void
 set_preassoc_scan_mac_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
+	NMSupplicantInterface *self;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
 
@@ -519,10 +521,11 @@ set_preassoc_scan_mac_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user
 	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
-	if (error)
-		nm_log_warn (LOGD_SUPPLICANT, "Failed to enable scan MAC address randomization");
 
-	iface_check_ready (NM_SUPPLICANT_INTERFACE (user_data));
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	if (error)
+		_LOGW ("failed to enable scan MAC address randomization (%s)", error->message);
+	iface_check_ready (self);
 }
 
 static void
@@ -704,10 +707,8 @@ props_changed_cb (GDBusProxy *proxy,
 		 * AP will be positive.
 		 */
 		priv->disconnect_reason = i32;
-		if (priv->disconnect_reason != 0) {
-			nm_log_warn (LOGD_SUPPLICANT, "Connection disconnected (reason %d)",
-				         priv->disconnect_reason);
-		}
+		if (priv->disconnect_reason != 0)
+			_LOGW ("connection disconnected (reason %d)", priv->disconnect_reason);
 	}
 
 	g_object_thaw_notify (G_OBJECT (self));
@@ -722,8 +723,9 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			nm_log_warn (LOGD_SUPPLICANT, "Failed to acquire wpa_supplicant interface proxy: (%s)", error->message);
-			set_state (NM_SUPPLICANT_INTERFACE (user_data), NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+			self = NM_SUPPLICANT_INTERFACE (user_data);
+			_LOGW ("failed to acquire wpa_supplicant interface proxy: (%s)", error->message);
+			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 		}
 		return;
 	}
@@ -802,7 +804,7 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_SUPPLICANT, "(%s): interface added to supplicant", priv->dev);
+	_LOGD ("interface added to supplicant");
 
 	priv->object_path = g_strdup (path);
 	priv->iface_proxy = g_object_new (G_TYPE_DBUS_PROXY,
@@ -843,7 +845,7 @@ interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		interface_add_done (self, path);
 	} else {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s", priv->dev, error->message);
+		_LOGE ("error getting interface: %s", error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 	}
 }
@@ -892,12 +894,11 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		 * state.
 		 */
 		g_dbus_error_strip_remote_error (error);
-		nm_log_dbg (LOGD_SUPPLICANT, "(%s): failed to activate supplicant: %s",
-		            priv->dev, error->message);
+		_LOGD ("failed to activate supplicant: %s", error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_INIT);
 	} else {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_err (LOGD_SUPPLICANT, "(%s): error adding interface: %s", priv->dev, error->message);
+		_LOGE ("error adding interface: %s", error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 	}
 }
@@ -920,9 +921,9 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	wpas_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (!wpas_proxy) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			nm_log_warn (LOGD_SUPPLICANT, "Failed to acquire wpa_supplicant proxy: (%s)",
-			             error ? error->message : "unknown");
-			set_state (NM_SUPPLICANT_INTERFACE (user_data), NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+			self = NM_SUPPLICANT_INTERFACE (user_data);
+			_LOGW ("failed to acquire wpa_supplicant proxy: (%s)", error->message);
+			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 		}
 		return;
 	}
@@ -963,7 +964,7 @@ interface_add (NMSupplicantInterface *self)
 	/* Can only start the interface from INIT state */
 	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
 
-	nm_log_dbg (LOGD_SUPPLICANT, "(%s): adding interface to supplicant", priv->dev);
+	_LOGD ("adding interface to supplicant");
 
 	/* Move to starting to prevent double-calls of interface_add() */
 	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_STARTING);
@@ -1017,7 +1018,8 @@ log_result_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	    && !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
 	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUPPLICANT, "Failed to %s: %s.", (char *) user_data, error->message);
+		nm_log_warn (_NMLOG_DOMAIN, "%s: failed to %s: %s",
+		             _NMLOG_PREFIX_NAME, (const char *) user_data, error->message);
 	}
 }
 
@@ -1071,14 +1073,17 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 static void
 select_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
+	NMSupplicantInterface *self;
 	gs_unref_variant GVariant *reply = NULL;
-	gs_free_error GError *err = NULL;
+	gs_free_error GError *error = NULL;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &err);
-	if (!reply && !g_error_matches (err, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		g_dbus_error_strip_remote_error (err);
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't select network config: %s.", err->message);
-		emit_error_helper (NM_SUPPLICANT_INTERFACE (user_data), err);
+	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	if (   !reply
+	    && !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		self = NM_SUPPLICANT_INTERFACE (user_data);
+		g_dbus_error_strip_remote_error (error);
+		_LOGW ("couldn't select network config: %s", error->message);
+		emit_error_helper (self, error);
 	}
 }
 
@@ -1106,10 +1111,10 @@ add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *reply = NULL;
-	gs_free_error GError *err = NULL;
+	gs_free_error GError *error = NULL;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &err);
-	if (g_error_matches (err, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -1119,9 +1124,9 @@ add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	if (reply)
 		call_select_network (self);
 	else {
-		g_dbus_error_strip_remote_error (err);
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't set network certificates: %s.", err->message);
-		emit_error_helper (self, err);
+		g_dbus_error_strip_remote_error (error);
+		_LOGW ("couldn't set network certificates: %s", error->message);
+		emit_error_helper (self, error);
 	}
 }
 
@@ -1151,7 +1156,7 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUPPLICANT, "Adding network to supplicant failed: %s.", error->message);
+		_LOGW ("adding network to supplicant failed: %s", error->message);
 		emit_error_helper (self, error);
 		return;
 	}
@@ -1212,15 +1217,14 @@ set_mac_randomization_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user
 
 	if (!reply) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't send MAC randomization mode to "
-		             "the supplicant interface: %s.",
-		             error->message);
+		_LOGW ("couldn't send MAC randomization mode to the supplicant interface: %s",
+		       error->message);
 		emit_error_helper (self, error);
 		return;
 	}
 
-	nm_log_info (LOGD_SUPPLICANT, "Config: set MAC randomization to %s",
-	             nm_supplicant_config_get_mac_randomization (priv->cfg));
+	_LOGI ("config: set MAC randomization to %s",
+	       nm_supplicant_config_get_mac_randomization (priv->cfg));
 
 	add_network (self);
 }
@@ -1242,14 +1246,14 @@ set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	if (!reply) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't send AP scan mode to the supplicant interface: %s.",
-		             error->message);
+		_LOGW ("couldn't send AP scan mode to the supplicant interface: %s",
+		       error->message);
 		emit_error_helper (self, error);
 		return;
 	}
 
-	nm_log_info (LOGD_SUPPLICANT, "Config: set interface ap_scan to %d",
-	             nm_supplicant_config_get_ap_scan (priv->cfg));
+	_LOGI ("config: set interface ap_scan to %d",
+	       nm_supplicant_config_get_ap_scan (priv->cfg));
 
 	if (priv->mac_randomization_support == NM_SUPPLICANT_FEATURE_YES) {
 		const char *mac_randomization = nm_supplicant_config_get_mac_randomization (priv->cfg);
@@ -1314,6 +1318,7 @@ nm_supplicant_interface_set_config (NMSupplicantInterface *self,
 static void
 scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
+	NMSupplicantInterface *self;
 	gs_unref_variant GVariant *reply = NULL;
 	gs_free_error GError *error = NULL;
 
@@ -1321,15 +1326,17 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+
 	if (error) {
 		if (_nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
-			nm_log_dbg (LOGD_SUPPLICANT, "Could not get scan request result: %s", error->message);
+			_LOGD ("could not get scan request result: %s", error->message);
 		else {
 			g_dbus_error_strip_remote_error (error);
-			nm_log_warn (LOGD_SUPPLICANT, "Could not get scan request result: %s", error->message);
+			_LOGW ("could not get scan request result: %s", error->message);
 		}
 	}
-	g_signal_emit (NM_SUPPLICANT_INTERFACE (user_data), signals[SCAN_DONE], 0, error ? FALSE : TRUE);
+	g_signal_emit (self, signals[SCAN_DONE], 0, error ? FALSE : TRUE);
 }
 
 gboolean
