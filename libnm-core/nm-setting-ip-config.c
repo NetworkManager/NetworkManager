@@ -616,6 +616,7 @@ nm_ip_route_new_binary (int family,
 	char string[NM_UTILS_INET_ADDRSTRLEN];
 
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
+	g_return_val_if_fail (dest, NULL);
 
 	if (!valid_prefix (family, prefix, error, TRUE))
 		return NULL;
@@ -782,12 +783,17 @@ void
 nm_ip_route_set_dest (NMIPRoute *route,
                       const char *dest)
 {
+	char *new_dest;
+
 	g_return_if_fail (route != NULL);
 	g_return_if_fail (dest != NULL);
 	g_return_if_fail (nm_utils_ipaddr_valid (route->family, dest));
 
+	new_dest = canonicalize_ip (route->family, dest, FALSE);
+	g_return_if_fail (new_dest);
+
 	g_free (route->dest);
-	route->dest = canonicalize_ip (route->family, dest, FALSE);
+	route->dest = new_dest;
 }
 
 /**
