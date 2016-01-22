@@ -879,7 +879,8 @@ test_nm_utils_new_vlan_name (void)
 			gs_free char *vlan_id_s = NULL;
 			guint vlan_id;
 
-			vlan_id = nmtst_get_rand_int () % 4096;
+			/* Create a random VLAN id between 1 and 4094 */
+			vlan_id = 1 + nmtst_get_rand_int () % 4094;
 
 			vlan_id_s = g_strdup_printf (".%d", vlan_id);
 

@@ -2155,7 +2155,7 @@ nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id)
 	else if (vlan_id < 1000)
 		id_len = 4;
 	else {
-		g_return_val_if_fail (vlan_id < 4096, NULL);
+		g_return_val_if_fail (vlan_id < 4095, NULL);
 		id_len = 5;
 	}
 
