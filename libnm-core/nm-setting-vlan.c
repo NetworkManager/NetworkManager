@@ -666,6 +666,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->id >= 4095) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("the vlan id must be in range 0-4094 but is %u"),
+		             priv->id);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_ID);
+	}
+
 	if (priv->flags & ~NM_VLAN_FLAGS_ALL) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -851,7 +860,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * NMSettingVlan:id:
 	 *
 	 * The VLAN identifier that the interface created by this connection should
-	 * be assigned.
+	 * be assigned. The valid range is from 0 to 4094, without the reserved id 4095.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: id
