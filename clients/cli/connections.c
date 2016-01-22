@@ -5350,16 +5350,16 @@ cleanup_bt:
 			return FALSE;
 		}
 		if (!vlan_id && ask)
-			vlan_id = vlan_id_ask = nmc_readline (_("VLAN ID <0-4095>: "));
+			vlan_id = vlan_id_ask = nmc_readline (_("VLAN ID <0-4094>: "));
 		if (!vlan_id) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'id' is required."));
 			goto cleanup_vlan;
 		}
 		if (vlan_id) {
-			if (!nmc_string_to_uint (vlan_id, TRUE, 0, 4095, &id)) {
+			if (!nmc_string_to_uint (vlan_id, TRUE, 0, 4094, &id)) {
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("Error: 'id': '%s' is not valid; use <0-4095>."),
+				             _("Error: 'id': '%s' is not valid; use <0-4094>."),
 				             vlan_id);
 				goto cleanup_vlan;
 			}
