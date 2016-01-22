@@ -8,12 +8,6 @@ print_test_logs() {
     echo ">>>> PRINT TEST LOGS $1 (done)"
 }
 
-sh ./autogen.sh \
-    --with-systemd-logind=no \
-    --enable-more-warnings=no
-
-make -j6
-
 if ! make check -k ; then
 
     print_test_logs "first-test"
