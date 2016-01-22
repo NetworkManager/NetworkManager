@@ -21,7 +21,7 @@ noinst_PROGRAMS = $(TESTS)
 if WITH_VALGRIND
 @VALGRIND_RULES@ --launch-dbus
 else
-LOG_COMPILER = $(srcdir)/libnm-test-launch.sh
+LOG_COMPILER = $(top_srcdir)/tools/run-test-dbus-session.sh
 endif
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
@@ -40,5 +40,3 @@ test_secret_agent_SOURCES = \
 	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-secret-agent.c
 endif
-
-EXTRA_DIST = libnm-test-launch.sh

@@ -80,10 +80,14 @@ else
     fi
 fi
 
+NMTST_DBUS_RUN_SESSION=()
 if [ "$NMTST_LAUNCH_DBUS" == "yes" ]; then
-    # Spawn DBus
-    eval `dbus-launch --sh-syntax`
-    trap "kill $DBUS_SESSION_BUS_PID" EXIT
+    if ! which dbus-run-session &>/dev/null ; then
+        eval `dbus-launch --sh-syntax`
+        trap "kill $DBUS_SESSION_BUS_PID" EXIT
+    else
+        NMTST_DBUS_RUN_SESSION=(dbus-run-session --)
+    fi
 fi
 
 if [ "$NMTST_NO_VALGRIND" != "" ]; then
@@ -95,6 +99,7 @@ LOGFILE="${TEST}.valgrind-log"
 
 export G_SLICE=always-malloc
 export G_DEBUG=gc-friendly
+"${NMTST_DBUS_RUN_SESSION[@]}" \
 "${NMTST_LIBTOOL[@]}" "$NMTST_VALGRIND" \
 	--quiet \
 	--error-exitcode=$VALGRIND_ERROR \
