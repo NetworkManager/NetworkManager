@@ -17,7 +17,7 @@ noinst_PROGRAMS = $(TESTS)
 if WITH_VALGRIND
 @VALGRIND_RULES@ --launch-dbus
 else
-LOG_COMPILER = $(srcdir)/libnm-glib-test-launch.sh
+LOG_COMPILER = $(top_srcdir)/tools/run-test-dbus-session.sh
 endif
 TESTS = test-nm-client test-remote-settings-client
 
@@ -50,5 +50,3 @@ test_remote_settings_client_LDADD = \
 ###########################################
 
 endif
-
-EXTRA_DIST = libnm-glib-test-launch.sh
