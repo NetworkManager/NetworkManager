@@ -1,10 +1,30 @@
 language: c
 before_install:
   - sudo apt-get update
-  - sudo apt-get install autoconf libtool pkg-config intltool libdbus-glib-1-dev libdbus-1-dev libiw-dev libglib2.0-dev libnl-3-dev libnl-route-3-dev libnl-genl-3-dev ppp-dev libpolkit-gobject-1-dev libgnutls28-dev libgcrypt11-dev uuid-dev libudev-dev libgudev-1.0-dev libgirepository1.0-dev gobject-introspection libsoup2.4-dev gtk-doc-tools libglib2.0-doc libreadline-dev libnewt-dev libnss3-dev iptables make python-software-properties python-gi python-dbus dbus dbus-x11
+  - sudo apt-get install autoconf libtool pkg-config intltool libdbus-glib-1-dev libdbus-1-dev libiw-dev libglib2.0-dev
+    libnl-3-dev libnl-route-3-dev libnl-genl-3-dev ppp-dev libpolkit-gobject-1-dev libgnutls28-dev libgcrypt11-dev
+    uuid-dev libudev-dev libgudev-1.0-dev libgirepository1.0-dev gobject-introspection libsoup2.4-dev gtk-doc-tools
+    libglib2.0-doc libreadline-dev libnewt-dev libnss3-dev iptables make python-software-properties python-gi
+    python-dbus dbus dbus-x11
   - sudo dbus-uuidgen --ensure
   - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty main'
   - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse'
   - sudo apt-get update
   - sudo apt-get install libnl-3-dev libndp-dev automake
-script: "./contrib/travis/travis-run.sh"
+
+script:
+  - sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no
+  - make -j4
+  - ./contrib/travis/travis-check.sh"
+
+addons:
+  coverity_scan:
+    project:
+      name: NetworkManager/NetworkManager
+    build_command_prepend: sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no
+    build_command: make -j4
+    branch_pattern: .*coverity.*
+
+env:
+  global:
+    secure: K36MXkcsuDZ0msuEj5zHMmHfv6O725lsXuFdP6AJ3rYWKuLYE1+iNLgIRndNWDK9ckkNQFaCxDY4Z/NCfCYQTGAS9oXR5AwNqNbhOq8XrqdaZ2GX35sob8Tp4B3IsoREkN/UbIkXQKYlA5rUhgtSifUg3EwfeOiFvnLCwHcp0rYHnvT/jaq5vodBbA1jChjezcMHsp43kvPXHpybKRkipb9EzV/V3VtDLLWh9WQBvQNawpsHnT+MXSke1yU1zfNMyD9XiD7VDzCwaTs6LzjoFBLc86QS5U/9W72s0rFe6SbecntQHftknRzSrGiJDNe64wDZN/Wxq1MHxEOFCwDi6vcSwQ+RoTdhyshhfPVY2Mm5soj2w7Dx43Cz0dDZDCMhu5xxzFAFgkieJSfwXbuxga0ds58Ph8MgtDSp3fBRewZwI+vMuzl7a1hGkcqJojrm1lfgAKbNgrNUzQRwbVYAyrpa6/vCbd6ZH4PEtITwLaRf2mz8PG71xiMQguDDDXS8WF0U7Looe+G9ybAUwDS5hqHfeP+3q6bfN5Sg5Zs5QkBIN5LZbeWbPYldOEEDTvo3VI7e84bk7U5qEoUKc0w/tqVF1B5KgNUq6nIkCkmoBx8RFnmjpOHh99IfeRG9nQTRpCaEDvAM4fcRzITzId8dIIfAW/45P3ozzfz/HYiie+o=
