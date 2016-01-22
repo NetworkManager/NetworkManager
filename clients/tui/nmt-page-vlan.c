@@ -108,7 +108,7 @@ nmt_page_vlan_constructed (GObject *object)
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
-	widget = id_entry = nmt_newt_entry_numeric_new (8, 0, 4095);
+	widget = id_entry = nmt_newt_entry_numeric_new (8, 0, 4094);
 	g_object_bind_property (s_vlan, NM_SETTING_VLAN_ID,
 	                        widget, "text",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
