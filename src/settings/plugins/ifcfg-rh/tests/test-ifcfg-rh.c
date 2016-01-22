@@ -440,11 +440,17 @@ test_read_unrecognized (void)
 	g_object_unref (connection);
 }
 
+typedef struct {
+	const char *test_path;
+	const char *file;
+	const char *expected_id;
+	gboolean expect_ip6;
+} ReadWiredStaticItem;
+
 static void
-test_read_wired_static (const char *file,
-                        const char *expected_id,
-                        gboolean expect_ip6)
+test_read_wired_static (gconstpointer test_data)
 {
+	const ReadWiredStaticItem *item = test_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
@@ -458,7 +464,7 @@ test_read_wired_static (const char *file,
 	NMIPAddress *ip6_addr;
 	gboolean success;
 
-	connection = connection_from_file_test (file, NULL, TYPE_ETHERNET,
+	connection = connection_from_file_test (item->file, NULL, TYPE_ETHERNET,
 	                                        &unmanaged, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
@@ -470,7 +476,7 @@ test_read_wired_static (const char *file,
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, item->expected_id);
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -511,7 +517,7 @@ test_read_wired_static (const char *file,
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	if (expect_ip6) {
+	if (item->expect_ip6) {
 		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 		g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
@@ -589,8 +595,6 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_DHCP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp"
-
 static void
 test_read_wired_dhcp (void)
 {
@@ -600,134 +604,41 @@ test_read_wired_dhcp (void)
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	GError *error = NULL;
-	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
-	const char *tmp;
-	const char *expected_id = "System test-wired-dhcp";
-	const char *expected_dhcp_hostname = "foobar";
+	const char *mac;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_DHCP,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-dhcp",
+	                                        NULL, TYPE_ETHERNET,
 	                                        &unmanaged,
 	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-dhcp-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DHCP, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-dhcp-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DHCP, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-dhcp-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
-
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-dhcp-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-dhcp-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-dhcp-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-
-	/* Timestamp */
-	ASSERT (nm_setting_connection_get_timestamp (s_con) == 0,
-	        "wired-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_TIMESTAMP);
-
-	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
-	        "wired-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-dhcp");
+	g_assert_cmpuint (nm_setting_connection_get_timestamp (s_con), ==, 0);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRED SETTING ===== */
-
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-dhcp-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* MAC address */
 	mac = nm_setting_wired_get_mac_address (s_wired);
-	ASSERT (mac != NULL,
-	        "wired-dhcp-verify-wired", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
-	        "wired-dhcp-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_MAC_ADDRESS);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 
 	/* ===== IPv4 SETTING ===== */
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
-
-	tmp = nm_setting_ip_config_get_dhcp_hostname (s_ip4);
-	ASSERT (tmp != NULL,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DHCP_HOSTNAME);
-	ASSERT (strcmp (tmp, expected_dhcp_hostname) == 0,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DHCP_HOSTNAME);
-
-	ASSERT (nm_setting_ip_config_get_ignore_auto_dns (s_ip4) == TRUE,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS);
-
-	/* DNS Addresses */
-	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "foobar");
+	g_assert (nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
+	g_assert_cmpuint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
 
 	g_object_unref (connection);
 }
@@ -996,214 +907,68 @@ test_read_wired_defroute_no (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	GError *error = NULL;
-	const char *tmp;
-	const char *expected_id = "System test-wired-defroute-no";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_DEFROUTE_NO,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-defroute-no-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DEFROUTE_NO, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-defroute-no-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DEFROUTE_NO, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-defroute-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DEFROUTE_NO);
-
-	/* ===== CONNECTION SETTING ===== */
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no",
+	                                        NULL, TYPE_ETHERNET, &unmanaged, &error);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert (unmanaged == NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-defroute-no-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-defroute-no");
 
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-defroute-no-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-defroute-no-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-
-	/* ===== WIRED SETTING ===== */
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-defroute-no-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_WIRED_SETTING_NAME);
-
-	/* ===== IPv4 SETTING ===== */
+	g_assert (nm_connection_get_setting_wired (connection));
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-defroute-no-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wired-defroute-no-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
-
-	ASSERT (nm_setting_ip_config_get_never_default (s_ip4) == TRUE,
-	        "wired-defroute-no-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
-
-	/* ===== IPv6 SETTING ===== */
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4));
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-	        "wired-defroute-no-verify-ip6", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0,
-	        "wired-defroute-no-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
-
-	ASSERT (nm_setting_ip_config_get_never_default (s_ip6) == TRUE,
-	        "wired-defroute-no-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip6));
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes"
-#define TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES TEST_IFCFG_DIR"/network-scripts/network-test-wired-defroute-no-gatewaydev-yes"
 
 static void
 test_read_wired_defroute_no_gatewaydev_yes (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	GError *error = NULL;
-	const char *tmp;
-	const char *expected_id = "System test-wired-defroute-no-gatewaydev-yes";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	                                        TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes",
+	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-defroute-no-gatewaydev-yes",
 	                                        TYPE_ETHERNET,
 	                                        &unmanaged,
 	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-defroute-no-gatewaydev-yes-read",
-	        "failed to read %s: %s",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-defroute-no-gatewaydev-yes-verify",
-	        "failed to verify %s: %s",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-defroute-no-gatewaydev-yes-verify",
-	        "failed to verify %s: unexpected unmanaged value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES);
-
-	/* ===== CONNECTION SETTING ===== */
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert (unmanaged == NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-defroute-no-gatewaydev-yes");
 
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-
-	/* ===== WIRED SETTING ===== */
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-defroute-no-gatewaydev-yes-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_WIRED_SETTING_NAME);
-
-	/* ===== IPv4 SETTING ===== */
+	g_assert (nm_connection_get_setting_wired (connection));
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
-
-	ASSERT (nm_setting_ip_config_get_never_default (s_ip4) == FALSE,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
-
-	/* ===== IPv6 SETTING ===== */
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4) == FALSE);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
-
-	ASSERT (nm_setting_ip_config_get_never_default (s_ip6) == FALSE,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip6) == FALSE);
 
 	g_object_unref (connection);
 }
@@ -13074,13 +12839,11 @@ test_read_vlan_trailing_spaces (void)
 }
 
 
+#define TPATH "/settings/plugins/ifcfg-rh/"
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
-
-
-#define TEST_IFCFG_WIRED_STATIC           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static"
-#define TEST_IFCFG_WIRED_STATIC_BOOTPROTO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto"
 
 #define TEST_IFCFG_WIRED_IPV4_MANUAL_1 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv4-manual-1"
 #define TEST_IFCFG_WIRED_IPV4_MANUAL_2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv4-manual-2"
@@ -13089,12 +12852,12 @@ test_read_vlan_trailing_spaces (void)
 
 #define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
 
-#define TPATH "/settings/plugins/ifcfg-rh/"
-
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
+	int i;
+
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
@@ -13115,9 +12878,17 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
 	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
 
-	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
-	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
-	test_read_wired_dhcp ();
+	{
+		static const ReadWiredStaticItem read_wired_static[] = {
+			{ TPATH "read-static",           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           TRUE },
+			{ TPATH "read-static-bootproto", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", FALSE }
+		};
+
+		for (i = 0; i < G_N_ELEMENTS (read_wired_static); i++)
+			g_test_add_data_func (read_wired_static[i].test_path, &read_wired_static[i], test_read_wired_static);
+	}
+
+	g_test_add_func (TPATH "read-dhcp", test_read_wired_dhcp);
 	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
 	g_test_add_func (TPATH "read-shared-plus-ip", test_read_wired_shared_plus_ip);
 	g_test_add_func (TPATH "read-dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
@@ -13125,8 +12896,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "read-global-gateway-ignore", test_read_wired_global_gateway_ignore);
 	g_test_add_func (TPATH "read-obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
 	g_test_add_func (TPATH "read-never-default", test_read_wired_never_default);
-	test_read_wired_defroute_no ();
-	test_read_wired_defroute_no_gatewaydev_yes ();
+	g_test_add_func (TPATH "read-defroute-no", test_read_wired_defroute_no);
+	g_test_add_func (TPATH "read-defroute-no-gatewaydev-yes", test_read_wired_defroute_no_gatewaydev_yes);
 	g_test_add_func (TPATH "routes/read-static", test_read_wired_static_routes);
 	test_read_wired_static_routes_legacy ();
 	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_1, "System test-wired-ipv4-manual-1");
@@ -13186,7 +12957,6 @@ int main (int argc, char **argv)
 			{ "default", NM_SETTING_MAC_RANDOMIZATION_DEFAULT, "default" },
 			{ "missing", NM_SETTING_MAC_RANDOMIZATION_NEVER,   "never" },
 		};
-		int i;
 
 		for (i = 0; i < G_N_ELEMENTS (test_wifi_mac_random); i++) {
 			char *tpath;
