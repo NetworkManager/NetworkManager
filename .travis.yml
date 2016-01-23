@@ -15,7 +15,7 @@ before_install:
 script:
   - sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no
   - make -j4
-  - ./contrib/travis/travis-check.sh"
+  - ./contrib/travis/travis-check.sh
 
 addons:
   coverity_scan:
