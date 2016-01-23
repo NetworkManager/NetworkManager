@@ -4418,6 +4418,8 @@ nm_manager_stop (NMManager *self)
 	/* Remove all devices */
 	while (priv->devices)
 		remove_device (self, NM_DEVICE (priv->devices->data), TRUE, TRUE);
+
+	_active_connection_cleanup (self);
 }
 
 static gboolean
