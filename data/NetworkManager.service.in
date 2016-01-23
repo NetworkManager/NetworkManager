@@ -1,7 +1,7 @@
 [Unit]
 Description=Network Manager
 Wants=network.target
-After=dbus.service
+After=network-pre.target dbus.service
 Before=network.target @DISTRO_NETWORK_SERVICE@
 
 [Service]
