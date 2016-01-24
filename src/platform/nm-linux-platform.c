@@ -2804,13 +2804,23 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 
 static void
 delayed_action_wait_for_nl_response_complete_all (NMPlatform *platform,
-                                                  WaitForNlResponseResult result)
+                                                  WaitForNlResponseResult fallback_result)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
-		while (priv->delayed_action.list_wait_for_nl_response->len > 0)
-			delayed_action_wait_for_nl_response_complete (platform, priv->delayed_action.list_wait_for_nl_response->len - 1, result);
+		while (priv->delayed_action.list_wait_for_nl_response->len > 0) {
+			const DelayedActionWaitForNlResponseData *data;
+			guint idx = priv->delayed_action.list_wait_for_nl_response->len - 1;
+			WaitForNlResponseResult r;
+
+			data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, idx);
+
+			/* prefer the result that we already have. */
+			r = data->seq_result ? : fallback_result;
+
+			delayed_action_wait_for_nl_response_complete (platform, idx, r);
+		}
 	}
 	nm_assert (!NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
 	nm_assert (priv->delayed_action.list_wait_for_nl_response->len == 0);
@@ -3461,7 +3471,7 @@ event_seq_check (NMPlatform *platform, struct nl_msg *msg, WaitForNlResponseResu
 }
 
 static void
-event_valid_msg (NMPlatform *platform, struct nl_msg *msg)
+event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_events)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nmpobj NMPObject *obj = NULL;
@@ -3476,6 +3486,9 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg)
 
 	if (_support_kernel_extended_ifa_flags_still_undecided () && msghdr->nlmsg_type == RTM_NEWADDR)
 		_support_kernel_extended_ifa_flags_detect (msg);
+
+	if (!handle_events)
+		return;
 
 	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK, RTM_DELADDR, RTM_DELROUTE)) {
 		/* The event notifies about a deleted object. We don't need to initialize all
@@ -5528,13 +5541,6 @@ continue_reading:
 	if (n <= 0)
 		return n;
 
-	if (!handle_events) {
-		/* we read until failure or there is nothing to read (EAGAIN). */
-		g_clear_pointer (&buf, free);
-		g_clear_pointer (&creds, free);
-		goto continue_reading;
-	}
-
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok (hdr, n)) {
 		gboolean abort_parsing = FALSE;
@@ -5627,7 +5633,9 @@ continue_reading:
 			/* Valid message (not checking for MULTIPART bit to
 			 * get along with broken kernels. NL_SKIP has no
 			 * effect on this.  */
-			event_valid_msg (platform, msg);
+
+			event_valid_msg (platform, msg, handle_events);
+
 			seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		}
 
@@ -5698,10 +5706,8 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 					break;
 				case -NLE_NOMEM:
 					_LOGI ("netlink: read: too many netlink events. Need to resynchronize platform cache");
-					/* Drain the event queue, we've lost events and are out of sync anyway and we'd
-					 * like to free up some space. We'll read in the status synchronously. */
-					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
 					event_handler_recvmsgs (platform, FALSE);
+					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
 					delayed_action_schedule (platform,
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
