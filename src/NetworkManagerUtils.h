@@ -260,11 +260,11 @@ const char *nm_utils_enum2str (const NMUtilsEnum2StrDesc *descs,
 
 /*****************************************************************************/
 
-#define NM_UTILS_STRING_LOOKUP_TABLE_ITEM(v, n)   (void) 0; case v: return (n); (void) 0
-#define NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S(v, n) NM_UTILS_STRING_LOOKUP_TABLE_ITEM(v, ""n"")
+#define NM_UTILS_LOOKUP_ITEM(v, n)   (void) 0; case v: return (n); (void) 0
+#define NM_UTILS_LOOKUP_STR_ITEM(v, n) NM_UTILS_LOOKUP_ITEM(v, ""n"")
 
-#define _NM_UTILS_STRING_LOOKUP_TABLE_DEFINE(scope, fcn_name, lookup_type, unknown_val, ...) \
-scope const char * \
+#define _NM_UTILS_LOOKUP_DEFINE(scope, fcn_name, lookup_type, result_type, unknown_val, ...) \
+scope result_type \
 fcn_name (lookup_type val) \
 { \
 	switch (val) { \
@@ -276,15 +276,15 @@ fcn_name (lookup_type val) \
 	}; \
 }
 
-#define NM_UTILS_STRING_LOOKUP_TABLE_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
-	_NM_UTILS_STRING_LOOKUP_TABLE_DEFINE (, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
-#define NM_UTILS_STRING_LOOKUP_TABLE_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
-	_NM_UTILS_STRING_LOOKUP_TABLE_DEFINE (static, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+#define NM_UTILS_LOOKUP_STR_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_LOOKUP_DEFINE (, fcn_name, lookup_type, const char *, unknown_val, __VA_ARGS__)
+#define NM_UTILS_LOOKUP_STR_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_LOOKUP_DEFINE (static, fcn_name, lookup_type, const char *, unknown_val, __VA_ARGS__)
 
 /* Call the string-lookup-table function @fcn_name. If the function returns
  * %NULL, the numeric index is converted to string using a alloca() buffer.
  * Beware: this macro uses alloca(). */
-#define NM_UTILS_STRING_LOOKUP_TABLE(fcn_name, idx) \
+#define NM_UTILS_LOOKUP_STR(fcn_name, idx) \
 	({ \
 		typeof (idx) _idx = (idx); \
 		const char *_s; \
