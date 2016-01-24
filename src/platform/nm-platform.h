@@ -666,7 +666,8 @@ _nm_platform_uint8_inv (guint8 scope)
 
 const char *nm_link_type_to_string (NMLinkType link_type);
 
-const char *nm_platform_error_to_string (NMPlatformError error);
+const char *_nm_platform_error_to_string (NMPlatformError error);
+#define nm_platform_error_to_string(error) NM_UTILS_LOOKUP_STR (_nm_platform_error_to_string, error)
 
 gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
 char *nm_platform_sysctl_get (NMPlatform *self, const char *path);

@@ -181,39 +181,25 @@ nm_platform_try_get (void)
 /******************************************************************/
 
 /**
- * nm_platform_error_to_string:
+ * _nm_platform_error_to_string:
  * @error_code: the error code to stringify.
  *
  * Returns: A string representation of the error.
  * For negative numbers, this function interprets
  * the code as -errno.
+ * For invalid (positive) numbers it returns NULL.
  */
-const char *
-nm_platform_error_to_string (NMPlatformError error)
-{
-	switch (error) {
-	case NM_PLATFORM_ERROR_SUCCESS:
-		return "success";
-	case NM_PLATFORM_ERROR_BUG:
-		return "bug";
-	case NM_PLATFORM_ERROR_UNSPECIFIED:
-		return "unspecified";
-	case NM_PLATFORM_ERROR_NOT_FOUND:
-		return "not-found";
-	case NM_PLATFORM_ERROR_EXISTS:
-		return "exists";
-	case NM_PLATFORM_ERROR_WRONG_TYPE:
-		return "wrong-type";
-	case NM_PLATFORM_ERROR_NOT_SLAVE:
-		return "not-slave";
-	case NM_PLATFORM_ERROR_NO_FIRMWARE:
-		return "no-firmware";
-	default:
-		if (error < 0)
-			return g_strerror (- ((int) error));
-		return "unknown";
-	}
-}
+NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
+	( val < 0 ? g_strerror (- ((int) val)) : NULL ),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_SUCCESS,     "success"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_BUG,         "bug"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_UNSPECIFIED, "unspecified"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NOT_FOUND,   "not-found"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_EXISTS,      "exists"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_WRONG_TYPE,  "wrong-type"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NOT_SLAVE,   "not-slave"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NO_FIRMWARE, "no-firmware"),
+);
 
 /******************************************************************/
 
