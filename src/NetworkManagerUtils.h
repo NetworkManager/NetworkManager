@@ -260,6 +260,9 @@ const char *nm_utils_enum2str (const NMUtilsEnum2StrDesc *descs,
 
 /*****************************************************************************/
 
+#define NM_UTILS_STRING_LOOKUP_TABLE_ITEM(v, n)   [v] = n
+#define NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S(v, n) NM_UTILS_STRING_LOOKUP_TABLE_ITEM(v, ""n"")
+
 #define _NM_UTILS_STRING_LOOKUP_TABLE_DEFINE(scope, fcn_name, lookup_type, unknown_val, ...) \
 scope const char * \
 fcn_name (lookup_type idx) \
