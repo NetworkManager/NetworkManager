@@ -267,7 +267,7 @@ fcn_name (lookup_type idx) \
 	static const char *const descs[] = { \
 		__VA_ARGS__ \
 	}; \
-	if ((gssize) idx >= 0 && idx < G_N_ELEMENTS (descs)) \
+	if ((gsize) idx < G_N_ELEMENTS (descs)) \
 		return descs[idx]; \
 	return unknown_val; \
 }
