@@ -122,11 +122,11 @@ static void _device_cleanup (NMActiveConnection *self);
 /****************************************************************/
 
 NM_UTILS_STRING_LOOKUP_TABLE_DEFINE_STATIC (_state_to_string, NMActiveConnectionState, NULL,
-	[NM_ACTIVE_CONNECTION_STATE_UNKNOWN]            = "unknown",
-	[NM_ACTIVE_CONNECTION_STATE_ACTIVATING]         = "activating",
-	[NM_ACTIVE_CONNECTION_STATE_ACTIVATED]          = "activated",
-	[NM_ACTIVE_CONNECTION_STATE_DEACTIVATING]       = "deactivating",
-	[NM_ACTIVE_CONNECTION_STATE_DEACTIVATED]        = "deactivated",
+	NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S (NM_ACTIVE_CONNECTION_STATE_UNKNOWN,      "unknown"),
+	NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   "activating"),
+	NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S (NM_ACTIVE_CONNECTION_STATE_ACTIVATED,    "activated"),
+	NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S (NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, "deactivating"),
+	NM_UTILS_STRING_LOOKUP_TABLE_ITEM_S (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  "deactivated"),
 );
 #define state_to_string(state) NM_UTILS_STRING_LOOKUP_TABLE (_state_to_string, state)
 
