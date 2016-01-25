@@ -815,10 +815,13 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (client);
 	int r = 0;
 
-	if (priv->client4)
+	if (priv->client4) {
+		sd_dhcp_client_set_callback (priv->client4, NULL, NULL);
 		r = sd_dhcp_client_stop (priv->client4);
-	else if (priv->client6)
+	} else if (priv->client6) {
+		sd_dhcp6_client_set_callback (priv->client6, NULL, NULL);
 		r = sd_dhcp6_client_stop (priv->client6);
+	}
 
 	if (r) {
 		nm_log_warn (priv->client6 ? LOGD_DHCP6 : LOGD_DHCP4,
