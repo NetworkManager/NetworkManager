@@ -58,6 +58,9 @@
 
 #define VLAN_FLAG_MVRP 0x8
 
+/* nm-internal error codes for libnl. Make sure they don't overlap. */
+#define _NLE_NM_NOBUFS 500
+
 /*********************************************************************************************/
 
 #define IFQDISCSIZ                      32
@@ -5540,6 +5543,15 @@ continue_reading:
 			n = -NLE_AGAIN;
 		}
 		break;
+	case -NLE_NOMEM:
+		if (errno == ENOBUFS) {
+			/* we are very much interested in a overrun of the receive buffer.
+			 * nl_recv() maps all kinds of errors to NLE_NOMEM, so check also
+			 * for errno explicitly. And if so, hack our own return code to signal
+			 * the overrun. */
+			n = -_NLE_NM_NOBUFS;
+		}
+		break;
 	}
 
 	if (n <= 0)
@@ -5714,7 +5726,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				case -NLE_DUMP_INTR:
 					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 					break;
-				case -NLE_NOMEM:
+				case -_NLE_NM_NOBUFS:
 					_LOGI ("netlink: read: too many netlink events. Need to resynchronize platform cache");
 					event_handler_recvmsgs (platform, FALSE);
 					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
