@@ -5036,16 +5036,20 @@ NM_DEFINE_SINGLETON_REGISTER (NMManager);
 NMManager *
 nm_manager_get (void)
 {
-	g_assert (singleton_instance);
+	g_return_val_if_fail (singleton_instance, NULL);
 	return singleton_instance;
 }
 
 NMConnectionProvider *
 nm_connection_provider_get (void)
 {
-	g_assert (singleton_instance);
-	g_assert (NM_MANAGER_GET_PRIVATE (singleton_instance)->settings);
-	return NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton_instance)->settings);
+	NMConnectionProvider *p;
+
+	g_return_val_if_fail (singleton_instance, NULL);
+
+	p = NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton_instance)->settings);
+	g_return_val_if_fail (p, NULL);
+	return p;
 }
 
 NMManager *
@@ -5056,7 +5060,7 @@ nm_manager_setup (const char *state_file,
 {
 	NMManager *self;
 
-	g_assert (singleton_instance == NULL);
+	g_return_val_if_fail (!singleton_instance, singleton_instance);
 
 	self = g_object_new (NM_TYPE_MANAGER,
 	                     NM_MANAGER_NETWORKING_ENABLED, initial_net_enabled,
