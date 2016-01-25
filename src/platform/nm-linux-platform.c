@@ -5954,14 +5954,8 @@ constructed (GObject *_object)
 	nle = nl_socket_set_nonblocking (priv->nlh);
 	g_assert (!nle);
 
-	/* The default buffer size wasn't enough for the testsuites. It might just
-	 * as well happen with NetworkManager itself. For now let's hope 128KB is
-	 * good enough.
-	 *
-	 * FIXME: it's unclear that this is still actually needed. The testsuite
-	 * certainly doesn't fail for me. Maybe it can be removed.
-	 */
-	nle = nl_socket_set_buffer_size (priv->nlh, 131072, 0);
+	/* use 8 MB for receive socket kernel queue. */
+	nle = nl_socket_set_buffer_size (priv->nlh, 8*1024*1024, 0);
 	g_assert (!nle);
 
 	nle = nl_socket_add_memberships (priv->nlh,
