@@ -154,6 +154,8 @@ void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name
 
 void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
 
+void nm_dhcp_client_start_timeout (NMDhcpClient *self);
+
 void nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid);
 
 void nm_dhcp_client_set_state (NMDhcpClient *self,

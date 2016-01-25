@@ -51,7 +51,6 @@ typedef struct {
 	struct sd_dhcp6_client *client6;
 	char *lease_file;
 
-	guint timeout_id;
 	guint request_count;
 
 	gboolean privacy;
@@ -667,6 +666,8 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		nm_log_warn (LOGD_DHCP4, "(%s): failed to start DHCP (%d)", iface, r);
 		goto error;
 	}
+
+	nm_dhcp_client_start_timeout (client);
 
 	success = TRUE;
 

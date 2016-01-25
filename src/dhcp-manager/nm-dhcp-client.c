@@ -338,7 +338,7 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 }
 
 static gboolean
-daemon_timeout (gpointer user_data)
+transaction_timeout (gpointer user_data)
 {
 	NMDhcpClient *self = NM_DHCP_CLIENT (user_data);
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -393,6 +393,18 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 void
+nm_dhcp_client_start_timeout (NMDhcpClient *self)
+{
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	/* Set up a timeout on the transaction to kill it after the timeout */
+	g_assert (priv->timeout_id == 0);
+	priv->timeout_id = g_timeout_add_seconds (priv->timeout,
+	                                          transaction_timeout,
+	                                          self);
+}
+
+void
 nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -400,11 +412,8 @@ nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid)
 	g_return_if_fail (priv->pid == -1);
 	priv->pid = pid;
 
-	/* Set up a timeout on the transaction to kill it after the timeout */
-	g_assert (priv->timeout_id == 0);
-	priv->timeout_id = g_timeout_add_seconds (priv->timeout,
-	                                          daemon_timeout,
-	                                          self);
+	nm_dhcp_client_start_timeout (self);
+
 	g_return_if_fail (priv->watch_id == 0);
 	priv->watch_id = g_child_watch_add (pid, daemon_watch_cb, self);
 }
