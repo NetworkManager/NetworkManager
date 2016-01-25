@@ -222,7 +222,7 @@ create_and_realize (NMDevice *device,
 	                                  nm_setting_tun_get_vnet_hdr (s_tun),
 	                                  nm_setting_tun_get_multi_queue (s_tun),
 	                                  out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create TUN/TAP interface '%s' for '%s': %s",
 		             iface,

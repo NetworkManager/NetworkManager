@@ -673,7 +673,7 @@ create_and_realize (NMDevice *device,
 	NMPlatformError plerr;
 
 	plerr = nm_platform_link_team_add (NM_PLATFORM_GET, iface, out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create team master interface '%s' for '%s': %s",
 		             iface,

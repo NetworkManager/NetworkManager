@@ -238,7 +238,7 @@ create_and_realize (NMDevice *device,
 	lnk.tap = nm_setting_macvlan_get_tap (s_macvlan);
 
 	plerr = nm_platform_link_macvlan_add (NM_PLATFORM_GET, iface, parent_ifindex, &lnk, out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create %s interface '%s' for '%s': %s",
 		             lnk.tap ? "macvtap" : "macvlan",

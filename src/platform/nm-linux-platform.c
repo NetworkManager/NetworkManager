@@ -58,6 +58,9 @@
 
 #define VLAN_FLAG_MVRP 0x8
 
+/* nm-internal error codes for libnl. Make sure they don't overlap. */
+#define _NLE_NM_NOBUFS 500
+
 /*********************************************************************************************/
 
 #define IFQDISCSIZ                      32
@@ -2804,13 +2807,23 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 
 static void
 delayed_action_wait_for_nl_response_complete_all (NMPlatform *platform,
-                                                  WaitForNlResponseResult result)
+                                                  WaitForNlResponseResult fallback_result)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
-		while (priv->delayed_action.list_wait_for_nl_response->len > 0)
-			delayed_action_wait_for_nl_response_complete (platform, priv->delayed_action.list_wait_for_nl_response->len - 1, result);
+		while (priv->delayed_action.list_wait_for_nl_response->len > 0) {
+			const DelayedActionWaitForNlResponseData *data;
+			guint idx = priv->delayed_action.list_wait_for_nl_response->len - 1;
+			WaitForNlResponseResult r;
+
+			data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, idx);
+
+			/* prefer the result that we already have. */
+			r = data->seq_result ? : fallback_result;
+
+			delayed_action_wait_for_nl_response_complete (platform, idx, r);
+		}
 	}
 	nm_assert (!NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
 	nm_assert (priv->delayed_action.list_wait_for_nl_response->len == 0);
@@ -3461,7 +3474,7 @@ event_seq_check (NMPlatform *platform, struct nl_msg *msg, WaitForNlResponseResu
 }
 
 static void
-event_valid_msg (NMPlatform *platform, struct nl_msg *msg)
+event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_events)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nmpobj NMPObject *obj = NULL;
@@ -3476,6 +3489,9 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg)
 
 	if (_support_kernel_extended_ifa_flags_still_undecided () && msghdr->nlmsg_type == RTM_NEWADDR)
 		_support_kernel_extended_ifa_flags_detect (msg);
+
+	if (!handle_events)
+		return;
 
 	if (NM_IN_SET (msghdr->nlmsg_type, RTM_DELLINK, RTM_DELADDR, RTM_DELROUTE)) {
 		/* The event notifies about a deleted object. We don't need to initialize all
@@ -5517,23 +5533,29 @@ continue_reading:
 	errno = 0;
 	n = nl_recv (sk, &nla, &buf, &creds);
 
-	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
-	if (n == 0 && errno == EAGAIN) {
-		/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
-		 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
-		G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
-		n = -NLE_AGAIN;
+	switch (n) {
+	case 0:
+		/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
+		if (errno == EAGAIN) {
+			/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
+			 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
+			G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
+			n = -NLE_AGAIN;
+		}
+		break;
+	case -NLE_NOMEM:
+		if (errno == ENOBUFS) {
+			/* we are very much interested in a overrun of the receive buffer.
+			 * nl_recv() maps all kinds of errors to NLE_NOMEM, so check also
+			 * for errno explicitly. And if so, hack our own return code to signal
+			 * the overrun. */
+			n = -_NLE_NM_NOBUFS;
+		}
+		break;
 	}
 
 	if (n <= 0)
 		return n;
-
-	if (!handle_events) {
-		/* we read until failure or there is nothing to read (EAGAIN). */
-		g_clear_pointer (&buf, free);
-		g_clear_pointer (&creds, free);
-		goto continue_reading;
-	}
 
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok (hdr, n)) {
@@ -5627,7 +5649,9 @@ continue_reading:
 			/* Valid message (not checking for MULTIPART bit to
 			 * get along with broken kernels. NL_SKIP has no
 			 * effect on this.  */
-			event_valid_msg (platform, msg);
+
+			event_valid_msg (platform, msg, handle_events);
+
 			seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		}
 
@@ -5651,6 +5675,12 @@ continue_reading:
 		goto continue_reading;
 	}
 stop:
+	if (!handle_events) {
+		/* when we don't handle events, we want to drain all messages from the socket
+		 * without handling the messages (but still check for sequence numbers).
+		 * Repeat reading. */
+		goto continue_reading;
+	}
 	err = 0;
 out:
 	nlmsg_free (msg);
@@ -5696,12 +5726,10 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				case -NLE_DUMP_INTR:
 					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 					break;
-				case -NLE_NOMEM:
+				case -_NLE_NM_NOBUFS:
 					_LOGI ("netlink: read: too many netlink events. Need to resynchronize platform cache");
-					/* Drain the event queue, we've lost events and are out of sync anyway and we'd
-					 * like to free up some space. We'll read in the status synchronously. */
-					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
 					event_handler_recvmsgs (platform, FALSE);
+					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
 					delayed_action_schedule (platform,
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
@@ -5926,14 +5954,8 @@ constructed (GObject *_object)
 	nle = nl_socket_set_nonblocking (priv->nlh);
 	g_assert (!nle);
 
-	/* The default buffer size wasn't enough for the testsuites. It might just
-	 * as well happen with NetworkManager itself. For now let's hope 128KB is
-	 * good enough.
-	 *
-	 * FIXME: it's unclear that this is still actually needed. The testsuite
-	 * certainly doesn't fail for me. Maybe it can be removed.
-	 */
-	nle = nl_socket_set_buffer_size (priv->nlh, 131072, 0);
+	/* use 8 MB for receive socket kernel queue. */
+	nle = nl_socket_set_buffer_size (priv->nlh, 8*1024*1024, 0);
 	g_assert (!nle);
 
 	nle = nl_socket_add_memberships (priv->nlh,

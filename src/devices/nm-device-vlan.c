@@ -237,7 +237,7 @@ create_and_realize (NMDevice *device,
 	                                   vlan_id,
 	                                   nm_setting_vlan_get_flags (s_vlan),
 	                                   out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create VLAN interface '%s' for '%s': %s",
 		             iface,
