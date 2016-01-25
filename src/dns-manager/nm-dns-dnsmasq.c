@@ -145,15 +145,15 @@ add_global_config (GString *str, const NMGlobalDnsConfig *config)
 	for (i = 0; i < nm_global_dns_config_get_num_domains (config); i++) {
 		NMGlobalDnsDomain *domain = nm_global_dns_config_get_domain (config, i);
 		const char *const *servers = nm_global_dns_domain_get_servers (domain);
+		const char *name = nm_global_dns_domain_get_name (domain);
+
+		g_return_if_fail (name);
 
 		for (j = 0; servers && servers[j]; j++) {
-			if (!strcmp (servers[j], "*"))
+			if (!strcmp (name, "*"))
 				g_string_append_printf (str, "server=%s\n", servers[j]);
-			else {
-				g_string_append_printf (str, "server=/%s/%s\n",
-				                        nm_global_dns_domain_get_name (domain),
-				                        servers[j]);
-			}
+			else
+				g_string_append_printf (str, "server=/%s/%s\n", name, servers[j]);
 		}
 
 	}
