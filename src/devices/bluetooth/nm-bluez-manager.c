@@ -395,6 +395,8 @@ dispose (GObject *object)
 	cleanup_checking (self, TRUE);
 
 	priv->bluez_version = 0;
+
+	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
 }
 
 static void
