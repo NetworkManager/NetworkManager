@@ -5530,12 +5530,16 @@ continue_reading:
 	errno = 0;
 	n = nl_recv (sk, &nla, &buf, &creds);
 
-	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
-	if (n == 0 && errno == EAGAIN) {
-		/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
-		 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
-		G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
-		n = -NLE_AGAIN;
+	switch (n) {
+	case 0:
+		/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
+		if (errno == EAGAIN) {
+			/* EAGAIN is equal to EWOULDBLOCK. If it would not be, we'd have to
+			 * workaround libnl3 mapping EWOULDBLOCK to -NLE_FAILURE. */
+			G_STATIC_ASSERT (EAGAIN == EWOULDBLOCK);
+			n = -NLE_AGAIN;
+		}
+		break;
 	}
 
 	if (n <= 0)
