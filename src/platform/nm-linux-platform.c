@@ -5659,6 +5659,12 @@ continue_reading:
 		goto continue_reading;
 	}
 stop:
+	if (!handle_events) {
+		/* when we don't handle events, we want to drain all messages from the socket
+		 * without handling the messages (but still check for sequence numbers).
+		 * Repeat reading. */
+		goto continue_reading;
+	}
 	err = 0;
 out:
 	nlmsg_free (msg);
