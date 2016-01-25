@@ -272,7 +272,7 @@ create_and_realize (NMDevice *device,
 	}
 
 	plerr = nm_platform_link_infiniband_add (NM_PLATFORM_GET, parent_ifindex, p_key, out_plink);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create InfiniBand P_Key interface '%s' for '%s': %s",
 		             nm_device_get_iface (device),

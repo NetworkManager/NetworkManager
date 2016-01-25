@@ -661,7 +661,7 @@ create_and_realize (NMDevice *device,
 		}
 
 		plerr = nm_platform_link_gre_add (NM_PLATFORM_GET, iface, &lnk_gre, out_plink);
-		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 			             "Failed to create GRE interface '%s' for '%s': %s",
 			             iface,
@@ -687,7 +687,7 @@ create_and_realize (NMDevice *device,
 		lnk_sit.path_mtu_discovery = nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel);
 
 		plerr = nm_platform_link_sit_add (NM_PLATFORM_GET, iface, &lnk_sit, out_plink);
-		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 					"Failed to create SIT interface '%s' for '%s': %s",
 					iface,
@@ -713,7 +713,7 @@ create_and_realize (NMDevice *device,
 		lnk_ipip.path_mtu_discovery = nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel);
 
 		plerr = nm_platform_link_ipip_add (NM_PLATFORM_GET, iface, &lnk_ipip, out_plink);
-		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 					"Failed to create IPIP interface '%s' for '%s': %s",
 					iface,
@@ -742,7 +742,7 @@ create_and_realize (NMDevice *device,
 		lnk_ip6tnl.proto = nm_setting_ip_tunnel_get_mode (s_ip_tunnel) == NM_IP_TUNNEL_MODE_IPIP6 ? IPPROTO_IPIP : IPPROTO_IPV6;
 
 		plerr = nm_platform_link_ip6tnl_add (NM_PLATFORM_GET, iface, &lnk_ip6tnl, out_plink);
-		if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 			             "Failed to create IPIP interface '%s' for '%s': %s",
 			             iface,
