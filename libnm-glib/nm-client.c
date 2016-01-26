@@ -35,7 +35,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
+#include "gsystem-local-alloc.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
@@ -312,16 +312,13 @@ static gboolean
 get_permissions_sync (NMClient *self, GError **error)
 {
 	gboolean success;
-	GHashTable *permissions = NULL;
+	gs_unref_hashtable GHashTable *permissions = NULL;
 
 	success = dbus_g_proxy_call_with_timeout (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
 	                                          "GetPermissions", 3000, error,
 	                                          G_TYPE_INVALID,
 	                                          DBUS_TYPE_G_MAP_OF_STRING, &permissions, G_TYPE_INVALID);
 	update_permissions (self, success ? permissions : NULL);
-	if (permissions)
-		g_hash_table_destroy (permissions);
-
 	return success;
 }
 
@@ -331,17 +328,14 @@ get_permissions_reply (DBusGProxy *proxy,
                        gpointer user_data)
 {
 	NMClient *self = NM_CLIENT (user_data);
-	GHashTable *permissions = NULL;
-	GError *error = NULL;
+	gs_unref_hashtable GHashTable *permissions = NULL;
+	gs_free_error GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_STRING, &permissions,
 	                       G_TYPE_INVALID);
 	NM_CLIENT_GET_PRIVATE (self)->perm_call = NULL;
 	update_permissions (NM_CLIENT (user_data), error ? NULL : permissions);
-	if (permissions)
-		g_hash_table_destroy (permissions);
-	g_clear_error (&error);
 }
 
 static void
@@ -1875,14 +1869,13 @@ static void
 init_async_got_permissions (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
 	NMClientInitData *init_data = user_data;
-	GHashTable *permissions;
-	GError *error = NULL;
+	gs_unref_hashtable GHashTable *permissions = NULL;
+	gs_free_error GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_STRING, &permissions,
 	                       G_TYPE_INVALID);
 	update_permissions (init_data->client, error ? NULL : permissions);
-	g_clear_error (&error);
 
 	init_data->permissions_pending = FALSE;
 	init_async_complete (init_data);
