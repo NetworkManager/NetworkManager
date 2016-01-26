@@ -460,7 +460,7 @@ write_resolv_conf (FILE *f,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not write " _PATH_RESCONF ": %s\n",
+		             "Could not write " _PATH_RESCONF ": %s",
 		             g_strerror (errno));
 		return FALSE;
 	}
@@ -505,7 +505,7 @@ dispatch_resolvconf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not write to %s: %s\n",
+		             "Could not write to %s: %s",
 		             RESOLVCONF_PATH,
 		             g_strerror (errno));
 		return SR_ERROR;
@@ -565,7 +565,7 @@ update_resolv_conf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not open %s: %s\n",
+		             "Could not open %s: %s",
 		             MY_RESOLV_CONF_TMP,
 		             g_strerror (errno));
 		return SR_ERROR;
@@ -581,7 +581,7 @@ update_resolv_conf (NMDnsManager *self,
 			g_set_error (error,
 			             NM_MANAGER_ERROR,
 			             NM_MANAGER_ERROR_FAILED,
-			             "Could not close %s: %s\n",
+			             "Could not close %s: %s",
 			             MY_RESOLV_CONF_TMP,
 			             g_strerror (errno));
 		}
@@ -593,7 +593,7 @@ update_resolv_conf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not replace %s: %s\n",
+		             "Could not replace %s: %s",
 		             MY_RESOLV_CONF,
 		             g_strerror (errno));
 		return SR_ERROR;
@@ -631,7 +631,7 @@ update_resolv_conf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not lstat %s: %s\n",
+		             "Could not lstat %s: %s",
 		             _PATH_RESCONF,
 		             g_strerror (errno));
 		return SR_ERROR;
@@ -645,7 +645,7 @@ update_resolv_conf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not unlink %s: %s\n",
+		             "Could not unlink %s: %s",
 		             RESOLV_CONF_TMP,
 		             g_strerror (errno));
 		return SR_ERROR;
@@ -655,7 +655,7 @@ update_resolv_conf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not create symlink %s pointing to %s: %s\n",
+		             "Could not create symlink %s pointing to %s: %s",
 		             RESOLV_CONF_TMP,
 		             MY_RESOLV_CONF,
 		             g_strerror (errno));
@@ -666,7 +666,7 @@ update_resolv_conf (NMDnsManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "Could not rename %s to %s: %s\n",
+		             "Could not rename %s to %s: %s",
 		             RESOLV_CONF_TMP,
 		             _PATH_RESCONF,
 		             g_strerror (errno));
