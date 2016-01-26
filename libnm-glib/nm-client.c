@@ -331,7 +331,7 @@ get_permissions_reply (DBusGProxy *proxy,
                        gpointer user_data)
 {
 	NMClient *self = NM_CLIENT (user_data);
-	GHashTable *permissions;
+	GHashTable *permissions = NULL;
 	GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
