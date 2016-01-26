@@ -36,14 +36,14 @@ static int option_append(uint8_t options[], size_t size, size_t *offset,
         assert(options);
         assert(offset);
 
-        if (code != DHCP_OPTION_END)
+        if (code != SD_DHCP_OPTION_END)
                 /* always make sure there is space for an END option */
                 size --;
 
         switch (code) {
 
-        case DHCP_OPTION_PAD:
-        case DHCP_OPTION_END:
+        case SD_DHCP_OPTION_PAD:
+        case SD_DHCP_OPTION_END:
                 if (size < *offset + 1)
                         return -ENOBUFS;
 
@@ -93,7 +93,7 @@ int dhcp_option_append(DHCPMessage *message, size_t size, size_t *offset,
                 else if (r == -ENOBUFS && (file || sname)) {
                         /* did not fit, but we have more buffers to try
                            close the options array and move the offset to its end */
-                        r = option_append(message->options, size, offset, DHCP_OPTION_END, 0, NULL);
+                        r = option_append(message->options, size, offset, SD_DHCP_OPTION_END, 0, NULL);
                         if (r < 0)
                                 return r;
 
@@ -114,7 +114,7 @@ int dhcp_option_append(DHCPMessage *message, size_t size, size_t *offset,
                         } else if (r == -ENOBUFS && sname) {
                                 /* did not fit, but we have more buffers to try
                                    close the file array and move the offset to its end */
-                                r = option_append(message->options, size, offset, DHCP_OPTION_END, 0, NULL);
+                                r = option_append(message->options, size, offset, SD_DHCP_OPTION_END, 0, NULL);
                                 if (r < 0)
                                         return r;
 
@@ -154,10 +154,10 @@ static int parse_options(const uint8_t options[], size_t buflen, uint8_t *overlo
                 code = options[offset ++];
 
                 switch (code) {
-                case DHCP_OPTION_PAD:
+                case SD_DHCP_OPTION_PAD:
                         continue;
 
-                case DHCP_OPTION_END:
+                case SD_DHCP_OPTION_END:
                         return 0;
                 }
 
@@ -172,7 +172,7 @@ static int parse_options(const uint8_t options[], size_t buflen, uint8_t *overlo
                 option = &options[offset];
 
                 switch (code) {
-                case DHCP_OPTION_MESSAGE_TYPE:
+                case SD_DHCP_OPTION_MESSAGE_TYPE:
                         if (len != 1)
                                 return -EINVAL;
 
@@ -181,7 +181,7 @@ static int parse_options(const uint8_t options[], size_t buflen, uint8_t *overlo
 
                         break;
 
-                case DHCP_OPTION_ERROR_MESSAGE:
+                case SD_DHCP_OPTION_ERROR_MESSAGE:
                         if (len == 0)
                                 return -EINVAL;
 
@@ -205,7 +205,7 @@ static int parse_options(const uint8_t options[], size_t buflen, uint8_t *overlo
                         }
 
                         break;
-                case DHCP_OPTION_OVERLOAD:
+                case SD_DHCP_OPTION_OVERLOAD:
                         if (len != 1)
                                 return -EINVAL;
 

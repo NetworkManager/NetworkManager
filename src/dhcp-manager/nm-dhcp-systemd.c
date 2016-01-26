@@ -37,18 +37,15 @@
 
 #include "sd-dhcp-client.h"
 #include "sd-dhcp6-client.h"
-#include "dhcp-protocol.h"
 #include "dhcp-lease-internal.h"
-#include "dhcp6-protocol.h"
-#include "dhcp6-lease-internal.h"
 
 G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_SYSTEMD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdPrivate))
 
 typedef struct {
-	struct sd_dhcp_client *client4;
-	struct sd_dhcp6_client *client6;
+	sd_dhcp_client *client4;
+	sd_dhcp6_client *client6;
 	char *lease_file;
 
 	guint request_count;
@@ -61,7 +58,6 @@ typedef struct {
 #define DHCP_OPTION_NIS_DOMAIN         40
 #define DHCP_OPTION_NIS_SERVERS        41
 #define DHCP_OPTION_DOMAIN_SEARCH     119
-#define DHCP_OPTION_RFC3442_ROUTES    121
 #define DHCP_OPTION_MS_ROUTES         249
 #define DHCP_OPTION_WPAD              252
 
@@ -87,53 +83,53 @@ typedef struct {
 #define REQPREFIX "requested_"
 
 static const ReqOption dhcp4_requests[] = {
-	{ DHCP_OPTION_SUBNET_MASK,            REQPREFIX "subnet_mask",                     TRUE },
-	{ DHCP_OPTION_TIME_OFFSET,            REQPREFIX "time_offset",                     TRUE },
-	{ DHCP_OPTION_ROUTER,                 REQPREFIX "routers",                         TRUE },
-	{ DHCP_OPTION_DOMAIN_NAME_SERVER,     REQPREFIX "domain_name_servers",             TRUE },
-	{ DHCP_OPTION_HOST_NAME,              REQPREFIX "host_name",                       TRUE },
-	{ DHCP_OPTION_DOMAIN_NAME,            REQPREFIX "domain_name",                     TRUE },
-	{ DHCP_OPTION_INTERFACE_MTU,          REQPREFIX "interface_mtu",                   TRUE },
-	{ DHCP_OPTION_BROADCAST,              REQPREFIX "broadcast_address",               TRUE },
-	{ DHCP_OPTION_STATIC_ROUTE,           REQPREFIX "static_routes",                   TRUE },
-	{ DHCP_OPTION_NIS_DOMAIN,             REQPREFIX "nis_domain",                      TRUE },
-	{ DHCP_OPTION_NIS_SERVERS,            REQPREFIX "nis_servers",                     TRUE },
-	{ DHCP_OPTION_NTP_SERVER,             REQPREFIX "ntp_servers",                     TRUE },
-	{ DHCP_OPTION_SERVER_IDENTIFIER,      REQPREFIX "dhcp_server_identifier",          TRUE },
-	{ DHCP_OPTION_DOMAIN_SEARCH,          REQPREFIX "domain_search",                   TRUE },
-	{ DHCP_OPTION_CLASSLESS_STATIC_ROUTE, REQPREFIX "rfc3442_classless_static_routes", TRUE },
-	{ DHCP_OPTION_MS_ROUTES,              REQPREFIX "ms_classless_static_routes",      TRUE },
-	{ DHCP_OPTION_WPAD,                   REQPREFIX "wpad",                            TRUE },
+	{ SD_DHCP_OPTION_SUBNET_MASK,            REQPREFIX "subnet_mask",                     TRUE },
+	{ SD_DHCP_OPTION_TIME_OFFSET,            REQPREFIX "time_offset",                     TRUE },
+	{ SD_DHCP_OPTION_ROUTER,                 REQPREFIX "routers",                         TRUE },
+	{ SD_DHCP_OPTION_DOMAIN_NAME_SERVER,     REQPREFIX "domain_name_servers",             TRUE },
+	{ SD_DHCP_OPTION_HOST_NAME,              REQPREFIX "host_name",                       TRUE },
+	{ SD_DHCP_OPTION_DOMAIN_NAME,            REQPREFIX "domain_name",                     TRUE },
+	{ SD_DHCP_OPTION_INTERFACE_MTU,          REQPREFIX "interface_mtu",                   TRUE },
+	{ SD_DHCP_OPTION_BROADCAST,              REQPREFIX "broadcast_address",               TRUE },
+	{ SD_DHCP_OPTION_STATIC_ROUTE,           REQPREFIX "static_routes",                   TRUE },
+	{ DHCP_OPTION_NIS_DOMAIN,                REQPREFIX "nis_domain",                      TRUE },
+	{ DHCP_OPTION_NIS_SERVERS,               REQPREFIX "nis_servers",                     TRUE },
+	{ SD_DHCP_OPTION_NTP_SERVER,             REQPREFIX "ntp_servers",                     TRUE },
+	{ SD_DHCP_OPTION_SERVER_IDENTIFIER,      REQPREFIX "dhcp_server_identifier",          TRUE },
+	{ DHCP_OPTION_DOMAIN_SEARCH,             REQPREFIX "domain_search",                   TRUE },
+	{ SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, REQPREFIX "rfc3442_classless_static_routes", TRUE },
+	{ DHCP_OPTION_MS_ROUTES,                 REQPREFIX "ms_classless_static_routes",      TRUE },
+	{ DHCP_OPTION_WPAD,                      REQPREFIX "wpad",                            TRUE },
 
 	/* Internal values */
-	{ DHCP_OPTION_IP_ADDRESS_LEASE_TIME, REQPREFIX "expiry",                          FALSE },
-	{ DHCP_OPTION_CLIENT_IDENTIFIER,     REQPREFIX "dhcp_client_identifier",          FALSE },
-	{ DHCP_OPTION_IP_ADDRESS,            REQPREFIX "ip_address",                      FALSE },
+	{ SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,  REQPREFIX "expiry",                          FALSE },
+	{ SD_DHCP_OPTION_CLIENT_IDENTIFIER,      REQPREFIX "dhcp_client_identifier",          FALSE },
+	{ DHCP_OPTION_IP_ADDRESS,                REQPREFIX "ip_address",                      FALSE },
 	{ 0, NULL, FALSE }
 };
 
 static const ReqOption dhcp6_requests[] = {
-	{ DHCP6_OPTION_CLIENTID,       REQPREFIX "dhcp6_client_id",     TRUE },
+	{ SD_DHCP6_OPTION_CLIENTID,              REQPREFIX "dhcp6_client_id",     TRUE },
 
 	/* Don't request server ID by default; some servers don't reply to
 	 * Information Requests that request the Server ID.
 	 */
-	{ DHCP6_OPTION_SERVERID,       REQPREFIX "dhcp6_server_id",     FALSE },
+	{ SD_DHCP6_OPTION_SERVERID,              REQPREFIX "dhcp6_server_id",     FALSE },
 
-	{ DHCP6_OPTION_DNS_SERVERS,    REQPREFIX "dhcp6_name_servers",  TRUE },
-	{ DHCP6_OPTION_DOMAIN_LIST,    REQPREFIX "dhcp6_domain_search", TRUE },
-	{ DHCP6_OPTION_SNTP_SERVERS,   REQPREFIX "dhcp6_sntp_servers",  TRUE },
+	{ SD_DHCP6_OPTION_DNS_SERVERS,           REQPREFIX "dhcp6_name_servers",  TRUE },
+	{ SD_DHCP6_OPTION_DOMAIN_LIST,           REQPREFIX "dhcp6_domain_search", TRUE },
+	{ SD_DHCP6_OPTION_SNTP_SERVERS,          REQPREFIX "dhcp6_sntp_servers",  TRUE },
 
 	/* Internal values */
-	{ DHCP6_OPTION_IP_ADDRESS,     REQPREFIX "ip6_address",         FALSE },
-	{ DHCP6_OPTION_PREFIXLEN,      REQPREFIX "ip6_prefixlen",       FALSE },
-	{ DHCP6_OPTION_PREFERRED_LIFE, REQPREFIX "preferred_life",      FALSE },
-	{ DHCP6_OPTION_MAX_LIFE,       REQPREFIX "max_life",            FALSE },
-	{ DHCP6_OPTION_STARTS,         REQPREFIX "starts",              FALSE },
-	{ DHCP6_OPTION_LIFE_STARTS,    REQPREFIX "life_starts",         FALSE },
-	{ DHCP6_OPTION_RENEW,          REQPREFIX "renew",               FALSE },
-	{ DHCP6_OPTION_REBIND,         REQPREFIX "rebind",              FALSE },
-	{ DHCP6_OPTION_IAID,           REQPREFIX "iaid",                FALSE },
+	{ DHCP6_OPTION_IP_ADDRESS,               REQPREFIX "ip6_address",         FALSE },
+	{ DHCP6_OPTION_PREFIXLEN,                REQPREFIX "ip6_prefixlen",       FALSE },
+	{ DHCP6_OPTION_PREFERRED_LIFE,           REQPREFIX "preferred_life",      FALSE },
+	{ DHCP6_OPTION_MAX_LIFE,                 REQPREFIX "max_life",            FALSE },
+	{ DHCP6_OPTION_STARTS,                   REQPREFIX "starts",              FALSE },
+	{ DHCP6_OPTION_LIFE_STARTS,              REQPREFIX "life_starts",         FALSE },
+	{ DHCP6_OPTION_RENEW,                    REQPREFIX "renew",               FALSE },
+	{ DHCP6_OPTION_REBIND,                   REQPREFIX "rebind",              FALSE },
+	{ DHCP6_OPTION_IAID,                     REQPREFIX "iaid",                FALSE },
 	{ 0, NULL, FALSE }
 };
 
@@ -215,7 +211,7 @@ lease_to_ip4_config (const char *iface,
 	guint32 lifetime = 0, i;
 	NMPlatformIP4Address address;
 	GString *l;
-	struct sd_dhcp_route *routes;
+	gs_free sd_dhcp_route **routes = NULL;
 	guint16 mtu;
 	int r, num;
 	guint64 end_time;
@@ -242,7 +238,7 @@ lease_to_ip4_config (const char *iface,
 	LOG_LEASE (LOGD_DHCP4, "  plen %d", address.plen);
 	add_option (options,
 	            dhcp4_requests,
-	            DHCP_OPTION_SUBNET_MASK,
+	            SD_DHCP_OPTION_SUBNET_MASK,
 	            nm_utils_inet4_ntop (tmp_addr.s_addr, NULL));
 
 	/* Lease time */
@@ -253,7 +249,7 @@ lease_to_ip4_config (const char *iface,
 	LOG_LEASE (LOGD_DHCP4, "  expires in %" G_GUINT32_FORMAT " seconds", lifetime);
 	add_option_u64 (options,
 	                dhcp4_requests,
-	                DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
+	                SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
 	                end_time);
 
 	address.source = NM_IP_CONFIG_SOURCE_DHCP;
@@ -265,7 +261,7 @@ lease_to_ip4_config (const char *iface,
 		nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
 		str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
 		LOG_LEASE (LOGD_DHCP4, "  gateway %s", str);
-		add_option (options, dhcp4_requests, DHCP_OPTION_ROUTER, str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str);
 	}
 
 	/* DNS Servers */
@@ -281,7 +277,7 @@ lease_to_ip4_config (const char *iface,
 			}
 		}
 		if (l->len)
-			add_option (options, dhcp4_requests, DHCP_OPTION_DOMAIN_NAME_SERVER, l->str);
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, l->str);
 		g_string_free (l, TRUE);
 	}
 
@@ -297,14 +293,14 @@ lease_to_ip4_config (const char *iface,
 			nm_ip4_config_add_domain (ip4_config, *s);
 		}
 		g_strfreev (domains);
-		add_option (options, dhcp4_requests, DHCP_OPTION_DOMAIN_NAME, str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME, str);
 	}
 
 	/* Hostname */
 	r = sd_dhcp_lease_get_hostname (lease, &str);
 	if (r == 0) {
 		LOG_LEASE (LOGD_DHCP4, "  hostname '%s'", str);
-		add_option (options, dhcp4_requests, DHCP_OPTION_HOST_NAME, str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_HOST_NAME, str);
 	}
 
 	/* Routes */
@@ -312,13 +308,23 @@ lease_to_ip4_config (const char *iface,
 	if (num > 0) {
 		l = g_string_sized_new (30);
 		for (i = 0; i < num; i++) {
-			NMPlatformIP4Route route;
+			NMPlatformIP4Route route = { 0 };
 			const char *gw_str;
+			guint8 plen;
+			struct in_addr a;
 
-			memset (&route, 0, sizeof (route));
-			route.network = routes[i].dst_addr.s_addr;
-			route.plen = routes[i].dst_prefixlen;
-			route.gateway = routes[i].gw_addr.s_addr;
+			if (sd_dhcp_route_get_destination (routes[i], &a) < 0)
+				continue;
+			route.network = a.s_addr;
+
+			if (sd_dhcp_route_get_destination_prefix_length (routes[i], &plen) < 0)
+				continue;
+			route.plen = plen;
+
+			if (sd_dhcp_route_get_gateway (routes[i], &a) < 0)
+				continue;
+			route.gateway = a.s_addr;
+
 			route.source = NM_IP_CONFIG_SOURCE_DHCP;
 			route.metric = default_priority;
 			nm_ip4_config_add_route (ip4_config, &route);
@@ -329,7 +335,7 @@ lease_to_ip4_config (const char *iface,
 
 			g_string_append_printf (l, "%s%s/%d %s", l->len ? " " : "", str, route.plen, gw_str);
 		}
-		add_option (options, dhcp4_requests, DHCP_OPTION_RFC3442_ROUTES, l->str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, l->str);
 		g_string_free (l, TRUE);
 	}
 
@@ -337,7 +343,7 @@ lease_to_ip4_config (const char *iface,
 	r = sd_dhcp_lease_get_mtu (lease, &mtu);
 	if (r == 0 && mtu) {
 		nm_ip4_config_set_mtu (ip4_config, mtu, NM_IP_CONFIG_SOURCE_DHCP);
-		add_option_u32 (options, dhcp4_requests, DHCP_OPTION_INTERFACE_MTU, mtu);
+		add_option_u32 (options, dhcp4_requests, SD_DHCP_OPTION_INTERFACE_MTU, mtu);
 		LOG_LEASE (LOGD_DHCP4, "  mtu %u", mtu);
 	}
 
@@ -350,7 +356,7 @@ lease_to_ip4_config (const char *iface,
 			LOG_LEASE (LOGD_DHCP4, "  ntp server '%s'", str);
 			g_string_append_printf (l, "%s%s", l->len ? " " : "", str);
 		}
-		add_option (options, dhcp4_requests, DHCP_OPTION_NTP_SERVER, l->str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, l->str);
 		g_string_free (l, TRUE);
 	}
 

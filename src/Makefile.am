@@ -77,6 +77,8 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/basic/fileio.h \
 	systemd/src/basic/fs-util.c \
 	systemd/src/basic/fs-util.h \
+	systemd/src/basic/hash-funcs.c \
+	systemd/src/basic/hash-funcs.h \
 	systemd/src/basic/hashmap.c \
 	systemd/src/basic/hashmap.h \
 	systemd/src/basic/hexdecoct.c \
@@ -106,6 +108,7 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/basic/set.h \
 	systemd/src/basic/socket-util.h \
 	systemd/src/basic/sparse-endian.h \
+	systemd/src/basic/stdio-util.h \
 	systemd/src/basic/string-table.c \
 	systemd/src/basic/string-table.h \
 	systemd/src/basic/string-util.c \
