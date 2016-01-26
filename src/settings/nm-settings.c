@@ -1532,11 +1532,11 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 	char *hostname_eol;
 	gboolean ret;
 	gs_free_error GError *error = NULL;
-	const char *file = priv->hostname.file;
+	char *file = priv->hostname.file, *link_path = NULL;
 	gs_unref_variant GVariant *var = NULL;
+	struct stat file_stat = { .st_mode = 0 };
 #if HAVE_SELINUX
 	security_context_t se_ctx_prev = NULL, se_ctx = NULL;
-	struct stat file_stat = { .st_mode = 0 };
 	mode_t st_mode = 0;
 #endif
 
@@ -1553,6 +1553,14 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 
 		return !error;
 	}
+
+	/* If the hostname file is a symbolic link, follow it to find where the
+	 * real file is located, otherwise g_file_set_contents will attempt to
+	 * replace the link with a plain file.
+	 */
+	if (lstat (file, &file_stat) == 0 && S_ISLNK (file_stat.st_mode) &&
+		(link_path = g_file_read_link (file, NULL)))
+		file = link_path;
 
 #if HAVE_SELINUX
 	/* Get default context for hostname file and set it for fscreate */
@@ -1584,6 +1592,7 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 #endif
 
 	g_free (hostname_eol);
+	g_free (link_path);
 
 	if (!ret) {
 		nm_log_warn (LOGD_SETTINGS, "Could not save hostname to %s: %s", file, error->message);
