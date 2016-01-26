@@ -52,6 +52,7 @@ typedef struct {
 	MMSimpleConnectProperties *connect_properties;
 	GArray *ip_types;
 	guint ip_types_i;
+	guint ip_type_tries;
 	GError *first_error;
 } ConnectContext;
 
@@ -331,11 +332,17 @@ connect_ready (MMModemSimple *simple_iface,
 		} else
 			g_error_free (error);
 
-		/* If the modem/provider lies and the IP type we tried isn't supported,
-		 * retry with the next one, if any.
-		 */
-		ctx->ip_types_i++;
-		connect_context_clear (self);
+		if (ctx->ip_type_tries == 0 && g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_RETRY)) {
+			/* Try one more time */
+			ctx->ip_type_tries++;
+		} else {
+			/* If the modem/provider lies and the IP type we tried isn't supported,
+			 * retry with the next one, if any.
+			 */
+			ctx->ip_types_i++;
+			ctx->ip_type_tries = 0;
+		}
+		connect_context_step (self);
 		return;
 	}
 
@@ -485,9 +492,10 @@ connect_context_step (NMModemBroadband *self)
 			else
 				g_assert_not_reached ();
 
-			nm_log_dbg (LOGD_MB, "(%s): launching connection with ip type '%s'",
+			nm_log_dbg (LOGD_MB, "(%s): launching connection with ip type '%s' (try %d)",
 			            nm_modem_get_uid (NM_MODEM (self)),
-			            nm_modem_ip_type_to_string (current));
+			            nm_modem_ip_type_to_string (current),
+			            ctx->ip_type_tries + 1);
 
 			mm_modem_simple_connect (self->priv->simple_iface,
 			                         ctx->connect_properties,
