@@ -21,6 +21,7 @@
 #include "nm-default.h"
 
 #include <net/ethernet.h>
+#include <errno.h>
 
 #include "sd-lldp.h"
 #include "lldp.h"
@@ -30,6 +31,10 @@
 
 #define MAX_NEIGHBORS         4096
 #define MIN_UPDATE_INTERVAL   2
+
+#define LLDP_MAC_NEAREST_BRIDGE          ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }))
+#define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 }))
+#define LLDP_MAC_NEAREST_CUSTOMER_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 }))
 
 typedef struct {
 	char         *iface;
@@ -58,7 +63,7 @@ typedef struct {
 	char *chassis_id;
 	char *port_id;
 
-	int dest;
+	struct ether_addr destination_address;
 
 	GHashTable *tlvs;
 } LLDPNeighbor;
@@ -91,6 +96,16 @@ static void process_lldp_neighbors (NMLldpListener *self);
 
 /*****************************************************************************/
 
+static gboolean
+ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
+{
+	nm_assert (a1);
+	nm_assert (a2);
+
+	G_STATIC_ASSERT_EXPR (sizeof (*a1) == ETH_ALEN);
+	return memcmp (a1, a2, ETH_ALEN) == 0;
+}
+
 static void
 gvalue_destroy (gpointer data)
 {
@@ -101,14 +116,40 @@ gvalue_destroy (gpointer data)
 }
 
 static GValue *
-gvalue_new_nstr (const char *str, guint16 len)
+gvalue_new_str (const char *str)
 {
 	GValue *value;
 
 	value = g_slice_new0 (GValue);
 	g_value_init (value, G_TYPE_STRING);
-	g_value_take_string (value, strndup (str, len));
+	g_value_set_string (value, str ?: "");
 	return value;
+}
+
+static GValue *
+gvalue_new_str_ptr (const void *str, gsize len)
+{
+	const char *s = str;
+	const char *tmp;
+	gsize len0 = len;
+	gs_free char *str_free = NULL;
+	gs_free char *str_escaped = NULL;
+
+	/* truncate at first NUL, including removing trailing NULs*/
+	tmp = memchr (s, '\0', len);
+	if (tmp)
+		len = tmp - s;
+
+	if (!len)
+		return gvalue_new_str ("");
+
+	if (len0 <= len || s[len] != '\0') {
+		/* hmpf, g_strescape needs a trailing NUL. Need to clone */
+		s = str_free = g_strndup (s, len);
+	}
+
+	str_escaped = g_strescape (s, NULL);
+	return gvalue_new_str (str_escaped);
 }
 
 static GValue *
@@ -120,6 +161,21 @@ gvalue_new_uint (guint val)
 	g_value_init (value, G_TYPE_UINT);
 	g_value_set_uint (value, val);
 	return value;
+}
+
+static GValue *
+gvalue_new_uint_u8 (const void *data)
+{
+	return gvalue_new_uint (*((const guint8 *) data));
+}
+
+static GValue *
+gvalue_new_uint_u16 (const void *data)
+{
+	guint16 v;
+
+	memcpy (&v, data, sizeof (v));
+	return gvalue_new_uint (ntohs (v));
 }
 
 static guint
@@ -174,7 +230,7 @@ lldp_neighbor_equal (LLDPNeighbor *a, LLDPNeighbor *b)
 
 	if (   a->chassis_id_type != b->chassis_id_type
 	    || a->port_id_type != b->port_id_type
-	    || a->dest != b->dest
+	    || ether_addr_equal (&a->destination_address, &b->destination_address)
 	    || g_strcmp0 (a->chassis_id, b->chassis_id)
 	    || g_strcmp0 (a->port_id, b->port_id))
 		return FALSE;
@@ -258,13 +314,13 @@ static void
 process_lldp_neighbors (NMLldpListener *self)
 {
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-	nm_auto_free sd_lldp_packet **packets = NULL;
+	nm_auto_free sd_lldp_neighbor **neighbors = NULL;
 	GHashTable *hash;
-	int num, i;
+	int num, i, r;
 
 	g_return_if_fail (priv->lldp_handle);
 
-	num = sd_lldp_get_packets (priv->lldp_handle, &packets);
+	num = sd_lldp_get_neighbors (priv->lldp_handle, &neighbors);
 	if (num < 0) {
 		_LOGD ("process: error %d retrieving neighbor packets for %s",
 		        num, priv->iface);
@@ -274,35 +330,40 @@ process_lldp_neighbors (NMLldpListener *self)
 	hash = g_hash_table_new_full (lldp_neighbor_id_hash, lldp_neighbor_id_equal,
 	                              (GDestroyNotify) lldp_neighbor_free, NULL);
 
-	for (i = 0; packets && i < num; i++) {
+	for (i = 0; neighbors && i < num; i++) {
 		nm_auto (lldp_neighbor_freep) LLDPNeighbor *neigh = NULL;
-		uint8_t chassis_id_type, port_id_type, *chassis_id, *port_id, data8;
-		uint16_t chassis_id_len, port_id_len, len, data16;
+		uint8_t chassis_id_type, port_id_type;
+		uint16_t data16;
+		uint8_t *data8;
+		const void *chassis_id, *port_id;
+		gsize chassis_id_len, port_id_len, len;
 		GValue *value;
-		char *str;
-		int r;
+		const char *str;
 
 		if (i >= MAX_NEIGHBORS)
-			goto next_packet;
+			break;
 
-		r = sd_lldp_packet_read_chassis_id (packets[i], &chassis_id_type,
-		                                    &chassis_id, &chassis_id_len);
+		r = sd_lldp_neighbor_get_chassis_id (neighbors[i], &chassis_id_type,
+		                                     &chassis_id, &chassis_id_len);
 		if (r < 0)
-			goto next_packet;
+			goto next_neighbor;
+		if (chassis_id_len < 1)
+			goto next_neighbor;
 
-		r = sd_lldp_packet_read_port_id (packets[i], &port_id_type,
-		                                 &port_id, &port_id_len);
+		r = sd_lldp_neighbor_get_port_id (neighbors[i], &port_id_type,
+		                                  &port_id, &port_id_len);
 		if (r < 0)
-			goto next_packet;
+			goto next_neighbor;
+		if (port_id_len < 1)
+			goto next_neighbor;
 
 		neigh = g_slice_new0 (LLDPNeighbor);
 		neigh->tlvs = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 		neigh->chassis_id_type = chassis_id_type;
 		neigh->port_id_type = port_id_type;
-		sd_lldp_packet_get_destination_type (packets[i], &neigh->dest);
 
-		if (chassis_id_len < 1)
-			goto next_packet;
+		if (sd_lldp_neighbor_get_destination_address (neighbors[i], &neigh->destination_address) < 0)
+			goto next_neighbor;
 
 		switch (chassis_id_type) {
 		case LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
@@ -316,11 +377,8 @@ process_lldp_neighbors (NMLldpListener *self)
 			break;
 		default:
 			_LOGD ("process: unsupported chassis ID type %d", chassis_id_type);
-			goto next_packet;
+			goto next_neighbor;
 		}
-
-		if (port_id_len < 1)
-			goto next_packet;
 
 		switch (port_id_type) {
 		case LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
@@ -334,58 +392,120 @@ process_lldp_neighbors (NMLldpListener *self)
 			break;
 		default:
 			_LOGD ("process: unsupported port ID type %d", port_id_type);
-			goto next_packet;
+			goto next_neighbor;
 		}
 
-		if (sd_lldp_packet_read_port_description (packets[i], &str, &len) == 0) {
-			value = gvalue_new_nstr (str, len);
+		if (sd_lldp_neighbor_get_port_description (neighbors[i], &str) == 0) {
+			value = gvalue_new_str (str);
 			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_PORT_DESCRIPTION, value);
 		}
 
-		if (sd_lldp_packet_read_system_name (packets[i], &str, &len) == 0) {
-			value = gvalue_new_nstr (str, len);
+		if (sd_lldp_neighbor_get_system_name (neighbors[i], &str) == 0) {
+			value = gvalue_new_str (str);
 			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_SYSTEM_NAME, value);
 		}
 
-		if (sd_lldp_packet_read_system_description (packets[i], &str, &len) == 0) {
-			value = gvalue_new_nstr (str, len);
+		if (sd_lldp_neighbor_get_system_description (neighbors[i], &str) == 0) {
+			value = gvalue_new_str (str);
 			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, value);
 		}
 
-		if (sd_lldp_packet_read_system_capability (packets[i], &data16) == 0) {
+		if (sd_lldp_neighbor_get_system_capabilities (neighbors[i], &data16) == 0) {
 			value = gvalue_new_uint (data16);
 			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, value);
 		}
 
-		if (sd_lldp_packet_read_port_vlan_id (packets[i], &data16) == 0) {
-			value = gvalue_new_uint (data16);
-			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PVID, value);
-		}
+		if (sd_lldp_neighbor_tlv_rewind (neighbors[i]) < 0)
+			goto next_neighbor;
+		do {
+			guint8 oui[3];
+			guint8 subtype;
 
-		if (sd_lldp_packet_read_port_protocol_vlan_id (packets[i], &data8, &data16) == 0) {
-			value = gvalue_new_uint (data16);
-			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PPVID, value);
+			r = sd_lldp_neighbor_tlv_get_oui (neighbors[i], oui, &subtype);
+			if (r < 0) {
+				if (r == -ENXIO)
+					continue;
+				goto next_neighbor;
+			}
 
-			value = gvalue_new_uint (data8);
-			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS, value);
-		}
+			if (!(   memcmp (oui, LLDP_OUI_802_1, sizeof (oui)) == 0
+			      && NM_IN_SET (subtype,
+			                    LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID,
+			                    LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID,
+			                    LLDP_OUI_802_1_SUBTYPE_VLAN_NAME)))
+				continue;
 
-		if (sd_lldp_packet_read_vlan_name (packets[i], &data16, &str, &len) == 0) {
-			value = gvalue_new_uint (data16);
-			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VID, value);
+			if (sd_lldp_neighbor_tlv_get_raw (neighbors[i], (void *) &data8, &len) < 0)
+				continue;
 
-			value = gvalue_new_nstr (str, len);
-			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME, value);
-		}
+			/* skip over leading TLV, OUI and subtype */
+#ifdef WITH_MORE_ASSERTS
+			{
+				guint8 check_hdr[] = {
+					0xfe | (((len - 2) >> 8) & 0x01), ((len - 2) & 0xFF),
+					oui[0], oui[1], oui[2],
+					subtype
+				};
+
+				nm_assert (len > 2 + 3 +1);
+				nm_assert (memcmp (data8, check_hdr, sizeof check_hdr) == 0);
+			}
+#endif
+			if (len <= 6)
+				goto next_neighbor;
+			data8 += 6;
+			len -= 6;
+
+			/*if (memcmp (oui, LLDP_OUI_802_1, sizeof (oui)) == 0)*/
+			{
+				switch (subtype) {
+				case LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
+					if (len != 2)
+						goto next_neighbor;
+					g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PVID,
+					                     gvalue_new_uint_u16 (data8));
+					break;
+				case LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
+					if (len != 3)
+						goto next_neighbor;
+					g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS,
+					                     gvalue_new_uint_u8 (&data8[0]));
+					g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PPVID,
+					                     gvalue_new_uint_u16 (&data8[1]));
+					break;
+				case LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
+					int l;
+
+					if (len <= 3)
+						goto next_neighbor;
+
+					l = data8[2];
+					if (len != 3 + l)
+						goto next_neighbor;
+
+					g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VID,
+					                     gvalue_new_uint_u16 (&data8[0]));
+					g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME,
+					                     gvalue_new_str_ptr (&data8[3], len));
+					break;
+				}
+				default:
+					g_assert_not_reached ();
+				}
+			}
+		} while (sd_lldp_neighbor_tlv_next (neighbors[i]) > 0);
 
 		_LOGD ("process: new neigh: CHASSIS='%s' PORT='%s'",
 		        neigh->chassis_id, neigh->port_id);
 
 		g_hash_table_add (hash, neigh);
 		neigh = NULL;
-next_packet:
-		sd_lldp_packet_unref (packets[i]);
+next_neighbor:
+		;
 	}
+
+	for (i = 0; neighbors && i < num; i++)
+		sd_lldp_neighbor_unref (neighbors[i]);
 
 	if (lldp_hash_table_equal (priv->lldp_neighbors, hash)) {
 		g_hash_table_destroy (hash);
@@ -405,7 +525,7 @@ next_packet:
 }
 
 static void
-lldp_event_handler (sd_lldp *lldp, int event, void *userdata)
+lldp_event_handler (sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, void *userdata)
 {
 	NMLldpListener *self = userdata;
 	NMLldpListenerPrivate *priv;
@@ -423,15 +543,13 @@ lldp_event_handler (sd_lldp *lldp, int event, void *userdata)
 }
 
 gboolean
-nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
-                        const guint8 *mac, guint mac_len, GError **error)
+nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 {
 	NMLldpListenerPrivate *priv;
 	int ret;
 
 	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), FALSE);
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (iface, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
@@ -442,42 +560,35 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
 		return FALSE;
 	}
 
-	if (!mac || mac_len != ETH_ALEN) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		                     "unsupported device");
-		return FALSE;
-	}
-
-	ret = sd_lldp_new (ifindex, iface, (struct ether_addr *) mac, &priv->lldp_handle);
-	if (ret) {
+	ret = sd_lldp_new (&priv->lldp_handle, ifindex);
+	if (ret < 0) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "initialization failed");
 		return FALSE;
 	}
 
 	ret = sd_lldp_attach_event (priv->lldp_handle, NULL, 0);
-	if (ret) {
+	if (ret < 0) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "attach event failed");
 		goto err_free;
 	}
 
 	ret = sd_lldp_set_callback (priv->lldp_handle, lldp_event_handler, self);
-	if (ret) {
+	if (ret < 0) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "set callback failed");
 		goto err;
 	}
 
 	ret = sd_lldp_start (priv->lldp_handle);
-	if (ret) {
+	if (ret < 0) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "start failed");
 		goto err;
 	}
 
 	priv->ifindex = ifindex;
-	priv->iface = strdup (iface);
 	_LOGD ("start");
 	return TRUE;
 
@@ -503,7 +614,6 @@ nm_lldp_listener_stop (NMLldpListener *self)
 		sd_lldp_stop (priv->lldp_handle);
 		sd_lldp_detach_event (priv->lldp_handle);
 		sd_lldp_unref (priv->lldp_handle);
-		g_clear_pointer (&priv->iface, g_free);
 		priv->lldp_handle = NULL;
 
 		size = g_hash_table_size (priv->lldp_neighbors);
@@ -536,7 +646,6 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 	GHashTableIter iter;
 	NMLldpListenerPrivate *priv;
 	LLDPNeighbor *neigh;
-	char *dest_str = NULL;
 
 	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), FALSE);
 
@@ -551,6 +660,7 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &neigh)) {
 		GHashTableIter val_iter;
 		gpointer key, val;
+		const char *dest_str;
 
 		g_variant_builder_init (&neigh_builder, G_VARIANT_TYPE ("a{sv}"));
 
@@ -567,18 +677,14 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 		                       NM_LLDP_ATTR_PORT_ID,
 		                       g_variant_new_string (neigh->port_id));
 
-		switch (neigh->dest) {
-		case SD_LLDP_DESTINATION_TYPE_NEAREST_BRIDGE:
+		if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_BRIDGE))
 			dest_str = NM_LLDP_DEST_NEAREST_BRIDGE;
-			break;
-		case SD_LLDP_DESTINATION_TYPE_NEAREST_NON_TPMR_BRIDGE:
+		else if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
 			dest_str = NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE;
-			break;
-		case SD_LLDP_DESTINATION_TYPE_NEAREST_CUSTOMER_BRIDGE:
+		else if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
 			dest_str = NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE;
-			break;
-		}
-
+		else
+			dest_str = NULL;
 		if (dest_str) {
 			g_variant_builder_add (&neigh_builder, "{sv}",
 			                       NM_LLDP_ATTR_DESTINATION,

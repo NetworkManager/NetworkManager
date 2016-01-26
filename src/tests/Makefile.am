@@ -117,6 +117,7 @@ test_wired_defname_LDADD = \
 test_systemd_CFLAGS = \
 	"-I$(srcdir)/../" \
 	"-I$(srcdir)/../platform" \
+	"-I$(srcdir)/../systemd" \
 	"-I$(srcdir)/../systemd/src/systemd"
 
 test_systemd_SOURCES = \

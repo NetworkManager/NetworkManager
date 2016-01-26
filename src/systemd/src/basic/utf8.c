@@ -243,7 +243,7 @@ char *utf8_escape_non_printable(const char *str) {
                                         *(s++) = hexchar((int) *str);
 
                                         str += 1;
-                                        len --;
+                                        len--;
                                 }
                         }
                 } else {

@@ -233,7 +233,7 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
 /* We override the glibc assert() here. */
 #undef assert
 #ifdef NDEBUG
-#define assert(expr) do {} while(false)
+#define assert(expr) do {} while (false)
 #else
 #define assert(expr) assert_message_se(expr, #expr)
 #endif
@@ -369,6 +369,12 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
                 }                               \
                 _found;                         \
         })
+
+#define SWAP_TWO(x, y) do {                        \
+                typeof(x) _t = (x);                \
+                (x) = (y);                         \
+                (y) = (_t);                        \
+        } while (false)
 
 /* Define C11 thread_local attribute even on older gcc compiler
  * version */

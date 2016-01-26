@@ -35,6 +35,7 @@
 #include "in-addr-util.h"
 #include "network-internal.h"
 #include "random-util.h"
+#include "socket-util.h"
 #include "string-table.h"
 #include "util.h"
 
@@ -65,7 +66,7 @@ struct sd_dhcp6_client {
         uint8_t retransmit_count;
         sd_event_source *timeout_resend;
         sd_event_source *timeout_resend_expire;
-        sd_dhcp6_client_cb_t cb;
+        sd_dhcp6_client_callback_t cb;
         void *userdata;
         struct duid duid;
         size_t duid_len;
@@ -112,7 +113,7 @@ DEFINE_STRING_TABLE_LOOKUP(dhcp6_message_status, int);
 
 static int client_start(sd_dhcp6_client *client, enum DHCP6State state);
 
-int sd_dhcp6_client_set_callback(sd_dhcp6_client *client, sd_dhcp6_client_cb_t cb, void *userdata) {
+int sd_dhcp6_client_set_callback(sd_dhcp6_client *client, sd_dhcp6_client_callback_t cb, void *userdata) {
         assert_return(client, -EINVAL);
 
         client->cb = cb;
@@ -893,18 +894,16 @@ static int client_receive_message(sd_event_source *s, int fd, uint32_t revents, 
         sd_dhcp6_client *client = userdata;
         DHCP6_CLIENT_DONT_DESTROY(client);
         _cleanup_free_ DHCP6Message *message = NULL;
-        int r, buflen, len;
+        ssize_t buflen, len;
+        int r = 0;
 
         assert(s);
         assert(client);
         assert(client->event);
 
-        r = ioctl(fd, FIONREAD, &buflen);
-        if (r < 0)
-                return -errno;
-        else if (buflen < 0)
-                /* This really should not happen */
-                return -EIO;
+        buflen = next_datagram_size_fd(fd);
+        if (buflen < 0)
+                return buflen;
 
         message = malloc(buflen);
         if (!message)
@@ -1207,7 +1206,7 @@ error:
         return r;
 }
 
-int sd_dhcp6_client_attach_event(sd_dhcp6_client *client, sd_event *event, int priority) {
+int sd_dhcp6_client_attach_event(sd_dhcp6_client *client, sd_event *event, int64_t priority) {
         int r;
 
         assert_return(client, -EINVAL);

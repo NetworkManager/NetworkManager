@@ -103,7 +103,7 @@ struct sd_dhcp_client {
         sd_event_source *timeout_t1;
         sd_event_source *timeout_t2;
         sd_event_source *timeout_expire;
-        sd_dhcp_client_cb_t cb;
+        sd_dhcp_client_callback_t cb;
         void *userdata;
         sd_dhcp_lease *lease;
         usec_t start_delay;
@@ -123,7 +123,7 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
                                       uint32_t revents, void *userdata);
 static void client_stop(sd_dhcp_client *client, int error);
 
-int sd_dhcp_client_set_callback(sd_dhcp_client *client, sd_dhcp_client_cb_t cb,
+int sd_dhcp_client_set_callback(sd_dhcp_client *client, sd_dhcp_client_callback_t cb,
                                 void *userdata) {
         assert_return(client, -EINVAL);
 
@@ -960,7 +960,7 @@ static int client_initialize_time_events(sd_dhcp_client *client) {
         client->timeout_resend = sd_event_source_unref(client->timeout_resend);
 
         if (client->start_delay) {
-                sd_event_now(client->event, clock_boottime_or_monotonic(), &usec);
+                assert_se(sd_event_now(client->event, clock_boottime_or_monotonic(), &usec) >= 0);
                 usec += client->start_delay;
         }
 
@@ -1527,20 +1527,17 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
                                       uint32_t revents, void *userdata) {
         sd_dhcp_client *client = userdata;
         _cleanup_free_ DHCPMessage *message = NULL;
-        int buflen = 0, len, r;
         const struct ether_addr zero_mac = { { 0, 0, 0, 0, 0, 0 } };
         const struct ether_addr *expected_chaddr = NULL;
         uint8_t expected_hlen = 0;
+        ssize_t len, buflen;
 
         assert(s);
         assert(client);
 
-        r = ioctl(fd, FIONREAD, &buflen);
-        if (r < 0)
-                return -errno;
-        else if (buflen < 0)
-                /* this can't be right */
-                return -EIO;
+        buflen = next_datagram_size_fd(fd);
+        if (buflen < 0)
+                return buflen;
 
         message = malloc0(buflen);
         if (!message)
@@ -1618,17 +1615,15 @@ static int client_receive_message_raw(sd_event_source *s, int fd,
         };
         struct cmsghdr *cmsg;
         bool checksum = true;
-        int buflen = 0, len, r;
+        ssize_t buflen, len;
+        int r;
 
         assert(s);
         assert(client);
 
-        r = ioctl(fd, FIONREAD, &buflen);
-        if (r < 0)
-                return -errno;
-        else if (buflen < 0)
-                /* this can't be right */
-                return -EIO;
+        buflen = next_datagram_size_fd(fd);
+        if (buflen < 0)
+                return buflen;
 
         packet = malloc0(buflen);
         if (!packet)
@@ -1698,8 +1693,7 @@ int sd_dhcp_client_stop(sd_dhcp_client *client) {
         return 0;
 }
 
-int sd_dhcp_client_attach_event(sd_dhcp_client *client, sd_event *event,
-                                int priority) {
+int sd_dhcp_client_attach_event(sd_dhcp_client *client, sd_event *event, int64_t priority) {
         int r;
 
         assert_return(client, -EINVAL);

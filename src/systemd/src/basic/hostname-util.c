@@ -19,7 +19,6 @@
 
 #include "nm-sd-adapt.h"
 
-#include <bits/local_lim.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -51,12 +50,41 @@ bool hostname_is_set(void) {
 char* gethostname_malloc(void) {
         struct utsname u;
 
+        /* This call tries to return something useful, either the actual hostname
+         * or it makes something up. The only reason it might fail is OOM.
+         * It might even return "localhost" if that's set. */
+
         assert_se(uname(&u) >= 0);
 
         if (isempty(u.nodename) || streq(u.nodename, "(none)"))
                 return strdup(u.sysname);
 
         return strdup(u.nodename);
+}
+
+int gethostname_strict(char **ret) {
+        struct utsname u;
+        char *k;
+
+        /* This call will rather fail than make up a name. It will not return "localhost" either. */
+
+        assert_se(uname(&u) >= 0);
+
+        if (isempty(u.nodename))
+                return -ENXIO;
+
+        if (streq(u.nodename, "(none)"))
+                return -ENXIO;
+
+        if (is_localhost(u.nodename))
+                return -ENXIO;
+
+        k = strdup(u.nodename);
+        if (!k)
+                return -ENOMEM;
+
+        *ret = k;
+        return 0;
 }
 
 static bool hostname_valid_char(char c) {
@@ -98,7 +126,7 @@ bool hostname_is_valid(const char *s, bool allow_trailing_dot) {
                                 return false;
 
                         dot = true;
-                        n_dots ++;
+                        n_dots++;
                 } else {
                         if (!hostname_valid_char(*p))
                                 return false;
@@ -124,6 +152,8 @@ char* hostname_cleanup(char *s) {
 
         assert(s);
 
+        strshorten(s, HOST_NAME_MAX);
+
         for (p = s, d = s, dot = true; *p; p++) {
                 if (*p == '.') {
                         if (dot)
@@ -142,8 +172,6 @@ char* hostname_cleanup(char *s) {
                 d[-1] = 0;
         else
                 *d = 0;
-
-        strshorten(s, HOST_NAME_MAX);
 
         return s;
 }

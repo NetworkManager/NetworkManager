@@ -44,6 +44,7 @@ extern unsigned int if_nametoindex (const char *__ifname);
 #include "nm-lndp-rdisc.h"
 #include "nm-utils.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-sd-adapt.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -345,6 +346,7 @@ main (int argc, char *argv[])
 	size_t hwaddr_len = 0;
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
+	guint sd_id;
 
 	nm_g_type_init ();
 
@@ -494,6 +496,8 @@ main (int argc, char *argv[])
 		nm_rdisc_start (rdisc);
 	}
 
+	sd_id = nm_sd_event_attach_default ();
+
 	g_main_loop_run (main_loop);
 
 	g_clear_pointer (&hwaddr, g_byte_array_unref);
@@ -502,6 +506,8 @@ main (int argc, char *argv[])
 		unlink (pidfile);
 
 	nm_log_info (LOGD_CORE, "exiting");
+
+	nm_clear_g_source (&sd_id);
 	exit (0);
 }
 

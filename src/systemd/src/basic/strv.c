@@ -377,7 +377,7 @@ char *strv_join(char **l, const char *separator) {
 
         n = 0;
         STRV_FOREACH(s, l) {
-                if (n != 0)
+                if (s != l)
                         n += k;
                 n += strlen(*s);
         }
@@ -388,7 +388,7 @@ char *strv_join(char **l, const char *separator) {
 
         e = r;
         STRV_FOREACH(s, l) {
-                if (e != r)
+                if (s != l)
                         e = stpcpy(e, separator);
 
                 e = stpcpy(e, *s);
