@@ -141,7 +141,7 @@ struct Request {
 #define __LOG_print(print_cmd, _request, _script, ...) \
 	G_STMT_START { \
 		nm_assert ((_request) && (!(_script) || (_script)->request == (_request))); \
-		print_cmd ("#%u '%s'%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+		print_cmd ("req:%u '%s'%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
 		           (_request)->request_id, \
 		           (_request)->action, \
 		           (_request)->iface ? " [" : "", \
@@ -161,7 +161,7 @@ struct Request {
 		if (!__request) \
 			__request = __script->request; \
 		nm_assert (__request && (!__script || __script->request == __request)); \
-		if ((log_always) || __request->debug) { \
+		if ((log_always) || _LOG_R_D_enabled (__request)) { \
 			if (FALSE) { \
 				/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
 				 * get a compiler warning about wrong format. */ \
