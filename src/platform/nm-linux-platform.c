@@ -1909,6 +1909,19 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
 				                         GINT_TO_POINTER (new->link.ifindex));
 			}
+			if (   new->link.type == NM_LINK_TYPE_ETHERNET
+			    && new->link.addr.len == 0) {
+				/* Due to a kernel bug, we sometimes receive spurious NEWLINK
+				 * messages after a wifi interface has disappeared. Since the
+				 * link is not present anymore we can't determine its type and
+				 * thus it will show up as a Ethernet one, with no address
+				 * specified.  Request the link again to check if it really
+				 * exists.  https://bugzilla.redhat.com/show_bug.cgi?id=1302037
+				 */
+				delayed_action_schedule (platform,
+				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
+				                         GINT_TO_POINTER (new->link.ifindex));
+			}
 		}
 		{
 			/* on enslave/release, we also refresh the master. */
