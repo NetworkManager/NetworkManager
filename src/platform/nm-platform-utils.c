@@ -143,7 +143,8 @@ nmp_utils_ethtool_get_permanent_address (const char *ifname,
 		struct ethtool_perm_addr e;
 		guint8 _extra_data[NM_UTILS_HWADDR_LEN_MAX + 1];
 	} edata;
-	guint zeros[NM_UTILS_HWADDR_LEN_MAX] = { 0 };
+	static const guint8 zeros[NM_UTILS_HWADDR_LEN_MAX] = { 0 };
+	static guint8 ones[NM_UTILS_HWADDR_LEN_MAX] = { 0 };
 
 	if (!ifname)
 		return FALSE;
@@ -160,6 +161,12 @@ nmp_utils_ethtool_get_permanent_address (const char *ifname,
 	/* Some drivers might return a permanent address of all zeros.
 	 * Reject that (rh#1264024) */
 	if (memcmp (edata.e.data, zeros, edata.e.size) == 0)
+		return FALSE;
+
+	/* Some drivers return a permanent address of all ones. Reject that too */
+	if (G_UNLIKELY (ones[0] != 0xFF))
+		memset (ones, 0xFF, sizeof (ones));
+	if (memcmp (edata.e.data, ones, edata.e.size) == 0)
 		return FALSE;
 
 	memcpy (buf, edata.e.data, edata.e.size);
