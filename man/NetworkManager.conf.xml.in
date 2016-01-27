@@ -537,7 +537,7 @@ ipv6.ip6-privacy=1
         exception that the <literal>[connection]</literal> section is always
         considered last. In the example above, this order is <literal>[connection-wifi-wlan0]</literal>,
         <literal>[connection-wlan-other]</literal>, and <literal>[connection]</literal>.
-        When checking for a default configuration value, the section are searched until
+        When checking for a default configuration value, the sections are searched until
         the requested value is found.
         In the example above, "ipv4.route-metric" for wlan0 interface is set to 50,
         and for all other Wi-Fi typed interfaces to 55. Also, Wi-Fi devices would have
