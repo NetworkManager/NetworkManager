@@ -88,6 +88,7 @@
 #include <nm-vpn-editor.h>
 #include <nm-vpn-editor-plugin.h>
 #include <nm-vpn-plugin-info.h>
+#include <nm-vpn-service-plugin.h>
 #include <nm-wimax-nsp.h>
 
 #undef __NETWORKMANAGER_H_INSIDE__

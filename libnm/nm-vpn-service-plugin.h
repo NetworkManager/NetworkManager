@@ -22,6 +22,10 @@
 #ifndef __NM_VPN_SERVICE_PLUGIN_H__
 #define __NM_VPN_SERVICE_PLUGIN_H__
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <gio/gio.h>
 #include <nm-vpn-dbus-interface.h>
 #include <nm-connection.h>
