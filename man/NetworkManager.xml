@@ -286,79 +286,79 @@
 
     <variablelist>
       <varlistentry>
-	<term><option>--version</option> | <option>-V</option></term>
-	<listitem><para>Print the NetworkManager software version and exit.
-	</para></listitem>
+        <term><option>--version</option> | <option>-V</option></term>
+        <listitem><para>Print the NetworkManager software version and exit.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--help</option> | <option>-h</option></term>
-	<listitem><para>Print NetworkManager's available options and exit.
-	</para></listitem>
+        <term><option>--help</option> | <option>-h</option></term>
+        <listitem><para>Print NetworkManager's available options and exit.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--no-daemon</option> | <option>-n</option></term>
-	<listitem><para>Do not daemonize.
-	</para></listitem>
+        <term><option>--no-daemon</option> | <option>-n</option></term>
+        <listitem><para>Do not daemonize.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--debug</option> | <option>-d</option></term>
-	<listitem><para>Do not daemonize, and direct log output to the
-	controlling terminal in addition to syslog.
-	</para></listitem>
+        <term><option>--debug</option> | <option>-d</option></term>
+        <listitem><para>Do not daemonize, and direct log output to the
+        controlling terminal in addition to syslog.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--pid-file</option> | <option>-p</option></term>
-	<listitem><para>Specify location of a PID file.  The PID file
-	is used for storing PID of the running process and prevents
-	running multiple instances.
-	</para></listitem>
+        <term><option>--pid-file</option> | <option>-p</option></term>
+        <listitem><para>Specify location of a PID file.  The PID file
+        is used for storing PID of the running process and prevents
+        running multiple instances.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--state-file</option></term>
-	<listitem><para>Specify file for storing state of the
-	NetworkManager persistently.  If not specified, the default
-	value of /var/lib/NetworkManager/NetworkManager.state is used.
-	</para></listitem>
+        <term><option>--state-file</option></term>
+        <listitem><para>Specify file for storing state of the
+        NetworkManager persistently.  If not specified, the default
+        value of /var/lib/NetworkManager/NetworkManager.state is used.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--config</option></term>
-	<listitem><para> Specify configuration file to set up various
-	settings for NetworkManager.  If not specified, the default
-	value of /etc/NetworkManager/NetworkManager.conf is used with
-	a fallback to the older 'nm-system-settings.conf' if located
-	in the same directory.  See
-	<citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
-	for more information on configuration file.
-	</para></listitem>
+        <term><option>--config</option></term>
+        <listitem><para> Specify configuration file to set up various
+        settings for NetworkManager.  If not specified, the default
+        value of /etc/NetworkManager/NetworkManager.conf is used with
+        a fallback to the older 'nm-system-settings.conf' if located
+        in the same directory.  See
+        <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+        for more information on configuration file.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--plugins</option></term>
-	<listitem><para>List plugins used to manage system-wide
-	connection settings.  This list has preference over plugins
-	specified in the configuration file.  Currently supported
-	plugins are: keyfile, <option>ifcfg-rh</option>,
-	<option>ifcfg-suse</option>, <option>ifupdown</option>.
-	</para></listitem>
+        <term><option>--plugins</option></term>
+        <listitem><para>List plugins used to manage system-wide
+        connection settings.  This list has preference over plugins
+        specified in the configuration file.  Currently supported
+        plugins are: keyfile, <option>ifcfg-rh</option>,
+        <option>ifcfg-suse</option>, <option>ifupdown</option>.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--log-level</option></term>
-	<listitem><para>
-	  Sets how much information NetworkManager sends to the log destination (usually
-	  syslog's "daemon" facility).  By default, only informational, warning, and error
-	  messages are logged. See the section on <literal>logging</literal> in
-	  <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
-	  for more information.
-	</para></listitem>
+        <term><option>--log-level</option></term>
+        <listitem><para>
+          Sets how much information NetworkManager sends to the log destination (usually
+          syslog's "daemon" facility).  By default, only informational, warning, and error
+          messages are logged. See the section on <literal>logging</literal> in
+          <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          for more information.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--log-domains</option></term>
-	<listitem><para>
-	  A comma-separated list specifying which operations are logged to the log
-	  destination (usually syslog). By default, most domains are logging-enabled.
-	  See the section on <literal>logging</literal> in
-	  <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
-	  for more information.
-	</para></listitem>
+        <term><option>--log-domains</option></term>
+        <listitem><para>
+          A comma-separated list specifying which operations are logged to the log
+          destination (usually syslog). By default, most domains are logging-enabled.
+          See the section on <literal>logging</literal> in
+          <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          for more information.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--print-config</option></term>
@@ -380,18 +380,18 @@
 
     <variablelist>
       <varlistentry>
-	<term><varname>NM_UNMANAGED</varname></term>
-	<listitem><para>
-	  No default connection will be created and automatic activation
-	  will not be attempted when this property of a device is set to a
-	  true value ("1" or "true"). You will still be able to attach a
-	  connection to the device manually or observe externally added
-	  configuration such as addresses or routes.
-	</para><para>
-	  Create an udev rule that sets this property to prevent NetworkManager
-	  from interfering with virtual Ethernet device interfaces that are
-	  managed by virtualization tools.
-	</para></listitem>
+        <term><varname>NM_UNMANAGED</varname></term>
+        <listitem><para>
+          No default connection will be created and automatic activation
+          will not be attempted when this property of a device is set to a
+          true value ("1" or "true"). You will still be able to attach a
+          connection to the device manually or observe externally added
+          configuration such as addresses or routes.
+        </para><para>
+          Create an udev rule that sets this property to prevent NetworkManager
+          from interfering with virtual Ethernet device interfaces that are
+          managed by virtualization tools.
+        </para></listitem>
       </varlistentry>
     </variablelist>
   </refsect1>

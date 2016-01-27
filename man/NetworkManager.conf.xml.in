@@ -84,16 +84,16 @@ Copyright 2010 - 2014 Red Hat, Inc.
     <para>
       Minimal system settings configuration file looks like this:
       <programlisting>
-	[main]
-	plugins=keyfile
+        [main]
+        plugins=keyfile
       </programlisting>
     </para>
     <para>
       As an extension to the normal keyfile format, you can also
       append a value to a previously-set list-valued key by doing:
       <programlisting>
-	plugins+=another-plugin
-	plugins-=remove-me
+        plugins+=another-plugin
+        plugins-=remove-me
       </programlisting>
     </para>
   </refsect1>
@@ -102,201 +102,201 @@ Copyright 2010 - 2014 Red Hat, Inc.
     <title><literal>main</literal> section</title>
     <variablelist>
       <varlistentry>
-	<term><varname>plugins</varname></term>
-	<listitem>
-	  <para>
-	    Lists system settings plugin names separated by ','. These
-	    plugins are used to read and write system-wide
-	    connections. When multiple plugins are specified, the
-	    connections are read from all listed plugins. When writing
-	    connections, the plugins will be asked to save the
-	    connection in the order listed here; if the first plugin
-	    cannot write out that connection type (or can't write out
-	    any connections) the next plugin is tried, etc. If none of
-	    the plugins can save the connection, an error is returned
-	    to the user.
-	  </para>
-	  <para>
-	    If NetworkManager defines a distro-specific
-	    network-configuration plugin for your system, then that
-	    will normally be listed here. (See below for the available
-	    plugins.) Note that the <literal>keyfile</literal> plugin
-	    is always appended to the end of this list (if it doesn't
-	    already appear earlier in the list), so if there is no
-	    distro-specific plugin for your system then you can leave
-	    this key unset and NetworkManager will fall back to using
-	    <literal>keyfile</literal>.
-	  </para>
-	</listitem>
+        <term><varname>plugins</varname></term>
+        <listitem>
+          <para>
+            Lists system settings plugin names separated by ','. These
+            plugins are used to read and write system-wide
+            connections. When multiple plugins are specified, the
+            connections are read from all listed plugins. When writing
+            connections, the plugins will be asked to save the
+            connection in the order listed here; if the first plugin
+            cannot write out that connection type (or can't write out
+            any connections) the next plugin is tried, etc. If none of
+            the plugins can save the connection, an error is returned
+            to the user.
+          </para>
+          <para>
+            If NetworkManager defines a distro-specific
+            network-configuration plugin for your system, then that
+            will normally be listed here. (See below for the available
+            plugins.) Note that the <literal>keyfile</literal> plugin
+            is always appended to the end of this list (if it doesn't
+            already appear earlier in the list), so if there is no
+            distro-specific plugin for your system then you can leave
+            this key unset and NetworkManager will fall back to using
+            <literal>keyfile</literal>.
+          </para>
+        </listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>monitor-connection-files</varname></term>
-	<listitem><para>Whether the configured settings plugin(s)
-	should set up file monitors and immediately pick up changes
-	made to connection files while NetworkManager is running. This
-	is disabled by default; NetworkManager will only read
-	the connection files at startup, and when explicitly requested
-	via the ReloadConnections D-Bus call. If this key is set to
-	'<literal>true</literal>', then NetworkManager will reload
-	connection files any time they changed.</para></listitem>
+        <term><varname>monitor-connection-files</varname></term>
+        <listitem><para>Whether the configured settings plugin(s)
+        should set up file monitors and immediately pick up changes
+        made to connection files while NetworkManager is running. This
+        is disabled by default; NetworkManager will only read
+        the connection files at startup, and when explicitly requested
+        via the ReloadConnections D-Bus call. If this key is set to
+        '<literal>true</literal>', then NetworkManager will reload
+        connection files any time they changed.</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>auth-polkit</varname></term>
-	<listitem><para>Whether the system uses PolicyKit for authorization.
-	If <literal>false</literal>, all requests will be allowed. If
-	<literal>true</literal>, non-root requests are authorized using PolicyKit.
-	The default value is <literal>@NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT@</literal>.
-	</para></listitem>
+        <term><varname>auth-polkit</varname></term>
+        <listitem><para>Whether the system uses PolicyKit for authorization.
+        If <literal>false</literal>, all requests will be allowed. If
+        <literal>true</literal>, non-root requests are authorized using PolicyKit.
+        The default value is <literal>@NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT@</literal>.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>dhcp</varname></term>
-	<listitem><para>This key sets up what DHCP client
-	NetworkManager will use. Allowed values are
-	<literal>dhclient</literal>, <literal>dhcpcd</literal>, and
-	<literal>internal</literal>. The <literal>dhclient</literal>
-	and <literal>dhcpcd</literal> options require the indicated
-	clients to be installed. The <literal>internal</literal>
-	option uses a built-in DHCP client which is not currently as
-	featureful as the external clients (and in particular, does
-	not yet support DHCPv6).</para>
-	<para>If this key is missing, available DHCP clients are
-	looked for in this order: <literal>dhclient</literal>,
-	<literal>dhcpcd</literal>,
-	<literal>internal</literal>.</para></listitem>
+        <term><varname>dhcp</varname></term>
+        <listitem><para>This key sets up what DHCP client
+        NetworkManager will use. Allowed values are
+        <literal>dhclient</literal>, <literal>dhcpcd</literal>, and
+        <literal>internal</literal>. The <literal>dhclient</literal>
+        and <literal>dhcpcd</literal> options require the indicated
+        clients to be installed. The <literal>internal</literal>
+        option uses a built-in DHCP client which is not currently as
+        featureful as the external clients (and in particular, does
+        not yet support DHCPv6).</para>
+        <para>If this key is missing, available DHCP clients are
+        looked for in this order: <literal>dhclient</literal>,
+        <literal>dhcpcd</literal>,
+        <literal>internal</literal>.</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>no-auto-default</varname></term>
-	<listitem><para>Specify devices for which
-	NetworkManager shouldn't create default wired connection
-	(Auto eth0).  By default, NetworkManager creates a temporary
-	wired connection for any Ethernet device that is managed and
-	doesn't have a connection configured. List a device in this
-	option to inhibit creating the default connection for the
-	device. May have the special value <literal>*</literal> to
-	apply to all devices.</para>
-	<para>When the default wired connection is deleted or saved
-	to a new persistent connection by a plugin, the device is
-	added to a list in the file
-	<filename>/var/run/NetworkManager/no-auto-default.state</filename>
-	to prevent creating the default connection for that device
-	again.</para>
-	<para>See <xref linkend="device-spec"/> for the syntax how to
-	specify a device.
-	</para>
-	<para>
-	  Example:
-	  <programlisting>
+        <term><varname>no-auto-default</varname></term>
+        <listitem><para>Specify devices for which
+        NetworkManager shouldn't create default wired connection
+        (Auto eth0).  By default, NetworkManager creates a temporary
+        wired connection for any Ethernet device that is managed and
+        doesn't have a connection configured. List a device in this
+        option to inhibit creating the default connection for the
+        device. May have the special value <literal>*</literal> to
+        apply to all devices.</para>
+        <para>When the default wired connection is deleted or saved
+        to a new persistent connection by a plugin, the device is
+        added to a list in the file
+        <filename>/var/run/NetworkManager/no-auto-default.state</filename>
+        to prevent creating the default connection for that device
+        again.</para>
+        <para>See <xref linkend="device-spec"/> for the syntax how to
+        specify a device.
+        </para>
+        <para>
+          Example:
+          <programlisting>
 no-auto-default=00:22:68:5c:5d:c4,00:1e:65:ff:aa:ee
 no-auto-default=eth0,eth1
 no-auto-default=*
-	  </programlisting>
-	</para>
-	</listitem>
+          </programlisting>
+        </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>ignore-carrier</varname></term>
-	<listitem>
-	  <para>
-	    Specify devices for which NetworkManager will (partially)
-	    ignore the carrier state. Normally, for
-	    device types that support carrier-detect, such as Ethernet
-	    and InfiniBand, NetworkManager will only allow a
-	    connection to be activated on the device if carrier is
-	    present (ie, a cable is plugged in), and it will
-	    deactivate the device if carrier drops for more than a few
-	    seconds.
-	  </para>
-	  <para>
-	    Listing a device here will allow activating connections on
-	    that device even when it does not have carrier, provided
-	    that the connection uses only statically-configured IP
-	    addresses. Additionally, it will allow any active
-	    connection (whether static or dynamic) to remain active on
-	    the device when carrier is lost.
-	  </para>
-	  <para>
-	    Note that the "carrier" property of NMDevices and device D-Bus
-	    interfaces will still reflect the actual device state; it's just
-	    that NetworkManager will not make use of that information.
-	  </para>
-	  <para>See <xref linkend="device-spec"/> for the syntax how to
-	   specify a device.
-	  </para>
-	</listitem>
+        <term><varname>ignore-carrier</varname></term>
+        <listitem>
+          <para>
+            Specify devices for which NetworkManager will (partially)
+            ignore the carrier state. Normally, for
+            device types that support carrier-detect, such as Ethernet
+            and InfiniBand, NetworkManager will only allow a
+            connection to be activated on the device if carrier is
+            present (ie, a cable is plugged in), and it will
+            deactivate the device if carrier drops for more than a few
+            seconds.
+          </para>
+          <para>
+            Listing a device here will allow activating connections on
+            that device even when it does not have carrier, provided
+            that the connection uses only statically-configured IP
+            addresses. Additionally, it will allow any active
+            connection (whether static or dynamic) to remain active on
+            the device when carrier is lost.
+          </para>
+          <para>
+            Note that the "carrier" property of NMDevices and device D-Bus
+            interfaces will still reflect the actual device state; it's just
+            that NetworkManager will not make use of that information.
+          </para>
+          <para>See <xref linkend="device-spec"/> for the syntax how to
+           specify a device.
+          </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>assume-ipv6ll-only</varname></term>
-	<listitem>
-	  <para>
-	    Specify devices for which NetworkManager will try to
-	    generate a connection based on initial configuration when
-	    the device only has an IPv6 link-local address.
-	  </para>
-	  <para>See <xref linkend="device-spec"/> for the syntax how to
-	   specify a device.
-	  </para>
-	</listitem>
+        <term><varname>assume-ipv6ll-only</varname></term>
+        <listitem>
+          <para>
+            Specify devices for which NetworkManager will try to
+            generate a connection based on initial configuration when
+            the device only has an IPv6 link-local address.
+          </para>
+          <para>See <xref linkend="device-spec"/> for the syntax how to
+           specify a device.
+          </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>configure-and-quit</varname></term>
-	<listitem>
-	  <para>
-	    When set to '<literal>true</literal>', NetworkManager quits after
-	    performing initial network configuration but spawns small helpers
-	    to preserve DHCP leases and IPv6 addresses.  This is useful in
-	    environments where network setup is more or less static or it is
-	    desirable to save process time but still handle some dynamic
-	    configurations.  When this option is <literal>true</literal>,
-	    network configuration for WiFi, WWAN, Bluetooth, ADSL, and PPPoE
-	    interfaces cannot be preserved due to their use of external
-	    services, and these devices will be deconfigured when NetworkManager
-	    quits even though other interface's configuration may be preserved.
-	    Also, to preserve DHCP addresses the '<literal>dhcp</literal>' option
-	    must be set to '<literal>internal</literal>'. The default value of
-	    the '<literal>configure-and-quit</literal>' option is
-	    '<literal>false</literal>', meaning that NetworkManager will continue
-	    running after initial network configuration and continue responding
-	    to system and hardware events, D-Bus requests, and user commands.
-	  </para>
-	</listitem>
+        <term><varname>configure-and-quit</varname></term>
+        <listitem>
+          <para>
+            When set to '<literal>true</literal>', NetworkManager quits after
+            performing initial network configuration but spawns small helpers
+            to preserve DHCP leases and IPv6 addresses.  This is useful in
+            environments where network setup is more or less static or it is
+            desirable to save process time but still handle some dynamic
+            configurations.  When this option is <literal>true</literal>,
+            network configuration for WiFi, WWAN, Bluetooth, ADSL, and PPPoE
+            interfaces cannot be preserved due to their use of external
+            services, and these devices will be deconfigured when NetworkManager
+            quits even though other interface's configuration may be preserved.
+            Also, to preserve DHCP addresses the '<literal>dhcp</literal>' option
+            must be set to '<literal>internal</literal>'. The default value of
+            the '<literal>configure-and-quit</literal>' option is
+            '<literal>false</literal>', meaning that NetworkManager will continue
+            running after initial network configuration and continue responding
+            to system and hardware events, D-Bus requests, and user commands.
+          </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>dns</varname></term>
-	<listitem><para>Set the DNS (<filename>resolv.conf</filename>) processing mode.</para>
-	<para><literal>default</literal>: The default if the key is
-	not specified. NetworkManager will update
-	<filename>resolv.conf</filename> to reflect the nameservers
-	provided by currently active connections.</para>
-	<para><literal>dnsmasq</literal>: NetworkManager will run
-	dnsmasq as a local caching nameserver, using a "split DNS"
-	configuration if you are connected to a VPN, and then update
-	<filename>resolv.conf</filename> to point to the local
-	nameserver.</para>
-	<para><literal>unbound</literal>: NetworkManager will talk
-	to unbound and dnssec-triggerd, providing a "split DNS"
-	configuration with DNSSEC support. The /etc/resolv.conf
-	will be managed by dnssec-trigger daemon.</para>
-	<para><literal>none</literal>: NetworkManager will not
-	modify resolv.conf.</para>
-	</listitem>
+        <term><varname>dns</varname></term>
+        <listitem><para>Set the DNS (<filename>resolv.conf</filename>) processing mode.</para>
+        <para><literal>default</literal>: The default if the key is
+        not specified. NetworkManager will update
+        <filename>resolv.conf</filename> to reflect the nameservers
+        provided by currently active connections.</para>
+        <para><literal>dnsmasq</literal>: NetworkManager will run
+        dnsmasq as a local caching nameserver, using a "split DNS"
+        configuration if you are connected to a VPN, and then update
+        <filename>resolv.conf</filename> to point to the local
+        nameserver.</para>
+        <para><literal>unbound</literal>: NetworkManager will talk
+        to unbound and dnssec-triggerd, providing a "split DNS"
+        configuration with DNSSEC support. The /etc/resolv.conf
+        will be managed by dnssec-trigger daemon.</para>
+        <para><literal>none</literal>: NetworkManager will not
+        modify resolv.conf.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>rc-manager</varname></term>
-	<listitem><para>Set the <filename>resolv.conf</filename>
-	management mode. The default value depends on how NetworkManager
-	was built.</para>
-	<para><literal>none</literal>: NetworkManager will directly
-	write changes to <filename>resolv.conf</filename>.</para>
-	<para><literal>resolvconf</literal>: NetworkManager will run
-	resolvconf to update the DNS configuration.</para>
-	<para><literal>netconfig</literal>: NetworkManager will run
-	netconfig to update the DNS configuration.</para>
-	</listitem>
+        <term><varname>rc-manager</varname></term>
+        <listitem><para>Set the <filename>resolv.conf</filename>
+        management mode. The default value depends on how NetworkManager
+        was built.</para>
+        <para><literal>none</literal>: NetworkManager will directly
+        write changes to <filename>resolv.conf</filename>.</para>
+        <para><literal>resolvconf</literal>: NetworkManager will run
+        resolvconf to update the DNS configuration.</para>
+        <para><literal>netconfig</literal>: NetworkManager will run
+        netconfig to update the DNS configuration.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -329,13 +329,13 @@ no-auto-default=*
 
     <para>
       <variablelist>
-	<varlistentry>
-	  <term><varname>hostname</varname></term>
-	  <listitem><para>This key is deprecated and has no effect
-	  since the hostname is now stored in /etc/hostname or other
-	  system configuration files according to build options.
-	  </para></listitem>
-	</varlistentry>
+        <varlistentry>
+          <term><varname>hostname</varname></term>
+          <listitem><para>This key is deprecated and has no effect
+          since the hostname is now stored in /etc/hostname or other
+          system configuration files according to build options.
+          </para></listitem>
+        </varlistentry>
         <varlistentry>
           <term><varname>path</varname></term>
           <listitem>
@@ -344,23 +344,23 @@ no-auto-default=*
             </para>
           </listitem>
         </varlistentry>
-	<varlistentry>
-	  <term><varname>unmanaged-devices</varname></term>
-	  <listitem><para>Set devices that should be ignored by
-	   NetworkManager.
-	  </para>
-	  <para>See <xref linkend="device-spec"/> for the syntax how to
-	   specify a device.
-	  </para>
-	  <para>
-	    Example:
-	    <programlisting>
+        <varlistentry>
+          <term><varname>unmanaged-devices</varname></term>
+          <listitem><para>Set devices that should be ignored by
+           NetworkManager.
+          </para>
+          <para>See <xref linkend="device-spec"/> for the syntax how to
+           specify a device.
+          </para>
+          <para>
+            Example:
+            <programlisting>
 unmanaged-devices=interface-name:em4
 unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth2
-	    </programlisting>
-	  </para>
-	  </listitem>
-	</varlistentry>
+            </programlisting>
+          </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
@@ -372,23 +372,23 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 
     <para>
       <variablelist>
-	<varlistentry>
-	  <term><varname>managed</varname></term>
-	  <listitem><para>If set to <literal>true</literal>, then
-	  interfaces listed in
-	  <filename>/etc/network/interfaces</filename> are managed by
-	  NetworkManager.  If set to <literal>false</literal>, then
-	  any interface listed in
-	  <filename>/etc/network/interfaces</filename> will be ignored
-	  by NetworkManager. Remember that NetworkManager controls the
-	  default route, so because the interface is ignored,
-	  NetworkManager may assign the default route to some other
-	  interface.</para>
-	  <para>
-	    The default value is <literal>false</literal>.
-	  </para>
-	  </listitem>
-	</varlistentry>
+        <varlistentry>
+          <term><varname>managed</varname></term>
+          <listitem><para>If set to <literal>true</literal>, then
+          interfaces listed in
+          <filename>/etc/network/interfaces</filename> are managed by
+          NetworkManager.  If set to <literal>false</literal>, then
+          any interface listed in
+          <filename>/etc/network/interfaces</filename> will be ignored
+          by NetworkManager. Remember that NetworkManager controls the
+          default route, so because the interface is ignored,
+          NetworkManager may assign the default route to some other
+          interface.</para>
+          <para>
+            The default value is <literal>false</literal>.
+          </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
@@ -401,35 +401,35 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 
     <para>
       <variablelist>
-	<varlistentry>
-	  <term><varname>level</varname></term>
-	  <listitem><para>The default logging verbosity level.
-	  One of <literal>OFF</literal>, <literal>ERR</literal>,
-	  <literal>WARN</literal>, <literal>INFO</literal>,
-	  <literal>DEBUG</literal>, <literal>TRACE</literal>.  The ERR
-	  level logs only critical errors.  WARN logs warnings that may
-	  reflect operation. INFO logs various informational messages that
-	  are useful for tracking state and operations.  DEBUG enables
-	  verbose logging for debugging purposes. TRACE enables even more
-	  verbose logging then DEBUG level.  Subsequent levels also log
-	  all messages from earlier levels; thus setting the log level
-	  to INFO also logs error and warning messages.</para></listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term><varname>domains</varname></term>
-	  <listitem><para>The following log domains are available:
-	  PLATFORM, RFKILL, ETHER, WIFI, BT, MB, DHCP4, DHCP6, PPP,
-	  WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
-	  AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX,
-	  INFINIBAND, FIREWALL, ADSL, BOND, VLAN, BRIDGE, DBUS_PROPS,
-	  TEAM, CONCHECK, DCB, DISPATCH, AUDIT.</para>
-	  <para>In addition, these special domains can be used: NONE,
-	  ALL, DEFAULT, DHCP, IP.</para>
-	  <para>You can specify per-domain log level overrides by
-	  adding a colon and a log level to any domain. E.g.,
-	  "<literal>WIFI:DEBUG,WIFI_SCAN:OFF</literal>".</para></listitem>
-	</varlistentry>
-	<varlistentry>
+        <varlistentry>
+          <term><varname>level</varname></term>
+          <listitem><para>The default logging verbosity level.
+          One of <literal>OFF</literal>, <literal>ERR</literal>,
+          <literal>WARN</literal>, <literal>INFO</literal>,
+          <literal>DEBUG</literal>, <literal>TRACE</literal>.  The ERR
+          level logs only critical errors.  WARN logs warnings that may
+          reflect operation. INFO logs various informational messages that
+          are useful for tracking state and operations.  DEBUG enables
+          verbose logging for debugging purposes. TRACE enables even more
+          verbose logging then DEBUG level.  Subsequent levels also log
+          all messages from earlier levels; thus setting the log level
+          to INFO also logs error and warning messages.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>domains</varname></term>
+          <listitem><para>The following log domains are available:
+          PLATFORM, RFKILL, ETHER, WIFI, BT, MB, DHCP4, DHCP6, PPP,
+          WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
+          AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX,
+          INFINIBAND, FIREWALL, ADSL, BOND, VLAN, BRIDGE, DBUS_PROPS,
+          TEAM, CONCHECK, DCB, DISPATCH, AUDIT.</para>
+          <para>In addition, these special domains can be used: NONE,
+          ALL, DEFAULT, DHCP, IP.</para>
+          <para>You can specify per-domain log level overrides by
+          adding a colon and a log level to any domain. E.g.,
+          "<literal>WIFI:DEBUG,WIFI_SCAN:OFF</literal>".</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <para>Domain descriptions:
           <simplelist type="horiz" columns="1">
           <member>PLATFORM    : OS (platform) operations</member>
@@ -479,29 +479,29 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
           </simplelist>
           </para>
         </varlistentry>
-	<varlistentry>
-	  <term><varname>backend</varname></term>
-	  <listitem><para>The logging backend. Supported values
-	  are "<literal>debug</literal>", "<literal>syslog</literal>",
-	  "<literal>journal</literal>" and "<literal>journal-syslog-style</literal>.
-	  "<literal>debug</literal>" uses syslog and logs to standard error.
-	  "<literal>journal-syslog-style</literal>" prints the same message to journal
-	  as it would print for "<literal>syslog</literal>", containing redundant
-	  fields in the text.
-	  If NetworkManager is started in debug mode (<literal>--debug</literal>)
-	  this option is ignored and "<literal>debug</literal>" is always used.
-	  Otherwise, the default is "<literal>@NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT@</literal>".
-	  </para></listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term><varname>audit</varname></term>
-	  <listitem><para>Whether the audit records are delivered to
-	  auditd, the audit daemon.  If <literal>false</literal>, audit
-	  records will be sent only to the NetworkManager logging
-	  system. If set to <literal>true</literal>, they will be also
-	  sent to auditd.  The default value is <literal>@NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT@</literal>.
-	  </para></listitem>
-	</varlistentry>
+        <varlistentry>
+          <term><varname>backend</varname></term>
+          <listitem><para>The logging backend. Supported values
+          are "<literal>debug</literal>", "<literal>syslog</literal>",
+          "<literal>journal</literal>" and "<literal>journal-syslog-style</literal>.
+          "<literal>debug</literal>" uses syslog and logs to standard error.
+          "<literal>journal-syslog-style</literal>" prints the same message to journal
+          as it would print for "<literal>syslog</literal>", containing redundant
+          fields in the text.
+          If NetworkManager is started in debug mode (<literal>--debug</literal>)
+          this option is ignored and "<literal>debug</literal>" is always used.
+          Otherwise, the default is "<literal>@NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT@</literal>".
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>audit</varname></term>
+          <listitem><para>Whether the audit records are delivered to
+          auditd, the audit daemon.  If <literal>false</literal>, audit
+          records will be sent only to the NetworkManager logging
+          system. If set to <literal>true</literal>, they will be also
+          sent to auditd.  The default value is <literal>@NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT@</literal>.
+          </para></listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
@@ -629,32 +629,32 @@ ipv6.ip6-privacy=1
 
     <para>
       <variablelist>
-	<varlistentry>
-	  <term><varname>uri</varname></term>
-	  <listitem><para>The URI of a web page to periodically
-	  request when connectivity is being checked.  This page
-	  should return the header "X-NetworkManager-Status" with a
-	  value of "online".  Alternatively, it's body content should
-	  be set to "NetworkManager is online".  The body content
-	  check can be controlled by the <literal>response</literal>
-	  option.  If this option is blank or missing, connectivity
-	  checking is disabled.
-	  </para></listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term><varname>interval</varname></term>
-	  <listitem><para>Specified in seconds; controls how often
-	  connectivity is checked when a network connection exists. If
-	  set to 0 connectivity checking is disabled.  If missing, the
-	  default is 300 seconds.</para></listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term><varname>response</varname></term>
-	  <listitem><para>If set controls what body content
-	  NetworkManager checks for when requesting the URI for
-	  connectivity checking.  If missing, defaults to
-	  "NetworkManager is online" </para></listitem>
-	</varlistentry>
+        <varlistentry>
+          <term><varname>uri</varname></term>
+          <listitem><para>The URI of a web page to periodically
+          request when connectivity is being checked.  This page
+          should return the header "X-NetworkManager-Status" with a
+          value of "online".  Alternatively, it's body content should
+          be set to "NetworkManager is online".  The body content
+          check can be controlled by the <literal>response</literal>
+          option.  If this option is blank or missing, connectivity
+          checking is disabled.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>interval</varname></term>
+          <listitem><para>Specified in seconds; controls how often
+          connectivity is checked when a network connection exists. If
+          set to 0 connectivity checking is disabled.  If missing, the
+          default is 300 seconds.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>response</varname></term>
+          <listitem><para>If set controls what body content
+          NetworkManager checks for when requesting the URI for
+          connectivity checking.  If missing, defaults to
+          "NetworkManager is online" </para></listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
@@ -665,22 +665,22 @@ ipv6.ip6-privacy=1
     connection-specific configuration.</para>
     <para>
       <variablelist>
-	<varlistentry>
-	  <term><varname>searches</varname></term>
-	  <listitem>
-	    <para>
-	     A list of search domains to be used during hostname lookup.
-	   </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term><varname>options</varname></term>
-	  <listitem>
-	    <para>
-	     A list of of options to be passed to the hostname resolver.
-	   </para>
-	  </listitem>
-	</varlistentry>
+        <varlistentry>
+          <term><varname>searches</varname></term>
+          <listitem>
+            <para>
+             A list of search domains to be used during hostname lookup.
+           </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>options</varname></term>
+          <listitem>
+            <para>
+             A list of of options to be passed to the hostname resolver.
+           </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
@@ -697,22 +697,22 @@ ipv6.ip6-privacy=1
     </para>
     <para>
       <variablelist>
-	<varlistentry>
-	  <term><varname>servers</varname></term>
-	  <listitem>
-	    <para>
-	     A list of addresses of DNS servers to be used for the given domain.
-	   </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term><varname>options</varname></term>
-	  <listitem>
-	    <para>
-	     A list of domain-specific DNS options. Not used at the moment.
-	   </para>
-	  </listitem>
-	</varlistentry>
+        <varlistentry>
+          <term><varname>servers</varname></term>
+          <listitem>
+            <para>
+             A list of addresses of DNS servers to be used for the given domain.
+           </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>options</varname></term>
+          <listitem>
+            <para>
+             A list of domain-specific DNS options. Not used at the moment.
+           </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
@@ -811,86 +811,86 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
 
     <variablelist>
       <varlistentry>
-	<term><varname>keyfile</varname></term>
-	<listitem>
-	  <para>
-	    The <literal>keyfile</literal> plugin is the generic
-	    plugin that supports all the connection types and
-	    capabilities that NetworkManager has. It writes files out
-	    in an .ini-style format in
-	    /etc/NetworkManager/system-connections.
-	  </para>
-	  <para>
-	    The stored connection file may contain passwords and
-	    private keys, so it will be made readable only to root,
-	    and the plugin will ignore files that are readable or
-	    writable by any user or group other than root.
-	  </para>
-	  <para>
-	    This plugin is always active, and will automatically be
-	    used to store any connections that aren't supported by any
-	    other active plugin.
-	  </para>
-	</listitem>
+        <term><varname>keyfile</varname></term>
+        <listitem>
+          <para>
+            The <literal>keyfile</literal> plugin is the generic
+            plugin that supports all the connection types and
+            capabilities that NetworkManager has. It writes files out
+            in an .ini-style format in
+            /etc/NetworkManager/system-connections.
+          </para>
+          <para>
+            The stored connection file may contain passwords and
+            private keys, so it will be made readable only to root,
+            and the plugin will ignore files that are readable or
+            writable by any user or group other than root.
+          </para>
+          <para>
+            This plugin is always active, and will automatically be
+            used to store any connections that aren't supported by any
+            other active plugin.
+          </para>
+        </listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>ifcfg-rh</varname></term>
-	<listitem>
-	  <para>
-	    This plugin is used on the Fedora and Red Hat Enterprise
-	    Linux distributions to read and write configuration from
-	    the standard
-	    <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
-	    files. It currently supports reading Ethernet, Wi-Fi,
-	    InfiniBand, VLAN, Bond, Bridge, and Team connections.
-	    Enabling <literal>ifcfg-rh</literal> implicitly enables
-	    <literal>ibft</literal> plugin, if it is available.
-	    This can be disabled by adding <literal>no-ibft</literal>.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-	<term><varname>ifcfg-suse</varname></term>
-	<listitem>
-	  <para>
-	    This plugin is deprecated and its selection has no effect.
-	    The <literal>keyfile</literal> plugin should be used
-	    instead.
-	  </para>
-	</listitem>
+        <term><varname>ifcfg-rh</varname></term>
+        <listitem>
+          <para>
+            This plugin is used on the Fedora and Red Hat Enterprise
+            Linux distributions to read and write configuration from
+            the standard
+            <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
+            files. It currently supports reading Ethernet, Wi-Fi,
+            InfiniBand, VLAN, Bond, Bridge, and Team connections.
+            Enabling <literal>ifcfg-rh</literal> implicitly enables
+            <literal>ibft</literal> plugin, if it is available.
+            This can be disabled by adding <literal>no-ibft</literal>.
+          </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>ifupdown</varname></term>
-	<listitem>
-	  <para>
-	    This plugin is used on the Debian and Ubuntu
-	    distributions, and reads Ethernet and Wi-Fi connections
-	    from <filename>/etc/network/interfaces</filename>.
-	  </para>
-	  <para>
-	    This plugin is read-only; any connections (of any type)
-	    added from within NetworkManager when you are using this
-	    plugin will be saved using the <literal>keyfile</literal>
-	    plugin instead.
-	  </para>
-	</listitem>
+        <term><varname>ifcfg-suse</varname></term>
+        <listitem>
+          <para>
+            This plugin is deprecated and its selection has no effect.
+            The <literal>keyfile</literal> plugin should be used
+            instead.
+          </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><varname>ibft</varname>, <varname>no-ibft</varname></term>
-	<listitem>
-	  <para>
-	    This plugin allows to read iBFT configuration (iSCSI Boot Firmware Table).
-	    The configuration is read using /sbin/iscsiadm. Users are expected to
-	    configure iBFT connections via the firmware interfaces.
-	    If ibft support is available, it is automatically enabled after
-	    <literal>ifcfg-rh</literal>. This can be disabled by <literal>no-ibft</literal>.
-	    You can also explicitly specify <literal>ibft</literal> to load the
-	    plugin without <literal>ifcfg-rh</literal> or to change the plugin order.
-	  </para>
-	</listitem>
+        <term><varname>ifupdown</varname></term>
+        <listitem>
+          <para>
+            This plugin is used on the Debian and Ubuntu
+            distributions, and reads Ethernet and Wi-Fi connections
+            from <filename>/etc/network/interfaces</filename>.
+          </para>
+          <para>
+            This plugin is read-only; any connections (of any type)
+            added from within NetworkManager when you are using this
+            plugin will be saved using the <literal>keyfile</literal>
+            plugin instead.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><varname>ibft</varname>, <varname>no-ibft</varname></term>
+        <listitem>
+          <para>
+            This plugin allows to read iBFT configuration (iSCSI Boot Firmware Table).
+            The configuration is read using /sbin/iscsiadm. Users are expected to
+            configure iBFT connections via the firmware interfaces.
+            If ibft support is available, it is automatically enabled after
+            <literal>ifcfg-rh</literal>. This can be disabled by <literal>no-ibft</literal>.
+            You can also explicitly specify <literal>ibft</literal> to load the
+            plugin without <literal>ifcfg-rh</literal> or to change the plugin order.
+          </para>
+        </listitem>
       </varlistentry>
 
     </variablelist>
