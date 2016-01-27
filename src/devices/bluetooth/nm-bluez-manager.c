@@ -397,6 +397,10 @@ dispose (GObject *object)
 	cleanup_checking (self, TRUE);
 
 	priv->bluez_version = 0;
+
+	g_clear_object (&priv->provider);
+
+	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -404,8 +408,7 @@ nm_bluez_manager_init (NMBluezManager *self)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	priv->provider = nm_connection_provider_get ();
-	g_assert (priv->provider);
+	priv->provider = g_object_ref (nm_connection_provider_get ());
 }
 
 static NMDevice *

@@ -1014,7 +1014,7 @@ nm_bluez_device_new (const char *path,
 	const char *interface_name = NULL;
 
 	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (provider != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (provider), NULL);
 	g_return_val_if_fail (bluez_version == 4 || bluez_version == 5, NULL);
 
 	self = (NMBluezDevice *) g_object_new (NM_TYPE_BLUEZ_DEVICE,
@@ -1028,7 +1028,7 @@ nm_bluez_device_new (const char *path,
 	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
 	priv->bluez_version = bluez_version;
-	priv->provider = provider;
+	priv->provider = g_object_ref (provider);
 	g_return_val_if_fail (bluez_version == 5 || (bluez_version == 4 && adapter_address), NULL);
 	if (adapter_address)
 		set_adapter_address (self, adapter_address);
@@ -1102,9 +1102,11 @@ dispose (GObject *object)
 	}
 #endif
 
-	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
-	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
-	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
+	if (priv->provider) {
+		g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
+		g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
+		g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
+	}
 
 	g_slist_free_full (priv->connections, g_object_unref);
 	priv->connections = NULL;
@@ -1120,6 +1122,8 @@ dispose (GObject *object)
 		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (to_delete), NULL, NULL);
 		g_object_unref (to_delete);
 	}
+
+	g_clear_object (&priv->provider);
 }
 
 static void
