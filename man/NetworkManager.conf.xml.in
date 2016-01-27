@@ -84,17 +84,17 @@ Copyright 2010 - 2014 Red Hat, Inc.
     <para>
       Minimal system settings configuration file looks like this:
       <programlisting>
-        [main]
-        plugins=keyfile
-      </programlisting>
+[main]
+plugins=keyfile
+</programlisting>
     </para>
     <para>
       As an extension to the normal keyfile format, you can also
       append a value to a previously-set list-valued key by doing:
       <programlisting>
-        plugins+=another-plugin
-        plugins-=remove-me
-      </programlisting>
+plugins+=another-plugin
+plugins-=remove-me
+</programlisting>
     </para>
   </refsect1>
 
@@ -189,7 +189,7 @@ Copyright 2010 - 2014 Red Hat, Inc.
 no-auto-default=00:22:68:5c:5d:c4,00:1e:65:ff:aa:ee
 no-auto-default=eth0,eth1
 no-auto-default=*
-          </programlisting>
+</programlisting>
         </para>
         </listitem>
       </varlistentry>
@@ -357,7 +357,7 @@ no-auto-default=*
             <programlisting>
 unmanaged-devices=interface-name:em4
 unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth2
-            </programlisting>
+</programlisting>
           </para>
           </listitem>
         </varlistentry>
@@ -971,7 +971,7 @@ interface-name:em4
 mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth2
 interface-name:vboxnet*,except:interface-name:vboxnet2
 *,except:mac:00:22:68:1c:59:b1
-        </programlisting>
+</programlisting>
       </para>
     </refsect2>
   </refsect1>
