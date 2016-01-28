@@ -1280,6 +1280,8 @@ nm_vpn_connection_config_get (NMVpnConnection *self, GVariant *dict)
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &b))
 		priv->has_ip6 = b;
 	nm_exported_object_clear_and_unexport (&priv->ip6_config);
+
+	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
 
 guint32
