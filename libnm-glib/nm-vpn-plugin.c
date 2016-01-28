@@ -342,8 +342,6 @@ nm_vpn_plugin_set_config (NMVPNPlugin *plugin,
 	if (val && g_value_get_boolean (val))
 		priv->has_ip6 = TRUE;
 
-	g_warn_if_fail (priv->has_ip4 || priv->has_ip6);
-
 	/* Record the items that need to also be inserted into the
 	 * ip4config, for compatibility with older daemons.
 	 */

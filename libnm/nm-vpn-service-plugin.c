@@ -315,8 +315,6 @@ nm_vpn_service_plugin_set_config (NMVpnServicePlugin *plugin,
 	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP4, "b", &priv->has_ip4);
 	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &priv->has_ip6);
 
-	g_warn_if_fail (priv->has_ip4 || priv->has_ip6);
-
 	/* Record the items that need to also be inserted into the
 	 * ip4config, for compatibility with older daemons.
 	 */
