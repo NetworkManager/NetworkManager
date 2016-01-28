@@ -225,33 +225,33 @@ test_nm_utils_kill_child (void)
 	int err;
 	GLogLevelFlags fatal_mask;
 	char *argv_watchdog[] = {
-			"sh",
+			"bash",
 			"-c",
 			"sleep 4; "
 			"kill -KILL 0; #watchdog for #" TEST_TOKEN,
 			NULL,
 		};
 	char *argv1[] = {
-			"sh",
+			"bash",
 			"-c",
 			"trap \"sleep 0.3; exit 10\" EXIT; "
 			"sleep 100000; exit $? #" TEST_TOKEN,
 			NULL,
 		};
 	char *argv2[] = {
-			"sh",
+			"bash",
 			"-c",
 			"exit 47; #" TEST_TOKEN,
 			NULL,
 		};
 	char *argv3[] = {
-			"sh",
+			"bash",
 			"-c",
 			"trap \"exit 47\" TERM; while true; do :; done; #" TEST_TOKEN,
 			NULL,
 		};
 	char *argv4[] = {
-			"sh",
+			"bash",
 			"-c",
 			"trap \"while true; do :; done\" TERM; while true; do :; done; #" TEST_TOKEN,
 			NULL,
