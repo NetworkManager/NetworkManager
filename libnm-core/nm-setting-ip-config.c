@@ -86,6 +86,29 @@ canonicalize_ip (int family, const char *ip, gboolean null_any)
 	return g_strdup (inet_ntop (family, addr_bytes, addr_str, sizeof (addr_str)));
 }
 
+static char *
+canonicalize_ip_binary (int family, gconstpointer ip, gboolean null_any)
+{
+	char string[NM_UTILS_INET_ADDRSTRLEN];
+
+	if (!ip) {
+		if (null_any)
+			return NULL;
+		if (family == AF_INET)
+			return g_strdup ("0.0.0.0");
+		if (family == AF_INET6)
+			return g_strdup ("::");
+		g_return_val_if_reached (NULL);
+	}
+	if (null_any) {
+		int addrlen = (family == AF_INET ? sizeof (struct in_addr) : sizeof (struct in6_addr));
+
+		if (!memcmp (ip, &in6addr_any, addrlen))
+			return NULL;
+	}
+	return g_strdup (inet_ntop (family, ip, string, sizeof (string)));
+}
+
 static gboolean
 valid_ip (int family, const char *ip, GError **error)
 {
@@ -629,8 +652,7 @@ nm_ip_route_new_binary (int family,
 	route->family = family;
 	route->dest = g_strdup (inet_ntop (family, dest, string, sizeof (string)));
 	route->prefix = prefix;
-	if (next_hop)
-		route->next_hop = g_strdup (inet_ntop (family, next_hop, string, sizeof (string)));
+	route->next_hop = canonicalize_ip_binary (family, next_hop, TRUE);
 	route->metric = metric;
 
 	return route;
@@ -954,15 +976,10 @@ void
 nm_ip_route_set_next_hop_binary (NMIPRoute *route,
                                  gconstpointer next_hop)
 {
-	char string[NM_UTILS_INET_ADDRSTRLEN];
-
 	g_return_if_fail (route != NULL);
 
 	g_free (route->next_hop);
-	if (next_hop)
-		route->next_hop = g_strdup (inet_ntop (route->family, next_hop, string, sizeof (string)));
-	else
-		route->next_hop = NULL;
+	route->next_hop = canonicalize_ip_binary (route->family, next_hop, TRUE);
 }
 
 /**
