@@ -5297,7 +5297,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
-	ip6_config = priv->ext_ip6_config;
+	ip6_config = priv->ip6_config;
 	for (i = 0; ip6_config && i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
 		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
 
