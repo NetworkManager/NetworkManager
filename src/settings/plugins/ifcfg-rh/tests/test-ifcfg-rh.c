@@ -12856,6 +12856,10 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
+	static const ReadWiredStaticItem read_wired_static[] = {
+		{ TPATH "read-static",           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           TRUE },
+		{ TPATH "read-static-bootproto", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", FALSE }
+	};
 	int i;
 
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
@@ -12878,15 +12882,8 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
 	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
 
-	{
-		static const ReadWiredStaticItem read_wired_static[] = {
-			{ TPATH "read-static",           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           TRUE },
-			{ TPATH "read-static-bootproto", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", FALSE }
-		};
-
-		for (i = 0; i < G_N_ELEMENTS (read_wired_static); i++)
-			g_test_add_data_func (read_wired_static[i].test_path, &read_wired_static[i], test_read_wired_static);
-	}
+	for (i = 0; i < G_N_ELEMENTS (read_wired_static); i++)
+		g_test_add_data_func (read_wired_static[i].test_path, &read_wired_static[i], test_read_wired_static);
 
 	g_test_add_func (TPATH "read-dhcp", test_read_wired_dhcp);
 	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
