@@ -3148,8 +3148,7 @@ make_wpa_setting (shvarFile *ifcfg,
 		g_free (allow_rsn);
 	}
 
-	/* coverity[dereference] */
-	if (!strcmp (value, "WPA-PSK")) {
+	if (wpa_psk) {
 		NMSettingSecretFlags psk_flags;
 
 		psk_flags = read_secret_flags (ifcfg, "WPA_PSK_FLAGS");
@@ -3169,7 +3168,7 @@ make_wpa_setting (shvarFile *ifcfg,
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
 		else
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
-	} else if (!strcmp (value, "WPA-EAP") || !strcmp (value, "IEEE8021X")) {
+	} else if (wpa_eap || ieee8021x) {
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
 		if (adhoc) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
