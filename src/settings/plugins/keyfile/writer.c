@@ -50,28 +50,21 @@ write_cert_key_file (const char *path,
 	char *tmppath;
 	int fd = -1, written;
 	gboolean success = FALSE;
+	mode_t saved_umask;
 
 	tmppath = g_malloc0 (strlen (path) + 10);
 	g_assert (tmppath);
 	memcpy (tmppath, path, strlen (path));
 	strcat (tmppath, ".XXXXXX");
 
+	/* Only readable by root */
+	saved_umask = umask (S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+
 	errno = 0;
 	fd = mkstemp (tmppath);
 	if (fd < 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not create temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-
-	/* Only readable by root */
-	errno = 0;
-	if (fchmod (fd, S_IRUSR | S_IWUSR) != 0) {
-		close (fd);
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not set permissions for temporary file '%s': %d",
 		             path, errno);
 		goto out;
 	}
@@ -100,6 +93,7 @@ write_cert_key_file (const char *path,
 	}
 
 out:
+	umask (saved_umask);
 	g_free (tmppath);
 	return success;
 }
@@ -244,6 +238,7 @@ _internal_write_connection (NMConnection *connection,
 	const char *id;
 	WriteInfo info = { 0 };
 	GError *local_err = NULL;
+	mode_t saved_umask;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
@@ -275,6 +270,8 @@ _internal_write_connection (NMConnection *connection,
 		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
 		g_free (filename_escaped);
 	}
+
+	saved_umask = umask (S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 
 	/* If a file with this path already exists (but isn't the existing path
 	 * of the connection) then we need another name.  Multiple connections
@@ -360,6 +357,7 @@ _internal_write_connection (NMConnection *connection,
 	g_free (path);
 
 out:
+	umask (saved_umask);
 	g_free (data);
 	return success;
 }

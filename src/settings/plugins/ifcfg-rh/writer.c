@@ -145,27 +145,20 @@ write_secret_file (const char *path,
 	char *tmppath;
 	int fd = -1, written;
 	gboolean success = FALSE;
+	mode_t saved_umask;
 
 	tmppath = g_malloc0 (strlen (path) + 10);
 	memcpy (tmppath, path, strlen (path));
 	strcat (tmppath, ".XXXXXX");
+
+	/* Only readable by root */
+	saved_umask = umask (S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 
 	errno = 0;
 	fd = mkstemp (tmppath);
 	if (fd < 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not create temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-
-	/* Only readable by root */
-	errno = 0;
-	if (fchmod (fd, S_IRUSR | S_IWUSR)) {
-		close (fd);
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not set permissions for temporary file '%s': %d",
 		             path, errno);
 		goto out;
 	}
@@ -194,6 +187,7 @@ write_secret_file (const char *path,
 	success = TRUE;
 
 out:
+	umask (saved_umask);
 	g_free (tmppath);
 	return success;
 }
