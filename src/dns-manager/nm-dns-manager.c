@@ -874,7 +874,8 @@ update_dns (NMDnsManager *self,
 	if (priv->hostname) {
 		const char *hostdomain = strchr (priv->hostname, '.');
 
-		if (hostdomain) {
+		if (   hostdomain
+		    && !nm_utils_ipaddr_valid (AF_UNSPEC, priv->hostname)) {
 			hostdomain++;
 			if (DOMAIN_IS_VALID (hostdomain))
 				add_string_item (rc.searches, hostdomain);
