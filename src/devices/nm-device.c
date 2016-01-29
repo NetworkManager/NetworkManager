@@ -7094,25 +7094,23 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	addrconf6_cleanup (self);
 }
 
-G_GNUC_NULL_TERMINATED
 static gboolean
-_hash_check_invalid_keys (GHashTable *hash, const char *setting_name, GError **error, ...)
+_hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GError **error, const char **argv)
 {
-	va_list ap;
-	const char *key;
 	guint found_keys = 0;
+	guint i;
+
+	nm_assert (argv && argv[0]);
 
 #if NM_MORE_ASSERTS > 10
 	/* Assert that the keys are unique. */
 	{
 		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 
-		va_start (ap, error);
-		while ((key = va_arg (ap, const char *))) {
-			if (!g_hash_table_add (check_dups, (char *) key))
+		for (i = 0; argv[i]; i++) {
+			if (!g_hash_table_add (check_dups, (char *) argv[i]))
 				nm_assert (FALSE);
 		}
-		va_end (ap);
 		nm_assert (g_hash_table_size (check_dups) > 0);
 	}
 #endif
@@ -7120,12 +7118,10 @@ _hash_check_invalid_keys (GHashTable *hash, const char *setting_name, GError **e
 	if (!hash || g_hash_table_size (hash) == 0)
 		return TRUE;
 
-	va_start (ap, error);
-	while ((key = va_arg (ap, const char *))) {
-		if (g_hash_table_contains (hash, key))
+	for (i = 0; argv[i]; i++) {
+		if (g_hash_table_contains (hash, argv[i]))
 			found_keys++;
 	}
-	va_end (ap);
 
 	if (found_keys != g_hash_table_size (hash)) {
 		GHashTableIter iter;
@@ -7137,14 +7133,12 @@ _hash_check_invalid_keys (GHashTable *hash, const char *setting_name, GError **e
 
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			va_start (ap, error);
-			while ((key = va_arg (ap, const char *))) {
-				if (!strcmp (key, k)) {
+			for (i = 0; argv[i]; i++) {
+				if (!strcmp (argv[i], k)) {
 					first_invalid_key = k;
 					break;
 				}
 			}
-			va_end (ap);
 			if (first_invalid_key)
 				break;
 		}
@@ -7161,6 +7155,7 @@ _hash_check_invalid_keys (GHashTable *hash, const char *setting_name, GError **e
 
 	return TRUE;
 }
+#define _hash_check_invalid_keys(hash, setting_name, error, ...) _hash_check_invalid_keys_impl (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
 
 void
 nm_device_reactivate_ip4_config (NMDevice *self,
@@ -7262,16 +7257,14 @@ reapply_connection (NMDevice *self,
 	if (!_hash_check_invalid_keys (diffs, NULL, error,
 	                               NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                               NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                               NM_SETTING_CONNECTION_SETTING_NAME,
-	                               NULL))
+	                               NM_SETTING_CONNECTION_SETTING_NAME))
 		return FALSE;
 
 	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
 	                               NM_SETTING_CONNECTION_SETTING_NAME,
 	                               error,
 	                               NM_SETTING_CONNECTION_ZONE,
-	                               NM_SETTING_CONNECTION_METERED,
-	                               NULL))
+	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
 
 	_LOGD (LOGD_DEVICE, "reapply");
