@@ -509,7 +509,8 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (   len == 0
+	if (   !device
+	    || len == 0
 	    || len > NM_UTILS_HWADDR_LEN_MAX
 	    || !addr)
 		g_return_val_if_reached (FALSE);
