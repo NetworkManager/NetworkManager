@@ -66,6 +66,7 @@ GType nm_ip6_config_get_type (void);
 
 
 NMIP6Config * nm_ip6_config_new (int ifindex);
+NMIP6Config * nm_ip6_config_new_cloned (const NMIP6Config *src);
 
 int nm_ip6_config_get_ifindex (const NMIP6Config *config);
 
