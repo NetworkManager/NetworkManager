@@ -335,7 +335,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 {
 	NMDnsMasqManagerPrivate *priv;
 	NMCmdLine *dm_cmd;
-	char *cmd_str;
+	gs_free char *cmd_str = NULL;
 
 	g_return_val_if_fail (NM_IS_DNSMASQ_MANAGER (manager), FALSE);
 	if (error)
@@ -353,9 +353,8 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	nm_log_info (LOGD_SHARING, "Starting dnsmasq...");
 
-	cmd_str = nm_cmd_line_to_str (dm_cmd);
-	nm_log_dbg (LOGD_SHARING, "Command line: %s", cmd_str);
-	g_free (cmd_str);
+	nm_log_dbg (LOGD_SHARING, "Command line: %s",
+	            (cmd_str = nm_cmd_line_to_str (dm_cmd)));
 
 	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) dm_cmd->array->pdata, NULL,
