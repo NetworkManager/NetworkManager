@@ -1362,6 +1362,29 @@ nm_ip6_config_address_exists (const NMIP6Config *config,
 	return _addresses_get_index (config, needle) >= 0;
 }
 
+const NMPlatformIP6Address *
+nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolean linklocal)
+{
+	NMIP6ConfigPrivate *priv;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	linklocal = !!linklocal;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP6Address *addr = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+
+		if (   ((!!IN6_IS_ADDR_LINKLOCAL (&addr->address)) == linklocal)
+		    && !(addr->flags & IFA_F_TENTATIVE))
+			return addr;
+	}
+
+	return NULL;
+}
+
 /******************************************************************/
 
 void
