@@ -335,6 +335,7 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  con_ip6_config; /* config from the setting */
 	NMIP6Config *  wwan_ip6_config;
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
+	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
 	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	guint32        ip6_mtu;
@@ -8684,7 +8685,6 @@ update_ip6_config (NMDevice *self, gboolean initial)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
-	gboolean linklocal6_just_completed = FALSE;
 	gboolean capture_resolv_conf;
 	NMDnsManagerResolvConfMode resolv_conf_mode;
 
@@ -8697,12 +8697,11 @@ update_ip6_config (NMDevice *self, gboolean initial)
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
-	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, capture_resolv_conf, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-	if (priv->ext_ip6_config) {
+	g_clear_object (&priv->ext_ip6_config_captured);
+	priv->ext_ip6_config_captured = nm_ip6_config_capture (ifindex, capture_resolv_conf, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	if (priv->ext_ip6_config_captured) {
 
-		/* Check this before modifying ext_ip6_config */
-		linklocal6_just_completed = priv->linklocal6_timeout_id &&
-		                            have_ip6_address (priv->ext_ip6_config, TRUE);
+		priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal
@@ -8734,7 +8733,9 @@ update_ip6_config (NMDevice *self, gboolean initial)
 		ip6_config_merge_and_apply (self, FALSE, NULL);
 	}
 
-	if (linklocal6_just_completed) {
+	if (   priv->linklocal6_timeout_id
+	    && priv->ext_ip6_config_captured
+	    && have_ip6_address (priv->ext_ip6_config_captured, TRUE)) {
 		/* linklocal6 is ready now, do the state transition... we are also
 		 * invoked as g_idle_add, so no problems with reentrance doing it now.
 		 */
@@ -9648,6 +9649,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_clear_object (&priv->con_ip6_config);
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->ext_ip6_config);
+	g_clear_object (&priv->ext_ip6_config_captured);
 	g_clear_object (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
 
