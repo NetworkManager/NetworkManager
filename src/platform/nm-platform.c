@@ -190,7 +190,7 @@ nm_platform_try_get (void)
  * For invalid (positive) numbers it returns NULL.
  */
 NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
-	( val < 0 ? g_strerror (- ((int) val)) : NULL ),
+	NM_UTILS_LOOKUP_DEFAULT ( val < 0 ? g_strerror (- ((int) val)) : NULL ),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_SUCCESS,     "success"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_BUG,         "bug"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_UNSPECIFIED, "unspecified"),

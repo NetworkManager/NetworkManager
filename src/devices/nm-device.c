@@ -460,7 +460,8 @@ state_to_string (NMDeviceState state)
 	return queued_state_to_string (state) + strlen (QUEUED_PREFIX);
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason, NULL,
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_UNKNOWN,                        "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_NONE,                           "none"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_NOW_MANAGED,                    "managed"),

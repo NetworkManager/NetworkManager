@@ -768,7 +768,7 @@ nm_vpn_connection_get_service (NMVpnConnection *self)
 }
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_plugin_failure_to_string, NMVpnPluginFailure,
-	NULL,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED,   "login-failed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED, "connect-failed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG,  "bad-ip-config"),
@@ -796,7 +796,7 @@ plugin_failed (NMVpnConnection *self, guint reason)
 }
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_service_state_to_string, NMVpnServiceState,
-	NULL,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_SERVICE_STATE_UNKNOWN,  "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_SERVICE_STATE_INIT,     "init"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_SERVICE_STATE_SHUTDOWN, "shutdown"),
@@ -808,7 +808,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_service_state_to_string, NMVpnServiceSta
 #define vpn_service_state_to_string(state) NM_UTILS_LOOKUP_STR (_vpn_service_state_to_string, state)
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_state_to_string, VpnState,
-	NULL,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (STATE_UNKNOWN,       "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (STATE_WAITING,       "waiting"),
 	NM_UTILS_LOOKUP_STR_ITEM (STATE_PREPARE,       "prepare"),
@@ -824,7 +824,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_state_to_string, VpnState,
 #define vpn_state_to_string(state) NM_UTILS_LOOKUP_STR (_vpn_state_to_string, state)
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_reason_to_string, NMVpnConnectionStateReason,
-	NULL,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_UNKNOWN,               "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_NONE,                  "none"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,     "user-disconnected"),

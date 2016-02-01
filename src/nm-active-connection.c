@@ -121,7 +121,8 @@ static void _device_cleanup (NMActiveConnection *self);
 
 /****************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState, NULL,
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_UNKNOWN,      "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   "activating"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATED,    "activated"),
