@@ -1880,45 +1880,6 @@ nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
-const char *
-nm_utils_enum2str (const NMUtilsEnum2StrDesc *descs,
-                   gsize n_descs,
-                   int val,
-                   char *buf,
-                   gsize len)
-{
-	gsize i;
-
-#if NM_MORE_ASSERTS > 10
-	nm_assert (descs);
-	nm_assert (n_descs > 0);
-	for (i = 0; i < n_descs; i++) {
-		gsize j;
-
-		nm_assert (descs[i].name && descs[i].name[0]);
-		for (j = 0; j < i; j++)
-			nm_assert (descs[j].value != descs[i].value);
-	}
-#endif
-
-	nm_utils_to_string_buffer_init (&buf, &len);
-
-	if (!len)
-		return buf;
-
-	for (i = 0; i < n_descs; i++) {
-		if (val == descs[i].value) {
-			g_strlcpy (buf, descs[i].name, len);
-			return buf;
-		}
-	}
-
-	g_snprintf (buf, len, "(%d)", val);
-	return buf;
-};
-
-/*****************************************************************************/
-
 /**
  * nm_utils_get_shared_wifi_permission:
  * @connection: the NMConnection to lookup the permission.

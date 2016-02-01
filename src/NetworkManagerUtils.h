@@ -229,34 +229,33 @@ const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
-typedef struct {
-	int value;
-	const char *name;
-} NMUtilsEnum2StrDesc;
+#define NM_UTILS_ENUM2STR(v, n)     (void) 0; case v: s = ""n""; (void) 0
+#define NM_UTILS_ENUM2STR_IGNORE(v) (void) 0; case v: break; (void) 0
 
-#define NM_UTILS_ENUM2STR(v, n) { .value = v, .name = ""n, }
-
-#define _NM_UTILS_ENUM2STR_DEFINE(scope, fcn_name, enum_type, ...) \
+#define _NM_UTILS_ENUM2STR_DEFINE(scope, fcn_name, lookup_type, int_fmt, ...) \
 scope const char * \
-fcn_name (enum_type val, char *buf, gsize len) \
+fcn_name (lookup_type val, char *buf, gsize len) \
 { \
-	static const NMUtilsEnum2StrDesc descs[] = { \
-		__VA_ARGS__ \
-	}; \
-	G_STATIC_ASSERT (sizeof (enum_type) <= sizeof (int)); \
-	return nm_utils_enum2str (descs, G_N_ELEMENTS (descs), val, buf, len); \
+	nm_utils_to_string_buffer_init (&buf, &len); \
+	if (len) { \
+		const char *s = NULL; \
+		switch (val) { \
+			(void) 0, \
+			__VA_ARGS__ \
+			(void) 0; \
+		}; \
+		if (s) \
+			g_strlcpy (buf, s, len); \
+		else \
+			g_snprintf (buf, len, "(%"int_fmt")", val); \
+	} \
+	return buf; \
 }
 
-#define NM_UTILS_ENUM2STR_DEFINE(fcn_name, enum_type, ...) \
-	_NM_UTILS_ENUM2STR_DEFINE (, fcn_name, enum_type, __VA_ARGS__)
-#define NM_UTILS_ENUM2STR_DEFINE_STATIC(fcn_name, enum_type, ...) \
-	_NM_UTILS_ENUM2STR_DEFINE (static, fcn_name, enum_type, __VA_ARGS__)
-
-const char *nm_utils_enum2str (const NMUtilsEnum2StrDesc *descs,
-                               gsize n_descs,
-                               int val,
-                               char *buf,
-                               gsize len);
+#define NM_UTILS_ENUM2STR_DEFINE(fcn_name, lookup_type, ...) \
+	_NM_UTILS_ENUM2STR_DEFINE (, fcn_name, lookup_type, "d", __VA_ARGS__)
+#define NM_UTILS_ENUM2STR_DEFINE_STATIC(fcn_name, lookup_type, ...) \
+	_NM_UTILS_ENUM2STR_DEFINE (static, fcn_name, lookup_type, "d", __VA_ARGS__)
 
 /*****************************************************************************/
 
