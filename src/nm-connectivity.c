@@ -142,7 +142,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 
 	if (msg->status_code == 511) {
 		_LOGD ("check for uri '%s' returned status '%d %s'; captive portal present.",
-			   uri, msg->status_code, msg->reason_phrase);
+		       uri, msg->status_code, msg->reason_phrase);
 		new_state = NM_CONNECTIVITY_PORTAL;
 	} else {
 		/* Check headers; if we find the NM-specific one we're done */
@@ -162,7 +162,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 			}
 		} else {
 			_LOGI ("check for uri '%s' returned status '%d %s'; assuming captive portal.",
-				   uri, msg->status_code, msg->reason_phrase);
+			       uri, msg->status_code, msg->reason_phrase);
 			new_state = NM_CONNECTIVITY_PORTAL;
 		}
 	}
@@ -466,11 +466,10 @@ dispose (GObject *object)
 		g_clear_object (&priv->soup_session);
 	}
 
-	if (priv->check_id > 0) {
-		g_source_remove (priv->check_id);
-		priv->check_id = 0;
-	}
+	nm_clear_g_source (&priv->check_id);
 #endif
+
+	G_OBJECT_CLASS (nm_connectivity_parent_class)->dispose (object);
 }
 
 
