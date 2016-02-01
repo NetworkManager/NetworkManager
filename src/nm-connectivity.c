@@ -29,6 +29,7 @@
 #include "nm-default.h"
 #include "nm-connectivity.h"
 #include "nm-config.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
@@ -76,24 +77,14 @@ nm_connectivity_get_state (NMConnectivity *connectivity)
 	return NM_CONNECTIVITY_GET_PRIVATE (connectivity)->state;
 }
 
-const char *
-nm_connectivity_state_to_string (NMConnectivityState state)
-{
-	switch (state) {
-	case NM_CONNECTIVITY_UNKNOWN:
-		return "UNKNOWN";
-	case NM_CONNECTIVITY_NONE:
-		return "NONE";
-	case NM_CONNECTIVITY_LIMITED:
-		return "LIMITED";
-	case NM_CONNECTIVITY_PORTAL:
-		return "PORTAL";
-	case NM_CONNECTIVITY_FULL:
-		return "FULL";
-	default:
-		g_return_val_if_reached ("???");
-	}
-}
+NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState,
+	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_UNKNOWN,  "UNKNOWN"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_NONE,     "NONE"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_LIMITED,  "LIMITED"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_PORTAL,   "PORTAL"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FULL,     "FULL"),
+);
 
 static void
 update_state (NMConnectivity *self, NMConnectivityState state)
