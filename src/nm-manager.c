@@ -1582,6 +1582,8 @@ get_existing_connection (NMManager *manager, NMDevice *device, gboolean *out_gen
 	matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
 	                                                             connection,
 	                                                             nm_device_has_carrier (device),
+	                                                             nm_device_get_ip4_route_metric (device),
+	                                                             nm_device_get_ip6_route_metric (device),
 	                                                             match_connection_filter,
 	                                                             device));
 	if (matched) {
