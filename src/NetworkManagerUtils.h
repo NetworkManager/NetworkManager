@@ -260,20 +260,20 @@ const char *nm_utils_enum2str (const NMUtilsEnum2StrDesc *descs,
 
 /*****************************************************************************/
 
-#define NM_UTILS_LOOKUP_ITEM(v, n)   (void) 0; case v: return (n); (void) 0
+#define NM_UTILS_LOOKUP_ITEM(v, n)     (void) 0; case v: return (n); (void) 0
 #define NM_UTILS_LOOKUP_STR_ITEM(v, n) NM_UTILS_LOOKUP_ITEM(v, ""n"")
+#define NM_UTILS_LOOKUP_ITEM_IGNORE(v) (void) 0; case v: break; (void) 0
 
 #define _NM_UTILS_LOOKUP_DEFINE(scope, fcn_name, lookup_type, result_type, unknown_val, ...) \
 scope result_type \
 fcn_name (lookup_type val) \
 { \
 	switch (val) { \
-		default: \
-			return (unknown_val); \
 		(void) 0, \
 		__VA_ARGS__ \
 		(void) 0; \
 	}; \
+	return (unknown_val); \
 }
 
 #define NM_UTILS_LOOKUP_STR_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
