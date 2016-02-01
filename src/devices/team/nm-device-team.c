@@ -218,6 +218,7 @@ master_update_slave_connection (NMDevice *self,
 
 	err = teamdctl_port_config_get_raw_direct (tdc, iface_slave, (char **)&team_port_config);
 	port_config = g_strdup (team_port_config);
+	teamdctl_disconnect (tdc);
 	teamdctl_free (tdc);
 	if (err) {
 		g_set_error (error,
