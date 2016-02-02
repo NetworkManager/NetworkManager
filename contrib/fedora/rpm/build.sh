@@ -125,7 +125,7 @@ case "$BUILDTYPE" in
 		;;
 esac
 
-rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" || die "ERROR: rpmbuild FAILED"
+rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARGS || die "ERROR: rpmbuild FAILED"
 
 ln -snf "$TEMPBASE" ./latest
 TEMP_LATEST="$(readlink -f .)"/latest

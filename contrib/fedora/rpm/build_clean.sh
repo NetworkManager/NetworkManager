@@ -32,8 +32,15 @@ IGNORE_DIRTY=0
 GIT_CLEAN=0
 QUICK=0
 NO_BUILD=0
+WITH_LIST=()
 
+_next_with=
 for A; do
+    if [ -n "$_next_with" ]; then
+        WITH_LIST=("${WITH_LIST[@]}" "$_next_with" "$A")
+        _next_with=
+        continue
+    fi
     case "$A" in
         -h|--help|-\?|help)
             usage
@@ -55,12 +62,20 @@ for A; do
             NO_BUILD=1
             IGNORE_DIRTY=1
             ;;
+        -w|--with)
+            _next_with=--with
+            ;;
+        -W|--without)
+            _next_with=--without
+            ;;
         *)
             usage
             die "Unexpected argument \"$A\""
             ;;
     esac
 done
+
+test -n "$_next_with" && die "Missing argument to $_next_with"
 
 if [[ $GIT_CLEAN == 1 ]]; then
     git clean -fdx :/
@@ -96,6 +111,7 @@ if [[ $NO_BUILD != 1 ]]; then
 fi
 
 export BUILDTYPE
+export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 
 "$SCRIPTDIR"/build.sh
 
