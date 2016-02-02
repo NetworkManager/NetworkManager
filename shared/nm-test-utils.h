@@ -1325,6 +1325,56 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
+#ifdef NM_SETTING_IP_CONFIG_H
+inline static void
+nmtst_setting_ip_config_add_address (NMSettingIPConfig *s_ip,
+                                     const char *address,
+                                     guint prefix)
+{
+	NMIPAddress *addr;
+	int family;
+
+	g_assert (s_ip);
+
+	if (nm_utils_ipaddr_valid (AF_INET, address))
+		family = AF_INET;
+	else if (nm_utils_ipaddr_valid (AF_INET6, address))
+		family = AF_INET6;
+	else
+		g_assert (FALSE);
+
+	addr = nm_ip_address_new (family, address, prefix, NULL);
+	g_assert (addr);
+	g_assert (nm_setting_ip_config_add_address (s_ip, addr));
+	nm_ip_address_unref (addr);
+}
+
+inline static void
+nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
+                                   const char *dest,
+                                   guint prefix,
+                                   const char *next_hop,
+                                   gint64 metric)
+{
+	NMIPRoute *route;
+	int family;
+
+	g_assert (s_ip);
+
+	if (nm_utils_ipaddr_valid (AF_INET, dest))
+		family = AF_INET;
+	else if (nm_utils_ipaddr_valid (AF_INET6, dest))
+		family = AF_INET6;
+	else
+		g_assert (FALSE);
+
+	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, NULL);
+	g_assert (route);
+	g_assert (nm_setting_ip_config_add_route (s_ip, route));
+	nm_ip_route_unref (route);
+}
+#endif /* NM_SETTING_IP_CONFIG_H */
+
 #if (defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)) || (defined(NM_CONNECTION_H))
 
 inline static NMConnection *
