@@ -31,8 +31,16 @@ cd "$GITDIR" || die "could not change to $GITDIR"
 IGNORE_DIRTY=0
 GIT_CLEAN=0
 QUICK=0
+NO_BUILD=0
+WITH_LIST=()
 
+_next_with=
 for A; do
+    if [ -n "$_next_with" ]; then
+        WITH_LIST=("${WITH_LIST[@]}" "$_next_with" "$A")
+        _next_with=
+        continue
+    fi
     case "$A" in
         -h|--help|-\?|help)
             usage
@@ -50,12 +58,24 @@ for A; do
         -S|--srpm)
             BUILDTYPE=SRPM
             ;;
+        -N|--no-build)
+            NO_BUILD=1
+            IGNORE_DIRTY=1
+            ;;
+        -w|--with)
+            _next_with=--with
+            ;;
+        -W|--without)
+            _next_with=--without
+            ;;
         *)
             usage
             die "Unexpected argument \"$A\""
             ;;
     esac
 done
+
+test -n "$_next_with" && die "Missing argument to $_next_with"
 
 if [[ $GIT_CLEAN == 1 ]]; then
     git clean -fdx :/
@@ -73,22 +93,25 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
     fi
 fi
 
-./autogen.sh --enable-gtk-doc || die "Error autogen.sh"
+if [[ $NO_BUILD != 1 ]]; then
+    ./autogen.sh --enable-gtk-doc || die "Error autogen.sh"
 
-if [[ $QUICK == 1 ]]; then
-    make -C include || die "Error make -C include"
-    make -C introspection || die "Error make -C introspection"
-    make -C libnm-core || die "Error make -C libnm-core"
-    make -C libnm || die "Error make -C libnm"
-    make -C libnm-util || die "Error make -C libnm-util"
-    make -C libnm-glib || die "Error make -C libnm-glib"
-    make dist || die "Error make distcheck"
-else
-    make -j 10 || die "Error make"
-    make distcheck || die "Error make distcheck"
+    if [[ $QUICK == 1 ]]; then
+        make -C include || die "Error make -C include"
+        make -C introspection || die "Error make -C introspection"
+        make -C libnm-core || die "Error make -C libnm-core"
+        make -C libnm || die "Error make -C libnm"
+        make -C libnm-util || die "Error make -C libnm-util"
+        make -C libnm-glib || die "Error make -C libnm-glib"
+        make dist || die "Error make distcheck"
+    else
+        make -j 10 || die "Error make"
+        make distcheck || die "Error make distcheck"
+    fi
 fi
 
 export BUILDTYPE
+export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 
 "$SCRIPTDIR"/build.sh
 

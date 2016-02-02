@@ -7,78 +7,89 @@
 # Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
 
 
-%define dbus_version 1.1
-%define dbus_glib_version 0.100
+%global dbus_version 1.1
+%global dbus_glib_version 0.100
 
-%define glib2_version	2.32.0
-%define wireless_tools_version 1:28-0pre9
-%define libnl3_version 3.2.7
+%global glib2_version	2.32.0
+%global wireless_tools_version 1:28-0pre9
+%global libnl3_version 3.2.7
 
-%define ppp_version %(rpm -q ppp-devel >/dev/null && rpm -q --qf '%%{version}' ppp-devel || echo -n bad)
+%global ppp_version %(rpm -q ppp-devel >/dev/null && rpm -q --qf '%%{version}' ppp-devel || echo -n bad)
 
-%define snapshot %{nil}
-%define git_sha __COMMIT__
-%define realversion __VERSION__
-%define release_version __RELEASE_VERSION__
-%define epoch_version 1
+%global snapshot %{nil}
+%global git_sha __COMMIT__
+%global realversion __VERSION__
+%global release_version __RELEASE_VERSION__
+%global epoch_version 1
 
-%define obsoletes_nmver 1:0.9.9.95-1
+%global obsoletes_nmver 1:0.9.9.95-1
 
-%global with_nmtui 1
+%global systemd_dir %{_prefix}/lib/systemd/system
+%global udev_dir %{_prefix}/lib/udev
 
-%if 0%{?fedora}
-%global regen_docs 1
-%else
-%global regen_docs 1
-%endif
+%global _hardened_build 1
 
-%define systemd_dir %{_prefix}/lib/systemd/system
-%define udev_dir %{_prefix}/lib/udev
+%global git_sha_version %(test -n '%{git_sha}' && echo '.%{git_sha}')
 
-%global with_adsl 1
-%global with_bluetooth 1
-%global with_team 1
-%global with_wifi 1
-%global with_wimax 0
-%global with_wwan 1
+###############################################################################
+
+%bcond_without adsl
+
+%global default_with_bluetooth 1
+%global default_with_wwan 1
 
 # WiMAX still supported on <= F19
 %if ! 0%{?rhel} && (! 0%{?fedora} || 0%{?fedora} < 20)
-%global with_wimax 1
+%bcond_without wimax
+%else
+%bcond_with wimax
 %endif
 
 # ModemManager on Fedora < 20 too old for Bluetooth && wwan
 %if (0%{?fedora} && 0%{?fedora} < 20)
-%global with_bluetooth 0
-%global with_wwan 0
+%global default_with_bluetooth 0
+%global default_with_wwan 0
 %endif
 
 # Bluetooth requires the WWAN plugin
-%if 0%{?with_bluetooth}
-%global with_wwan 1
+%if 0%{?default_with_bluetooth}
+%global default_with_wwan 1
 %endif
 
-%ifarch s390 s390x
-# No hardware-based plugins on s390
-%global with_adsl 0
-%global with_bluetooth 0
-%global with_wifi 0
-%global with_wimax 0
-%global with_wwan 0
+%if 0%{?default_with_bluetooth}
+%bcond_without bluetooth
+%else
+%bcond_with bluetooth
+%endif
+
+%if 0%{?default_with_wwan}
+%bcond_without wwan
+%else
+%bcond_with wwan
 %endif
 
 %if (0%{?fedora} && 0%{?fedora} <= 19)
-%global with_team 0
+%bcond_with team
+%else
+%bcond_without team
 %endif
 
-%define with_modem_manager_1 0
-%if 0%{?with_bluetooth} || (0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
-%define with_modem_manager_1 1
+%bcond_without wifi
+
+%bcond_without nmtui
+%bcond_without regen_docs
+%bcond_with    debug
+%bcond_without test
+
+###############################################################################
+
+%if %{with bluetooth} || (%{with wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
+%global with_modem_manager_1 1
+%else
+%global with_modem_manager_1 0
 %endif
 
-%global _hardened_build 1
-
-%define git_sha_version %(test -n '%{git_sha}' && echo '.%{git_sha}')
+###############################################################################
 
 Name: NetworkManager
 Summary: Network connection manager and user applications
@@ -97,8 +108,6 @@ Source4: 20-connectivity-fedora.conf
 
 #Patch1: 0001-some.patch
 
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
 %if 0%{?fedora} && 0%{?fedora} < 20
 Requires(post): chkconfig
 Requires(preun): chkconfig
@@ -109,7 +118,6 @@ Requires(preun): systemd
 Requires(postun): systemd
 
 Requires: dbus >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
 Requires: glib2 >= %{glib2_version}
 Requires: iproute
 Requires: dhclient >= 12:4.1.0
@@ -147,7 +155,7 @@ BuildRequires: ppp-devel >= 2.4.5
 BuildRequires: nss-devel >= 3.11.7
 BuildRequires: dhclient
 BuildRequires: readline-devel
-%if %{regen_docs}
+%if %{with regen_docs}
 BuildRequires: gtk-doc
 %endif
 BuildRequires: libudev-devel
@@ -155,10 +163,10 @@ BuildRequires: libuuid-devel
 BuildRequires: libgudev1-devel >= 143
 BuildRequires: vala-tools
 BuildRequires: iptables
-%if 0%{?with_bluetooth}
+%if %{with bluetooth}
 BuildRequires: bluez-libs-devel
 %endif
-%if 0%{?with_wimax}
+%if %{with wimax}
 BuildRequires: wimax-devel
 %endif
 BuildRequires: systemd >= 200-3 systemd-devel
@@ -167,7 +175,7 @@ BuildRequires: libndp-devel >= 1.0
 %if 0%{?with_modem_manager_1}
 BuildRequires: ModemManager-glib-devel >= 1.0
 %endif
-%if 0%{?with_nmtui}
+%if %{with nmtui}
 BuildRequires: newt-devel
 %endif
 BuildRequires: /usr/bin/dbus-launch
@@ -185,7 +193,7 @@ Ethernet, Bridge, Bond, VLAN, Team, InfiniBand, Wi-Fi, mobile broadband
 services.
 
 
-%if 0%{?with_adsl}
+%if %{with adsl}
 %package adsl
 Summary: ADSL device plugin for NetworkManager
 Group: System Environment/Base
@@ -198,7 +206,7 @@ This package contains NetworkManager support for ADSL devices.
 %endif
 
 
-%if 0%{?with_bluetooth}
+%if %{with bluetooth}
 %package bluetooth
 Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
@@ -213,7 +221,7 @@ This package contains NetworkManager support for Bluetooth devices.
 %endif
 
 
-%if 0%{?with_team}
+%if 0%{with team}
 %package team
 Summary: Team device plugin for NetworkManager
 Group: System Environment/Base
@@ -226,7 +234,7 @@ This package contains NetworkManager support for team devices.
 %endif
 
 
-%if 0%{?with_wifi}
+%if %{with wifi}
 %package wifi
 Summary: Wifi plugin for NetworkManager
 Group: System Environment/Base
@@ -239,7 +247,7 @@ This package contains NetworkManager support for Wifi and OLPC devices.
 %endif
 
 
-%if 0%{?with_wwan}
+%if %{with wwan}
 %package wwan
 Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
@@ -252,7 +260,7 @@ This package contains NetworkManager support for mobile broadband (WWAN) devices
 %endif
 
 
-%if 0%{?with_wimax}
+%if %{with wimax}
 %package wimax
 Summary: Intel WiMAX device support for NetworkManager
 Group: System Environment/Base
@@ -263,19 +271,6 @@ Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 This package contains NetworkManager support for Intel WiMAX mobile broadband
 devices.
 %endif
-
-
-%package devel
-Summary: Headers defining the NetworkManager D-Bus APIs
-Group: Development/Libraries
-Requires: %{name} = %{epoch}:%{version}-%{release}
-Requires: dbus-devel >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
-Requires: pkgconfig
-
-%description devel
-This package contains various headers accessing some NetworkManager functionality
-from applications.
 
 
 %package glib
@@ -293,11 +288,13 @@ See also NetworkManager-libnm.
 %package glib-devel
 Summary: Header files for adding NetworkManager support to applications (old API).
 Group: Development/Libraries
-Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
 Requires: dbus-glib-devel >= %{dbus_glib_version}
+Provides: %{name}-devel = %{epoch}:%{version}-%{release}
+Provides: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: %{name}-devel < %{epoch}:%{version}-%{release}
 
 %description glib-devel
 This package contains the header and pkg-config files for development applications using
@@ -308,8 +305,6 @@ NetworkManager API. See also NetworkManager-libnm-devel.
 %package libnm
 Summary: Libraries for adding NetworkManager support to applications (new API).
 Group: Development/Libraries
-Requires: dbus >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
 
 %description libnm
 This package contains the libraries that make it easier to use some NetworkManager
@@ -320,11 +315,9 @@ NetworkManager-glib.
 %package libnm-devel
 Summary: Header files for adding NetworkManager support to applications (new API).
 Group: Development/Libraries
-Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
-Requires: dbus-glib-devel >= %{dbus_glib_version}
 
 %description libnm-devel
 This package contains the header and pkg-config files for development applications using
@@ -374,10 +367,10 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 
 %build
 
-%if %{regen_docs}
+%if %{with regen_docs}
 # back up pristine docs and use them instead of generated ones, which make
 # multilib unhappy due to different timestamps in the generated content
-%{__cp} -R docs ORIG-docs
+cp -R docs ORIG-docs
 %endif
 
 autoreconf --install --force
@@ -388,13 +381,17 @@ intltoolize --automake --copy --force
 	--with-dhcpcd=no \
 	--with-crypto=nss \
 	--enable-more-warnings=error \
+%if %{with debug}
+	--with-more-logging \
+	--with-more-asserts=10000 \
+%endif
 	--enable-ppp=yes \
 %if 0%{?with_modem_manager_1}
 	--with-modem-manager-1=yes \
 %else
 	--with-modem-manager-1=no \
 %endif
-%if 0%{?with_wifi}
+%if %{with wifi}
 	--enable-wifi=yes \
 %if 0%{?fedora}
 	--with-wext=yes \
@@ -404,18 +401,18 @@ intltoolize --automake --copy --force
 %else
 	--enable-wifi=no \
 %endif
-%if 0%{?with_wimax}
+%if %{with wimax}
 	--enable-wimax=yes \
 %else
 	--enable-wimax=no \
 %endif
 	--enable-vala=yes \
-%if 0%{?regen_docs}
+%if %{with regen_docs}
 	--enable-gtk-doc \
 %else
 	--disable-gtk-doc \
 %endif
-%if 0%{?with_team}
+%if %{with team}
 	--enable-teamdctl=yes \
 %else
 	--enable-teamdctl=no \
@@ -441,56 +438,53 @@ intltoolize --automake --copy --force
 make %{?_smp_mflags}
 
 %install
-%{__rm} -rf $RPM_BUILD_ROOT
-
 # install NM
-make install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=%{buildroot}
 
-%{__cp} %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
+cp %{SOURCE1} %{buildroot}%{_sysconfdir}/%{name}/
 
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-%{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-%{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-%{__cp} %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/conf.d
+cp %{SOURCE2} %{buildroot}%{_sysconfdir}/%{name}/conf.d
+cp %{SOURCE3} %{buildroot}%{_sysconfdir}/%{name}/conf.d
+cp %{SOURCE4} %{buildroot}%{_sysconfdir}/%{name}/conf.d
 
 # create a VPN directory
-%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/VPN
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/VPN
 
 # create a keyfile plugin system settings directory
-%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/system-connections
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/system-connections
 
 # create a dnsmasq.d directory
-%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dnsmasq.d
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/dnsmasq.d
 
 # create dispatcher directories
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
-%{__cp} examples/dispatcher/10-ifcfg-rh-routes.sh $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/
-%{__ln_s} ../10-ifcfg-rh-routes.sh $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
+cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
+ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
 
-%{__mkdir_p} $RPM_BUILD_ROOT%{_datadir}/gnome-vpn-properties
+mkdir -p %{buildroot}%{_datadir}/gnome-vpn-properties
 
-%{__mkdir_p} $RPM_BUILD_ROOT%{_localstatedir}/lib/NetworkManager
+mkdir -p %{buildroot}%{_localstatedir}/lib/NetworkManager
 
 %find_lang %{name}
 
-%{__rm} -f $RPM_BUILD_ROOT%{_libdir}/*.la
-%{__rm} -f $RPM_BUILD_ROOT%{_libdir}/pppd/%{ppp_version}/*.la
-%{__rm} -f $RPM_BUILD_ROOT%{_libdir}/NetworkManager/*.la
+rm -f %{buildroot}%{_libdir}/*.la
+rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
+rm -f %{buildroot}%{_libdir}/NetworkManager/*.la
 
-%if %{regen_docs}
+%if %{with regen_docs}
 # install the pristine docs
-%{__cp} ORIG-docs/libnm-glib/html/* $RPM_BUILD_ROOT%{_datadir}/gtk-doc/html/libnm-glib/
-%{__cp} ORIG-docs/libnm-util/html/* $RPM_BUILD_ROOT%{_datadir}/gtk-doc/html/libnm-util/
+cp ORIG-docs/libnm-glib/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-glib/
+cp ORIG-docs/libnm-util/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-util/
 %endif
-
-%clean
-%{__rm} -rf $RPM_BUILD_ROOT
 
 
 %check
+%if %{with test}
 make check
+%endif
 
 
 %post
@@ -519,10 +513,11 @@ fi
 %post	glib -p /sbin/ldconfig
 %postun	glib -p /sbin/ldconfig
 
+%post	libnm -p /sbin/ldconfig
+%postun	libnm -p /sbin/ldconfig
+
 
 %files -f %{name}.lang
-%defattr(-,root,root,0755)
-%doc COPYING NEWS AUTHORS README CONTRIBUTING TODO
 %{_sysconfdir}/dbus-1/system.d/org.freedesktop.NetworkManager.conf
 %{_sysconfdir}/dbus-1/system.d/nm-avahi-autoipd.conf
 %{_sysconfdir}/dbus-1/system.d/nm-dispatcher.conf
@@ -546,7 +541,7 @@ fi
 %{_libexecdir}/nm-iface-helper
 %dir %{_libdir}/NetworkManager
 %{_libdir}/NetworkManager/libnm-settings-plugin*.so
-%if 0%{?with_nmtui}
+%if %{with nmtui}
 %exclude %{_mandir}/man1/nmtui*
 %endif
 %dir %{_sysconfdir}/%{name}
@@ -569,62 +564,43 @@ fi
 %{systemd_dir}/network-online.target.wants/NetworkManager-wait-online.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
+%doc NEWS AUTHORS README CONTRIBUTING TODO
+%license COPYING
 
-%if 0%{?with_adsl}
+%if %{with adsl}
 %files adsl
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %else
 %exclude %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %endif
 
-%if 0%{?with_bluetooth}
+%if %{with bluetooth}
 %files bluetooth
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %endif
 
-%if 0%{?with_team}
+%if %{with team}
 %files team
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-team.so
 %endif
 
-%if 0%{?with_wifi}
+%if %{with wifi}
 %files wifi
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
-%if 0%{?with_wwan}
+%if %{with wwan}
 %files wwan
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wwan.so
 %{_libdir}/%{name}/libnm-wwan.so
 %endif
 
-%if 0%{?with_wimax}
+%if %{with wimax}
 %files wimax
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wimax.so
 %endif
 
-%files devel
-%defattr(-,root,root,0755)
-%doc ChangeLog docs/api/html/*
-%dir %{_includedir}/%{name}
-%{_includedir}/%{name}/%{name}.h
-%{_includedir}/%{name}/NetworkManagerVPN.h
-%{_includedir}/%{name}/nm-version-macros.h
-%{_includedir}/%{name}/nm-version.h
-%{_libdir}/pkgconfig/%{name}.pc
-%dir %{_datadir}/gtk-doc/html/NetworkManager
-%{_datadir}/gtk-doc/html/NetworkManager/*
-%{_datadir}/vala/vapi/*.deps
-%{_datadir}/vala/vapi/*.vapi
-
 %files glib
-%defattr(-,root,root,0755)
 %{_libdir}/libnm-glib.so.*
 %{_libdir}/libnm-glib-vpn.so.*
 %{_libdir}/libnm-util.so.*
@@ -632,16 +608,22 @@ fi
 %{_libdir}/girepository-1.0/NMClient-1.0.typelib
 
 %files glib-devel
-%defattr(-,root,root,0755)
+%doc ChangeLog docs/api/html/*
 %dir %{_includedir}/libnm-glib
+%dir %{_includedir}/%{name}
 %{_includedir}/libnm-glib/*.h
+%{_includedir}/%{name}/%{name}.h
+%{_includedir}/%{name}/NetworkManagerVPN.h
 %{_includedir}/%{name}/nm-setting*.h
 %{_includedir}/%{name}/nm-connection.h
 %{_includedir}/%{name}/nm-utils-enum-types.h
 %{_includedir}/%{name}/nm-utils.h
+%{_includedir}/%{name}/nm-version.h
+%{_includedir}/%{name}/nm-version-macros.h
 %{_libdir}/pkgconfig/libnm-glib.pc
 %{_libdir}/pkgconfig/libnm-glib-vpn.pc
 %{_libdir}/pkgconfig/libnm-util.pc
+%{_libdir}/pkgconfig/%{name}.pc
 %{_libdir}/libnm-glib.so
 %{_libdir}/libnm-glib-vpn.so
 %{_libdir}/libnm-util.so
@@ -651,14 +633,17 @@ fi
 %{_datadir}/gtk-doc/html/libnm-glib/*
 %dir %{_datadir}/gtk-doc/html/libnm-util
 %{_datadir}/gtk-doc/html/libnm-util/*
+%dir %{_datadir}/gtk-doc/html/NetworkManager
+%{_datadir}/gtk-doc/html/NetworkManager/*
+%{_datadir}/vala/vapi/*.deps
+%{_datadir}/vala/vapi/*.vapi
 
 %files libnm
-%defattr(-,root,root,0755)
 %{_libdir}/libnm.so.*
 %{_libdir}/girepository-1.0/NM-1.0.typelib
 
 %files libnm-devel
-%defattr(-,root,root,0755)
+%doc ChangeLog docs/api/html/*
 %dir %{_includedir}/libnm
 %{_includedir}/libnm/*.h
 %{_libdir}/pkgconfig/libnm.pc
@@ -668,18 +653,16 @@ fi
 %{_datadir}/gtk-doc/html/libnm/*
 
 %files config-connectivity-fedora
-%defattr(-,root,root,0755)
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/conf.d
 %config(noreplace) %{_sysconfdir}/%{name}/conf.d/20-connectivity-fedora.conf
 
 %files config-server
-%defattr(-,root,root,0755)
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/conf.d
 %config(noreplace) %{_sysconfdir}/%{name}/conf.d/00-server.conf
 
-%if 0%{?with_nmtui}
+%if %{with nmtui}
 %files tui
 %{_bindir}/nmtui
 %{_bindir}/nmtui-edit
