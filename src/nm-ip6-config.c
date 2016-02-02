@@ -77,6 +77,18 @@ nm_ip6_config_new (int ifindex)
 	                                     NULL);
 }
 
+NMIP6Config *
+nm_ip6_config_new_cloned (const NMIP6Config *src)
+{
+	NMIP6Config *new;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (src), NULL);
+
+	new = nm_ip6_config_new (nm_ip6_config_get_ifindex (src));
+	nm_ip6_config_replace (new, src, NULL);
+	return new;
+}
+
 int
 nm_ip6_config_get_ifindex (const NMIP6Config *config)
 {
@@ -962,8 +974,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	const NMPlatformIP6Address *dst_addr, *src_addr;
 	const NMPlatformIP6Route *dst_route, *src_route;
 
-	g_return_val_if_fail (src != NULL, FALSE);
-	g_return_val_if_fail (dst != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (src), FALSE);
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (dst), FALSE);
 	g_return_val_if_fail (src != dst, FALSE);
 
 #if NM_MORE_ASSERTS
@@ -1348,6 +1360,29 @@ nm_ip6_config_address_exists (const NMIP6Config *config,
                               const NMPlatformIP6Address *needle)
 {
 	return _addresses_get_index (config, needle) >= 0;
+}
+
+const NMPlatformIP6Address *
+nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolean linklocal)
+{
+	NMIP6ConfigPrivate *priv;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	linklocal = !!linklocal;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP6Address *addr = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+
+		if (   ((!!IN6_IS_ADDR_LINKLOCAL (&addr->address)) == linklocal)
+		    && !(addr->flags & IFA_F_TENTATIVE))
+			return addr;
+	}
+
+	return NULL;
 }
 
 /******************************************************************/

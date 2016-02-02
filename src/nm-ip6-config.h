@@ -66,6 +66,7 @@ GType nm_ip6_config_get_type (void);
 
 
 NMIP6Config * nm_ip6_config_new (int ifindex);
+NMIP6Config * nm_ip6_config_new_cloned (const NMIP6Config *src);
 
 int nm_ip6_config_get_ifindex (const NMIP6Config *config);
 
@@ -96,9 +97,9 @@ void nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address 
 void nm_ip6_config_del_address (NMIP6Config *config, guint i);
 guint nm_ip6_config_get_num_addresses (const NMIP6Config *config);
 const NMPlatformIP6Address *nm_ip6_config_get_address (const NMIP6Config *config, guint i);
+const NMPlatformIP6Address *nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolean linklocal);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *config, const NMPlatformIP6Address *address);
 gboolean nm_ip6_config_addresses_sort (NMIP6Config *config, NMSettingIP6ConfigPrivacy use_temporary);
-
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);

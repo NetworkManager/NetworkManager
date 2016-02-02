@@ -335,6 +335,7 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  con_ip6_config; /* config from the setting */
 	NMIP6Config *  wwan_ip6_config;
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
+	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
 	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	guint32        ip6_mtu;
@@ -404,7 +405,6 @@ static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason);
 
 static gboolean addrconf6_start_with_link_ready (NMDevice *self);
-static gboolean dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection);
 static NMActStageReturn linklocal6_start (NMDevice *self);
 
 static void _carrier_wait_check_queued_act_request (NMDevice *self);
@@ -5284,9 +5284,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	GByteArray *tmp = NULL;
 	const guint8 *hw_addr;
 	size_t hw_addr_len = 0;
-	const struct in6_addr *ll_addr = NULL;
-	NMIP6Config *ip6_config;
-	int i;
+	const NMPlatformIP6Address *ll_addr = NULL;
 
 	g_assert (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -5298,22 +5296,16 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
-	ip6_config = priv->ip6_config;
-	for (i = 0; ip6_config && i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
-		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
+	if (priv->ext_ip6_config_captured)
+		ll_addr = nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE);
 
-		if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
-			ll_addr = &addr->address;
-			break;
-		}
-	}
 	g_return_val_if_fail (ll_addr, FALSE);
 
 	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
 	                                                nm_device_get_ip_iface (self),
 	                                                nm_device_get_ip_ifindex (self),
 	                                                tmp,
-	                                                ll_addr,
+	                                                &ll_addr->address,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_ip6_route_metric (self),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
@@ -5396,27 +5388,6 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 
 /******************************************/
 
-static gboolean
-have_ip6_address (const NMIP6Config *ip6_config, gboolean linklocal)
-{
-	guint i;
-
-	if (!ip6_config)
-		return FALSE;
-
-	linklocal = !!linklocal;
-
-	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
-		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
-
-		if ((IN6_IS_ADDR_LINKLOCAL (&addr->address) == linklocal) &&
-		    !(addr->flags & IFA_F_TENTATIVE))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 static void
 linklocal6_cleanup (NMDevice *self)
 {
@@ -5450,7 +5421,7 @@ linklocal6_complete (NMDevice *self)
 	const char *method;
 
 	g_assert (priv->linklocal6_timeout_id);
-	g_assert (have_ip6_address (priv->ip6_config, TRUE));
+	g_assert (nm_ip6_config_get_address_first_nontentative (priv->ip6_config, TRUE));
 
 	linklocal6_cleanup (self);
 
@@ -5567,7 +5538,7 @@ linklocal6_start (NMDevice *self)
 
 	linklocal6_cleanup (self);
 
-	if (have_ip6_address (priv->ip6_config, TRUE))
+	if (nm_ip6_config_get_address_first_nontentative (priv->ip6_config, TRUE))
 		return NM_ACT_STAGE_RETURN_FINISH;
 
 	connection = nm_device_get_applied_connection (self);
@@ -5802,7 +5773,7 @@ rdisc_ra_timeout (NMRDisc *rdisc, NMDevice *self)
 		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
 		 * config, consider that sufficient for IPv6 success.
 		 */
-		if (have_ip6_address (priv->ip6_config, FALSE))
+		if (nm_ip6_config_get_address_first_nontentative (priv->ip6_config, FALSE))
 			nm_device_activate_schedule_ip6_config_result (self);
 		else
 			nm_device_activate_schedule_ip6_config_timeout (self);
@@ -8684,7 +8655,6 @@ update_ip6_config (NMDevice *self, gboolean initial)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
-	gboolean linklocal6_just_completed = FALSE;
 	gboolean capture_resolv_conf;
 	NMDnsManagerResolvConfMode resolv_conf_mode;
 
@@ -8697,12 +8667,11 @@ update_ip6_config (NMDevice *self, gboolean initial)
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
-	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, capture_resolv_conf, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-	if (priv->ext_ip6_config) {
+	g_clear_object (&priv->ext_ip6_config_captured);
+	priv->ext_ip6_config_captured = nm_ip6_config_capture (ifindex, capture_resolv_conf, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	if (priv->ext_ip6_config_captured) {
 
-		/* Check this before modifying ext_ip6_config */
-		linklocal6_just_completed = priv->linklocal6_timeout_id &&
-		                            have_ip6_address (priv->ext_ip6_config, TRUE);
+		priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal
@@ -8734,7 +8703,9 @@ update_ip6_config (NMDevice *self, gboolean initial)
 		ip6_config_merge_and_apply (self, FALSE, NULL);
 	}
 
-	if (linklocal6_just_completed) {
+	if (   priv->linklocal6_timeout_id
+	    && priv->ext_ip6_config_captured
+	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE)) {
 		/* linklocal6 is ready now, do the state transition... we are also
 		 * invoked as g_idle_add, so no problems with reentrance doing it now.
 		 */
@@ -9648,6 +9619,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_clear_object (&priv->con_ip6_config);
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->ext_ip6_config);
+	g_clear_object (&priv->ext_ip6_config_captured);
 	g_clear_object (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
 
