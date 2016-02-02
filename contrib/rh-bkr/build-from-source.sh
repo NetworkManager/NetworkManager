@@ -7,6 +7,7 @@ BUILD_DIR="${BUILD_DIR:-/tmp/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
 BUILD_REPO="${BUILD_REPO-git://anongit.freedesktop.org/NetworkManager/NetworkManager}"
 ARCH="${ARCH:-`arch`}"
+WITH_DEBUG="$WITH_DEBUG"
 DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
 DO_TEST_PACKAGE="${DO_TEST_PACKAGE:-yes}"
 DO_INSTALL="${DO_INSTALL:-yes}"
@@ -100,12 +101,16 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
         --with-systemd-logind=yes \
         --with-consolekit=yes
 
-    make -j4
+    make -j20
     make check -k
 fi
 
 if [[ "$DO_TEST_PACKAGE" == yes || "$DO_INSTALL" == yes ]]; then
-    ./contrib/fedora/rpm/build_clean.sh -c
+    A=()
+    if [[ "$WITH_DEBUG" == yes ]]; then
+        A=("${A[@]}" --with debug)
+    fi
+    ./contrib/fedora/rpm/build_clean.sh -c "${A[@]}"
 fi
 
 if [[ "$DO_INSTALL" == yes ]]; then
