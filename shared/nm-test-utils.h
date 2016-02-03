@@ -962,25 +962,19 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 }
 #define nmtst_assert_ip6_address(addr, str_expected) _nmtst_assert_ip6_address (__FILE__, __LINE__, addr, str_expected)
 
-inline static void
-FAIL(const char *test_name, const char *fmt, ...)
-{
-	va_list args;
-	char buf[500];
+/* Deprecated: don't use this overly verbose macro. */
+#define FAIL(test_name, fmt, ...) \
+    G_STMT_START { \
+        g_error ("%s:%d: FAIL[%s]: " fmt, __FILE__, __LINE__, test_name, ## __VA_ARGS__); \
+    } G_STMT_END
 
-	g_snprintf (buf, 500, "FAIL: (%s) %s\n", test_name, fmt);
-
-	va_start (args, fmt);
-	vfprintf (stderr, buf, args);
-	va_end (args);
-	_exit (1);
-}
-
+/* Deprecated: don't use this overly verbose macro. */
 #define ASSERT(x, test_name, fmt, ...) \
-	if (!(x)) { \
-		FAIL (test_name, fmt, ## __VA_ARGS__); \
-	}
-
+    G_STMT_START { \
+        if (!(x)) { \
+            FAIL (test_name, fmt, ## __VA_ARGS__); \
+        } \
+    } G_STMT_END
 
 #define nmtst_spawn_sync(working_directory, standard_out, standard_err, assert_exit_status, ...) \
 	__nmtst_spawn_sync (working_directory, standard_out, standard_err, assert_exit_status, ##__VA_ARGS__, NULL)
