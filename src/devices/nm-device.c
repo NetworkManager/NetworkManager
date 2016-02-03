@@ -5538,7 +5538,8 @@ linklocal6_start (NMDevice *self)
 
 	linklocal6_cleanup (self);
 
-	if (nm_ip6_config_get_address_first_nontentative (priv->ip6_config, TRUE))
+	if (   priv->ip6_config
+	    && nm_ip6_config_get_address_first_nontentative (priv->ip6_config, TRUE))
 		return NM_ACT_STAGE_RETURN_FINISH;
 
 	connection = nm_device_get_applied_connection (self);
@@ -5773,7 +5774,8 @@ rdisc_ra_timeout (NMRDisc *rdisc, NMDevice *self)
 		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
 		 * config, consider that sufficient for IPv6 success.
 		 */
-		if (nm_ip6_config_get_address_first_nontentative (priv->ip6_config, FALSE))
+		if (   priv->ip6_config
+		    && nm_ip6_config_get_address_first_nontentative (priv->ip6_config, FALSE))
 			nm_device_activate_schedule_ip6_config_result (self);
 		else
 			nm_device_activate_schedule_ip6_config_timeout (self);
