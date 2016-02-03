@@ -18,7 +18,8 @@
 
 %global snapshot %{nil}
 %global git_sha __COMMIT__
-%global realversion __VERSION__
+%global rpm_version __VERSION__
+%global real_version __VERSION__
 %global release_version __RELEASE_VERSION__
 %global epoch_version 1
 
@@ -94,7 +95,7 @@
 Name: NetworkManager
 Summary: Network connection manager and user applications
 Epoch: %{epoch_version}
-Version: %{realversion}
+Version: %{rpm_version}
 Release: %{release_version}%{snapshot}%{git_sha_version}%{?dist}
 Group: System Environment/Base
 License: GPLv2+
@@ -361,7 +362,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 
 %prep
-%setup -q -n NetworkManager-%{realversion}
+%setup -q -n NetworkManager-%{real_version}
 
 #%patch1 -p1
 
