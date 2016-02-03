@@ -104,7 +104,7 @@ usage (const char *prog_name)
 	              "  c[onnection]    NetworkManager's connections\n"
 	              "  d[evice]        devices managed by NetworkManager\n"
 	              "  a[gent]         NetworkManager secret agent or polkit agent\n"
-	              "  m[monitor]      monitor NetworkManager changes\n"
+	              "  m[onitor]       monitor NetworkManager changes\n"
 	              "\n"),
 	            prog_name);
 }
