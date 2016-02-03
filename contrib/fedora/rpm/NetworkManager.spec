@@ -102,11 +102,6 @@ Source3: 20-connectivity-fedora.conf
 
 #Patch1: 0001-some.patch
 
-%if 0%{?fedora} && 0%{?fedora} < 20
-Requires(post): chkconfig
-Requires(preun): chkconfig
-%endif
-Requires(post): systemd-sysv
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
