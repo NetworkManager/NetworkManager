@@ -1578,7 +1578,7 @@ nmtst_assert_setting_verify_fails (NMSetting *setting,
 
 #ifdef __NM_UTILS_H__
 static inline void
-nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const char *expected, const char *loc)
+nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const char *expected, const char *file, int line)
 {
 	guint8 buf2[NM_UTILS_HWADDR_LEN_MAX];
 	gsize hwaddr2_len = 1;
@@ -1603,12 +1603,12 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 	if (success)
 		success = !memcmp (hwaddr1, buf2, hwaddr1_len);
 	if (!success) {
-		g_error ("assert: %s: hwaddr '%s' (%zd) expected, but got %s (%zd)",
-		         loc, expected, hwaddr2_len, nm_utils_hwaddr_ntoa (hwaddr1, hwaddr1_len), hwaddr1_len);
+		g_error ("assert: %s:%d: hwaddr '%s' (%zd) expected, but got %s (%zd)",
+		         file, line, expected, hwaddr2_len, nm_utils_hwaddr_ntoa (hwaddr1, hwaddr1_len), hwaddr1_len);
 	}
 }
 #define nmtst_assert_hwaddr_equals(hwaddr1, hwaddr1_len, expected) \
-    nmtst_assert_hwaddr_equals (hwaddr1, hwaddr1_len, expected, G_STRLOC)
+    nmtst_assert_hwaddr_equals (hwaddr1, hwaddr1_len, expected, __FILE__, __LINE__)
 #endif
 
 #if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__) && defined(__NM_KEYFILE_INTERNAL_H__)
