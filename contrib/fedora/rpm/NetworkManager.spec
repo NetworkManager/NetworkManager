@@ -343,7 +343,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %prep
 %setup -q -n NetworkManager-%{realversion}
 
-#%patch1 -p1 -b .0001-some.orig
+#%patch1 -p1
 
 %build
 
