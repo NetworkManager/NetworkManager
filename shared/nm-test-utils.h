@@ -648,6 +648,89 @@ nmtst_test_quick (void)
 	} G_STMT_END
 #endif
 
+/*****************************************************************************/
+
+typedef struct _NmtstTestData NmtstTestData;
+
+typedef void (*NmtstTestDataRelease) (const NmtstTestData *test_data);
+
+struct _NmtstTestData {
+	const char *testpath;
+	const char *detail;
+	NmtstTestDataRelease fcn_release;
+	gsize n_args;
+	gpointer args[1];
+};
+
+inline static void
+_nmtst_test_data_unpack_detail (const NmtstTestData *test_data, const char **detail, gsize n_args, ...)
+{
+	gsize i;
+	va_list ap;
+	gpointer *p;
+
+	g_assert (test_data);
+	g_assert_cmpint (n_args, ==, test_data->n_args);
+
+	if (detail)
+		*detail = test_data->detail;
+
+	va_start (ap, n_args);
+	for (i = 0; i < n_args; i++) {
+		p = va_arg (ap, gpointer *);
+
+		g_assert (p);
+		*p = test_data->args[i];
+	}
+	va_end (ap);
+}
+#define nmtst_test_data_unpack_detail(test_data, detail, ...) _nmtst_test_data_unpack_detail(test_data, detail, NM_NARG (__VA_ARGS__), ##__VA_ARGS__)
+#define nmtst_test_data_unpack(test_data, ...)                nmtst_test_data_unpack(test_data, NULL, ##__VA_ARGS__)
+
+inline static void
+_nmtst_test_data_free (gpointer data)
+{
+	NmtstTestData *test_data = data;
+
+	g_assert (test_data);
+
+	if (test_data->fcn_release)
+		test_data->fcn_release (test_data);
+
+	g_free ((gpointer) test_data->testpath);
+	g_free ((gpointer) test_data->detail);
+	g_free (test_data);
+}
+
+inline static void
+_nmtst_add_test_func_full (const char *testpath, const char *detail, GTestDataFunc test_func, NmtstTestDataRelease fcn_release, gsize n_args, ...)
+{
+	gsize i;
+	NmtstTestData *data;
+	va_list ap;
+
+	data = g_malloc (G_STRUCT_OFFSET (NmtstTestData, args) + sizeof (gpointer) * (n_args + 1));
+
+	data->testpath = g_strdup (testpath);
+	data->detail = g_strdup (detail);
+	data->fcn_release = fcn_release;
+	data->n_args = n_args;
+	va_start (ap, n_args);
+	for (i = 0; i < n_args; i++)
+		data->args[i] = va_arg (ap, gpointer);
+	data->args[i] = NULL;
+	va_end (ap);
+
+	g_test_add_data_func_full (testpath,
+	                           data,
+	                           test_func,
+	                           _nmtst_test_data_free);
+}
+#define nmtst_add_test_func_full(testpath, detail, test_func, fcn_release, ...) _nmtst_add_test_func_full(testpath, detail, test_func, fcn_release, NM_NARG (__VA_ARGS__), ##__VA_ARGS__)
+#define nmtst_add_test_func(testpath, detail, test_func, ...) nmtst_add_test_func_full(testpath, detail, test_func, NULL, ##__VA_ARGS__)
+
+/*****************************************************************************/
+
 inline static GRand *
 nmtst_get_rand0 (void)
 {
