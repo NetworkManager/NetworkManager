@@ -4499,7 +4499,7 @@ dhcp4_get_timeout (NMDevice *self, NMSettingIP4Config *s_ip4)
 	gs_free char *value = NULL;
 	int timeout;
 
-	timeout = nm_setting_ip4_config_get_dhcp_timeout (s_ip4);
+	timeout = nm_setting_ip_config_get_dhcp_timeout (NM_SETTING_IP_CONFIG (s_ip4));
 	if (timeout)
 		return timeout;
 

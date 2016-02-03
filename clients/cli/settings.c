@@ -276,7 +276,7 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 9 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 10 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),     /* 11 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT),       /* 12 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT),        /* 12 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 13 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 14 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_FQDN),          /* 15 */
@@ -297,7 +297,7 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
                                               NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES","\
                                               NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS","\
                                               NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID","\
-                                              NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT","\
+                                              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT","\
                                               NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
                                               NM_SETTING_IP_CONFIG_DHCP_HOSTNAME","\
                                               NM_SETTING_IP4_CONFIG_DHCP_FQDN","\
@@ -1516,7 +1516,7 @@ DEFINE_GETTER (nmc_property_ipv4_get_route_metric, NM_SETTING_IP_CONFIG_ROUTE_ME
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES)
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_timeout, NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_timeout, NM_SETTING_IP_CONFIG_DHCP_TIMEOUT)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_fqdn, NM_SETTING_IP4_CONFIG_DHCP_FQDN)
@@ -6460,7 +6460,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_TIMEOUT),
+	nmc_add_prop_funcs (GLUE_IP (4, DHCP_TIMEOUT),
 	                    nmc_property_ipv4_get_dhcp_timeout,
 	                    nmc_property_set_uint,
 	                    NULL,

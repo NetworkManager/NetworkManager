@@ -1126,6 +1126,7 @@ typedef struct {
 	gboolean never_default;
 	gboolean may_fail;
 	gint dad_timeout;
+	gint dhcp_timeout;
 } NMSettingIPConfigPrivate;
 
 enum {
@@ -1145,6 +1146,7 @@ enum {
 	PROP_NEVER_DEFAULT,
 	PROP_MAY_FAIL,
 	PROP_DAD_TIMEOUT,
+	PROP_DHCP_TIMEOUT,
 
 	LAST_PROP
 };
@@ -2105,6 +2107,26 @@ nm_setting_ip_config_get_dad_timeout (NMSettingIPConfig *setting)
 	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dad_timeout;
 }
 
+/**
+ * nm_setting_ip_config_get_dhcp_timeout:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-timeout
+ * property.
+ *
+ * Returns: the configured DHCP timeout in seconds. 0 = default for
+ * the particular kind of device.
+ *
+ * Since: 1.2
+ **/
+gint
+nm_setting_ip_config_get_dhcp_timeout (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dhcp_timeout;
+}
+
 static gboolean
 verify_label (const char *label)
 {
@@ -2368,6 +2390,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DAD_TIMEOUT:
 		priv->dad_timeout = g_value_get_int (value);
 		break;
+	case PROP_DHCP_TIMEOUT:
+		priv->dhcp_timeout = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2430,6 +2455,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DAD_TIMEOUT:
 		g_value_set_int (value, nm_setting_ip_config_get_dad_timeout (setting));
+		break;
+	case PROP_DHCP_TIMEOUT:
+		g_value_set_uint (value, nm_setting_ip_config_get_dhcp_timeout (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2731,6 +2759,18 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                    -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -1,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
+	/**
+	 * NMSettingIPConfig:dhcp-timeout:
+	 *
+	 * A timeout for a DHCP transaction in seconds.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DHCP_TIMEOUT,
+		 g_param_spec_uint (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
 		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 }

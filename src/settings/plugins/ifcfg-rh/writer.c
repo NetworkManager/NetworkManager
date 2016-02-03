@@ -2165,7 +2165,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (value)
 			svSetValue (ifcfg, "DHCP_CLIENT_ID", value, FALSE);
 
-		timeout = nm_setting_ip4_config_get_dhcp_timeout (NM_SETTING_IP4_CONFIG (s_ip4));
+		timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip4);
 		tmp = timeout ? g_strdup_printf ("%d", timeout) : NULL;
 		svSetValue (ifcfg, "IPV4_DHCP_TIMEOUT", tmp, FALSE);
 		g_free (tmp);
