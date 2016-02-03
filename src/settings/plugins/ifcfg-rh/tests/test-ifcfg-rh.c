@@ -1905,17 +1905,10 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                         NULL,
 	                                         &error);
-	ASSERT (success == TRUE,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not load CA certificate",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_CA_CERT);
+	g_assert (success == TRUE);
+
 	expected_ca_cert_path = nm_setting_802_1x_get_ca_cert_path (tmp_8021x);
-	ASSERT (expected_ca_cert_path != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: failed to get CA certificate",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_CA_CERT);
+	g_assert (expected_ca_cert_path);
 
 	read_ca_cert_path = nm_setting_802_1x_get_ca_cert_path (s_8021x);
 	ASSERT (read_ca_cert_path != NULL,
@@ -7399,12 +7392,8 @@ test_write_wired_aliases (void)
 		ip[j] = NULL;
 	}
 
-	for (i = 0; i < num_addresses; i++) {
-		ASSERT (ip[i] == 0,
-		        "wired-aliases-write-verify-ip4", "failed to verify %s: did not find IP4 address 0x%08x",
-		        testfile,
-		        ip[i]);
-	}
+	for (i = 0; i < num_addresses; i++)
+		g_assert (!ip[i]);
 
 	/* Gateway */
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");

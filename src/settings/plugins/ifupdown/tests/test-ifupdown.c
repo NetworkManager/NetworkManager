@@ -628,9 +628,7 @@ test18_read_static_ipv6 (const char *path)
 	connection = nm_simple_connection_new();
 	ifupdown_update_connection_from_if_block(connection, block, &error);
 
-	ASSERT (connection != NULL,
-			TEST18_NAME
-			"failed to read %s: %s", file, error->message);
+	g_assert (connection != NULL);
 
 	ASSERT (nm_connection_verify (connection, &error),
 			TEST18_NAME,

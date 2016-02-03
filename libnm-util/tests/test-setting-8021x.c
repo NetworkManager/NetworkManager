@@ -47,9 +47,7 @@ compare_blob_data (const char *test,
 
 	ASSERT (len > 0, test, "blob key file invalid (size 0)");
 
-	ASSERT (len == key->len,
-	        test, "blob key file (%d) and setting key data (%d) lengths don't match",
-	        len, key->len);
+	g_assert_cmpint (len, ==, key->len);
 
 	ASSERT (memcmp (contents, key->data, len) == 0,
 	        test, "blob key file and blob key data don't match");
