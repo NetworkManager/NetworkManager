@@ -5516,7 +5516,7 @@ msgid ""
 "  c[onnection]    NetworkManager's connections\n"
 "  d[evice]        devices managed by NetworkManager\n"
 "  a[gent]         NetworkManager secret agent or polkit agent\n"
-"  m[monitor]      monitor NetworkManager changes\n"
+"  m[onitor]       monitor NetworkManager changes\n"
 "\n"
 msgstr ""
 "Uso: %s [OPÇÕES] OBJETO { COMANDO | help }\n"
@@ -5546,7 +5546,7 @@ msgstr ""
 "  c[onnection]    conexões do NetworkManager\n"
 "  d[evice]        dispositivos gerenciados pelo NetworkManager\n"
 "  a[gent]         agente secreto do NetworkManager ou agente do polkit\n"
-"  m[monitor]      monitora alterações do NetworkManager\n"
+"  m[onitor]       monitora alterações do NetworkManager\n"
 
 #: ../clients/cli/nmcli.c:144
 #, c-format
