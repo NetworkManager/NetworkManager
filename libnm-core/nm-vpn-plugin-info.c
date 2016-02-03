@@ -140,7 +140,7 @@ nm_vpn_plugin_info_check_file_full (const char *filename,
 
 /**
  * _nm_vpn_plugin_info_check_file:
- * @filename:
+ * @filename: the file to check
  * @check_absolute: if %TRUE, only allow absolute path names.
  * @do_validate_filename: if %TRUE, only accept the filename if
  *   nm_vpn_plugin_info_validate_filename() succeeds.
