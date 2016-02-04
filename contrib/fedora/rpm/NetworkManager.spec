@@ -208,7 +208,7 @@ This package contains NetworkManager support for Bluetooth devices.
 %endif
 
 
-%if 0%{with team}
+%if %{with team}
 %package team
 Summary: Team device plugin for NetworkManager
 Group: System Environment/Base
