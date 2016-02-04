@@ -206,8 +206,7 @@ request_free (Request *request)
 	g_free (request->action);
 	g_free (request->iface);
 	g_strfreev (request->envp);
-	if (request->scripts)
-		g_ptr_array_free (request->scripts, TRUE);
+	g_ptr_array_free (request->scripts, TRUE);
 
 	g_slice_free (Request, request);
 }
