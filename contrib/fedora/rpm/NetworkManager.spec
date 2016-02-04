@@ -245,7 +245,8 @@ Requires: ModemManager
 Obsoletes: NetworkManager < %{obsoletes_nmver}
 
 %description wwan
-This package contains NetworkManager support for mobile broadband (WWAN) devices.
+This package contains NetworkManager support for mobile broadband (WWAN)
+devices.
 %endif
 
 
@@ -256,9 +257,9 @@ Requires: dbus >= %{dbus_version}
 Requires: dbus-glib >= %{dbus_glib_version}
 
 %description glib
-This package contains the libraries that make it easier to use some NetworkManager
-functionality from applications that use glib.  This is the older NetworkManager API.
-See also NetworkManager-libnm.
+This package contains the libraries that make it easier to use some
+NetworkManager functionality from applications that use glib.  This is
+the older NetworkManager API. See also NetworkManager-libnm.
 
 
 %package glib-devel
@@ -273,9 +274,10 @@ Provides: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-devel < %{epoch}:%{version}-%{release}
 
 %description glib-devel
-This package contains the header and pkg-config files for development applications using
-NetworkManager functionality from applications that use glib.  This is the older
-NetworkManager API. See also NetworkManager-libnm-devel.
+This package contains the header and pkg-config files for development
+applications using NetworkManager functionality from applications that
+use glib.
+This is the older NetworkManager API.  See also NetworkManager-libnm-devel.
 
 
 %package libnm
@@ -283,9 +285,9 @@ Summary: Libraries for adding NetworkManager support to applications (new API).
 Group: Development/Libraries
 
 %description libnm
-This package contains the libraries that make it easier to use some NetworkManager
-functionality from applications.  This is the new NetworkManager API.  See also
-NetworkManager-glib.
+This package contains the libraries that make it easier to use some
+NetworkManager functionality from applications.  This is the new
+NetworkManager API.  See also NetworkManager-glib.
 
 
 %package libnm-devel
@@ -296,9 +298,9 @@ Requires: glib2-devel
 Requires: pkgconfig
 
 %description libnm-devel
-This package contains the header and pkg-config files for development applications using
-NetworkManager functionality from applications.  This is the new NetworkManager API.
-See also NetworkManager-glib-devel.
+This package contains the header and pkg-config files for development
+applications using NetworkManager functionality from applications.  This
+is the new NetworkManager API. See also NetworkManager-glib-devel.
 
 
 %package config-connectivity-fedora
