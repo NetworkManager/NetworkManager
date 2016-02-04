@@ -587,8 +587,10 @@ sort_access_points (const GPtrArray *aps)
 	GPtrArray *sorted;
 	int i;
 
+	g_return_val_if_fail (aps, NULL);
+
 	sorted = g_ptr_array_sized_new (aps->len);
-	for (i = 0; aps && i < aps->len; i++)
+	for (i = 0; i < aps->len; i++)
 		g_ptr_array_add (sorted, aps->pdata[i]);
 	g_ptr_array_sort_with_data (sorted, compare_aps, NULL);
 	return sorted;
