@@ -21,12 +21,9 @@ with #ifdef MY_DEFINE / #endif in the code.
     GOOD: g_strdup (x)
     BAD:  g_strdup(x)
 
-* C-style comments, except for FIXMEs.
+* C-style comments
     GOOD: f(x);  /* comment */
     BAD:  f(x);  // comment
-
-    GOOD: // FIXME: juice the gooblygok
-    BAD:  /* FIXME: juice the gooblygok */
 
 * Keep assignments in the variable declaration area pretty short.
     GOOD: MyObject *object;
