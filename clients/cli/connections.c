@@ -1532,11 +1532,14 @@ sort_connections (const GPtrArray *cons, NmCli *nmc, const GArray *order)
 	int i;
 	NmcSortInfo compare_info;
 
+	if (!cons)
+		return;
+
 	compare_info.nmc = nmc;
 	compare_info.order = order;
 
 	sorted = g_ptr_array_sized_new (cons->len);
-	for (i = 0; cons && i < cons->len; i++)
+	for (i = 0; i < cons->len; i++)
 		g_ptr_array_add (sorted, cons->pdata[i]);
 	g_ptr_array_sort_with_data (sorted, compare_connections, &compare_info);
 	return sorted;
