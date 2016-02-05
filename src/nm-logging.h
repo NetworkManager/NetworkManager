@@ -189,15 +189,23 @@ void     nm_logging_syslog_openlog (const char *logging_backend);
 #define _LOGW_ENABLED(...)  _NMLOG_ENABLED (LOGL_WARN , ##__VA_ARGS__)
 #define _LOGE_ENABLED(...)  _NMLOG_ENABLED (LOGL_ERR  , ##__VA_ARGS__)
 
+#define _LOGT_err(errsv, ...) _NMLOG_err (errsv, LOGL_TRACE, __VA_ARGS__)
+#define _LOGD_err(errsv, ...) _NMLOG_err (errsv, LOGL_DEBUG, __VA_ARGS__)
+#define _LOGI_err(errsv, ...) _NMLOG_err (errsv, LOGL_INFO , __VA_ARGS__)
+#define _LOGW_err(errsv, ...) _NMLOG_err (errsv, LOGL_WARN , __VA_ARGS__)
+#define _LOGE_err(errsv, ...) _NMLOG_err (errsv, LOGL_ERR  , __VA_ARGS__)
+
 /* _LOGT() and _LOGt() both log with level TRACE, but the latter is disabled by default,
  * unless building with --with-more-logging. */
 #ifdef NM_MORE_LOGGING
-#define _LOGt_ENABLED(...)  _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
-#define _LOGt(...)          _NMLOG (LOGL_TRACE, __VA_ARGS__)
+#define _LOGt_ENABLED(...)    _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOGt(...)            _NMLOG (LOGL_TRACE, __VA_ARGS__)
+#define _LOGt_err(errsv, ...) _NMLOG_err (errsv, LOGL_TRACE, __VA_ARGS__)
 #else
 /* still call the logging macros to get compile time checks, but they will be optimized out. */
-#define _LOGt_ENABLED(...)  ( FALSE && (_NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
-#define _LOGt(...)          G_STMT_START { if (FALSE) { _NMLOG (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#define _LOGt_ENABLED(...)    ( FALSE && (_NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
+#define _LOGt(...)            G_STMT_START { if (FALSE) { _NMLOG (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#define _LOGt_err(errsv, ...) G_STMT_START { if (FALSE) { _NMLOG_err (errsv, LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
 /*****************************************************************************/
@@ -223,13 +231,21 @@ void     nm_logging_syslog_openlog (const char *logging_backend);
 #define _LOG2W_ENABLED(...)  _NMLOG2_ENABLED (LOGL_WARN , ##__VA_ARGS__)
 #define _LOG2E_ENABLED(...)  _NMLOG2_ENABLED (LOGL_ERR  , ##__VA_ARGS__)
 
+#define _LOG2T_err(errsv, ...) _NMLOG2_err (errsv, LOGL_TRACE, __VA_ARGS__)
+#define _LOG2D_err(errsv, ...) _NMLOG2_err (errsv, LOGL_DEBUG, __VA_ARGS__)
+#define _LOG2I_err(errsv, ...) _NMLOG2_err (errsv, LOGL_INFO , __VA_ARGS__)
+#define _LOG2W_err(errsv, ...) _NMLOG2_err (errsv, LOGL_WARN , __VA_ARGS__)
+#define _LOG2E_err(errsv, ...) _NMLOG2_err (errsv, LOGL_ERR  , __VA_ARGS__)
+
 #ifdef NM_MORE_LOGGING
-#define _LOG2t_ENABLED(...)  _NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
-#define _LOG2t(...)          _NMLOG2 (LOGL_TRACE, __VA_ARGS__)
+#define _LOG2t_ENABLED(...)    _NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG2t(...)            _NMLOG2 (LOGL_TRACE, __VA_ARGS__)
+#define _LOG2t_err(errsv, ...) _NMLOG2_err (errsv, LOGL_TRACE, __VA_ARGS__)
 #else
 /* still call the logging macros to get compile time checks, but they will be optimized out. */
-#define _LOG2t_ENABLED(...)  ( FALSE && (_NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
-#define _LOG2t(...)          G_STMT_START { if (FALSE) { _NMLOG2 (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#define _LOG2t_ENABLED(...)    ( FALSE && (_NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
+#define _LOG2t(...)            G_STMT_START { if (FALSE) { _NMLOG2 (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#define _LOG2t_err(errsv, ...) G_STMT_START { if (FALSE) { _NMLOG2_err (errsv, LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
 /*****************************************************************************/

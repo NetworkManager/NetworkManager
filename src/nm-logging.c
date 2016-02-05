@@ -149,8 +149,14 @@ static char *_domains_to_string (gboolean include_level_override);
 static void
 _ensure_initialized (void)
 {
-	if (G_UNLIKELY (!global.logging_set_up))
+	if (G_UNLIKELY (!global.logging_set_up)) {
+		int errsv = errno;
+
 		nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
+
+		/* must ensure that errno is not modified. */
+		errno = errsv;
+	}
 }
 
 static gboolean
@@ -419,6 +425,7 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 	if ((guint) level >= G_N_ELEMENTS (global.logging))
 		g_return_val_if_reached (FALSE);
 
+	/* This function is guaranteed not to modify errno. */
 	_ensure_initialized ();
 
 	return !!(global.logging[level] & domain);

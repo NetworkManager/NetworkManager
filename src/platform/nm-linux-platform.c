@@ -118,8 +118,26 @@
 #define _NMLOG_PREFIX_NAME                "platform-linux"
 #define _NMLOG_DOMAIN                     LOGD_PLATFORM
 #define _NMLOG2_DOMAIN                    LOGD_PLATFORM
-#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
-#define _NMLOG2(level, ...)               _LOG(level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
+#define _NMLOG(level, ...)                _LOG     (       level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
+#define _NMLOG_err(errsv, level, ...)     _LOG_err (errsv, level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
+#define _NMLOG2(level, ...)               _LOG     (       level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
+#define _NMLOG2_err(errsv, level, ...)    _LOG_err (errsv, level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
+
+
+#define _LOG_print(__level, __domain, __errsv, self, ...) \
+    G_STMT_START { \
+        char __prefix[32]; \
+        const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+        const void *const __self = (self); \
+        \
+        if (__self && __self != nm_platform_try_get ()) { \
+            g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
+            __p_prefix = __prefix; \
+        } \
+        _nm_log (__level, __domain, __errsv, \
+                 "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                 __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+    } G_STMT_END
 
 #define _LOG(level, domain, self, ...) \
     G_STMT_START { \
@@ -127,19 +145,29 @@
         const NMLogDomain __domain = (domain); \
         \
         if (nm_logging_enabled (__level, __domain)) { \
-            char __prefix[32]; \
-            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-            const void *const __self = (self); \
-            \
-            if (__self && __self != nm_platform_try_get ()) { \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-                __p_prefix = __prefix; \
-            } \
-            _nm_log (__level, __domain, 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+            _LOG_print (__level, __domain, 0, self, __VA_ARGS__); \
         } \
     } G_STMT_END
+
+#define _LOG_err(errsv, level, domain, self, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            int __errsv = (errsv); \
+            \
+            /* The %m format specifier (GNU extension) would alread allow you to specify the error
+             * message conveniently (and nm_log would get that right too). But we don't want to depend
+             * on that, so instead append the message at the end.
+             * Currently users are expected not to use %m in the format string. */ \
+            _LOG_print (__level, __domain, __errsv, self, \
+                        _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
+                        _NM_UTILS_MACRO_REST (__VA_ARGS__), \
+                        g_strerror (__errsv), __errsv); \
+        } \
+    } G_STMT_END
+
 
 #define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
 
