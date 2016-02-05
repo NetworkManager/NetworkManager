@@ -2391,7 +2391,7 @@ set_property (GObject *object, guint prop_id,
 		priv->dad_timeout = g_value_get_int (value);
 		break;
 	case PROP_DHCP_TIMEOUT:
-		priv->dhcp_timeout = g_value_get_uint (value);
+		priv->dhcp_timeout = g_value_get_int (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2457,7 +2457,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_int (value, nm_setting_ip_config_get_dad_timeout (setting));
 		break;
 	case PROP_DHCP_TIMEOUT:
-		g_value_set_uint (value, nm_setting_ip_config_get_dhcp_timeout (setting));
+		g_value_set_int (value, nm_setting_ip_config_get_dhcp_timeout (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2768,9 +2768,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_TIMEOUT,
-		 g_param_spec_uint (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_int (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
+		                   0, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   NM_SETTING_PARAM_FUZZY_IGNORE |
+		                   G_PARAM_STATIC_STRINGS));
 }
