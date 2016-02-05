@@ -707,7 +707,7 @@ nm_setting_vxlan_class_init (NMSettingVxlanClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_AGEING,
 		 g_param_spec_uint (NM_SETTING_VXLAN_AGEING, "", "",
-		                    0, G_MAXINT32, 300,
+		                    0, G_MAXUINT32, 300,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
@@ -724,7 +724,7 @@ nm_setting_vxlan_class_init (NMSettingVxlanClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_LIMIT,
 		 g_param_spec_uint (NM_SETTING_VXLAN_LIMIT, "", "",
-		                    0, G_MAXINT32, 0,
+		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
