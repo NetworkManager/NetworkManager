@@ -722,7 +722,7 @@ nm_setting_vxlan_class_init (NMSettingVxlanClass *setting_class)
 	 * Since: 1.2
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_AGEING,
+		(object_class, PROP_LIMIT,
 		 g_param_spec_uint (NM_SETTING_VXLAN_LIMIT, "", "",
 		                    0, G_MAXINT32, 0,
 		                    G_PARAM_READWRITE |
