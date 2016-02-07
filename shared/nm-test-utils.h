@@ -685,7 +685,7 @@ _nmtst_test_data_unpack_detail (const NmtstTestData *test_data, const char **det
 	va_end (ap);
 }
 #define nmtst_test_data_unpack_detail(test_data, detail, ...) _nmtst_test_data_unpack_detail(test_data, detail, NM_NARG (__VA_ARGS__), ##__VA_ARGS__)
-#define nmtst_test_data_unpack(test_data, ...)                nmtst_test_data_unpack(test_data, NULL, ##__VA_ARGS__)
+#define nmtst_test_data_unpack(test_data, ...)                nmtst_test_data_unpack_detail(test_data, NULL, ##__VA_ARGS__)
 
 inline static void
 _nmtst_test_data_free (gpointer data)
