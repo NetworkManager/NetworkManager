@@ -1140,12 +1140,24 @@ can_auto_connect (NMDevice *device,
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMSettingWireless *s_wifi;
 	GSList *ap_iter;
-	const char *method = NULL;
+	const char *method, *mode;
 	guint64 timestamp = 0;
 
 	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (device, connection, specific_object))
 		return FALSE;
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_return_val_if_fail (s_wifi, FALSE);
+
+	/* Always allow autoconnect for shared/Ad-Hoc/AP */
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (   g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
+	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0
+	    || g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		return TRUE;
 
 	/* Don't autoconnect to networks that have been tried at least once
 	 * but haven't been successful, since these are often accidental choices
@@ -1155,11 +1167,6 @@ can_auto_connect (NMDevice *device,
 		if (timestamp == 0)
 			return FALSE;
 	}
-
-	/* Use the connection if it's a shared connection */
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-		return TRUE;
 
 	for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
 		NMAccessPoint *ap = NM_AP (ap_iter->data);
