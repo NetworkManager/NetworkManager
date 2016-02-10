@@ -1365,25 +1365,26 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:powersave:
 	 *
-	 * If set to %FALSE, Wi-Fi power saving behavior is disabled.  If set to
-	 * %TRUE, Wi-Fi power saving behavior is enabled.  All other values are
-	 * reserved.  Note that even though only boolean values are allowed, the
-	 * property type is an unsigned integer to allow for future expansion.
+	 * One of %NM_SETTING_WIRELESS_POWERSAVE_DISABLE (disable Wi-Fi power
+	 * saving), %NM_SETTING_WIRELESS_POWERSAVE_ENABLE (enable Wi-Fi power
+	 * saving), %NM_SETTING_WIRELESS_POWERSAVE_IGNORE (don't touch currently
+	 * configure setting) or %NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (use the
+	 * globally configured value). All other values are reserved.
 	 *
 	 * Since: 1.2
 	 **/
 	/* ---ifcfg-rh---
 	 * property: powersave
 	 * variable: POWERSAVE(+)
-	 * default: no
+	 * values: default, ignore, enable, disable
 	 * description: Enables or disables Wi-Fi power saving.
-	 * example: POWERSAVE=yes
+	 * example: POWERSAVE=enable
 	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_POWERSAVE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_POWERSAVE, "", "",
-		                    0, G_MAXUINT32, 0,
+		                    0, G_MAXUINT32, NM_SETTING_WIRELESS_POWERSAVE_DEFAULT,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
 

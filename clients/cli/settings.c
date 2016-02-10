@@ -1854,14 +1854,19 @@ static char *
 nmc_property_wireless_get_powersave (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
-	guint powersave = nm_setting_wireless_get_powersave (s_wireless);
+	NMSettingWirelessPowersave powersave;
+	gs_free char *str = NULL;
+	char *ret;
 
-	if (powersave == 0)
-		return g_strdup (_("no"));
-	else if (powersave == 1)
-		return g_strdup (_("yes"));
-	else
-		return g_strdup_printf (_("yes (%u)"), powersave);
+	powersave = nm_setting_wireless_get_powersave (s_wireless);
+	str = nm_utils_enum_to_str (nm_setting_wireless_powersave_get_type (), powersave);
+
+	if (get_type == NMC_PROPERTY_GET_PARSABLE) {
+		ret = str;
+		str = NULL;
+		return ret;
+	} else
+		return g_strdup_printf ("%s (%u)", str, powersave);
 }
 
 static char *
@@ -4918,20 +4923,33 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wireless_remove_mac_address_blacklis
 static gboolean
 nmc_property_wireless_set_powersave (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	unsigned long powersave_int;
-	gboolean val_bool = FALSE;
+	NMSettingWirelessPowersave powersave;
+	gs_free const char **options = NULL;
+	gs_free char *options_str = NULL;
+	long int t;
+	gboolean ret;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_uint (val, TRUE, 0, G_MAXUINT32, &powersave_int)) {
-		if (!nmc_string_to_bool (val, &val_bool, NULL)) {
-			g_set_error (error, 1, 0, _("'%s' is not a valid powersave value"), val);
+	if (nmc_string_to_int_base (val, 0, TRUE,
+	                            NM_SETTING_WIRELESS_POWERSAVE_DEFAULT,
+	                            NM_SETTING_WIRELESS_POWERSAVE_LAST,
+	                            &t))
+		powersave = (NMSettingWirelessPowersave) t;
+	else {
+		ret = nm_utils_enum_from_str (nm_setting_wireless_powersave_get_type (),
+		                              val,
+		                              (int *) &powersave,
+		                              NULL);
+		if (!ret) {
+			options = nm_utils_enum_get_values (nm_setting_wireless_powersave_get_type (),
+			                                    NM_SETTING_WIRELESS_POWERSAVE_DEFAULT,
+			                                    NM_SETTING_WIRELESS_POWERSAVE_LAST);
+			options_str = g_strjoinv (",", (char **) options);
+			g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"), val, options_str);
 			return FALSE;
 		}
-		powersave_int = val_bool ? 1 : 0;
 	}
 
-	g_object_set (setting, prop, (guint32) powersave_int, NULL);
+	g_object_set (setting, prop, (guint) powersave, NULL);
 	return TRUE;
 }
 

@@ -981,7 +981,22 @@ write_wireless_setting (NMConnection *connection,
 	}
 
 	svSetValue (ifcfg, "SSID_HIDDEN", nm_setting_wireless_get_hidden (s_wireless) ? "yes" : NULL, TRUE);
-	svSetValue (ifcfg, "POWERSAVE", nm_setting_wireless_get_powersave (s_wireless) ? "yes" : NULL, TRUE);
+
+	switch (nm_setting_wireless_get_powersave (s_wireless)) {
+	case NM_SETTING_WIRELESS_POWERSAVE_IGNORE:
+		svSetValue (ifcfg, "POWERSAVE", "ignore", TRUE);
+		break;
+	case NM_SETTING_WIRELESS_POWERSAVE_DISABLE:
+		svSetValue (ifcfg, "POWERSAVE", "disable", TRUE);
+		break;
+	case NM_SETTING_WIRELESS_POWERSAVE_ENABLE:
+		svSetValue (ifcfg, "POWERSAVE", "enable", TRUE);
+		break;
+	default:
+	case NM_SETTING_WIRELESS_POWERSAVE_DEFAULT:
+		svSetValue (ifcfg, "POWERSAVE", NULL, TRUE);
+		break;
+	}
 
 	svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", NULL, TRUE);
 	switch (nm_setting_wireless_get_mac_address_randomization (s_wireless)) {

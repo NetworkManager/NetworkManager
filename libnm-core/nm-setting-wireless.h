@@ -80,6 +80,25 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_WIRELESS_MODE_INFRA  "infrastructure"
 
+/**
+ * NMSettingWirelessPowersave:
+ * @NM_SETTING_WIRELESS_POWERSAVE_DEFAULT: use the default value
+ * @NM_SETTING_WIRELESS_POWERSAVE_IGNORE: don't touch existing setting
+ * @NM_SETTING_WIRELESS_POWERSAVE_DISABLE: disable powersave
+ * @NM_SETTING_WIRELESS_POWERSAVE_ENABLE: enable powersave
+ *
+ * These flags indicate whether wireless powersave must be enabled.
+ **/
+typedef enum {
+	NM_SETTING_WIRELESS_POWERSAVE_DEFAULT       = 0,
+	NM_SETTING_WIRELESS_POWERSAVE_IGNORE        = 1,
+	NM_SETTING_WIRELESS_POWERSAVE_DISABLE       = 2,
+	NM_SETTING_WIRELESS_POWERSAVE_ENABLE        = 3,
+	_NM_SETTING_WIRELESS_POWERSAVE_NUM, /*< skip >*/
+	NM_SETTING_WIRELESS_POWERSAVE_LAST          =  _NM_SETTING_WIRELESS_POWERSAVE_NUM - 1, /*< skip >*/
+} NMSettingWirelessPowersave;
+
+
 struct _NMSettingWireless {
 	NMSetting parent;
 };

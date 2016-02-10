@@ -489,8 +489,6 @@ deactivate (NMDevice *device)
 	if (nm_device_get_initial_hw_address (device))
 		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_WIFI);
 
-	nm_platform_wifi_set_powersave (NM_PLATFORM_GET, ifindex, 0);
-
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
@@ -2388,6 +2386,38 @@ ensure_hotspot_frequency (NMDeviceWifi *self,
 	nm_ap_set_freq (ap, freq);
 }
 
+static void
+set_powersave (NMDevice *device)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessPowersave powersave;
+	gs_free char *value = NULL;
+
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS);
+	g_return_if_fail (s_wireless);
+
+	powersave = nm_setting_wireless_get_powersave (s_wireless);
+	if (powersave == NM_SETTING_WIRELESS_POWERSAVE_DEFAULT) {
+		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                               "wifi.powersave",
+		                                               device);
+		powersave = _nm_utils_ascii_str_to_int64 (value, 10,
+		                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE,
+		                                          NM_SETTING_WIRELESS_POWERSAVE_ENABLE,
+		                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE);
+	}
+
+	_LOGT (LOGD_WIFI, "powersave is set to %u", (unsigned int) powersave);
+
+	if (powersave == NM_SETTING_WIRELESS_POWERSAVE_IGNORE)
+		return;
+
+	nm_platform_wifi_set_powersave (NM_PLATFORM_GET,
+	                                nm_device_get_ifindex (device),
+	                                powersave == NM_SETTING_WIRELESS_POWERSAVE_ENABLE);
+}
+
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -2454,11 +2484,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	if ((nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) || nm_ap_is_hotspot (ap))
 		ensure_hotspot_frequency (self, s_wireless, ap);
 
-	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA) {
-		nm_platform_wifi_set_powersave (NM_PLATFORM_GET,
-		                                nm_device_get_ifindex (device),
-		                                nm_setting_wireless_get_powersave (s_wireless));
-	}
+	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
+		set_powersave (device);
 
 	/* Build up the supplicant configuration */
 	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap), &error);

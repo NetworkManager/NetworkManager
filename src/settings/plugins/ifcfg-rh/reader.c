@@ -3332,6 +3332,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	gint64 chan = 0;
 	NMSettingMacRandomization mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+	NMSettingWirelessPowersave powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
@@ -3509,9 +3510,28 @@ make_wireless_setting (shvarFile *ifcfg,
 	              svGetValueBoolean (ifcfg, "SSID_HIDDEN", FALSE),
 	              NULL);
 
+	value = svGetValueFull (ifcfg, "POWERSAVE", FALSE);
+	if (value) {
+		if (!strcmp (value, "default"))
+			powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
+		else if (!strcmp (value, "ignore"))
+			powersave = NM_SETTING_WIRELESS_POWERSAVE_IGNORE;
+		else if (!strcmp (value, "disable") || !strcmp (value, "no"))
+			powersave = NM_SETTING_WIRELESS_POWERSAVE_DISABLE;
+		else if (!strcmp (value, "enable") || !strcmp (value, "yes"))
+			powersave = NM_SETTING_WIRELESS_POWERSAVE_ENABLE;
+		else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid POWERSAVE value '%s'", value);
+			g_free (value);
+			goto error;
+		}
+		g_free (value);
+	}
+
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_POWERSAVE,
-	              svGetValueBoolean (ifcfg, "POWERSAVE", FALSE) ? 1 : 0,
+	              powersave,
 	              NULL);
 
 	value = svGetValueFull (ifcfg, "MAC_ADDRESS_RANDOMIZATION", FALSE);
@@ -3525,6 +3545,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid MAC_ADDRESS_RANDOMIZATION value '%s'", value);
+			g_free (value);
 			goto error;
 		}
 		g_free (value);

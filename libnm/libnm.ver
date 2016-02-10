@@ -1014,6 +1014,7 @@ global:
 	nm_setting_wired_wake_on_lan_get_type;
 	nm_setting_wireless_get_powersave;
 	nm_setting_wireless_get_mac_address_randomization;
+	nm_setting_wireless_powersave_get_type;
 	nm_utils_bond_mode_int_to_string;
 	nm_utils_bond_mode_string_to_int;
 	nm_utils_enum_from_str;
