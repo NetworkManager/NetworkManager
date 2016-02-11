@@ -116,6 +116,20 @@ __g_type_ensure (GType type)
 #define g_test_initialized() (g_test_config_vars->test_initialized)
 #endif
 
+/* g_assert_cmpmem() is only available since glib 2.46. */
+#if !GLIB_CHECK_VERSION (2, 45, 7)
+#define g_assert_cmpmem(m1, l1, m2, l2) G_STMT_START {\
+                                             gconstpointer __m1 = m1, __m2 = m2; \
+                                             int __l1 = l1, __l2 = l2; \
+                                             if (__l1 != __l2) \
+                                               g_assertion_message_cmpnum (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
+                                                                           #l1 " (len(" #m1 ")) == " #l2 " (len(" #m2 "))", __l1, "==", __l2, 'i'); \
+                                             else if (memcmp (__m1, __m2, __l1) != 0) \
+                                               g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
+                                                                    "assertion failed (" #m1 " == " #m2 ")"); \
+                                        } G_STMT_END
+#endif
+
 /* Rumtime check for glib version. First do a compile time check which
  * (if satisfied) shortcuts the runtime check. */
 #define nm_glib_check_version(major, minor, micro) \
