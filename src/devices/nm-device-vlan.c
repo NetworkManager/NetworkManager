@@ -546,8 +546,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
-	NMActRequest *req;
-	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
 	const char *cloned_mac;
@@ -559,13 +557,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	req = nm_device_get_act_request (dev);
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	connection = nm_act_request_get_applied_connection (req);
-	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_wired = nm_connection_get_setting_wired (connection);
+	s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
 	if (s_wired) {
 		/* Set device MAC address if the connection wants to change it */
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
@@ -573,7 +565,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 			nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_VLAN);
 	}
 
-	s_vlan = nm_connection_get_setting_vlan (connection);
+	s_vlan = (NMSettingVlan *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_VLAN);
 	if (s_vlan) {
 		gs_free NMVlanQosMapping *ingress_map = NULL;
 		gs_free NMVlanQosMapping *egress_map = NULL;

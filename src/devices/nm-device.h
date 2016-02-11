@@ -377,6 +377,7 @@ NMSettingsConnection *  nm_device_get_settings_connection       (NMDevice *dev);
 NMConnection *          nm_device_get_applied_connection        (NMDevice *dev);
 gboolean                nm_device_has_unmodified_applied_connection (NMDevice *self,
                                                                      NMSettingCompareFlags compare_flags);
+NMSetting *             nm_device_get_applied_setting           (NMDevice *dev, GType setting_type);
 
 void            nm_device_removed        (NMDevice *dev);
 

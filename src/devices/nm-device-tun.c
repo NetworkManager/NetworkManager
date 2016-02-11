@@ -285,8 +285,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
-	NMActRequest *req;
-	NMConnection *connection;
 	NMSettingWired *s_wired;
 	const char *cloned_mac;
 	NMActStageReturn ret;
@@ -301,13 +299,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (g_strcmp0 (priv->mode, "tap"))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
-	req = nm_device_get_act_request (device);
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	connection = nm_act_request_get_applied_connection (req);
-	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_wired = nm_connection_get_setting_wired (connection);
+	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
 	if (s_wired) {
 		/* Set device MAC address if the connection wants to change it */
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);

@@ -64,8 +64,6 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 #define PPPOE_RECONNECT_DELAY 7
 #define PPPOE_ENCAP_OVERHEAD  8 /* 2 bytes for PPP, 6 for PPPoE */
 
-static NMSetting *device_get_setting (NMDevice *device, GType setting_type);
-
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
@@ -427,26 +425,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	}
 
 	return TRUE;
-}
-
-/* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
-   It's here now to keep the patch short. */
-static NMSetting *
-device_get_setting (NMDevice *device, GType setting_type)
-{
-	NMActRequest *req;
-	NMSetting *setting = NULL;
-
-	req = nm_device_get_act_request (device);
-	if (req) {
-		NMConnection *connection;
-
-		connection = nm_act_request_get_applied_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
 }
 
 /*****************************************************************************/
@@ -830,7 +808,6 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMActRequest *req;
 	NMSettingWired *s_wired;
 	const char *cloned_mac;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
@@ -839,10 +816,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		req = nm_device_get_act_request (NM_DEVICE (self));
-		g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-		s_wired = (NMSettingWired *) device_get_setting (dev, NM_TYPE_SETTING_WIRED);
+		s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
 		if (s_wired) {
 			/* Set device MAC address if the connection wants to change it */
 			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
@@ -858,7 +832,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		if (priv->last_pppoe_time) {
 			gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
 
-			if (delay < PPPOE_RECONNECT_DELAY && device_get_setting (dev, NM_TYPE_SETTING_PPPOE)) {
+			if (   delay < PPPOE_RECONNECT_DELAY
+			    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
 				_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
 				       delay);
 				g_assert (!priv->pppoe_wait_id);
@@ -960,7 +935,6 @@ static NMActStageReturn
 pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMConnection *connection;
 	NMSettingPppoe *s_pppoe;
 	NMActRequest *req;
 	GError *err = NULL;
@@ -969,10 +943,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
 
-	connection = nm_act_request_get_applied_connection (req);
-	g_assert (req);
-
-	s_pppoe = nm_connection_get_setting_pppoe (connection);
+	s_pppoe = (NMSettingPppoe *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_PPPOE);
 	g_assert (s_pppoe);
 
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
@@ -1044,7 +1015,7 @@ dcb_configure (NMDevice *device)
 
 	dcb_timeout_cleanup (device);
 
-	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	g_assert (s_dcb);
 	if (!nm_dcb_setup (nm_device_get_iface (device), s_dcb, &error)) {
 		_LOGW (LOGD_DCB, "Activation: (ethernet) failed to enable DCB/FCoE: %s",
@@ -1190,7 +1161,7 @@ wake_on_lan_enable (NMDevice *device)
 	const char *password = NULL;
 	gs_free char *value = NULL;
 
-	s_wired = (NMSettingWired *) device_get_setting (device, NM_TYPE_SETTING_WIRED);
+	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
 	if (s_wired) {
 		wol = nm_setting_wired_get_wake_on_lan (s_wired);
 		password = nm_setting_wired_get_wake_on_lan_password (s_wired);
@@ -1235,7 +1206,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
+	s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (device,
+	                                                              NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
 	dcb_timeout_cleanup (device);
@@ -1248,7 +1220,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	if (!strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
 		NMSetting8021x *security;
 
-		security = (NMSetting8021x *) device_get_setting (device, NM_TYPE_SETTING_802_1X);
+		security = (NMSetting8021x *) nm_device_get_applied_setting (device,
+		                                                             NM_TYPE_SETTING_802_1X);
 		if (security) {
 			/* FIXME: for now 802.1x is mutually exclusive with DCB */
 			return nm_8021x_stage2_config (self, reason);
@@ -1258,7 +1231,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	wake_on_lan_enable (device);
 
 	/* DCB and FCoE setup */
-	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		/* lldpad really really wants the carrier to be up */
 		if (nm_platform_link_is_connected (NM_PLATFORM_GET, nm_device_get_ifindex (device))) {
@@ -1287,7 +1260,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	                           NM_SETTING_PPPOE_SETTING_NAME)) {
 		NMSettingPpp *s_ppp;
 
-		s_ppp = (NMSettingPpp *) device_get_setting (device, NM_TYPE_SETTING_PPP);
+		s_ppp = (NMSettingPpp *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPP);
 		if (s_ppp) {
 			guint32 mtu = 0, mru = 0, mxu;
 
@@ -1317,7 +1290,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
+	s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -1376,7 +1349,7 @@ deactivate (NMDevice *device)
 	dcb_carrier_cleanup (device);
 
 	/* Tear down DCB/FCoE if it was enabled */
-	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		if (!nm_dcb_cleanup (nm_device_get_iface (device), &error)) {
 			_LOGW (LOGD_DEVICE | LOGD_HW, "failed to disable DCB/FCoE: %s",
@@ -1386,7 +1359,7 @@ deactivate (NMDevice *device)
 	}
 
 	/* Set last PPPoE connection time */
-	if (device_get_setting (device, NM_TYPE_SETTING_PPPOE))
+	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
 		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Reset MAC address back to initial address */

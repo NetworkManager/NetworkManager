@@ -502,7 +502,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	gs_free_error GError *error = NULL;
-	NMConnection *connection;
 	NMSettingTeam *s_team;
 	const char *cfg;
 
@@ -512,9 +511,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
-	s_team = nm_connection_get_setting_team (connection);
+	s_team = (NMSettingTeam *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_TEAM);
 	g_assert (s_team);
 
 	if (priv->tdc) {

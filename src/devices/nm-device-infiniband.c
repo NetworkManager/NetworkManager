@@ -69,8 +69,6 @@ static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret;
-	NMActRequest *req;
-	NMConnection *connection;
 	NMSettingInfiniband *s_infiniband;
 	const char *transport_mode;
 	char *mode_path;
@@ -82,12 +80,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	req = nm_device_get_act_request (dev);
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	s_infiniband = (NMSettingInfiniband *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_INFINIBAND);
 	g_assert (s_infiniband);
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
