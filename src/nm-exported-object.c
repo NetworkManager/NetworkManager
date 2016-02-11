@@ -538,6 +538,7 @@ nm_exported_object_export (NMExportedObject *self)
 	NMExportedObjectPrivate *priv;
 	const char *class_export_path, *p;
 	GType type;
+	char *path;
 
 	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
@@ -568,18 +569,19 @@ nm_exported_object_export (NMExportedObject *self)
 			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
 		}
 
-		priv->path = g_strdup_printf (class_export_path, (*counter)++);
+		path = g_strdup_printf (class_export_path, (*counter)++);
 	} else
-		priv->path = g_strdup (class_export_path);
-
-	_LOGT ("export: \"%s\"", priv->path);
-	g_dbus_object_skeleton_set_object_path (G_DBUS_OBJECT_SKELETON (self), priv->path);
+		path = g_strdup (class_export_path);
 
 	type = G_OBJECT_TYPE (self);
 	while (type != NM_TYPE_EXPORTED_OBJECT) {
 		nm_exported_object_create_skeletons (self, type);
 		type = g_type_parent (type);
 	}
+
+	priv->path = path;
+	_LOGT ("export: \"%s\"", priv->path);
+	g_dbus_object_skeleton_set_object_path (G_DBUS_OBJECT_SKELETON (self), priv->path);
 
 	/* Important: priv->path and priv->interfaces must not change while
 	 * the object is registered. */
