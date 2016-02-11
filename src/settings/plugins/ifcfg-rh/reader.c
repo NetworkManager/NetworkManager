@@ -600,8 +600,11 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 			}
 		}
 		dest = g_match_info_fetch (match_info, 1);
-		if (!strcmp (dest, "default"))
-			strcpy (dest,  "0.0.0.0");
+		if (!strcmp (dest, "default")) {
+			g_match_info_free (match_info);
+			PARSE_WARNING ("ignoring manual default route: '%s' (%s)", *iter, filename);
+			continue;
+		}
 		if (!nm_utils_ipaddr_valid (AF_INET, dest)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route destination address '%s'", dest);
