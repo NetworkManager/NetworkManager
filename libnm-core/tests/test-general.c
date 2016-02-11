@@ -4899,6 +4899,132 @@ test_nm_in_set (void)
 
 /******************************************************************************/
 
+static const char *
+_test_nm_in_set_getstr (int *call_counter, gboolean allow_called, const char *value)
+{
+	g_assert (call_counter);
+	*call_counter += 1;
+	if (!allow_called)
+		g_assert_not_reached ();
+	return value;
+}
+
+static void
+test_nm_in_strset (void)
+{
+	int call_counter = 0;
+
+#define G(x) _test_nm_in_set_getstr (&call_counter, TRUE,  x)
+#define N(x) _test_nm_in_set_getstr (&call_counter, FALSE,  x)
+#define _ASSERT(expected, expr) \
+	G_STMT_START { \
+		_test_nm_in_set_assert (&call_counter, 0); \
+		g_assert (expr); \
+		_test_nm_in_set_assert (&call_counter, (expected)); \
+	} G_STMT_END
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL)));
+	_ASSERT (1, !NM_IN_STRSET ("a",  G(NULL)));
+	_ASSERT (1, !NM_IN_STRSET (NULL, G("a")));
+
+	_ASSERT (1,  NM_IN_STRSET_SE (NULL, G(NULL)));
+	_ASSERT (1, !NM_IN_STRSET_SE ("a",  G(NULL)));
+	_ASSERT (1, !NM_IN_STRSET_SE (NULL, G("a")));
+
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N(NULL)));
+	_ASSERT (2, !NM_IN_STRSET ("a",  G(NULL), G(NULL)));
+	_ASSERT (2,  NM_IN_STRSET (NULL, G("a"),  G(NULL)));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("a")));
+	_ASSERT (2,  NM_IN_STRSET ("a",  G(NULL), G("a")));
+	_ASSERT (2, !NM_IN_STRSET (NULL, G("a"),  G("a")));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("b")));
+	_ASSERT (2, !NM_IN_STRSET ("a",  G(NULL), G("b")));
+	_ASSERT (2, !NM_IN_STRSET (NULL, G("a"),  G("b")));
+
+	_ASSERT (2,  NM_IN_STRSET_SE (NULL, G(NULL), G(NULL)));
+	_ASSERT (2, !NM_IN_STRSET_SE ("a",  G(NULL), G(NULL)));
+	_ASSERT (2,  NM_IN_STRSET_SE (NULL, G("a"),  G(NULL)));
+	_ASSERT (2,  NM_IN_STRSET_SE (NULL, G(NULL), G("a")));
+	_ASSERT (2,  NM_IN_STRSET_SE ("a",  G(NULL), G("a")));
+	_ASSERT (2, !NM_IN_STRSET_SE (NULL, G("a"),  G("a")));
+	_ASSERT (2,  NM_IN_STRSET_SE (NULL, G(NULL), G("b")));
+	_ASSERT (2, !NM_IN_STRSET_SE ("a",  G(NULL), G("b")));
+	_ASSERT (2, !NM_IN_STRSET_SE (NULL, G("a"),  G("b")));
+
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N(NULL), N(NULL)));
+	_ASSERT (3, !NM_IN_STRSET ("a",  G(NULL), G(NULL), G(NULL)));
+	_ASSERT (2,  NM_IN_STRSET (NULL, G("a"),  G(NULL), N(NULL)));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("a"),  N(NULL)));
+	_ASSERT (2,  NM_IN_STRSET ("a",  G(NULL), G("a"),  N(NULL)));
+	_ASSERT (3,  NM_IN_STRSET (NULL, G("a"),  G("a"),  G(NULL)));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("b"),  N(NULL)));
+	_ASSERT (3, !NM_IN_STRSET ("a",  G(NULL), G("b"),  G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET (NULL, G("a"),  G("b"),  G(NULL)));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N(NULL), N("a")));
+	_ASSERT (3,  NM_IN_STRSET ("a",  G(NULL), G(NULL), G("a")));
+	_ASSERT (2,  NM_IN_STRSET (NULL, G("a"),  G(NULL), N("a")));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("a"),  N("a")));
+	_ASSERT (2,  NM_IN_STRSET ("a",  G(NULL), G("a"),  N("a")));
+	_ASSERT (3, !NM_IN_STRSET (NULL, G("a"),  G("a"),  G("a")));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("b"),  N("a")));
+	_ASSERT (3,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("a")));
+	_ASSERT (3, !NM_IN_STRSET (NULL, G("a"),  G("b"),  G("a")));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N(NULL), N("b")));
+	_ASSERT (3, !NM_IN_STRSET ("a",  G(NULL), G(NULL), G("b")));
+	_ASSERT (2,  NM_IN_STRSET (NULL, G("a"),  G(NULL), N("b")));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("a"),  N("b")));
+	_ASSERT (2,  NM_IN_STRSET ("a",  G(NULL), G("a"),  N("b")));
+	_ASSERT (3, !NM_IN_STRSET (NULL, G("a"),  G("a"),  G("b")));
+	_ASSERT (1,  NM_IN_STRSET (NULL, G(NULL), N("b"),  N("b")));
+	_ASSERT (3, !NM_IN_STRSET ("a",  G(NULL), G("b"),  G("b")));
+	_ASSERT (3, !NM_IN_STRSET (NULL, G("a"),  G("b"),  G("b")));
+
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G(NULL), G(NULL)));
+	_ASSERT (3, !NM_IN_STRSET_SE ("a",  G(NULL), G(NULL), G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G("a"),  G(NULL), G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("a"),  G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE ("a",  G(NULL), G("a"),  G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G("a"),  G("a"),  G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("b"),  G(NULL)));
+	_ASSERT (3, !NM_IN_STRSET_SE ("a",  G(NULL), G("b"),  G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G("a"),  G("b"),  G(NULL)));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G(NULL), G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE ("a",  G(NULL), G(NULL), G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G("a"),  G(NULL), G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("a"),  G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE ("a",  G(NULL), G("a"),  G("a")));
+	_ASSERT (3, !NM_IN_STRSET_SE (NULL, G("a"),  G("a"),  G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("b"),  G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE ("a",  G(NULL), G("b"),  G("a")));
+	_ASSERT (3, !NM_IN_STRSET_SE (NULL, G("a"),  G("b"),  G("a")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G(NULL), G("b")));
+	_ASSERT (3, !NM_IN_STRSET_SE ("a",  G(NULL), G(NULL), G("b")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G("a"),  G(NULL), G("b")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("a"),  G("b")));
+	_ASSERT (3,  NM_IN_STRSET_SE ("a",  G(NULL), G("a"),  G("b")));
+	_ASSERT (3, !NM_IN_STRSET_SE (NULL, G("a"),  G("a"),  G("b")));
+	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("b"),  G("b")));
+	_ASSERT (3, !NM_IN_STRSET_SE ("a",  G(NULL), G("b"),  G("b")));
+	_ASSERT (3, !NM_IN_STRSET_SE (NULL, G("a"),  G("b"),  G("b")));
+
+
+	_ASSERT (3,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("a"),  N("a")));
+	_ASSERT (4,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("a")));
+	_ASSERT (4, !NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d")));
+
+	_ASSERT (4,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("a"),  N("a")));
+	_ASSERT (5,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("a")));
+	_ASSERT (5, !NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("e")));
+
+	_ASSERT (5,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("a"),  N("a")));
+	_ASSERT (6,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("e"),  G("a")));
+	_ASSERT (6, !NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("e"),  G("f")));
+#undef G
+#undef N
+#undef _ASSERT
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4907,6 +5033,7 @@ int main (int argc, char **argv)
 
 	/* The tests */
 	g_test_add_func ("/core/general/test_nm_in_set", test_nm_in_set);
+	g_test_add_func ("/core/general/test_nm_in_strset", test_nm_in_strset);
 	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);
 	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
 	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);

@@ -175,6 +175,71 @@
  * side-effects. */
 #define NM_IN_SET_SE(x, ...)            _NM_IN_SET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
+/********************************************************/
+
+static inline gboolean
+_NM_IN_STRSET_streq (const char *x, const char *s)
+{
+	return s && strcmp (x, s) == 0;
+}
+
+#define _NM_IN_STRSET_EVAL_1(op, _x, y1)                            \
+    _NM_IN_STRSET_streq (_x, y1)
+
+#define _NM_IN_STRSET_EVAL_2(op, _x, y1, y2)                        \
+    (   _NM_IN_STRSET_streq (_x, y1)                                \
+     op _NM_IN_STRSET_streq (_x, y2)                                \
+    )
+
+#define _NM_IN_STRSET_EVAL_3(op, _x, y1, y2, y3)                    \
+    (   _NM_IN_STRSET_streq (_x, y1)                                \
+     op _NM_IN_STRSET_streq (_x, y2)                                \
+     op _NM_IN_STRSET_streq (_x, y3)                                \
+    )
+
+#define _NM_IN_STRSET_EVAL_4(op, _x, y1, y2, y3, y4)                \
+    (   _NM_IN_STRSET_streq (_x, y1)                                \
+     op _NM_IN_STRSET_streq (_x, y2)                                \
+     op _NM_IN_STRSET_streq (_x, y3)                                \
+     op _NM_IN_STRSET_streq (_x, y4)                                \
+    )
+
+#define _NM_IN_STRSET_EVAL_5(op, _x, y1, y2, y3, y4, y5)            \
+    (   _NM_IN_STRSET_streq (_x, y1)                                \
+     op _NM_IN_STRSET_streq (_x, y2)                                \
+     op _NM_IN_STRSET_streq (_x, y3)                                \
+     op _NM_IN_STRSET_streq (_x, y4)                                \
+     op _NM_IN_STRSET_streq (_x, y5)                                \
+    )
+
+#define _NM_IN_STRSET_EVAL_6(op, _x, y1, y2, y3, y4, y5, y6)        \
+    (   _NM_IN_STRSET_streq (_x, y1)                                \
+     op _NM_IN_STRSET_streq (_x, y2)                                \
+     op _NM_IN_STRSET_streq (_x, y3)                                \
+     op _NM_IN_STRSET_streq (_x, y4)                                \
+     op _NM_IN_STRSET_streq (_x, y5)                                \
+     op _NM_IN_STRSET_streq (_x, y6)                                \
+    )
+
+#define _NM_IN_STRSET_EVAL_N2(op, _x, n, ...) _NM_IN_STRSET_EVAL_##n(op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_N(op, x, n, ...)                       \
+    ({                                                            \
+        const char *_x = (x);                                     \
+        (   ((_x == NULL) && _NM_IN_SET_EVAL_N2    (op, (const char *) NULL, n, __VA_ARGS__)) \
+         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2 (op, _x,                  n, __VA_ARGS__)) \
+        ); \
+    })
+
+/* Beware that this does short-circuit evaluation (use "||" instead of "|")
+ * which has a possibly unexpected non-function-like behavior.
+ * Use NM_IN_STRSET_SE if you need all arguments to be evaluted. */
+#define NM_IN_STRSET(x, ...)               _NM_IN_STRSET_EVAL_N(||, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
+/* "SE" stands for "side-effect". Contrary to NM_IN_STRSET(), this does not do
+ * short-circuit evaluation, which can make a difference if the arguments have
+ * side-effects. */
+#define NM_IN_STRSET_SE(x, ...)            _NM_IN_STRSET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
 /*****************************************************************************/
 
 #define NM_PRINT_FMT_QUOTED(cond, prefix, str, suffix, str_else) \
