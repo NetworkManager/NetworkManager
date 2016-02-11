@@ -162,7 +162,7 @@ verify_no_wpa (NMSettingWirelessSecurity *s_wsec,
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("a connection using '%s' authentication cannot specific WPA protocols"),
+		             _("a connection using '%s' authentication cannot specify WPA protocols"),
 		             tag);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 		                NM_SETTING_WIRELESS_SECURITY_PROTO);
@@ -178,7 +178,7 @@ verify_no_wpa (NMSettingWirelessSecurity *s_wsec,
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("a connection using '%s' authentication cannot specific WPA ciphers"),
+			             _("a connection using '%s' authentication cannot specify WPA ciphers"),
 			             tag);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 			                NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
@@ -195,7 +195,7 @@ verify_no_wpa (NMSettingWirelessSecurity *s_wsec,
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("a connection using '%s' authentication cannot specific WPA ciphers"),
+			             _("a connection using '%s' authentication cannot specify WPA ciphers"),
 			             tag);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 			                NM_SETTING_WIRELESS_SECURITY_GROUP);
@@ -207,7 +207,7 @@ verify_no_wpa (NMSettingWirelessSecurity *s_wsec,
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("a connection using '%s' authentication cannot specific a WPA password"),
+		             _("a connection using '%s' authentication cannot specify a WPA password"),
 		             tag);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 		                NM_SETTING_WIRELESS_SECURITY_PSK);
