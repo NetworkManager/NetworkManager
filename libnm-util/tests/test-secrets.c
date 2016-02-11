@@ -739,11 +739,13 @@ NMTST_DEFINE ();
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
+	gboolean success;
 
 	nmtst_init (&argc, &argv, TRUE);
 
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	success = nm_utils_init (&error);
+	g_assert_no_error (error);
+	g_assert (success);
 
 	/* The tests */
 	g_test_add_func ("/libnm/need_tls_secrets_path", test_need_tls_secrets_path);

@@ -1039,16 +1039,10 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 #define nmtst_assert_ip6_address(addr, str_expected) _nmtst_assert_ip6_address (__FILE__, __LINE__, addr, str_expected)
 
 /* Deprecated: don't use this overly verbose macro. */
-#define FAIL(test_name, fmt, ...) \
-    G_STMT_START { \
-        g_error ("%s:%d: FAIL[%s]: " fmt, __FILE__, __LINE__, test_name, ## __VA_ARGS__); \
-    } G_STMT_END
-
-/* Deprecated: don't use this overly verbose macro. */
 #define ASSERT(x, test_name, fmt, ...) \
     G_STMT_START { \
         if (!(x)) { \
-            FAIL (test_name, fmt, ## __VA_ARGS__); \
+            g_error ("%s:%d: FAIL[%s]: " fmt, __FILE__, __LINE__, test_name, ## __VA_ARGS__); \
         } \
     } G_STMT_END
 
