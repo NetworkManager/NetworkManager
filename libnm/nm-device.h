@@ -157,6 +157,24 @@ gboolean             nm_device_reapply_finish       (NMDevice *device,
                                                      GAsyncResult *result,
                                                      GError **error);
 
+NM_AVAILABLE_IN_1_2
+NMConnection        *nm_device_get_applied_connection (NMDevice *device,
+                                                       guint32 flags,
+                                                       guint64 *version_id,
+                                                       GCancellable *cancellable,
+                                                       GError **error);
+NM_AVAILABLE_IN_1_2
+void                 nm_device_get_applied_connection_async  (NMDevice *device,
+                                                              guint32 flags,
+                                                              GCancellable *cancellable,
+                                                              GAsyncReadyCallback callback,
+                                                              gpointer user_data);
+NM_AVAILABLE_IN_1_2
+NMConnection        *nm_device_get_applied_connection_finish (NMDevice *device,
+                                                              GAsyncResult *result,
+                                                              guint64 *version_id,
+                                                              GError **error);
+
 gboolean             nm_device_disconnect           (NMDevice *device,
                                                      GCancellable *cancellable,
                                                      GError **error);
