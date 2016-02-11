@@ -1,5 +1,3 @@
-/*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
-
 #pragma once
 
 /***
@@ -69,7 +67,7 @@ typedef struct dual_timestamp {
 #define FORMAT_TIMESTAMP_RELATIVE_MAX 256
 #define FORMAT_TIMESPAN_MAX 64
 
-#define TIME_T_MAX (time_t)((1UL << ((sizeof(time_t) << 3) - 1)) - 1)
+#define TIME_T_MAX (time_t)((UINTMAX_C(1) << ((sizeof(time_t) << 3) - 1)) - 1)
 
 #define DUAL_TIMESTAMP_NULL ((struct dual_timestamp) { 0ULL, 0ULL })
 
@@ -91,8 +89,6 @@ struct timespec *timespec_store(struct timespec *ts, usec_t u);
 
 usec_t timeval_load(const struct timeval *tv) _pure_;
 struct timeval *timeval_store(struct timeval *tv, usec_t u);
-
-nsec_t timespec_load_nsec(const struct timespec *ts) _pure_;
 
 char *format_timestamp(char *buf, size_t l, usec_t t);
 char *format_timestamp_utc(char *buf, size_t l, usec_t t);
@@ -127,3 +123,29 @@ time_t mktime_or_timegm(struct tm *tm, bool utc);
 struct tm *localtime_or_gmtime_r(const time_t *t, struct tm *tm, bool utc);
 
 unsigned long usec_to_jiffies(usec_t usec);
+
+static inline usec_t usec_add(usec_t a, usec_t b) {
+        usec_t c;
+
+        /* Adds two time values, and makes sure USEC_INFINITY as input results as USEC_INFINITY in output, and doesn't
+         * overflow. */
+
+        c = a + b;
+        if (c < a || c < b) /* overflow check */
+                return USEC_INFINITY;
+
+        return c;
+}
+
+static inline usec_t usec_sub(usec_t timestamp, int64_t delta) {
+        if (delta < 0)
+                return usec_add(timestamp, (usec_t) (-delta));
+
+        if (timestamp == USEC_INFINITY) /* Make sure infinity doesn't degrade */
+                return USEC_INFINITY;
+
+        if (timestamp < (usec_t) delta)
+                return 0;
+
+        return timestamp - delta;
+}

@@ -1,5 +1,3 @@
-/*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
-
 /***
   This file is part of systemd.
 
@@ -119,7 +117,7 @@ char *cescape(const char *s) {
         return cescape_length(s, strlen(s));
 }
 
-int cunescape_one(const char *p, size_t length, uint32_t *ret, bool *eight_bit) {
+int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit) {
         int r = 1;
 
         assert(p);
@@ -230,7 +228,7 @@ int cunescape_one(const char *p, size_t length, uint32_t *ret, bool *eight_bit) 
 
                 int a[8];
                 unsigned i;
-                uint32_t c;
+                char32_t c;
 
                 if (length != (size_t) -1 && length < 9)
                         return -EINVAL;
@@ -267,7 +265,7 @@ int cunescape_one(const char *p, size_t length, uint32_t *ret, bool *eight_bit) 
         case '7': {
                 /* octal encoding */
                 int a, b, c;
-                uint32_t m;
+                char32_t m;
 
                 if (length != (size_t) -1 && length < 3)
                         return -EINVAL;
@@ -327,8 +325,8 @@ int cunescape_length_with_prefix(const char *s, size_t length, const char *prefi
 
         for (f = s, t = r + pl; f < s + length; f++) {
                 size_t remaining;
-                uint32_t u;
                 bool eight_bit = false;
+                char32_t u;
                 int k;
 
                 remaining = s + length - f;
