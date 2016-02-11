@@ -205,7 +205,7 @@ test_connection_match_basic (void)
 	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	/* Now change a material property like IPv4 method and ensure matching fails */
@@ -214,7 +214,7 @@ test_connection_match_basic (void)
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == NULL);
 
 	g_slist_free (connections);
@@ -250,7 +250,7 @@ test_connection_match_ip6_method (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
@@ -284,7 +284,7 @@ test_connection_match_ip6_method_ignore (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
@@ -318,14 +318,13 @@ test_connection_match_ip6_method_ignore_auto (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
 	g_object_unref (orig);
 	g_object_unref (copy);
 }
-
 
 static void
 test_connection_match_ip4_method (void)
@@ -355,11 +354,11 @@ test_connection_match_ip4_method (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, FALSE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, FALSE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	/* Ensure when carrier=true matching fails */
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == NULL);
 
 	g_slist_free (connections);
@@ -393,7 +392,7 @@ test_connection_match_interface_name (void)
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, NULL,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
@@ -430,7 +429,7 @@ test_connection_match_wired (void)
 	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
@@ -462,7 +461,7 @@ test_connection_match_wired2 (void)
 	 * the connections match. It can happen if assuming VLAN devices. */
 	nm_connection_remove_setting (orig, NM_TYPE_SETTING_WIRED);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
@@ -487,7 +486,7 @@ test_connection_match_cloned_mac (void)
 	              NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "52:54:00:ab:db:23",
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == fuzzy);
 
 	exact = nm_simple_connection_new_clone (orig);
@@ -498,14 +497,14 @@ test_connection_match_cloned_mac (void)
 	              NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "52:54:00:ab:db:23",
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == exact);
 
 	g_object_set (G_OBJECT (s_wired),
 	              NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "52:54:00:ab:db:24",
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched == fuzzy);
 
 	g_slist_free (connections);
@@ -565,7 +564,7 @@ test_connection_no_match_ip4_addr (void)
 	nm_setting_ip_config_add_address (s_ip4, nm_addr);
 	nm_ip_address_unref (nm_addr);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched != copy);
 
 	g_slist_free (connections);
@@ -611,7 +610,7 @@ test_connection_no_match_vlan (void)
 	              NM_SETTING_VLAN_FLAGS, 0,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched != copy);
 
 	/* Check that the connections do not match if VLAN priorities differ */
@@ -621,12 +620,124 @@ test_connection_no_match_vlan (void)
 	g_object_set (G_OBJECT (s_vlan_copy), NM_SETTING_VLAN_FLAGS, 0, NULL);
 	nm_setting_vlan_add_priority_str (s_vlan_copy, NM_VLAN_INGRESS_MAP, "4:2");
 
-	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, 0, 0, NULL, NULL);
 	g_assert (matched != copy);
 
 	g_slist_free (connections);
 	g_object_unref (orig);
 	g_object_unref (copy);
+}
+
+static void
+test_connection_match_ip4_routes1 (void)
+{
+	gs_unref_object NMConnection *orig = NULL, *copy = NULL;
+	NMConnection *matched;
+	gs_free_slist GSList *connections = NULL;
+	NMSettingIPConfig *s_ip4;
+
+	orig = _match_connection_new ();
+
+	s_ip4 = nm_connection_get_setting_ip4_config (orig);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	nmtst_setting_ip_config_add_address (s_ip4, "10.0.0.1", 8);
+
+	/* Clone connection */
+	copy = nm_simple_connection_new_clone (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Set routes on original connection */
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.16.0", 24, "10.0.0.2", -1);
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.17.0", 24, "10.0.0.3", 20);
+
+	/* Set single route on cloned connection */
+	s_ip4 = nm_connection_get_setting_ip4_config (copy);
+	g_assert (s_ip4);
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.17.0", 24, "10.0.0.3", 20);
+
+	/* Try to match the connections */
+	matched = nm_utils_match_connection (connections, orig, FALSE, 100, 0, NULL, NULL);
+	g_assert (matched == NULL);
+}
+
+static void
+test_connection_match_ip4_routes2 (void)
+{
+	gs_unref_object NMConnection *orig = NULL, *copy = NULL;
+	NMConnection *matched;
+	gs_free_slist GSList *connections = NULL;
+	NMSettingIPConfig *s_ip4;
+
+	orig = _match_connection_new ();
+
+	s_ip4 = nm_connection_get_setting_ip4_config (orig);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	nmtst_setting_ip_config_add_address (s_ip4, "10.0.0.1", 8);
+
+	/* Clone connection */
+	copy = nm_simple_connection_new_clone (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Set routes on original connection */
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.16.0", 24, "10.0.0.2", -1);
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.17.0", 24, "10.0.0.3", 20);
+
+	/* Set routes on cloned connection, changing order and using explicit metrics */
+	s_ip4 = nm_connection_get_setting_ip4_config (copy);
+	g_assert (s_ip4);
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.17.0", 24, "10.0.0.3", 20);
+	nmtst_setting_ip_config_add_route (s_ip4, "172.25.16.0", 24, "10.0.0.2", 100);
+
+	/* Try to match the connections using different default metrics */
+	matched = nm_utils_match_connection (connections, orig, FALSE, 100, 0, NULL, NULL);
+	g_assert (matched == copy);
+	matched = nm_utils_match_connection (connections, orig, FALSE, 500, 0, NULL, NULL);
+	g_assert (matched == NULL);
+}
+
+static void
+test_connection_match_ip6_routes (void)
+{
+	gs_unref_object NMConnection *orig = NULL, *copy = NULL;
+	NMConnection *matched;
+	gs_free_slist GSList *connections = NULL;
+	NMSettingIPConfig *s_ip6;
+
+	orig = _match_connection_new ();
+
+	s_ip6 = nm_connection_get_setting_ip6_config (orig);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	nmtst_setting_ip_config_add_address (s_ip6, "fd01::15", 64);
+
+	/* Clone connection */
+	copy = nm_simple_connection_new_clone (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Set routes on original connection */
+	nmtst_setting_ip_config_add_route (s_ip6, "2001:db8:a:b:0:0:0:0", 64, "fd01::16", -1);
+
+	/* Set routes on cloned connection */
+	s_ip6 = nm_connection_get_setting_ip6_config (copy);
+	g_assert (s_ip6);
+	nmtst_setting_ip_config_add_route (s_ip6, "2001:db8:a:b:0:0:0:0", 64, "fd01::16", 50);
+
+	/* Try to match the connections */
+	matched = nm_utils_match_connection (connections, orig, FALSE, 0, 100, NULL, NULL);
+	g_assert (matched == NULL);
+	matched = nm_utils_match_connection (connections, orig, FALSE, 0, 50, NULL, NULL);
+	g_assert (matched == copy);
 }
 
 static NMConnection *
@@ -1136,6 +1247,9 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-match/cloned_mac", test_connection_match_cloned_mac);
 	g_test_add_func ("/general/connection-match/no-match-ip4-addr", test_connection_no_match_ip4_addr);
 	g_test_add_func ("/general/connection-match/no-match-vlan", test_connection_no_match_vlan);
+	g_test_add_func ("/general/connection-match/routes/ip4/1", test_connection_match_ip4_routes1);
+	g_test_add_func ("/general/connection-match/routes/ip4/2", test_connection_match_ip4_routes2);
+	g_test_add_func ("/general/connection-match/routes/ip6", test_connection_match_ip6_routes);
 
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 
