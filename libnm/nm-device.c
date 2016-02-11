@@ -2167,6 +2167,9 @@ nm_device_is_software (NMDevice *device)
  * nm_device_reapply:
  * @device: a #NMDevice
  * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
+ * @version_id: zero or the expected version id of the applied connection. If specified
+ *   and the version id mismatches, the call fails without modification. This allows to
+ *   catch concurrent accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -2181,6 +2184,7 @@ nm_device_is_software (NMDevice *device)
 gboolean
 nm_device_reapply (NMDevice *device,
                    NMConnection *connection,
+                   guint64 version_id,
                    guint flags,
                    GCancellable *cancellable,
                    GError **error)
@@ -2197,7 +2201,7 @@ nm_device_reapply (NMDevice *device,
 
 
 	ret = nmdbus_device_call_reapply_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                       dict, flags, cancellable, error);
+	                                       dict, version_id, flags, cancellable, error);
 	if (error && *error)
 		g_dbus_error_strip_remote_error (*error);
 	return ret;
@@ -2226,6 +2230,9 @@ device_reapply_cb (GObject *proxy,
  * nm_device_reapply_async:
  * @device: a #NMDevice
  * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
+ * @version_id: zero or the expected version id of the applied connection. If specified
+ *   and the version id mismatches, the call fails without modification. This allows to
+ *   catch concurrent accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @callback: callback to be called when the reapply operation completes
@@ -2239,6 +2246,7 @@ device_reapply_cb (GObject *proxy,
 void
 nm_device_reapply_async (NMDevice *device,
                          NMConnection *connection,
+                         guint64 version_id,
                          guint flags,
                          GCancellable *cancellable,
                          GAsyncReadyCallback callback,
@@ -2258,7 +2266,7 @@ nm_device_reapply_async (NMDevice *device,
 	                                    nm_device_reapply_async);
 
 	nmdbus_device_call_reapply (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                            dict, flags, cancellable,
+	                            dict, version_id, flags, cancellable,
 	                            device_reapply_cb, simple);
 }
 

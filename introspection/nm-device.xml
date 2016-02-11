@@ -176,6 +176,13 @@
           settings from the connection that is active on the device will be used.
         </tp:docstring>
       </arg>
+      <arg name="version_id" type="t" direction="in">
+        <tp:docstring>
+            If non-zero, the current version id of the applied connection must match.
+            This optional argument allows to catch concurrent modifications when
+            reapplying the currently applied connection with modifications.
+        </tp:docstring>
+      </arg>
       <arg name="flags" type="u" direction="in">
         <tp:docstring>
           Flags which would modify the behavior of the Reapply call.

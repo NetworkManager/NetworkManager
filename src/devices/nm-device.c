@@ -7162,6 +7162,8 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 /* reapply_connection:
  * @connection: the new connection settings to be applied or %NULL to reapply
  *   the current settings connection
+ * @version_id: either zero, or the current version id for the applied
+ *   connection.
  * @error: the error if %FALSE is returned
  *
  * Change configuration of an already configured device if possible.
@@ -7172,6 +7174,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 static gboolean
 reapply_connection (NMDevice *self,
                     NMConnection *connection,
+                    guint64 version_id,
                     GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7181,7 +7184,6 @@ reapply_connection (NMDevice *self,
 	NMConnection *con_old, *con_new;
 	NMSettingIPConfig *s_ip4_old, *s_ip4_new;
 	NMSettingIPConfig *s_ip6_old, *s_ip6_new;
-	guint64 version_id;
 
 	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
 		g_set_error_literal (error,
@@ -7212,6 +7214,15 @@ reapply_connection (NMDevice *self,
 	                               NM_SETTING_CONNECTION_ZONE,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
+
+	if (   version_id != 0
+	    && version_id != nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_VERSION_ID_MISMATCH,
+		                     "Reapply failed because device changed in the meantime and the version-id mismatches");
+		return FALSE;
+	}
 
 	/**************************************************************************
 	 * Update applied connection
@@ -7249,6 +7260,11 @@ reapply_connection (NMDevice *self,
 	return TRUE;
 }
 
+typedef struct {
+	NMConnection *connection;
+	guint64 version_id;
+} ReapplyData;
+
 static void
 reapply_cb (NMDevice *self,
             GDBusMethodInvocation *context,
@@ -7256,8 +7272,16 @@ reapply_cb (NMDevice *self,
             GError *error,
             gpointer user_data)
 {
-	gs_unref_object NMConnection *connection = NM_CONNECTION (user_data);
+	ReapplyData *reapply_data = user_data;
+	guint64 version_id = 0;
+	gs_unref_object NMConnection *connection = NULL;
 	GError *local = NULL;
+
+	if (reapply_data) {
+		connection = reapply_data->connection;
+		version_id = reapply_data->version_id;
+		g_slice_free (ReapplyData, reapply_data);
+	}
 
 	if (error) {
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, error->message);
@@ -7267,6 +7291,7 @@ reapply_cb (NMDevice *self,
 
 	if (!reapply_connection (self,
 	                         connection ? : (NMConnection *) nm_device_get_settings_connection (self),
+	                         version_id,
 	                         &local)) {
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, local->message);
 		g_dbus_method_invocation_take_error (context, local);
@@ -7281,12 +7306,14 @@ static void
 impl_device_reapply (NMDevice *self,
                      GDBusMethodInvocation *context,
                      GVariant *settings,
+                     guint64 version_id,
                      guint flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection;
 	NMConnection *connection = NULL;
 	GError *error = NULL;
+	ReapplyData *reapply_data;
 
 	/* No flags supported as of now. */
 	if (flags != 0) {
@@ -7322,6 +7349,13 @@ impl_device_reapply (NMDevice *self,
 		nm_connection_clear_secrets (connection);
 	}
 
+	if (connection || version_id) {
+		reapply_data = g_slice_new (ReapplyData);
+		reapply_data->connection = connection;
+		reapply_data->version_id = version_id;
+	} else
+		reapply_data = NULL;
+
 	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
 	               context,
@@ -7329,7 +7363,7 @@ impl_device_reapply (NMDevice *self,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
 	               reapply_cb,
-	               connection);
+	               reapply_data);
 }
 
 static void

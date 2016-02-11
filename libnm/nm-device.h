@@ -140,12 +140,14 @@ char **              nm_device_disambiguate_names    (NMDevice **devices,
 NM_AVAILABLE_IN_1_2
 gboolean             nm_device_reapply              (NMDevice *device,
                                                      NMConnection *connection,
+                                                     guint64 version_id,
                                                      guint flags,
                                                      GCancellable *cancellable,
                                                      GError **error);
 NM_AVAILABLE_IN_1_2
 void                 nm_device_reapply_async        (NMDevice *device,
                                                      NMConnection *connection,
+                                                     guint64 version_id,
                                                      guint flags,
                                                      GCancellable *cancellable,
                                                      GAsyncReadyCallback callback,
