@@ -7366,6 +7366,100 @@ impl_device_reapply (NMDevice *self,
 	               reapply_data);
 }
 
+/*****************************************************************************/
+
+static void
+get_applied_connection_cb (NMDevice *self,
+                           GDBusMethodInvocation *context,
+                           NMAuthSubject *subject,
+                           GError *error,
+                           gpointer user_data /* possibly dangling pointer */)
+{
+	NMDevicePrivate *priv;
+	NMConnection *applied_connection;
+	GVariant *settings;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (error) {
+		g_dbus_method_invocation_return_gerror (context, error);
+		return;
+	}
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	applied_connection = nm_device_get_applied_connection (self);
+
+	if (!applied_connection) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "Device is not activated");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (applied_connection != user_data) {
+		/* The applied connection changed due to a race. Reauthenticate. */
+		g_signal_emit (self, signals[AUTH_REQUEST], 0,
+		               context,
+		               applied_connection,
+		               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+		               TRUE,
+		               get_applied_connection_cb,
+		               applied_connection /* no need take a ref. We will not dereference this pointer. */);
+		return;
+	}
+
+	settings = nm_connection_to_dbus (applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+	if (!settings)
+		settings = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(@a{sa{sv}}t)",
+	                                                      settings,
+	                                                      nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)));
+}
+
+static void
+impl_device_get_applied_connection (NMDevice *self,
+                                    GDBusMethodInvocation *context,
+                                    guint32 flags)
+{
+	NMConnection *applied_connection;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	/* No flags supported as of now. */
+	if (flags != 0) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_FAILED,
+		                             "Invalid flags specified");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	applied_connection = nm_device_get_applied_connection (self);
+	if (!applied_connection) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "Device is not activated");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	/* Ask the manager to authenticate this request for us */
+	g_signal_emit (self, signals[AUTH_REQUEST], 0,
+	               context,
+	               applied_connection,
+	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	               TRUE,
+	               get_applied_connection_cb,
+	               applied_connection /* no need take a ref. We will not dereference this pointer. */);
+}
+
+/*****************************************************************************/
+
 static void
 disconnect_cb (NMDevice *self,
                GDBusMethodInvocation *context,
@@ -11724,6 +11818,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_SKELETON,
 	                                        "Reapply", impl_device_reapply,
+	                                        "GetAppliedConnection", impl_device_get_applied_connection,
 	                                        "Disconnect", impl_device_disconnect,
 	                                        "Delete", impl_device_delete,
 	                                        NULL);
