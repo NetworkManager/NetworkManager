@@ -7181,6 +7181,7 @@ reapply_connection (NMDevice *self,
 	NMConnection *con_old, *con_new;
 	NMSettingIPConfig *s_ip4_old, *s_ip4_new;
 	NMSettingIPConfig *s_ip6_old, *s_ip6_new;
+	guint64 version_id;
 
 	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
 		g_set_error_literal (error,
@@ -7212,11 +7213,16 @@ reapply_connection (NMDevice *self,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
 
-	_LOGD (LOGD_DEVICE, "reapply");
-
 	/**************************************************************************
 	 * Update applied connection
 	 *************************************************************************/
+
+	if (diffs)
+		nm_active_connection_version_id_bump ((NMActiveConnection *) priv->act_request);
+
+	_LOGD (LOGD_DEVICE, "reapply (version-id %llu%s)",
+	       (long long unsigned) nm_active_connection_version_id_get (((NMActiveConnection *) priv->act_request)),
+	       diffs ? "" : " (unmodified)");
 
 	if (diffs) {
 		con_old = applied_clone  = nm_simple_connection_new_clone (applied);
@@ -9218,6 +9224,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	NMSettingConnection *s_con_applied;
 	const char *zone;
 	NMMetered metered;
+	guint64 version_id;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -9240,7 +9247,8 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
 	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
 
-		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s", NM_PRINT_FMT_QUOTE_STRING (zone));
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->priv->act_request);
+		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (long long unsigned) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
 		              NM_SETTING_CONNECTION_ZONE, zone,
@@ -9251,7 +9259,8 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 
 	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
 
-		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d", (int) metered);
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->priv->act_request);
+		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d (version-id %llu)", (int) metered, (long long unsigned) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
 		              NM_SETTING_CONNECTION_METERED, metered,

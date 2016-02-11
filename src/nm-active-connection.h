@@ -83,6 +83,9 @@ typedef struct {
 	                                NMMetered new_value);
 } NMActiveConnectionClass;
 
+guint64 nm_active_connection_version_id_get (NMActiveConnection *self);
+guint64 nm_active_connection_version_id_bump (NMActiveConnection *self);
+
 GType         nm_active_connection_get_type (void);
 
 typedef void (*NMActiveConnectionAuthResultFunc) (NMActiveConnection *self,
