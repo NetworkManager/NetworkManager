@@ -4864,6 +4864,8 @@ test_nm_in_set (void)
 	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1)));
 
 	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
+	_ASSERT (5,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G( 4), G(-1)));
+	_ASSERT (6,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G( 4), G( 5), G( -1)));
 
 	_ASSERT (1, !NM_IN_SET_SE (-1, G( 1)));
 	_ASSERT (1,  NM_IN_SET_SE (-1, G(-1)));
@@ -4889,6 +4891,7 @@ test_nm_in_set (void)
 	_ASSERT (4,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G(-1)));
 
 	_ASSERT (5,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
+	_ASSERT (6,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G( 4), G( 5), G(-1)));
 #undef G
 #undef N
 #undef _ASSERT

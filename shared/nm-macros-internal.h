@@ -120,53 +120,50 @@
 
 /********************************************************/
 
-#define _NM_IN_SET_EVAL_1(op, x, y1)                              \
-    ({                                                            \
-        typeof(x) _x = (x);                                       \
-        (   (_x == (y1))                                          \
-        );                                                        \
-    })
+#define _NM_IN_SET_EVAL_1(op, _x, y1)                               \
+    (_x == (y1))
 
-#define _NM_IN_SET_EVAL_2(op, x, y1, y2)                          \
-    ({                                                            \
-        typeof(x) _x = (x);                                       \
-        (   (_x == (y1))                                          \
-         op (_x == (y2))                                          \
-        );                                                        \
-    })
+#define _NM_IN_SET_EVAL_2(op, _x, y1, y2)                           \
+    (   (_x == (y1))                                                \
+     op (_x == (y2))                                                \
+    )
 
-#define _NM_IN_SET_EVAL_3(op, x, y1, y2, y3)                      \
-    ({                                                            \
-        typeof(x) _x = (x);                                       \
-        (   (_x == (y1))                                          \
-         op (_x == (y2))                                          \
-         op (_x == (y3))                                          \
-        );                                                        \
-    })
+#define _NM_IN_SET_EVAL_3(op, _x, y1, y2, y3)                       \
+    (   (_x == (y1))                                                \
+     op (_x == (y2))                                                \
+     op (_x == (y3))                                                \
+    )
 
-#define _NM_IN_SET_EVAL_4(op, x, y1, y2, y3, y4)                  \
-    ({                                                            \
-        typeof(x) _x = (x);                                       \
-        (   (_x == (y1))                                          \
-         op (_x == (y2))                                          \
-         op (_x == (y3))                                          \
-         op (_x == (y4))                                          \
-        );                                                        \
-    })
+#define _NM_IN_SET_EVAL_4(op, _x, y1, y2, y3, y4)                   \
+    (   (_x == (y1))                                                \
+     op (_x == (y2))                                                \
+     op (_x == (y3))                                                \
+     op (_x == (y4))                                                \
+    )
 
-#define _NM_IN_SET_EVAL_5(op, x, y1, y2, y3, y4, y5)              \
-    ({                                                            \
-        typeof(x) _x = (x);                                       \
-        (   (_x == (y1))                                          \
-         op (_x == (y2))                                          \
-         op (_x == (y3))                                          \
-         op (_x == (y4))                                          \
-         op (_x == (y5))                                          \
-        );                                                        \
-    })
+#define _NM_IN_SET_EVAL_5(op, _x, y1, y2, y3, y4, y5)               \
+    (   (_x == (y1))                                                \
+     op (_x == (y2))                                                \
+     op (_x == (y3))                                                \
+     op (_x == (y4))                                                \
+     op (_x == (y5))                                                \
+    )
 
-#define _NM_IN_SET_EVAL_N2(op, x, n, ...)        _NM_IN_SET_EVAL_##n(op, x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_N(op, x, n, ...)         _NM_IN_SET_EVAL_N2(op, x, n, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_6(op, _x, y1, y2, y3, y4, y5, y6)           \
+    (   (_x == (y1))                                                \
+     op (_x == (y2))                                                \
+     op (_x == (y3))                                                \
+     op (_x == (y4))                                                \
+     op (_x == (y5))                                                \
+     op (_x == (y6))                                                \
+    )
+
+#define _NM_IN_SET_EVAL_N2(op, _x, n, ...)        _NM_IN_SET_EVAL_##n(op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_N(op, x, n, ...)                            \
+    ({                                                              \
+        typeof(x) _x = (x);                                         \
+        !!_NM_IN_SET_EVAL_N2(op, _x, n, __VA_ARGS__);               \
+    })
 
 /* Beware that this does short-circuit evaluation (use "||" instead of "|")
  * which has a possibly unexpected non-function-like behavior.
