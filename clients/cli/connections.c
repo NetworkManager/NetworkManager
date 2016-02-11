@@ -1533,7 +1533,7 @@ sort_connections (const GPtrArray *cons, NmCli *nmc, const GArray *order)
 	NmcSortInfo compare_info;
 
 	if (!cons)
-		return;
+		return NULL;
 
 	compare_info.nmc = nmc;
 	compare_info.order = order;
