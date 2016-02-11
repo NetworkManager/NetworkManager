@@ -555,15 +555,15 @@ ipv6.ip6-privacy=0
         <varlistentry>
           <term><varname>ipv6.route-metric</varname></term>
         </varlistentry>
+        <varlistentry>
+          <term><varname>vpn.timeout</varname></term>
+          <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.mac-address-randomization</varname></term>
+          <listitem><para>If left unspecified, MAC address randomization is disabled.</para></listitem>
+        </varlistentry>
       </variablelist>
-      <varlistentry>
-        <term><varname>vpn.timeout</varname></term>
-        <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><varname>wifi.mac-address-randomization</varname></term>
-        <listitem><para>If left unspecified, MAC address randomization is disabled.</para></listitem>
-      </varlistentry>
     </para>
     </refsect2>
 
