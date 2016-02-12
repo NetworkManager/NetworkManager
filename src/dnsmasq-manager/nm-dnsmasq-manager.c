@@ -295,9 +295,8 @@ create_dm_cmd_line (const char *iface,
 	g_string_free (s, TRUE);
 
 	/* dnsmasq exits if the conf dir is not present */
-	if (g_file_test (CONFDIR, G_FILE_TEST_IS_DIR)) {
+	if (g_file_test (CONFDIR, G_FILE_TEST_IS_DIR))
 		nm_cmd_line_add_string (cmd, "--conf-dir=" CONFDIR);
-	}
 
 	return cmd;
 }
