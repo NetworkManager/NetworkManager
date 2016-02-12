@@ -44,6 +44,7 @@
 #include "nm-glib.h"
 #include "nm-version.h"
 #include "gsystem-local-alloc.h"
+#include "nm-macros-internal.h"
 
 /*****************************************************************************/
 

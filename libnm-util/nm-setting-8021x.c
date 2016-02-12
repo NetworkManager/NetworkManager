@@ -22,17 +22,18 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-setting-8021x.h"
+
 #include <string.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-setting-8021x.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "crypto.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-8021x

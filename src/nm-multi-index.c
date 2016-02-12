@@ -25,8 +25,6 @@
 
 #include <string.h>
 
-#include "nm-macros-internal.h"
-
 struct NMMultiIndex {
 	NMMultiIndexFuncEqual equal_fcn;
 	NMMultiIndexFuncClone clone_fcn;

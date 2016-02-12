@@ -22,12 +22,9 @@
 
 #include "config.h"
 
+#include "nm-default.h"
 #include "nm-vpn-editor-plugin.h"
 
-#include <gio/gio.h>
-
-#include "nm-macros-internal.h"
-#include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
 
 static void nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface);

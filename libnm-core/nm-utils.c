@@ -21,6 +21,9 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-utils.h"
+
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -31,13 +34,9 @@
 #include <gmodule.h>
 #include <sys/stat.h>
 
-#include "nm-default.h"
-#include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
-#include "nm-macros-internal.h"
-
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-infiniband.h"

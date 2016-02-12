@@ -21,22 +21,22 @@
 
 #include "config.h"
 
-#include <string.h>
-
-#include <nm-setting-connection.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-utils.h>
-
 #include "nm-default.h"
 #include "nm-device-wifi.h"
+
+#include <string.h>
+
+#include "nm-setting-connection.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-utils.h"
+
 #include "nm-access-point.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-helpers.h"
-#include "nm-macros-internal.h"
 
 #include "nmdbus-device-wifi.h"
 

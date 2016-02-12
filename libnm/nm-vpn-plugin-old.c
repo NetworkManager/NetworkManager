@@ -21,19 +21,19 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-vpn-plugin-old.h"
+
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
-#include "nm-vpn-plugin-old.h"
 #include "nm-enum-types.h"
 #include "nm-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-helpers.h"
 #include "nm-core-internal.h"
 #include "nm-simple-connection.h"
-#include "nm-macros-internal.h"
 
 #include "nmdbus-vpn-plugin.h"
 

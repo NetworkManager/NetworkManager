@@ -20,6 +20,8 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+
 #include <syslog.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -31,14 +33,10 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <arpa/inet.h>
-
 #include <glib-unix.h>
 
-#include "nm-default.h"
 #include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
-#include "nm-macros-internal.h"
-#include "gsystem-local-alloc.h"
 
 #include "nmdbus-dispatcher.h"
 

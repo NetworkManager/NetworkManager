@@ -21,10 +21,10 @@
 
 #include "config.h"
 
-#include "nm-macros-internal.h"
+#include "nm-default.h"
+
 #include "nm-keyfile-utils.h"
 #include "nm-keyfile-internal.h"
-
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"

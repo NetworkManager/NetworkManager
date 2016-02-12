@@ -21,19 +21,17 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-ip4-config.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-ip4-config.h"
-
-#include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
-#include "nm-macros-internal.h"
 
 #include "nmdbus-ip4-config.h"
 

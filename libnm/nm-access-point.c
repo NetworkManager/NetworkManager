@@ -21,19 +21,19 @@
 
 #include "config.h"
 
-#include <string.h>
-
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-utils.h>
-
 #include "nm-default.h"
 #include "nm-access-point.h"
+
+#include <string.h>
+
+#include "nm-connection.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-utils.h"
+
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
-#include "nm-macros-internal.h"
 
 G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
 

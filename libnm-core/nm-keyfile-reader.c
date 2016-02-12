@@ -21,6 +21,9 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-keyfile-internal.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -29,10 +32,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-core-internal.h"
-#include "nm-macros-internal.h"
-#include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
 
 typedef struct {

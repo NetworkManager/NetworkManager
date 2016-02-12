@@ -20,6 +20,9 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "writer.h"
+
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -30,26 +33,23 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-8021x.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-vlan.h>
-#include <nm-setting-team.h>
-#include <nm-setting-team-port.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-8021x.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-team.h"
+#include "nm-setting-team-port.h"
 #include "nm-core-internal.h"
-#include <nm-utils.h>
+#include "nm-utils.h"
 #include "nm-core-internal.h"
-#include "nm-macros-internal.h"
 
-#include "nm-default.h"
 #include "common.h"
 #include "shvar.h"
 #include "reader.h"
-#include "writer.h"
 #include "utils.h"
 #include "crypto.h"
 

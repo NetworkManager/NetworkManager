@@ -25,14 +25,13 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-vpn-helpers.h"
+
 #include <string.h>
 #include <gmodule.h>
 
-#include "nm-default.h"
 #include "nm-utils.h"
-#include "nm-vpn-helpers.h"
-
-#include "nm-macros-internal.h"
 
 static gboolean plugins_loaded;
 static GSList *plugins = NULL;

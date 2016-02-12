@@ -21,12 +21,13 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-setting-ip6-config.h"
+
 #include <string.h>
 
-#include "nm-setting-ip6-config.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
-#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-ip6-config

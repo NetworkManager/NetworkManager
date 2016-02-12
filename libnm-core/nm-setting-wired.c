@@ -22,14 +22,15 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-setting-wired.h"
+
 #include <string.h>
 #include <net/ethernet.h>
 
-#include "nm-setting-wired.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-wired

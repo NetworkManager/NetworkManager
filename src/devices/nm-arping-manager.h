@@ -19,9 +19,6 @@
 
 #include <netinet/in.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_ARPING_MANAGER            (nm_arping_manager_get_type ())

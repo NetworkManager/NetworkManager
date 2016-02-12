@@ -21,15 +21,11 @@
 #ifndef __NMP_OBJECT_H__
 #define __NMP_OBJECT_H__
 
-#include "config.h"
-
-#include "nm-platform.h"
-#include "nm-multi-index.h"
-#include "nm-macros-internal.h"
-
 #include <netlink/netlink.h>
 #include <gudev/gudev.h>
 
+#include "nm-platform.h"
+#include "nm-multi-index.h"
 
 typedef enum { /*< skip >*/
 	NMP_OBJECT_TO_STRING_ID,

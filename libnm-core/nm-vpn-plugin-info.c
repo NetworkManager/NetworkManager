@@ -20,16 +20,14 @@
 
 #include "config.h"
 
+#include "nm-default.h"
 #include "nm-vpn-plugin-info.h"
 
-#include <gio/gio.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "gsystem-local-alloc.h"
 #include "nm-errors.h"
-#include "nm-macros-internal.h"
 #include "nm-core-internal.h"
 
 #define DEFAULT_DIR_ETC     NMCONFDIR"/VPN"

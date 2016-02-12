@@ -20,18 +20,18 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
-#include "nm-macros-internal.h"
 
 #include "nm-test-utils.h"
 

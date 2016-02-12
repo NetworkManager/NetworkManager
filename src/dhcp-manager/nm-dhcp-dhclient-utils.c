@@ -19,18 +19,18 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-dhcp-dhclient-utils.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
-#include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
-#include "nm-macros-internal.h"
 
 #define CLIENTID_TAG            "send dhcp-client-identifier"
 

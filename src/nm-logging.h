@@ -26,11 +26,6 @@
 #error nm-test-utils.h must be included as last header
 #endif
 
-#include "nm-logging.h"
-
-#include "nm-default.h"
-#include "nm-macros-internal.h"
-
 /* Log domains */
 typedef enum  { /*< skip >*/
 	LOGD_NONE       = 0LL,

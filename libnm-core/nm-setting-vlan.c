@@ -21,12 +21,13 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-setting-vlan.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-setting-vlan.h"
 #include "nm-default.h"
-#include "nm-macros-internal.h"
 #include "nm-utils.h"
 #include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"

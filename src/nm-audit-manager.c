@@ -20,19 +20,17 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-audit-manager.h"
+
 #include <errno.h>
 #include <string.h>
 #if HAVE_LIBAUDIT
 #include <libaudit.h>
 #endif
 
-#include "gsystem-local-alloc.h"
-#include "nm-audit-manager.h"
-#include "nm-glib.h"
 #include "nm-auth-subject.h"
 #include "nm-config.h"
-#include "nm-logging.h"
-#include "nm-macros-internal.h"
 #include "nm-settings-connection.h"
 
 #define AUDIT_LOG_LEVEL LOGL_INFO

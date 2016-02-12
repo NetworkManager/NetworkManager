@@ -21,19 +21,20 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-object.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <nm-utils.h>
-#include "nm-default.h"
+
+#include "nm-utils.h"
 #include "nm-dbus-interface.h"
-#include "nm-object.h"
 #include "nm-object-cache.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
 #include "nm-core-internal.h"
-#include "nm-macros-internal.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }

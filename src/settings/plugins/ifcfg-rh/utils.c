@@ -20,15 +20,14 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "utils.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-core-internal.h"
-#include "nm-macros-internal.h"
 #include "NetworkManagerUtils.h"
-
-#include "utils.h"
 #include "shvar.h"
 
 /*

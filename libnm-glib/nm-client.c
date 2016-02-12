@@ -21,12 +21,13 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-client.h"
+
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include <nm-utils.h>
 
-#include "nm-default.h"
-#include "nm-client.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
@@ -36,7 +37,6 @@
 #include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
-#include "gsystem-local-alloc.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 

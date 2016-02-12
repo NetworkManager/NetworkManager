@@ -20,11 +20,11 @@
 
 #include "config.h"
 
-#include <string.h>
-
 #include "nm-default.h"
 #include "nm-firewall-manager.h"
-#include "gsystem-local-alloc.h"
+
+#include <string.h>
+
 #include "NetworkManagerUtils.h"
 
 #define NM_FIREWALL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \

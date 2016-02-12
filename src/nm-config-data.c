@@ -21,6 +21,7 @@
 
 #include "config.h"
 
+#include "nm-default.h"
 #include "nm-config-data.h"
 
 #include <string.h>
@@ -29,8 +30,6 @@
 #include "nm-device.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
-#include "nm-macros-internal.h"
-#include "nm-default.h"
 
 typedef struct {
 	char *group_name;

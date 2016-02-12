@@ -19,6 +19,9 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-dhcp-client.h"
+
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -28,13 +31,10 @@
 #include <stdlib.h>
 #include <uuid/uuid.h>
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-dhcp-client.h"
 #include "nm-dhcp-utils.h"
 #include "nm-platform.h"
-#include "gsystem-local-alloc.h"
 
 typedef struct {
 	char *       iface;

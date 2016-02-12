@@ -21,14 +21,15 @@
 
 #include "config.h"
 
-#include <signal.h>
 #include "nm-default.h"
 #include "nm-vpn-plugin.h"
+
+#include <signal.h>
+
 #include "nm-vpn-enum-types.h"
 #include "nm-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-macros-internal.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVPNPlugin *plugin,
                                             GHashTable *connection,

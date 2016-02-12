@@ -22,18 +22,19 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-setting-connection.h"
+
 #include <string.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-core-enum-types.h"
-#include "nm-setting-connection.h"
 #include "nm-connection-private.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-team.h"
 #include "nm-setting-vlan.h"
-#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-connection

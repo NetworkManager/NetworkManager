@@ -21,9 +21,6 @@
 #ifndef __NM_LLDP_LISTENER__
 #define __NM_LLDP_LISTENER__
 
-#include "nm-glib.h"
-#include "nm-types.h"
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_LLDP_LISTENER            (nm_lldp_listener_get_type ())

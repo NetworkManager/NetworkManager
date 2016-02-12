@@ -19,15 +19,14 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "settings.h"
+
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "utils.h"
 #include "common.h"
-#include "settings.h"
-#include "nm-macros-internal.h"
-#include "gsystem-local-alloc.h"
 
 /* Forward declarations */
 static char *wep_key_type_to_string (NMWepKeyType type);

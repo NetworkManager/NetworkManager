@@ -21,9 +21,11 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-modem.h"
+
 #include <string.h>
 
-#include "nm-modem.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
 #include "nm-setting-connection.h"
@@ -32,7 +34,6 @@
 #include "nm-device-private.h"
 #include "nm-modem-enum-types.h"
 #include "nm-route-manager.h"
-#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 

@@ -21,6 +21,9 @@
 
 #include "config.h"
 
+#include "nm-default.h"
+#include "nm-keyfile-internal.h"
+
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,7 +33,6 @@
 #include <string.h>
 
 #include "nm-core-internal.h"
-#include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
 
 typedef struct {
