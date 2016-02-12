@@ -5556,7 +5556,7 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct nl_sock *sk = priv->nlh;
-	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
+	int n, err = 0, multipart = 0, interrupted = 0;
 	struct nlmsghdr *hdr;
 	WaitForNlResponseResult seq_result;
 
@@ -5612,7 +5612,6 @@ continue_reading:
 
 		nlmsg_set_proto (msg, NETLINK_ROUTE);
 		nlmsg_set_src (msg, &nla);
-		nrecv++;
 
 		if (!creds || creds->pid) {
 			if (creds)
@@ -5720,10 +5719,6 @@ stop:
 out:
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
-
-	if (!err)
-		err = nrecv;
-
 	return err;
 }
 
