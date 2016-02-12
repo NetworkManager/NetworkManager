@@ -242,6 +242,11 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
+#define nm_streq(s1, s2)  (strcmp (s1, s2) == 0)
+#define nm_streq0(s1, s2) (g_strcmp0 (s1, s2) == 0)
+
+/*****************************************************************************/
+
 #define NM_PRINT_FMT_QUOTED(cond, prefix, str, suffix, str_else) \
 	(cond) ? (prefix) : "", \
 	(cond) ? (str) : (str_else), \
