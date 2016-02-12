@@ -80,7 +80,6 @@ NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT","\
                                               NM_SETTING_CONNECTION_METERED","\
                                               NM_SETTING_CONNECTION_LLDP
-#define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wired[] = {
@@ -114,7 +113,6 @@ NmcOutputField nmc_fields_setting_wired[] = {
                                          NM_SETTING_WIRED_S390_OPTIONS","\
                                          NM_SETTING_WIRED_WAKE_ON_LAN","\
                                          NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD
-#define NMC_FIELDS_SETTING_WIRED_COMMON  NMC_FIELDS_SETTING_WIRED_ALL
 
 /* Available fields for NM_SETTING_802_1X_SETTING_NAME */
 NmcOutputField nmc_fields_setting_8021X[] = {
@@ -186,7 +184,6 @@ NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_PIN","\
                                           NM_SETTING_802_1X_PIN_FLAGS","\
                                           NM_SETTING_802_1X_SYSTEM_CA_CERTS
-#define NMC_FIELDS_SETTING_802_1X_COMMON  NMC_FIELDS_SETTING_802_1X_ALL
 
 /* Available fields for NM_SETTING_WIRELESS_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wireless[] = {
@@ -224,7 +221,6 @@ NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_SEEN_BSSIDS","\
                                             NM_SETTING_WIRELESS_HIDDEN"," \
                                             NM_SETTING_WIRELESS_POWERSAVE
-#define NMC_FIELDS_SETTING_WIRELESS_COMMON  NMC_FIELDS_SETTING_WIRELESS_ALL
 
 /* Available fields for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wireless_security[] = {
@@ -266,7 +262,6 @@ NmcOutputField nmc_fields_setting_wireless_security[] = {
                                                      NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS","\
                                                      NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD","\
                                                      NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS
-#define NMC_FIELDS_SETTING_WIRELESS_SECURITY_COMMON  NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL
 
 /* Available fields for NM_SETTING_IP4_CONFIG_SETTING_NAME */
 NmcOutputField nmc_fields_setting_ip4_config[] = {
@@ -310,7 +305,6 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
                                               NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
                                               NM_SETTING_IP_CONFIG_MAY_FAIL","\
                                               NM_SETTING_IP_CONFIG_DAD_TIMEOUT
-#define NMC_FIELDS_SETTING_IP4_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_IP6_CONFIG_SETTING_NAME */
 NmcOutputField nmc_fields_setting_ip6_config[] = {
@@ -350,7 +344,6 @@ NmcOutputField nmc_fields_setting_ip6_config[] = {
                                               NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE","\
                                               NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
                                               NM_SETTING_IP_CONFIG_DHCP_HOSTNAME
-#define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_serial[] = {
@@ -368,7 +361,6 @@ NmcOutputField nmc_fields_setting_serial[] = {
                                           NM_SETTING_SERIAL_PARITY","\
                                           NM_SETTING_SERIAL_STOPBITS","\
                                           NM_SETTING_SERIAL_SEND_DELAY
-#define NMC_FIELDS_SETTING_SERIAL_COMMON  NMC_FIELDS_SETTING_SERIAL_ALL
 
 /* Available fields for NM_SETTING_PPP_SETTING_NAME */
 NmcOutputField nmc_fields_setting_ppp[] = {
@@ -412,7 +404,6 @@ NmcOutputField nmc_fields_setting_ppp[] = {
                                        NM_SETTING_PPP_MTU","\
                                        NM_SETTING_PPP_LCP_ECHO_FAILURE","\
                                        NM_SETTING_PPP_LCP_ECHO_INTERVAL
-#define NMC_FIELDS_SETTING_PPP_COMMON  NMC_FIELDS_SETTING_PPP_ALL
 
 /* Available fields for NM_SETTING_PPPOE_SETTING_NAME */
 NmcOutputField nmc_fields_setting_pppoe[] = {
@@ -428,7 +419,6 @@ NmcOutputField nmc_fields_setting_pppoe[] = {
                                          NM_SETTING_PPPOE_USERNAME","\
                                          NM_SETTING_PPPOE_PASSWORD","\
                                          NM_SETTING_PPPOE_PASSWORD_FLAGS
-#define NMC_FIELDS_SETTING_PPPOE_COMMON  NMC_FIELDS_SETTING_PPPOE_ALL
 
 /* Available fields for NM_SETTING_ADSL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_adsl[] = {
@@ -450,7 +440,6 @@ NmcOutputField nmc_fields_setting_adsl[] = {
                                         NM_SETTING_ADSL_ENCAPSULATION","\
                                         NM_SETTING_ADSL_VPI","\
                                         NM_SETTING_ADSL_VCI
-#define NMC_FIELDS_SETTING_ADSL_COMMON  NMC_FIELDS_SETTING_ADSL_ALL
 
 /* Available fields for NM_SETTING_GSM_SETTING_NAME */
 NmcOutputField nmc_fields_setting_gsm[] = {
@@ -482,7 +471,6 @@ NmcOutputField nmc_fields_setting_gsm[] = {
                                        NM_SETTING_GSM_DEVICE_ID","\
                                        NM_SETTING_GSM_SIM_ID","\
                                        NM_SETTING_GSM_SIM_OPERATOR_ID
-#define NMC_FIELDS_SETTING_GSM_COMMON  NMC_FIELDS_SETTING_GSM_ALL
 
 /* Available fields for NM_SETTING_CDMA_SETTING_NAME */
 NmcOutputField nmc_fields_setting_cdma[] = {
@@ -498,7 +486,6 @@ NmcOutputField nmc_fields_setting_cdma[] = {
                                         NM_SETTING_CDMA_USERNAME","\
                                         NM_SETTING_CDMA_PASSWORD","\
                                         NM_SETTING_CDMA_PASSWORD_FLAGS
-#define NMC_FIELDS_SETTING_CDMA_COMMON  NMC_FIELDS_SETTING_CDMA_ALL
 
 /* Available fields for NM_SETTING_BLUETOOTH_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bluetooth[] = {
@@ -510,7 +497,6 @@ NmcOutputField nmc_fields_setting_bluetooth[] = {
 #define NMC_FIELDS_SETTING_BLUETOOTH_ALL     "name"","\
                                              NM_SETTING_BLUETOOTH_BDADDR","\
                                              NM_SETTING_BLUETOOTH_TYPE
-#define NMC_FIELDS_SETTING_BLUETOOTH_COMMON  NMC_FIELDS_SETTING_BLUETOOTH_ALL
 
 /* Available fields for NM_SETTING_OLPC_MESH_SETTING_NAME */
 NmcOutputField nmc_fields_setting_olpc_mesh[] = {
@@ -524,7 +510,6 @@ NmcOutputField nmc_fields_setting_olpc_mesh[] = {
                                              NM_SETTING_OLPC_MESH_SSID","\
                                              NM_SETTING_OLPC_MESH_CHANNEL","\
                                              NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS
-#define NMC_FIELDS_SETTING_OLPC_MESH_COMMON  NMC_FIELDS_SETTING_OLPC_MESH_ALL
 
 /* Available fields for NM_SETTING_VPN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_vpn[] = {
@@ -544,7 +529,6 @@ NmcOutputField nmc_fields_setting_vpn[] = {
                                        NM_SETTING_VPN_SECRETS","\
                                        NM_SETTING_VPN_PERSISTENT","\
                                        NM_SETTING_VPN_TIMEOUT
-#define NMC_FIELDS_SETTING_VPN_COMMON  NMC_FIELDS_SETTING_VPN_ALL
 
 /* Available fields for NM_SETTING_WIMAX_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wimax[] = {
@@ -556,7 +540,6 @@ NmcOutputField nmc_fields_setting_wimax[] = {
 #define NMC_FIELDS_SETTING_WIMAX_ALL     "name"","\
                                          NM_SETTING_WIMAX_MAC_ADDRESS","\
                                          NM_SETTING_WIMAX_NETWORK_NAME
-#define NMC_FIELDS_SETTING_WIMAX_COMMON  NMC_FIELDS_SETTING_WIMAX_ALL
 
 /* Available fields for NM_SETTING_INFINIBAND_SETTING_NAME */
 NmcOutputField nmc_fields_setting_infiniband[] = {
@@ -574,7 +557,6 @@ NmcOutputField nmc_fields_setting_infiniband[] = {
                                               NM_SETTING_INFINIBAND_TRANSPORT_MODE"," \
                                               NM_SETTING_INFINIBAND_P_KEY"," \
                                               NM_SETTING_INFINIBAND_PARENT
-#define NMC_FIELDS_SETTING_INFINIBAND_COMMON  NMC_FIELDS_SETTING_INFINIBAND_ALL \
 
 /* Available fields for NM_SETTING_BOND_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bond[] = {
@@ -584,7 +566,6 @@ NmcOutputField nmc_fields_setting_bond[] = {
 };
 #define NMC_FIELDS_SETTING_BOND_ALL     "name"","\
                                         NM_SETTING_BOND_OPTIONS
-#define NMC_FIELDS_SETTING_BOND_COMMON  NMC_FIELDS_SETTING_BOND_ALL
 
 /* Available fields for NM_SETTING_VLAN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_vlan[] = {
@@ -602,7 +583,6 @@ NmcOutputField nmc_fields_setting_vlan[] = {
                                         NM_SETTING_VLAN_FLAGS","\
                                         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP","\
                                         NM_SETTING_VLAN_EGRESS_PRIORITY_MAP
-#define NMC_FIELDS_SETTING_VLAN_COMMON  NMC_FIELDS_SETTING_VLAN_ALL
 
 /* Available fields for NM_SETTING_BRIDGE_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bridge[] = {
@@ -626,7 +606,6 @@ NmcOutputField nmc_fields_setting_bridge[] = {
                                          NM_SETTING_BRIDGE_MAX_AGE","\
                                          NM_SETTING_BRIDGE_AGEING_TIME","\
                                          NM_SETTING_BRIDGE_MULTICAST_SNOOPING
-#define NMC_FIELDS_SETTING_BRIDGE_COMMON NMC_FIELDS_SETTING_BRIDGE_ALL
 
 /* Available fields for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bridge_port[] = {
@@ -640,7 +619,6 @@ NmcOutputField nmc_fields_setting_bridge_port[] = {
                                               NM_SETTING_BRIDGE_PORT_PRIORITY","\
                                               NM_SETTING_BRIDGE_PORT_PATH_COST","\
                                               NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE
-#define NMC_FIELDS_SETTING_BRIDGE_PORT_COMMON NMC_FIELDS_SETTING_BRIDGE_PORT_ALL
 
 /* Available fields for NM_SETTING_TEAM_SETTING_NAME */
 NmcOutputField nmc_fields_setting_team[] = {
@@ -650,7 +628,6 @@ NmcOutputField nmc_fields_setting_team[] = {
 };
 #define NMC_FIELDS_SETTING_TEAM_ALL     "name"","\
                                         NM_SETTING_TEAM_CONFIG
-#define NMC_FIELDS_SETTING_TEAM_COMMON  NMC_FIELDS_SETTING_TEAM_ALL
 
 /* Available fields for NM_SETTING_TEAM_PORT_SETTING_NAME */
 NmcOutputField nmc_fields_setting_team_port[] = {
@@ -660,7 +637,6 @@ NmcOutputField nmc_fields_setting_team_port[] = {
 };
 #define NMC_FIELDS_SETTING_TEAM_PORT_ALL     "name"","\
                                              NM_SETTING_TEAM_PORT_CONFIG
-#define NMC_FIELDS_SETTING_TEAM_PORT_COMMON  NMC_FIELDS_SETTING_TEAM_PORT_ALL
 
 /* Available fields for NM_SETTING_DCB_SETTING_NAME */
 NmcOutputField nmc_fields_setting_dcb[] = {
@@ -698,7 +674,6 @@ NmcOutputField nmc_fields_setting_dcb[] = {
                                        NM_SETTING_DCB_PRIORITY_BANDWIDTH","\
                                        NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH","\
                                        NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS
-#define NMC_FIELDS_SETTING_DCB_COMMON  NMC_FIELDS_SETTING_DCB_ALL
 
 /* Available fields for NM_SETTING_TUN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_tun[] = {
@@ -718,7 +693,6 @@ NmcOutputField nmc_fields_setting_tun[] = {
                                        NM_SETTING_TUN_PI","\
                                        NM_SETTING_TUN_VNET_HDR","\
                                        NM_SETTING_TUN_MULTI_QUEUE
-#define NMC_FIELDS_SETTING_TUN_COMMON  NMC_FIELDS_SETTING_TUN_ALL
 
 /* Available fields for NM_SETTING_IP_TUNNEL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_ip_tunnel[] = {
@@ -750,7 +724,6 @@ NmcOutputField nmc_fields_setting_ip_tunnel[] = {
                                               NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT","\
                                               NM_SETTING_IP_TUNNEL_FLOW_LABEL","\
                                               NM_SETTING_IP_TUNNEL_MTU
-#define NMC_FIELDS_SETTING_IP_TUNNEL_COMMON   NMC_FIELDS_SETTING_IP_TUNNEL_ALL
 
 /* Available fields for NM_SETTING_MACVLAN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_macvlan[] = {
@@ -766,7 +739,6 @@ NmcOutputField nmc_fields_setting_macvlan[] = {
                                            NM_SETTING_MACVLAN_MODE","\
                                            NM_SETTING_MACVLAN_PROMISCUOUS","\
                                            NM_SETTING_MACVLAN_TAP
-#define NMC_FIELDS_SETTING_MACVLAN_COMMON  NMC_FIELDS_SETTING_MACVLAN_ALL
 
 /* Available fields for NM_SETTING_VXLAN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_vxlan[] = {
@@ -806,7 +778,6 @@ NmcOutputField nmc_fields_setting_vxlan[] = {
                                              NM_SETTING_VXLAN_RSC","\
                                              NM_SETTING_VXLAN_L2_MISS","\
                                              NM_SETTING_VXLAN_L3_MISS
-#define NMC_FIELDS_SETTING_VXLAN_COMMON      NMC_FIELDS_SETTING_VXLAN_ALL
 
 /*----------------------------------------------------------------------------*/
 static char *
