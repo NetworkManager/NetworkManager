@@ -115,7 +115,8 @@ parent_hwaddr_changed (NMDevice *parent,
 			 * removing the IPv6 configuration; reapply it.
 			 */
 			s_ip6 = nm_connection_get_setting_ip6_config (connection);
-			nm_device_reactivate_ip6_config (NM_DEVICE (self), s_ip6, s_ip6);
+			if (s_ip6)
+				nm_device_reactivate_ip6_config (NM_DEVICE (self), s_ip6, s_ip6);
 		}
 	}
 }
