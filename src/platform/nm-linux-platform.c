@@ -5618,6 +5618,7 @@ continue_reading:
 				_LOGT ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
 			else
 				_LOGT ("netlink: recvmsg: received message without credentials");
+			err = 0;
 			goto stop;
 		}
 
@@ -5719,7 +5720,6 @@ stop:
 		 * Repeat reading. */
 		goto continue_reading;
 	}
-	err = 0;
 out:
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
