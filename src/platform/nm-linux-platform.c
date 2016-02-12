@@ -5557,7 +5557,6 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct nl_sock *sk = priv->nlh;
 	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
-	unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
 	WaitForNlResponseResult seq_result;
 
@@ -5567,10 +5566,12 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 	initialize the variable. Thomas Graf.
 	*/
 	struct sockaddr_nl nla = {0};
-	struct nl_msg *msg = NULL;
-	struct ucred *creds = NULL;
+	nm_auto_free struct ucred *creds = NULL;
+	nm_auto_free unsigned char *buf = NULL;
 
 continue_reading:
+	g_clear_pointer (&buf, free);
+	g_clear_pointer (&creds, free);
 	errno = 0;
 	n = nl_recv (sk, &nla, &buf, &creds);
 
@@ -5600,9 +5601,9 @@ continue_reading:
 
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok (hdr, n)) {
+		nm_auto_nlmsg struct nl_msg *msg = NULL;
 		gboolean abort_parsing = FALSE;
 
-		nlmsg_free (msg);
 		msg = nlmsg_convert (hdr);
 		if (!msg) {
 			err = -NLE_NOMEM;
@@ -5704,13 +5705,6 @@ continue_reading:
 			goto out;
 	}
 
-	nlmsg_free (msg);
-	free (buf);
-	free (creds);
-	buf = NULL;
-	msg = NULL;
-	creds = NULL;
-
 	if (multipart) {
 		/* Multipart message not yet complete, continue reading */
 		goto continue_reading;
@@ -5724,10 +5718,6 @@ stop:
 	}
 	err = 0;
 out:
-	nlmsg_free (msg);
-	free (buf);
-	free (creds);
-
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
 
