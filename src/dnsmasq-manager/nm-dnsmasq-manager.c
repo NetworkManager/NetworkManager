@@ -43,6 +43,8 @@ typedef struct {
 
 #define NM_DNSMASQ_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNSMASQ_MANAGER, NMDnsMasqManagerPrivate))
 
+#define CONFDIR NMCONFDIR "/dnsmasq-shared.d"
+
 G_DEFINE_TYPE (NMDnsMasqManager, nm_dnsmasq_manager, G_TYPE_OBJECT)
 
 enum {
@@ -291,6 +293,11 @@ create_dm_cmd_line (const char *iface,
 	g_string_append (s, pidfile);
 	nm_cmd_line_add_string (cmd, s->str);
 	g_string_free (s, TRUE);
+
+	/* dnsmasq exits if the conf dir is not present */
+	if (g_file_test (CONFDIR, G_FILE_TEST_IS_DIR)) {
+		nm_cmd_line_add_string (cmd, "--conf-dir=" CONFDIR);
+	}
 
 	return cmd;
 }
