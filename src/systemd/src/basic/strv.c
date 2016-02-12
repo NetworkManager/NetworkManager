@@ -1,5 +1,3 @@
-/*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
-
 /***
   This file is part of systemd.
 
@@ -33,6 +31,7 @@
 #if 0 /* NM_IGNORED */
 #include "extract-word.h"
 #endif /* NM_IGNORED */
+#include "fileio.h"
 #include "string-util.h"
 #include "strv.h"
 #include "util.h"
@@ -876,4 +875,23 @@ rollback:
 
         nl[k] = NULL;
         return -ENOMEM;
+}
+
+int fputstrv(FILE *f, char **l, const char *separator, bool *space) {
+        bool b = false;
+        char **s;
+        int r;
+
+        /* Like fputs(), but for strv, and with a less stupid argument order */
+
+        if (!space)
+                space = &b;
+
+        STRV_FOREACH(s, l) {
+                r = fputs_with_space(f, *s, separator, space);
+                if (r < 0)
+                        return r;
+        }
+
+        return 0;
 }
