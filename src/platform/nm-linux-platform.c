@@ -5615,9 +5615,9 @@ continue_reading:
 
 		if (!creds || creds->pid) {
 			if (creds)
-				_LOGD ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
+				_LOGT ("netlink: recvmsg: received non-kernel message (pid %d)", creds->pid);
 			else
-				_LOGD ("netlink: recvmsg: received message without credentials");
+				_LOGT ("netlink: recvmsg: received message without credentials");
 			goto stop;
 		}
 
