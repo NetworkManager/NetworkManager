@@ -22,7 +22,15 @@
 #ifndef __NM_MACROS_INTERNAL_H__
 #define __NM_MACROS_INTERNAL_H__
 
-#include "nm-default.h"
+/********************************************************/
+
+/**
+ * nm_auto_free:
+ *
+ * Call free() on a variable location when it goes out of scope.
+ */
+#define nm_auto_free __attribute__ ((cleanup(_nm_auto_free_impl)))
+GS_DEFINE_CLEANUP_FUNCTION(void*, _nm_auto_free_impl, free)
 
 /********************************************************/
 
