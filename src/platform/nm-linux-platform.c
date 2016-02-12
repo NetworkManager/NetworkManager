@@ -5699,11 +5699,8 @@ continue_reading:
 
 		event_seq_check (platform, msg, seq_result);
 
-		if (abort_parsing) {
-			if (!handle_events)
-				goto continue_reading;
-			goto out;
-		}
+		if (abort_parsing)
+			goto stop;
 
 		err = 0;
 		hdr = nlmsg_next (hdr, &n);
