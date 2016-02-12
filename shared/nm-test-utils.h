@@ -1341,7 +1341,7 @@ nmtst_setting_ip_config_add_address (NMSettingIPConfig *s_ip,
 	else if (nm_utils_ipaddr_valid (AF_INET6, address))
 		family = AF_INET6;
 	else
-		g_assert (FALSE);
+		g_assert_not_reached ();
 
 	addr = nm_ip_address_new (family, address, prefix, NULL);
 	g_assert (addr);
@@ -1366,7 +1366,7 @@ nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
 	else if (nm_utils_ipaddr_valid (AF_INET6, dest))
 		family = AF_INET6;
 	else
-		g_assert (FALSE);
+		g_assert_not_reached ();
 
 	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, NULL);
 	g_assert (route);
