@@ -431,6 +431,7 @@ mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/system-connections
 
 # create a dnsmasq.d directory
 mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/dnsmasq.d
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/dnsmasq-shared.d
 
 # create dispatcher directories
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d
@@ -510,6 +511,7 @@ fi
 %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
 %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dnsmasq.d
+%dir %{_sysconfdir}/%{name}/dnsmasq-shared.d
 %dir %{_sysconfdir}/%{name}/VPN
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %{_bindir}/nm-online
