@@ -141,14 +141,14 @@ NM_AVAILABLE_IN_1_2
 gboolean             nm_device_reapply              (NMDevice *device,
                                                      NMConnection *connection,
                                                      guint64 version_id,
-                                                     guint flags,
+                                                     guint32 flags,
                                                      GCancellable *cancellable,
                                                      GError **error);
 NM_AVAILABLE_IN_1_2
 void                 nm_device_reapply_async        (NMDevice *device,
                                                      NMConnection *connection,
                                                      guint64 version_id,
-                                                     guint flags,
+                                                     guint32 flags,
                                                      GCancellable *cancellable,
                                                      GAsyncReadyCallback callback,
                                                      gpointer user_data);

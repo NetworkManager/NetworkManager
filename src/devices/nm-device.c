@@ -7307,7 +7307,7 @@ impl_device_reapply (NMDevice *self,
                      GDBusMethodInvocation *context,
                      GVariant *settings,
                      guint64 version_id,
-                     guint flags)
+                     guint32 flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection;
@@ -7318,7 +7318,7 @@ impl_device_reapply (NMDevice *self,
 	/* No flags supported as of now. */
 	if (flags != 0) {
 		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             NM_DEVICE_ERROR_FAILED,
 		                             "Invalid flags specified");
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
 		g_dbus_method_invocation_take_error (context, error);
