@@ -633,7 +633,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 		 * causes the route on the unmanaged device to be replaced).
 		 * Still, that is not much different then from messing with unmanaged routes when
 		 * the effective and the intended metrics equal. The rules is: NM will leave routes
-		 * on unmanged devices alone, unless they conflict with what NM wants to configure.
+		 * on unmanaged devices alone, unless they conflict with what NM wants to configure.
 		 ***************************************************************************/
 
 		g_array_set_size (ipx_routes->effective_metrics, ipx_routes->entries->len);
