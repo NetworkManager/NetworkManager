@@ -39,7 +39,7 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 	data->ifindex = ifindex;
 	data->ifname = ifname;
 
-	g_assert (data->handler_id >= 0);
+	g_assert (data->handler_id > 0);
 
 	return data;
 }
