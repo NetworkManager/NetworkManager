@@ -3507,19 +3507,13 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 			}
 			ifname = *argv;
 		} else {
-			g_string_printf (nmc->return_text, _("Error: unknown parameter: %s"), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
 
 		argc--;
 		argv++;
-	}
-
-	if (argc > 0) {
-		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
