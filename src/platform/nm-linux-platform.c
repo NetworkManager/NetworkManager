@@ -5697,11 +5697,12 @@ continue_reading:
 		}
 
 		event_seq_check (platform, msg, seq_result);
-		err = 0;
-		hdr = nlmsg_next (hdr, &n);
 
 		if (abort_parsing)
 			goto out;
+
+		err = 0;
+		hdr = nlmsg_next (hdr, &n);
 	}
 
 	if (multipart) {
