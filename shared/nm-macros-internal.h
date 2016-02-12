@@ -107,7 +107,7 @@
 /********************************************************/
 
 /* macro to return strlen() of a compile time string. */
-#define STRLEN(str)     ( sizeof ("" str) - 1 )
+#define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
 
 #define NM_SET_OUT(out_val, value) \
 	G_STMT_START { \

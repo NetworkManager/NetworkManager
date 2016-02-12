@@ -117,7 +117,7 @@ G_DEFINE_TYPE (NMConfigData, nm_config_data, G_TYPE_OBJECT)
 #define _HAS_PREFIX(str, prefix) \
 	({ \
 		const char *_str = (str); \
-		g_str_has_prefix ( _str, ""prefix"") && _str[STRLEN(prefix)] != '\0'; \
+		g_str_has_prefix ( _str, ""prefix"") && _str[NM_STRLEN(prefix)] != '\0'; \
 	})
 
 /************************************************************************/
@@ -430,7 +430,7 @@ _merge_keyfiles (GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
 
 			if (   !is_intern && !is_atomic
 			    && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
-				const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
+				const char *key_base = &key[NM_STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
 
 				if (!g_key_file_has_key (keyfile_intern, group, key_base, NULL))
 					g_key_file_remove_key (keyfile, group, key_base, NULL);
@@ -473,8 +473,8 @@ _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 
 	if (a_is_connection && b_is_connection) {
 		/* if both are connection groups, we want the explicit [connection] group first. */
-		a_is_connection = a[STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0';
-		b_is_connection = b[STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0';
+		a_is_connection = a[NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0';
+		b_is_connection = b[NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0';
 
 		if (a_is_connection != b_is_connection) {
 			if (a_is_connection)
@@ -1126,7 +1126,7 @@ _get_connection_infos (GKeyFile *keyfile)
 	else if (ngroups > 0) {
 		for (i = 0, j = 0; i < ngroups; i++) {
 			if (g_str_has_prefix (groups[i], NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)) {
-				if (groups[i][STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0')
+				if (groups[i][NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0')
 					connection_tag = groups[i];
 				else
 					groups[j++] = groups[i];

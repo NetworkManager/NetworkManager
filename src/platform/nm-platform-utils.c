@@ -503,13 +503,13 @@ gboolean
 nmp_utils_device_exists (const char *name)
 {
 #define SYS_CLASS_NET "/sys/class/net/"
-	char sysdir[STRLEN (SYS_CLASS_NET) + IFNAMSIZ] = SYS_CLASS_NET;
+	char sysdir[NM_STRLEN (SYS_CLASS_NET) + IFNAMSIZ] = SYS_CLASS_NET;
 
 	if (   !name
 	    || strlen (name) >= IFNAMSIZ
 	    || !nm_utils_is_valid_path_component (name))
 		g_return_val_if_reached (FALSE);
 
-	strcpy (&sysdir[STRLEN (SYS_CLASS_NET)], name);
+	strcpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], name);
 	return g_file_test (sysdir, G_FILE_TEST_EXISTS);
 }

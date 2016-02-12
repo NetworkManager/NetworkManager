@@ -712,7 +712,7 @@ _has_prefix_impl (char *str, const char *prefix, gsize prefix_len)
 	} while (g_ascii_isspace (str[0]));
 	return str;
 }
-#define _has_prefix(STR, PREFIX) _has_prefix_impl (STR, PREFIX, STRLEN (PREFIX))
+#define _has_prefix(STR, PREFIX) _has_prefix_impl (STR, PREFIX, NM_STRLEN (PREFIX))
 
 void
 get_dhcp_hostname_and_client_id (char **hostname, char **client_id)

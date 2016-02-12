@@ -39,7 +39,7 @@
 #include "crypto.h"
 
 /* Embed the commit id in the build binary */
-static const char *const __nm_git_sha = STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
+static const char *const __nm_git_sha = NM_STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
 
 /**
  * SECTION:nm-utils

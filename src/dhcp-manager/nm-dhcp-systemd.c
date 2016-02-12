@@ -146,7 +146,7 @@ take_option (GHashTable *options,
 	for (i = 0; requests[i].name; i++) {
 		if (requests[i].num == option) {
 			g_hash_table_insert (options,
-			                     (gpointer) (requests[i].name + STRLEN (REQPREFIX)),
+			                     (gpointer) (requests[i].name + NM_STRLEN (REQPREFIX)),
 			                     value);
 			break;
 		}
@@ -362,7 +362,7 @@ lease_to_ip4_config (const char *iface,
 
 	r = sd_dhcp_lease_get_vendor_specific (lease, &data, &data_len);
 	if (r >= 0)
-		metered = !!memmem (data, data_len, "ANDROID_METERED", STRLEN ("ANDROID_METERED"));
+		metered = !!memmem (data, data_len, "ANDROID_METERED", NM_STRLEN ("ANDROID_METERED"));
 	nm_ip4_config_set_metered (ip4_config, metered);
 
 	return ip4_config;

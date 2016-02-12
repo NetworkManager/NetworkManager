@@ -489,7 +489,7 @@ read_hostname_gentoo (const char *path)
 		if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
 			continue;
 		if (g_str_has_prefix (all_lines[i], "hostname=")) {
-			tmp = &all_lines[i][STRLEN ("hostname=")];
+			tmp = &all_lines[i][NM_STRLEN ("hostname=")];
 			result = g_shell_unquote (tmp, NULL);
 			break;
 		}
@@ -516,7 +516,7 @@ hostname_is_dynamic (void)
 		if (str) {
 			g_strstrip (str);
 			if (g_str_has_prefix (str, "DHCLIENT_SET_HOSTNAME="))
-				dynamic = strcmp (&str[STRLEN ("DHCLIENT_SET_HOSTNAME=")], "\"yes\"") == 0;
+				dynamic = strcmp (&str[NM_STRLEN ("DHCLIENT_SET_HOSTNAME=")], "\"yes\"") == 0;
 			g_free (str);
 		}
 	}

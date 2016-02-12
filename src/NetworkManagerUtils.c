@@ -1204,8 +1204,8 @@ nm_utils_find_helper(const char *progname, const char *try_first, GError **error
 		const char **_spec = (pspec); \
 		gboolean _has = FALSE; \
 		\
-		if (!g_ascii_strncasecmp (*_spec, (""tag), STRLEN (tag))) { \
-			*_spec += STRLEN (tag); \
+		if (!g_ascii_strncasecmp (*_spec, (""tag), NM_STRLEN (tag))) { \
+			*_spec += NM_STRLEN (tag); \
 			_has = TRUE; \
 		} \
 		_has; \
@@ -1214,8 +1214,8 @@ nm_utils_find_helper(const char *progname, const char *try_first, GError **error
 static const char *
 _match_except (const char *spec_str, gboolean *out_except)
 {
-	if (!g_ascii_strncasecmp (spec_str, EXCEPT_TAG, STRLEN (EXCEPT_TAG))) {
-		spec_str += STRLEN (EXCEPT_TAG);
+	if (!g_ascii_strncasecmp (spec_str, EXCEPT_TAG, NM_STRLEN (EXCEPT_TAG))) {
+		spec_str += NM_STRLEN (EXCEPT_TAG);
 		*out_except = TRUE;
 	} else
 		*out_except = FALSE;
@@ -1240,10 +1240,10 @@ nm_match_spec_device_type (const GSList *specs, const char *device_type)
 
 		spec_str = _match_except (spec_str, &except);
 
-		if (g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, STRLEN (DEVICE_TYPE_TAG)) != 0)
+		if (g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, NM_STRLEN (DEVICE_TYPE_TAG)) != 0)
 			continue;
 
-		spec_str += STRLEN (DEVICE_TYPE_TAG);
+		spec_str += NM_STRLEN (DEVICE_TYPE_TAG);
 		if (strcmp (spec_str, device_type) == 0) {
 			if (except)
 				return NM_MATCH_SPEC_NEG_MATCH;
@@ -1270,13 +1270,13 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 
 		spec_str = _match_except (spec_str, &except);
 
-		if (   !g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))
-		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG))
-		    || !g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, STRLEN (DEVICE_TYPE_TAG)))
+		if (   !g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, NM_STRLEN (INTERFACE_NAME_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, NM_STRLEN (SUBCHAN_TAG))
+		    || !g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, NM_STRLEN (DEVICE_TYPE_TAG)))
 			continue;
 
-		if (!g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG)))
-			spec_str += STRLEN (MAC_TAG);
+		if (!g_ascii_strncasecmp (spec_str, MAC_TAG, NM_STRLEN (MAC_TAG)))
+			spec_str += NM_STRLEN (MAC_TAG);
 		else if (except)
 			continue;
 
@@ -1307,13 +1307,13 @@ nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
 
 		spec_str = _match_except (spec_str, &except);
 
-		if (   !g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG))
-		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG))
-		    || !g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, STRLEN (DEVICE_TYPE_TAG)))
+		if (   !g_ascii_strncasecmp (spec_str, MAC_TAG, NM_STRLEN (MAC_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, NM_STRLEN (SUBCHAN_TAG))
+		    || !g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, NM_STRLEN (DEVICE_TYPE_TAG)))
 			continue;
 
-		if (!g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))) {
-			spec_str += STRLEN (INTERFACE_NAME_TAG);
+		if (!g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, NM_STRLEN (INTERFACE_NAME_TAG))) {
+			spec_str += NM_STRLEN (INTERFACE_NAME_TAG);
 			if (spec_str[0] == '=')
 				spec_str += 1;
 			else {
@@ -1425,8 +1425,8 @@ nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 
 		spec_str = _match_except (spec_str, &except);
 
-		if (!g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG))) {
-			spec_str += STRLEN (SUBCHAN_TAG);
+		if (!g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, NM_STRLEN (SUBCHAN_TAG))) {
+			spec_str += NM_STRLEN (SUBCHAN_TAG);
 			if (parse_subchannels (spec_str, &spec_a, &spec_b, &spec_c)) {
 				if (a == spec_a && b == spec_b && c == spec_c) {
 					if (except)

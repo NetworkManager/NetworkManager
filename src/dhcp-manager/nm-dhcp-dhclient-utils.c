@@ -148,9 +148,9 @@ read_client_id (const char *str)
 	gs_free char *s = NULL;
 	char *p;
 
-	g_assert (!strncmp (str, CLIENTID_TAG, STRLEN (CLIENTID_TAG)));
+	g_assert (!strncmp (str, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)));
 
-	str += STRLEN (CLIENTID_TAG);
+	str += NM_STRLEN (CLIENTID_TAG);
 	while (g_ascii_isspace (*str))
 		str++;
 
@@ -188,7 +188,7 @@ nm_dhcp_dhclient_get_client_id_from_config_file (const char *path)
 
 	lines = g_strsplit_set (contents, "\n\r", 0);
 	for (line = lines; lines && *line; line++) {
-		if (!strncmp (*line, CLIENTID_TAG, STRLEN (CLIENTID_TAG)))
+		if (!strncmp (*line, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)))
 			return read_client_id (*line);
 	}
 	return NULL;

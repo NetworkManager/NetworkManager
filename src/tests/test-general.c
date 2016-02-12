@@ -1121,8 +1121,8 @@ test_nm_utils_strbuf_append (void)
 #define STR_ORIG "abcdefghijklmnopqrstuvwxyz"
 	int buf_len;
 	int rep;
-	char buf[STRLEN (BUF_ORIG) + 1];
-	char str[STRLEN (BUF_ORIG) + 1];
+	char buf[NM_STRLEN (BUF_ORIG) + 1];
+	char str[NM_STRLEN (BUF_ORIG) + 1];
 
 	for (buf_len = 0; buf_len < 10; buf_len++) {
 		for (rep = 0; rep < 50; rep++) {

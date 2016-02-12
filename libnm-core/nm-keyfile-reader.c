@@ -874,17 +874,17 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 
 	/* It's the PATH scheme, can just set plain data.
 	 * In this case, @data_len includes */
-	if (   data_len >= STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
+	if (   data_len >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
 	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
 		if (nm_setting_802_1x_check_cert_scheme (data, data_len + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-			const char *path = &data[STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
+			const char *path = &data[NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
 			gs_free char *path_free = NULL;
 
 			if (path[0] != '/') {
 				/* we want to read absolute paths because we use keyfile as exchange
 				 * between different processes which might not have the same cwd. */
 				path = path_free = get_cert_path (info->base_dir, (const guint8 *) path,
-				                                  data_len - STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
+				                                  data_len - NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
 			}
 
 			g_object_set (setting, key, bytes, NULL);
@@ -899,15 +899,15 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 		}
 		return TRUE;
 	}
-	if (   data_len > STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
+	if (   data_len > NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
 	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
-		const char *cdata = data + STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+		const char *cdata = data + NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
 		guchar *bin;
 		GBytes *bytes2;
 		gsize i;
 		gboolean valid_base64;
 
-		data_len -= STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+		data_len -= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
 
 		/* Let's be strict here. We expect valid base64, no funny stuff!!
 		 * We didn't write such invalid data ourselfes and refuse to read it as blob. */

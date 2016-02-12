@@ -746,7 +746,7 @@ maybe_add_option (GHashTable *hash,
 	}
 
 	if (g_str_has_prefix (key, NEW_TAG))
-		key += STRLEN (NEW_TAG);
+		key += NM_STRLEN (NEW_TAG);
 	if (!key[0])
 		return;
 

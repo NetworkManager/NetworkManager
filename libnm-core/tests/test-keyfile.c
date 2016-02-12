@@ -287,7 +287,7 @@ _test_8021x_cert_check_blob_full (NMConnection *con, const void *data, gsize len
 	_test_8021x_cert_check (con, NM_SETTING_802_1X_CK_SCHEME_BLOB, g_bytes_get_data (bytes, NULL), g_bytes_get_size (bytes));
 	g_bytes_unref (bytes);
 }
-#define _test_8021x_cert_check_blob(con, data) _test_8021x_cert_check_blob_full(con, data, STRLEN (data))
+#define _test_8021x_cert_check_blob(con, data) _test_8021x_cert_check_blob_full(con, data, NM_STRLEN (data))
 
 static void
 test_8021x_cert (void)
@@ -352,7 +352,7 @@ test_8021x_cert (void)
 	_test_8021x_cert_check_blob (con, "\0");
 	_test_8021x_cert_check_blob (con, "10");
 	_test_8021x_cert_check_blob (con, "data:;base64,a");
-	_test_8021x_cert_check_blob_full (con, "data:;base64,a", STRLEN ("data:;base64,a") + 1);
+	_test_8021x_cert_check_blob_full (con, "data:;base64,a", NM_STRLEN ("data:;base64,a") + 1);
 	_test_8021x_cert_check_blob (con, "data:;base64,file://a");
 	_test_8021x_cert_check_blob (con, "123");
 

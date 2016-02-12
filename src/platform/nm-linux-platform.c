@@ -636,8 +636,8 @@ _linktype_read_devtype (const char *sysfs_path)
 		end = strpbrk (cont, "\r\n");
 		if (end)
 			*end++ = '\0';
-		if (strncmp (cont, DEVTYPE_PREFIX, STRLEN (DEVTYPE_PREFIX)) == 0) {
-			cont += STRLEN (DEVTYPE_PREFIX);
+		if (strncmp (cont, DEVTYPE_PREFIX, NM_STRLEN (DEVTYPE_PREFIX)) == 0) {
+			cont += NM_STRLEN (DEVTYPE_PREFIX);
 			memmove (contents, cont, strlen (cont) + 1);
 			return contents;
 		}

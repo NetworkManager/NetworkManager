@@ -455,7 +455,7 @@ _iovec_set_string (struct iovec *iov, gboolean *iov_free, int i, const char *str
 	iov[i].iov_len = len;
 	iov_free[i] = FALSE;
 }
-#define _iovec_set_literal_string(iov, iov_free, i, str) _iovec_set_string ((iov), (iov_free), (i), (""str""), STRLEN (str))
+#define _iovec_set_literal_string(iov, iov_free, i, str) _iovec_set_string ((iov), (iov_free), (i), (""str""), NM_STRLEN (str))
 #endif
 
 void

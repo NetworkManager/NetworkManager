@@ -295,9 +295,9 @@ static void
 test_existing_ascii_client_id (void)
 {
 	gs_unref_bytes GBytes *new_client_id = NULL;
-	char buf[STRLEN (EACID) + 1] = { 0 };
+	char buf[NM_STRLEN (EACID) + 1] = { 0 };
 
-	memcpy (buf + 1, EACID, STRLEN (EACID));
+	memcpy (buf + 1, EACID, NM_STRLEN (EACID));
 	new_client_id = g_bytes_new (buf, sizeof (buf));
 	test_config (existing_ascii_client_id_orig, existing_ascii_client_id_expected,
 	             FALSE, NULL, NULL,

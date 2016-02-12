@@ -3490,11 +3490,11 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 
 	_to_string_dev (NULL, address->ifindex, str_dev, sizeof (str_dev));
 
-	nm_platform_addr_flags2str (address->flags, &s_flags[STRLEN (S_FLAGS_PREFIX)], sizeof (s_flags) - STRLEN (S_FLAGS_PREFIX));
-	if (s_flags[STRLEN (S_FLAGS_PREFIX)] == '\0')
+	nm_platform_addr_flags2str (address->flags, &s_flags[NM_STRLEN (S_FLAGS_PREFIX)], sizeof (s_flags) - NM_STRLEN (S_FLAGS_PREFIX));
+	if (s_flags[NM_STRLEN (S_FLAGS_PREFIX)] == '\0')
 		s_flags[0] = '\0';
 	else
-		memcpy (s_flags, S_FLAGS_PREFIX, STRLEN (S_FLAGS_PREFIX));
+		memcpy (s_flags, S_FLAGS_PREFIX, NM_STRLEN (S_FLAGS_PREFIX));
 
 	str_lft_p = _lifetime_to_string (address->timestamp,
 	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
