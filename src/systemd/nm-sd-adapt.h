@@ -114,6 +114,12 @@ G_STMT_START { \
 
 /*****************************************************************************/
 
+/* work around missing uchar.h */
+typedef guint16 char16_t;
+typedef guint32 char32_t;
+
+/*****************************************************************************/
+
 /* Can't include both net/if.h and linux/if.h; so have to define this here */
 #ifndef IFNAMSIZ
 #define IFNAMSIZ 16

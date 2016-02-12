@@ -24,7 +24,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#if 0 /* NM_IGNORED */
 #include <uchar.h>
+#endif /* NM_IGNORED */
 
 #include "macro.h"
 #if 0 /* NM_IGNORED */
