@@ -65,10 +65,10 @@ typedef enum {
 	_LOG_FORMAT_FLAG_LEVEL_ERROR                        = LOG_FORMAT_FLAG_TIMESTAMP_ERROR |
 	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR,
 
-	_LOG_FORMAT_FLAG_SYSLOG                             = LOG_FORMAT_FLAG_TIMESTAMP_DEBUG |
-	                                                      LOG_FORMAT_FLAG_TIMESTAMP_ERROR |
+	_LOG_FORMAT_FLAG_SYSLOG                             = _LOG_FORMAT_FLAG_TIMESTAMP |
 	                                                      LOG_FORMAT_FLAG_LOCATION_DEBUG |
-	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR,
+	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR |
+	                                                      LOG_FORMAT_FLAG_ALIGN_LOCATION,
 } LogFormatFlags;
 
 static void
@@ -753,7 +753,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 		if (strcmp (logging_backend, "journal-syslog-style") == 0)
 			log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
 		else
-			log_format_flags = LOG_FORMAT_FLAG_NONE;
+			log_format_flags = _LOG_FORMAT_FLAG_TIMESTAMP;
 		global.log_backend = LOG_BACKEND_JOURNAL;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
