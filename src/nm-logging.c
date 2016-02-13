@@ -49,6 +49,7 @@ typedef enum {
 	LOG_FORMAT_FLAG_LOCATION_DEBUG                      = (1LL << 3),
 	LOG_FORMAT_FLAG_LOCATION_INFO                       = (1LL << 4),
 	LOG_FORMAT_FLAG_LOCATION_ERROR                      = (1LL << 5),
+	LOG_FORMAT_FLAG_ALIGN_LOCATION                      = (1LL << 6),
 
 	_LOG_FORMAT_FLAG_TIMESTAMP                          = LOG_FORMAT_FLAG_TIMESTAMP_DEBUG |
 	                                                      LOG_FORMAT_FLAG_TIMESTAMP_INFO |
@@ -530,13 +531,42 @@ _nm_log_impl (const char *file,
 
 	s_buf_location[0] = '\0';
 	if (NM_FLAGS_ANY (global.log_format_flags, global.level_desc[level].log_format_level & _LOG_FORMAT_FLAG_LOCATION)) {
+#define MAX_LEN_FILE 37
+#define MAX_LEN_FUNC 26
 		gsize l = sizeof (s_buf_location);
-		char *p = s_buf_location;
+		char *p = s_buf_location, *p_buf;
+		gsize len;
+		char s_buf[MAX (MAX_LEN_FILE, MAX_LEN_FUNC) + 30];
 
-		if (file)
-			nm_utils_strbuf_append (&p, &l, " [%s:%u]", file, line);
-		if (func)
-			nm_utils_strbuf_append (&p, &l, " %s():", func);
+		if (file) {
+			if (NM_FLAGS_HAS (global.log_format_flags, LOG_FORMAT_FLAG_ALIGN_LOCATION)) {
+				/* left-align the "[file:line]" string, but truncate from left to MAX_LEN_FILE chars. */
+				len = strlen (file);
+				nm_sprintf_buf (s_buf, "[%s:%u]",
+				                len > MAX_LEN_FILE ? &file[len - MAX_LEN_FILE] : file,
+				                line);
+				len = strlen (s_buf);
+				if (len > MAX_LEN_FILE) {
+					p_buf = &s_buf[len - MAX_LEN_FILE];
+					p_buf[0] = '[';
+				} else
+					p_buf = s_buf;
+				nm_utils_strbuf_append (&p, &l, " %-"G_STRINGIFY (MAX_LEN_FILE)"s", p_buf);
+			} else
+				nm_utils_strbuf_append (&p, &l, " [%s:%u]", file, line);
+		}
+		if (func) {
+			if (NM_FLAGS_HAS (global.log_format_flags, LOG_FORMAT_FLAG_ALIGN_LOCATION)) {
+				/* left-align the "func():" string, but truncate from left to MAX_LEN_FUNC chars. */
+				len = strlen (func);
+				nm_sprintf_buf (s_buf, "%s():",
+				                len > MAX_LEN_FUNC ? &func[len - MAX_LEN_FUNC] : func);
+				len = strlen (s_buf);
+				nm_utils_strbuf_append (&p, &l, " %-"G_STRINGIFY (MAX_LEN_FUNC)"s",
+				                        len > MAX_LEN_FUNC ? &s_buf[len - MAX_LEN_FUNC] : s_buf);
+			} else
+				nm_utils_strbuf_append (&p, &l, " %s():", func);
+		}
 	}
 
 	switch (global.log_backend) {
