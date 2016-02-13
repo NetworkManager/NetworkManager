@@ -164,17 +164,11 @@ _init_nm_debug (const char *debug)
 		{ "RLIMIT_CORE", D_RLIMIT_CORE },
 		{ "fatal-warnings", D_FATAL_WARNINGS },
 	};
-	guint flags = 0;
+	guint flags;
 	const char *env = getenv ("NM_DEBUG");
 
-	if (env && strcasecmp (env, "help") != 0) {
-		/* g_parse_debug_string() prints options to stderr if the variable
-		 * is set to "help". Don't allow that. */
-		flags = g_parse_debug_string (env,  keys, G_N_ELEMENTS (keys));
-	}
-
-	if (debug && strcasecmp (debug, "help") != 0)
-		flags |= g_parse_debug_string (debug,  keys, G_N_ELEMENTS (keys));
+	flags  = nm_utils_parse_debug_string (env, keys, G_N_ELEMENTS (keys));
+	flags |= nm_utils_parse_debug_string (debug, keys, G_N_ELEMENTS (keys));
 
 	if (NM_FLAGS_HAS (flags, D_RLIMIT_CORE)) {
 		/* only enable this, if explicitly requested, because it might
