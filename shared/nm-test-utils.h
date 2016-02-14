@@ -158,6 +158,12 @@ _nmtst_assert_success (gboolean success, GError *error, const char *file, int li
 }
 #define nmtst_assert_success(success, error) _nmtst_assert_success ((success), (error), __FILE__, __LINE__)
 
+#define nmtst_assert_no_success(success, error) \
+	G_STMT_START { \
+		g_assert (error); \
+		g_assert (!(success)); \
+	} G_STMT_END
+
 /*******************************************************************************/
 
 struct __nmtst_internal
