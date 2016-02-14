@@ -103,13 +103,8 @@ test_cert (gconstpointer test_data)
 	path = g_build_filename (TEST_CERT_DIR, (const char *) test_data, NULL);
 
 	array = crypto_load_and_verify_certificate (path, &format, &error);
-	ASSERT (array != NULL, "cert",
-	        "couldn't read certificate file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_X509, "cert",
-	        "%s: unexpected certificate format (expected %d, got %d)",
-	        path, NM_CRYPTO_FILE_FORMAT_X509, format);
+	nmtst_assert_success (array != NULL, error);
+	g_assert (format == NM_CRYPTO_FILE_FORMAT_X509);
 
 	g_byte_array_free (array, TRUE);
 }
@@ -143,42 +138,22 @@ test_load_private_key (const char *path,
 
 	array = crypto_decrypt_private_key (path, password, &key_type, &error);
 	if (expect_fail) {
-		ASSERT (array == NULL, desc,
-		        "unexpected success reading private key file '%s' with "
-		        "invalid password",
-		        path);
-
-		ASSERT (key_type != NM_CRYPTO_KEY_TYPE_UNKNOWN, desc,
-		        "unexpected failure determining private key file '%s' "
-		        "type with invalid password (expected %d, got %d)",
-		        path, NM_CRYPTO_KEY_TYPE_UNKNOWN, key_type);
+		g_assert (!array);
+		g_assert ((password && error) || (!password && !error));
+		g_assert (key_type != NM_CRYPTO_KEY_TYPE_UNKNOWN);
 		g_clear_error (&error);
 		return;
 	}
 
-	ASSERT (array != NULL, desc,
-	        "couldn't read private key file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
-	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
+	g_assert (array);
+	g_assert (key_type == NM_CRYPTO_KEY_TYPE_RSA);
 
 	if (decrypted_path) {
 		/* Compare the crypto decrypted key against a known-good decryption */
 		decrypted = file_to_byte_array (decrypted_path);
-		ASSERT (decrypted != NULL, desc,
-		        "couldn't read decrypted private key file '%s': %d %s",
-		        decrypted_path, error->code, error->message);
-
-		ASSERT (decrypted->len > 0, desc, "decrypted key file invalid (size 0)");
-
-		ASSERT (decrypted->len == array->len,
-			    desc, "decrypted key file (%d) and decrypted key data (%d) lengths don't match",
-			    decrypted->len, array->len);
-
-		ASSERT (memcmp (decrypted->data, array->data, array->len) == 0,
-			    desc, "decrypted key file and decrypted key data don't match");
+		g_assert (decrypted);
+		g_assert_cmpint (decrypted->len, >, 0);
+		g_assert_cmpmem (decrypted->data, decrypted->len, array->data, array->len);
 
 		g_byte_array_free (decrypted, TRUE);
 	}
@@ -197,17 +172,10 @@ test_load_pkcs12 (const char *path,
 	GError *error = NULL;
 
 	format = crypto_verify_private_key (path, password, &error);
-	if (expect_fail) {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
-		        "unexpected success reading PKCS#12 private key file "
-		        "'%s' with invalid password",
-		        path);
-	} else {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_PKCS12, desc,
-			    "%s: unexpected PKCS#12 private key file format (expected %d, got "
-			    "%d): %d %s",
-			    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
-	}
+	if (expect_fail)
+		g_assert (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+	else
+		g_assert (format == NM_CRYPTO_FILE_FORMAT_PKCS12);
 	g_clear_error (&error);
 }
 
@@ -219,10 +187,7 @@ test_load_pkcs12_no_password (const char *path, const char *desc)
 
 	/* We should still get a valid returned crypto file format */
 	format = crypto_verify_private_key (path, NULL, &error);
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_PKCS12, desc,
-		    "%s: unexpected PKCS#12 private key file format (expected %d, got "
-		    "%d): %d %s",
-		    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
+	g_assert (format == NM_CRYPTO_FILE_FORMAT_PKCS12);
 }
 
 static void
@@ -231,13 +196,10 @@ test_is_pkcs12 (const char *path, gboolean expect_fail, const char *desc)
 	gboolean is_pkcs12;
 
 	is_pkcs12 = crypto_is_pkcs12_file (path, NULL);
-	if (expect_fail) {
-		ASSERT (is_pkcs12 == FALSE, desc,
-		        "unexpected success reading non-PKCS#12 file '%s'",
-		        path);
-	} else {
-		ASSERT (is_pkcs12 == TRUE, desc, "couldn't read PKCS#12 file '%s'", path);
-	}
+	if (expect_fail)
+		g_assert (!is_pkcs12);
+	else
+		g_assert (is_pkcs12);
 }
 
 static void
@@ -250,17 +212,10 @@ test_load_pkcs8 (const char *path,
 	GError *error = NULL;
 
 	format = crypto_verify_private_key (path, password, &error);
-	if (expect_fail) {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
-		        "unexpected success reading PKCS#8 private key file "
-		        "'%s' with invalid password",
-		        path);
-	} else {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
-			    "%s: unexpected PKCS#8 private key file format (expected %d, got "
-			    "%d): %d %s",
-			    path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format, error->code, error->message);
-	}
+	if (expect_fail)
+		g_assert (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+	else
+		g_assert (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY);
 }
 
 static gboolean
@@ -295,42 +250,27 @@ test_encrypt_private_key (const char *path,
 	GError *error = NULL;
 
 	array = crypto_decrypt_private_key (path, password, &key_type, &error);
-	ASSERT (array != NULL, desc,
-	        "couldn't read private key file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
-	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
+	g_assert (array);
+	g_assert_no_error (error);
+	g_assert (key_type == NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
 	if (is_cipher_aes (path))
 		encrypted = nm_utils_rsa_key_encrypt_aes (array, password, NULL, &error);
 	else
 		encrypted = nm_utils_rsa_key_encrypt (array, password, NULL, &error);
-	ASSERT (encrypted != NULL, desc,
-	        "couldn't re-encrypt private key file '%s': %d %s",
-	        path, error->code, error->message);
+	g_assert (encrypted);
+	g_assert_no_error (error);
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	re_decrypted = crypto_decrypt_private_key_data (encrypted, password, &key_type, &error);
-	ASSERT (re_decrypted != NULL, desc,
-	        "couldn't read private key file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
-	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
+	g_assert (re_decrypted);
+	g_assert_no_error (error);
+	g_assert (key_type == NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Compare the original decrypted key with the re-decrypted key */
-	ASSERT (array->len == re_decrypted->len, desc,
-	        "%s: unexpected re-decrypted private key length (expected %d, got %d)",
-	        path, array->len, re_decrypted->len);
-
-	ASSERT (!memcmp (array->data, re_decrypted->data, array->len), desc,
-	        "%s: unexpected private key data",
-	        path);
+	g_assert_cmpmem (array->data, array->len, re_decrypted->data, re_decrypted->len);
 
 	g_byte_array_free (re_decrypted, TRUE);
 	g_byte_array_free (encrypted, TRUE);
@@ -345,8 +285,7 @@ test_key (gconstpointer test_data)
 
 	parts = g_strsplit ((const char *) test_data, ", ", -1);
 	len = g_strv_length (parts);
-	ASSERT (len == 2 || len == 3, "test-crypto",
-	        "wrong number of arguments (<key file>, <password>, [<decrypted key file>])");
+	g_assert (len == 2 || len == 3);
 
 	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
 	password = parts[1];
@@ -369,8 +308,7 @@ test_pkcs12 (gconstpointer test_data)
 	char **parts, *path, *password;
 
 	parts = g_strsplit ((const char *) test_data, ", ", -1);
-	ASSERT (g_strv_length (parts) == 2, "test-crypto",
-	        "wrong number of arguments (<file>, <password>)");
+	g_assert_cmpint (g_strv_length (parts), ==, 2);
 
 	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
 	password = parts[1];
@@ -390,8 +328,7 @@ test_pkcs8 (gconstpointer test_data)
 	char **parts, *path, *password;
 
 	parts = g_strsplit ((const char *) test_data, ", ", -1);
-	ASSERT (g_strv_length (parts) == 2, "test-crypto",
-	        "wrong number of arguments (<file>, <password>)");
+	g_assert_cmpint (g_strv_length (parts), ==, 2);
 
 	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
 	password = parts[1];
