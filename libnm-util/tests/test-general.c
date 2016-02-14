@@ -53,42 +53,33 @@
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)
 {
-	const char *test = user_data;
-
 	if (!strcmp (key, "foobar1")) {
-		ASSERT (strcmp (value, "blahblah1") == 0,
-				test, "unexpected vpn item '%s' / '%s'", key, value);
+		g_assert_cmpstr (value, ==, "blahblah1");
 		return;
 	}
 
 	if (!strcmp (key, "foobar2")) {
-		ASSERT (strcmp (value, "blahblah2") == 0,
-				test, "unexpected vpn item '%s' / '%s'", key, value);
+		g_assert_cmpstr (value, ==, "blahblah2");
 		return;
 	}
 
 	if (!strcmp (key, "foobar3")) {
-		ASSERT (strcmp (value, "blahblah3") == 0,
-				test, "unexpected vpn item '%s' / '%s'", key, value);
+		g_assert_cmpstr (value, ==, "blahblah3");
 		return;
 	}
 
 	if (!strcmp (key, "foobar4")) {
-		ASSERT (strcmp (value, "blahblah4") == 0,
-				test, "unexpected vpn item '%s' / '%s'", key, value);
+		g_assert_cmpstr (value, ==, "blahblah4");
 		return;
 	}
 
-	ASSERT (FALSE, test, "unexpected vpn item '%s'", key);
+	g_assert_not_reached ();
 }
 
 static void
 vpn_check_empty_func (const char *key, const char *value, gpointer user_data)
 {
-	const char *test = user_data;
-
-	/* We don't expect any values */
-	ASSERT (FALSE, test, "unexpected vpn item '%s'", key);
+	g_assert_not_reached ();
 }
 
 static void
@@ -97,9 +88,7 @@ test_setting_vpn_items (void)
 	NMSettingVPN *s_vpn;
 
 	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
-	ASSERT (s_vpn != NULL,
-	        "vpn-items",
-	        "error creating vpn setting");
+	g_assert (s_vpn);
 
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", "blahblah1");
 	nm_setting_vpn_add_data_item (s_vpn, "foobar2", "blahblah2");
@@ -107,7 +96,7 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_add_data_item (s_vpn, "foobar4", "blahblah4");
 
 	/* Ensure that added values are all present */
-	nm_setting_vpn_foreach_data_item (s_vpn, vpn_check_func, "vpn-data");
+	nm_setting_vpn_foreach_data_item (s_vpn, vpn_check_func, NULL);
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar1");
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar2");
 	nm_setting_vpn_remove_data_item (s_vpn, "foobar3");
@@ -119,7 +108,7 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_add_secret (s_vpn, "foobar4", "blahblah4");
 
 	/* Ensure that added values are all present */
-	nm_setting_vpn_foreach_secret (s_vpn, vpn_check_func, "vpn-secrets");
+	nm_setting_vpn_foreach_secret (s_vpn, vpn_check_func, NULL);
 	nm_setting_vpn_remove_secret (s_vpn, "foobar1");
 	nm_setting_vpn_remove_secret (s_vpn, "foobar2");
 	nm_setting_vpn_remove_secret (s_vpn, "foobar3");
@@ -150,7 +139,7 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_add_data_item (s_vpn, "", "blahblah1");
 	g_test_assert_expected_messages ();
 
-	nm_setting_vpn_foreach_data_item (s_vpn, vpn_check_empty_func, "vpn-data-empty");
+	nm_setting_vpn_foreach_data_item (s_vpn, vpn_check_empty_func, NULL);
 
 	/* Try to add some blank secrets and make sure they are rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*key != NULL*");
@@ -177,7 +166,7 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_add_secret (s_vpn, "", "blahblah1");
 	g_test_assert_expected_messages ();
 
-	nm_setting_vpn_foreach_secret (s_vpn, vpn_check_empty_func, "vpn-secrets-empty");
+	nm_setting_vpn_foreach_secret (s_vpn, vpn_check_empty_func, NULL);
 
 	g_object_unref (s_vpn);
 }
@@ -198,14 +187,10 @@ test_setting_vpn_update_secrets (void)
 	const char *val2 = "value2";
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "vpn-update-secrets",
-	        "error creating connection");
+	g_assert (connection);
 
 	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
-	ASSERT (s_vpn != NULL,
-	        "vpn-update-secrets",
-	        "error creating vpn setting");
+	g_assert (s_vpn);
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
 	settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_destroy);
@@ -222,21 +207,17 @@ test_setting_vpn_update_secrets (void)
 	g_hash_table_insert (secrets, (char *) key2, (char *) val2);
 
 	success = nm_connection_update_secrets (connection, NM_SETTING_VPN_SETTING_NAME, settings, &error);
-	ASSERT (success == TRUE,
-	        "vpn-update-secrets", "failed to update VPN secrets: %s", error->message);
+	g_assert_no_error (error);
+	g_assert (success);
 
 	/* Read the secrets back out */
 	tmp = nm_setting_vpn_get_secret (s_vpn, key1);
-	ASSERT (tmp != NULL,
-	        "vpn-update-secrets", "unexpected failure getting key #1");
-	ASSERT (strcmp (tmp, val1) == 0,
-	        "vpn-update-secrets", "unexpected key #1 value");
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, val1);
 
 	tmp = nm_setting_vpn_get_secret (s_vpn, key2);
-	ASSERT (tmp != NULL,
-	        "vpn-update-secrets", "unexpected failure getting key #2");
-	ASSERT (strcmp (tmp, val2) == 0,
-	        "vpn-update-secrets", "unexpected key #2 value");
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, val2);
 
 	g_hash_table_destroy (settings);
 	g_object_unref (connection);
@@ -341,8 +322,7 @@ test_setting_ip6_config_old_address_array (void)
 	GValue *read_addr, *read_prefix, *read_gw;
 
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	ASSERT (s_ip6 != NULL,
-	        "ip6-old-addr", "error creating IP6 setting");
+	g_assert (s_ip6);
 
 	g_value_init (&written_value, OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
 
@@ -373,38 +353,29 @@ test_setting_ip6_config_old_address_array (void)
 	g_value_init (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
 	g_object_get_property (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_ADDRESSES, &read_value);
 
-	ASSERT (G_VALUE_HOLDS (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS),
-	        "ip6-old-addr", "wrong addresses property value type '%s'",
-	        G_VALUE_TYPE_NAME (&read_value));
+	g_assert (G_VALUE_HOLDS (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS));
 
 	read_addresses = (GPtrArray *) g_value_get_boxed (&read_value);
-	ASSERT (read_addresses != NULL,
-	        "ip6-old-addr", "missing addresses on readback");
-	ASSERT (read_addresses->len == 1,
-	        "ip6-old-addr", "expected one address on readback");
+	g_assert (read_addresses);
+	g_assert_cmpint (read_addresses->len, ==, 1);
 
 	read_array = (GValueArray *) g_ptr_array_index (read_addresses, 0);
 
 	read_addr = g_value_array_get_nth (read_array, 0);
 	ba = g_value_get_boxed (read_addr);
-	ASSERT (ba->len == sizeof (addr),
-	        "ip6-old-addr", "unexpected address item length %d", ba->len);
-	ASSERT (memcmp (ba->data, &addr[0], sizeof (addr)) == 0,
-	        "ip6-old-addr", "unexpected failure comparing addresses");
+	g_assert_cmpint (ba->len, ==, sizeof (addr));
+	g_assert_cmpmem (ba->data, ba->len, &addr[0], sizeof (addr));
 
 	read_prefix = g_value_array_get_nth (read_array, 1);
-	ASSERT (g_value_get_uint (read_prefix) == prefix,
-	        "ip6-old-addr", "unexpected failure comparing prefix");
+	g_assert_cmpint (g_value_get_uint (read_prefix), ==, prefix);
 
 	/* Ensure the gateway is all zeros, which is how the 2-item to 3-item
 	 * conversion happens.
 	 */
 	read_gw = g_value_array_get_nth (read_array, 2);
 	ba = g_value_get_boxed (read_gw);
-	ASSERT (ba->len == sizeof (gw),
-	        "ip6-old-addr", "unexpected gateway item length %d", ba->len);
-	ASSERT (memcmp (ba->data, &gw[0], sizeof (gw)) == 0,
-	        "ip6-old-addr", "unexpected failure comparing gateways");
+	g_assert_cmpint (ba->len, ==, sizeof (gw));
+	g_assert_cmpmem (ba->data, ba->len, &gw[0], sizeof (gw));
 
 	g_ptr_array_unref (addresses);
 	g_value_unset (&written_value);
@@ -419,25 +390,17 @@ test_setting_gsm_apn_spaces (void)
 	const char *tmp;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
-	ASSERT (s_gsm != NULL,
-	        "gsm-apn-spaces",
-	        "error creating GSM setting");
+	g_assert (s_gsm);
 
 	/* Trailing space */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar ", NULL);
 	tmp = nm_setting_gsm_get_apn (s_gsm);
-	ASSERT (tmp != NULL,
-	        "gsm-apn-spaces", "empty APN");
-	ASSERT (strcmp (tmp, "foobar") == 0,
-	        "gsm-apn-spaces", "unexpected APN");
+	g_assert_cmpstr (tmp, ==, "foobar");
 
 	/* Leading space */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, " foobar", NULL);
 	tmp = nm_setting_gsm_get_apn (s_gsm);
-	ASSERT (tmp != NULL,
-	        "gsm-apn-spaces", "empty APN");
-	ASSERT (strcmp (tmp, "foobar") == 0,
-	        "gsm-apn-spaces", "unexpected APN");
+	g_assert_cmpstr (tmp, ==, "foobar");
 }
 
 static void
@@ -446,36 +409,29 @@ test_setting_gsm_apn_bad_chars (void)
 	gs_unref_object NMSettingGsm *s_gsm = NULL;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
-	ASSERT (s_gsm != NULL,
-	        "gsm-apn-bad-chars",
-	        "error creating GSM setting");
+	g_assert (s_gsm);
 
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
 
 	/* Make sure a valid APN works */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar123.-baz", NULL);
-	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == TRUE,
-	        "gsm-apn-bad-chars", "unexpectedly invalid GSM setting");
+	g_assert (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
 
 	/* Random invalid chars */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "@#%$@#%@#%", NULL);
-	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
-	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+	g_assert (!nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
 
 	/* Spaces */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar baz", NULL);
-	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
-	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+	g_assert (!nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
 
 	/* 0 characters long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "", NULL);
-	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
-	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+	g_assert (!nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
 
 	/* 65-character long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl1", NULL);
-	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
-	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+	g_assert (!nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
 }
 
 static void
@@ -524,15 +480,13 @@ make_test_wsec_setting (const char *detail)
 	NMSettingWirelessSecurity *s_wsec;
 
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	ASSERT (s_wsec != NULL, detail, "error creating setting");
-
+	g_assert (s_wsec);
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "foobarbaz",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "random psk",
 	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "aaaaaaaaaa",
 	              NULL);
-
 	return s_wsec;
 }
 
@@ -547,14 +501,10 @@ test_setting_to_hash_all (void)
 	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
 
 	/* Make sure all keys are there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME));
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK));
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0));
 
 	g_hash_table_destroy (hash);
 	g_object_unref (s_wsec);
@@ -571,16 +521,12 @@ test_setting_to_hash_no_secrets (void)
 	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_NO_SECRETS);
 
 	/* Make sure non-secret keys are there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
-	        "setting-to-hash-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
-	        "setting-to-hash-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME));
 
 	/* Make sure secrets are not there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK) == NULL,
-	        "setting-to-hash-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0) == NULL,
-	        "setting-to-hash-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (!g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK));
+	g_assert (!g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0));
 
 	g_hash_table_destroy (hash);
 	g_object_unref (s_wsec);
@@ -597,16 +543,12 @@ test_setting_to_hash_only_secrets (void)
 	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 
 	/* Make sure non-secret keys are there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT) == NULL,
-	        "setting-to-hash-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME) == NULL,
-	        "setting-to-hash-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	g_assert (!g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
+	g_assert (!g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME));
 
 	/* Make sure secrets are not there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
-	        "setting-to-hash-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
-	        "setting-to-hash-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK));
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0));
 
 	g_hash_table_destroy (hash);
 	g_object_unref (s_wsec);
@@ -628,8 +570,7 @@ test_connection_to_hash_setting_name (void)
 	/* Make sure the keys of the first level hash are setting names, not
 	 * the GType name of the setting objects.
 	 */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != NULL,
-	        "connection-to-hash-setting-name", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME));
 
 	g_hash_table_destroy (hash);
 	g_object_unref (connection);
@@ -894,24 +835,20 @@ test_connection_new_from_hash (void)
 static void
 check_permission (NMSettingConnection *s_con,
                   guint32 idx,
-                  const char *expected_uname,
-                  const char *tag)
+                  const char *expected_uname)
 {
 	gboolean success;
 	const char *ptype = NULL, *pitem = NULL, *detail = NULL;
 
 	success = nm_setting_connection_get_permission (s_con, 0, &ptype, &pitem, &detail);
-	ASSERT (success == TRUE, tag, "unexpected failure getting added permission");
+	g_assert (success);
 
-	/* Permission type */
-	ASSERT (ptype != NULL, tag, "unexpected failure getting permission type");
-	ASSERT (strcmp (ptype, "user") == 0, tag, "retrieved unexpected permission type");
+	g_assert_cmpstr (ptype, ==, "user");
 
-	/* Permission item */
-	ASSERT (pitem != NULL, tag, "unexpected failure getting permission item");
-	ASSERT (strcmp (pitem, expected_uname) == 0, tag, "retrieved unexpected permission item");
+	g_assert (pitem);
+	g_assert_cmpstr (pitem, ==, expected_uname);
 
-	ASSERT (detail == NULL, tag, "unexpected success getting permission detail");
+	g_assert (!detail);
 }
 
 #define TEST_UNAME "asdfasfasdf"
@@ -931,79 +868,66 @@ test_setting_connection_permissions_helpers (void)
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*strcmp (ptype, \"user\") == 0*");
 	success = nm_setting_connection_add_permission (s_con, "foobar", "blah", NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad permission type #1");
+	g_assert (!success);
 
 	/* Ensure a bad [type] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*ptype*");
 	success = nm_setting_connection_add_permission (s_con, NULL, "blah", NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad permission type #2");
+	g_assert (!success);
 
 	/* Ensure a bad [item] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*uname*");
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*p != NULL*");
 	success = nm_setting_connection_add_permission (s_con, "user", NULL, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #1");
+	g_assert (!success);
 
 	/* Ensure a bad [item] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*uname[0] != '\\0'*");
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*p != NULL*");
 	success = nm_setting_connection_add_permission (s_con, "user", "", NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #2");
+	g_assert (!success);
 
 	/* Ensure an [item] with ':' is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*strchr (uname, ':')*");
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*p != NULL*");
 	success = nm_setting_connection_add_permission (s_con, "user", "ad:asdf", NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #3");
+	g_assert (!success);
 
 	/* Ensure a non-UTF-8 [item] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*g_utf8_validate (uname, -1, NULL)*");
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*p != NULL*");
 	success = nm_setting_connection_add_permission (s_con, "user", buf, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #4");
+	g_assert (!success);
 
 	/* Ensure a non-NULL [detail] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*detail == NULL*");
 	success = nm_setting_connection_add_permission (s_con, "user", "dafasdf", "asdf");
 	g_test_assert_expected_messages ();
-	ASSERT (success == FALSE,
-	        "setting-connection-permissions-helpers", "unexpected success adding bad detail");
+	g_assert (!success);
 
 	/* Ensure a valid call results in success */
 	success = nm_setting_connection_add_permission (s_con, "user", TEST_UNAME, NULL);
-	ASSERT (success == TRUE,
-	        "setting-connection-permissions-helpers", "unexpected failure adding valid user permisson");
+	g_assert (success);
 
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
-	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 1);
 
-	check_permission (s_con, 0, TEST_UNAME, "setting-connection-permissions-helpers");
+	check_permission (s_con, 0, TEST_UNAME);
 
 	/* Check the actual GObject property just to be paranoid */
 	g_object_get (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, &list, NULL);
-	ASSERT (list != NULL,
-	        "setting-connection-permissions-helpers", "unexpected failure getting permissions list");
-	ASSERT (g_slist_length (list) == 1,
-	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions in list");
-	ASSERT (strcmp (list->data, expected_perm) == 0,
-	        "setting-connection-permissions-helpers", "unexpected permission property data");
+	g_assert (list);
+	g_assert_cmpint (g_slist_length (list), ==, 1);
+	g_assert_cmpstr (list->data, ==, expected_perm);
 	g_slist_free_full (list, g_free);
 
 	/* Now remove that permission and ensure we have 0 permissions */
 	nm_setting_connection_remove_permission (s_con, 0);
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-helpers", "unexpected failure removing permission");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	g_object_unref (s_con);
 }
@@ -1055,69 +979,59 @@ test_setting_connection_permissions_property (void)
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*strncmp (str, PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0*");
 	add_permission_property (s_con, "foobar", "blah", -1, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission type #1");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure a bad [type] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*strncmp (str, PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0*");
 	add_permission_property (s_con, NULL, "blah", -1, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission type #2");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure a bad [item] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*last_colon > str*");
 	add_permission_property (s_con, "user", NULL, -1, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission item #1");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure a bad [item] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*last_colon > str*");
 	add_permission_property (s_con, "user", "", -1, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission item #2");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure an [item] with ':' in the middle is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*str[i] != ':'*");
 	add_permission_property (s_con, "user", "ad:asdf", -1, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission item #3");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure an [item] with ':' at the end is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*str[i] != ':'*");
 	add_permission_property (s_con, "user", "adasdfaf:", -1, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission item #4");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure a non-UTF-8 [item] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*g_utf8_validate (str, -1, NULL)*");
 	add_permission_property (s_con, "user", buf, (int) sizeof (buf), NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad permission item #5");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure a non-NULL [detail] is rejected */
 	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*(last_colon + 1) == '\\0'*");
 	add_permission_property (s_con, "user", "dafasdf", -1, "asdf");
 	g_test_assert_expected_messages ();
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected success adding bad detail");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	/* Ensure a valid call results in success */
 	success = nm_setting_connection_add_permission (s_con, "user", TEST_UNAME, NULL);
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
-	        "setting-connection-permissions-property", "unexpected failure adding valid user permisson");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 1);
 
-	check_permission (s_con, 0, TEST_UNAME, "setting-connection-permissions-property");
+	check_permission (s_con, 0, TEST_UNAME);
 
 	/* Now remove that permission and ensure we have 0 permissions */
 	nm_setting_connection_remove_permission (s_con, 0);
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-permissions-property", "unexpected failure removing permission");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 0);
 
 	g_object_unref (s_con);
 }
