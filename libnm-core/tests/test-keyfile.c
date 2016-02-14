@@ -113,9 +113,10 @@ _nm_keyfile_read (GKeyFile *keyfile,
 	con = nm_keyfile_read (keyfile, keyfile_name, base_dir, read_handler, read_data, &error);
 	g_assert_no_error (error);
 	g_assert (NM_IS_CONNECTION (con));
-	if (needs_normalization)
+	if (needs_normalization) {
 		nmtst_assert_connection_verifies_after_normalization (con, 0, 0);
-	else
+		nmtst_connection_normalize (con);
+	} else
 		nmtst_assert_connection_verifies_without_normalization (con);
 	return con;
 }
@@ -334,6 +335,7 @@ test_8021x_cert (void)
 
 	nm_connection_add_setting (con, NM_SETTING (s_8021x));
 	nmtst_assert_connection_verifies_and_normalizable (con);
+	nmtst_connection_normalize (con);
 
 
 	_test_8021x_cert_check (con, scheme, full_TEST_WIRED_TLS_CA_CERT, -1);

@@ -3306,6 +3306,7 @@ _test_connection_normalize_type_normalizable_setting (const char *type,
 
 	g_assert (!nm_connection_get_setting_by_name (con, type));
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
+	nmtst_connection_normalize (con);
 
 	s_base = nm_connection_get_setting_by_name (con, type);
 	g_assert (s_base);
@@ -3362,6 +3363,7 @@ _test_connection_normalize_type_normalizable_type (const char *type,
 	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
 
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_connection_normalize (con);
 
 	g_assert_cmpstr (nm_connection_get_connection_type (con), ==, type);
 	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
@@ -3626,6 +3628,7 @@ test_connection_normalize_slave_type_1 (void)
 
 	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
+	nmtst_connection_normalize (con);
 	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
@@ -3656,6 +3659,7 @@ test_connection_normalize_slave_type_2 (void)
 	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_connection_normalize (con);
 	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
@@ -3679,7 +3683,8 @@ test_connection_normalize_infiniband_mtu (void)
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 	              NM_SETTING_INFINIBAND_MTU, (guint) 2044,
 	              NULL);
-	nmtst_assert_connection_verifies_without_normalization (con);
+	nmtst_assert_connection_verifies_and_normalizable (con);
+	nmtst_connection_normalize (con);
 	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
 
 	g_object_set (s_infini,
@@ -3687,6 +3692,7 @@ test_connection_normalize_infiniband_mtu (void)
 	              NM_SETTING_INFINIBAND_MTU, (guint) 2045,
 	              NULL);
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	nmtst_connection_normalize (con);
 	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
 
 	g_object_set (s_infini,
@@ -3701,6 +3707,7 @@ test_connection_normalize_infiniband_mtu (void)
 	              NM_SETTING_INFINIBAND_MTU, (guint) 65521,
 	              NULL);
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	nmtst_connection_normalize (con);
 	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
 }
 
@@ -3940,6 +3947,7 @@ test_setting_compare_default_strv (void)
 	c1 = nmtst_create_minimal_connection ("test_compare_default_strv", NULL,
 	                                      NM_SETTING_WIRED_SETTING_NAME, NULL);
 	nmtst_assert_connection_verifies_and_normalizable (c1);
+	nmtst_connection_normalize (c1);
 
 	c2 = nm_simple_connection_new_clone (c1);
 	nmtst_assert_connection_verifies_without_normalization (c2);
