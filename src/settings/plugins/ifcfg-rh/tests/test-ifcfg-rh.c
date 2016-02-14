@@ -64,26 +64,96 @@ typedef struct {
 	const char *write_expected;
 } WifiMacRandomData;
 
-#if 0
-static void
-connection_diff (NMConnection *a, NMConnection *b)
-{
-	GHashTable *hash;
-	GHashTableIter iter, siter;
-	const char *setting_name, *key;
-	GHashTable *setting_hash = NULL;
+/*****************************************************************************/
 
-	if (!nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &hash)) {
-		g_hash_table_iter_init (&iter, hash);
-		while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
-			g_hash_table_iter_init (&siter, setting_hash);
-			while (g_hash_table_iter_next (&siter, (gpointer) &key, NULL))
-				g_message (":: %s :: %s", setting_name,key);
-		}
-		g_hash_table_destroy (hash);
-	}
+static NMConnection *
+_connection_from_file (const char *filename,
+                       const char *network_file,
+                       const char *test_type,
+                       char **out_unhandled)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	g_assert (!out_unhandled || !*out_unhandled);
+
+	connection = connection_from_file_test (filename, network_file, test_type, out_unhandled, &error);
+	g_assert_no_error (error);
+
+	if (out_unhandled && *out_unhandled)
+		nmtst_assert_connection_verifies (connection);
+	else
+		nmtst_assert_connection_verifies_without_normalization (connection);
+	return connection;
 }
-#endif
+
+static void
+_connection_from_file_fail (const char *filename,
+                            const char *network_file,
+                            const char *test_type,
+                            GError **error)
+{
+	NMConnection *connection;
+	GError *local = NULL;
+	char *unhandled = NULL;
+	char **p_unhandled = (nmtst_get_rand_int () % 2) ? &unhandled : NULL;
+
+	connection = connection_from_file_test (filename, network_file, test_type, p_unhandled, &local);
+
+	g_assert (!connection);
+	g_assert (local);
+	g_assert (!p_unhandled || !*p_unhandled);
+	g_propagate_error (error, local);
+}
+
+static void
+_writer_new_connection (NMConnection *connection,
+                        const char *ifcfg_dir,
+                        char **out_filename)
+{
+	gboolean success;
+	GError *error = NULL;
+	char *filename = NULL;
+
+	g_assert (NM_IS_CONNECTION (connection));
+	g_assert (ifcfg_dir);
+
+	success = writer_new_connection (connection,
+	                                 ifcfg_dir,
+	                                 &filename,
+	                                 &error);
+	nmtst_assert_success (success, error);
+	g_assert (filename && filename[0]);
+
+	if (out_filename)
+		*out_filename = filename;
+	else
+		g_free (filename);
+}
+
+static void
+_writer_new_connection_fail (NMConnection *connection,
+                             const char *ifcfg_dir,
+                             GError **error)
+{
+	gboolean success;
+	GError *local = NULL;
+	char *filename = NULL;
+
+	g_assert (NM_IS_CONNECTION (connection));
+	g_assert (ifcfg_dir);
+
+	success = writer_new_connection (connection,
+	                                 ifcfg_dir,
+	                                 &filename,
+	                                 &local);
+	nmtst_assert_no_success (success, local);
+	g_assert (!filename);
+
+	g_propagate_error (error, local);
+}
+
+/*****************************************************************************/
 
 static gboolean
 verify_cert_or_key (NMSetting8021x *s_compare,
@@ -193,20 +263,13 @@ test_read_basic (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_id = "System test-minimal";
 	guint64 expected_timestamp = 0;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-minimal",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-minimal",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -252,22 +315,15 @@ test_read_miscellaneous_variables (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	char *expected_mac_blacklist[3] = { "00:16:41:11:22:88", "00:16:41:11:22:99", "6a:5d:5a:fa:dd:f0" };
 	int mac_blacklist_num, i;
 	guint64 expected_timestamp = 0;
-	gboolean success;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid MAC in HWADDR_BLACKLIST 'XX:aa:invalid'*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
+	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -302,21 +358,14 @@ test_read_variables_corner_cases (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_zone = "'";
 	const char *expected_id = "\"";
 	guint64 expected_timestamp = 0;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -351,20 +400,12 @@ test_read_unmanaged (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	char *unhandled_spec = NULL;
-	GError *error = NULL;
 	const char *expected_id = "System test-nm-controlled";
 	guint64 expected_timestamp = 0;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
-	                                        NULL, TYPE_ETHERNET,
-	                                        &unhandled_spec,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
+	                                    NULL, TYPE_ETHERNET,
+	                                    &unhandled_spec);
 	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:mac:00:11:22:33:f8:9f");
 
 	/* ===== CONNECTION SETTING ===== */
@@ -384,20 +425,12 @@ test_read_unmanaged_unrecognized (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	gs_free char *unhandled_spec = NULL;
-	GError *error = NULL;
 	const char *expected_id = "PigeonNet";
 	guint64 expected_timestamp = 0;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
-	                                        NULL, NULL,
-	                                        &unhandled_spec,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
+	                                    NULL, NULL,
+	                                    &unhandled_spec);
 	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:interface-name:ipoac0");
 
 	/* ===== CONNECTION SETTING ===== */
@@ -415,20 +448,12 @@ test_read_unrecognized (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	gs_free char *unhandled_spec = NULL;
-	GError *error = NULL;
 	const char *expected_id = "U Can't Touch This";
 	guint64 expected_timestamp = 0;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
-	                                        NULL, NULL,
-	                                        &unhandled_spec,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
+	                                    NULL, NULL,
+	                                    &unhandled_spec);
 	g_assert_cmpstr (unhandled_spec, ==, "unrecognized:mac:00:11:22:33");
 
 	/* ===== CONNECTION SETTING ===== */
@@ -457,20 +482,13 @@ test_read_wired_static (gconstpointer test_data)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	NMIPAddress *ip4_addr;
 	NMIPAddress *ip6_addr;
-	gboolean success;
 
-	connection = connection_from_file_test (item->file, NULL, TYPE_ETHERNET,
-	                                        &unmanaged, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (item->file, NULL, TYPE_ETHERNET,
+	                                    &unmanaged);
 	g_assert_cmpstr (unmanaged, ==, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -556,7 +574,6 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	NMIPAddress *ip4_addr;
 	char *file, *expected_id;
 
@@ -565,12 +582,8 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing PREFIX, assuming*");
-	connection = connection_from_file_test (file, NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
+	connection = _connection_from_file (file, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
-	g_assert_no_error (error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -603,15 +616,12 @@ test_read_wired_dhcp (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *mac;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-dhcp",
-	                                        NULL, TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-dhcp",
+	                                    NULL, TYPE_ETHERNET,
+	                                    &unmanaged);
 	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -649,19 +659,11 @@ test_read_wired_dhcp_plus_ip (void)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	GError *error = NULL;
 	NMIPAddress *ip4_addr;
 	NMIPAddress *ip6_addr;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -725,13 +727,10 @@ test_read_wired_shared_plus_ip (void)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	NMIPAddress *ip4_addr;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-shared-plus-ip",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-shared-plus-ip",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -759,14 +758,12 @@ test_read_wired_global_gateway (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	NMIPAddress *ip4_addr;
 	char *unmanaged = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway",
-	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway",
-	                                        TYPE_ETHERNET, &unmanaged, &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway",
+	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway",
+	                                    TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -803,15 +800,14 @@ test_read_wired_global_gateway_ignore (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	char *unmanaged = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring GATEWAY (/etc/sysconfig/network) for * because the connection has no static addresses");
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway-ignore",
-	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway-ignore",
-	                                        TYPE_ETHERNET, &unmanaged, &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway-ignore",
+	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway-ignore",
+	                                    TYPE_ETHERNET, &unmanaged);
+	g_test_assert_expected_messages ();
 	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -842,13 +838,10 @@ test_read_wired_obsolete_gateway_n (void)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	NMIPAddress *ip4_addr;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-obsolete-gateway-n",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-obsolete-gateway-n",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -874,12 +867,10 @@ test_read_wired_never_default (void)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default",
-	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-never-default",
-	                                        TYPE_ETHERNET, NULL, &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default",
+	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-never-default",
+	                                    TYPE_ETHERNET, NULL);
 
 	/* ===== WIRED SETTING ===== */
 	g_assert (nm_connection_get_setting_wired (connection));
@@ -900,8 +891,6 @@ test_read_wired_never_default (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_DEFROUTE_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no"
-
 static void
 test_read_wired_defroute_no (void)
 {
@@ -910,11 +899,9 @@ test_read_wired_defroute_no (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no",
-	                                        NULL, TYPE_ETHERNET, &unmanaged, &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no",
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -944,15 +931,11 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes",
-	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-defroute-no-gatewaydev-yes",
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
-	g_assert (unmanaged == NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes",
+	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-defroute-no-gatewaydev-yes",
+	                                    TYPE_ETHERNET,
+	                                    &unmanaged);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -980,12 +963,10 @@ test_read_wired_static_routes (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	NMIPRoute *ip4_route;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	nmtst_assert_connection_verifies_without_normalization (connection);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1021,8 +1002,6 @@ test_read_wired_static_routes (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes-legacy"
-
 static void
 test_read_wired_static_routes_legacy (void)
 {
@@ -1031,82 +1010,40 @@ test_read_wired_static_routes_legacy (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	NMIPRoute *ip4_route;
 	const char *expected_id = "System test-wired-static-routes-legacy";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-
-	ASSERT (connection != NULL,
-	        "wired-static-routes-legacy-read",
-	        "failed to read %s: %s",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-static-routes-legacy-verify", "failed to verify %s: %s",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-static-routes-legacy-verify",
-	        "failed to verify %s: unexpected unmanaged value",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes-legacy",
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-static-routes-legacy-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Routes */
-	ASSERT (nm_setting_ip_config_get_num_routes (s_ip4) == 3,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_ROUTES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 3);
 
 	/* Route #1 */
 	ip4_route = nm_setting_ip_config_get_route (s_ip4, 0);
@@ -1143,75 +1080,41 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	NMIPAddress *ip4_addr;
 
-	connection = connection_from_file_test (file,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-ipv4-manual-read", "failed to read %s: %s", file, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-ipv4-manual-verify", "failed to verify %s: %s", file, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-ipv4-manual-verify", "failed to verify %s: unexpected unmanaged value", file);
+	connection = _connection_from_file (file,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-ipv4-manual-verify-connection", "failed to verify %s: missing %s setting",
-	        file,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-ipv4-manual-verify-connection", "failed to verify %s: missing %s / %s key",
-	        file,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-ipv4-manual-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        file,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-ipv4-manual-verify-wired", "failed to verify %s: missing %s setting",
-	        file,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-ipv4-manual-verify-ip4", "failed to verify %s: missing %s setting",
-	        file,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
-	        "wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        file,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 3,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-		file,
-		NM_SETTING_IP4_CONFIG_SETTING_NAME,
-		NM_SETTING_IP_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 3);
 
 	/* Address #1 */
 	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
@@ -1234,8 +1137,6 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_IPV6_MANUAL TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-manual"
-
 static void
 test_read_wired_ipv6_manual (void)
 {
@@ -1245,7 +1146,6 @@ test_read_wired_ipv6_manual (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ipv6-manual";
 	NMIPAddress *ip6_addr;
@@ -1253,143 +1153,63 @@ test_read_wired_ipv6_manual (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring manual default route*");
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_IPV6_MANUAL,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-manual",
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_test_assert_expected_messages ();
-
-	ASSERT (connection != NULL,
-	        "wired-ipv6-manual-read", "failed to read %s: %s", TEST_IFCFG_WIRED_IPV6_MANUAL, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-ipv6-manual-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_IPV6_MANUAL, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-ipv6-manual-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_IPV6_MANUAL);
+	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-ipv6-manual-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
-	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-ipv6-manual-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-ipv6-manual-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-ipv6-manual-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
 
 	/* DNS search domains */
-	ASSERT (nm_setting_ip_config_get_num_dns_searches (s_ip4) == 3,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip4), ==, 3);
 
 	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 0);
-	ASSERT (tmp != NULL,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
-	ASSERT (strcmp (tmp, "lorem.com") == 0,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "lorem.com");
 
 	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 1);
-	ASSERT (tmp != NULL,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
-	ASSERT (strcmp (tmp, "ipsum.org") == 0,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "ipsum.org");
 
 	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 2);
-	ASSERT (tmp != NULL,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
-	ASSERT (strcmp (tmp, "dolor.edu") == 0,
-	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "dolor.edu");
 
 	/* ===== IPv6 SETTING ===== */
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	g_assert (s_ip6);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
-	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 
-	ASSERT (nm_setting_ip_config_get_never_default (s_ip6) == FALSE,
-	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
+	g_assert (!nm_setting_ip_config_get_never_default (s_ip6));
 
-	ASSERT (nm_setting_ip_config_get_may_fail (s_ip6) == TRUE,
-	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_MAY_FAIL);
+	g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip6) == 3,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-		TEST_IFCFG_WIRED_IPV6_MANUAL,
-		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 3);
 
 	/* Address #1 */
 	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
@@ -1427,30 +1247,12 @@ test_read_wired_ipv6_manual (void)
 	g_assert_cmpint (nm_ip_route_get_metric (ip6_route), ==, 777);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip_config_get_num_dns (s_ip6) == 2,
-	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL,
-		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip6, 1), "1:2:3:4::b") == 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #2",
-		TEST_IFCFG_WIRED_IPV6_MANUAL,
-		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP_CONFIG_DNS);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
 
 	/* DNS domains - none as domains are stuffed to 'ipv4' setting */
-	ASSERT (nm_setting_ip_config_get_num_dns_searches (s_ip6) == 0,
-	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip6), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1467,91 +1269,47 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	NMIPAddress *ip6_addr;
 	const char *method;
 
-	connection = connection_from_file_test (file,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-ipv6-only-read", "failed to read %s: %s", file, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-ipv6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_IPV6_ONLY, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-ipv6-only-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_IPV6_MANUAL);
+	connection = _connection_from_file (file, NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-ipv6-only-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-ipv6-only-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-ipv6-only-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-ipv6-only-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-ipv6-only-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	method = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
-	        "wired-ipv6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (method, ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 
 	/* ===== IPv6 SETTING ===== */
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-	        "wired-ipv6-only-verify-ip6", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	g_assert (s_ip6);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
-	        "wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip6) == 1,
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-		TEST_IFCFG_WIRED_IPV6_MANUAL,
-		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 1);
 
 	/* Address #1 */
 	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
@@ -1560,17 +1318,8 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 56);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip_config_get_num_dns (s_ip6) == 1,
-	        "wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL,
-		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP_CONFIG_DNS);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 1);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
 
 	/* DNS domains should be in IPv6, because IPv4 is disabled */
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip6), ==, 3);
@@ -1592,84 +1341,44 @@ test_read_wired_dhcp6_only (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-dhcp6-only";
 	const char *method;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_DHCP6_ONLY,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-dhcp6-only-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-dhcp6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-dhcp6-only-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP6_ONLY);
+	connection = _connection_from_file (TEST_IFCFG_WIRED_DHCP6_ONLY, NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-dhcp6-only-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-dhcp6-only-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	method = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
-	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (method, ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 
 	/* ===== IPv6 SETTING ===== */
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	g_assert (s_ip6);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0,
-	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_DHCP6_ONLY,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
 
 	g_object_unref (connection);
 }
@@ -1682,41 +1391,17 @@ test_read_onboot_no (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_ONBOOT_NO,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "onboot-no-read", "failed to read %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "onboot-no-verify", "failed to verify %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_ONBOOT_NO);
-
-	/* ===== CONNECTION SETTING ===== */
+	connection = _connection_from_file (TEST_IFCFG_ONBOOT_NO, NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "onboot-no-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_ONBOOT_NO,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
-	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
-	        "onboot-no-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_ONBOOT_NO,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (!nm_setting_connection_get_autoconnect (s_con));
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_NOIP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-noip"
 
 static void
 test_read_noip (void)
@@ -1724,16 +1409,8 @@ test_read_noip (void)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_NOIP,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
-	g_assert_no_error (error);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-noip", NULL, TYPE_ETHERNET, NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
@@ -1769,133 +1446,58 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	const char *expected_ca_cert_path;
 	const char *read_ca_cert_path;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-8021x-peap-mschapv2-read", "failed to read %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2);
+	connection = _connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-8021x-peap-mschapv2-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
-	ASSERT (s_8021x != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME);
+	g_assert (s_8021x);
 
 	/* EAP methods */
-	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	ASSERT (tmp != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
-	ASSERT (strcmp (tmp, "peap") == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "peap");
 
 	/* Identity */
 	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
-	ASSERT (strcmp (tmp, expected_identity) == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_identity);
 
 	/* Anonymous Identity */
 	tmp = nm_setting_802_1x_get_anonymous_identity (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
-	ASSERT (strcmp (tmp, expected_anon_identity) == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_anon_identity);
 
 	/* Password */
 	tmp = nm_setting_802_1x_get_password (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PASSWORD);
-	ASSERT (strcmp (tmp, expected_password) == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PASSWORD);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_password);
 
 	/* PEAP version */
 	tmp = nm_setting_802_1x_get_phase1_peapver (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE1_PEAPVER);
-	ASSERT (strcmp (tmp, "1") == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE1_PEAPVER);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "1");
 
 	/* PEAP Label */
 	tmp = nm_setting_802_1x_get_phase1_peaplabel (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE1_PEAPLABEL);
-	ASSERT (strcmp (tmp, "1") == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE1_PEAPLABEL);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "1");
 
 	/* CA Cert */
 	tmp_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
@@ -1911,17 +1513,9 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	g_assert (expected_ca_cert_path);
 
 	read_ca_cert_path = nm_setting_802_1x_get_ca_cert_path (s_8021x);
-	ASSERT (read_ca_cert_path != NULL,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_CA_CERT);
+	g_assert (read_ca_cert_path);
 
-	ASSERT (strcmp (read_ca_cert_path, expected_ca_cert_path) == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s certificate path",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_CA_CERT);
+	g_assert_cmpstr (read_ca_cert_path, ==, expected_ca_cert_path);
 
 	g_object_unref (tmp_8021x);
 
@@ -1937,22 +1531,10 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	GError *error = NULL;
 	const char *expected_identity = "David Smith";
-	gboolean success = FALSE;
 	char *dirname, *tmp;
 
-	connection = connection_from_file_test (ifcfg,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (ifcfg, NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -1987,17 +1569,12 @@ test_read_write_802_1X_subj_matches (void)
 	NMConnection *connection, *reread;
 	NMSetting8021x *s_8021x;
 	char *written = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing IEEE_8021X_CA_CERT*peap*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
+	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -2015,33 +1592,18 @@ test_read_write_802_1X_subj_matches (void)
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
 
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &written,
-	                                 &error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &written);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing IEEE_8021X_CA_CERT*peap*");
-	reread = connection_from_file_test (written, NULL, TYPE_ETHERNET, NULL,
-	                                    &error);
+	reread = _connection_from_file (written, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 	unlink (written);
 	g_free (written);
 
-	g_assert_no_error (error);
-	g_assert (reread != NULL);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Check 802.1X stuff of the re-read connection. */
 	s_8021x = nm_connection_get_setting_802_1x (reread);
@@ -2068,20 +1630,13 @@ test_read_802_1x_ttls_eapgtc (void)
 {
 	NMConnection *connection;
 	NMSetting8021x *s_8021x;
-	GError *error = NULL;
-	gboolean success;
 
 	/* Test that EAP-* inner methods are correctly read into the
 	 * NMSetting8021x::autheap property.
 	 */
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc",
-	                                        NULL, TYPE_WIRELESS, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc",
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -2106,7 +1661,6 @@ test_read_wired_aliases_good (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System aliasem0";
 	int expected_num_addresses = 4;
@@ -2115,59 +1669,29 @@ test_read_wired_aliases_good (void)
 	const char *expected_gateway = "192.168.1.1";
 	int i, j;
 
-	connection = connection_from_file_test (TEST_IFCFG_ALIASES_GOOD,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "aliases-good-read", "failed to read %s: %s", TEST_IFCFG_ALIASES_GOOD, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "aliases-good-verify", "failed to verify %s: %s", TEST_IFCFG_ALIASES_GOOD, error->message);
+	connection = _connection_from_file (TEST_IFCFG_ALIASES_GOOD,
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "aliases-good-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_ALIASES_GOOD,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "aliases-good-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_ALIASES_GOOD,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "aliases-good-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_ALIASES_GOOD,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "aliases-good-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_ALIASES_GOOD,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
-	        "aliases-good-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_ALIASES_GOOD,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
-	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == expected_num_addresses,
-	        "aliases-good-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_ALIASES_GOOD,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, expected_num_addresses);
 
 	/* Addresses */
 	for (i = 0; i < expected_num_addresses; i++) {
@@ -2201,12 +1725,8 @@ test_read_wired_aliases_good (void)
 	/* Gateway */
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, expected_gateway);
 
-	for (i = 0; i < expected_num_addresses; i++) {
-		ASSERT (expected_address[i] == NULL,
-		        "aliases-good-verify-ip4", "failed to verify %s: did not find IP4 address %s",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        expected_address[i]);
-	}
+	for (i = 0; i < expected_num_addresses; i++)
+		g_assert (!expected_address[i]);
 
 	g_object_unref (connection);
 }
@@ -2217,64 +1737,32 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	NMIPAddress *ip4_addr;
 
-	connection = connection_from_file_test (base,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
+	connection = _connection_from_file (base, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (connection != NULL,
-	        "aliases-bad-read", "failed to read %s: %s", base, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "aliases-bad-verify", "failed to verify %s: %s", base, error->message);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "aliases-bad-verify-connection", "failed to verify %s: missing %s setting",
-	        base,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "aliases-bad-verify-connection", "failed to verify %s: missing %s / %s key",
-	        base,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "aliases-bad-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        base,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "aliases-bad-verify-ip4", "failed to verify %s: missing %s setting",
-	        base,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
-	        "aliases-bad-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        base,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
-	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 1,
-	        "aliases-bad-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        base,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
 
 	/* Addresses */
 	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
@@ -2318,17 +1806,11 @@ test_read_dns_options (void)
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	char *unmanaged = NULL;
 	const char *option;
-	GError *error = NULL;
 	const char *options[] = { "ndots:3", "single-request-reopen", "inet6" };
 	guint32 i, options_len = sizeof (options) / sizeof (options[0]);
 
-	connection = connection_from_file_test (TEST_IFCFG_DNS_OPTIONS,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
+	connection = _connection_from_file (TEST_IFCFG_DNS_OPTIONS,
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert_cmpstr (unmanaged, ==, NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2368,7 +1850,6 @@ test_write_dns_options (void)
 	char *uuid;
 	NMIPAddress *addr;
 	NMIPAddress *addr6;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 
@@ -2429,25 +1910,13 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
-	g_assert (nm_connection_verify (connection, &error));
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
 	/* RES_OPTIONS is copied to both IPv4 and IPv6 settings */
@@ -2459,9 +1928,7 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_dns_option (s_ip6, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -2478,7 +1945,6 @@ test_read_wifi_open (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4, *s_ip6;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *mac;
@@ -2489,37 +1955,18 @@ test_read_wifi_open (void)
 	const char *expected_mode = "infrastructure";
 	const guint32 expected_channel = 1;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-open-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-open-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-open-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-open-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-open-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
@@ -2527,88 +1974,37 @@ test_read_wifi_open (void)
 	 */
 
 	/* Timestamp */
-	ASSERT (nm_setting_connection_get_timestamp (s_con) == expected_timestamp,
-	        "wifi-open-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_TIMESTAMP);
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 
 	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
-	        "wifi-open-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	g_assert_cmpint (nm_setting_connection_get_autoconnect_priority (s_con), ==, -1);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-open-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* MAC address */
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	ASSERT (mac != NULL,
-	        "wifi-open-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 
-	ASSERT (nm_setting_wireless_get_mtu (s_wireless) == 0,
-	        "wifi-open-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MTU);
+	g_assert_cmpint (nm_setting_wireless_get_mtu (s_wireless), ==, 0);
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-open-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	
-	ASSERT (nm_setting_wireless_get_bssid (s_wireless) == NULL,
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_BSSID);
+	g_assert (ssid);
+	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
+	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+
+	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
 
 	tmp = nm_setting_wireless_get_mode (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-open-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
-	ASSERT (strcmp (tmp, expected_mode) == 0,
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_mode);
 
-	ASSERT (nm_setting_wireless_get_channel (s_wireless) == expected_channel,
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_CHANNEL);
+	g_assert (nm_setting_wireless_get_channel (s_wireless) == expected_channel);
 
 	/* ===== WiFi SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -2617,20 +2013,13 @@ test_read_wifi_open (void)
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-open-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (s_ip4), ==, 104);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-open-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert( s_ip6);
@@ -2647,62 +2036,31 @@ test_read_wifi_open_auto (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-open-auto)";
 	const char *expected_mode = "infrastructure";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN_AUTO,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-open-auto-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-open-auto-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN_AUTO,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN_AUTO,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN_AUTO,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-open-auto-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN_AUTO,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN_AUTO,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	tmp = nm_setting_wireless_get_mode (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN_AUTO,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
-	ASSERT (strcmp (tmp, expected_mode) == 0,
-	        "wifi-open-auto-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN_AUTO,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_mode);
 
 	g_object_unref (connection);
 }
@@ -2715,69 +2073,33 @@ test_read_wifi_open_ssid_hex (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *expected_id = "System blahblah (test-wifi-open-ssid-hex)";
 	const char *expected_ssid = "blahblah";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-open-ssid-hex-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_HEX, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-open-ssid-hex-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_HEX, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
-	/* SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert (ssid);
+	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
+	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -2785,17 +2107,7 @@ test_read_wifi_open_ssid_hex (void)
 static void
 test_read_wifi_open_ssid_bad (const char *file, const char *test)
 {
-	NMConnection *connection;
-	GError *error = NULL;
-
-	connection = connection_from_file_test (file,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
-	g_clear_error (&error);
-
+	_connection_from_file_fail (file, NULL, TYPE_WIRELESS, NULL);
 }
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
@@ -2806,69 +2118,33 @@ test_read_wifi_open_ssid_quoted (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *expected_id = "System foo\"bar\\ (test-wifi-open-ssid-quoted)";
 	const char *expected_ssid = "foo\"bar\\";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-open-ssid-quoted-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_QUOTED, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-open-ssid-quoted-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_QUOTED, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
-	/* SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert (ssid);
+	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
+	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -2883,7 +2159,6 @@ test_read_wifi_wep (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *mac;
@@ -2896,37 +2171,18 @@ test_read_wifi_wep (void)
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wep-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wep-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
@@ -2934,186 +2190,76 @@ test_read_wifi_wep (void)
 	 */
 
 	/* Timestamp */
-	ASSERT (nm_setting_connection_get_timestamp (s_con) == expected_timestamp,
-	        "wifi-wep-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_TIMESTAMP);
+	g_assert (nm_setting_connection_get_timestamp (s_con) == expected_timestamp);
 
 	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
-	        "wifi-wep-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* MAC address */
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	ASSERT (mac != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 
 	/* MTU */
-	ASSERT (nm_setting_wireless_get_mtu (s_wireless) == 0,
-	        "wifi-wep-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MTU);
+	g_assert_cmpint (nm_setting_wireless_get_mtu (s_wireless), ==, 0);
 
-	/* SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert (ssid);
+	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
+	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
 
-	/* BSSID */
-	ASSERT (nm_setting_wireless_get_bssid (s_wireless) == NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_BSSID);
+	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
 
 	/* Mode */
 	tmp = nm_setting_wireless_get_mode (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
-	ASSERT (strcmp (tmp, expected_mode) == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_mode);
 
 	/* Channel */
-	ASSERT (nm_setting_wireless_get_channel (s_wireless) == expected_channel,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_CHANNEL);
+	g_assert (nm_setting_wireless_get_channel (s_wireless) == expected_channel);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 
 	/* WEP key index */
-	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
 	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
-	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
-	        TEST_IFCFG_WIFI_WEP,
-	        key_type);
+	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
 	/* WEP key index 0 */
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
-	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_wep_key0);
 
-	/* WEP key index 1 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
-
-	/* WEP key index 2 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
-
-	/* WEP key index 3 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	/* WEP Authentication mode */
 	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
-	ASSERT (strcmp (tmp, "shared") == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "shared");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wep-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wep-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
@@ -3128,7 +2274,6 @@ test_read_wifi_wep_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *expected_id = "System blahblah (test-wifi-wep-adhoc)";
@@ -3136,211 +2281,85 @@ test_read_wifi_wep_adhoc (void)
 	const char *expected_mode = "adhoc";
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_ADHOC,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-adhoc-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_ADHOC, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-adhoc-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_ADHOC, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_ADHOC,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wep-adhoc-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-adhoc-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wep-adhoc-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
 	 * depending on where the tests are run.
 	 */
 
-	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
-	        "wifi-wep-adhoc-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (!nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
-	/* SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert (ssid);
+	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
+	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
 
-	/* BSSID */
-	ASSERT (nm_setting_wireless_get_bssid (s_wireless) == NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_BSSID);
+	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
 
 	/* Mode */
 	tmp = nm_setting_wireless_get_mode (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
-	ASSERT (strcmp (tmp, expected_mode) == 0,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_mode);
 
 	/* Channel */
-	ASSERT (nm_setting_wireless_get_channel (s_wireless) == 11,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_CHANNEL);
+	g_assert_cmpint (nm_setting_wireless_get_channel (s_wireless), ==, 11);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 
 	/* WEP key index */
-	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
 	/* WEP key index 0 */
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
-	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_wep_key0);
 
-	/* WEP key index 1 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
-
-	/* WEP key index 2 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
-
-	/* WEP key index 3 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	/* WEP Authentication mode */
-	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+	g_assert (!nm_setting_wireless_security_get_auth_alg (s_wsec));
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* Ignore auto DNS */
-	ASSERT (nm_setting_ip_config_get_ignore_auto_dns (s_ip4) == TRUE,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS);
+	g_assert (nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
-
-	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_DNS);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
 
 	g_object_unref (connection);
 }
@@ -3354,105 +2373,46 @@ test_read_wifi_wep_passphrase (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_wep_key0 = "foobar222blahblah";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-passphrase-read", "failed to read %s: %s",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-passphrase-verify", "failed to verify %s: %s",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wep-passphrase-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 
 	/* WEP key index */
-	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
 	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
-	ASSERT (key_type == NM_WEP_KEY_TYPE_PASSPHRASE,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        key_type);
+	g_assert (key_type == NM_WEP_KEY_TYPE_PASSPHRASE);
 
 	/* WEP key index 0 */
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
-	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_wep_key0);
 
-	/* WEP key index 1 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
-
-	/* WEP key index 2 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
-
-	/* WEP key index 3 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	g_object_unref (connection);
 }
@@ -3466,103 +2426,46 @@ test_read_wifi_wep_40_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_wep_key0 = "Lorem";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_40_ASCII,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-40-ascii-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_40_ASCII, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-40-ascii-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_40_ASCII, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_40_ASCII,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wep-40-ascii-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 
 	/* WEP key index */
-	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
 	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
-	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        key_type);
+	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
 	/* WEP key index 0 */
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
-	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_wep_key0);
 
-	/* WEP key index 1 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
-
-	/* WEP key index 2 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
-
-	/* WEP key index 3 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	g_object_unref (connection);
 }
@@ -3576,103 +2479,46 @@ test_read_wifi_wep_104_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_wep_key0 = "LoremIpsumSit";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_104_ASCII,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-104-ascii-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_104_ASCII, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-104-ascii-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_104_ASCII, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_104_ASCII,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wep-104-ascii-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 
 	/* WEP key index */
-	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
 	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
-	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        key_type);
+	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
 	/* WEP key index 0 */
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
-	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_wep_key0);
 
-	/* WEP key index 1 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
-
-	/* WEP key index 2 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
-
-	/* WEP key index 3 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	g_object_unref (connection);
 }
@@ -3686,105 +2532,51 @@ test_read_wifi_leap (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-leap)";
 	const char *expected_identity = "Bill Smith";
 	const char *expected_password = "foobarblah";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_LEAP,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-leap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_LEAP, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-leap-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_LEAP, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_LEAP,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-leap-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-leap-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-leap-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "ieee8021x") == 0,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "ieee8021x");
 
 	/* WEP Authentication mode */
 	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
-	ASSERT (strcmp (tmp, "leap") == 0,
-	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "leap");
 
 	/* LEAP Username */
 	tmp = nm_setting_wireless_security_get_leap_username (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
-	ASSERT (strcmp (tmp, expected_identity) == 0,
-	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_identity);
 
 	/* LEAP Password */
 	tmp = nm_setting_wireless_security_get_leap_password (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
-	ASSERT (strcmp (tmp, expected_password) == 0,
-	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_password);
 
 	g_object_unref (connection);
 }
@@ -3798,21 +2590,9 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *expected_identity = "Bill Smith";
-	gboolean success;
 
-	connection = connection_from_file_test (file,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (file, NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== WIRELESS SETTING ===== */
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -3842,7 +2622,6 @@ test_read_wifi_wpa_psk (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *mac;
@@ -3864,204 +2643,91 @@ test_read_wifi_wpa_psk (void)
 	gboolean found_proto_wpa = FALSE;
 	gboolean found_proto_rsn = FALSE;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-psk-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-psk-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_PSK, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wpa-psk-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wpa-psk-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
 	 * depending on where the tests are run.
 	 */
 
-	/* Timestamp */
-	ASSERT (nm_setting_connection_get_timestamp (s_con) == expected_timestamp,
-	        "wifi-wpa-psk-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_TIMESTAMP);
+	g_assert (nm_setting_connection_get_timestamp (s_con) == expected_timestamp);
 
-	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
-	        "wifi-wpa-psk-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* MAC address */
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	ASSERT (mac != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 
 	/* MTU */
-	ASSERT (nm_setting_wireless_get_mtu (s_wireless) == 0,
-	        "wifi-wpa-psk-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MTU);
+	g_assert_cmpint (nm_setting_wireless_get_mtu (s_wireless), ==, 0);
 
-	/* SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert (ssid);
+	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
+	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
 
-	/* BSSID */
-	ASSERT (nm_setting_wireless_get_bssid (s_wireless) == NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_BSSID);
+	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
 
-	/* Mode */
 	tmp = nm_setting_wireless_get_mode (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
-	ASSERT (strcmp (tmp, expected_mode) == 0,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_mode);
 
-	/* Channel */
-	ASSERT (nm_setting_wireless_get_channel (s_wireless) == expected_channel,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_CHANNEL);
+	g_assert (nm_setting_wireless_get_channel (s_wireless) == expected_channel);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
 	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (strcmp (tmp, expected_key_mgmt) == 0,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
 
 	/* PSK */
 	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (strcmp (tmp, expected_psk) == 0,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_psk);
 
-	/* WEP Authentication mode */
-	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
-	ASSERT (tmp == NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+	g_assert (!nm_setting_wireless_security_get_auth_alg (s_wsec));
 
 	/* Pairwise ciphers */
 	n = nm_setting_wireless_security_get_num_pairwise (s_wsec);
-	ASSERT (n == 2,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+	g_assert_cmpint (n, ==, 2);
 	for (i = 0; i < n; i++) {
 		tmp = nm_setting_wireless_security_get_pairwise (s_wsec, i);
-		ASSERT (tmp, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing pairwise cipher",
-		        TEST_IFCFG_WIFI_WPA_PSK);
+		g_assert (tmp);
 		if (strcmp (tmp, "tkip") == 0)
 			found_pair_tkip = TRUE;
 		else if (strcmp (tmp, "ccmp") == 0)
 			found_pair_ccmp = TRUE;
 	}
-	ASSERT (found_pair_tkip, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing pairwise TKIP cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK);
-	ASSERT (found_pair_ccmp, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing pairwise CCMP cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK);
+	g_assert (found_pair_tkip);
+	g_assert (found_pair_ccmp);
 
 	/* Group ciphers */
 	n = nm_setting_wireless_security_get_num_groups (s_wsec);
-	ASSERT (n == 4,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_GROUP);
+	g_assert_cmpint (n, ==, 4);
 	for (i = 0; i < n; i++) {
 		tmp = nm_setting_wireless_security_get_group (s_wsec, i);
-		ASSERT (tmp, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing group cipher",
-		        TEST_IFCFG_WIFI_WPA_PSK);
+		g_assert (tmp);
 		if (strcmp (tmp, "tkip") == 0)
 			found_group_tkip = TRUE;
 		else if (strcmp (tmp, "ccmp") == 0)
@@ -4071,51 +2737,33 @@ test_read_wifi_wpa_psk (void)
 		else if (strcmp (tmp, "wep104") == 0)
 			found_group_wep104 = TRUE;
 	}
-	ASSERT (found_group_tkip, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing group TKIP cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK);
-	ASSERT (found_group_ccmp, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing group CCMP cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK);
-	ASSERT (found_group_wep40, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing group WEP-40 cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK);
-	ASSERT (found_group_wep104, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing group WEP-104 cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK);
+	g_assert (found_group_tkip);
+	g_assert (found_group_ccmp);
+	g_assert (found_group_wep40);
+	g_assert (found_group_wep104);
 
 	/* Protocols */
 	n = nm_setting_wireless_security_get_num_protos (s_wsec);
-	ASSERT (n == 2,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PROTO);
+	g_assert_cmpint (n, ==, 2);
 	for (i = 0; i < n; i++) {
 		tmp = nm_setting_wireless_security_get_proto (s_wsec, i);
-		ASSERT (tmp, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing protocol",
-		        TEST_IFCFG_WIFI_WPA_PSK);
+		g_assert (tmp);
 		if (strcmp (tmp, "wpa") == 0)
 			found_proto_wpa = TRUE;
 		else if (strcmp (tmp, "rsn") == 0)
 			found_proto_rsn = TRUE;
 	}
-	ASSERT (found_proto_wpa, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing protoocl WPA",
-	        TEST_IFCFG_WIFI_WPA_PSK);
-	ASSERT (found_proto_rsn, "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing protocol RSN",
-	        TEST_IFCFG_WIFI_WPA_PSK);
+	g_assert (found_proto_wpa);
+	g_assert (found_proto_rsn);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wpa-psk-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wpa-psk-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
@@ -4129,71 +2777,37 @@ test_read_wifi_wpa_psk_2 (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System ipsum (test-wifi-wpa-psk-2)";
 	const char *expected_psk = "They're really saying I love you. >>`<< \\";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_2,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-psk-2-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_2, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-psk-2-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_PSK_2, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_2,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wpa-psk-2-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-2-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wpa-psk-2-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-psk-2-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wpa-psk-2-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* PSK */
 	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-2-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (strcmp (tmp, expected_psk) == 0,
-	        "wifi-wpa-psk-2-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_psk);
 
 	g_object_unref (connection);
 }
@@ -4207,71 +2821,37 @@ test_read_wifi_wpa_psk_unquoted (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk-unquoted)";
 	const char *expected_psk = "54336845e2f3f321c4c7";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-psk-unquoted-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-psk-unquoted-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* PSK */
 	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (strcmp (tmp, expected_psk) == 0,
-	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_psk);
 
 	g_object_unref (connection);
 }
@@ -4281,22 +2861,12 @@ test_read_wifi_wpa_psk_unquoted (void)
 static void
 test_read_wifi_wpa_psk_unquoted2 (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
-
 	/* Ensure a quoted 64-character WPA passphrase will fail since passphrases
 	 * must be between 8 and 63 ASCII characters inclusive per the WPA spec.
 	 */
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection == NULL,
-	        "wifi-wpa-psk-unquoted-read", "unexpected success reading %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2);
-	g_clear_error (&error);
-
+	_connection_from_file_fail (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2,
+	                            NULL, TYPE_WIRELESS, NULL);
 }
 
 #define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
@@ -4309,7 +2879,6 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk-adhoc)";
 	const char *expected_mode = "adhoc";
@@ -4318,148 +2887,68 @@ test_read_wifi_wpa_psk_adhoc (void)
 	const char *expected_group = "ccmp";
 	const char *expected_proto = "wpa";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-psk-adhoc-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_ADHOC, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-psk-adhoc-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_PSK_ADHOC, error->message);
+	connection = _connection_from_file(TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
+	                                   NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wpa-psk-adhoc-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wpa-psk-adhoc-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* Mode */
 	tmp = nm_setting_wireless_get_mode (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
-	ASSERT (strcmp (tmp, expected_mode) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MODE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_mode);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
 	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (strcmp (tmp, expected_key_mgmt) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
 
 	/* PSK */
 	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (strcmp (tmp, expected_psk) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_psk);
 
 	/* Pairwise cipher: unused in adhoc mode */
-	ASSERT (nm_setting_wireless_security_get_num_pairwise (s_wsec) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+	g_assert_cmpint (nm_setting_wireless_security_get_num_pairwise (s_wsec), ==, 0);
 
 	/* Group cipher */
-	ASSERT (nm_setting_wireless_security_get_num_groups (s_wsec) == 1,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_GROUP);
+	g_assert_cmpint (nm_setting_wireless_security_get_num_groups (s_wsec), ==, 1);
 
 	tmp = nm_setting_wireless_security_get_group (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing group cipher",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC);
-	ASSERT (strcmp (tmp, expected_group) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_GROUP);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_group);
 
 	/* Protocols */
-	ASSERT (nm_setting_wireless_security_get_num_protos (s_wsec) == 1,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PROTO);
+	g_assert_cmpint (nm_setting_wireless_security_get_num_protos (s_wsec), ==, 1);
 	tmp = nm_setting_wireless_security_get_proto (s_wsec, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing proto",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC);
-	ASSERT (strcmp (tmp, expected_proto) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PROTO);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_proto);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wpa-psk-adhoc-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wpa-psk-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
@@ -4474,7 +2963,6 @@ test_read_wifi_wpa_psk_hex (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk-hex)";
@@ -4482,113 +2970,52 @@ test_read_wifi_wpa_psk_hex (void)
 	const char *expected_key_mgmt = "wpa-psk";
 	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-psk-hex-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_HEX, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-psk-hex-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_PSK_HEX, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_HEX,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wpa-psk-hex-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-hex-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wpa-psk-hex-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
-	/* SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (ssid != NULL,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (g_bytes_get_size (ssid) == strlen (expected_ssid),
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert (ssid);
+	g_assert_cmpint (g_bytes_get_size (ssid), ==, strlen (expected_ssid));
+	g_assert (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)) == 0);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
 	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (strcmp (tmp, expected_key_mgmt) == 0,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
 
 	/* PSK */
 	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (strcmp (tmp, expected_psk) == 0,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_PSK);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_psk);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wpa-psk-hex-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wpa-psk-hex-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
@@ -4606,86 +3033,42 @@ test_read_wifi_wpa_eap_tls (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp, *password;
 	const char *expected_identity = "Bill Smith";
 	const char *expected_privkey_password = "test1";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-eap-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TLS, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-eap-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TLS, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wifi-wpa-eap-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TLS);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-eap-tls-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wpa-eap-tls-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wpa-eap-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
-	ASSERT (s_8021x != NULL,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME);
+	g_assert (s_8021x);
 
 	/* EAP methods */
-	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
-	ASSERT (strcmp (tmp, "tls") == 0,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "tls");
 
 	/* Identity */
 	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
-	ASSERT (strcmp (tmp, expected_identity) == 0,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_identity);
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
@@ -4701,17 +3084,9 @@ test_read_wifi_wpa_eap_tls (void)
 
 	/* Private Key Password */
 	password = nm_setting_802_1x_get_private_key_password (s_8021x);
-	ASSERT (password != NULL,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+	g_assert (password);
 
-	ASSERT (strcmp (password, expected_privkey_password) == 0,
-	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+	g_assert_cmpstr (password, ==, expected_privkey_password);
 
 	/* Private key */
 	verify_cert_or_key (s_8021x,
@@ -4734,73 +3109,37 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp, *password;
 	const char *expected_identity = "Chuck Shumer";
 	const char *expected_privkey_password = "test1";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wpa-eap-ttls-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                                    NULL, TYPE_WIRELESS, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
-	ASSERT (s_8021x != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME);
+	g_assert (s_8021x);
 
 	/* EAP methods */
-	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
-	ASSERT (strcmp (tmp, "ttls") == 0,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "ttls");
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
@@ -4810,16 +3149,8 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	/* Inner auth method */
 	tmp = nm_setting_802_1x_get_phase2_autheap (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
-	ASSERT (strcmp (tmp, "tls") == 0,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "tls");
 
 	/* Inner CA Cert */
 	verify_cert_or_key (s_8021x,
@@ -4835,17 +3166,9 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	/* Inner Private Key Password */
 	password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-	ASSERT (password != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+	g_assert (password);
 
-	ASSERT (strcmp (password, expected_privkey_password) == 0,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+	g_assert_cmpstr (password, ==, expected_privkey_password);
 
 	/* Inner private key */
 	verify_cert_or_key (s_8021x,
@@ -4855,16 +3178,8 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	/* Identity */
 	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
-	ASSERT (strcmp (tmp, expected_identity) == 0,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_identity);
 
 	g_object_unref (connection);
 }
@@ -4878,20 +3193,9 @@ test_read_wifi_dynamic_wep_leap (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	gboolean success;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_DYNAMIC_WEP_LEAP,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_DYNAMIC_WEP_LEAP,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -4941,94 +3245,47 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_password = "foobar baz";
 	const char *expected_identity = "David Smith";
 	const char *expected_key_mgmt = "ieee8021x";
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-eap-ttls-chap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	                                    NULL, TYPE_WIRELESS, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
 	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (strcmp (tmp, expected_key_mgmt) == 0,
-	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
-	ASSERT (s_8021x != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME);
+	g_assert (s_8021x);
 
 	/* EAP methods */
-	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
-	ASSERT (strcmp (tmp, "ttls") == 0,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "ttls");
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
@@ -5038,42 +3295,18 @@ test_read_wifi_wep_eap_ttls_chap (void)
 
 	/* Inner auth method */
 	tmp = nm_setting_802_1x_get_phase2_auth (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE2_AUTH);
-	ASSERT (strcmp (tmp, "chap") == 0,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PHASE2_AUTH);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "chap");
 
 	/* Password */
 	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
-	ASSERT (strcmp (tmp, expected_identity) == 0,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_IDENTITY);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_identity);
 
 	/* Password */
 	tmp = nm_setting_802_1x_get_password (s_8021x);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PASSWORD);
-	ASSERT (strcmp (tmp, expected_password) == 0,
-	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_PASSWORD);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_password);
 
 	g_object_unref (connection);
 }
@@ -5084,17 +3317,9 @@ test_read_wired_wake_on_lan (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	gboolean success;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-wake-on-lan",
-	                                        NULL, TYPE_WIRELESS, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-wake-on-lan",
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -5121,17 +3346,9 @@ test_read_wifi_hidden (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	gboolean success;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-hidden",
-	                                        NULL, TYPE_WIRELESS, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-hidden",
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -5151,7 +3368,6 @@ test_write_wifi_hidden (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	shvarFile *f;
 	GBytes *ssid;
@@ -5185,17 +3401,11 @@ test_write_wifi_hidden (void)
 
 	g_bytes_unref (ssid);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -5208,21 +3418,10 @@ test_write_wifi_hidden (void)
 	g_free (val);
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
-	                                    NULL, &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -5235,19 +3434,11 @@ test_read_wifi_mac_random (gconstpointer user_data)
 	const WifiMacRandomData *test_data = user_data;
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
-	gboolean success;
-	GError *error = NULL;
 	char *path;
 
 	path = g_strdup_printf (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-mac-random-%s", test_data->name);
-	connection = connection_from_file_test (path, NULL, TYPE_WIRELESS, NULL, &error);
+	connection = _connection_from_file (path, NULL, TYPE_WIRELESS, NULL);
 	g_free (path);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -5264,7 +3455,6 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	shvarFile *f;
 	GBytes *ssid;
@@ -5298,17 +3488,11 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	              NULL);
 	g_bytes_unref (ssid);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-		                             TEST_SCRATCH_DIR "/network-scripts/",
-		                             &testfile,
-		                             &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -5320,20 +3504,10 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	g_free (val);
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS, NULL, &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -5348,7 +3522,6 @@ test_write_wired_wake_on_lan (void)
 	NMSettingWired *s_wired;
 	NMSettingWiredWakeOnLan wol;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	shvarFile *f;
 
@@ -5379,17 +3552,11 @@ test_write_wired_wake_on_lan (void)
 	              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, "00:00:00:11:22:33",
 	              NULL);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -5403,21 +3570,10 @@ test_write_wired_wake_on_lan (void)
 	g_free (val);
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_ETHERNET,
-	                                    NULL, &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -5430,17 +3586,9 @@ test_read_wifi_band_a (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	gboolean success;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a",
-	                                        NULL, TYPE_WIRELESS, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a",
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -5460,7 +3608,6 @@ test_write_wifi_band_a (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	shvarFile *f;
 	GBytes *ssid;
@@ -5494,17 +3641,11 @@ test_write_wifi_band_a (void)
 
 	g_bytes_unref (ssid);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -5517,21 +3658,10 @@ test_write_wifi_band_a (void)
 	g_free (val);
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
-	                                    NULL, &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -5541,27 +3671,21 @@ test_write_wifi_band_a (void)
 static void
 test_read_wifi_band_a_channel_mismatch (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch",
-	                                        NULL, TYPE_WIRELESS, NULL, &error);
-	g_assert (connection == NULL);
+	_connection_from_file_fail (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch",
+	                            NULL, TYPE_WIRELESS, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
-	g_clear_error (&error);
 }
 
 static void
 test_read_wifi_band_bg_channel_mismatch (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch",
-	                                        NULL, TYPE_WIRELESS, NULL, &error);
-	g_assert (connection == NULL);
+	_connection_from_file_fail (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch",
+	                            NULL, TYPE_WIRELESS, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
-	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
@@ -5574,150 +3698,71 @@ test_read_wired_qeth_static (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-qeth-static";
-	const char *mac;
 	const char *expected_channel0 = "0.0.0600";
 	const char *expected_channel1 = "0.0.0601";
 	const char *expected_channel2 = "0.0.0602";
 	const char * const *subchannels;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_QETH_STATIC,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wired-qeth-static-read", "failed to read %s: %s", TEST_IFCFG_WIRED_QETH_STATIC, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-qeth-static-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_QETH_STATIC, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "wired-qeth-static-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_QETH_STATIC);
+	connection = _connection_from_file (TEST_IFCFG_WIRED_QETH_STATIC,
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wired-qeth-static-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wired-qeth-static-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wired-qeth-static-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
-	/* MAC address */
-	mac = nm_setting_wired_get_mac_address (s_wired);
-	ASSERT (mac == NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_MAC_ADDRESS);
+	g_assert (!nm_setting_wired_get_mac_address (s_wired));
 
 	/* Subchannels */
 	subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
-	ASSERT (subchannels != NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_S390_SUBCHANNELS);
-	ASSERT (subchannels[0] && subchannels[1] && subchannels[2] && !subchannels[3],
-	        "wired-qeth-static-verify-wired", "failed to verify %s: invalid %s / %s key (not 3 elements)",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_S390_SUBCHANNELS);
+	g_assert (subchannels);
+	g_assert (subchannels[0] && subchannels[1] && subchannels[2] && !subchannels[3]);
 
-	ASSERT (strcmp (subchannels[0], expected_channel0) == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #0",
-	        TEST_IFCFG_WIRED_QETH_STATIC);
-	ASSERT (strcmp (subchannels[1], expected_channel1) == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #1",
-	        TEST_IFCFG_WIRED_QETH_STATIC);
-	ASSERT (strcmp (subchannels[2], expected_channel2) == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #2",
-	        TEST_IFCFG_WIRED_QETH_STATIC);
+	g_assert_cmpstr (subchannels[0], ==, expected_channel0);
+	g_assert_cmpstr (subchannels[1], ==, expected_channel1);
+	g_assert_cmpstr (subchannels[2], ==, expected_channel2);
 
 	/* Nettype */
 	tmp = nm_setting_wired_get_s390_nettype (s_wired);
-	ASSERT (tmp != NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_S390_NETTYPE);
-	ASSERT (strcmp (tmp, "qeth") == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_S390_NETTYPE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "qeth");
 
 	/* port name */
 	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "portname");
-	ASSERT (tmp != NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s s390 option 'portname'",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
-	ASSERT (strcmp (tmp, "OSAPORT") == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s s390 option 'portname' value",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "OSAPORT");
 
 	/* port number */
 	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "portno");
-	ASSERT (tmp != NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s s390 option 'portno'",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
-	ASSERT (strcmp (tmp, "0") == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s s390 option 'portno' value",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "0");
 
 	/* layer */
 	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "layer2");
-	ASSERT (tmp != NULL,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s s390 option 'layer2'",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
-	ASSERT (strcmp (tmp, "1") == 0,
-	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s s390 option 'layer2' value",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "1");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "wired-qeth-static-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
-	        "wired-qeth-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_QETH_STATIC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	g_object_unref (connection);
 }
@@ -5731,25 +3776,14 @@ test_read_wired_ctc_static (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ctc-static";
 	const char *expected_channel0 = "0.0.1b00";
 	const char *expected_channel1 = "0.0.1b01";
 	const char * const *subchannels;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIRED_CTC_STATIC,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        &unmanaged,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_WIRED_CTC_STATIC,
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -5791,42 +3825,22 @@ test_read_wifi_wep_no_keys (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System foobar (test-wifi-wep-no-keys)";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "wifi-wep-no-keys-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_NO_KEYS, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "wifi-wep-no-keys-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_NO_KEYS, error->message);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, expected_id);
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
@@ -5836,47 +3850,25 @@ test_read_wifi_wep_no_keys (void)
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	ASSERT (s_wireless != NULL,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (s_wireless);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	ASSERT (s_wsec != NULL,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (s_wsec);
 
 	/* Key management */
-	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 
 	/* WEP key index */
-	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
 	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
-	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        key_type);
+	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
 	/* WEP key index 0; we don't expect it to be filled */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	ASSERT (tmp == NULL,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 0));
 
 	g_object_unref (connection);
 }
@@ -5889,55 +3881,35 @@ test_read_permissions (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	gboolean success;
-	GError *error = NULL;
 	guint32 num;
 	const char *tmp;
 
-	connection = connection_from_file_test (TEST_IFCFG_PERMISSIONS,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "permissions-read", "failed to read %s: %s", TEST_IFCFG_PERMISSIONS, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "permissions-verify", "failed to verify %s: %s", TEST_IFCFG_PERMISSIONS, error->message);
+	connection = _connection_from_file (TEST_IFCFG_PERMISSIONS,
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "permissions-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_PERMISSIONS,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	num = nm_setting_connection_get_num_permissions (s_con);
-	ASSERT (num == 3,
-	        "permissions-verify-permissions", "unexpected number of permissions (%d, expected 3)",
-	        num);
+	g_assert_cmpint (num, ==, 3);
 
 	/* verify each permission */
 	tmp = NULL;
 	success = nm_setting_connection_get_permission (s_con, 0, NULL, &tmp, NULL);
-	ASSERT (success == TRUE,
-	        "permissions-verify-permissions", "unexpected failure getting permission #1");
-	ASSERT (strcmp (tmp, "dcbw") == 0,
-	        "permissions-verify-permissions", "unexpected permission #1");
+	g_assert (success);
+	g_assert_cmpstr (tmp, ==, "dcbw");
 
 	tmp = NULL;
 	success = nm_setting_connection_get_permission (s_con, 1, NULL, &tmp, NULL);
-	ASSERT (success == TRUE,
-	        "permissions-verify-permissions", "unexpected failure getting permission #2");
-	ASSERT (strcmp (tmp, "ssmith") == 0,
-	        "permissions-verify-permissions", "unexpected permission #2");
+	g_assert (success);
+	g_assert_cmpstr (tmp, ==, "ssmith");
 
 	tmp = NULL;
 	success = nm_setting_connection_get_permission (s_con, 2, NULL, &tmp, NULL);
-	ASSERT (success == TRUE,
-	        "permissions-verify-permissions", "unexpected failure getting permission #3");
-	ASSERT (strcmp (tmp, "johnny5") == 0,
-	        "permissions-verify-permissions", "unexpected permission #3");
+	g_assert (success);
+	g_assert_cmpstr (tmp, ==, "johnny5");
 
 	g_object_unref (connection);
 }
@@ -5950,21 +3922,11 @@ test_read_wifi_wep_agent_keys (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	GError *error = NULL;
 	NMWepKeyType key_type;
-	gboolean success;
 	NMSettingSecretFlags flags;
 
-	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_AGENT_KEYS,
-	                                        NULL,
-	                                        TYPE_WIRELESS,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection != NULL);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_AGENT_KEYS,
+	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* Ensure the connection is still marked for wifi security even though
 	 * we don't have any WEP keys because they are agent owned.
@@ -6016,7 +3978,6 @@ test_write_wired_static (void)
 	NMIPAddress *addr;
 	NMIPAddress *addr6;
 	NMIPRoute *route6;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *route6file = NULL;
@@ -6119,40 +4080,19 @@ test_write_wired_static (void)
 	nm_setting_ip_config_add_dns_search (s_ip6, dns_search3);
 	nm_setting_ip_config_add_dns_search (s_ip6, dns_search4);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-static-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-static-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
-
-	ASSERT (testfile != NULL,
-	        "wired-static-write", "didn't get ifcfg file path back after writing connection");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	/* reread will be normalized, so we must normalize connection too. */
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "wired-static-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-static-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	/* FIXME: currently DNS domains from IPv6 setting are stored in 'DOMAIN' key in ifcfg-file 
+	/* FIXME: currently DNS domains from IPv6 setting are stored in 'DOMAIN' key in ifcfg-file
 	 * However after re-reading they are dropped into IPv4 setting.
 	 * So, in order to comparison succeeded, move DNS domains back to IPv6 setting.
 	 */
@@ -6187,8 +4127,6 @@ test_write_wired_dhcp (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -6222,9 +4160,7 @@ test_write_wired_dhcp (void)
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-dhcp-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
@@ -6235,37 +4171,14 @@ test_write_wired_dhcp (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-dhcp-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wired-dhcp-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "wired-dhcp-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-dhcp-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wired-dhcp-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -6277,39 +4190,19 @@ test_write_wired_dhcp_plus_ip (void)
 {
 	NMConnection *connection, *reread;
 	char *written = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &written,
-	                                 &error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &written);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (written, NULL, TYPE_ETHERNET, NULL,
-	                                    &error);
+	reread = _connection_from_file (written, NULL, TYPE_ETHERNET, NULL);
 	unlink (written);
 	g_free (written);
 
-	g_assert_no_error (error);
-	g_assert (reread != NULL);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -6323,14 +4216,9 @@ test_read_write_wired_dhcp_send_hostname (void)
 	NMSettingIPConfig *s_ip6;
 	const char * dhcp_hostname = "kamil-patka";
 	char *written = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-send-hostname",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-send-hostname",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* Check dhcp-hostname and dhcp-send-hostname */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -6346,30 +4234,15 @@ test_read_write_wired_dhcp_send_hostname (void)
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
 
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &written,
-	                                 &error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &written);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (written, NULL, TYPE_ETHERNET, NULL,
-	                                    &error);
+	reread = _connection_from_file (written, NULL, TYPE_ETHERNET, NULL);
 	unlink (written);
 	g_free (written);
 
-	g_assert_no_error (error);
-	g_assert (reread != NULL);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Check dhcp-hostname and dhcp-send-hostname from the re-read connection. */
 	s_ip4 = nm_connection_get_setting_ip4_config (reread);
@@ -6397,7 +4270,6 @@ test_write_wired_static_ip6_only (void)
 	char *uuid;
 	const char *dns6 = "fade:0102:0103::face";
 	NMIPAddress *addr6;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 
@@ -6447,41 +4319,16 @@ test_write_wired_static_ip6_only (void)
 	/* DNS server */
 	nm_setting_ip_config_add_dns (s_ip6, dns6);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-static-ip6-only-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-static-ip6-only-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wired-static-ip6-only-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "wired-static-ip6-only-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-static-ip6-only-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wired-static-ip6-only-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -6509,7 +4356,6 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	char *uuid;
 	const char *dns6 = "fade:0102:0103::face";
 	NMIPAddress *addr6;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *id = NULL;
@@ -6565,30 +4411,15 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	/* DNS server */
 	nm_setting_ip_config_add_dns (s_ip6, dns6);
 
-	g_assert (nm_connection_verify (connection, &error));
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
-	g_assert_no_error (error);
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	{
 		/* re-read the file to check that what key was written. */
@@ -6636,114 +4467,55 @@ test_read_write_static_routes_legacy (void)
 	char *testfile = NULL;
 	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean success;
-	GError *error = NULL;
 	const char *tmp;
 
-	connection = connection_from_file_test (TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "read-write-static-routes-legacy-read", "failed to read %s: %s",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "read-write-static-routes-legacy-verify", "failed to verify %s: %s",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY, error->message);
+	connection = _connection_from_file (TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "read-write-static-routes-legacy-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-	        "read-write-static-routes-legacy-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_ID);
+	g_assert (tmp);
 
 	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
-	        "read_write-static-routes-legacy-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_CONNECTION_SETTING_NAME,
-	        NM_SETTING_CONNECTION_AUTOCONNECT);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRED SETTING ===== */
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-	        "read-write-static-routes-legacy-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_METHOD);
+	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
-	ASSERT (nm_setting_ip_config_get_never_default (s_ip4) == FALSE,
-	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
+	g_assert (!nm_setting_ip_config_get_never_default (s_ip4));
 
 	/* Save the ifcfg; use a special different scratch dir to ensure that
 	 * we can clean up after the written connection in both the original
 	 * source tree and for 'make distcheck'.
 	 */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/tmp",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "read-write-static-routes-legacy-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/tmp",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "read-write-static-routes-legacy-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 	routefile = utils_get_route_path (testfile);
 	unlink (routefile);
 	route6file = utils_get_route6_path (testfile);
 	unlink (route6file);
 
-	ASSERT (reread != NULL,
-	        "read-write-static-routes-legacy-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "read-write-static-routes-legacy-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "read-write-static-routes-legacy-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (routefile);
@@ -6770,7 +4542,6 @@ test_write_wired_static_routes (void)
 	const char *dns_search2 = "lab.foobar.com";
 	NMIPAddress *addr;
 	NMIPRoute *route;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *routefile = NULL;
@@ -6844,44 +4615,19 @@ test_write_wired_static_routes (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-static-routes-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-static-routes-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wired-static-routes-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
-
-	ASSERT (reread != NULL,
-	        "wired-static-routes-write-reread", "failed to read %s: %s", testfile, error->message);
 
 	routefile = utils_get_route_path (testfile);
 	unlink (routefile);
 
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-static-routes-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wired-static-routes-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (routefile);
@@ -6954,77 +4700,32 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 
 	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
 
-	success = nm_setting_802_1x_set_ca_cert (s_8021x, 
+	success = nm_setting_802_1x_set_ca_cert (s_8021x,
 	                                         TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
 	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                         NULL,
 	                                         &error);
-	ASSERT (success == TRUE,
-	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_success (success, error);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-dhcp-8021x-peap-mschapv2write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wired-dhcp-8021x-peap-mschapv2write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
-
-	ASSERT (reread != NULL,
-	        "wired-dhcp-8021x-peap-mschapv2write-reread", "failed to read %s: %s", testfile, error->message);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-dhcp-8021x-peap-mschapv2write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wired-dhcp-8021x-peap-mschapv2write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
-
-#if 0
-static GByteArray *
-file_to_byte_array (const char *filename)
-{
-	char *contents;
-	GByteArray *array = NULL;
-	gsize length = 0;
-
-	if (g_file_get_contents (filename, &contents, &length, NULL)) {
-		array = g_byte_array_sized_new (length);
-		g_byte_array_append (array, (guint8 *) contents, length);
-		g_assert (array->len == length);
-		g_free (contents);
-	}
-	return array;
-}
-#endif
 
 #define TEST_IFCFG_WIRED_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
 #define TEST_IFCFG_WIRED_TLS_CLIENT_CERT TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
@@ -7131,47 +4832,16 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	/* Set secret flags */
 	g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, flags, NULL);
 
-	/* Verify finished connection */
-	success = nm_connection_verify (connection, &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to verify connection: %s", error->message);
-	}
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to write connection: %s", error->message);
-	}
-	g_assert (success);
-	g_assert (testfile != NULL);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
-
-	g_assert (reread != NULL);
-
-	success = nm_connection_verify (reread, &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to verify %s: %s", testfile, error->message);
-	}
-	g_assert (success);
 
 	/* Ensure the reread connection's certificates and private key are paths; no
 	 * matter what scheme was used in the original connection they will be read
@@ -7210,7 +4880,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 			g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, NULL, NULL);
 		}
 
-		g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+		nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 	}
 
 	/* Clean up created certs and keys */
@@ -7247,21 +4917,17 @@ test_write_wired_aliases (void)
 	const char *ip[] = { "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" };
 	const char *label[] = { NULL, "alias0:2", NULL, "alias0:3" };
 	NMIPAddress *addr;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	shvarFile *ifcfg;
 	int i, j;
 
 	connection = nm_simple_connection_new ();
-	ASSERT (connection != NULL,
-	        "wired-aliases-write", "failed to allocate new connection");
+	g_assert (connection);
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        "wired-aliases-write", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -7274,16 +4940,12 @@ test_write_wired_aliases (void)
 
 	/* Wired setting */
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	ASSERT (s_wired != NULL,
-	        "wired-aliases-write", "failed to allocate new %s setting",
-	        NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-	        "wired-aliases-write", "failed to allocate new %s setting",
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -7301,9 +4963,7 @@ test_write_wired_aliases (void)
 		nm_ip_address_unref (addr);
 	}
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-aliases-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
 	/* Create some pre-existing alias files, to make sure they get overwritten / deleted. */
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":2");
@@ -7311,63 +4971,35 @@ test_write_wired_aliases (void)
 	svSetValue (ifcfg, "IPADDR", "192.168.1.2", FALSE);
 	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
-	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS),
-	        "wired-aliases-write", "failed to write extra alias file");
+	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS));
 
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":5");
 	svSetValue (ifcfg, "DEVICE", "alias0:5", FALSE);
 	svSetValue (ifcfg, "IPADDR", "192.168.1.5", FALSE);
 	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
-	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS),
-	        "wired-aliases-write", "failed to write extra alias file");
+	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS));
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-aliases-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
-
-	ASSERT (testfile != NULL,
-	        "wired-aliases-write", "didn't get ifcfg file path back after writing connection");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	/* Re-check the alias files */
-	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS),
-	        "wired-aliases-write", "saving failed to write ifcfg-alias0:2");
-	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":3", G_FILE_TEST_EXISTS),
-	        "wired-aliases-write", "saving failed to write ifcfg-alias0:3");
-	ASSERT (!g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS),
-	        "wired-aliases-write", "saving failed to delete unused ifcfg-alias0:5");
+	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS));
+	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":3", G_FILE_TEST_EXISTS));
+	g_assert (!g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS));
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 	unlink (TEST_SCRATCH_ALIAS_BASE ":2");
 	unlink (TEST_SCRATCH_ALIAS_BASE ":3");
-
-	ASSERT (reread != NULL,
-	        "wired-aliases-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-aliases-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
 
 	/* nm_connection_compare() is not guaranteed to succeed, because the
 	 * aliases get read back in essentially random order. So just
 	 * verify the aliases manually.
 	 */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == num_addresses,
-	        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        testfile,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP_CONFIG_ADDRESSES);
+	g_assert (nm_setting_ip_config_get_num_addresses (s_ip4) == num_addresses);
 
 	/* Addresses */
 	for (i = 0; i < num_addresses; i++) {
@@ -7411,7 +5043,6 @@ test_write_gateway (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	shvarFile *f;
 	NMIPAddress *addr;
@@ -7454,17 +5085,11 @@ test_write_gateway (void)
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -7510,21 +5135,10 @@ test_write_gateway (void)
 
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
-	                                    NULL, &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -7542,7 +5156,6 @@ test_write_wifi_open (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	GBytes *ssid;
@@ -7601,32 +5214,13 @@ test_write_wifi_open (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-open-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-open-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-open-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
-	g_assert_no_error (error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
 	/* Now make sure that the ESSID item isn't double-quoted (rh #606518) */
 	ifcfg = svOpenFile (testfile, &error);
@@ -7634,25 +5228,16 @@ test_write_wifi_open (void)
 	g_assert (ifcfg != NULL);
 
 	tmp = svGetValue (ifcfg, "ESSID", TRUE);
-	ASSERT (tmp != NULL,
-	        "wifi-open-write-reread", "failed to read ESSID key from %s", testfile);
+	g_assert (tmp);
 
-	ASSERT (strncmp (tmp, "\"\"", 2) != 0,
-	        "wifi-open-write-reread", "unexpected ESSID double-quote in %s", testfile);
+	g_assert (strncmp (tmp, "\"\"", 2) != 0);
 
 	g_free (tmp);
 	svCloseFile (ifcfg);
 
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-open-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-open-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-open-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -7669,8 +5254,6 @@ test_write_wifi_open_hex_ssid (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd };
@@ -7718,41 +5301,16 @@ test_write_wifi_open_hex_ssid (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-open-hex-ssid-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-open-hex-ssid-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-open-hex-ssid-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-open-hex-ssid-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-open-hex-ssid-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-open-hex-ssid-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -7770,8 +5328,6 @@ test_write_wifi_wep (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -7835,50 +5391,22 @@ test_write_wifi_wep (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wep-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wep-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wep-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	ASSERT (stat (keyfile, &statbuf) == 0,
-	        "wifi-wep-write-reread", "couldn't stat() '%s'", keyfile);
-	ASSERT (S_ISREG (statbuf.st_mode),
-	        "wifi-wep-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
-	ASSERT ((statbuf.st_mode & 0077) == 0,
-	        "wifi-wep-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+	g_assert_cmpint (stat (keyfile, &statbuf), ==, 0);
+	g_assert (S_ISREG (statbuf.st_mode));
+	g_assert_cmpint ((statbuf.st_mode & 0077), ==, 0);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wep-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wep-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wep-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -7897,7 +5425,6 @@ test_write_wifi_wep_adhoc (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
@@ -7968,50 +5495,22 @@ test_write_wifi_wep_adhoc (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wep-adhoc-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wep-adhoc-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wep-adhoc-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	ASSERT (stat (keyfile, &statbuf) == 0,
-	        "wifi-wep-adhoc-write-reread", "couldn't stat() '%s'", keyfile);
-	ASSERT (S_ISREG (statbuf.st_mode),
-	        "wifi-wep-adhoc-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
-	ASSERT ((statbuf.st_mode & 0077) == 0,
-	        "wifi-wep-adhoc-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+	g_assert_cmpint (stat (keyfile, &statbuf), ==, 0);
+	g_assert (S_ISREG (statbuf.st_mode));
+	g_assert_cmpint ((statbuf.st_mode & 0077), ==, 0);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wep-adhoc-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wep-adhoc-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wep-adhoc-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8030,8 +5529,6 @@ test_write_wifi_wep_passphrase (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -8093,50 +5590,22 @@ test_write_wifi_wep_passphrase (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wep-passphrase-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wep-passphrase-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wep-passphrase-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	ASSERT (stat (keyfile, &statbuf) == 0,
-	        "wifi-wep-passphrase-write-reread", "couldn't stat() '%s'", keyfile);
-	ASSERT (S_ISREG (statbuf.st_mode),
-	        "wifi-wep-passphrase-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
-	ASSERT ((statbuf.st_mode & 0077) == 0,
-	        "wifi-wep-passphrase-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+	g_assert_cmpint (stat (keyfile, &statbuf), ==, 0);
+	g_assert (S_ISREG (statbuf.st_mode));
+	g_assert_cmpint ((statbuf.st_mode & 0077), ==, 0);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wep-passphrase-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wep-passphrase-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wep-passphrase-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8155,8 +5624,6 @@ test_write_wifi_wep_40_ascii (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -8220,50 +5687,22 @@ test_write_wifi_wep_40_ascii (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wep-40-ascii-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wep-40-ascii-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wep-40-ascii-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	ASSERT (stat (keyfile, &statbuf) == 0,
-	        "wifi-wep-40-ascii-write-reread", "couldn't stat() '%s'", keyfile);
-	ASSERT (S_ISREG (statbuf.st_mode),
-	        "wifi-wep-40-ascii-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
-	ASSERT ((statbuf.st_mode & 0077) == 0,
-	        "wifi-wep-40-ascii-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+	g_assert_cmpint (stat (keyfile, &statbuf), ==, 0);
+	g_assert (S_ISREG (statbuf.st_mode));
+	g_assert_cmpint ((statbuf.st_mode & 0077), ==, 0);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wep-40-ascii-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wep-40-ascii-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wep-40-ascii-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8282,8 +5721,6 @@ test_write_wifi_wep_104_ascii (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -8347,50 +5784,23 @@ test_write_wifi_wep_104_ascii (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wep-104-ascii-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wep-104-ascii-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wep-104-ascii-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	ASSERT (stat (keyfile, &statbuf) == 0,
-	        "wifi-wep-104-ascii-write-reread", "couldn't stat() '%s'", keyfile);
-	ASSERT (S_ISREG (statbuf.st_mode),
-	        "wifi-wep-104-ascii-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
-	ASSERT ((statbuf.st_mode & 0077) == 0,
-	        "wifi-wep-104-ascii-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+	g_assert_cmpint (stat (keyfile, &statbuf), ==, 0);
+	g_assert (S_ISREG (statbuf.st_mode));
+	g_assert_cmpint ((statbuf.st_mode & 0077), ==, 0);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wep-104-ascii-write-reread", "failed to read %s: %s", testfile, error->message);
 
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wep-104-ascii-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wep-104-ascii-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8409,8 +5819,6 @@ test_write_wifi_leap (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -8471,50 +5879,22 @@ test_write_wifi_leap (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-leap-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-leap-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-leap-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	ASSERT (stat (keyfile, &statbuf) == 0,
-	        "wifi-leap-write-reread", "couldn't stat() '%s'", keyfile);
-	ASSERT (S_ISREG (statbuf.st_mode),
-	        "wifi-leap-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
-	ASSERT ((statbuf.st_mode & 0077) == 0,
-	        "wifi-leap-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+	g_assert_cmpint (stat (keyfile, &statbuf), ==, 0);
+	g_assert (S_ISREG (statbuf.st_mode));
+	g_assert_cmpint ((statbuf.st_mode & 0077), ==, 0);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-leap-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-leap-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-leap-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8533,8 +5913,6 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -8597,47 +5975,24 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-
-	g_assert_no_error (error);
 
 	/* No key should be written out since the secret is not system owned */
 	keyfile = utils_get_keys_path (testfile);
 	g_assert (g_file_test (keyfile, G_FILE_TEST_EXISTS) == FALSE);
 
-	g_assert (reread);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
 	/* Remove the LEAP password from the original connection since it wont' be
 	 * in the reread connection, as the password is not system owned.
 	 */
 	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, NULL, NULL);
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8660,9 +6015,7 @@ test_write_wifi_wpa_psk (const char *name,
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *uuid, *tmp;
-	gboolean success;
-	GError *error = NULL;
+	char *uuid;
 	char *testfile = NULL;
 	char *keyfile = NULL;
 	GBytes *ssid;
@@ -8737,46 +6090,19 @@ test_write_wifi_wpa_psk (const char *name,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        test_name, "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        test_name, "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        test_name, "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	tmp = g_strdup_printf ("%s-reread", test_name);
-	ASSERT (reread != NULL,
-	        tmp, "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        tmp, "failed to verify %s: %s", testfile, error->message);
-	g_free (tmp);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        test_name, "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8795,7 +6121,6 @@ test_write_wifi_wpa_psk_adhoc (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
@@ -8872,44 +6197,19 @@ test_write_wifi_wpa_psk_adhoc (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wpa-psk-adhoc-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-psk-adhoc-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wpa-psk-adhoc-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wpa-psk-adhoc-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wpa-psk-adhoc-write-reread", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wpa-psk-adhoc-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8986,18 +6286,14 @@ test_write_wifi_wpa_eap_tls (void)
 	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                         NULL,
 	                                         &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-tls-write", "failed to set CA certificate '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+	nmtst_assert_success (success, error);
 
 	success = nm_setting_802_1x_set_client_cert (s_8021x,
 	                                             TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
 	                                             NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                             NULL,
 	                                             &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-tls-write", "failed to set client certificate '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT, error->message);
+	nmtst_assert_success (success, error);
 
 	success = nm_setting_802_1x_set_private_key (s_8021x,
 	                                             TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
@@ -9005,9 +6301,7 @@ test_write_wifi_wpa_eap_tls (void)
 	                                             NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                             NULL,
 	                                             &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-tls-write", "failed to set private key '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
+	nmtst_assert_success (success, error);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -9024,44 +6318,19 @@ test_write_wifi_wpa_eap_tls (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wpa-eap-tls-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-tls-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wpa-eap-tls-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	ASSERT (reread != NULL,
-	        "wifi-wpa-eap-tls-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wpa-eap-tls-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wpa-eap-tls-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -9142,9 +6411,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                         NULL,
 	                                         &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "failed to set CA certificate '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+	nmtst_assert_success (success, error);
 
 	/* Phase 2 TLS stuff */
 
@@ -9154,9 +6421,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	                                                NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                                NULL,
 	                                                &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "failed to set inner CA certificate '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+	nmtst_assert_success (success, error);
 
 	/* phase2 client cert */
 	success = nm_setting_802_1x_set_phase2_client_cert (s_8021x,
@@ -9164,9 +6429,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	                                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                                    NULL,
 	                                                    &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "failed to set inner client certificate '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT, error->message);
+	nmtst_assert_success (success, error);
 
 	/* phase2 private key */
 	success = nm_setting_802_1x_set_phase2_private_key (s_8021x,
@@ -9175,9 +6438,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	                                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                                    NULL,
 	                                                    &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "failed to set private key '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
+	nmtst_assert_success (success, error);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -9194,44 +6455,19 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wpa-eap-ttls-tls-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-
-	ASSERT (reread != NULL,
-	        "wifi-wpa-eap-ttls-tls-write-reread", "failed to read %s: %s", testfile, error->message);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wpa-eap-ttls-tls-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wpa-eap-ttls-tls-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -9316,10 +6552,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                         NULL,
 	                                         &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to set CA certificate '%s': %s",
-	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
-
+	nmtst_assert_success (success, error);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -9336,44 +6569,19 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wifi-wpa-eap-ttls-mschapv2-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-
-	ASSERT (reread != NULL,
-	        "wifi-wpa-eap-ttls-mschapv2-write-reread", "failed to read %s: %s", testfile, error->message);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wpa-eap-ttls-mschapv2-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wpa-eap-ttls-mschapv2-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -9469,38 +6677,19 @@ test_write_wifi_wpa_then_open (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
-	g_assert_no_error (error);
-	g_assert (reread);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (reread);
+
+	nmtst_connection_normalize (connection);
 
 	/* Now change the connection to open and recheck */
 	nm_connection_remove_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
@@ -9519,29 +6708,14 @@ test_write_wifi_wpa_then_open (void)
 	g_free (keyfile);
 	keyfile = NULL;
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read it for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-
-	g_assert (reread);
 
 	/* No keyfile since it's an open connection this time */
 	keyfile = utils_get_keys_path (testfile);
 	g_assert (g_file_test (keyfile, G_FILE_TEST_EXISTS) == FALSE);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	unlink (testfile);
 	g_free (testfile);
@@ -9593,8 +6767,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	              NULL);
 	g_free (uuid);
 	g_strfreev (perms);
-	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
-                "test_write_wifi_wpa_then_wep_with_perms", "unexpected failure adding valid user permisson");
+	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 1);
 
 	/* Wifi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
@@ -9645,38 +6818,19 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
-	g_assert_no_error (error);
-	g_assert (reread);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (reread);
+
+	nmtst_connection_normalize (connection);
 
 	/* Now change the connection to WEP and recheck */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
@@ -9701,28 +6855,13 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	g_free (keyfile);
 	keyfile = NULL;
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
-	/* re-read it for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
-	g_assert_no_error (error);
-
-	g_assert (reread);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-
+	nmtst_connection_normalize (connection);
 	success = nm_connection_compare (connection, reread,
 	                                 NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 	                                 NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS);
-
-	ASSERT (success,
-	        "test_write_wifi_wpa_then_wep_with_perms", "failed to compare connections");
+	g_assert (success);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
@@ -9747,7 +6886,6 @@ test_write_wifi_dynamic_wep_leap (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
@@ -9821,40 +6959,18 @@ test_write_wifi_dynamic_wep_leap (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
-	g_assert_no_error (error);
-	g_assert (reread);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Check and make sure that an "old-school" LEAP (Network EAP) connection
 	 * did not get written.  Check first that the auth alg is not set to "LEAP"
@@ -9891,8 +7007,6 @@ test_write_wired_qeth_dhcp (void)
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	char **subchans;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -9943,42 +7057,16 @@ test_write_wired_qeth_dhcp (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	/* Verify */
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-qeth-dhcp-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wired-qeth-dhcp-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "wired-qeth-dhcp-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "wired-qeth-dhcp-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wired-qeth-dhcp-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wired-qeth-dhcp-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -9996,7 +7084,6 @@ test_write_wired_ctc_dhcp (void)
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	char **subchans;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	shvarFile *ifcfg;
@@ -10047,19 +7134,11 @@ test_write_wired_ctc_dhcp (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	/* Verify */
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile != NULL);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	/* Ensure the CTCPROT item gets written out as it's own option */
 	ifcfg = svOpenFile (testfile, &error);
@@ -10078,24 +7157,10 @@ test_write_wired_ctc_dhcp (void)
 
 	svCloseFile (ifcfg);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	g_assert (reread);
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -10112,8 +7177,6 @@ test_write_permissions (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -10156,42 +7219,16 @@ test_write_permissions (void)
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	/* Verify */
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "permissions-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "permissions-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "permissions-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "permissions-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "permissions-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "permissions-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -10211,8 +7248,6 @@ test_write_wifi_wep_agent_keys (void)
 	char *uuid;
 	const char *str_ssid = "foobarbaz";
 	GBytes *ssid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -10271,37 +7306,14 @@ test_write_wifi_wep_agent_keys (void)
 	              NULL);
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "asdfdjaslfjasd;flasjdfl;aksdf");
 
-	/* Verify */
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile != NULL);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_WIRELESS,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 	unlink (testfile);
-
-	g_assert_no_error (error);
-	g_assert (reread);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
 
 	/* Remove the WEP key from the original, because it should not have been
 	 * written out to disk as it was agent-owned.  The new connection should
@@ -10313,9 +7325,7 @@ test_write_wifi_wep_agent_keys (void)
 	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_UNKNOWN,
 	              NULL);
 
-	/* Compare original and reread */
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -10332,9 +7342,7 @@ test_write_wired_pppoe (void)
 	NMSettingPppoe *s_pppoe;
 	NMSettingPpp *s_ppp;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
-	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -10377,17 +7385,11 @@ test_write_wired_pppoe (void)
 	s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wired-pppoe-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == FALSE,
-	        "wired-pppoe-write", "unexpected success writing connection to disk");
+	_writer_new_connection_fail (connection,
+	                             TEST_SCRATCH_DIR "/network-scripts/",
+	                             NULL);
 
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -10401,9 +7403,7 @@ test_write_vpn (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingVpn *s_vpn;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
-	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -10440,17 +7440,11 @@ test_write_vpn (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "vpn-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == FALSE,
-	        "vpn-write", "unexpected success writing connection to disk");
+	_writer_new_connection_fail (connection,
+	                             TEST_SCRATCH_DIR "/network-scripts/",
+	                             NULL);
 
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -10467,9 +7461,7 @@ test_write_mobile_broadband (gboolean gsm)
 	NMSettingPpp *s_ppp;
 	NMSettingSerial *s_serial;
 	char *uuid;
-	gboolean success;
 	GError *error = NULL;
-	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -10523,17 +7515,11 @@ test_write_mobile_broadband (gboolean gsm)
 	s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "mobile-broadband-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == FALSE,
-	        "mobile-broadband-write", "unexpected success writing connection to disk");
+	_writer_new_connection_fail (connection,
+	                             TEST_SCRATCH_DIR "/network-scripts/",
+	                             NULL);
 
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -10548,16 +7534,8 @@ test_read_bridge_main (void)
 	NMSettingBridge *s_bridge;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_BRIDGE_MAIN,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
-	g_assert_no_error (error);
+	connection = _connection_from_file (TEST_IFCFG_BRIDGE_MAIN, NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
 
@@ -10593,7 +7571,6 @@ test_write_bridge_main (void)
 	char *uuid;
 	NMIPAddress *addr;
 	static const char *mac = "31:33:33:37:be:cd";
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 
@@ -10651,29 +7628,14 @@ test_write_bridge_main (void)
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert (success);
-	g_assert_cmpstr (testfile, !=, NULL);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_BRIDGE,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_BRIDGE, NULL);
 	unlink (testfile);
 
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert_no_error (error);
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -10688,19 +7650,8 @@ test_read_bridge_component (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
-	GError *error = NULL;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_BRIDGE_COMPONENT,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_BRIDGE_COMPONENT, NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -10727,8 +7678,6 @@ test_write_bridge_component (void)
 	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -10745,8 +7694,8 @@ test_write_bridge_component (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-				  NM_SETTING_CONNECTION_MASTER, "br0",
-				  NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NM_SETTING_CONNECTION_MASTER, "br0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
 
@@ -10768,36 +7717,16 @@ test_write_bridge_component (void)
 	              NM_SETTING_BRIDGE_PORT_PATH_COST, 33,
 	              NULL);
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	g_assert (reread);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -10809,16 +7738,9 @@ test_read_bridge_missing_stp (void)
 {
 	NMConnection *connection;
 	NMSettingBridge *s_bridge;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-missing-stp",
-	                                        NULL,
-	                                        TYPE_BRIDGE,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
-	g_assert_no_error (error);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-missing-stp",
+	                                    NULL, TYPE_BRIDGE, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
 
@@ -10837,18 +7759,10 @@ static void
 test_read_vlan_interface (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 	guint32 from = 0, to = 0;
 
-	connection = connection_from_file_test (TEST_IFCFG_VLAN_INTERFACE,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
-
+	connection = _connection_from_file (TEST_IFCFG_VLAN_INTERFACE, NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan43");
 
@@ -10895,17 +7809,9 @@ static void
 test_read_vlan_only_vlan_id (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file_test (TEST_IFCFG_VLAN_ONLY_VLANID,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
-
+	connection = _connection_from_file (TEST_IFCFG_VLAN_ONLY_VLANID, NULL, TYPE_ETHERNET, NULL);
 
 	g_assert (nm_connection_get_interface_name (connection) == NULL);
 
@@ -10926,17 +7832,9 @@ static void
 test_read_vlan_only_device (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file_test (TEST_IFCFG_VLAN_ONLY_DEVICE,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
-
+	connection = _connection_from_file (TEST_IFCFG_VLAN_ONLY_DEVICE, NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0.9");
 
@@ -10953,15 +7851,10 @@ static void
 test_read_vlan_physdev (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
 
@@ -10978,15 +7871,10 @@ static void
 test_read_vlan_reorder_hdr_1 (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-1",
-	                                        NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	g_assert (nm_connection_verify (connection, &error));
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-1",
+	                                        NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
 
@@ -11005,16 +7893,10 @@ static void
 test_read_vlan_flags_1 (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-1",
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-1",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "super-vlan");
 
@@ -11033,16 +7915,10 @@ static void
 test_read_vlan_flags_2 (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "super-vlan");
 
@@ -11062,21 +7938,13 @@ test_write_vlan (void)
 {
 	NMConnection *connection;
 	char *written = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
 
-	connection = connection_from_file_test (TEST_IFCFG_VLAN_INTERFACE,
-	                                        NULL,
-	                                        TYPE_VLAN,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
+	                                    NULL, TYPE_VLAN, NULL);
 
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &written,
-	                                 &error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &written);
 
 	unlink (written);
 	g_free (written);
@@ -11089,44 +7957,20 @@ test_write_vlan_flags (void)
 {
 	NMConnection *connection, *reread;
 	char *written = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
-	                                        NULL,
-	                                        TYPE_VLAN,
-	                                        NULL,
-	                                        &error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
+	                                    NULL, TYPE_VLAN, NULL);
 
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &written,
-	                                 &error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &written);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (written,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (written, NULL, TYPE_ETHERNET, NULL);
 
 	unlink (written);
 	g_free (written);
 
-	g_assert_no_error (error);
-	g_assert (reread != NULL);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -11137,44 +7981,19 @@ test_write_vlan_only_vlanid (void)
 {
 	NMConnection *connection, *reread;
 	char *written = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
 
-	connection = connection_from_file_test (TEST_IFCFG_VLAN_ONLY_VLANID,
-	                                        NULL,
-	                                        TYPE_VLAN,
-	                                        NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (TEST_IFCFG_VLAN_ONLY_VLANID,
+	                                    NULL, TYPE_VLAN, NULL);
 
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &written,
-	                                 &error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &written);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (written,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (written, NULL, TYPE_ETHERNET, NULL);
 	unlink (written);
 	g_free (written);
 
-	g_assert_no_error (error);
-	g_assert (reread != NULL);
-
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -11188,8 +8007,6 @@ test_write_vlan_reorder_hdr (void)
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
 	char *uuid;
-	GError *error = NULL;
-	gboolean success;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -11221,30 +8038,14 @@ test_write_vlan_reorder_hdr (void)
 	              NM_SETTING_VLAN_FLAGS, 1,
 	              NULL);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	g_assert_no_error (error);
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -11259,10 +8060,7 @@ test_write_ethernet_missing_ipv6 (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -11304,54 +8102,16 @@ test_write_ethernet_missing_ipv6 (void)
 	 * missing IPv6 as IPv6 with NM_SETTING_IP6_CONFIG_METHOD_AUTO method.
 	 */
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "ethernet-missing-ipv6", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "ethernet-missing-ipv6", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "ethernet-missing-ipv6", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "ethernet-missing-ipv6-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "ethernet-missing-ipv6-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	/*
-	 * We need to add IPv6 setting to the original connection now so that
-	 * the comparison can succeed. Missing IPv6 setting should have been
-	 * written out (and re-read) as Automatic IPv6.
-	 */
-	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
-	g_assert (s_ip6);
-	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-	g_object_set (s_ip6,
-	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
-	              NULL);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "ethernet-missing-ipv6", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -11361,15 +8121,11 @@ test_write_ethernet_missing_ipv6 (void)
 static void
 test_read_ibft_ignored (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
-	                                        NULL, TYPE_ETHERNET,
-	                                        NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"
@@ -11379,34 +8135,18 @@ test_read_bond_main (void)
 {
 	NMConnection *connection;
 	NMSettingBond *s_bond;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_BOND_MAIN,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "bond-main-read", "unexpected failure reading %s", TEST_IFCFG_BOND_MAIN);
+	connection = _connection_from_file (TEST_IFCFG_BOND_MAIN,
+	                                    NULL, TYPE_ETHERNET,NULL);
 
-	ASSERT (nm_connection_verify (connection, &error),
-	        "bond-main-read", "failed to verify %s: %s", TEST_IFCFG_BOND_MAIN, error->message);
-
-	ASSERT (g_strcmp0 (nm_connection_get_interface_name (connection), "bond0") == 0,
-	        "bond-main", "failed to verify %s: DEVICE=%s does not match bond0",
-	        TEST_IFCFG_BOND_MAIN, nm_connection_get_interface_name (connection));
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
 
 	/* ===== Bonding SETTING ===== */
 
 	s_bond = nm_connection_get_setting_bond (connection);
-	ASSERT (s_bond != NULL,
-	        "bond-main", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_BOND_MAIN,
-	        NM_SETTING_BOND_SETTING_NAME);
+	g_assert (s_bond);
 
-	ASSERT (g_strcmp0 (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON), "100") == 0,
-	        "bond-main", "failed to verify %s: miimon=%s does not match 100",
-	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON));
+	g_assert_cmpstr (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON), ==, "100");
 
 	g_object_unref (connection);
 }
@@ -11423,7 +8163,6 @@ test_write_bond_main (void)
 	NMSettingWired *s_wired;
 	char *uuid;
 	NMIPAddress *addr;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 
@@ -11476,37 +8215,14 @@ test_write_bond_main (void)
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "bond-main-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "bond-main-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_BOND,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_BOND, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "bond-main-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "bond-main-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "bond-main-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -11520,33 +8236,17 @@ test_read_bond_slave (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_BOND_SLAVE,
-	                                        NULL,
-	                                        TYPE_ETHERNET,
-	                                        NULL,
-	                                        &error);
+	connection = _connection_from_file (TEST_IFCFG_BOND_SLAVE,
+	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
-	ASSERT (connection != NULL,
-	        "bond-slave-read", "unexpected failure reading %s", TEST_IFCFG_BOND_SLAVE);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "bond-slave-read", "failed to verify %s: %s", TEST_IFCFG_BOND_SLAVE, error->message);
-
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "bond-slave-read", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_BOND_SLAVE, NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
-	ASSERT (g_strcmp0 (nm_setting_connection_get_master (s_con), "bond0") == 0,
-	        "bond-slave-read", "failed to verify %s: master is not bond0",
-	        TEST_IFCFG_BOND_SLAVE);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "bond0");
 
-	ASSERT (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_BOND_SETTING_NAME) == 0,
-	        "bond-slave-read", "failed to verify %s: slave-type is not bond",
-	        TEST_IFCFG_BOND_SLAVE);
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 
 	g_object_unref (connection);
 }
@@ -11561,8 +8261,6 @@ test_write_bond_slave (void)
 	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -11577,8 +8275,8 @@ test_write_bond_slave (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-				  NM_SETTING_CONNECTION_MASTER, "bond0",
-				  NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+	              NM_SETTING_CONNECTION_MASTER, "bond0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
 
@@ -11591,41 +8289,16 @@ test_write_bond_slave (void)
 	              NM_SETTING_WIRED_MTU, mtu,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "bond-slave-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "bond-slave-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "bond-slave-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "bond-slave-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "bond-slave-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "bond-slave-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -11640,58 +8313,27 @@ test_read_infiniband (void)
 	NMConnection *connection;
 	NMSettingInfiniband *s_infiniband;
 	char *unmanaged = NULL;
-	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
 	const char *transport_mode;
 
-	connection = connection_from_file_test (TEST_IFCFG_INFINIBAND,
-	                                        NULL,
-	                                        TYPE_INFINIBAND,
-	                                        &unmanaged,
-	                                        &error);
-	ASSERT (connection != NULL,
-	        "infiniband-read", "failed to read %s: %s", TEST_IFCFG_INFINIBAND, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "infiniband-verify", "failed to verify %s: %s", TEST_IFCFG_INFINIBAND, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "infiniband-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_INFINIBAND);
+	connection = _connection_from_file (TEST_IFCFG_INFINIBAND, NULL, TYPE_INFINIBAND, &unmanaged);
+	g_assert (!unmanaged);
 
 	/* ===== INFINIBAND SETTING ===== */
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	ASSERT (s_infiniband != NULL,
-	        "infiniband-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_INFINIBAND,
-	        NM_SETTING_INFINIBAND_SETTING_NAME);
+	g_assert (s_infiniband);
 
 	/* MAC address */
 	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	ASSERT (mac != NULL,
-	        "infiniband-verify-infiniband", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_INFINIBAND,
-	        NM_SETTING_INFINIBAND_SETTING_NAME,
-	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
-	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
-	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_INFINIBAND,
-	        NM_SETTING_INFINIBAND_SETTING_NAME,
-	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 
 	/* Transport mode */
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
-	ASSERT (transport_mode != NULL,
-	        "infiniband-verify-infiniband", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_INFINIBAND,
-	        NM_SETTING_INFINIBAND_SETTING_NAME,
-	        NM_SETTING_INFINIBAND_TRANSPORT_MODE);
-	ASSERT (strcmp (transport_mode, "connected") == 0,
-	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_INFINIBAND,
-	        NM_SETTING_INFINIBAND_SETTING_NAME,
-	        NM_SETTING_INFINIBAND_TRANSPORT_MODE);
+	g_assert (transport_mode);
+	g_assert_cmpstr (transport_mode, ==, "connected");
 
 	g_object_unref (connection);
 }
@@ -11709,7 +8351,6 @@ test_write_infiniband (void)
 	guint32 mtu = 65520;
 	char *uuid;
 	NMIPAddress *addr;
-	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 
@@ -11761,41 +8402,16 @@ test_write_infiniband (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "infiniband-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "infiniband-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "infiniband-write", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_INFINIBAND,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_INFINIBAND, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "infiniband-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "infiniband-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "infiniband-write", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -11809,33 +8425,16 @@ test_read_bond_slave_ib (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_BOND_SLAVE_IB,
-	                                        NULL,
-	                                        NULL,
-	                                        NULL,
-	                                        &error);
-	g_test_assert_expected_messages();
-
-	ASSERT (connection != NULL,
-	        "bond-slave-read-ib", "unexpected failure reading %s", TEST_IFCFG_BOND_SLAVE_IB);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "bond-slave-read-ib", "failed to verify %s: %s", TEST_IFCFG_BOND_SLAVE_IB, error->message);
+	connection = _connection_from_file (TEST_IFCFG_BOND_SLAVE_IB,
+	                                    NULL, NULL, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-	        "bond-slave-read-ib", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_BOND_SLAVE_IB, NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (s_con);
 
-	ASSERT (g_strcmp0 (nm_setting_connection_get_master (s_con), "bond0") == 0,
-	        "bond-slave-read-ib", "failed to verify %s: master is not bond0",
-	        TEST_IFCFG_BOND_SLAVE_IB);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "bond0");
 
-	ASSERT (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_BOND_SETTING_NAME) == 0,
-	        "bond-slave-read-ib", "failed to verify %s: slave-type is not bond",
-	        TEST_IFCFG_BOND_SLAVE_IB);
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 
 	g_object_unref (connection);
 }
@@ -11849,8 +8448,6 @@ test_write_bond_slave_ib (void)
 	NMSettingInfiniband *s_infiniband;
 	static const char *mac = "80:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22";
 	char *uuid;
-	gboolean success;
-	GError *error = NULL;
 	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -11865,8 +8462,8 @@ test_write_bond_slave_ib (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
-				  NM_SETTING_CONNECTION_MASTER, "bond0",
-				  NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+	              NM_SETTING_CONNECTION_MASTER, "bond0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
 
@@ -11880,41 +8477,16 @@ test_write_bond_slave_ib (void)
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "bond-slave-write-ib", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "bond-slave-write-ib", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	ASSERT (testfile != NULL,
-	        "bond-slave-write-ib", "didn't get ifcfg file path back after writing connection");
-
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    NULL,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, NULL, NULL);
 	unlink (testfile);
 
-	ASSERT (reread != NULL,
-	        "bond-slave-write-ib-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "bond-slave-write-ib-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "bond-slave-write-ib", "written and re-read connection weren't the same.");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -11927,17 +8499,9 @@ test_read_bond_opts_mode_numeric (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingBond *s_bond;
-	gboolean success;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-mode-numeric",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-mode-numeric",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
 
@@ -11960,9 +8524,7 @@ static void
 test_read_dcb_basic (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingDcb *s_dcb;
-	gboolean success;
 	guint i;
 	guint expected_group_ids[8] = { 0, 0, 0, 0, 1, 1, 1, 0xF };
 	guint expected_group_bandwidths[8] = { 25, 0, 0, 75, 0, 0, 0, 0 };
@@ -11971,13 +8533,8 @@ test_read_dcb_basic (void)
 	guint expected_traffic_classes[8] = { 7, 6, 5, 4, 3, 2, 1, 0 };
 	gboolean expected_pfcs[8] = { TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE };
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
 	g_assert (s_dcb);
@@ -12024,13 +8581,11 @@ static void
 test_write_dcb_basic (void)
 {
 	NMConnection *connection, *reread;
-	GError *error = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingDcb *s_dcb;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	gboolean success;
 	guint i;
 	char *uuid, *testfile;
 	const guint group_ids[8] = { 4, 0xF, 6, 0xF, 1, 7, 3, 0xF };
@@ -12090,29 +8645,16 @@ test_write_dcb_basic (void)
 		nm_setting_dcb_set_priority_traffic_class (s_dcb, i, traffic_classes[i]);
 	}
 
-	g_assert (nm_connection_verify (connection, &error));
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	g_assert_no_error (error);
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -12123,17 +8665,10 @@ static void
 test_read_dcb_default_app_priorities (void)
 {
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingDcb *s_dcb;
-	gboolean success;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-default-app-priorities",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-default-app-priorities",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
 	g_assert (s_dcb);
@@ -12153,127 +8688,106 @@ test_read_dcb_default_app_priorities (void)
 static void
 test_read_dcb_bad_booleans (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_STRICT value*not all 0s and 1s*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid boolean digit"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
 test_read_dcb_short_booleans (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DCB_PG_STRICT value*8 characters*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "boolean array must be 8 characters"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
 test_read_dcb_bad_uints (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_UP2TC value*not 0 - 7*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid uint digit"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
 test_read_dcb_short_uints (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DCB_PG_UP2TC value*8 characters*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "uint array must be 8 characters"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
 test_read_dcb_bad_percent (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_PCT percentage value*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid percent element"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
 test_read_dcb_short_percent (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_PCT percentage list value*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "percent array must be 8 elements"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
 test_read_dcb_pgpct_not_100 (void)
 {
-	NMConnection *connection;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DCB_PG_PCT percentages do not equal 100*");
-	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
+	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid percentage sum"));
-	g_assert (connection == NULL);
-	g_clear_error (&error);
 }
 
 static void
@@ -12281,19 +8795,12 @@ test_read_fcoe_mode (gconstpointer user_data)
 {
 	const char *expected_mode = user_data;
 	NMConnection *connection;
-	GError *error = NULL;
 	NMSettingDcb *s_dcb;
-	gboolean success;
 	char *file;
 
 	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-fcoe-%s", expected_mode);
-	connection = connection_from_file_test (file, NULL, TYPE_ETHERNET, NULL, &error);
+	connection = _connection_from_file (file, NULL, TYPE_ETHERNET, NULL);
 	g_free (file);
-	g_assert_no_error (error);
-	g_assert (connection);
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
 	g_assert (s_dcb);
@@ -12315,7 +8822,6 @@ test_write_fcoe_mode (gconstpointer user_data)
 	NMSettingDcb *s_dcb;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	gboolean success;
 	char *uuid, *testfile;
 
 	connection = nm_simple_connection_new ();
@@ -12353,16 +8859,11 @@ test_write_fcoe_mode (gconstpointer user_data)
 	              NM_SETTING_DCB_APP_FCOE_MODE, expected_mode,
 	              NULL);
 
-	g_assert (nm_connection_verify (connection, &error));
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	{
 		shvarFile *ifcfg = svOpenFile (testfile, &error);
@@ -12376,18 +8877,10 @@ test_write_fcoe_mode (gconstpointer user_data)
 		g_free (written_mode);
 	}
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile,
-	                                    NULL,
-	                                    TYPE_ETHERNET,
-	                                    NULL,
-	                                    &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
-	g_assert_no_error (error);
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -12400,18 +8893,10 @@ test_read_team_master (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingTeam *s_team;
-	gboolean success;
-	GError *error = NULL;
 	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "team0");
 
@@ -12436,7 +8921,6 @@ test_write_team_master (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
 	const char *escaped_expected_config = "\"{ \\\"device\\\": \\\"team0\\\", \\\"link_watch\\\": { \\\"name\\\": \\\"ethtool\\\" } }\"";
@@ -12489,13 +8973,9 @@ test_write_team_master (void)
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -12512,21 +8992,11 @@ test_write_team_master (void)
 	g_free (val);
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_ETHERNET,
-	                                    NULL, &error);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -12539,18 +9009,10 @@ test_read_team_port (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingTeamPort *s_team_port;
-	gboolean success;
-	GError *error = NULL;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -12572,7 +9034,6 @@ test_write_team_port (void)
 	NMSettingTeamPort *s_team_port;
 	NMSettingWired *s_wired;
 	char *uuid, *testfile = NULL, *val;
-	gboolean success;
 	GError *error = NULL;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
 	const char *escaped_expected_config = "\"{ \\\"p4p1\\\": { \\\"prio\\\": -10, \\\"sticky\\\": true } }\"";
@@ -12603,17 +9064,11 @@ test_write_team_port (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies (connection);
 
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	f = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
@@ -12636,21 +9091,11 @@ test_write_team_port (void)
 	g_free (val);
 	svCloseFile (f);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file_test (testfile, NULL, TYPE_ETHERNET,
-	                                    NULL, &error);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET,
+	                                NULL);
 	unlink (testfile);
-	g_assert_no_error (error);
-	g_assert (reread);
 
-	success = nm_connection_verify (reread, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -12662,17 +9107,9 @@ test_read_team_port_empty_config (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	gboolean success;
-	GError *error = NULL;
 
-	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-empty-config",
-	                                        NULL, TYPE_ETHERNET, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (connection);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-empty-config",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -12811,10 +9248,7 @@ test_read_vlan_trailing_spaces (void)
 	g_assert (strstr (contents, "DEVICE=\"vlan201\"  \n"));
 	g_free (contents);
 
-	connection = connection_from_file_test (testfile, NULL, TYPE_ETHERNET, NULL,
-	                                        &error);
-	g_assert_no_error (error);
-	g_assert (connection != NULL);
+	connection = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);

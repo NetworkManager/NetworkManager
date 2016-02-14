@@ -39,14 +39,7 @@ test_get_ifcfg_name (const char *desc,
 	const char *result;
 
 	result = utils_get_ifcfg_name (path, only_ifcfg);
-	if (expected == NULL) {
-		ASSERT (result == NULL, desc, "unexpected valid ifcfg name '%s'", result);
-	} else {
-		ASSERT (result != NULL, desc, "failed to create ifcfg name for '%s'", path);
-
-		ASSERT (strcmp (result, expected) == 0,
-		        desc, "unexpected ifcfg name '%s' created for '%s'", result, path);
-	}
+	g_assert_cmpstr (result, ==, expected);
 }
 
 static void
@@ -57,14 +50,7 @@ test_get_ifcfg_path (const char *desc,
 	char *result;
 
 	result = utils_get_ifcfg_path (path);
-	if (expected == NULL) {
-		ASSERT (result == NULL, desc, "unexpected valid ifcfg name '%s'", result);
-	} else {
-		ASSERT (result != NULL, desc, "failed to create ifcfg name for '%s'", path);
-
-		ASSERT (strcmp (result, expected) == 0,
-		        desc, "unexpected ifcfg name '%s' created for '%s'", result, path);
-	}
+	g_assert_cmpstr (result, ==, expected);
 	g_free (result);
 }
 
@@ -76,14 +62,7 @@ test_get_keys_path (const char *desc,
 	char *result;
 
 	result = utils_get_keys_path (path);
-	if (expected == NULL) {
-		ASSERT (result == NULL, desc, "unexpected valid extra path '%s'", result);
-	} else {
-		ASSERT (result != NULL, desc, "failed to create extra path for '%s'", path);
-
-		ASSERT (strcmp (result, expected) == 0,
-		        desc, "unexpected extra path '%s' created for '%s'", result, path);
-	}
+	g_assert_cmpstr (result, ==, expected);
 	g_free (result);
 }
 
@@ -95,14 +74,7 @@ test_get_route_path (const char *desc,
 	char *result;
 
 	result = utils_get_route_path (path);
-	if (expected == NULL) {
-		ASSERT (result == NULL, desc, "unexpected valid extra path '%s'", result);
-	} else {
-		ASSERT (result != NULL, desc, "failed to create extra path for '%s'", path);
-
-		ASSERT (strcmp (result, expected) == 0,
-		        desc, "unexpected extra path '%s' created for '%s'", result, path);
-	}
+	g_assert_cmpstr (result, ==, expected);
 	g_free (result);
 }
 
@@ -112,7 +84,7 @@ test_ignored (const char *desc, const char *path, gboolean expected_ignored)
 	gboolean result;
 
 	result = utils_should_ignore_file (path, FALSE);
-	ASSERT (result == expected_ignored, desc, "unexpected ignore result for path '%s'", path);
+	g_assert (result == expected_ignored);
 }
 
 static void
