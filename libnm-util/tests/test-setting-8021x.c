@@ -41,17 +41,12 @@ compare_blob_data (const char *test,
 	GError *error = NULL;
 	gboolean success;
 
+	g_assert (key && key->len > 0);
+
 	success = g_file_get_contents (key_path, &contents, &len, &error);
-	ASSERT (success == TRUE,
-	        test, "failed to read blob key file: %s", error->message);
+	nmtst_assert_success (success, error);
 
-	ASSERT (len > 0, test, "blob key file invalid (size 0)");
-
-	g_assert_cmpint (len, ==, key->len);
-
-	ASSERT (memcmp (contents, key->data, len) == 0,
-	        test, "blob key file and blob key data don't match");
-
+	g_assert_cmpmem (contents, len, key->data, key->len);
 	g_free (contents);
 }
 
@@ -60,8 +55,11 @@ compare_blob_data (const char *test,
 static void
 check_scheme_path (GByteArray *value, const char *path)
 {
-	guint8 *p = value->data;
+	guint8 *p;
 
+	g_assert (value);
+
+	p = value->data;
 	g_assert (memcmp (p, SCHEME_PATH, strlen (SCHEME_PATH)) == 0);
 	p += strlen (SCHEME_PATH);
 	g_assert (memcmp (p, path, strlen (path)) == 0);
@@ -83,7 +81,7 @@ test_private_key_import (const char *path,
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL, "private-key-import", "setting was NULL");
+	g_assert (s_8021x);
 
 	success = nm_setting_802_1x_set_private_key (s_8021x,
 	                                             path,
@@ -91,29 +89,21 @@ test_private_key_import (const char *path,
 	                                             scheme,
 	                                             &format,
 	                                             &error);
-	ASSERT (success == TRUE,
-	        "private-key-import", "error reading private key: %s", error->message);
-	ASSERT (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "private-key-import", "unexpected private key format (got %d)", format);
+	nmtst_assert_success (success, error);
+	g_assert (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 	tmp_fmt = nm_setting_802_1x_get_private_key_format (s_8021x);
-	ASSERT (tmp_fmt == format,
-	        "private-key-import", "unexpected re-read private key format (expected %d, got %d)",
-	        format, tmp_fmt);
+	g_assert (tmp_fmt == format);
 
 	/* Make sure the password is what we expect */
 	pw = nm_setting_802_1x_get_private_key_password (s_8021x);
-	ASSERT (pw != NULL,
-	        "private-key-import", "failed to get previous private key password");
-	ASSERT (strcmp (pw, password) == 0,
-	        "private-key-import", "failed to compare private key password");
+	g_assert (pw);
+	g_assert_cmpstr (pw, ==, password);
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		tmp_key = (GByteArray *) nm_setting_802_1x_get_private_key_blob (s_8021x);
-		ASSERT (tmp_key != NULL, "private-key-import", "missing private key blob");
 		compare_blob_data ("private-key-import", path, tmp_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		g_object_get (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY, &tmp_key, NULL);
-		ASSERT (tmp_key != NULL, "private-key-import", "missing private key value");
 		check_scheme_path (tmp_key, path);
 		g_byte_array_free (tmp_key, TRUE);
 	} else
@@ -122,16 +112,13 @@ test_private_key_import (const char *path,
 	/* If it's PKCS#12 ensure the client cert is the same value */
 	if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
 		g_object_get (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY, &tmp_key, NULL);
-		ASSERT (tmp_key != NULL, "private-key-import", "missing private key value");
+		g_assert (tmp_key);
 
 		g_object_get (s_8021x, NM_SETTING_802_1X_CLIENT_CERT, &client_cert, NULL);
-		ASSERT (client_cert != NULL, "private-key-import", "missing client certificate value");
+		g_assert (client_cert);
 
 		/* make sure they are the same */
-		ASSERT (tmp_key->len == client_cert->len,
-		        "private-key-import", "unexpected different private key and client cert lengths");
-		ASSERT (memcmp (tmp_key->data, client_cert->data, tmp_key->len) == 0,
-		        "private-key-import", "unexpected different private key and client cert data");
+		g_assert_cmpmem (tmp_key->data, tmp_key->len, client_cert->data, client_cert->len);
 
 		g_byte_array_free (tmp_key, TRUE);
 		g_byte_array_free (client_cert, TRUE);
@@ -154,7 +141,7 @@ test_phase2_private_key_import (const char *path,
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL, "phase2-private-key-import", "setting was NULL");
+	g_assert (s_8021x);
 
 	success = nm_setting_802_1x_set_phase2_private_key (s_8021x,
 	                                                    path,
@@ -162,29 +149,21 @@ test_phase2_private_key_import (const char *path,
 	                                                    scheme,
 	                                                    &format,
 	                                                    &error);
-	ASSERT (success == TRUE,
-	        "phase2-private-key-import", "error reading private key: %s", error->message);
-	ASSERT (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "phase2-private-key-import", "unexpected private key format");
+	nmtst_assert_success (success, error);
+	g_assert (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 	tmp_fmt = nm_setting_802_1x_get_phase2_private_key_format (s_8021x);
-	ASSERT (tmp_fmt == format,
-	        "phase2-private-key-import", "unexpected re-read private key format (expected %d, got %d)",
-	        format, tmp_fmt);
+	g_assert (tmp_fmt == format);
 
 	/* Make sure the password is what we expect */
 	pw = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-	ASSERT (pw != NULL,
-	        "phase2-private-key-import", "failed to get previous private key password");
-	ASSERT (strcmp (pw, password) == 0,
-	        "phase2-private-key-import", "failed to compare private key password");
+	g_assert (pw);
+	g_assert_cmpstr (pw, ==, password);
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		tmp_key = (GByteArray *) nm_setting_802_1x_get_phase2_private_key_blob (s_8021x);
-		ASSERT (tmp_key != NULL, "phase2-private-key-import", "missing private key blob");
 		compare_blob_data ("phase2-private-key-import", path, tmp_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		g_object_get (s_8021x, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &tmp_key, NULL);
-		ASSERT (tmp_key != NULL, "phase2-private-key-import", "missing private key value");
 		check_scheme_path (tmp_key, path);
 		g_byte_array_free (tmp_key, TRUE);
 	} else
@@ -193,16 +172,13 @@ test_phase2_private_key_import (const char *path,
 	/* If it's PKCS#12 ensure the client cert is the same value */
 	if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
 		g_object_get (s_8021x, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &tmp_key, NULL);
-		ASSERT (tmp_key != NULL, "private-key-import", "missing private key value");
+		g_assert (tmp_key);
 
 		g_object_get (s_8021x, NM_SETTING_802_1X_PHASE2_CLIENT_CERT, &client_cert, NULL);
-		ASSERT (client_cert != NULL, "private-key-import", "missing client certificate value");
+		g_assert (client_cert);
 
 		/* make sure they are the same */
-		ASSERT (tmp_key->len == client_cert->len,
-		        "private-key-import", "unexpected different private key and client cert lengths");
-		ASSERT (memcmp (tmp_key->data, client_cert->data, tmp_key->len) == 0,
-		        "private-key-import", "unexpected different private key and client cert data");
+		g_assert_cmpmem (tmp_key->data, tmp_key->len, client_cert->data, client_cert->len);
 
 		g_byte_array_free (tmp_key, TRUE);
 		g_byte_array_free (client_cert, TRUE);
@@ -221,7 +197,7 @@ test_wrong_password_keeps_data (const char *path, const char *password)
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL, "wrong-password-keeps-data", "setting was NULL");
+	g_assert (s_8021x);
 
 	success = nm_setting_802_1x_set_private_key (s_8021x,
 	                                             path,
@@ -229,10 +205,8 @@ test_wrong_password_keeps_data (const char *path, const char *password)
 	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                             &format,
 	                                             &error);
-	ASSERT (success == TRUE,
-	        "wrong-password-keeps-data", "error reading private key: %s", error->message);
-	ASSERT (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "wrong-password-keeps-data", "unexpected private key format (got %d)", format);
+	nmtst_assert_success (success, error);
+	g_assert (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 
 	/* Now try to set it to something that's not a certificate */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
@@ -242,20 +216,14 @@ test_wrong_password_keeps_data (const char *path, const char *password)
 	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                             &format,
 	                                             &error);
-	ASSERT (success == FALSE,
-	        "wrong-password-keeps-data", "unexpected success reading private key");
-	ASSERT (error != NULL,
-	        "wrong-password-keeps-data", "unexpected missing error");
-	ASSERT (format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "wrong-password-keeps-data", "unexpected success reading private key format");
+	nmtst_assert_no_success (success, error);
+	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 	g_clear_error (&error);
 
 	/* Make sure the password hasn't changed */
 	pw = nm_setting_802_1x_get_private_key_password (s_8021x);
-	ASSERT (pw != NULL,
-	        "wrong-password-keeps-data", "failed to get previous private key password");
-	ASSERT (strcmp (pw, password) == 0,
-	        "wrong-password-keeps-data", "failed to compare private key password");
+	g_assert (pw);
+	g_assert_cmpstr (pw, ==, password);
 
 	g_object_unref (s_8021x);
 }
@@ -270,7 +238,7 @@ test_clear_private_key (const char *path, const char *password)
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL, "clear-private-key", "setting was NULL");
+	g_assert (s_8021x);
 
 	success = nm_setting_802_1x_set_private_key (s_8021x,
 	                                             path,
@@ -278,17 +246,13 @@ test_clear_private_key (const char *path, const char *password)
 	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                             &format,
 	                                             &error);
-	ASSERT (success == TRUE,
-	        "clear-private-key", "error reading private key: %s", error->message);
-	ASSERT (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "clear-private-key", "unexpected private key format (got %d)", format);
+	nmtst_assert_success (success, error);
+	g_assert (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 
 	/* Make sure the password is what we expect */
 	pw = nm_setting_802_1x_get_private_key_password (s_8021x);
-	ASSERT (pw != NULL,
-	        "clear-private-key", "failed to get previous private key password");
-	ASSERT (strcmp (pw, password) == 0,
-	        "clear-private-key", "failed to compare private key password");
+	g_assert (pw);
+	g_assert_cmpstr (pw, ==, password);
 
 	/* Now clear it */
 	success = nm_setting_802_1x_set_private_key (s_8021x,
@@ -297,14 +261,10 @@ test_clear_private_key (const char *path, const char *password)
 	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                             NULL,
 	                                             &error);
-	ASSERT (success == TRUE,
-	        "clear-private-key", "unexpected failure clearing private key");
-	ASSERT (error == NULL,
-	        "clear-private-key", "unexpected error clearing private key");
+	nmtst_assert_success (success, error);
 
 	/* Ensure the password is also now clear */
-	ASSERT (nm_setting_802_1x_get_private_key_password (s_8021x) == NULL,
-	        "clear-private-key", "unexpected private key password");
+	g_assert (!nm_setting_802_1x_get_private_key_password (s_8021x));
 
 	g_object_unref (s_8021x);
 }
@@ -319,7 +279,7 @@ test_wrong_phase2_password_keeps_data (const char *path, const char *password)
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL, "wrong-phase2-password-keeps-data", "setting was NULL");
+	g_assert (s_8021x);
 
 	success = nm_setting_802_1x_set_phase2_private_key (s_8021x,
 	                                                    path,
@@ -327,10 +287,8 @@ test_wrong_phase2_password_keeps_data (const char *path, const char *password)
 	                                                    NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                                    &format,
 	                                                    &error);
-	ASSERT (success == TRUE,
-	        "wrong-phase2-password-keeps-data", "error reading private key: %s", error->message);
-	ASSERT (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "wrong-phase2-password-keeps-data", "unexpected private key format (got %d)", format);
+	nmtst_assert_success (success, error);
+	g_assert (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 
 	/* Now try to set it to something that's not a certificate */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
@@ -340,20 +298,14 @@ test_wrong_phase2_password_keeps_data (const char *path, const char *password)
 	                                                    NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                                    &format,
 	                                                    &error);
-	ASSERT (success == FALSE,
-	        "wrong-phase2-password-keeps-data", "unexpected success reading private key");
-	ASSERT (error != NULL,
-	        "wrong-phase2-password-keeps-data", "unexpected missing error");
-	ASSERT (format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "wrong-phase2-password-keeps-data", "unexpected success reading private key format");
+	nmtst_assert_no_success (success, error);
+	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 	g_clear_error (&error);
 
 	/* Make sure the password hasn't changed */
 	pw = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-	ASSERT (pw != NULL,
-	        "wrong-phase2-password-keeps-data", "failed to get previous private key password");
-	ASSERT (strcmp (pw, password) == 0,
-	        "wrong-phase2-password-keeps-data", "failed to compare private key password");
+	g_assert (pw);
+	g_assert_cmpstr (pw, ==, password);
 
 	g_object_unref (s_8021x);
 }
@@ -368,7 +320,7 @@ test_clear_phase2_private_key (const char *path, const char *password)
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL, "clear-phase2-private-key", "setting was NULL");
+	g_assert (s_8021x);
 
 	success = nm_setting_802_1x_set_phase2_private_key (s_8021x,
 	                                                    path,
@@ -376,17 +328,13 @@ test_clear_phase2_private_key (const char *path, const char *password)
 	                                                    NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                                    &format,
 	                                                    &error);
-	ASSERT (success == TRUE,
-	        "clear-phase2-private-key", "error reading private key: %s", error->message);
-	ASSERT (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
-	        "clear-phase2-private-key", "unexpected private key format (got %d)", format);
+	nmtst_assert_success (success, error);
+	g_assert (format != NM_SETTING_802_1X_CK_FORMAT_UNKNOWN);
 
 	/* Make sure the password is what we expect */
 	pw = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-	ASSERT (pw != NULL,
-	        "clear-phase2-private-key", "failed to get previous private key password");
-	ASSERT (strcmp (pw, password) == 0,
-	        "clear-phase2-private-key", "failed to compare private key password");
+	g_assert (pw);
+	g_assert_cmpstr (pw, ==, password);
 
 	/* Now clear it */
 	success = nm_setting_802_1x_set_phase2_private_key (s_8021x,
@@ -395,14 +343,10 @@ test_clear_phase2_private_key (const char *path, const char *password)
 	                                                    NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	                                                    NULL,
 	                                                    &error);
-	ASSERT (success == TRUE,
-	        "clear-phase2-private-key", "unexpected failure clearing private key");
-	ASSERT (error == NULL,
-	        "clear-phase2-private-key", "unexpected error clearing private key");
+	nmtst_assert_success (success, error);
 
 	/* Ensure the password is also now clear */
-	ASSERT (nm_setting_802_1x_get_phase2_private_key_password (s_8021x) == NULL,
-	        "clear-phase2-private-key", "unexpected private key password");
+	g_assert (!nm_setting_802_1x_get_phase2_private_key_password (s_8021x));
 
 	g_object_unref (s_8021x);
 }

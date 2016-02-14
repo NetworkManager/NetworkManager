@@ -53,9 +53,7 @@ test_defaults (GType type, const char *name)
 	setting = g_object_new (type, NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	ASSERT (property_specs != NULL,
-	        name, "couldn't find property specs for object of type '%s'",
-	        g_type_name (G_OBJECT_TYPE (setting)));
+	g_assert (property_specs);
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
@@ -87,9 +85,7 @@ test_defaults (GType type, const char *name)
 		} else
 			ok = g_param_value_defaults (prop_spec, &value);
 
-		ASSERT (ok,
-		        name, "property '%s' value '%s' not the expected default value '%s'",
-		        prop_spec->name, actual, expected);
+		g_assert (ok);
 
 		g_free (actual);
 		g_free (expected);
