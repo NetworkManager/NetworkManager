@@ -482,7 +482,7 @@ guint64
 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 {
 	guint64 start_time;
-	gs_free gchar *filename = NULL;
+	char filename[256];
 	gs_free gchar *contents = NULL;
 	size_t length;
 	gs_strfreev gchar **tokens = NULL;
@@ -497,7 +497,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 
 	g_return_val_if_fail (pid > 0, 0);
 
-	filename = g_strdup_printf ("/proc/%"G_GUINT64_FORMAT"/stat", (guint64) pid);
+	nm_sprintf_buf (filename, "/proc/%"G_GUINT64_FORMAT"/stat", (guint64) pid);
 
 	if (!g_file_get_contents (filename, &contents, &length, NULL))
 		goto out;
