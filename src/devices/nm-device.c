@@ -9378,10 +9378,9 @@ nm_device_recheck_available_connections (NMDevice *self)
 			changed = TRUE;
 	}
 
-	if (changed) {
+	if (changed)
 		available_connections_notify (self);
-		available_connections_check_delete_unrealized (self);
-	}
+	available_connections_check_delete_unrealized (self);
 }
 
 /**
