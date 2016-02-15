@@ -218,6 +218,7 @@ lease_to_ip4_config (const char *iface,
 	const void *data;
 	gsize data_len;
 	gboolean metered = FALSE;
+	gboolean static_default_gateway = FALSE;
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
@@ -254,15 +255,6 @@ lease_to_ip4_config (const char *iface,
 
 	address.source = NM_IP_CONFIG_SOURCE_DHCP;
 	nm_ip4_config_add_address (ip4_config, &address);
-
-	/* Gateway */
-	r = sd_dhcp_lease_get_router (lease, &tmp_addr);
-	if (r == 0) {
-		nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
-		str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
-		LOG_LEASE (LOGD_DHCP4, "  gateway %s", str);
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str);
-	}
 
 	/* DNS Servers */
 	num = sd_dhcp_lease_get_dns (lease, &addr_list);
@@ -325,18 +317,46 @@ lease_to_ip4_config (const char *iface,
 				continue;
 			route.gateway = a.s_addr;
 
-			route.source = NM_IP_CONFIG_SOURCE_DHCP;
-			route.metric = default_priority;
-			nm_ip4_config_add_route (ip4_config, &route);
+			if (route.plen) {
+				route.source = NM_IP_CONFIG_SOURCE_DHCP;
+				route.metric = default_priority;
+				nm_ip4_config_add_route (ip4_config, &route);
 
-			str = nm_utils_inet4_ntop (route.network, buf);
-			gw_str = nm_utils_inet4_ntop (route.gateway, NULL);
-			LOG_LEASE (LOGD_DHCP4, "  static route %s/%d gw %s", str, route.plen, gw_str);
+				str = nm_utils_inet4_ntop (route.network, buf);
+				gw_str = nm_utils_inet4_ntop (route.gateway, NULL);
+				LOG_LEASE (LOGD_DHCP4, "  static route %s/%d gw %s", str, route.plen, gw_str);
 
-			g_string_append_printf (l, "%s%s/%d %s", l->len ? " " : "", str, route.plen, gw_str);
+				g_string_append_printf (l, "%s%s/%d %s", l->len ? " " : "", str, route.plen, gw_str);
+			} else {
+				if (!static_default_gateway) {
+					static_default_gateway = TRUE;
+					nm_ip4_config_set_gateway (ip4_config, route.gateway);
+
+					str = nm_utils_inet4_ntop (route.gateway, NULL);
+					LOG_LEASE (LOGD_DHCP4, "  gateway %s", str);
+					add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str);
+				}
+			}
 		}
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, l->str);
+		if (l->len)
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, l->str);
 		g_string_free (l, TRUE);
+	}
+
+	/* If the DHCP server returns both a Classless Static Routes option and a
+	 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
+	 * Be more lenient and ignore the Router option only if Classless Static
+	 * Routes contain a default gateway (as other DHCP backends do).
+	 */
+	/* Gateway */
+	if (!static_default_gateway) {
+		r = sd_dhcp_lease_get_router (lease, &tmp_addr);
+		if (r == 0) {
+			nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
+			str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
+			LOG_LEASE (LOGD_DHCP4, "  gateway %s", str);
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str);
+		}
 	}
 
 	/* MTU */
