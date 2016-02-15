@@ -9354,10 +9354,15 @@ nm_device_recheck_available_connections (NMDevice *self)
 		for (iter = connections; iter; iter = g_slist_next (iter)) {
 			connection = NM_CONNECTION (iter->data);
 
-			if (available_connections_add (self, connection)) {
-				if (prune_list)
-					g_hash_table_remove (prune_list, connection);
-				changed = TRUE;
+			if (nm_device_check_connection_available (self,
+				                                  connection,
+				                                  NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
+				                                  NULL)) {
+				if (available_connections_add (self, connection))
+					changed = TRUE;
+			} else {
+				if (prune_list && g_hash_table_remove (prune_list, connection))
+					changed = TRUE;
 			}
 		}
 
