@@ -878,7 +878,7 @@ _lookup_link_cached (NMPlatform *platform, int ifindex, gboolean *completed_from
 	if (!*completed_from_cache) {
 		obj = ifindex > 0 ? nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex) : NULL;
 
-		if (obj && !obj->_link.netlink.is_in_netlink)
+		if (obj && obj->_link.netlink.is_in_netlink)
 			*link_cached = obj;
 		else
 			*link_cached = NULL;
