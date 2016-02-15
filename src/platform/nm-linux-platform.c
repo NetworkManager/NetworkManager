@@ -610,7 +610,7 @@ _lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_fro
 	if (!*completed_from_cache) {
 		obj = ifindex > 0 && cache ? nmp_cache_lookup_link (cache, ifindex) : NULL;
 
-		if (obj && !obj->_link.netlink.is_in_netlink)
+		if (obj && obj->_link.netlink.is_in_netlink)
 			*link_cached = obj;
 		else
 			*link_cached = NULL;
