@@ -1881,7 +1881,7 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
 	 */
-	if (   !nm_device_get_managed (device)
+	if (   !nm_device_get_managed (device, FALSE)
 	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG)
 	    || have_connection_for_device (self, device))
 		return;
