@@ -948,24 +948,24 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 }
 
 /**
- * get_virtual_iface_name:
+ * nm_manager_get_connection_iface:
  * @self: the #NMManager
- * @connection: the #NMConnection representing a virtual interface
+ * @connection: the #NMConnection to get the interface for
  * @out_parent: on success, the parent device if any
  * @error: an error if determining the virtual interface name failed
  *
  * Given @connection, returns the interface name that the connection
- * would represent if it is a virtual connection.  %NULL is returned and
- * @error is set if the connection is not virtual, or if the name could
- * not be determined.
+ * would need to use when activated. %NULL is returned if the name
+ * is not specified in connection or a the name for a virtual device
+ * could not be generated.
  *
  * Returns: the expected interface name (caller takes ownership), or %NULL
  */
-static char *
-get_virtual_iface_name (NMManager *self,
-                        NMConnection *connection,
-                        NMDevice **out_parent,
-                        GError **error)
+char *
+nm_manager_get_connection_iface (NMManager *self,
+                                 NMConnection *connection,
+                                 NMDevice **out_parent,
+                                 GError **error)
 {
 	NMDeviceFactory *factory;
 	char *iface = NULL;
@@ -1021,7 +1021,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	iface = get_virtual_iface_name (self, connection, &parent, &error);
+	iface = nm_manager_get_connection_iface (self, connection, &parent, &error);
 	if (!iface) {
 		nm_log_warn (LOGD_DEVICE, "(%s) can't get a name of a virtual device: %s",
 		             nm_connection_get_id (connection), error->message);
@@ -3219,7 +3219,7 @@ validate_activation_request (NMManager *self,
 			char *iface;
 
 			/* Look for an existing device with the connection's interface name */
-			iface = get_virtual_iface_name (self, connection, NULL, error);
+			iface = nm_manager_get_connection_iface (self, connection, NULL, error);
 			if (!iface)
 				goto error;
 
