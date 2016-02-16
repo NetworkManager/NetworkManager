@@ -1509,7 +1509,7 @@ device_link_changed (NMDevice *self)
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 		nm_device_set_unmanaged_by_user_udev (self);
 
-		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
 
 	if (   priv->ifindex > 0
