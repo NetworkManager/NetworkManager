@@ -666,9 +666,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 
 	/* ---ifcfg-rh---
 	 * property: dhcp-timeout
-	 * variable: DHCP_TIMEOUT(+)
+	 * variable: IPV4_DHCP_TIMEOUT(+)
 	 * description: A timeout after which the DHCP transaction fails in case of no response.
-	 * example: DHCP_TIMEOUT=10
+	 * example: IPV4_DHCP_TIMEOUT=10
 	 * ---end---
 	 */
 
