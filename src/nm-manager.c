@@ -1814,7 +1814,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	ifindex = nm_device_get_ifindex (device);
 	if (ifindex > 0 && nm_manager_get_device_by_ifindex (self, ifindex)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		             "A device with ifindex %d already exits", ifindex);
+		             "A device with ifindex %d already exists", ifindex);
 		return FALSE;
 	}
 
