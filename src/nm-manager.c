@@ -1033,9 +1033,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = iter->data;
 
-		if (   g_strcmp0 (nm_device_get_iface (candidate), iface) == 0
-		    && nm_device_check_connection_compatible (candidate, connection)) {
-
+		if (nm_device_check_connection_compatible (candidate, connection)) {
 			if (nm_device_is_real (candidate)) {
 				nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
 				            nm_connection_get_id (connection), iface);
