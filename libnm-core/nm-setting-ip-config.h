@@ -147,6 +147,7 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_IP_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
+#define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
 
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
@@ -250,6 +251,8 @@ gboolean      nm_setting_ip_config_get_never_default          (NMSettingIPConfig
 gboolean      nm_setting_ip_config_get_may_fail               (NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_2
 gint          nm_setting_ip_config_get_dad_timeout            (NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_2
+gint          nm_setting_ip_config_get_dhcp_timeout           (NMSettingIPConfig *setting);
 
 G_END_DECLS
 
