@@ -41,6 +41,8 @@
 
 /* always include these headers for our internal source files. */
 
+#include <stdlib.h>
+
 #include "nm-glib.h"
 #include "nm-version.h"
 #include "gsystem-local-alloc.h"
