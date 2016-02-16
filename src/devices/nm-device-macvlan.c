@@ -376,7 +376,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	NMSettingMacvlan *s_macvlan;
-	const char *parent, *iface = NULL;
+	const char *parent = NULL;
 
 	if (!NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -407,13 +407,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 			if (!match_hwaddr (device, connection, TRUE))
 				return FALSE;
 		}
-	}
-
-	/* Ensure the interface name matches */
-	iface = nm_connection_get_interface_name (connection);
-	if (iface) {
-		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0)
-			return FALSE;
 	}
 
 	return TRUE;

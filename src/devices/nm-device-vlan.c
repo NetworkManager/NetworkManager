@@ -390,7 +390,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
-	const char *parent, *iface = NULL;
+	const char *parent = NULL;
 
 	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -414,16 +414,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 			if (!match_hwaddr (device, connection, TRUE))
 				return FALSE;
 		}
-	}
-
-	/* Ensure the interface name matches.  If not specified we assume a match
-	 * since both the parent interface and the VLAN ID matched by the time we
-	 * get here.
-	 */
-	iface = nm_connection_get_interface_name (connection);
-	if (iface) {
-		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0)
-			return FALSE;
 	}
 
 	return TRUE;
