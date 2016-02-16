@@ -2167,6 +2167,9 @@ nm_device_is_software (NMDevice *device)
  * nm_device_reapply:
  * @device: a #NMDevice
  * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
+ * @version_id: zero or the expected version id of the applied connection. If specified
+ *   and the version id mismatches, the call fails without modification. This allows to
+ *   catch concurrent accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -2181,7 +2184,8 @@ nm_device_is_software (NMDevice *device)
 gboolean
 nm_device_reapply (NMDevice *device,
                    NMConnection *connection,
-                   guint flags,
+                   guint64 version_id,
+                   guint32 flags,
                    GCancellable *cancellable,
                    GError **error)
 {
@@ -2197,7 +2201,7 @@ nm_device_reapply (NMDevice *device,
 
 
 	ret = nmdbus_device_call_reapply_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                       dict, flags, cancellable, error);
+	                                       dict, version_id, flags, cancellable, error);
 	if (error && *error)
 		g_dbus_error_strip_remote_error (*error);
 	return ret;
@@ -2226,6 +2230,9 @@ device_reapply_cb (GObject *proxy,
  * nm_device_reapply_async:
  * @device: a #NMDevice
  * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
+ * @version_id: zero or the expected version id of the applied connection. If specified
+ *   and the version id mismatches, the call fails without modification. This allows to
+ *   catch concurrent accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @callback: callback to be called when the reapply operation completes
@@ -2239,7 +2246,8 @@ device_reapply_cb (GObject *proxy,
 void
 nm_device_reapply_async (NMDevice *device,
                          NMConnection *connection,
-                         guint flags,
+                         guint64 version_id,
+                         guint32 flags,
                          GCancellable *cancellable,
                          GAsyncReadyCallback callback,
                          gpointer user_data)
@@ -2258,7 +2266,7 @@ nm_device_reapply_async (NMDevice *device,
 	                                    nm_device_reapply_async);
 
 	nmdbus_device_call_reapply (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                            dict, flags, cancellable,
+	                            dict, version_id, flags, cancellable,
 	                            device_reapply_cb, simple);
 }
 
@@ -2290,6 +2298,179 @@ nm_device_reapply_finish (NMDevice *device,
 	else
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_device_get_applied_connection:
+ * @device: a #NMDevice
+ * @flags: the flags argument. Currently this value must always be zero.
+ * @version_id: (out): (allow-none): returns the current version id of
+ *   the applied connection
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Fetch the currently applied connection on the device.
+ *
+ * Returns: (transfer-full): a %NMConnection with the currently applied settings
+ *   or %NULL on error.
+ *
+ * Since: 1.2
+ **/
+NMConnection *
+nm_device_get_applied_connection (NMDevice *device,
+                                  guint32 flags,
+                                  guint64 *version_id,
+                                  GCancellable *cancellable,
+                                  GError **error)
+{
+	gs_unref_variant GVariant *dict = NULL;
+	guint64 my_version_id;
+	gboolean success;
+	NMConnection *connection;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	success = nmdbus_device_call_get_applied_connection_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                                          flags, &dict, &my_version_id, cancellable, error);
+	if (!success) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
+		return NULL;
+	}
+
+	connection = nm_simple_connection_new_from_dbus (dict, error);
+	if (!connection)
+		return NULL;
+
+	NM_SET_OUT (version_id, my_version_id);
+	return connection;
+}
+
+typedef struct {
+	NMConnection *connection;
+	guint64 version_id;
+} GetAppliedConnectionData;
+
+static void
+device_get_applied_connection_data_free (gpointer user_data)
+{
+	GetAppliedConnectionData *data = user_data;
+
+	g_return_if_fail (data);
+
+	g_object_unref (data->connection);
+	g_slice_free (GetAppliedConnectionData, data);
+}
+
+static void
+device_get_applied_connection_cb (GObject *proxy,
+                                  GAsyncResult *result,
+                                  gpointer user_data)
+{
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
+	gs_unref_variant GVariant *dict = NULL;
+	guint64 my_version_id;
+	GError *error = NULL;
+	NMConnection *connection;
+	GetAppliedConnectionData *data;
+
+	if (!nmdbus_device_call_get_applied_connection_finish (NMDBUS_DEVICE (proxy), &dict, &my_version_id, result, &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_simple_async_result_take_error (simple, error);
+		goto out;
+	}
+
+	connection = nm_simple_connection_new_from_dbus (dict, &error);
+	if (!connection) {
+		g_simple_async_result_take_error (simple, error);
+		goto out;
+	}
+
+	data = g_slice_new (GetAppliedConnectionData);
+	data->connection = connection;
+	data->version_id = my_version_id;
+	g_simple_async_result_set_op_res_gpointer (simple, data, device_get_applied_connection_data_free);
+
+out:
+	g_simple_async_result_complete (simple);
+}
+
+/**
+ * nm_device_get_applied_connection_async:
+ * @device: a #NMDevice
+ * @flags: the flags argument. Currently this value must always be zero.
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the reapply operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Asynchronously begins an get the a currently applied connection.
+ *
+ * Since: 1.2
+ **/
+void
+nm_device_get_applied_connection_async  (NMDevice *device,
+                                         guint32 flags,
+                                         GCancellable *cancellable,
+                                         GAsyncReadyCallback callback,
+                                         gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
+	                                    nm_device_get_applied_connection_async);
+
+	nmdbus_device_call_get_applied_connection (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                           flags, cancellable,
+	                                           device_get_applied_connection_cb, simple);
+}
+
+/**
+ * nm_device_get_applied_connection_finish:
+ * @device: a #NMDevice
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @version_id: (out): (allow-none): the current version id of the applied
+ *   connection.
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_device_get_applied_connection_async().
+ *
+ * Returns: (transfer-full): a currently applied %NMConnection or %NULL in case
+ *   of error.
+ *
+ * Since: 1.2
+ **/
+NMConnection *
+nm_device_get_applied_connection_finish (NMDevice *device,
+                                         GAsyncResult *result,
+                                         guint64 *version_id,
+                                         GError **error)
+{
+	GSimpleAsyncResult *simple;
+	GetAppliedConnectionData *data;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_get_applied_connection_async), NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+
+	data = g_simple_async_result_get_op_res_gpointer (simple);
+	g_return_val_if_fail (data, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (data->connection), NULL);
+
+	NM_SET_OUT (version_id, data->version_id);
+	return g_object_ref (data->connection);
+}
+
+/*****************************************************************************/
 
 /**
  * nm_device_disconnect:

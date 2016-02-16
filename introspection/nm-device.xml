@@ -172,8 +172,18 @@
     <method name="Reapply">
       <arg name="connection" type="a{sa{sv}}" direction="in">
         <tp:docstring>
-          The effective connection settings and properties to use. If empty, the connection
-          settings from the connection that is active on the device will be used.
+          The optional connection settings that will be reapplied on the device. If empty, the
+          currently active settings-connection will be used. The connection cannot arbitrarly
+          differ from the current applied-connection otherwise the call will fail.
+          Only certain changes are supported, like adding or removing IP addresses.
+        </tp:docstring>
+      </arg>
+      <arg name="version_id" type="t" direction="in">
+        <tp:docstring>
+          If non-zero, the current version id of the applied-connection must match.
+          The current version id can be retrieved via GetAppliedConnection.
+          This optional argument allows to catch concurrent modifications between
+          the GetAppliedConnection call and Reapply.
         </tp:docstring>
       </arg>
       <arg name="flags" type="u" direction="in">
@@ -183,10 +193,54 @@
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Attempts to update the configuration of a device without deactivating it.
-        You can either modify the configuration by passing the desired setup via "connection"
-        argument or just omit the argument to bring it in sync with the connection that
-        has been activated but could have been modified  since.
+        Attempts to update the configuration of a device without deactivating it. NetworkManager
+        has the concept of connections, which are profiles that contain the configuration for
+        a networking device. Those connections are exposed via D-Bus as individual objects
+        that can be created, modified and deleted. When activating such a settings-connection
+        on a device, the settings-connection is cloned to become an applied-connection and used to
+        configure the device (see GetAppliedConnection). Subsequent modification of the
+        settings-connection don't propagate automatically to the device's applied-connection
+        (with exception of the firewall-zone and the metered property). For the changes to take
+        effect, you can either re-activate the settings-connection, or call Reapply.
+        The Reapply call allows you to directly update the applied-connection and reconfigure
+        the device.
+        Reapply can also be useful if the currently applied-connection is equal to the connection
+        that is about to be reapplied. This allows to reconfigure the device and revert external
+        changes like removing or adding an IP address (which NetworkManager doesn't revert
+        automatically because it is assumed that the user made these changes intentionally outside
+        of NetworkManager).
+        Reapply can make the applied-connection different from the settings-connection,
+        just like updating the settings-connection can make them different.
+      </tp:docstring>
+    </method>
+
+    <method name="GetAppliedConnection">
+      <arg name="flags" type="u" direction="in">
+        <tp:docstring>
+          Flags which would modify the behavior of the GetAppliedConnection call.
+          There are no flags defined currently and the users should use the value of 0.
+        </tp:docstring>
+      </arg>
+      <arg name="connection" type="a{sa{sv}}" direction="out">
+        <tp:docstring>
+            The effective connection settings that the connection has currently applied.
+        </tp:docstring>
+      </arg>
+      <arg name="version_id" type="t" direction="out">
+        <tp:docstring>
+            The version-id of the currently applied connection. This can be specified during
+            Reapply to avoid races where you first fetch the applied connection, modify it
+            and try to reapply it. If the applied connection is modified in the meantime, the
+            version_id gets incremented and Reapply will fail.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Get the currently applied connection on the device. This is a snapshot of the last activated
+        connection on the device, that is the configuration that is currently applied on the device.
+        Usually this is the same as GetSettings of the referenced settings connection. However, it
+        can differ if the settings connection was subsequently modified or the applied connection was
+        modified by Reapply. The applied connection is set when activating a device or when calling
+        Reapply.
       </tp:docstring>
     </method>
 

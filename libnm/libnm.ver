@@ -875,6 +875,9 @@ global:
 	nm_connection_get_setting_vxlan;
 	nm_connection_verify_secrets;
 	nm_device_ethernet_get_s390_subchannels;
+	nm_device_get_applied_connection;
+	nm_device_get_applied_connection_async;
+	nm_device_get_applied_connection_finish;
 	nm_device_get_lldp_neighbors;
 	nm_device_get_metered;
 	nm_device_get_nm_plugin_missing;

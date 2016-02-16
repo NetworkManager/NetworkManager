@@ -7162,6 +7162,8 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 /* reapply_connection:
  * @connection: the new connection settings to be applied or %NULL to reapply
  *   the current settings connection
+ * @version_id: either zero, or the current version id for the applied
+ *   connection.
  * @error: the error if %FALSE is returned
  *
  * Change configuration of an already configured device if possible.
@@ -7172,6 +7174,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 static gboolean
 reapply_connection (NMDevice *self,
                     NMConnection *connection,
+                    guint64 version_id,
                     GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7212,11 +7215,25 @@ reapply_connection (NMDevice *self,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
 
-	_LOGD (LOGD_DEVICE, "reapply");
+	if (   version_id != 0
+	    && version_id != nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_VERSION_ID_MISMATCH,
+		                     "Reapply failed because device changed in the meantime and the version-id mismatches");
+		return FALSE;
+	}
 
 	/**************************************************************************
 	 * Update applied connection
 	 *************************************************************************/
+
+	if (diffs)
+		nm_active_connection_version_id_bump ((NMActiveConnection *) priv->act_request);
+
+	_LOGD (LOGD_DEVICE, "reapply (version-id %llu%s)",
+	       (long long unsigned) nm_active_connection_version_id_get (((NMActiveConnection *) priv->act_request)),
+	       diffs ? "" : " (unmodified)");
 
 	if (diffs) {
 		con_old = applied_clone  = nm_simple_connection_new_clone (applied);
@@ -7243,6 +7260,11 @@ reapply_connection (NMDevice *self,
 	return TRUE;
 }
 
+typedef struct {
+	NMConnection *connection;
+	guint64 version_id;
+} ReapplyData;
+
 static void
 reapply_cb (NMDevice *self,
             GDBusMethodInvocation *context,
@@ -7250,8 +7272,16 @@ reapply_cb (NMDevice *self,
             GError *error,
             gpointer user_data)
 {
-	gs_unref_object NMConnection *connection = NM_CONNECTION (user_data);
+	ReapplyData *reapply_data = user_data;
+	guint64 version_id = 0;
+	gs_unref_object NMConnection *connection = NULL;
 	GError *local = NULL;
+
+	if (reapply_data) {
+		connection = reapply_data->connection;
+		version_id = reapply_data->version_id;
+		g_slice_free (ReapplyData, reapply_data);
+	}
 
 	if (error) {
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, error->message);
@@ -7261,6 +7291,7 @@ reapply_cb (NMDevice *self,
 
 	if (!reapply_connection (self,
 	                         connection ? : (NMConnection *) nm_device_get_settings_connection (self),
+	                         version_id,
 	                         &local)) {
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, local->message);
 		g_dbus_method_invocation_take_error (context, local);
@@ -7275,17 +7306,19 @@ static void
 impl_device_reapply (NMDevice *self,
                      GDBusMethodInvocation *context,
                      GVariant *settings,
-                     guint flags)
+                     guint64 version_id,
+                     guint32 flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection;
 	NMConnection *connection = NULL;
 	GError *error = NULL;
+	ReapplyData *reapply_data;
 
 	/* No flags supported as of now. */
 	if (flags != 0) {
 		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             NM_DEVICE_ERROR_FAILED,
 		                             "Invalid flags specified");
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
 		g_dbus_method_invocation_take_error (context, error);
@@ -7316,6 +7349,13 @@ impl_device_reapply (NMDevice *self,
 		nm_connection_clear_secrets (connection);
 	}
 
+	if (connection || version_id) {
+		reapply_data = g_slice_new (ReapplyData);
+		reapply_data->connection = connection;
+		reapply_data->version_id = version_id;
+	} else
+		reapply_data = NULL;
+
 	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
 	               context,
@@ -7323,8 +7363,102 @@ impl_device_reapply (NMDevice *self,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
 	               reapply_cb,
-	               connection);
+	               reapply_data);
 }
+
+/*****************************************************************************/
+
+static void
+get_applied_connection_cb (NMDevice *self,
+                           GDBusMethodInvocation *context,
+                           NMAuthSubject *subject,
+                           GError *error,
+                           gpointer user_data /* possibly dangling pointer */)
+{
+	NMDevicePrivate *priv;
+	NMConnection *applied_connection;
+	GVariant *settings;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (error) {
+		g_dbus_method_invocation_return_gerror (context, error);
+		return;
+	}
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	applied_connection = nm_device_get_applied_connection (self);
+
+	if (!applied_connection) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "Device is not activated");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (applied_connection != user_data) {
+		/* The applied connection changed due to a race. Reauthenticate. */
+		g_signal_emit (self, signals[AUTH_REQUEST], 0,
+		               context,
+		               applied_connection,
+		               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+		               TRUE,
+		               get_applied_connection_cb,
+		               applied_connection /* no need take a ref. We will not dereference this pointer. */);
+		return;
+	}
+
+	settings = nm_connection_to_dbus (applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+	if (!settings)
+		settings = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(@a{sa{sv}}t)",
+	                                                      settings,
+	                                                      nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)));
+}
+
+static void
+impl_device_get_applied_connection (NMDevice *self,
+                                    GDBusMethodInvocation *context,
+                                    guint32 flags)
+{
+	NMConnection *applied_connection;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	/* No flags supported as of now. */
+	if (flags != 0) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_FAILED,
+		                             "Invalid flags specified");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	applied_connection = nm_device_get_applied_connection (self);
+	if (!applied_connection) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "Device is not activated");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	/* Ask the manager to authenticate this request for us */
+	g_signal_emit (self, signals[AUTH_REQUEST], 0,
+	               context,
+	               applied_connection,
+	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	               TRUE,
+	               get_applied_connection_cb,
+	               applied_connection /* no need take a ref. We will not dereference this pointer. */);
+}
+
+/*****************************************************************************/
 
 static void
 disconnect_cb (NMDevice *self,
@@ -9218,6 +9352,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	NMSettingConnection *s_con_applied;
 	const char *zone;
 	NMMetered metered;
+	guint64 version_id;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -9240,7 +9375,8 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
 	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
 
-		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s", NM_PRINT_FMT_QUOTE_STRING (zone));
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->priv->act_request);
+		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (long long unsigned) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
 		              NM_SETTING_CONNECTION_ZONE, zone,
@@ -9251,7 +9387,8 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 
 	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
 
-		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d", (int) metered);
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->priv->act_request);
+		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d (version-id %llu)", (int) metered, (long long unsigned) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
 		              NM_SETTING_CONNECTION_METERED, metered,
@@ -11681,6 +11818,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_SKELETON,
 	                                        "Reapply", impl_device_reapply,
+	                                        "GetAppliedConnection", impl_device_get_applied_connection,
 	                                        "Disconnect", impl_device_disconnect,
 	                                        "Delete", impl_device_delete,
 	                                        NULL);

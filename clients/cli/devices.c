@@ -1928,7 +1928,7 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 		info->queue = g_slist_prepend (info->queue, g_object_ref (device));
 
 		/* Now reapply the connection to the device */
-		nm_device_reapply_async (device, NULL, 0, NULL, reapply_device_cb, info);
+		nm_device_reapply_async (device, NULL, 0, 0, NULL, reapply_device_cb, info);
 	}
 
 error:

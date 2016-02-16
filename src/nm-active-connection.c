@@ -46,6 +46,8 @@ typedef struct {
 	char *specific_object;
 	NMDevice *device;
 
+	guint64 version_id;
+
 	char *pending_activation_id;
 
 	gboolean is_default;
@@ -796,10 +798,45 @@ nm_active_connection_authorize (NMActiveConnection *self,
 
 /****************************************************************/
 
+static guint64
+_version_id_new (void)
+{
+	static guint64 id = 0;
+
+	return ++id;
+}
+
+guint64
+nm_active_connection_version_id_get (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), 0);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->version_id;
+}
+
+guint64
+nm_active_connection_version_id_bump (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), 0);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE  (self);
+	priv->version_id = _version_id_new ();
+	_LOGT ("new version-id %llu", (long long unsigned) priv->version_id);
+	return priv->version_id;
+}
+
+/****************************************************************/
+
 static void
 nm_active_connection_init (NMActiveConnection *self)
 {
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
 	_LOGT ("creating");
+
+	priv->version_id = _version_id_new ();
 }
 
 static void
@@ -810,7 +847,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 
-	_LOGD ("constructed (%s)", G_OBJECT_TYPE_NAME (self));
+	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (long long unsigned) priv->version_id);
 
 	g_return_if_fail (priv->subject);
 }
