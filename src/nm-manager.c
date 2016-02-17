@@ -987,6 +987,20 @@ nm_manager_get_connection_iface (NMManager *self,
 		return NULL;
 	}
 
+	if (   !out_parent
+	    && !NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_iface) {
+		/* optimization. Shortcut lookup of the partent device. */
+		iface = g_strdup (nm_connection_get_interface_name (connection));
+		if (!iface) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_FAILED,
+			             "failed to determine interface name: error determine name for %s",
+			             nm_connection_get_connection_type (connection));
+		}
+		return iface;
+	}
+
 	parent = find_parent_device_for_connection (self, connection, factory);
 	iface = nm_device_factory_get_connection_iface (factory,
 	                                                connection,
