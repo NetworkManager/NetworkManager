@@ -2990,21 +2990,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	else
 		parent[0] = 0;
 
-	if (link->inet6_addr_gen_mode_inv) {
-		switch (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv)) {
-			case 0:
-				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode eui64");
-				break;
-			case 1:
-				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode none");
-				break;
-			default:
-				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode %d", _nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv));
-				break;
-		}
-	} else
-		str_addrmode[0] = '\0';
-
 	if (link->addr.len)
 		str_addr = nm_utils_hwaddr_ntoa (link->addr.data, MIN (link->addr.len, sizeof (link->addr.data)));
 	if (link->inet6_token.is_valid)
@@ -3023,7 +3008,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            " %s" /* link->type */
 	            "%s%s" /* kind */
 	            "%s" /* is-in-udev */
-	            "%s" /* addr-gen-mode */
+	            "%s%s" /* addr-gen-mode */
 	            "%s%s" /* addr */
 	            "%s%s" /* inet6_token */
 	            "%s%s" /* driver */
@@ -3038,7 +3023,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->kind ? (g_strcmp0 (str_link_type, link->kind) ? "/" : "*") : "?",
 	            link->kind && g_strcmp0 (str_link_type, link->kind) ? link->kind : "",
 	            link->initialized ? " init" : " not-init",
-	            str_addrmode,
+	            link->inet6_addr_gen_mode_inv ? " addrgenmode " : "",
+	            link->inet6_addr_gen_mode_inv ? nm_platform_link_inet6_addrgenmode2str (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv), str_addrmode, sizeof (str_addrmode)) : "",
 	            str_addr ? " addr " : "",
 	            str_addr ? str_addr : "",
 	            str_inet6_token ? " inet6token " : "",
