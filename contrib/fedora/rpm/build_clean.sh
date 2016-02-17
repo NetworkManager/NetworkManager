@@ -7,15 +7,18 @@ die() {
 }
 
 usage() {
-    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-Q|--quick]"
+    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-Q|--quick] [-S|--srpm] [-N|--no-dist] [[-w|--with OPTION] ...] [[-W|--without OPTION] ...]"
     echo
-    echo "Does all the steps from a clean working directory to an RPM of NetworkManager"
+    echo "Does all the steps from a clean git working directory to an RPM of NetworkManager"
     echo
     echo "Options:"
     echo "  --force: force build, even if working directory is not clean and has local modifications"
     echo "  --clean: run \`git-clean -fdx :/\` before build"
     echo "  --quick: only run \`make dist\` instead of \`make distcheck\`"
     echo "  --srpm: only build the SRPM"
+    echo "  --no-dist: skip creating the source tarball if you already did \`make dist\`"
+    echo "  --with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
+    echo "  --without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
 }
 
 
@@ -31,7 +34,7 @@ cd "$GITDIR" || die "could not change to $GITDIR"
 IGNORE_DIRTY=0
 GIT_CLEAN=0
 QUICK=0
-NO_BUILD=0
+NO_DIST=0
 WITH_LIST=()
 
 _next_with=
@@ -58,8 +61,8 @@ for A; do
         -S|--srpm)
             BUILDTYPE=SRPM
             ;;
-        -N|--no-build)
-            NO_BUILD=1
+        -N|--no-dist)
+            NO_DIST=1
             IGNORE_DIRTY=1
             ;;
         -w|--with)
@@ -93,7 +96,7 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
     fi
 fi
 
-if [[ $NO_BUILD != 1 ]]; then
+if [[ $NO_DIST != 1 ]]; then
     ./autogen.sh --enable-gtk-doc || die "Error autogen.sh"
 
     if [[ $QUICK == 1 ]]; then
