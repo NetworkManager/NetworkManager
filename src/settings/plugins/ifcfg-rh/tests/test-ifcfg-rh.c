@@ -265,8 +265,6 @@ test_read_basic (void)
 	NMSettingIPConfig *s_ip6;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	const char *expected_id = "System test-minimal";
-	guint64 expected_timestamp = 0;
 
 	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-minimal",
 	                                    NULL, TYPE_ETHERNET, NULL);
@@ -274,8 +272,8 @@ test_read_basic (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
-	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-minimal");
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
@@ -360,9 +358,6 @@ test_read_variables_corner_cases (void)
 	NMSettingIPConfig *s_ip4;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	const char *expected_zone = "'";
-	const char *expected_id = "\"";
-	guint64 expected_timestamp = 0;
 
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
 	                                    NULL, TYPE_ETHERNET, NULL);
@@ -370,9 +365,9 @@ test_read_variables_corner_cases (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
-	g_assert_cmpstr (nm_setting_connection_get_zone (s_con), ==, expected_zone);
-	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "\"");
+	g_assert_cmpstr (nm_setting_connection_get_zone (s_con), ==, "'");
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRED SETTING ===== */
@@ -400,7 +395,6 @@ test_read_unmanaged (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	char *unhandled_spec = NULL;
-	const char *expected_id = "System test-nm-controlled";
 	guint64 expected_timestamp = 0;
 
 	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
@@ -411,7 +405,7 @@ test_read_unmanaged (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-nm-controlled");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -425,7 +419,6 @@ test_read_unmanaged_unrecognized (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	gs_free char *unhandled_spec = NULL;
-	const char *expected_id = "PigeonNet";
 	guint64 expected_timestamp = 0;
 
 	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
@@ -436,7 +429,7 @@ test_read_unmanaged_unrecognized (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "PigeonNet");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 
 	g_object_unref (connection);
@@ -448,7 +441,6 @@ test_read_unrecognized (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	gs_free char *unhandled_spec = NULL;
-	const char *expected_id = "U Can't Touch This";
 	guint64 expected_timestamp = 0;
 
 	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
@@ -459,7 +451,7 @@ test_read_unrecognized (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "U Can't Touch This");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 
 	g_object_unref (connection);
@@ -1010,9 +1002,7 @@ test_read_wired_static_routes_legacy (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	const char *tmp;
 	NMIPRoute *ip4_route;
-	const char *expected_id = "System test-wired-static-routes-legacy";
 
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes-legacy",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
@@ -1022,11 +1012,7 @@ test_read_wired_static_routes_legacy (void)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-static-routes-legacy");
 
 	/* ===== WIRED SETTING ===== */
 
@@ -1037,10 +1023,7 @@ test_read_wired_static_routes_legacy (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Routes */
 	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 3);
@@ -1072,18 +1055,26 @@ test_read_wired_static_routes_legacy (void)
 	g_object_unref (connection);
 }
 
+typedef struct {
+	const char *test_path;
+	const char *file;
+	const char *expected_id;
+} ReadWiredIpv4ManualItem;
+
 static void
-test_read_wired_ipv4_manual (const char *file, const char *expected_id)
+test_read_wired_ipv4_manual (gconstpointer data)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	const char *tmp;
 	NMIPAddress *ip4_addr;
+	const ReadWiredIpv4ManualItem *info = data;
 
-	connection = _connection_from_file (file,
+	g_assert (info->expected_id);
+
+	connection = _connection_from_file (info->file,
 	                                    NULL,
 	                                    TYPE_ETHERNET,
 	                                    &unmanaged);
@@ -1093,11 +1084,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, info->expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
@@ -1108,10 +1095,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 3);
@@ -1146,8 +1130,6 @@ test_read_wired_ipv6_manual (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	const char *tmp;
-	const char *expected_id = "System test-wired-ipv6-manual";
 	NMIPAddress *ip6_addr;
 	NMIPRoute *ip6_route;
 
@@ -1162,10 +1144,7 @@ test_read_wired_ipv6_manual (void)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-ipv6-manual");
 
 	/* ===== WIRED SETTING ===== */
 
@@ -1182,30 +1161,16 @@ test_read_wired_ipv6_manual (void)
 
 	/* DNS search domains */
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip4), ==, 3);
-
-	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "lorem.com");
-
-	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 1);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "ipsum.org");
-
-	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 2);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "dolor.edu");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 0), ==, "lorem.com");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 1), ==, "ipsum.org");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 2), ==, "dolor.edu");
 
 	/* ===== IPv6 SETTING ===== */
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip6);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
-
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 	g_assert (!nm_setting_ip_config_get_never_default (s_ip6));
-
 	g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
 	/* IP addresses */
@@ -1257,9 +1222,6 @@ test_read_wired_ipv6_manual (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_IPV6_ONLY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only"
-#define TEST_IFCFG_WIRED_IPV6_ONLY_1 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only-1"
-
 static void
 test_read_wired_ipv6_only (const char *file, const char *expected_id)
 {
@@ -1269,9 +1231,10 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	const char *tmp;
 	NMIPAddress *ip6_addr;
 	const char *method;
+
+	g_assert (expected_id);
 
 	connection = _connection_from_file (file, NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
@@ -1280,11 +1243,7 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
@@ -1303,10 +1262,7 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip6);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 1);
@@ -1330,8 +1286,6 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_DHCP6_ONLY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp6-only"
-
 static void
 test_read_wired_dhcp6_only (void)
 {
@@ -1341,22 +1295,16 @@ test_read_wired_dhcp6_only (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	const char *tmp;
-	const char *expected_id = "System test-wired-dhcp6-only";
 	const char *method;
 
-	connection = _connection_from_file (TEST_IFCFG_WIRED_DHCP6_ONLY, NULL, TYPE_ETHERNET, &unmanaged);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp6-only", NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-dhcp6-only");
 
 	/* ===== WIRED SETTING ===== */
 
@@ -1375,15 +1323,10 @@ test_read_wired_dhcp6_only (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip6);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_ONBOOT_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no"
 
 static void
 test_read_onboot_no (void)
@@ -1392,7 +1335,7 @@ test_read_onboot_no (void)
 	NMSettingConnection *s_con;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_ONBOOT_NO, NULL, TYPE_ETHERNET, &unmanaged);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no", NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1425,8 +1368,7 @@ test_read_noip (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2"
-#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem"
 
 static void
 test_read_wired_8021x_peap_mschapv2 (void)
@@ -1438,15 +1380,11 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	NMSetting8021x *tmp_8021x;
 	char *unmanaged = NULL;
 	GError *error = NULL;
-	const char *tmp;
-	const char *expected_identity = "David Smith";
-	const char *expected_anon_identity = "somebody";
-	const char *expected_password = "foobar baz";
 	gboolean success = FALSE;
 	const char *expected_ca_cert_path;
 	const char *read_ca_cert_path;
 
-	connection = _connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -1459,45 +1397,19 @@ test_read_wired_8021x_peap_mschapv2 (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x);
 
-	/* EAP methods */
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
-	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "peap");
-
-	/* Identity */
-	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_identity);
-
-	/* Anonymous Identity */
-	tmp = nm_setting_802_1x_get_anonymous_identity (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_anon_identity);
-
-	/* Password */
-	tmp = nm_setting_802_1x_get_password (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_password);
-
-	/* PEAP version */
-	tmp = nm_setting_802_1x_get_phase1_peapver (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "1");
-
-	/* PEAP Label */
-	tmp = nm_setting_802_1x_get_phase1_peaplabel (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "1");
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "peap");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "David Smith");
+	g_assert_cmpstr (nm_setting_802_1x_get_anonymous_identity (s_8021x), ==, "somebody");
+	g_assert_cmpstr (nm_setting_802_1x_get_password (s_8021x), ==, "foobar baz");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase1_peapver (s_8021x), ==, "1");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase1_peaplabel (s_8021x), ==, "1");
 
 	/* CA Cert */
 	tmp_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
@@ -1507,6 +1419,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
 	                                         NULL,
 	                                         &error);
+	g_assert_no_error (error);
 	g_assert (success == TRUE);
 
 	expected_ca_cert_path = nm_setting_802_1x_get_ca_cert_path (tmp_8021x);
@@ -1522,16 +1435,12 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_8021X_TLS_AGENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-agent"
-#define TEST_IFCFG_WIRED_8021X_TLS_ALWAYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-always"
-
 static void
 test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags expected_flags)
 {
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	const char *expected_identity = "David Smith";
 	char *dirname, *tmp;
 
 	connection = _connection_from_file (ifcfg, NULL, TYPE_ETHERNET, NULL);
@@ -1545,7 +1454,7 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 	g_assert (s_8021x);
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "tls");
-	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, expected_identity);
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "David Smith");
 	g_assert_cmpint (nm_setting_802_1x_get_private_key_password_flags (s_8021x), ==, expected_flags);
 
 	dirname = g_path_get_dirname (ifcfg);
@@ -1653,44 +1562,31 @@ test_read_802_1x_ttls_eapgtc (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_ALIASES_GOOD TEST_IFCFG_DIR"/network-scripts/ifcfg-aliasem0"
-
 static void
 test_read_wired_aliases_good (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
-	const char *expected_id = "System aliasem0";
 	int expected_num_addresses = 4;
 	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
 	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
-	const char *expected_gateway = "192.168.1.1";
 	int i, j;
 
-	connection = _connection_from_file (TEST_IFCFG_ALIASES_GOOD,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem0",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System aliasem0");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
-
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, expected_num_addresses);
 
 	/* Addresses */
@@ -1723,7 +1619,7 @@ test_read_wired_aliases_good (void)
 	}
 
 	/* Gateway */
-	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, expected_gateway);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
 	for (i = 0; i < expected_num_addresses; i++)
 		g_assert (!expected_address[i]);
@@ -1737,8 +1633,9 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
 	NMIPAddress *ip4_addr;
+
+	g_assert (expected_id);
 
 	connection = _connection_from_file (base, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
@@ -1747,20 +1644,13 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
 
@@ -1777,27 +1667,21 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_ALIASES_BAD_1  TEST_IFCFG_DIR"/network-scripts/ifcfg-aliasem1"
-
 static void
 test_read_wired_aliases_bad_1 (void)
 {
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*aliasem1:1*has no DEVICE*");
-	test_read_wired_aliases_bad (TEST_IFCFG_ALIASES_BAD_1, "System aliasem1");
+	test_read_wired_aliases_bad (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem1", "System aliasem1");
 }
-
-#define TEST_IFCFG_ALIASES_BAD_2  TEST_IFCFG_DIR"/network-scripts/ifcfg-aliasem2"
 
 static void
 test_read_wired_aliases_bad_2 (void)
 {
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*aliasem2:1*has invalid DEVICE*");
-	test_read_wired_aliases_bad (TEST_IFCFG_ALIASES_BAD_2, "System aliasem2");
+	test_read_wired_aliases_bad (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem2", "System aliasem2");
 }
-
-#define TEST_IFCFG_DNS_OPTIONS TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dns-options"
 
 static void
 test_read_dns_options (void)
@@ -1809,7 +1693,7 @@ test_read_dns_options (void)
 	const char *options[] = { "ndots:3", "single-request-reopen", "inet6" };
 	guint32 i, options_len = sizeof (options) / sizeof (options[0]);
 
-	connection = _connection_from_file (TEST_IFCFG_DNS_OPTIONS,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dns-options",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert_cmpstr (unmanaged, ==, NULL);
 
@@ -1935,8 +1819,6 @@ test_write_dns_options (void)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_WIFI_OPEN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open"
-
 static void
 test_read_wifi_open (void)
 {
@@ -1945,40 +1827,27 @@ test_read_wifi_open (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4, *s_ip6;
-	const char *tmp;
 	GBytes *ssid;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	const char *expected_id = "System blahblah (test-wifi-open)";
-	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
-	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 1;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-open)");
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
 	 * depending on where the tests are run.
 	 */
 
-	/* Timestamp */
-	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
-
-	/* Autoconnect */
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
-
 	g_assert_cmpint (nm_setting_connection_get_autoconnect_priority (s_con), ==, -1);
 
 	/* ===== WIRELESS SETTING ===== */
@@ -1995,16 +1864,11 @@ test_read_wifi_open (void)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
-	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
 
 	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
-
-	tmp = nm_setting_wireless_get_mode (s_wireless);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_mode);
-
-	g_assert (nm_setting_wireless_get_channel (s_wireless) == expected_channel);
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "infrastructure");
+	g_assert_cmpint (nm_setting_wireless_get_channel (s_wireless), ==, 1);
 
 	/* ===== WiFi SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -2014,12 +1878,8 @@ test_read_wifi_open (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (s_ip4), ==, 104);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert( s_ip6);
@@ -2028,44 +1888,28 @@ test_read_wifi_open (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_OPEN_AUTO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-auto"
-
 static void
 test_read_wifi_open_auto (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	const char *tmp;
-	const char *expected_id = "System blahblah (test-wifi-open-auto)";
-	const char *expected_mode = "infrastructure";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN_AUTO,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open-auto",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
-
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-open-auto)");
 
 	/* ===== WIRELESS SETTING ===== */
-
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
-
-	tmp = nm_setting_wireless_get_mode (s_wireless);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_mode);
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "infrastructure");
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_OPEN_SSID_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-hex"
 
 static void
 test_read_wifi_open_ssid_hex (void)
@@ -2073,23 +1917,17 @@ test_read_wifi_open_ssid_hex (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	const char *tmp;
 	GBytes *ssid;
-	const char *expected_id = "System blahblah (test-wifi-open-ssid-hex)";
 	const char *expected_ssid = "blahblah";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open-ssid-hex",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-open-ssid-hex)");
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -2098,19 +1936,16 @@ test_read_wifi_open_ssid_hex (void)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
-	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
 
 	g_object_unref (connection);
 }
 
 static void
-test_read_wifi_open_ssid_bad (const char *file, const char *test)
+test_read_wifi_open_ssid_bad (gconstpointer data)
 {
-	_connection_from_file_fail (file, NULL, TYPE_WIRELESS, NULL);
+	_connection_from_file_fail ((const char *) data, NULL, TYPE_WIRELESS, NULL);
 }
-
-#define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
 
 static void
 test_read_wifi_open_ssid_quoted (void)
@@ -2118,23 +1953,17 @@ test_read_wifi_open_ssid_quoted (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	const char *tmp;
 	GBytes *ssid;
-	const char *expected_id = "System foo\"bar\\ (test-wifi-open-ssid-quoted)";
 	const char *expected_ssid = "foo\"bar\\";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open-ssid-quoted",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System foo\"bar\\ (test-wifi-open-ssid-quoted)");
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -2143,13 +1972,10 @@ test_read_wifi_open_ssid_quoted (void)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
-	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WEP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep"
 
 static void
 test_read_wifi_wep (void)
@@ -2159,40 +1985,27 @@ test_read_wifi_wep (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
 	GBytes *ssid;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	const char *expected_id = "System blahblah (test-wifi-wep)";
-	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
-	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 1;
-	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-wep)");
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
 	 * depending on where the tests are run.
 	 */
 
-	/* Timestamp */
-	g_assert (nm_setting_connection_get_timestamp (s_con) == expected_timestamp);
-
-	/* Autoconnect */
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRELESS SETTING ===== */
@@ -2210,61 +2023,36 @@ test_read_wifi_wep (void)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
-	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
 
 	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
-
-	/* Mode */
-	tmp = nm_setting_wireless_get_mode (s_wireless);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_mode);
-
-	/* Channel */
-	g_assert (nm_setting_wireless_get_channel (s_wireless) == expected_channel);
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "infrastructure");
+	g_assert_cmpint (nm_setting_wireless_get_channel (s_wireless), ==, 1);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
-
-	/* WEP key index */
+	g_assert_cmpstr (nm_setting_wireless_security_get_auth_alg (s_wsec), ==, "shared");
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
-	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
 	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
-	/* WEP key index 0 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_wep_key0);
-
+	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, "0123456789abcdef0123456789");
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
-
-	/* WEP Authentication mode */
-	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "shared");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WEP_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-adhoc"
 
 static void
 test_read_wifi_wep_adhoc (void)
@@ -2274,25 +2062,17 @@ test_read_wifi_wep_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
 	GBytes *ssid;
-	const char *expected_id = "System blahblah (test-wifi-wep-adhoc)";
 	const char *expected_ssid = "blahblah";
-	const char *expected_mode = "adhoc";
-	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_ADHOC,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-adhoc",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-wep-adhoc)");
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
@@ -2308,50 +2088,30 @@ test_read_wifi_wep_adhoc (void)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
-	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
 
 	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
-
-	/* Mode */
-	tmp = nm_setting_wireless_get_mode (s_wireless);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_mode);
-
-	/* Channel */
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "adhoc");
 	g_assert_cmpint (nm_setting_wireless_get_channel (s_wireless), ==, 11);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
-
-	/* WEP key index */
+	g_assert (!nm_setting_wireless_security_get_auth_alg (s_wsec));
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
-	/* WEP key index 0 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_wep_key0);
-
+	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, "0123456789abcdef0123456789");
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
-
-	/* WEP Authentication mode */
-	g_assert (!nm_setting_wireless_security_get_auth_alg (s_wsec));
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* Ignore auto DNS */
 	g_assert (nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
@@ -2364,8 +2124,6 @@ test_read_wifi_wep_adhoc (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WEP_PASSPHRASE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-passphrase"
-
 static void
 test_read_wifi_wep_passphrase (void)
 {
@@ -2373,11 +2131,8 @@ test_read_wifi_wep_passphrase (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_wep_key0 = "foobar222blahblah";
-	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-passphrase",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2394,30 +2149,16 @@ test_read_wifi_wep_passphrase (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
-
-	/* WEP key index */
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
-
-	/* WEP key type */
-	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
-	g_assert (key_type == NM_WEP_KEY_TYPE_PASSPHRASE);
-
-	/* WEP key index 0 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_wep_key0);
-
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_type (s_wsec), ==, NM_WEP_KEY_TYPE_PASSPHRASE);
+	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, "foobar222blahblah");
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WEP_40_ASCII TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-40-ascii"
 
 static void
 test_read_wifi_wep_40_ascii (void)
@@ -2426,11 +2167,9 @@ test_read_wifi_wep_40_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_wep_key0 = "Lorem";
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_40_ASCII,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-40-ascii",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2447,30 +2186,19 @@ test_read_wifi_wep_40_ascii (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
-
-	/* WEP key index */
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
-	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
 	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
-	/* WEP key index 0 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_wep_key0);
-
+	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, "Lorem");
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WEP_104_ASCII TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-104-ascii"
 
 static void
 test_read_wifi_wep_104_ascii (void)
@@ -2479,11 +2207,9 @@ test_read_wifi_wep_104_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_wep_key0 = "LoremIpsumSit";
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_104_ASCII,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-104-ascii",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2500,30 +2226,19 @@ test_read_wifi_wep_104_ascii (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
-
-	/* WEP key index */
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
 
-	/* WEP key type */
 	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
 	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
 
-	/* WEP key index 0 */
-	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_wep_key0);
-
+	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, "LoremIpsumSit");
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 3));
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_LEAP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-leap"
 
 static void
 test_read_wifi_leap (void)
@@ -2532,23 +2247,15 @@ test_read_wifi_leap (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_id = "System blahblah (test-wifi-leap)";
-	const char *expected_identity = "Bill Smith";
-	const char *expected_password = "foobarblah";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_LEAP,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-leap)");
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -2559,30 +2266,13 @@ test_read_wifi_leap (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "ieee8021x");
-
-	/* WEP Authentication mode */
-	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "leap");
-
-	/* LEAP Username */
-	tmp = nm_setting_wireless_security_get_leap_username (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_identity);
-
-	/* LEAP Password */
-	tmp = nm_setting_wireless_security_get_leap_password (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_password);
+	g_assert_cmpstr (nm_setting_wireless_security_get_auth_alg (s_wsec), ==, "leap");
+	g_assert_cmpstr (nm_setting_wireless_security_get_leap_username (s_wsec), ==, "Bill Smith");
+	g_assert_cmpstr (nm_setting_wireless_security_get_leap_password (s_wsec), ==, "foobarblah");
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_LEAP_AGENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-leap-agent"
-#define TEST_IFCFG_WIFI_LEAP_ALWAYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-leap-always-ask"
 
 static void
 test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expected_flags)
@@ -2590,7 +2280,6 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *expected_identity = "Bill Smith";
 
 	connection = _connection_from_file (file, NULL, TYPE_WIRELESS, NULL);
 
@@ -2604,15 +2293,13 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 
 	g_assert (g_strcmp0 (nm_setting_wireless_security_get_key_mgmt (s_wsec), "ieee8021x") == 0);
 	g_assert (g_strcmp0 (nm_setting_wireless_security_get_auth_alg (s_wsec), "leap") == 0);
-	g_assert (g_strcmp0 (nm_setting_wireless_security_get_leap_username (s_wsec), expected_identity) == 0);
+	g_assert (g_strcmp0 (nm_setting_wireless_security_get_leap_username (s_wsec), "Bill Smith") == 0);
 	/* password blank as it's not system-owned */
 	g_assert (nm_setting_wireless_security_get_leap_password_flags (s_wsec) == expected_flags);
 	g_assert (nm_setting_wireless_security_get_leap_password (s_wsec) == NULL);
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WPA_PSK TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk"
 
 static void
 test_read_wifi_wpa_psk (void)
@@ -2622,17 +2309,10 @@ test_read_wifi_wpa_psk (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
 	GBytes *ssid;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	const char *expected_id = "System blahblah (test-wifi-wpa-psk)";
-	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
-	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 1;
-	const char *expected_key_mgmt = "wpa-psk";
-	const char *expected_psk = "I wonder what the king is doing tonight?";
 	guint32 n, i;
 	gboolean found_pair_tkip = FALSE;
 	gboolean found_pair_ccmp = FALSE;
@@ -2643,26 +2323,21 @@ test_read_wifi_wpa_psk (void)
 	gboolean found_proto_wpa = FALSE;
 	gboolean found_proto_rsn = FALSE;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-wpa-psk)");
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
 	 * depending on where the tests are run.
 	 */
 
-	g_assert (nm_setting_connection_get_timestamp (s_con) == expected_timestamp);
-
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
 	/* ===== WIRELESS SETTING ===== */
@@ -2670,49 +2345,33 @@ test_read_wifi_wpa_psk (void)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
-	/* MAC address */
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	g_assert (mac);
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)));
 
-	/* MTU */
 	g_assert_cmpint (nm_setting_wireless_get_mtu (s_wireless), ==, 0);
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	g_assert (ssid);
-	g_assert (g_bytes_get_size (ssid) == strlen (expected_ssid));
-	g_assert_cmpint (memcmp (g_bytes_get_data (ssid, NULL), expected_ssid, strlen (expected_ssid)), ==, 0);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
 
 	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
-
-	tmp = nm_setting_wireless_get_mode (s_wireless);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_mode);
-
-	g_assert (nm_setting_wireless_get_channel (s_wireless) == expected_channel);
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "infrastructure");
+	g_assert_cmpint (nm_setting_wireless_get_channel (s_wireless), ==, 1);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
-	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
-
-	/* PSK */
-	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_psk);
-
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "I wonder what the king is doing tonight?");
 	g_assert (!nm_setting_wireless_security_get_auth_alg (s_wsec));
 
 	/* Pairwise ciphers */
 	n = nm_setting_wireless_security_get_num_pairwise (s_wsec);
 	g_assert_cmpint (n, ==, 2);
 	for (i = 0; i < n; i++) {
-		tmp = nm_setting_wireless_security_get_pairwise (s_wsec, i);
+		const char * tmp = nm_setting_wireless_security_get_pairwise (s_wsec, i);
 		g_assert (tmp);
 		if (strcmp (tmp, "tkip") == 0)
 			found_pair_tkip = TRUE;
@@ -2726,7 +2385,7 @@ test_read_wifi_wpa_psk (void)
 	n = nm_setting_wireless_security_get_num_groups (s_wsec);
 	g_assert_cmpint (n, ==, 4);
 	for (i = 0; i < n; i++) {
-		tmp = nm_setting_wireless_security_get_group (s_wsec, i);
+		const char *tmp = nm_setting_wireless_security_get_group (s_wsec, i);
 		g_assert (tmp);
 		if (strcmp (tmp, "tkip") == 0)
 			found_group_tkip = TRUE;
@@ -2746,7 +2405,7 @@ test_read_wifi_wpa_psk (void)
 	n = nm_setting_wireless_security_get_num_protos (s_wsec);
 	g_assert_cmpint (n, ==, 2);
 	for (i = 0; i < n; i++) {
-		tmp = nm_setting_wireless_security_get_proto (s_wsec, i);
+		const char *tmp = nm_setting_wireless_security_get_proto (s_wsec, i);
 		g_assert (tmp);
 		if (strcmp (tmp, "wpa") == 0)
 			found_proto_wpa = TRUE;
@@ -2760,15 +2419,10 @@ test_read_wifi_wpa_psk (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WPA_PSK_2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-2"
 
 static void
 test_read_wifi_wpa_psk_2 (void)
@@ -2777,22 +2431,15 @@ test_read_wifi_wpa_psk_2 (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_id = "System ipsum (test-wifi-wpa-psk-2)";
-	const char *expected_psk = "They're really saying I love you. >>`<< \\";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_2,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-2",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System ipsum (test-wifi-wpa-psk-2)");
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -2803,16 +2450,10 @@ test_read_wifi_wpa_psk_2 (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* PSK */
-	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_psk);
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "They're really saying I love you. >>`<< \\");
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted"
 
 static void
 test_read_wifi_wpa_psk_unquoted (void)
@@ -2821,22 +2462,15 @@ test_read_wifi_wpa_psk_unquoted (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_id = "System blahblah (test-wifi-wpa-psk-unquoted)";
-	const char *expected_psk = "54336845e2f3f321c4c7";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-wpa-psk-unquoted)");
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -2847,16 +2481,10 @@ test_read_wifi_wpa_psk_unquoted (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* PSK */
-	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_psk);
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "54336845e2f3f321c4c7");
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2"
 
 static void
 test_read_wifi_wpa_psk_unquoted2 (void)
@@ -2865,11 +2493,9 @@ test_read_wifi_wpa_psk_unquoted2 (void)
 	 * must be between 8 and 63 ASCII characters inclusive per the WPA spec.
 	 */
 
-	_connection_from_file_fail (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2,
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2",
 	                            NULL, TYPE_WIRELESS, NULL);
 }
-
-#define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
 
 static void
 test_read_wifi_wpa_psk_adhoc (void)
@@ -2879,81 +2505,47 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
-	const char *expected_id = "System blahblah (test-wifi-wpa-psk-adhoc)";
-	const char *expected_mode = "adhoc";
-	const char *expected_key_mgmt = "wpa-none";
-	const char *expected_psk = "I wonder what the king is doing tonight?";
-	const char *expected_group = "ccmp";
-	const char *expected_proto = "wpa";
 
-	connection = _connection_from_file(TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
+	connection = _connection_from_file(TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc",
 	                                   NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-wpa-psk-adhoc)");
 
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
-	/* Mode */
-	tmp = nm_setting_wireless_get_mode (s_wireless);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_mode);
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "adhoc");
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-none");
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "I wonder what the king is doing tonight?");
 
-	/* Key management */
-	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
-
-	/* PSK */
-	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_psk);
-
-	/* Pairwise cipher: unused in adhoc mode */
+	/* Pairwise cipher is unused in adhoc mode */
 	g_assert_cmpint (nm_setting_wireless_security_get_num_pairwise (s_wsec), ==, 0);
 
-	/* Group cipher */
 	g_assert_cmpint (nm_setting_wireless_security_get_num_groups (s_wsec), ==, 1);
+	g_assert_cmpstr (nm_setting_wireless_security_get_group (s_wsec, 0), ==, "ccmp");
 
-	tmp = nm_setting_wireless_security_get_group (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_group);
-
-	/* Protocols */
 	g_assert_cmpint (nm_setting_wireless_security_get_num_protos (s_wsec), ==, 1);
-	tmp = nm_setting_wireless_security_get_proto (s_wsec, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_proto);
+	g_assert_cmpstr (nm_setting_wireless_security_get_proto (s_wsec, 0), ==, "wpa");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WPA_PSK_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-hex"
 
 static void
 test_read_wifi_wpa_psk_hex (void)
@@ -2963,25 +2555,17 @@ test_read_wifi_wpa_psk_hex (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	const char *tmp;
 	GBytes *ssid;
-	const char *expected_id = "System blahblah (test-wifi-wpa-psk-hex)";
 	const char *expected_ssid = "blahblah";
-	const char *expected_key_mgmt = "wpa-psk";
-	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_HEX,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-hex",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah (test-wifi-wpa-psk-hex)");
 
 	/* ===== WIRELESS SETTING ===== */
 
@@ -2997,33 +2581,21 @@ test_read_wifi_wpa_psk_hex (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
-	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
-
-	/* PSK */
-	tmp = nm_setting_wireless_security_get_psk (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_psk);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-tls"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem"
 
 static void
 test_read_wifi_wpa_eap_tls (void)
@@ -3033,11 +2605,9 @@ test_read_wifi_wpa_eap_tls (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	const char *tmp, *password;
-	const char *expected_identity = "Bill Smith";
 	const char *expected_privkey_password = "test1";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-eap-tls",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3050,25 +2620,14 @@ test_read_wifi_wpa_eap_tls (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x);
-
-	/* EAP methods */
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
-	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "tls");
-
-	/* Identity */
-	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_identity);
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "tls");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "Bill Smith");
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
@@ -3083,10 +2642,7 @@ test_read_wifi_wpa_eap_tls (void)
 	                    NM_SETTING_802_1X_CLIENT_CERT);
 
 	/* Private Key Password */
-	password = nm_setting_802_1x_get_private_key_password (s_8021x);
-	g_assert (password);
-
-	g_assert_cmpstr (password, ==, expected_privkey_password);
+	g_assert_cmpstr (nm_setting_802_1x_get_private_key_password (s_8021x), ==, expected_privkey_password);
 
 	/* Private key */
 	verify_cert_or_key (s_8021x,
@@ -3097,8 +2653,6 @@ test_read_wifi_wpa_eap_tls (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls"
-#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
 /* Also use TLS defines from the previous test */
 
 static void
@@ -3109,11 +2663,9 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	const char *tmp, *password;
-	const char *expected_identity = "Chuck Shumer";
 	const char *expected_privkey_password = "test1";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls",
 	                                    NULL, TYPE_WIRELESS, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3126,31 +2678,23 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x);
-
-	/* EAP methods */
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
-	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "ttls");
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "ttls");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "Chuck Shumer");
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT,
+	                    TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem",
 	                    NULL,
 	                    NM_SETTING_802_1X_CA_CERT);
 
 	/* Inner auth method */
-	tmp = nm_setting_802_1x_get_phase2_autheap (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "tls");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_autheap (s_8021x), ==, "tls");
 
 	/* Inner CA Cert */
 	verify_cert_or_key (s_8021x,
@@ -3165,10 +2709,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	                    NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 
 	/* Inner Private Key Password */
-	password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-	g_assert (password);
-
-	g_assert_cmpstr (password, ==, expected_privkey_password);
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_private_key_password (s_8021x), ==, expected_privkey_password);
 
 	/* Inner private key */
 	verify_cert_or_key (s_8021x,
@@ -3176,15 +2717,8 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	                    expected_privkey_password,
 	                    NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 
-	/* Identity */
-	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_identity);
-
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_DYNAMIC_WEP_LEAP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-dynamic-wep-leap"
 
 static void
 test_read_wifi_dynamic_wep_leap (void)
@@ -3194,7 +2728,7 @@ test_read_wifi_dynamic_wep_leap (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_DYNAMIC_WEP_LEAP,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-dynamic-wep-leap",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== WIRELESS SETTING ===== */
@@ -3233,9 +2767,6 @@ test_read_wifi_dynamic_wep_leap (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap"
-#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
-
 static void
 test_read_wifi_wep_eap_ttls_chap (void)
 {
@@ -3245,12 +2776,8 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	const char *tmp;
-	const char *expected_password = "foobar baz";
-	const char *expected_identity = "David Smith";
-	const char *expected_key_mgmt = "ieee8021x";
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap",
 	                                    NULL, TYPE_WIRELESS, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3263,19 +2790,12 @@ test_read_wifi_wep_eap_ttls_chap (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	/* ===== 802.1x SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-
-	/* Key management */
-	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_key_mgmt);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "ieee8021x");
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -3283,30 +2803,17 @@ test_read_wifi_wep_eap_ttls_chap (void)
 
 	/* EAP methods */
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
-	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "ttls");
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "ttls");
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
-	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT,
+	                    TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem",
 	                    NULL,
 	                    NM_SETTING_802_1X_CA_CERT);
 
-	/* Inner auth method */
-	tmp = nm_setting_802_1x_get_phase2_auth (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "chap");
-
-	/* Password */
-	tmp = nm_setting_802_1x_get_identity (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_identity);
-
-	/* Password */
-	tmp = nm_setting_802_1x_get_password (s_8021x);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_password);
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_auth (s_8021x), ==, "chap");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "David Smith");
+	g_assert_cmpstr (nm_setting_802_1x_get_password (s_8021x), ==, "foobar baz");
 
 	g_object_unref (connection);
 }
@@ -3688,8 +3195,6 @@ test_read_wifi_band_bg_channel_mismatch (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
 
-#define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
-
 static void
 test_read_wired_qeth_static (void)
 {
@@ -3698,14 +3203,9 @@ test_read_wired_qeth_static (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	const char *tmp;
-	const char *expected_id = "System test-wired-qeth-static";
-	const char *expected_channel0 = "0.0.0600";
-	const char *expected_channel1 = "0.0.0601";
-	const char *expected_channel2 = "0.0.0602";
 	const char * const *subchannels;
 
-	connection = _connection_from_file (TEST_IFCFG_WIRED_QETH_STATIC,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-qeth-static",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3713,11 +3213,7 @@ test_read_wired_qeth_static (void)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-qeth-static");
 
 	/* ===== WIRED SETTING ===== */
 
@@ -3731,43 +3227,23 @@ test_read_wired_qeth_static (void)
 	g_assert (subchannels);
 	g_assert (subchannels[0] && subchannels[1] && subchannels[2] && !subchannels[3]);
 
-	g_assert_cmpstr (subchannels[0], ==, expected_channel0);
-	g_assert_cmpstr (subchannels[1], ==, expected_channel1);
-	g_assert_cmpstr (subchannels[2], ==, expected_channel2);
+	g_assert_cmpstr (subchannels[0], ==, "0.0.0600");
+	g_assert_cmpstr (subchannels[1], ==, "0.0.0601");
+	g_assert_cmpstr (subchannels[2], ==, "0.0.0602");
 
-	/* Nettype */
-	tmp = nm_setting_wired_get_s390_nettype (s_wired);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "qeth");
-
-	/* port name */
-	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "portname");
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "OSAPORT");
-
-	/* port number */
-	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "portno");
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "0");
-
-	/* layer */
-	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "layer2");
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, "1");
+	g_assert_cmpstr (nm_setting_wired_get_s390_nettype (s_wired), ==, "qeth");
+	g_assert_cmpstr (nm_setting_wired_get_s390_option_by_key (s_wired, "portname"), ==, "OSAPORT");
+	g_assert_cmpstr (nm_setting_wired_get_s390_option_by_key (s_wired, "portno"), ==, "0");
+	g_assert_cmpstr (nm_setting_wired_get_s390_option_by_key (s_wired, "layer2"), ==, "1");
 
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIRED_CTC_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ctc-static"
 
 static void
 test_read_wired_ctc_static (void)
@@ -3776,20 +3252,16 @@ test_read_wired_ctc_static (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	char *unmanaged = NULL;
-	const char *tmp;
-	const char *expected_id = "System test-wired-ctc-static";
-	const char *expected_channel0 = "0.0.1b00";
-	const char *expected_channel1 = "0.0.1b01";
 	const char * const *subchannels;
 
-	connection = _connection_from_file (TEST_IFCFG_WIRED_CTC_STATIC,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ctc-static",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con != NULL);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-ctc-static");
 
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -3802,21 +3274,14 @@ test_read_wired_ctc_static (void)
 	g_assert (subchannels != NULL);
 	g_assert (subchannels[0] && subchannels[1] && !subchannels[2]);
 
-	g_assert_cmpstr (subchannels[0], ==, expected_channel0);
-	g_assert_cmpstr (subchannels[1], ==, expected_channel1);
+	g_assert_cmpstr (subchannels[0], ==, "0.0.1b00");
+	g_assert_cmpstr (subchannels[1], ==, "0.0.1b01");
 
-	/* Nettype */
 	g_assert_cmpstr (nm_setting_wired_get_s390_nettype (s_wired), ==, "ctc");
-
-	/* port name */
-	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "ctcprot");
-	g_assert (tmp != NULL);
-	g_assert_cmpstr (tmp, ==, "0");
+	g_assert_cmpstr (nm_setting_wired_get_s390_option_by_key (s_wired, "ctcprot"), ==, "0");
 
 	g_object_unref (connection);
 }
-
-#define TEST_IFCFG_WIFI_WEP_NO_KEYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-no-keys"
 
 static void
 test_read_wifi_wep_no_keys (void)
@@ -3825,22 +3290,16 @@ test_read_wifi_wep_no_keys (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *tmp;
-	const char *expected_id = "System foobar (test-wifi-wep-no-keys)";
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-no-keys",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	g_assert (tmp);
-	g_assert_cmpstr (tmp, ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System foobar (test-wifi-wep-no-keys)");
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
@@ -3873,8 +3332,6 @@ test_read_wifi_wep_no_keys (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_PERMISSIONS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-permissions"
-
 static void
 test_read_permissions (void)
 {
@@ -3884,7 +3341,7 @@ test_read_permissions (void)
 	guint32 num;
 	const char *tmp;
 
-	connection = _connection_from_file (TEST_IFCFG_PERMISSIONS,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-permissions",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -3914,8 +3371,6 @@ test_read_permissions (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WEP_AGENT_KEYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-agent-keys"
-
 static void
 test_read_wifi_wep_agent_keys (void)
 {
@@ -3925,7 +3380,7 @@ test_read_wifi_wep_agent_keys (void)
 	NMWepKeyType key_type;
 	NMSettingSecretFlags flags;
 
-	connection = _connection_from_file (TEST_IFCFG_WIFI_WEP_AGENT_KEYS,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-agent-keys",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* Ensure the connection is still marked for wifi security even though
@@ -3964,17 +3419,7 @@ test_write_wired_static (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4, *reread_s_ip4;
 	NMSettingIPConfig *s_ip6, *reread_s_ip6;
-	static const char *mac = "31:33:33:37:be:cd";
-	guint32 mtu = 1492;
 	char *uuid;
-	const char *dns1 = "4.2.2.1";
-	const char *dns2 = "4.2.2.2";
-	const char *dns_search1 = "foobar.com";
-	const char *dns_search2 = "lab.foobar.com";
-	const char *dns_search3 = "foobar6.com";
-	const char *dns_search4 = "lab6.foobar.com";
-	const char *dns6_1 = "fade:0102:0103::face";
-	const char *dns6_2 = "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed";
 	NMIPAddress *addr;
 	NMIPAddress *addr6;
 	NMIPRoute *route6;
@@ -4002,8 +3447,8 @@ test_write_wired_static (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	g_object_set (s_wired,
-	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
-	              NM_SETTING_WIRED_MTU, mtu,
+	              NM_SETTING_WIRED_MAC_ADDRESS, "31:33:33:37:be:cd",
+	              NM_SETTING_WIRED_MTU, (guint32) 1492,
 	              NULL);
 
 	/* IP4 setting */
@@ -4027,11 +3472,11 @@ test_write_wired_static (void)
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	nm_setting_ip_config_add_dns (s_ip4, dns1);
-	nm_setting_ip_config_add_dns (s_ip4, dns2);
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.1");
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.2");
 
-	nm_setting_ip_config_add_dns_search (s_ip4, dns_search1);
-	nm_setting_ip_config_add_dns_search (s_ip4, dns_search2);
+	nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com");
+	nm_setting_ip_config_add_dns_search (s_ip4, "lab.foobar.com");
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
@@ -4073,12 +3518,12 @@ test_write_wired_static (void)
 	nm_ip_route_unref (route6);
 
 	/* DNS servers */
-	nm_setting_ip_config_add_dns (s_ip6, dns6_1);
-	nm_setting_ip_config_add_dns (s_ip6, dns6_2);
+	nm_setting_ip_config_add_dns (s_ip6, "fade:0102:0103::face");
+	nm_setting_ip_config_add_dns (s_ip6, "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed");
 
 	/* DNS domains */
-	nm_setting_ip_config_add_dns_search (s_ip6, dns_search3);
-	nm_setting_ip_config_add_dns_search (s_ip6, dns_search4);
+	nm_setting_ip_config_add_dns_search (s_ip6, "foobar6.com");
+	nm_setting_ip_config_add_dns_search (s_ip6, "lab6.foobar.com");
 
 	nmtst_assert_connection_verifies (connection);
 
@@ -4266,9 +3711,7 @@ test_write_wired_static_ip6_only (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
-	const char *dns6 = "fade:0102:0103::face";
 	NMIPAddress *addr6;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -4292,7 +3735,7 @@ test_write_wired_static_ip6_only (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, "31:33:33:37:be:cd", NULL);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -4317,7 +3760,7 @@ test_write_wired_static_ip6_only (void)
 	nm_ip_address_unref (addr6);
 
 	/* DNS server */
-	nm_setting_ip_config_add_dns (s_ip6, dns6);
+	nm_setting_ip_config_add_dns (s_ip6, "fade:0102:0103::face");
 
 	nmtst_assert_connection_verifies (connection);
 
@@ -4352,9 +3795,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
-	const char *dns6 = "fade:0102:0103::face";
 	NMIPAddress *addr6;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -4383,7 +3824,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, "31:33:33:37:be:cd", NULL);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -4409,7 +3850,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	nm_ip_address_unref (addr6);
 
 	/* DNS server */
-	nm_setting_ip_config_add_dns (s_ip6, dns6);
+	nm_setting_ip_config_add_dns (s_ip6, "fade:0102:0103::face");
 
 	nmtst_assert_connection_verifies (connection);
 
@@ -4455,8 +3896,6 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-static-routes-legacy"
-
 static void
 test_read_write_static_routes_legacy (void)
 {
@@ -4469,7 +3908,7 @@ test_read_write_static_routes_legacy (void)
 	char *route6file = NULL;
 	const char *tmp;
 
-	connection = _connection_from_file (TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-static-routes-legacy",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -4493,10 +3932,7 @@ test_read_write_static_routes_legacy (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-
-	/* Method */
-	tmp = nm_setting_ip_config_get_method (s_ip4);
-	g_assert_cmpstr (tmp, ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_assert (!nm_setting_ip_config_get_never_default (s_ip4));
 
@@ -4533,13 +3969,7 @@ test_write_wired_static_routes (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	static const char *mac = "31:33:33:37:be:cd";
-	guint32 mtu = 1492;
 	char *uuid;
-	const char *dns1 = "4.2.2.1";
-	const char *dns2 = "4.2.2.2";
-	const char *dns_search1 = "foobar.com";
-	const char *dns_search2 = "lab.foobar.com";
 	NMIPAddress *addr;
 	NMIPRoute *route;
 	GError *error = NULL;
@@ -4566,8 +3996,8 @@ test_write_wired_static_routes (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	g_object_set (s_wired,
-	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
-	              NM_SETTING_WIRED_MTU, mtu,
+	              NM_SETTING_WIRED_MAC_ADDRESS, "31:33:33:37:be:cd",
+	              NM_SETTING_WIRED_MTU, (guint32) 1492,
 	              NULL);
 
 	/* IP4 setting */
@@ -4600,11 +4030,11 @@ test_write_wired_static_routes (void)
 	nm_setting_ip_config_add_route (s_ip4, route);
 	nm_ip_route_unref (route);
 
-	nm_setting_ip_config_add_dns (s_ip4, dns1);
-	nm_setting_ip_config_add_dns (s_ip4, dns2);
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.1");
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.2");
 
-	nm_setting_ip_config_add_dns_search (s_ip4, dns_search1);
-	nm_setting_ip_config_add_dns_search (s_ip4, dns_search2);
+	nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com");
+	nm_setting_ip_config_add_dns_search (s_ip4, "lab.foobar.com");
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
@@ -4727,10 +4157,6 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_WIRED_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
-#define TEST_IFCFG_WIRED_TLS_CLIENT_CERT TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
-#define TEST_IFCFG_WIRED_TLS_PRIVATE_KEY TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
-
 static void
 test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
                             NMSettingSecretFlags flags)
@@ -4798,7 +4224,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 
 	/* CA cert */
 	success = nm_setting_802_1x_set_ca_cert (s_8021x,
-	                                         TEST_IFCFG_WIRED_TLS_CA_CERT,
+	                                         TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem",
 	                                         scheme,
 	                                         &format,
 	                                         &error);
@@ -4809,7 +4235,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	/* Client cert */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	success = nm_setting_802_1x_set_client_cert (s_8021x,
-	                                             TEST_IFCFG_WIRED_TLS_CLIENT_CERT,
+	                                             TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem",
 	                                             scheme,
 	                                             &format,
 	                                             &error);
@@ -4820,7 +4246,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	/* Private key */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	success = nm_setting_802_1x_set_private_key (s_8021x,
-	                                             TEST_IFCFG_WIRED_TLS_PRIVATE_KEY,
+	                                             TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem",
 	                                             "test1",
 	                                             scheme,
 	                                             &format,
@@ -5160,9 +4586,6 @@ test_write_wifi_open (void)
 	char *testfile = NULL;
 	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
-	const char *bssid = "11:22:33:44:55:66";
-	guint32 channel = 9, mtu = 1345;
-	const char *mac = "aa:bb:cc:dd:ee:ff";
 	shvarFile *ifcfg;
 	char *tmp;
 
@@ -5189,12 +4612,12 @@ test_write_wifi_open (void)
 
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
-	              NM_SETTING_WIRELESS_BSSID, bssid,
-	              NM_SETTING_WIRELESS_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRELESS_BSSID, "11:22:33:44:55:66",
+	              NM_SETTING_WIRELESS_MAC_ADDRESS, "aa:bb:cc:dd:ee:ff",
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NM_SETTING_WIRELESS_BAND, "bg",
-	              NM_SETTING_WIRELESS_CHANNEL, channel,
-	              NM_SETTING_WIRELESS_MTU, mtu,
+	              NM_SETTING_WIRELESS_CHANNEL, (guint32) 9,
+	              NM_SETTING_WIRELESS_MTU, (guint32) 1345,
 	              NULL);
 
 	g_bytes_unref (ssid);
@@ -5432,7 +4855,6 @@ test_write_wifi_wep_adhoc (void)
 	const char *ssid_data = "blahblah";
 	struct stat statbuf;
 	NMIPAddress *addr;
-	const char *dns1 = "4.2.2.1";
 
 	connection = nm_simple_connection_new ();
 
@@ -5484,7 +4906,7 @@ test_write_wifi_wep_adhoc (void)
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	nm_setting_ip_config_add_dns (s_ip4, dns1);
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.1");
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
@@ -5903,7 +5325,7 @@ test_write_wifi_leap (void)
 }
 
 static void
-test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
+test_write_wifi_leap_secret_flags (gconstpointer data)
 {
 	NMConnection *connection;
 	NMConnection *reread;
@@ -5917,6 +5339,7 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	char *keyfile = NULL;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
+	NMSettingSecretFlags flags = GPOINTER_TO_UINT (data);
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -6127,7 +5550,6 @@ test_write_wifi_wpa_psk_adhoc (void)
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	NMIPAddress *addr;
-	const char *dns1 = "4.2.2.1";
 
 	connection = nm_simple_connection_new ();
 
@@ -6186,7 +5608,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	nm_setting_ip_config_add_dns (s_ip4, dns1);
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.1");
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
@@ -7451,7 +6873,7 @@ test_write_vpn (void)
 }
 
 static void
-test_write_mobile_broadband (gboolean gsm)
+test_write_mobile_broadband (gconstpointer data)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -7462,6 +6884,7 @@ test_write_mobile_broadband (gboolean gsm)
 	NMSettingSerial *s_serial;
 	char *uuid;
 	GError *error = NULL;
+	gboolean gsm = GPOINTER_TO_UINT (data);
 
 	connection = nm_simple_connection_new ();
 
@@ -7525,8 +6948,6 @@ test_write_mobile_broadband (gboolean gsm)
 	g_clear_error (&error);
 }
 
-#define TEST_IFCFG_BRIDGE_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-main"
-
 static void
 test_read_bridge_main (void)
 {
@@ -7535,7 +6956,8 @@ test_read_bridge_main (void)
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 
-	connection = _connection_from_file (TEST_IFCFG_BRIDGE_MAIN, NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bridge-main",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
 
@@ -7642,8 +7064,6 @@ test_write_bridge_main (void)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_BRIDGE_COMPONENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-component"
-
 static void
 test_read_bridge_component (void)
 {
@@ -7651,7 +7071,8 @@ test_read_bridge_component (void)
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
 
-	connection = _connection_from_file (TEST_IFCFG_BRIDGE_COMPONENT, NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bridge-component",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -7762,7 +7183,8 @@ test_read_vlan_interface (void)
 	NMSettingVlan *s_vlan;
 	guint32 from = 0, to = 0;
 
-	connection = _connection_from_file (TEST_IFCFG_VLAN_INTERFACE, NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan43");
 
@@ -7826,15 +7248,14 @@ test_read_vlan_only_vlan_id (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_VLAN_ONLY_DEVICE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-only-device"
-
 static void
 test_read_vlan_only_device (void)
 {
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	connection = _connection_from_file (TEST_IFCFG_VLAN_ONLY_DEVICE, NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-vlan-only-device",
+	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0.9");
 
@@ -8128,15 +7549,13 @@ test_read_ibft_ignored (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
 
-#define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"
-
 static void
 test_read_bond_main (void)
 {
 	NMConnection *connection;
 	NMSettingBond *s_bond;
 
-	connection = _connection_from_file (TEST_IFCFG_BOND_MAIN,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-main",
 	                                    NULL, TYPE_ETHERNET,NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
@@ -8229,15 +7648,13 @@ test_write_bond_main (void)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_BOND_SLAVE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-slave"
-
 static void
 test_read_bond_slave (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 
-	connection = _connection_from_file (TEST_IFCFG_BOND_SLAVE,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-slave",
 	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -8305,8 +7722,6 @@ test_write_bond_slave (void)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_INFINIBAND TEST_IFCFG_DIR"/network-scripts/ifcfg-test-infiniband"
-
 static void
 test_read_infiniband (void)
 {
@@ -8317,7 +7732,8 @@ test_read_infiniband (void)
 	char expected_mac_address[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
 	const char *transport_mode;
 
-	connection = _connection_from_file (TEST_IFCFG_INFINIBAND, NULL, TYPE_INFINIBAND, &unmanaged);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-infiniband",
+	                                    NULL, TYPE_INFINIBAND, &unmanaged);
 	g_assert (!unmanaged);
 
 	/* ===== INFINIBAND SETTING ===== */
@@ -8418,15 +7834,13 @@ test_write_infiniband (void)
 	g_object_unref (reread);
 }
 
-#define TEST_IFCFG_BOND_SLAVE_IB TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-slave-ib"
-
 static void
 test_read_bond_slave_ib (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 
-	connection = _connection_from_file (TEST_IFCFG_BOND_SLAVE_IB,
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-slave-ib",
 	                                    NULL, NULL, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -9268,11 +8682,6 @@ test_read_vlan_trailing_spaces (void)
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
 
-#define TEST_IFCFG_WIRED_IPV4_MANUAL_1 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv4-manual-1"
-#define TEST_IFCFG_WIRED_IPV4_MANUAL_2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv4-manual-2"
-#define TEST_IFCFG_WIRED_IPV4_MANUAL_3 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv4-manual-3"
-#define TEST_IFCFG_WIRED_IPV4_MANUAL_4 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv4-manual-4"
-
 #define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
 
 NMTST_DEFINE ();
@@ -9282,6 +8691,12 @@ int main (int argc, char **argv)
 	static const ReadWiredStaticItem read_wired_static[] = {
 		{ TPATH "read-static",           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           TRUE },
 		{ TPATH "read-static-bootproto", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", FALSE }
+	};
+	static const ReadWiredIpv4ManualItem read_wired_ipv4_manual[] = {
+		{ TPATH "wired/read/manual/1", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-1", "System test-wired-ipv4-manual-1" },
+		{ TPATH "wired/read/manual/2", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-2", "System test-wired-ipv4-manual-2" },
+		{ TPATH "wired/read/manual/3", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-3", "System test-wired-ipv4-manual-3" },
+		{ TPATH "wired/read/manual/4", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-4", "System test-wired-ipv4-manual-4" }
 	};
 	int i;
 
@@ -9319,52 +8734,53 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "read-defroute-no", test_read_wired_defroute_no);
 	g_test_add_func (TPATH "read-defroute-no-gatewaydev-yes", test_read_wired_defroute_no_gatewaydev_yes);
 	g_test_add_func (TPATH "routes/read-static", test_read_wired_static_routes);
-	test_read_wired_static_routes_legacy ();
-	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_1, "System test-wired-ipv4-manual-1");
-	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_2, "System test-wired-ipv4-manual-2");
-	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_3, "System test-wired-ipv4-manual-3");
-	test_read_wired_ipv4_manual (TEST_IFCFG_WIRED_IPV4_MANUAL_4, "System test-wired-ipv4-manual-4");
-	test_read_wired_ipv6_manual ();
-	test_read_wired_ipv6_only (TEST_IFCFG_WIRED_IPV6_ONLY, "System test-wired-ipv6-only");
-	test_read_wired_ipv6_only (TEST_IFCFG_WIRED_IPV6_ONLY_1, "System test-wired-ipv6-only-1");
-	test_read_wired_dhcp6_only ();
-	test_read_onboot_no ();
-	test_read_noip ();
-	test_read_wired_8021x_peap_mschapv2 ();
-	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
+	g_test_add_func (TPATH "routes/read-static-legacy", test_read_wired_static_routes_legacy);
+
+	for (i = 0; i < G_N_ELEMENTS (read_wired_ipv4_manual); i++)
+		g_test_add_data_func (read_wired_ipv4_manual[i].test_path, &read_wired_ipv4_manual[i], test_read_wired_ipv4_manual);
+
+	g_test_add_func (TPATH "wired/ipv6-manual", test_read_wired_ipv6_manual);
+	test_read_wired_ipv6_only (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv6-only", "System test-wired-ipv6-only");
+	test_read_wired_ipv6_only (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv6-only-1", "System test-wired-ipv6-only-1");
+	g_test_add_func (TPATH "wired/dhcpv6-only", test_read_wired_dhcp6_only);
+	g_test_add_func (TPATH "wired/onboot/no", test_read_onboot_no);
+	g_test_add_func (TPATH "wired/no-ip", test_read_noip);
+	g_test_add_func (TPATH "802-1x/peap/mschapv2", test_read_wired_8021x_peap_mschapv2);
+	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-8021x-tls-agent",
+	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-8021x-tls-always",
 	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
-	test_read_wired_aliases_good ();
-	test_read_wired_aliases_bad_1 ();
-	test_read_wired_aliases_bad_2 ();
-	test_read_wifi_open ();
-	test_read_wifi_open_auto ();
-	test_read_wifi_open_ssid_hex ();
-	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX, "wifi-open-ssid-bad-hex-read");
-	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX, "wifi-open-ssid-long-hex-read");
-	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED, "wifi-open-ssid-long-quoted-read");
-	test_read_wifi_open_ssid_quoted ();
-	test_read_wifi_wep ();
-	test_read_wifi_wep_adhoc ();
-	test_read_wifi_wep_passphrase ();
-	test_read_wifi_wep_40_ascii ();
-	test_read_wifi_wep_104_ascii ();
-	test_read_wifi_leap ();
-	test_read_wifi_leap_secret_flags (TEST_IFCFG_WIFI_LEAP_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-	test_read_wifi_leap_secret_flags (TEST_IFCFG_WIFI_LEAP_ALWAYS,
+	g_test_add_func (TPATH "wired/read/aliases", test_read_wired_aliases_good);
+	g_test_add_func (TPATH "wired/read/aliases/bad1", test_read_wired_aliases_bad_1);
+	g_test_add_func (TPATH "wired/read/aliases/bad2", test_read_wired_aliases_bad_2);
+	g_test_add_func (TPATH "wifi/read/open", test_read_wifi_open);
+	g_test_add_func (TPATH "wifi/read/open/auto", test_read_wifi_open_auto);
+	g_test_add_func (TPATH "wifi/read/open/hex-ssid", test_read_wifi_open_ssid_hex);
+	g_test_add_data_func (TPATH "wifi/read/open-ssid/bad-hex", TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX, test_read_wifi_open_ssid_bad);
+	g_test_add_data_func (TPATH "wifi/read/open-ssid/long-hex", TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX, test_read_wifi_open_ssid_bad);
+	g_test_add_data_func (TPATH "wifi/read/open-ssid/long-quoted", TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED, test_read_wifi_open_ssid_bad);
+	g_test_add_func (TPATH "wifi/read/open/quoted-ssid", test_read_wifi_open_ssid_quoted);
+	g_test_add_func (TPATH "wifi/read/wep", test_read_wifi_wep);
+	g_test_add_func (TPATH "wifi/read/wep/adhoc", test_read_wifi_wep_adhoc);
+	g_test_add_func (TPATH "wifi/read/wep/passphrase", test_read_wifi_wep_passphrase);
+	g_test_add_func (TPATH "wifi/read/wep/40-ascii", test_read_wifi_wep_40_ascii);
+	g_test_add_func (TPATH "wifi/read/wep/104-ascii", test_read_wifi_wep_104_ascii);
+	g_test_add_func (TPATH "wifi/read/leap", test_read_wifi_leap);
+	test_read_wifi_leap_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-agent", NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	test_read_wifi_leap_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-always-ask",
 	                                  NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
-	test_read_wifi_wpa_psk ();
-	test_read_wifi_wpa_psk_2 ();
-	test_read_wifi_wpa_psk_unquoted ();
-	test_read_wifi_wpa_psk_unquoted2 ();
-	test_read_wifi_wpa_psk_adhoc ();
-	test_read_wifi_wpa_psk_hex ();
-	test_read_wifi_dynamic_wep_leap ();
-	test_read_wifi_wpa_eap_tls ();
-	test_read_wifi_wpa_eap_ttls_tls ();
-	test_read_wifi_wep_eap_ttls_chap ();
+	g_test_add_func (TPATH "wifi/read/wpa-psk", test_read_wifi_wpa_psk);
+	g_test_add_func (TPATH "wifi/read/wpa-psk/2", test_read_wifi_wpa_psk_2);
+	g_test_add_func (TPATH "wifi/read/wpa-psk/unquoted", test_read_wifi_wpa_psk_unquoted);
+	g_test_add_func (TPATH "wifi/read/wpa-psk/unquoted2", test_read_wifi_wpa_psk_unquoted2);
+	g_test_add_func (TPATH "wifi/read/wpa-psk/adhoc", test_read_wifi_wpa_psk_adhoc);
+	g_test_add_func (TPATH "wifi/read/wpa-psk/hex", test_read_wifi_wpa_psk_hex);
+	g_test_add_func (TPATH "wifi/read/dynamic-wep/leap", test_read_wifi_dynamic_wep_leap);
+	g_test_add_func (TPATH "wifi/read/wpa/eap/tls", test_read_wifi_wpa_eap_tls);
+	g_test_add_func (TPATH "wifi/read/wpa/eap/ttls/tls", test_read_wifi_wpa_eap_ttls_tls);
+	g_test_add_func (TPATH "wifi/read/dynamic-wep/eap/ttls/chap", test_read_wifi_wep_eap_ttls_chap);
 	g_test_add_func (TPATH "wifi/read-band-a", test_read_wifi_band_a);
 	g_test_add_func (TPATH "wifi/read-band-a-channel-mismatch", test_read_wifi_band_a_channel_mismatch);
 	g_test_add_func (TPATH "wifi/read-band-bg-channel-mismatch", test_read_wifi_band_bg_channel_mismatch);
@@ -9397,46 +8813,49 @@ int main (int argc, char **argv)
 		}
 	}
 
-	test_read_wired_qeth_static ();
-	test_read_wired_ctc_static ();
-	test_read_wifi_wep_no_keys ();
-	test_read_permissions ();
-	test_read_wifi_wep_agent_keys ();
-	test_read_infiniband ();
-	test_read_vlan_interface ();
+	g_test_add_func (TPATH "wifi/read/wep-no-keys", test_read_wifi_wep_no_keys);
+	g_test_add_func (TPATH "wifi/read/wep-agent-keys", test_read_wifi_wep_agent_keys);
+	g_test_add_func (TPATH "infiniband/read", test_read_infiniband);
+	g_test_add_func (TPATH "vlan/read", test_read_vlan_interface);
 	g_test_add_func (TPATH "vlan/read-flags-1", test_read_vlan_flags_1);
 	g_test_add_func (TPATH "vlan/read-flags-2", test_read_vlan_flags_2);
-	test_read_vlan_only_vlan_id ();
-	test_read_vlan_only_device ();
-	g_test_add_func (TPATH "vlan/physdev", test_read_vlan_physdev);
-	g_test_add_func (TPATH "vlan/reorder-hdr-1", test_read_vlan_reorder_hdr_1);
-	g_test_add_func (TPATH "wired/read-wake-on-lan", test_read_wired_wake_on_lan);
+	g_test_add_func (TPATH "vlan/read/only-vlanid", test_read_vlan_only_vlan_id);
+	g_test_add_func (TPATH "vlan/read/only-device", test_read_vlan_only_device);
+	g_test_add_func (TPATH "vlan/read/physdev", test_read_vlan_physdev);
+	g_test_add_func (TPATH "vlan/read/reorder-hdr-1", test_read_vlan_reorder_hdr_1);
+	g_test_add_func (TPATH "wired/read/read-wake-on-lan", test_read_wired_wake_on_lan);
 
-	test_write_wired_static ();
-	test_write_wired_static_ip6_only ();
-	test_write_wired_static_routes ();
-	test_read_write_static_routes_legacy ();
-	test_write_wired_dhcp ();
+	g_test_add_func (TPATH "wired/write/static", test_write_wired_static);
+	g_test_add_func (TPATH "wired/write/static-ip6-only", test_write_wired_static_ip6_only);
+	g_test_add_func (TPATH "wired/write-static-routes", test_write_wired_static_routes);
+	g_test_add_func (TPATH "wired/read-write-static-routes-legacy", test_read_write_static_routes_legacy);
+	g_test_add_func (TPATH "wired/write/dhcp", test_write_wired_dhcp);
 	g_test_add_func (TPATH "wired/write-dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
-	test_write_wired_dhcp_8021x_peap_mschapv2 ();
+	g_test_add_func (TPATH "wired/write/dhcp-8021x-peap-mschapv2", test_write_wired_dhcp_8021x_peap_mschapv2);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
-	test_write_wired_aliases ();
+	g_test_add_func (TPATH "wired/write-aliases", test_write_wired_aliases);
 	g_test_add_func (TPATH "ipv4/write-static-addresses-GATEWAY", test_write_gateway);
 	g_test_add_func (TPATH "wired/write-wake-on-lan", test_write_wired_wake_on_lan);
-	test_write_wifi_open ();
-	test_write_wifi_open_hex_ssid ();
-	test_write_wifi_wep ();
-	test_write_wifi_wep_adhoc ();
-	test_write_wifi_wep_passphrase ();
-	test_write_wifi_wep_40_ascii ();
-	test_write_wifi_wep_104_ascii ();
-	test_write_wifi_leap ();
-	test_write_wifi_leap_secret_flags (NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-	test_write_wifi_leap_secret_flags (NM_SETTING_SECRET_FLAG_NOT_SAVED);
-	test_write_wifi_leap_secret_flags (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	g_test_add_func (TPATH "wifi/write/open", test_write_wifi_open);
+	g_test_add_func (TPATH "wifi/write/open/hex-ssid", test_write_wifi_open_hex_ssid);
+	g_test_add_func (TPATH "wifi/write/wep", test_write_wifi_wep);
+	g_test_add_func (TPATH "wifi/write/wep/adhoc", test_write_wifi_wep_adhoc);
+	g_test_add_func (TPATH "wifi/write/wep/passphrase", test_write_wifi_wep_passphrase);
+	g_test_add_func (TPATH "wifi/write/wep/40-ascii", test_write_wifi_wep_40_ascii);
+	g_test_add_func (TPATH "wifi/write/wep/104-ascii", test_write_wifi_wep_104_ascii);
+	g_test_add_func (TPATH "wifi/write/leap", test_write_wifi_leap);
+	g_test_add_data_func (TPATH "wifi/write/leap/flags/agent",
+	                      GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED),
+	                      test_write_wifi_leap_secret_flags);
+	g_test_add_data_func (TPATH "wifi/write/leap/flags/not-saved",
+	                      GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_NOT_SAVED),
+	                      test_write_wifi_leap_secret_flags);
+	g_test_add_data_func (TPATH "wifi/write/leap/flags/agent-and-not-saved",
+	                      GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED),
+	                      test_write_wifi_leap_secret_flags);
 	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
 	                         "wifi-wpa-psk-write",
 	                         FALSE,
@@ -9473,25 +8892,31 @@ int main (int argc, char **argv)
 	                         TRUE,
 	                         TRUE,
 	                         "blah`oops\"grr'$*@~!%\\");
-	test_write_wifi_wpa_psk_adhoc ();
-	test_write_wifi_wpa_eap_tls ();
-	test_write_wifi_wpa_eap_ttls_tls ();
-	test_write_wifi_wpa_eap_ttls_mschapv2 ();
-	test_write_wifi_dynamic_wep_leap ();
-	test_write_wifi_wpa_then_open ();
-	test_write_wifi_wpa_then_wep_with_perms ();
+
+	g_test_add_func (TPATH "wifi/write/wpa/psk/adhoc", test_write_wifi_wpa_psk_adhoc);
+	g_test_add_func (TPATH "wifi/write/wpa/eap/tls", test_write_wifi_wpa_eap_tls);
+	g_test_add_func (TPATH "wifi/write/wpa/eap/ttls/tls", test_write_wifi_wpa_eap_ttls_tls);
+	g_test_add_func (TPATH "wifi/write/wpa/eap/ttls/mschapv2", test_write_wifi_wpa_eap_ttls_mschapv2);
+	g_test_add_func (TPATH "wifi/write/dynamic-wep/leap", test_write_wifi_dynamic_wep_leap);
+	g_test_add_func (TPATH "wifi/write-wpa-then-open", test_write_wifi_wpa_then_open);
+	g_test_add_func (TPATH "wifi/write-wpa-then-wep-with-perms", test_write_wifi_wpa_then_wep_with_perms);
 	g_test_add_func (TPATH "wifi/write-hidden", test_write_wifi_hidden);
 	g_test_add_func (TPATH "wifi/write-band-a", test_write_wifi_band_a);
-	test_write_wired_qeth_dhcp ();
-	test_write_wired_ctc_dhcp ();
-	test_write_permissions ();
-	test_write_wifi_wep_agent_keys ();
-	test_write_infiniband ();
-	test_write_vlan ();
+
+	g_test_add_func (TPATH "s390/read-qeth-static", test_read_wired_qeth_static);
+	g_test_add_func (TPATH "s390/write-qeth-dhcp", test_write_wired_qeth_dhcp);
+	g_test_add_func (TPATH "s390/read-ctc-static", test_read_wired_ctc_static);
+	g_test_add_func (TPATH "s390/write-ctc-dhcp", test_write_wired_ctc_dhcp);
+
+	g_test_add_func (TPATH "permissions/read", test_read_permissions);
+	g_test_add_func (TPATH "permissions/write", test_write_permissions);
+	g_test_add_func (TPATH "wifi/write-wep-agent-keys", test_write_wifi_wep_agent_keys);
+	g_test_add_func (TPATH "infiniband/write", test_write_infiniband);
+	g_test_add_func (TPATH "vlan/write", test_write_vlan);
 	g_test_add_func (TPATH "vlan/write-flags", test_write_vlan_flags);
-	test_write_vlan_only_vlanid ();
+	g_test_add_func (TPATH "vlan/write-only-vlanid", test_write_vlan_only_vlanid);
 	g_test_add_func (TPATH "vlan/write-vlan-reorder-hdr", test_write_vlan_reorder_hdr);
-	test_write_ethernet_missing_ipv6 ();
+	g_test_add_func (TPATH "wired/write-missing-ipv6", test_write_ethernet_missing_ipv6);
 	g_test_add_func (TPATH "write-dns-options", test_write_dns_options);
 
 	/* iSCSI / ibft */
@@ -9514,20 +8939,20 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "fcoe/write-vn2vn", (gpointer) NM_SETTING_DCB_FCOE_MODE_VN2VN, test_write_fcoe_mode);
 
 	/* bonding */
-	test_read_bond_main ();
-	test_read_bond_slave ();
-	test_read_bond_slave_ib ();
-	test_write_bond_main ();
-	test_write_bond_slave ();
-	test_write_bond_slave_ib ();
+	g_test_add_func (TPATH "bond/read-master", test_read_bond_main);
+	g_test_add_func (TPATH "bond/read-slave", test_read_bond_slave);
+	g_test_add_func (TPATH "bond/read-slave-ib", test_read_bond_slave_ib);
+	g_test_add_func (TPATH "bond/write-master", test_write_bond_main);
+	g_test_add_func (TPATH "bond/write-slave", test_write_bond_slave);
+	g_test_add_func (TPATH "bond/write-slave-ib", test_write_bond_slave_ib);
 	g_test_add_func (TPATH "bond/bonding-opts-numeric-mode", test_read_bond_opts_mode_numeric);
 
 	/* bridging */
-	test_read_bridge_main ();
-	test_write_bridge_main ();
-	test_read_bridge_component ();
-	test_write_bridge_component ();
-	test_read_bridge_missing_stp ();
+	g_test_add_func (TPATH "bridge/read-master", test_read_bridge_main);
+	g_test_add_func (TPATH "bridge/write-master", test_write_bridge_main);
+	g_test_add_func (TPATH "bridge/read-component", test_read_bridge_component);
+	g_test_add_func (TPATH "bridge/write-component", test_write_bridge_component);
+	g_test_add_func (TPATH "bridge/read-missing-stp", test_read_bridge_missing_stp);
 
 	/* Team */
 	g_test_add_func (TPATH "team/read-master", test_read_team_master);
@@ -9537,10 +8962,10 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
 
 	/* Stuff we expect to fail for now */
-	test_write_wired_pppoe ();
-	test_write_vpn ();
-	test_write_mobile_broadband (TRUE);
-	test_write_mobile_broadband (FALSE);
+	g_test_add_func (TPATH "pppoe/write-wired", test_write_wired_pppoe);
+	g_test_add_func (TPATH "vpn/write", test_write_vpn);
+	g_test_add_data_func (TPATH "wwan/write-gsm", GUINT_TO_POINTER (TRUE), test_write_mobile_broadband);
+	g_test_add_data_func (TPATH "wwan/write-cdma", GUINT_TO_POINTER (FALSE), test_write_mobile_broadband);
 
 	return g_test_run ();
 }
