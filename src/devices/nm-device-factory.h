@@ -103,8 +103,8 @@ typedef struct {
 	/**
 	 * get_connection_iface:
 	 * @factory: the #NMDeviceFactory
-	 * @connection: the #NMConnection to return the virtual interface name for
-	 * @parent_iface: parent interface name
+	 * @connection: the #NMConnection to return the interface name for
+	 * @parent_iface: optional parent interface name for virtual devices
 	 *
 	 * Given a connection, returns the interface name that a device activating
 	 * that connection would have.
