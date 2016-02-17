@@ -101,7 +101,7 @@ typedef struct {
 	                                       NMConnection *connection);
 
 	/**
-	 * get_virtual_iface_name:
+	 * get_connection_iface:
 	 * @factory: the #NMDeviceFactory
 	 * @connection: the #NMConnection to return the virtual interface name for
 	 * @parent_iface: parent interface name
@@ -111,9 +111,9 @@ typedef struct {
 	 *
 	 * Returns: the interface name, or %NULL
 	 */
-	char * (*get_virtual_iface_name) (NMDeviceFactory *factory,
-	                                  NMConnection *connection,
-	                                  const char *parent_iface);
+	char * (*get_connection_iface) (NMDeviceFactory *factory,
+	                                NMConnection *connection,
+	                                const char *parent_iface);
 
 	/**
 	 * create_device:
@@ -175,10 +175,10 @@ void       nm_device_factory_get_supported_types (NMDeviceFactory *factory,
 const char *nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
                                                      NMConnection *connection);
 
-char *     nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
-                                                     NMConnection *connection,
-                                                     const char *parent_iface,
-                                                     GError **error);
+char *     nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
+                                                   NMConnection *connection,
+                                                   const char *parent_iface,
+                                                   GError **error);
 
 void       nm_device_factory_start       (NMDeviceFactory *factory);
 

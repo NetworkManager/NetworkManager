@@ -158,9 +158,9 @@ nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
 }
 
 static char *
-get_virtual_iface_name (NMDeviceFactory *factory,
-                        NMConnection *connection,
-                        const char *parent_iface)
+get_connection_iface (NMDeviceFactory *factory,
+                      NMConnection *connection,
+                      const char *parent_iface)
 {
 	const char *iface;
 
@@ -173,10 +173,10 @@ get_virtual_iface_name (NMDeviceFactory *factory,
 }
 
 char *
-nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
-                                          NMConnection *connection,
-                                          const char *parent_iface,
-                                          GError **error)
+nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
+                                        NMConnection *connection,
+                                        const char *parent_iface,
+                                        GError **error)
 {
 	char *ifname;
 
@@ -193,7 +193,7 @@ nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 		return NULL;
 	}
 
-	if (!NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name) {
+	if (!NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_iface) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
@@ -202,7 +202,7 @@ nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 		return NULL;
 	}
 
-	ifname = NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name (factory, connection, parent_iface);
+	ifname = NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_iface (factory, connection, parent_iface);
 	if (!ifname) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
@@ -230,7 +230,7 @@ nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 static void
 nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
 {
-	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
+	factory_iface->get_connection_iface = get_connection_iface;
 
 	/* Signals */
 	signals[DEVICE_ADDED] = g_signal_new (NM_DEVICE_FACTORY_DEVICE_ADDED,

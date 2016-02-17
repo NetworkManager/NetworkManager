@@ -985,10 +985,10 @@ get_virtual_iface_name (NMManager *self,
 	}
 
 	parent = find_parent_device_for_connection (self, connection);
-	iface = nm_device_factory_get_virtual_iface_name (factory,
-	                                                  connection,
-	                                                  parent ? nm_device_get_ip_iface (parent) : NULL,
-	                                                  error);
+	iface = nm_device_factory_get_connection_iface (factory,
+	                                                connection,
+	                                                parent ? nm_device_get_ip_iface (parent) : NULL,
+	                                                error);
 	if (!iface)
 		return NULL;
 
