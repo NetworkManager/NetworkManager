@@ -229,7 +229,7 @@ const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
-#define NM_UTILS_ENUM2STR(v, n)     (void) 0; case v: s = ""n""; (void) 0
+#define NM_UTILS_ENUM2STR(v, n)     (void) 0; case v: s = ""n""; break; (void) 0
 #define NM_UTILS_ENUM2STR_IGNORE(v) (void) 0; case v: break; (void) 0
 
 #define _NM_UTILS_ENUM2STR_DEFINE(scope, fcn_name, lookup_type, int_fmt, ...) \
