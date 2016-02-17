@@ -2134,7 +2134,8 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 gboolean
 nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMPlatformTunProperties *props)
 {
-	char *path, *val;
+	char path[256];
+	char *val;
 	gboolean success = TRUE;
 
 	_CHECK_SELF (self, klass, FALSE);
@@ -2147,11 +2148,9 @@ nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname
 
 	if (!ifname || !nm_utils_iface_valid_name (ifname))
 		return FALSE;
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
 
-	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
+	nm_sprintf_buf (path, "/sys/class/net/%s/owner", ifname);
 	val = nm_platform_sysctl_get (self, path);
-	g_free (path);
 	if (val) {
 		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
 		if (errno)
@@ -2160,9 +2159,8 @@ nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname
 	} else
 		success = FALSE;
 
-	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
+	nm_sprintf_buf (path, "/sys/class/net/%s/group", ifname);
 	val = nm_platform_sysctl_get (self, path);
-	g_free (path);
 	if (val) {
 		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
 		if (errno)
@@ -2171,9 +2169,8 @@ nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname
 	} else
 		success = FALSE;
 
-	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
+	nm_sprintf_buf (path, "/sys/class/net/%s/tun_flags", ifname);
 	val = nm_platform_sysctl_get (self, path);
-	g_free (path);
 	if (val) {
 		gint64 flags;
 
