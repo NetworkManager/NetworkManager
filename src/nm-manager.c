@@ -2564,21 +2564,6 @@ ensure_master_active_connection (NMManager *self,
 			return master_ac;
 		}
 
-		/* Device described by master_connection may be a virtual one that's
-		 * not created yet.
-		 */
-		if (!found_device && nm_connection_is_virtual (NM_CONNECTION (master_connection))) {
-			master_ac = nm_manager_activate_connection (self,
-			                                            master_connection,
-			                                            NULL,
-			                                            NULL,
-			                                            subject,
-			                                            error);
-			if (!master_ac)
-				g_prefix_error (error, "%s", "Master device activation failed: ");
-			return master_ac;
-		}
-
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
