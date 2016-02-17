@@ -896,7 +896,7 @@ nm_manager_get_state (NMManager *manager)
 /***************************/
 
 static NMDevice *
-find_parent_device_for_connection (NMManager *self, NMConnection *connection)
+find_parent_device_for_connection (NMManager *self, NMConnection *connection, NMDeviceFactory *cached_factory)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
@@ -907,9 +907,12 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	factory = nm_device_factory_manager_find_factory_for_connection (connection);
-	if (!factory)
-		return NULL;
+	if (!cached_factory) {
+		factory = nm_device_factory_manager_find_factory_for_connection (connection);
+		if (!factory)
+			return NULL;
+	} else
+		factory = cached_factory;
 
 	parent_name = nm_device_factory_get_connection_parent (factory, connection);
 	if (!parent_name)
@@ -984,7 +987,7 @@ nm_manager_get_connection_iface (NMManager *self,
 		return NULL;
 	}
 
-	parent = find_parent_device_for_connection (self, connection);
+	parent = find_parent_device_for_connection (self, connection, factory);
 	iface = nm_device_factory_get_connection_iface (factory,
 	                                                connection,
 	                                                parent ? nm_device_get_ip_iface (parent) : NULL,
@@ -1119,7 +1122,7 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 		NMConnection *candidate = iter->data;
 		NMDevice *parent;
 
-		parent = find_parent_device_for_connection (self, candidate);
+		parent = find_parent_device_for_connection (self, candidate, NULL);
 		if (parent == device)
 			connection_changed (priv->settings, candidate, self);
 	}
@@ -2770,7 +2773,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	if (!nm_device_is_real (device)) {
 		NMDevice *parent;
 
-		parent = find_parent_device_for_connection (self, (NMConnection *) connection);
+		parent = find_parent_device_for_connection (self, (NMConnection *) connection, NULL);
 		if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, error)) {
 			g_prefix_error (error, "%s failed to create resources: ", nm_device_get_iface (device));
 			return FALSE;
