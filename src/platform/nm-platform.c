@@ -3413,6 +3413,7 @@ NM_UTILS_ENUM2STR_DEFINE (nm_platform_link_inet6_addrgenmode2str, guint8,
 	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_NONE, "none"),
 	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_EUI64, "eui64"),
 	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY, "stable-privacy"),
+	NM_UTILS_ENUM2STR (NM_IN6_ADDR_GEN_MODE_RANDOM, "random"),
 );
 
 NM_UTILS_FLAGS2STR_DEFINE (nm_platform_addr_flags2str, unsigned,
