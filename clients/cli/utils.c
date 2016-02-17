@@ -362,8 +362,13 @@ use_colors (NmCli *nmc)
 	if (nmc == NULL)
 		return FALSE;
 
-	if (nmc->use_colors == NMC_USE_COLOR_AUTO)
-		nmc->use_colors = isatty (fileno (stdout)) ? NMC_USE_COLOR_YES : NMC_USE_COLOR_NO;
+	if (nmc->use_colors == NMC_USE_COLOR_AUTO) {
+		if (   g_strcmp0 (g_getenv ("TERM"), "dumb") == 0
+		    || !isatty (fileno (stdout)))
+			nmc->use_colors = NMC_USE_COLOR_NO;
+		else
+			nmc->use_colors = NMC_USE_COLOR_YES;
+	}
 
 	return nmc->use_colors == NMC_USE_COLOR_YES;
 }
