@@ -157,57 +157,31 @@ nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
 	return NULL;
 }
 
-static char *
-get_virtual_iface_name (NMDeviceFactory *factory,
-                        NMConnection *connection,
-                        const char *parent_iface)
-{
-	const char *iface;
-
-	/* For any other virtual connection, NMSettingConnection:interface-name is
-	 * the virtual device name.
-	 */
-	iface = nm_connection_get_interface_name (connection);
-	g_return_val_if_fail (iface != NULL, NULL);
-	return g_strdup (iface);
-}
-
 char *
-nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
-                                          NMConnection *connection,
-                                          const char *parent_iface,
-                                          GError **error)
+nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
+                                        NMConnection *connection,
+                                        const char *parent_iface,
+                                        GError **error)
 {
+	NMDeviceFactoryInterface *klass;
 	char *ifname;
 
 	g_return_val_if_fail (factory != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	if (!nm_connection_is_virtual (connection)) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "failed to determine virtual interface name: connection type '%s' is not a software device",
-		             nm_connection_get_connection_type (connection));
-		return NULL;
-	}
+	klass = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
 
-	if (!NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "failed to determine virtual interface name: cannot generate name for %s",
-		             nm_connection_get_connection_type (connection));
-		return NULL;
-	}
+	if (klass->get_connection_iface)
+		ifname = klass->get_connection_iface (factory, connection, parent_iface);
+	else
+		ifname = g_strdup (nm_connection_get_interface_name (connection));
 
-	ifname = NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_virtual_iface_name (factory, connection, parent_iface);
 	if (!ifname) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "failed to determine virtual interface name: error generating name for %s",
+		             "failed to determine interface name: error determine name for %s",
 		             nm_connection_get_connection_type (connection));
 		return NULL;
 	}
@@ -216,7 +190,7 @@ nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
-		             "failed to determine virtual interface name: invalid name \"%s\" generated",
+		             "failed to determine interface name: name \"%s\" is invalid",
 		             ifname);
 		g_free (ifname);
 		return NULL;
@@ -230,8 +204,6 @@ nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 static void
 nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
 {
-	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
-
 	/* Signals */
 	signals[DEVICE_ADDED] = g_signal_new (NM_DEVICE_FACTORY_DEVICE_ADDED,
 	                                      NM_TYPE_DEVICE_FACTORY,

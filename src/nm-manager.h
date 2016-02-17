@@ -101,6 +101,11 @@ const GSList *      nm_manager_get_devices             (NMManager *manager);
 NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);
 
+char *              nm_manager_get_connection_iface (NMManager *self,
+                                                     NMConnection *connection,
+                                                     NMDevice **out_parent,
+                                                     GError **error);
+
 NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
                                                         NMSettingsConnection *connection,
                                                         const char *specific_object,
@@ -112,5 +117,6 @@ gboolean            nm_manager_deactivate_connection   (NMManager *manager,
                                                         const char *connection_path,
                                                         NMDeviceStateReason reason,
                                                         GError **error);
+
 
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

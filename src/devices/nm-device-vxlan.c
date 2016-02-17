@@ -296,7 +296,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (device);
 	NMSettingVxlan *s_vxlan;
-	const char *iface, *parent;
+	const char *parent;
 
 	if (!NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -304,12 +304,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	s_vxlan = nm_connection_get_setting_vxlan (connection);
 	if (!s_vxlan)
 		return FALSE;
-
-	iface = nm_connection_get_interface_name (connection);
-	if (iface) {
-		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0)
-			return FALSE;
-	}
 
 	if (nm_device_is_real (device)) {
 		parent = nm_setting_vxlan_get_parent (s_vxlan);
@@ -810,9 +804,9 @@ get_connection_parent (NMDeviceFactory *factory, NMConnection *connection)
 }
 
 static char *
-get_virtual_iface_name (NMDeviceFactory *factory,
-                        NMConnection *connection,
-                        const char *parent_iface)
+get_connection_iface (NMDeviceFactory *factory,
+                      NMConnection *connection,
+                      const char *parent_iface)
 {
 	const char *ifname;
 	NMSettingVxlan *s_vxlan;
@@ -834,6 +828,6 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL (VXLAN, Vxlan, vxlan,
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_VXLAN_SETTING_NAME),
 	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
-	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
+	factory_iface->get_connection_iface = get_connection_iface;
 	)
 

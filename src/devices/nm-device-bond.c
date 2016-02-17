@@ -75,7 +75,6 @@ check_connection_available (NMDevice *device,
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
-	const char *iface;
 	NMSettingBond *s_bond;
 
 	if (!NM_DEVICE_CLASS (nm_device_bond_parent_class)->check_connection_compatible (device, connection))
@@ -83,11 +82,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	s_bond = nm_connection_get_setting_bond (connection);
 	if (!s_bond || !nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
-		return FALSE;
-
-	/* Bond connections must specify the virtual interface name */
-	iface = nm_connection_get_interface_name (connection);
-	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
 
 	/* FIXME: match bond properties like mode, etc? */

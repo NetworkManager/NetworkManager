@@ -73,7 +73,6 @@ check_connection_available (NMDevice *device,
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
-	const char *iface;
 	NMSettingBridge *s_bridge;
 	const char *mac_address;
 
@@ -82,11 +81,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	if (!s_bridge || !nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
-		return FALSE;
-
-	/* Bridge connections must specify the virtual interface name */
-	iface = nm_connection_get_interface_name (connection);
-	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
 
 	mac_address = nm_setting_bridge_get_mac_address (s_bridge);

@@ -2958,15 +2958,18 @@ nm_device_complete_connection (NMDevice *self,
 static gboolean
 check_connection_compatible (NMDevice *self, NMConnection *connection)
 {
-	NMSettingConnection *s_con;
-	const char *config_iface, *device_iface;
+	const char *device_iface = nm_device_get_iface (self);
+	gs_free char *conn_iface = nm_manager_get_connection_iface (nm_manager_get (),
+	                                                            connection,
+	                                                            NULL, NULL);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	/* We always need a interface name for virtual devices, but for
+	 * physical ones a connection without interface name is fine for
+	 * any device. */
+	if (!conn_iface)
+		return !nm_connection_is_virtual (connection);
 
-	config_iface = nm_setting_connection_get_interface_name (s_con);
-	device_iface = nm_device_get_iface (self);
-	if (config_iface && strcmp (config_iface, device_iface) != 0)
+	if (strcmp (conn_iface, device_iface) != 0)
 		return FALSE;
 
 	return TRUE;

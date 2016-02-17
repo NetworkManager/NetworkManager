@@ -376,7 +376,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	NMSettingMacvlan *s_macvlan;
-	const char *parent, *iface = NULL;
+	const char *parent = NULL;
 
 	if (!NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -407,13 +407,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 			if (!match_hwaddr (device, connection, TRUE))
 				return FALSE;
 		}
-	}
-
-	/* Ensure the interface name matches */
-	iface = nm_connection_get_interface_name (connection);
-	if (iface) {
-		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0)
-			return FALSE;
 	}
 
 	return TRUE;
@@ -744,9 +737,9 @@ get_connection_parent (NMDeviceFactory *factory, NMConnection *connection)
 }
 
 static char *
-get_virtual_iface_name (NMDeviceFactory *factory,
-                        NMConnection *connection,
-                        const char *parent_iface)
+get_connection_iface (NMDeviceFactory *factory,
+                      NMConnection *connection,
+                      const char *parent_iface)
 {
 	NMSettingMacvlan *s_macvlan;
 	const char *ifname;
@@ -768,6 +761,6 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL (MACVLAN, Macvlan, macvlan,
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_MACVLAN_SETTING_NAME),
 	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
-	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
+	factory_iface->get_connection_iface = get_connection_iface;
 	)
 
