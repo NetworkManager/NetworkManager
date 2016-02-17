@@ -157,37 +157,26 @@ nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
 	return NULL;
 }
 
-static char *
-get_connection_iface (NMDeviceFactory *factory,
-                      NMConnection *connection,
-                      const char *parent_iface)
-{
-	/* Default to just using NMSettingConnection:interface-name  */
-	return g_strdup (nm_connection_get_interface_name (connection));
-}
-
 char *
 nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
                                         NMConnection *connection,
                                         const char *parent_iface,
                                         GError **error)
 {
+	NMDeviceFactoryInterface *klass;
 	char *ifname;
 
 	g_return_val_if_fail (factory != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	if (!NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_iface) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "failed to determine interface name: cannot determine name for %s",
-		             nm_connection_get_connection_type (connection));
-		return NULL;
-	}
+	klass = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
 
-	ifname = NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_iface (factory, connection, parent_iface);
+	if (klass->get_connection_iface)
+		ifname = klass->get_connection_iface (factory, connection, parent_iface);
+	else
+		ifname = g_strdup (nm_connection_get_interface_name (connection));
+
 	if (!ifname) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
@@ -215,8 +204,6 @@ nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
 static void
 nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
 {
-	factory_iface->get_connection_iface = get_connection_iface;
-
 	/* Signals */
 	signals[DEVICE_ADDED] = g_signal_new (NM_DEVICE_FACTORY_DEVICE_ADDED,
 	                                      NM_TYPE_DEVICE_FACTORY,
