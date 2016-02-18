@@ -1505,9 +1505,26 @@ device_link_changed (NMDevice *self)
 	if (   priv->ifindex > 0
 	    && info.initialized
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+		NMDeviceStateReason reason;
+
 		nm_device_set_unmanaged_by_user_udev (self);
 
-		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+		/* If the devices that need an external IFF_UP go managed below,
+		 * it means they're already up. In that case we should use an "assumed"
+		 * reason to prevent the cleanup sequence from being run on transition
+		 * from "unmanaged" to "unavailable". */
+		if (   priv->up
+		    && !nm_device_get_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN)
+		    && NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
+			/* Ensure the assume check is queued before any queued state changes
+			 * from the transition to UNAVAILABLE.
+			 */
+			nm_device_queue_recheck_assume (self);
+			reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+		} else
+			reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
+
+		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
 	}
 
 	if (   priv->ifindex > 0
