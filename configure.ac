@@ -595,7 +595,11 @@ AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss|gnutls], [Cryptography lib
 with_nss=no
 with_gnutls=no
 if test x"$ac_crypto" = xnss; then
-  PKG_CHECK_MODULES(NSS, [nss >= 3.11])
+  PKG_CHECK_MODULES(NSS, [nss >= 3.11], [have_nss=yes], [have_nss=no])
+  if test "$have_nss" != yes; then
+    # workaround on Debian, where the NSS module bumped the epoch
+    PKG_CHECK_MODULES(NSS, [nss >= 2:3.11])
+  fi
 
   # Work around a pkg-config bug (fdo #29801) where exists != usable
   FOO=`$PKG_CONFIG --cflags --libs nss`
