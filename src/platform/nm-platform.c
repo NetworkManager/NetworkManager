@@ -42,6 +42,12 @@
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 
+/*****************************************************************************/
+
+const NMIPAddr nm_ip_addr_zero = NMIPAddrInit;
+
+/*****************************************************************************/
+
 #define ADDRESS_LIFETIME_PADDING 5
 
 G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);

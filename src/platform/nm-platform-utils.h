@@ -69,4 +69,6 @@ gboolean nmp_utils_lifetime_get (guint32 timestamp,
 
 gboolean nmp_utils_device_exists (const char *name);
 
+gboolean nmp_utils_ip4_address_is_link_local (in_addr_t addr);
+
 #endif /* __NM_PLATFORM_UTILS_H__ */

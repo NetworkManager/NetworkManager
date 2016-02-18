@@ -415,6 +415,15 @@ out:
  * utils
  ******************************************************************/
 
+#define IPV4LL_NETWORK (htonl (0xA9FE0000L))
+#define IPV4LL_NETMASK (htonl (0xFFFF0000L))
+
+gboolean
+nmp_utils_ip4_address_is_link_local (in_addr_t addr)
+{
+	return (addr & IPV4LL_NETMASK) == IPV4LL_NETWORK;
+}
+
 /**
  * Takes a pair @timestamp and @duration, and returns the remaining duration based
  * on the new timestamp @now.
