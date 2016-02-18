@@ -127,9 +127,32 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"
 
-static gboolean
-set_system_hostname (const char *new_hostname, const char *msg)
+static void settings_set_hostname_cb (const char *hostname,
+                                      gboolean result,
+                                      gpointer user_data)
 {
+	int ret = 0;
+
+	if (!result) {
+		ret = sethostname (hostname, strlen (hostname));
+		if (ret != 0) {
+			int errsv = errno;
+
+			_LOGW (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
+			       hostname, errsv, strerror (errsv));
+			if (errsv == EPERM)
+				_LOGW (LOGD_DNS, "you should use hostnamed when systemd hardening is in effect!");
+		}
+	}
+
+	if (!ret)
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+static void
+set_system_hostname (NMPolicy *self, const char *new_hostname, const char *msg)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	char old_hostname[HOST_NAME_MAX + 1];
 	const char *name;
 	int ret;
@@ -147,23 +170,15 @@ set_system_hostname (const char *new_hostname, const char *msg)
 		/* Don't set the hostname if it isn't actually changing */
 		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
 		       || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
-			return FALSE;
+			return;
 	}
 
 	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
-
 	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
-	ret = sethostname (name, strlen (name));
-	if (ret != 0) {
-		int errsv = errno;
-
-		_LOGW (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
-		       name, errsv, strerror (errsv));
-		if (errsv == EPERM)
-			_LOGW (LOGD_DNS, "you should use hostnamed when systemd hardening is in effect!");
-	}
-
-	return (ret == 0);
+	nm_settings_set_transient_hostname (priv->settings,
+	                                    name,
+	                                    settings_set_hostname_cb,
+	                                    NULL);
 }
 
 static void
@@ -205,8 +220,7 @@ _set_hostname (NMPolicy *policy,
 
 	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
 
-	if (set_system_hostname (priv->cur_hostname, msg))
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
+	set_system_hostname (policy, priv->cur_hostname, msg);
 }
 
 static void
