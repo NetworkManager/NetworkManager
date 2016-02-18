@@ -58,12 +58,6 @@
 
 #include "nm-test-utils.h"
 
-typedef struct {
-	const char *name;
-	const NMSettingMacRandomization value;
-	const char *write_expected;
-} WifiMacRandomData;
-
 /*****************************************************************************/
 
 static NMConnection *
@@ -457,17 +451,9 @@ test_read_unrecognized (void)
 	g_object_unref (connection);
 }
 
-typedef struct {
-	const char *test_path;
-	const char *file;
-	const char *expected_id;
-	gboolean expect_ip6;
-} ReadWiredStaticItem;
-
 static void
 test_read_wired_static (gconstpointer test_data)
 {
-	const ReadWiredStaticItem *item = test_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
@@ -478,15 +464,21 @@ test_read_wired_static (gconstpointer test_data)
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	NMIPAddress *ip4_addr;
 	NMIPAddress *ip6_addr;
+	const char *file, *expected_id;
+	gpointer expect_ip6_p;
 
-	connection = _connection_from_file (item->file, NULL, TYPE_ETHERNET,
+	nmtst_test_data_unpack (test_data, &file, &expected_id, &expect_ip6_p);
+
+	g_assert (expected_id);
+
+	connection = _connection_from_file (file, NULL, TYPE_ETHERNET,
 	                                    &unmanaged);
 	g_assert_cmpstr (unmanaged, ==, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, item->expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -527,7 +519,7 @@ test_read_wired_static (gconstpointer test_data)
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	if (item->expect_ip6) {
+	if (GPOINTER_TO_INT (expect_ip6_p)) {
 		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 		g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
@@ -1055,12 +1047,6 @@ test_read_wired_static_routes_legacy (void)
 	g_object_unref (connection);
 }
 
-typedef struct {
-	const char *test_path;
-	const char *file;
-	const char *expected_id;
-} ReadWiredIpv4ManualItem;
-
 static void
 test_read_wired_ipv4_manual (gconstpointer data)
 {
@@ -1070,11 +1056,13 @@ test_read_wired_ipv4_manual (gconstpointer data)
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	NMIPAddress *ip4_addr;
-	const ReadWiredIpv4ManualItem *info = data;
+	const char *file, *expected_id;
 
-	g_assert (info->expected_id);
+	nmtst_test_data_unpack (data, &file, &expected_id);
 
-	connection = _connection_from_file (info->file,
+	g_assert (expected_id);
+
+	connection = _connection_from_file (file,
 	                                    NULL,
 	                                    TYPE_ETHERNET,
 	                                    &unmanaged);
@@ -1084,7 +1072,7 @@ test_read_wired_ipv4_manual (gconstpointer data)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, info->expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 
 	/* ===== WIRED SETTING ===== */
 
@@ -1223,7 +1211,7 @@ test_read_wired_ipv6_manual (void)
 }
 
 static void
-test_read_wired_ipv6_only (const char *file, const char *expected_id)
+test_read_wired_ipv6_only (gconstpointer test_data)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -1233,6 +1221,9 @@ test_read_wired_ipv6_only (const char *file, const char *expected_id)
 	char *unmanaged = NULL;
 	NMIPAddress *ip6_addr;
 	const char *method;
+	const char *file, *expected_id;
+
+	nmtst_test_data_unpack (test_data, &file, &expected_id);
 
 	g_assert (expected_id);
 
@@ -1436,12 +1427,16 @@ test_read_wired_8021x_peap_mschapv2 (void)
 }
 
 static void
-test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags expected_flags)
+test_read_wired_8021x_tls_secret_flags (gconstpointer test_data)
 {
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
 	char *dirname, *tmp;
+	const char *ifcfg;
+	gpointer expected_flags_p;
+
+	nmtst_test_data_unpack (test_data, &ifcfg, &expected_flags_p);
 
 	connection = _connection_from_file (ifcfg, NULL, TYPE_ETHERNET, NULL);
 
@@ -1455,7 +1450,7 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "tls");
 	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "David Smith");
-	g_assert_cmpint (nm_setting_802_1x_get_private_key_password_flags (s_8021x), ==, expected_flags);
+	g_assert_cmpint (nm_setting_802_1x_get_private_key_password_flags (s_8021x), ==, GPOINTER_TO_INT (expected_flags_p));
 
 	dirname = g_path_get_dirname (ifcfg);
 	tmp = g_build_path ("/", dirname, "test_ca_cert.pem", NULL);
@@ -2275,11 +2270,15 @@ test_read_wifi_leap (void)
 }
 
 static void
-test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expected_flags)
+test_read_wifi_leap_secret_flags (gconstpointer test_data)
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
+	const char *file;
+	gpointer expected_flags_p;
+
+	nmtst_test_data_unpack (test_data, &file, &expected_flags_p);
 
 	connection = _connection_from_file (file, NULL, TYPE_WIRELESS, NULL);
 
@@ -2295,7 +2294,7 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	g_assert (g_strcmp0 (nm_setting_wireless_security_get_auth_alg (s_wsec), "leap") == 0);
 	g_assert (g_strcmp0 (nm_setting_wireless_security_get_leap_username (s_wsec), "Bill Smith") == 0);
 	/* password blank as it's not system-owned */
-	g_assert (nm_setting_wireless_security_get_leap_password_flags (s_wsec) == expected_flags);
+	g_assert (nm_setting_wireless_security_get_leap_password_flags (s_wsec) == GPOINTER_TO_INT (expected_flags_p));
 	g_assert (nm_setting_wireless_security_get_leap_password (s_wsec) == NULL);
 
 	g_object_unref (connection);
@@ -2938,18 +2937,23 @@ test_write_wifi_hidden (void)
 static void
 test_read_wifi_mac_random (gconstpointer user_data)
 {
-	const WifiMacRandomData *test_data = user_data;
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	char *path;
+	const char *name;
+	gpointer value_p;
+	NMSettingMacRandomization value;
 
-	path = g_strdup_printf (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-mac-random-%s", test_data->name);
+	nmtst_test_data_unpack (user_data, &name, &value_p);
+	value = GPOINTER_TO_INT (value_p);
+
+	path = g_strdup_printf (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-mac-random-%s", name);
 	connection = _connection_from_file (path, NULL, TYPE_WIRELESS, NULL);
 	g_free (path);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
-	g_assert_cmpint (nm_setting_wireless_get_mac_address_randomization (s_wifi), ==, test_data->value);
+	g_assert_cmpint (nm_setting_wireless_get_mac_address_randomization (s_wifi), ==, value);
 
 	g_object_unref (connection);
 }
@@ -2957,7 +2961,6 @@ test_read_wifi_mac_random (gconstpointer user_data)
 static void
 test_write_wifi_mac_random (gconstpointer user_data)
 {
-	const WifiMacRandomData *test_data = user_data;
 	NMConnection *connection, *reread;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -2966,6 +2969,14 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	shvarFile *f;
 	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+	const char *name, *write_expected;
+	gpointer value_p;
+	NMSettingMacRandomization value;
+
+	nmtst_test_data_unpack (user_data, &name, &value_p, &write_expected);
+	value = GPOINTER_TO_INT (value_p);
+
+	g_assert (write_expected);
 
 	connection = nm_simple_connection_new ();
 
@@ -2974,7 +2985,7 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
-	val = g_strdup_printf ("Test Write WiFi MAC %s", test_data->name);
+	val = g_strdup_printf ("Test Write WiFi MAC %s", name);
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, val,
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -2991,7 +3002,7 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION, test_data->value,
+	              NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION, value,
 	              NULL);
 	g_bytes_unref (ssid);
 
@@ -3007,7 +3018,7 @@ test_write_wifi_mac_random (gconstpointer user_data)
 
 	/* re-read the file to check that what key was written. */
 	val = svGetValue (f, "MAC_ADDRESS_RANDOMIZATION", FALSE);
-	g_assert_cmpstr (val, ==, test_data->write_expected);
+	g_assert_cmpstr (val, ==, write_expected);
 	g_free (val);
 	svCloseFile (f);
 
@@ -4158,8 +4169,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 }
 
 static void
-test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
-                            NMSettingSecretFlags flags)
+test_write_wired_8021x_tls (gconstpointer test_data)
 {
 	NMConnection *connection;
 	NMConnection *reread;
@@ -4176,6 +4186,13 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	const char *pw;
 	char *tmp;
+	gpointer scheme_p, flags_p;
+	NMSetting8021xCKScheme scheme;
+	NMSettingSecretFlags flags;
+
+	nmtst_test_data_unpack (test_data, &scheme_p, &flags_p);
+	scheme = GPOINTER_TO_INT (scheme_p);
+	flags = GPOINTER_TO_INT (flags_p);
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection != NULL);
@@ -5424,12 +5441,7 @@ test_write_wifi_leap_secret_flags (gconstpointer data)
 }
 
 static void
-test_write_wifi_wpa_psk (const char *name,
-                         const char *test_name,
-                         gboolean wep_group,
-                         gboolean wpa,
-                         gboolean wpa2,
-                         const char *psk)
+test_write_wifi_wpa_psk (gconstpointer test_data)
 {
 	NMConnection *connection;
 	NMConnection *reread;
@@ -5443,8 +5455,14 @@ test_write_wifi_wpa_psk (const char *name,
 	char *keyfile = NULL;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
+	struct {
+		const char *name, *psk;
+		gpointer wep_group_p, wpa_p, wpa2_p;
+	} args;
 
-	g_return_if_fail (psk != NULL);
+	nmtst_test_data_unpack (test_data, &args.name, &args.wep_group_p, &args.wpa_p, &args.wpa2_p, &args.psk);
+
+	g_assert (args.psk);
 
 	connection = nm_simple_connection_new ();
 
@@ -5454,7 +5472,7 @@ test_write_wifi_wpa_psk (const char *name,
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, name,
+	              NM_SETTING_CONNECTION_ID, args.name,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
@@ -5480,19 +5498,19 @@ test_write_wifi_wpa_psk (const char *name,
 
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
-	              NM_SETTING_WIRELESS_SECURITY_PSK, psk,
+	              NM_SETTING_WIRELESS_SECURITY_PSK, args.psk,
 	              NULL);
 
-	if (wep_group) {
+	if (GPOINTER_TO_INT (args.wep_group_p)) {
 		nm_setting_wireless_security_add_group (s_wsec, "wep40");
 		nm_setting_wireless_security_add_group (s_wsec, "wep104");
 	}
-	if (wpa) {
+	if (GPOINTER_TO_INT (args.wpa_p)) {
 		nm_setting_wireless_security_add_proto (s_wsec, "wpa");
 		nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
 		nm_setting_wireless_security_add_group (s_wsec, "tkip");
 	}
-	if (wpa2) {
+	if (GPOINTER_TO_INT (args.wpa2_p)) {
 		nm_setting_wireless_security_add_proto (s_wsec, "rsn");
 		nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
 		nm_setting_wireless_security_add_group (s_wsec, "ccmp");
@@ -8688,18 +8706,6 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	static const ReadWiredStaticItem read_wired_static[] = {
-		{ TPATH "read-static",           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           TRUE },
-		{ TPATH "read-static-bootproto", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", FALSE }
-	};
-	static const ReadWiredIpv4ManualItem read_wired_ipv4_manual[] = {
-		{ TPATH "wired/read/manual/1", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-1", "System test-wired-ipv4-manual-1" },
-		{ TPATH "wired/read/manual/2", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-2", "System test-wired-ipv4-manual-2" },
-		{ TPATH "wired/read/manual/3", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-3", "System test-wired-ipv4-manual-3" },
-		{ TPATH "wired/read/manual/4", TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-4", "System test-wired-ipv4-manual-4" }
-	};
-	int i;
-
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
@@ -8720,8 +8726,8 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
 	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
 
-	for (i = 0; i < G_N_ELEMENTS (read_wired_static); i++)
-		g_test_add_data_func (read_wired_static[i].test_path, &read_wired_static[i], test_read_wired_static);
+	nmtst_add_test_func (TPATH "read-static",           test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           GINT_TO_POINTER (TRUE));
+	nmtst_add_test_func (TPATH "read-static-bootproto", test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", GINT_TO_POINTER (FALSE));
 
 	g_test_add_func (TPATH "read-dhcp", test_read_wired_dhcp);
 	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
@@ -8736,20 +8742,24 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "routes/read-static", test_read_wired_static_routes);
 	g_test_add_func (TPATH "routes/read-static-legacy", test_read_wired_static_routes_legacy);
 
-	for (i = 0; i < G_N_ELEMENTS (read_wired_ipv4_manual); i++)
-		g_test_add_data_func (read_wired_ipv4_manual[i].test_path, &read_wired_ipv4_manual[i], test_read_wired_ipv4_manual);
+	nmtst_add_test_func (TPATH "wired/read/manual/1", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-1", "System test-wired-ipv4-manual-1");
+	nmtst_add_test_func (TPATH "wired/read/manual/2", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-2", "System test-wired-ipv4-manual-2");
+	nmtst_add_test_func (TPATH "wired/read/manual/3", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-3", "System test-wired-ipv4-manual-3");
+	nmtst_add_test_func (TPATH "wired/read/manual/4", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-4", "System test-wired-ipv4-manual-4");
 
 	g_test_add_func (TPATH "wired/ipv6-manual", test_read_wired_ipv6_manual);
-	test_read_wired_ipv6_only (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv6-only", "System test-wired-ipv6-only");
-	test_read_wired_ipv6_only (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv6-only-1", "System test-wired-ipv6-only-1");
+
+	nmtst_add_test_func (TPATH "wired-ipv6-only/0", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only",   "System test-wired-ipv6-only");
+	nmtst_add_test_func (TPATH "wired-ipv6-only/1", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only-1", "System test-wired-ipv6-only-1");
+
 	g_test_add_func (TPATH "wired/dhcpv6-only", test_read_wired_dhcp6_only);
 	g_test_add_func (TPATH "wired/onboot/no", test_read_onboot_no);
 	g_test_add_func (TPATH "wired/no-ip", test_read_noip);
 	g_test_add_func (TPATH "802-1x/peap/mschapv2", test_read_wired_8021x_peap_mschapv2);
-	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-8021x-tls-agent",
-	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-8021x-tls-always",
-	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+
+	nmtst_add_test_func (TPATH "test-wired-8021x-tls/agent",  test_read_wired_8021x_tls_secret_flags, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-agent", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+	nmtst_add_test_func (TPATH "test-wired-8021x-tls/always", test_read_wired_8021x_tls_secret_flags, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-always", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED));
+
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
 	g_test_add_func (TPATH "wired/read/aliases", test_read_wired_aliases_good);
@@ -8768,9 +8778,10 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/read/wep/40-ascii", test_read_wifi_wep_40_ascii);
 	g_test_add_func (TPATH "wifi/read/wep/104-ascii", test_read_wifi_wep_104_ascii);
 	g_test_add_func (TPATH "wifi/read/leap", test_read_wifi_leap);
-	test_read_wifi_leap_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-agent", NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-	test_read_wifi_leap_secret_flags (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-always-ask",
-	                                  NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+
+	nmtst_add_test_func (TPATH "wifi-leap-secret-flags/agent", test_read_wifi_leap_secret_flags, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-agent",      GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+	nmtst_add_test_func (TPATH "wifi-leap-secret-flags/ask",   test_read_wifi_leap_secret_flags, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-always-ask", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED));
+
 	g_test_add_func (TPATH "wifi/read/wpa-psk", test_read_wifi_wpa_psk);
 	g_test_add_func (TPATH "wifi/read/wpa-psk/2", test_read_wifi_wpa_psk_2);
 	g_test_add_func (TPATH "wifi/read/wpa-psk/unquoted", test_read_wifi_wpa_psk_unquoted);
@@ -8786,32 +8797,15 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/read-band-bg-channel-mismatch", test_read_wifi_band_bg_channel_mismatch);
 	g_test_add_func (TPATH "wifi/read-hidden", test_read_wifi_hidden);
 
-	{
-		static const WifiMacRandomData test_wifi_mac_random[] = {
-			{ "always",  NM_SETTING_MAC_RANDOMIZATION_ALWAYS,  "always" },
-			{ "never",   NM_SETTING_MAC_RANDOMIZATION_NEVER,   "never" },
-			{ "default", NM_SETTING_MAC_RANDOMIZATION_DEFAULT, "default" },
-			{ "missing", NM_SETTING_MAC_RANDOMIZATION_NEVER,   "never" },
-		};
+	nmtst_add_test_func (TPATH "wifi/read-mac-random-always",   test_read_wifi_mac_random,  "always",  GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_ALWAYS));
+	nmtst_add_test_func (TPATH "wifi/read-mac-random-never",    test_read_wifi_mac_random,  "never",   GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER));
+	nmtst_add_test_func (TPATH "wifi/read-mac-random-default",  test_read_wifi_mac_random,  "default", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
+	nmtst_add_test_func (TPATH "wifi/read-mac-random-missing",  test_read_wifi_mac_random,  "missing", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER));
 
-		for (i = 0; i < G_N_ELEMENTS (test_wifi_mac_random); i++) {
-			char *tpath;
-
-			tpath = g_strdup_printf (TPATH "wifi/read-mac-random-%s", test_wifi_mac_random[i].name);
-			g_test_add_data_func_full (tpath,
-			                           g_memdup (&test_wifi_mac_random[i], sizeof (test_wifi_mac_random[i])),
-			                           test_read_wifi_mac_random,
-			                           g_free);
-			g_free (tpath);
-
-			tpath = g_strdup_printf (TPATH "wifi/write-mac-random-%s", test_wifi_mac_random[i].name);
-			g_test_add_data_func_full (tpath,
-			                           g_memdup (&test_wifi_mac_random[i], sizeof (test_wifi_mac_random[i])),
-			                           test_write_wifi_mac_random,
-			                           g_free);
-			g_free (tpath);
-		}
-	}
+	nmtst_add_test_func (TPATH "wifi/write-mac-random-always",  test_write_wifi_mac_random, "always",  GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_ALWAYS),  "always");
+	nmtst_add_test_func (TPATH "wifi/write-mac-random-never",   test_write_wifi_mac_random, "never",   GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER),   "never");
+	nmtst_add_test_func (TPATH "wifi/write-mac-random-default", test_write_wifi_mac_random, "default", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_DEFAULT), "default");
+	nmtst_add_test_func (TPATH "wifi/write-mac-random-missing", test_write_wifi_mac_random, "missing", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER),   "never");
 
 	g_test_add_func (TPATH "wifi/read/wep-no-keys", test_read_wifi_wep_no_keys);
 	g_test_add_func (TPATH "wifi/read/wep-agent-keys", test_read_wifi_wep_agent_keys);
@@ -8832,10 +8826,14 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/write/dhcp", test_write_wired_dhcp);
 	g_test_add_func (TPATH "wired/write-dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
 	g_test_add_func (TPATH "wired/write/dhcp-8021x-peap-mschapv2", test_write_wired_dhcp_8021x_peap_mschapv2);
-	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);
-	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
-	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
+
+#define _add_test_write_wired_8021x_tls(testpath, scheme, flags) \
+	nmtst_add_test_func (testpath, test_write_wired_8021x_tls, GINT_TO_POINTER (scheme), GINT_TO_POINTER (flags))
+	_add_test_write_wired_8021x_tls (TPATH "wired-8021x-tls/1", NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	_add_test_write_wired_8021x_tls (TPATH "wired-8021x-tls/2", NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	_add_test_write_wired_8021x_tls (TPATH "wired-8021x-tls/3", NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	_add_test_write_wired_8021x_tls (TPATH "wired-8021x-tls/4", NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
+
 	g_test_add_func (TPATH "wired/write-aliases", test_write_wired_aliases);
 	g_test_add_func (TPATH "ipv4/write-static-addresses-GATEWAY", test_write_gateway);
 	g_test_add_func (TPATH "wired/write-wake-on-lan", test_write_wired_wake_on_lan);
@@ -8856,42 +8854,15 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "wifi/write/leap/flags/agent-and-not-saved",
 	                      GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED),
 	                      test_write_wifi_leap_secret_flags);
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
-	                         "wifi-wpa-psk-write",
-	                         FALSE,
-	                         TRUE,
-	                         FALSE,
-	                         DEFAULT_HEX_PSK);
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA2 PSK",
-	                         "wifi-wpa2-psk-write",
-	                         FALSE,
-	                         FALSE,
-	                         TRUE,
-	                         DEFAULT_HEX_PSK);
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK",
-	                         "wifi-wpa-wpa2-psk-write",
-	                         FALSE,
-	                         TRUE,
-	                         TRUE,
-	                         DEFAULT_HEX_PSK);
-	test_write_wifi_wpa_psk ("Test Write Wifi WEP WPA WPA2 PSK",
-	                         "wifi-wep-wpa-wpa2-psk-write",
-	                         TRUE,
-	                         TRUE,
-	                         TRUE,
-	                         DEFAULT_HEX_PSK);
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK Passphrase",
-	                         "wifi-wpa-wpa2-psk-passphrase-write",
-	                         FALSE,
-	                         TRUE,
-	                         TRUE,
-	                         "really insecure passphrase04!");
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK Passphrase Special Chars",
-	                         "wifi-wpa-wpa2-psk-passphrase-write-spec-chars",
-	                         FALSE,
-	                         TRUE,
-	                         TRUE,
-	                         "blah`oops\"grr'$*@~!%\\");
+
+#define _add_test_write_wifi_wpa_psk(testpath, name, wep_group, wpa, wpa2, psk) \
+	nmtst_add_test_func (testpath, test_write_wifi_wpa_psk, name, GPOINTER_TO_INT (wep_group), GPOINTER_TO_INT (wpa), GPOINTER_TO_INT (wpa2), psk)
+	_add_test_write_wifi_wpa_psk (TPATH "wifi-wpa-psk/wpa-psk-write",                            "Test Write Wifi WPA PSK",                               FALSE, TRUE,  FALSE, DEFAULT_HEX_PSK);
+	_add_test_write_wifi_wpa_psk (TPATH "wifi-wpa-psk/wpa2-psk-write",                           "Test Write Wifi WPA2 PSK",                              FALSE, FALSE, TRUE,  DEFAULT_HEX_PSK);
+	_add_test_write_wifi_wpa_psk (TPATH "wifi-wpa-psk/wpa-wpa2-psk-write",                       "Test Write Wifi WPA WPA2 PSK",                          FALSE, TRUE,  TRUE,  DEFAULT_HEX_PSK);
+	_add_test_write_wifi_wpa_psk (TPATH "wifi-wpa-psk/wep-wpa-wpa2-psk-write",                   "Test Write Wifi WEP WPA WPA2 PSK",                      TRUE,  TRUE,  TRUE,  DEFAULT_HEX_PSK);
+	_add_test_write_wifi_wpa_psk (TPATH "wifi-wpa-psk/wpa-wpa2-psk-passphrase-write",            "Test Write Wifi WPA WPA2 PSK Passphrase",               FALSE, TRUE,  TRUE,  "really insecure passphrase04!");
+	_add_test_write_wifi_wpa_psk (TPATH "wifi-wpa-psk/wpa-wpa2-psk-passphrase-write-spec-chars", "Test Write Wifi WPA WPA2 PSK Passphrase Special Chars", FALSE, TRUE,  TRUE,  "blah`oops\"grr'$*@~!%\\");
 
 	g_test_add_func (TPATH "wifi/write/wpa/psk/adhoc", test_write_wifi_wpa_psk_adhoc);
 	g_test_add_func (TPATH "wifi/write/wpa/eap/tls", test_write_wifi_wpa_eap_tls);
