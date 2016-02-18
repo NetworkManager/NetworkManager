@@ -29,6 +29,7 @@
 
 #include "nm-utils.h"
 #include "nm-platform.h"
+#include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
@@ -182,6 +183,73 @@ routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, 
 	return a->network == b->network && a->plen == b->plen &&
 	       (!consider_gateway_and_metric || (a->gateway == b->gateway && a->metric == b->metric));
 }
+
+/*****************************************************************************/
+
+static gint
+_addresses_sort_cmp_get_prio (in_addr_t addr)
+{
+	if (nmp_utils_ip4_address_is_link_local (addr))
+		return 0;
+	return 1;
+}
+
+static gint
+_addresses_sort_cmp (gconstpointer a, gconstpointer b)
+{
+	gint p1, p2, c;
+	const NMPlatformIP4Address *a1 = a, *a2 = b;
+
+	/* Sort by address type. For example link local will
+	 * be sorted *after* a global address. */
+	p1 = _addresses_sort_cmp_get_prio (a1->address);
+	p2 = _addresses_sort_cmp_get_prio (a2->address);
+	if (p1 != p2)
+		return p1 > p2 ? -1 : 1;
+
+	/* Sort the addresses based on their source. */
+	if (a1->source != a2->source)
+		return a1->source > a2->source ? -1 : 1;
+
+	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
+		return (a1->label[0] == '\0') ? -1 : 1;
+
+	/* finally sort addresses lexically */
+	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
+	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
+}
+
+gboolean
+nm_ip4_config_addresses_sort (NMIP4Config *self)
+{
+	NMIP4ConfigPrivate *priv;
+	size_t data_len = 0;
+	char *data_pre = NULL;
+	gboolean changed;
+
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (self), FALSE);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	if (priv->addresses->len > 1) {
+		data_len = priv->addresses->len * g_array_get_element_size (priv->addresses);
+		data_pre = g_new (char, data_len);
+		memcpy (data_pre, priv->addresses->data, data_len);
+
+		g_array_sort (priv->addresses, _addresses_sort_cmp);
+
+		changed = memcmp (data_pre, priv->addresses->data, data_len) != 0;
+		g_free (data_pre);
+
+		if (changed) {
+			_notify (self, PROP_ADDRESS_DATA);
+			_notify (self, PROP_ADDRESSES);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/*****************************************************************************/
 
 NMIP4Config *
 nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
