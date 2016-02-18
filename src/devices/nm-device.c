@@ -1185,8 +1185,6 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 	 * when slaves change.
 	 */
 	nm_device_update_hw_address (self);
-
-	g_warn_if_fail (NM_FLAGS_HAS (slave_priv->unmanaged_mask, NM_UNMANAGED_IS_SLAVE));
 	nm_device_set_unmanaged_by_flags (slave, NM_UNMANAGED_IS_SLAVE, NM_UNMAN_FLAG_OP_FORGET, NM_DEVICE_STATE_REASON_REMOVED);
 }
 
