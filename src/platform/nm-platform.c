@@ -41,6 +41,7 @@
 #include "nm-enum-types.h"
 #include "nm-platform-utils.h"
 #include "nmp-object.h"
+#include "nmp-netns.h"
 
 /*****************************************************************************/
 
@@ -89,6 +90,7 @@ static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 
 enum {
 	PROP_0,
+	PROP_NETNS_SUPPORT,
 	PROP_REGISTER_SINGLETON,
 	LAST_PROP,
 };
@@ -2128,6 +2130,10 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 
 	/* Pre-4.1 kernel did not expose the peer_ifindex as IFA_LINK. Lookup via ethtool. */
 	if (out_peer_ifindex) {
+		nm_auto_pop_netns NMPNetns *netns = NULL;
+
+		if (!nm_platform_netns_push (self, &netns))
+			return FALSE;
 		peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (plink->name);
 		if (peer_ifindex <= 0)
 			return FALSE;
@@ -2393,7 +2399,11 @@ _to_string_ifa_flags (guint32 ifa_flags, char *buf, gsize size)
 gboolean
 nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	_CHECK_SELF (self, klass, FALSE);
+
+	if (!nm_platform_netns_push (self, &netns))
+		return FALSE;
 
 	return nmp_utils_ethtool_set_wake_on_lan (ifname, wol, wol_password);
 }
@@ -2401,7 +2411,11 @@ nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSet
 gboolean
 nm_platform_ethtool_get_link_speed (NMPlatform *self, const char *ifname, guint32 *out_speed)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	_CHECK_SELF (self, klass, FALSE);
+
+	if (!nm_platform_netns_push (self, &netns))
+		return FALSE;
 
 	return nmp_utils_ethtool_get_link_speed (ifname, out_speed);
 }
@@ -4018,6 +4032,31 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 
 /******************************************************************/
 
+NMPNetns *
+nm_platform_netns_get (NMPlatform *self)
+{
+	_CHECK_SELF (self, klass, NULL);
+
+	return self->_netns;
+}
+
+gboolean
+nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns)
+{
+	g_return_val_if_fail (NM_IS_PLATFORM (platform), FALSE);
+
+	if (   platform->_netns
+	    && !nmp_netns_push (platform->_netns)) {
+		NM_SET_OUT (netns, NULL);
+		return FALSE;
+	}
+
+	NM_SET_OUT (netns, platform->_netns);
+	return TRUE;
+}
+
+/******************************************************************/
+
 static gboolean
 _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
 {
@@ -4117,9 +4156,20 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (object);
+	NMPlatform *self = NM_PLATFORM (object);
+	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_NETNS_SUPPORT:
+		/* construct-only */
+		if (g_value_get_boolean (value)) {
+			NMPNetns *netns;
+
+			netns = nmp_netns_get_current ();
+			if (netns)
+				self->_netns = g_object_ref (netns);
+		}
+		break;
 	case PROP_REGISTER_SINGLETON:
 		/* construct-only */
 		priv->register_singleton = g_value_get_boolean (value);
@@ -4148,6 +4198,14 @@ nm_platform_init (NMPlatform *object)
 }
 
 static void
+finalize (GObject *object)
+{
+	NMPlatform *self = NM_PLATFORM (object);
+
+	g_clear_object (&self->_netns);
+}
+
+static void
 nm_platform_class_init (NMPlatformClass *platform_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (platform_class);
@@ -4156,8 +4214,17 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
+	object_class->finalize = finalize;
 
 	platform_class->wifi_set_powersave = wifi_set_powersave;
+
+	g_object_class_install_property
+	 (object_class, PROP_NETNS_SUPPORT,
+	     g_param_spec_boolean (NM_PLATFORM_NETNS_SUPPORT, "", "",
+	                           FALSE,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	 (object_class, PROP_REGISTER_SINGLETON,
