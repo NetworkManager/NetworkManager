@@ -271,13 +271,16 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
-#define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
+#define NM_GOBJECT_PROPERTIES_DEFINE_BASE(...) \
 typedef enum { \
 	_PROPERTY_ENUMS_0, \
 	__VA_ARGS__ \
 	_PROPERTY_ENUMS_LAST, \
 } _PropertyEnums; \
-static GParamSpec *obj_properties[_PROPERTY_ENUMS_LAST] = { NULL, }; \
+static GParamSpec *obj_properties[_PROPERTY_ENUMS_LAST] = { NULL, }
+
+#define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (__VA_ARGS__); \
 static inline void \
 _notify (obj_type *obj, _PropertyEnums prop) \
 { \
