@@ -19,9 +19,8 @@
  * Copyright 2007 - 2008 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-vpn-plugin-old.h"
 
 #include <errno.h>

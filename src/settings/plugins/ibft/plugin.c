@@ -18,7 +18,7 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -26,9 +26,8 @@
 
 #include <gmodule.h>
 
-#include <nm-setting-connection.h>
+#include "nm-setting-connection.h"
 
-#include "nm-default.h"
 #include "nm-settings-plugin.h"
 #include "NetworkManagerUtils.h"
 

@@ -19,12 +19,11 @@
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdio.h>
 
-#include "nm-default.h"
 #include "nm-config.h"
 #include "nm-utils.h"
 #include "nm-device.h"

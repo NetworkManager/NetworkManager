@@ -18,7 +18,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "nm-default.h"
 #include "nm-client.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"

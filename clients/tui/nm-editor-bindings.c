@@ -25,7 +25,7 @@
  * shared between nmtui, nm-connection-editor, and gnome-control-center.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

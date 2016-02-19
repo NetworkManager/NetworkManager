@@ -18,11 +18,10 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "NetworkManager.h"
 #include "nm-dbus-compat.h"
 

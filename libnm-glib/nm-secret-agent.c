@@ -18,12 +18,11 @@
  * Copyright 2010 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "nm-default.h"
 #include "NetworkManager.h"
 #include "nm-secret-agent.h"
 #include "nm-glib-enum-types.h"

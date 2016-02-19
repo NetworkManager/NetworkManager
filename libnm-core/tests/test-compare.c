@@ -19,12 +19,11 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#include "nm-default.h"
 #include "nm-property-compare.h"
 
 #include "nm-test-utils.h"

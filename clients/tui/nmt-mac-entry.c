@@ -26,11 +26,11 @@
  * on whether it currently contains a valid hardware address.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmt-mac-entry.h"
 

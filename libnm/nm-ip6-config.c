@@ -18,7 +18,7 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-ip6-config.h"
 #include "nm-object-private.h"

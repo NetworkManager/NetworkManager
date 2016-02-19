@@ -18,18 +18,16 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
+#include "nm-dbus-interface.h"
+#include "nm-connection.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-connection.h"
 
-#include <nm-dbus-interface.h>
-#include <nm-connection.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-connection.h>
-
-#include "nm-default.h"
 #include "nm-dispatcher-api.h"
 #include "nm-utils.h"
 

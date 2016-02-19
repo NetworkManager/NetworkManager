@@ -19,21 +19,20 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <glib/gstdio.h>
-#include <nm-dbus-interface.h>
-#include <nm-setting-connection.h>
-#include <nm-utils.h>
 
-#include "nm-default.h"
+#include "nm-dbus-interface.h"
+#include "nm-setting-connection.h"
+#include "nm-utils.h"
+
 #include "nm-settings-plugin.h"
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
-#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 

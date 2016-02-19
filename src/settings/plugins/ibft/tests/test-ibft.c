@@ -18,7 +18,7 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -33,7 +33,6 @@
 #include "NetworkManagerUtils.h"
 
 #include "reader.h"
-#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

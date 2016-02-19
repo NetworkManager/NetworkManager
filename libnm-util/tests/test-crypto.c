@@ -21,14 +21,13 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "crypto.h"
 #include "nm-utils.h"
 

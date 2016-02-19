@@ -18,7 +18,7 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
@@ -26,7 +26,6 @@
 #include "nm-platform.h"
 #include "nmp-object.h"
 #include "nm-core-internal.h"
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 /* if within half a second after adding an IP address a matching device-route shows

@@ -18,11 +18,10 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "interface_parser.h"
 #include "parser.h"

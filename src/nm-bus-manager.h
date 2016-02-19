@@ -22,10 +22,6 @@
 #ifndef __NM_BUS_MANAGER_H__
 #define __NM_BUS_MANAGER_H__
 
-#include "config.h"
-
-#include "nm-default.h"
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_BUS_MANAGER (nm_bus_manager_get_type ())
@@ -33,7 +29,7 @@ G_BEGIN_DECLS
 #define NM_BUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_BUS_MANAGER, NMBusManagerClass))
 #define NM_IS_BUS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), NM_TYPE_BUS_MANAGER))
 #define NM_IS_BUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_BUS_MANAGER))
-#define NM_BUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_BUS_MANAGER, NMBusManagerClass)) 
+#define NM_BUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_BUS_MANAGER, NMBusManagerClass))
 
 #define NM_BUS_MANAGER_DBUS_CONNECTION_CHANGED          "dbus-connection-changed"
 #define NM_BUS_MANAGER_PRIVATE_CONNECTION_NEW           "private-connection-new"

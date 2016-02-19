@@ -26,14 +26,13 @@
  * makes requests, like process identifier and user UID.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-auth-subject.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-bus-manager.h"
 #include "nm-enum-types.h"
 #include "NetworkManagerUtils.h"

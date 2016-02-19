@@ -21,7 +21,7 @@
  * (C) Copyright 2008 Canonical Ltd.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <arpa/inet.h>
@@ -31,7 +31,6 @@
 
 #include "nm-core-internal.h"
 #include "nm-settings-plugin.h"
-#include "nm-default.h"
 
 #include "parser.h"
 #include "plugin.h"

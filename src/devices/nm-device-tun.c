@@ -18,13 +18,12 @@
  * Copyright 2013 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include "nm-default.h"
 #include "nm-activation-request.h"
 #include "nm-device-tun.h"
 #include "nm-device-private.h"

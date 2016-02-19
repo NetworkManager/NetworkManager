@@ -18,7 +18,7 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -28,7 +28,6 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-dnsmasq-manager.h"
 #include "nm-dnsmasq-utils.h"
 #include "nm-utils.h"

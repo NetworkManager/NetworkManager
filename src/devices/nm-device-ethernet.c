@@ -19,7 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <netinet/in.h>
 #include <string.h>
@@ -29,7 +29,6 @@
 
 #include <gudev/gudev.h>
 
-#include "nm-default.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-private.h"
 #include "nm-activation-request.h"

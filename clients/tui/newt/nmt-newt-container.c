@@ -26,7 +26,7 @@
  * #NmtNewtGrid is the most generic container type.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

@@ -24,9 +24,9 @@
  * slaves of a connection.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmt-slave-list.h"
 

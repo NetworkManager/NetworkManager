@@ -18,9 +18,8 @@
  * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-active-connection.h"
 #include "nm-dbus-interface.h"
 #include "nm-device.h"

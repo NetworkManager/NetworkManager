@@ -19,9 +19,10 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
+
 #include "nm-vpn-connection.h"
 #include "NetworkManager.h"
 #include "nm-utils.h"

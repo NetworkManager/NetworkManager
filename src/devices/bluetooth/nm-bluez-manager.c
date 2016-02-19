@@ -18,14 +18,13 @@
  * Copyright (C) 2013 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include "nm-default.h"
 #include "nm-bluez-manager.h"
 #include "nm-device-factory.h"
 #include "nm-setting-bluetooth.h"

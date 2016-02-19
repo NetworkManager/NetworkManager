@@ -27,8 +27,6 @@
  *   gcc -Wall `pkg-config --cflags libnm` `pkg-config --cflags --libs gio-2.0` list-connections-gdbus.c -o list-connections-gdbus
  */
 
-#include "config.h"
-
 #include <gio/gio.h>
 #include <NetworkManager.h>
 

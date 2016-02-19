@@ -18,7 +18,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <glib-unix.h>
 #include <getopt.h>
@@ -36,7 +36,6 @@
  * Forward declare if_nametoindex. */
 extern unsigned int if_nametoindex (const char *__ifname);
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "nm-dhcp-manager.h"

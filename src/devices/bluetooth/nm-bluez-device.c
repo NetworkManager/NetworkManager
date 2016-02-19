@@ -19,11 +19,10 @@
  * Copyright (C) 2013 Intel Corporation.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-core-internal.h"
 
 #include "nm-bt-error.h"

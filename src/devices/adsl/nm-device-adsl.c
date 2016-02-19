@@ -18,7 +18,7 @@
  * Pantelis Koukousoulas <pktoss@gmail.com>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/socket.h>
 #include <linux/atmdev.h>
@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"

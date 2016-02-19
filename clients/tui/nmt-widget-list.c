@@ -30,7 +30,7 @@
  * FIXME: The way this works is sort of weird.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

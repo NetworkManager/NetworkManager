@@ -27,7 +27,7 @@
    remove this comment, and you're almost done.
 */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-setting-template.h"
 

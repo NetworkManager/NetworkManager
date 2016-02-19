@@ -18,13 +18,11 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <unistd.h>
 
-
 #include "nm-config.h"
-#include "nm-default.h"
 #include "nm-test-device.h"
 #include "nm-fake-platform.h"
 #include "nm-bus-manager.h"

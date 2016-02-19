@@ -19,9 +19,8 @@
  * Copyright (C) 2008 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-keyfile-internal.h"
 
 #include <stdlib.h>

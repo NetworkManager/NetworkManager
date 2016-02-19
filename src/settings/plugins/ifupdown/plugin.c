@@ -22,14 +22,15 @@
  * (C) Copyright 2009 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
-
+#include <arpa/inet.h>
+#include <gudev/gudev.h>
 #include <gmodule.h>
-#include <nm-setting-connection.h>
 
-#include "nm-default.h"
+#include "nm-setting-connection.h"
+
 #include "interface_parser.h"
 
 #include "nm-dbus-interface.h"
@@ -47,10 +48,6 @@
 #include "parser.h"
 
 #include "nm-config.h"
-
-#include <arpa/inet.h>
-
-#include <gudev/gudev.h>
 
 #define ENI_INTERFACES_FILE "/etc/network/interfaces"
 

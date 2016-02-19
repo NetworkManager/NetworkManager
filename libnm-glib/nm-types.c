@@ -18,11 +18,11 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <dbus/dbus-glib.h>
 #include <string.h>
-#include "nm-default.h"
+
 #include "nm-types.h"
 #include "nm-types-private.h"
 #include "nm-object-private.h"

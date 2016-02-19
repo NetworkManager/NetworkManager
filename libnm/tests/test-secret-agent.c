@@ -18,13 +18,13 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>
 
-#include <nm-secret-agent-old.h>
+#include "nm-secret-agent-old.h"
 
 #include "nm-test-libnm-utils.h"
 

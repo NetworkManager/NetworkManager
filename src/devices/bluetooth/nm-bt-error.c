@@ -18,9 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-bt-error.h"
 
 GQuark

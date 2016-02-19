@@ -19,9 +19,8 @@
  * Copyright 2005 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-utils.h"
 
 #include <string.h>

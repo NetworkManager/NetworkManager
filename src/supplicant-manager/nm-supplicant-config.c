@@ -19,12 +19,11 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"

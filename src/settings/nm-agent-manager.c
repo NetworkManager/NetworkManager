@@ -18,12 +18,11 @@
  * Copyright (C) 2010 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <pwd.h>
 
-#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-agent-manager.h"
 #include "nm-secret-agent.h"

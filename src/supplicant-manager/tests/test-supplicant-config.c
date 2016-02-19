@@ -18,7 +18,7 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -34,7 +34,6 @@
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
-#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

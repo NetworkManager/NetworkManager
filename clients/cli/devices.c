@@ -17,7 +17,7 @@
  * Copyright 2010 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <readline/readline.h>
 
-#include "nm-default.h"
 #include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
 #include "utils.h"

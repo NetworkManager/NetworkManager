@@ -19,11 +19,10 @@
  * Copyright 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "NetworkManager.h"
 #include "nm-active-connection.h"
 #include "nm-object-private.h"

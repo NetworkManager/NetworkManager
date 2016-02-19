@@ -18,11 +18,10 @@
  * Copyright 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <linux/if_infiniband.h>
 
-#include "nm-default.h"
 #include "nm-device-infiniband.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"

@@ -18,7 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -27,7 +27,6 @@
 #include <teamdctl.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-device-team.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"

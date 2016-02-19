@@ -18,24 +18,22 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
 #include <glib/gstdio.h>
 
-#include <nm-dbus-interface.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-8021x.h>
+#include "nm-dbus-interface.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-gsm.h"
+#include "nm-setting-cdma.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-8021x.h"
 #include "nm-platform.h"
-
-#include "nm-default.h"
 
 #include "common.h"
 #include "nm-config.h"

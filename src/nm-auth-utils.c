@@ -18,11 +18,10 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"

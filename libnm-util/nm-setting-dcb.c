@@ -19,7 +19,7 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <dbus/dbus-glib.h>

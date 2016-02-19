@@ -21,7 +21,7 @@
  *   and others
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -35,7 +35,6 @@
 
 #include <linux/fs.h>
 
-#include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-dns-manager.h"

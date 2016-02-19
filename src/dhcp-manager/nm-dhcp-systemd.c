@@ -16,7 +16,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -28,7 +28,6 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-default.h"
 #include "nm-dhcp-systemd.h"
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"

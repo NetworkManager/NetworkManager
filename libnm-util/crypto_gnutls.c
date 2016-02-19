@@ -21,14 +21,13 @@
  * Copyright 2007 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "nm-default.h"
 #include "crypto.h"
 
 #define SALT_LEN 8

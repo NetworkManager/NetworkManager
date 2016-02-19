@@ -18,10 +18,10 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
-#include "nm-default.h"
+
 #include "nm-object-cache.h"
 #include "nm-object.h"
 

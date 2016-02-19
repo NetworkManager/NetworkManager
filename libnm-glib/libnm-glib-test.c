@@ -20,18 +20,15 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
-#include "nm-default.h"
 #include "nm-client.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"

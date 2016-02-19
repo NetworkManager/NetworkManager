@@ -27,8 +27,6 @@
  *   gcc -Wall `pkg-config --cflags libnm` `pkg-config --cflags --libs gio-2.0` -luuid add-connection-gdbus.c -o add-connection-gdbus
  */
 
-#include "config.h"
-
 #include <gio/gio.h>
 #include <uuid/uuid.h>
 #include <NetworkManager.h>

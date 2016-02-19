@@ -25,11 +25,10 @@
  * nm-connection-editor, and gnome-control-center.
  */
 
-#include "config.h"
-
-#include <NetworkManager.h>
-
 #include "nm-default.h"
+
+#include "NetworkManager.h"
+
 #include "nm-editor-utils.h"
 #if 0
 #include "nm-vpn-helpers.h"

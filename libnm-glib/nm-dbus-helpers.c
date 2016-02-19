@@ -18,12 +18,12 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include "nm-default.h"
+
 #include "nm-dbus-helpers-private.h"
 #include "NetworkManager.h"
 

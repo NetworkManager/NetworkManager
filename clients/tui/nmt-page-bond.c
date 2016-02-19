@@ -25,9 +25,8 @@
  * can't just use #GBinding.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-bond.h"
 
 #include "nmt-address-list.h"

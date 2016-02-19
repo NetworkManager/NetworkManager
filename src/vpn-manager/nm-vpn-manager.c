@@ -19,11 +19,10 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-vpn-manager.h"
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-connection.h"

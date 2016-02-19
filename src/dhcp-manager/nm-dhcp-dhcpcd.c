@@ -21,7 +21,7 @@
  */
 
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -31,7 +31,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"

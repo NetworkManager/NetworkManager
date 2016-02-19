@@ -21,9 +21,8 @@
  * @short_description: The editor page for DSL connections
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-dsl.h"
 #include "nmt-page-ethernet.h"
 #include "nmt-page-ppp.h"

@@ -19,15 +19,14 @@
  * Copyright 2009 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-wimax.h>
-#include <nm-utils.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-wimax.h"
+#include "nm-utils.h"
 
-#include "nm-default.h"
 #include "nm-device-wimax.h"
 #include "nm-wimax-nsp.h"
 #include "nm-object-private.h"

@@ -21,8 +21,6 @@
 #ifndef __NM_PLATFORM_UTILS_H__
 #define __NM_PLATFORM_UTILS_H__
 
-#include "config.h"
-
 #include <gudev/gudev.h>
 
 #include "nm-platform.h"

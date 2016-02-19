@@ -19,7 +19,7 @@
  * Copyright (C) 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-settings-plugin.h"
 #include "nm-settings-connection.h"

@@ -25,8 +25,6 @@
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` get-ap-info-libnm.c -o get-ap-info-libnm
  */
 
-#include "config.h"
-
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>

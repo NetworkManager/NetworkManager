@@ -17,15 +17,14 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
 
-#include <nm-utils.h>
+#include "nm-utils.h"
 
-#include "nm-default.h"
 #include "nm-dhcp-utils.h"
 #include "nm-platform.h"
 

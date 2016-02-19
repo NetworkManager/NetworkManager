@@ -25,7 +25,7 @@
  * "Show password" checkbox that toggles whether the password is visible.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-password-fields.h"
 

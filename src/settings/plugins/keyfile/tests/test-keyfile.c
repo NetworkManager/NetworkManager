@@ -18,7 +18,7 @@
  * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -29,7 +29,6 @@
 #include <sys/socket.h>
 
 #include "nm-core-internal.h"
-#include "nm-default.h"
 
 #include "reader.h"
 #include "writer.h"

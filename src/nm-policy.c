@@ -19,15 +19,13 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
 
-
-#include "nm-default.h"
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"

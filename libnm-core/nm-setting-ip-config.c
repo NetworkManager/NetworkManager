@@ -20,12 +20,11 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"

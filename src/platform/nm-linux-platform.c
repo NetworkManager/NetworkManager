@@ -17,7 +17,7 @@
  *
  * Copyright (C) 2012-2015 Red Hat, Inc.
  */
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -48,7 +48,6 @@
 #include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-default.h"
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
 #include "nmp-object.h"

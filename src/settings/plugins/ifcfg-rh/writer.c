@@ -18,9 +18,8 @@
  * Copyright 2009 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "writer.h"
 
 #include <string.h>

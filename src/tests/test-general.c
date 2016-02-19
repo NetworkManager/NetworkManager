@@ -18,12 +18,11 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <errno.h>
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 

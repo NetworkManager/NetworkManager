@@ -16,12 +16,12 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-connection.h>
-#include "nm-default.h"
+#include "nm-connection.h"
+
 #include "nm-device-ethernet-utils.h"
 
 char *

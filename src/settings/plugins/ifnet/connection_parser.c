@@ -19,7 +19,7 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <arpa/inet.h>
@@ -27,7 +27,6 @@
 #include <errno.h>
 
 #include "nm-settings-plugin.h"
-#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 

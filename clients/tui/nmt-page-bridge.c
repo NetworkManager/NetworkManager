@@ -21,9 +21,8 @@
  * @short_description: The editor page for Bridge connections
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-bridge.h"
 
 #include "nmt-address-list.h"

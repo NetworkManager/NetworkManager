@@ -19,11 +19,10 @@
  * Copyright 2005 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-gvaluearray-compat.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"

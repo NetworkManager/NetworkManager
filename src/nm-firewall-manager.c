@@ -18,9 +18,8 @@
  * Copyright (C) 2011 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-firewall-manager.h"
 
 #include <string.h>

@@ -24,7 +24,7 @@
  * A "page" is a set of related #NmtEditorSections.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-editor-page.h"
 

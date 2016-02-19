@@ -20,16 +20,17 @@
  * (C) Copyright 2004 Tom Parker
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "interface_parser.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wordexp.h>
 #include <libgen.h>
+
 #include "nm-utils.h"
-#include "nm-default.h"
 
 if_block* first;
 if_block* last;

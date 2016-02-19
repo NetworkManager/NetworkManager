@@ -18,12 +18,11 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-wifi-ap-utils.h"
 #include "nm-utils.h"
 

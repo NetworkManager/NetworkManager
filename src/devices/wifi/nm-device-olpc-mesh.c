@@ -24,7 +24,7 @@
  * (C) Copyright 2009 One Laptop per Child
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <netinet/in.h>
 #include <string.h>
@@ -35,7 +35,6 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "nm-default.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"

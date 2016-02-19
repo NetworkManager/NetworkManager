@@ -18,7 +18,7 @@
  * Copyright (C) 2012 Aleksander Morgado <aleksander@gnu.org>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <arpa/inet.h>
@@ -26,7 +26,6 @@
 
 #include "nm-modem-broadband.h"
 #include "nm-core-internal.h"
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"

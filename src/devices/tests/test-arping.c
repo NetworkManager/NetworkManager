@@ -18,9 +18,8 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-arping-manager.h"
 #include "test-common.h"
 

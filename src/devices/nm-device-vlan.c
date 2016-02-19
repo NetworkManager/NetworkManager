@@ -18,11 +18,10 @@
  * Copyright 2011 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/socket.h>
 
-#include "nm-default.h"
 #include "nm-device-vlan.h"
 #include "nm-manager.h"
 #include "nm-utils.h"

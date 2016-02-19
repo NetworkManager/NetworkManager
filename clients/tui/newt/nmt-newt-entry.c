@@ -26,7 +26,7 @@
  * See also #NmtNewtEntryNumeric, for numeric-only entries.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

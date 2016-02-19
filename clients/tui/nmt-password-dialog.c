@@ -24,7 +24,7 @@
  * secrets when activating a connection.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-password-dialog.h"
 #include "nm-secret-agent-simple.h"

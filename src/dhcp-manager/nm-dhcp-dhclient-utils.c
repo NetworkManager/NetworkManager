@@ -17,9 +17,8 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-dhcp-dhclient-utils.h"
 
 #include <string.h>

@@ -21,11 +21,10 @@
  * @short_description: The editor page for PPP configuration
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nmt-page-ppp.h"
 #include "nmt-newt-section.h"
 #include "nmt-newt-separator.h"

@@ -24,7 +24,7 @@
  * including presenting a password dialog if necessary.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 

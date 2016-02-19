@@ -23,9 +23,8 @@
  * Some functions should probably eventually move into libnm.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-vpn-helpers.h"
 
 #include <string.h>

@@ -18,9 +18,8 @@
  * Copyright 2015 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-vpn-plugin-info.h"
 
 #include <string.h>

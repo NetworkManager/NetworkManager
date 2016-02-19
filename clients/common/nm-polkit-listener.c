@@ -31,13 +31,12 @@
  * https://github.com/lxde/lxqt-policykit/tree/master/src
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-polkit-listener.h"
 
 G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)

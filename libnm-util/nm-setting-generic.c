@@ -19,7 +19,7 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-setting-generic.h"
 #include "nm-setting-private.h"

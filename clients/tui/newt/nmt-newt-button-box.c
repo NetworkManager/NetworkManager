@@ -29,7 +29,7 @@
  * within each of the two sections.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

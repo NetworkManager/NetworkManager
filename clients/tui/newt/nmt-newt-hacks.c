@@ -24,7 +24,7 @@
  * functions that were added after 0.52.15.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-newt-hacks.h"
 

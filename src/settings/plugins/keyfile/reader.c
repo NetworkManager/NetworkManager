@@ -18,14 +18,13 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/stat.h>
 #include <string.h>
 
 #include "reader.h"
 
-#include "nm-default.h"
 #include "nm-keyfile-internal.h"
 #include "NetworkManagerUtils.h"
 

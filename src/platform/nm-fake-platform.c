@@ -18,7 +18,7 @@
  * Copyright (C) 2012–2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -30,7 +30,6 @@
 #include "nmp-object.h"
 #include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
-#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

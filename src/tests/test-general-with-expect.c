@@ -18,7 +18,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <errno.h>
@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-multi-index.h"
 

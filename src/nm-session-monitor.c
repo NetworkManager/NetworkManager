@@ -19,14 +19,13 @@
  * Author: Matthias Clasen
  * Author: Pavel Šimerda <psimerda@redhat.com>
  */
-#include "config.h"
+#include "nm-default.h"
 
 #include <pwd.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#include "nm-default.h"
 #include "nm-session-monitor.h"
 #include "NetworkManagerUtils.h"
 

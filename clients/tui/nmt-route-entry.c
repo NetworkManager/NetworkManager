@@ -26,13 +26,13 @@
  * This is used as a building block by #NmtRouteTable.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmt-route-entry.h"
 #include "nmt-ip-entry.h"

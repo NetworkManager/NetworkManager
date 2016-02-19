@@ -18,7 +18,7 @@
  * Copyright 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <netinet/in.h>
@@ -28,7 +28,6 @@
 
 #include "nm-device-ip-tunnel.h"
 #include "nm-device-private.h"
-#include "nm-default.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"

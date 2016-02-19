@@ -18,14 +18,12 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-
-#include "nm-default.h"
 
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 

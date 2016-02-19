@@ -18,11 +18,10 @@
  * Copyright 2010 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent-old.h"
 #include "nm-enum-types.h"

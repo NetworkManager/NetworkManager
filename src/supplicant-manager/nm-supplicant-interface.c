@@ -19,12 +19,11 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"

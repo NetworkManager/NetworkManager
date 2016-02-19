@@ -29,14 +29,13 @@
  * replace ShellNetworkAgent.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <NetworkManager.h>
-#include <nm-vpn-service-plugin.h>
+#include "NetworkManager.h"
+#include "nm-vpn-service-plugin.h"
 
-#include "nm-default.h"
 #include "nm-vpn-helpers.h"
 #include "nm-secret-agent-simple.h"
 

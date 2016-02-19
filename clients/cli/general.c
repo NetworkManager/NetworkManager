@@ -17,12 +17,11 @@
  * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"

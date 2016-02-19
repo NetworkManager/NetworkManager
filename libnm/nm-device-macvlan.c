@@ -18,16 +18,15 @@
  * Copyright 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-macvlan.h>
-#include <nm-setting-wired.h>
-#include <nm-utils.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-macvlan.h"
+#include "nm-setting-wired.h"
+#include "nm-utils.h"
 
-#include "nm-default.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

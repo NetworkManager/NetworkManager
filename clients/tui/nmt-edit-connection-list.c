@@ -24,7 +24,7 @@
  * "nmtui edit".
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmtui.h"
 #include "nmtui-edit.h"

@@ -19,11 +19,9 @@
  *
  */
 
-#include "config.h"
-
-#include <nm-utils.h>
-
 #include "nm-default.h"
+
+#include "nm-utils.h"
 
 extern GType nm_state_get_type (void);
 

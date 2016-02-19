@@ -24,11 +24,11 @@
  * access points displayed by "nmtui connect".
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"

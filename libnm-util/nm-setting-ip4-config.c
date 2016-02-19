@@ -20,12 +20,11 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-default.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"

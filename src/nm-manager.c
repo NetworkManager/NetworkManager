@@ -19,7 +19,7 @@
  * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -27,7 +27,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "nm-default.h"
 #include "nm-manager.h"
 #include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"

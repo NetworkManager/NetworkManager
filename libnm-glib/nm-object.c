@@ -19,13 +19,13 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <nm-utils.h>
-#include "nm-default.h"
+
+#include "nm-utils.h"
 #include "NetworkManager.h"
 #include "nm-object.h"
 #include "nm-object-cache.h"

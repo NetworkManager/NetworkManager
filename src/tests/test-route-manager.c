@@ -18,12 +18,11 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-default.h"
 #include "test-common.h"
 
 #include "nm-platform.h"

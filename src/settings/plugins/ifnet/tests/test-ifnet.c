@@ -20,16 +20,16 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <nm-utils.h>
 
-#include "nm-default.h"
+#include "nm-utils.h"
+
 #include "nm-linux-platform.h"
 
 #include "net_parser.h"

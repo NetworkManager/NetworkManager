@@ -18,12 +18,11 @@
  * Copyright 2011 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-device-bond.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"

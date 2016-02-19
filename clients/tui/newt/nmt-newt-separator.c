@@ -25,7 +25,7 @@
  * between widgets in containers that don't implement padding.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-newt-separator.h"
 

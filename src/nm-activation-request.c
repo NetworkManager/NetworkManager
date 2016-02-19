@@ -19,16 +19,14 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-
 #include "nm-activation-request.h"
-#include "nm-default.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-device.h"

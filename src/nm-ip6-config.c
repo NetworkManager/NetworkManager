@@ -19,9 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-ip6-config.h"
 
 #include <string.h>

@@ -19,17 +19,17 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <nm-utils.h>
+
+#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include <nm-settings-plugin.h>
+#include "nm-settings-plugin.h"
 #include "nm-config.h"
-#include "nm-default.h"
 #include "net_utils.h"
 #include "wpa_parser.h"
 #include "net_parser.h"

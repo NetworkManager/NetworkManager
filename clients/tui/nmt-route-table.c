@@ -24,13 +24,13 @@
  * and buttons to add and remove entries.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmt-route-table.h"
 #include "nmt-route-entry.h"

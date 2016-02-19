@@ -19,7 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <netinet/in.h>
 #include <string.h>
@@ -34,7 +34,6 @@
 #include <netlink/route/addr.h>
 #include <linux/if_addr.h>
 
-#include "nm-default.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"

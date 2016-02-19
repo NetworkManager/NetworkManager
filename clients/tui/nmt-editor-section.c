@@ -23,7 +23,7 @@
  * #NmtEditorSection is the abstract base class for #NmtEditor sections.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-editor-section.h"
 #include "nmt-newt-toggle-button.h"

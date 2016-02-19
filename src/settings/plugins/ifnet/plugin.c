@@ -20,14 +20,14 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
 #include <gmodule.h>
 
-#include <nm-utils.h>
-#include <nm-setting-connection.h>
+#include "nm-utils.h"
+#include "nm-setting-connection.h"
 
 #include "nm-default.h"
 #include "nm-dbus-interface.h"

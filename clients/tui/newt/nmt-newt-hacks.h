@@ -19,8 +19,6 @@
 #ifndef NMT_NEWT_HACKS_H
 #define NMT_NEWT_HACKS_H
 
-#include "config.h"
-
 #include <newt.h>
 
 #ifndef HAVE_NEWTCOMPONENTGETSIZE

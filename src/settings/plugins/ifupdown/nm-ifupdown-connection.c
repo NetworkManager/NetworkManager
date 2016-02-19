@@ -21,16 +21,16 @@
  * (C) Copyright 2007,2008 Canonical Ltd.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <glib/gstdio.h>
-#include <nm-dbus-interface.h>
-#include <nm-utils.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-settings-connection.h>
-#include <nm-settings-plugin.h>
-#include "nm-default.h"
+
+#include "nm-dbus-interface.h"
+#include "nm-utils.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-settings-connection.h"
+#include "nm-settings-plugin.h"
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 

@@ -19,16 +19,14 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "nm-default.h"
 #include "common.h"
 #include "utils.h"
 #include "nm-secret-agent-simple.h"

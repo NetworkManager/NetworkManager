@@ -19,8 +19,6 @@
  *
  */
 
-#include "config.h"
-
 #include "nm-default.h"
 
 #include "nm-keyfile-utils.h"

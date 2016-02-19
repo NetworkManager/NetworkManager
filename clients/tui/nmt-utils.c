@@ -21,7 +21,7 @@
  * @short_description: Miscellaneous nmtui-specific utilities
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

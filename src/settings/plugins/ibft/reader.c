@@ -18,7 +18,7 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +31,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"

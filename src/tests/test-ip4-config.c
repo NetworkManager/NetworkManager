@@ -18,12 +18,11 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
 

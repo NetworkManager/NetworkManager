@@ -20,14 +20,13 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <math.h>
 #include <netinet/in.h>
 
 #include "nm-property-compare.h"
-#include "nm-default.h"
 
 static gint
 _nm_property_compare_collection (GVariant *value1, GVariant *value2)

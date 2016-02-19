@@ -21,11 +21,10 @@
  * @short_description: The editor page for IP6 configuration
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nmt-page-ip6.h"
 #include "nmt-ip-entry.h"
 #include "nmt-address-list.h"

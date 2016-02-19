@@ -18,11 +18,10 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-dhcp4-config.h"
 #include "nm-utils.h"

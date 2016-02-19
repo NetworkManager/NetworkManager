@@ -26,7 +26,7 @@
  * #NmtNewtEntryValidator functions, so you should not set your own.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 

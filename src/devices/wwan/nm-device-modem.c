@@ -18,11 +18,10 @@
  * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-device-modem.h"
 #include "nm-modem.h"
 #include "nm-device-private.h"

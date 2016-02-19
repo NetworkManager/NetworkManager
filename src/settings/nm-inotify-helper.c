@@ -18,14 +18,13 @@
  * (C) Copyright 2008 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <unistd.h>
 #include <string.h>
 #include <sys/inotify.h>
 #include <errno.h>
 
-#include "nm-default.h"
 #include "nm-inotify-helper.h"
 #include "NetworkManagerUtils.h"
 

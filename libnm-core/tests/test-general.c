@@ -21,13 +21,11 @@
 
 #define NM_GLIB_COMPAT_H_TEST
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-utils.h>
-#include "nm-default.h"
-
+#include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -62,8 +60,9 @@
 #include "nm-simple-connection.h"
 #include "nm-keyfile-internal.h"
 
-#include "nm-test-utils.h"
 #include "test-general-enums.h"
+
+#include "nm-test-utils.h"
 
 /* When passing a "bool" typed argument to a variadic function that
  * expects a gboolean, the compiler will promote the integer type

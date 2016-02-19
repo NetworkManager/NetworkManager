@@ -24,7 +24,7 @@
  * wrap a (single) #newtComponent.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-newt-component.h"
 #include "nmt-newt-form.h"

@@ -18,14 +18,13 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-olpc-mesh.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-olpc-mesh.h"
 
-#include "nm-default.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

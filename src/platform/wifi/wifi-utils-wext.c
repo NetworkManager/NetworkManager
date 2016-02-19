@@ -19,7 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <string.h>
@@ -28,8 +28,6 @@
 #include <unistd.h>
 #include <math.h>
 
-
-#include "nm-default.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
 #include "nm-utils.h"

@@ -23,7 +23,7 @@
  * #NmtNewtCheckbox implements a checkbox widget.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-newt-checkbox.h"
 #include "nmt-newt-utils.h"

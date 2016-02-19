@@ -21,7 +21,7 @@
  * Copyright 2007 - 2009 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <prinit.h>
 #include <nss.h>
@@ -33,7 +33,6 @@
 #include <ciferfam.h>
 #include <p12plcy.h>
 
-#include "nm-default.h"
 #include "crypto.h"
 #include "nm-errors.h"
 

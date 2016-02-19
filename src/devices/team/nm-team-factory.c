@@ -18,7 +18,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <gmodule.h>
@@ -26,7 +26,6 @@
 #include "nm-device-factory.h"
 #include "nm-team-factory.h"
 #include "nm-device-team.h"
-#include "nm-default.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 

@@ -19,7 +19,7 @@
  * Copyright 2005 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -33,7 +33,6 @@
 #include <linux/if.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-utils.h"

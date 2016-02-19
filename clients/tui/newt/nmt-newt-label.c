@@ -25,7 +25,7 @@
  * See also #NmtNewtTextbox, for multiline.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

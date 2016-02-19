@@ -21,9 +21,8 @@
  * @short_description: The editor page for InfiniBand connections
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-infiniband.h"
 #include "nmt-mtu-entry.h"
 

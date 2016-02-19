@@ -17,9 +17,8 @@
  * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "settings.h"
 
 #include <stdlib.h>

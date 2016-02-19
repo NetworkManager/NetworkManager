@@ -18,7 +18,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -28,12 +28,10 @@
 #include <signal.h>
 
 #include "NetworkManager.h"
-
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-utils.h"
 
-#include "nm-default.h"
 #include "nm-remote-settings.h"
 
 #include "nm-test-libnm-utils.h"

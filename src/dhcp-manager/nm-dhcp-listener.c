@@ -17,7 +17,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -27,7 +27,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "nm-default.h"
 #include "nm-dhcp-listener.h"
 #include "nm-core-internal.h"
 #include "nm-bus-manager.h"

@@ -21,7 +21,7 @@
  * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -33,7 +33,6 @@
 
 #include "nm-setting-connection.h"
 
-#include "nm-default.h"
 #include "common.h"
 #include "plugin.h"
 #include "nm-settings-plugin.h"

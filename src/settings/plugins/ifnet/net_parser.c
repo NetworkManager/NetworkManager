@@ -19,15 +19,14 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <nm-settings-plugin.h>
-#include "nm-default.h"
+#include "nm-settings-plugin.h"
 
 #include "plugin.h"
 #include "nm-platform.h"

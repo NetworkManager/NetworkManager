@@ -19,14 +19,13 @@
  * Copyright (C) 2011 Dan Williams <dcbw@redhat.com>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #if WITH_CONCHECK
 #include <libsoup/soup.h>
 #endif
 
-#include "nm-default.h"
 #include "nm-connectivity.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"

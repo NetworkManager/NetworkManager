@@ -19,7 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -27,7 +27,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-bus-manager.h"
 #include "nm-core-internal.h"

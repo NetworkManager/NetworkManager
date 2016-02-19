@@ -20,7 +20,7 @@
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <string.h>
@@ -32,7 +32,6 @@
 #include <netlink/msg.h>
 #include <linux/nl80211.h>
 
-#include "nm-default.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
 #include "nm-platform.h"

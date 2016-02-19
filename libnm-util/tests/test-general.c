@@ -19,7 +19,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <dbus/dbus-glib.h>
 #include <string.h>
@@ -28,8 +28,7 @@
 #include <sys/wait.h>
 #include <sys/resource.h>
 
-#include <nm-utils.h>
-#include "nm-default.h"
+#include "nm-utils.h"
 #include "nm-gvaluearray-compat.h"
 
 #include "nm-setting-private.h"

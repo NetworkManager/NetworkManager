@@ -18,7 +18,7 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -29,7 +29,6 @@
 
 #include "nm-device-veth.h"
 #include "nm-device-private.h"
-#include "nm-default.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"

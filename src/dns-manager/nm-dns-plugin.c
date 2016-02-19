@@ -17,7 +17,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "nm-default.h"
 #include "nm-dns-plugin.h"
 #include "NetworkManagerUtils.h"
 

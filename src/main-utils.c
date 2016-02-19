@@ -19,7 +19,7 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -32,7 +32,6 @@
 #include <glib-unix.h>
 #include <gmodule.h>
 
-#include "nm-default.h"
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
 

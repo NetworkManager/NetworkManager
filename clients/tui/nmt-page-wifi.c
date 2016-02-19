@@ -25,11 +25,10 @@
  * properties.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nmt-page-wifi.h"
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"

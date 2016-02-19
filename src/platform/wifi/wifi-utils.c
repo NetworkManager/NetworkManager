@@ -19,13 +19,12 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "wifi-utils.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"

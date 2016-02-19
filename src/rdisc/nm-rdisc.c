@@ -18,7 +18,7 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -27,7 +27,6 @@
 #include "nm-rdisc.h"
 #include "nm-rdisc-private.h"
 
-#include "nm-default.h"
 #include "nm-utils.h"
 
 #include <nm-setting-ip6-config.h>

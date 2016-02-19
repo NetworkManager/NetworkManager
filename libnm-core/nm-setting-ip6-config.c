@@ -19,9 +19,8 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-setting-ip6-config.h"
 
 #include <string.h>

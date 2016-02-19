@@ -18,12 +18,11 @@
  * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
 #include "nm-device-bt.h"

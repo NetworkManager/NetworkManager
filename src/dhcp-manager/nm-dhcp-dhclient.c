@@ -24,6 +24,8 @@
 #include <time.h>
 #undef _XOPEN_SOURCE
 
+#include "nm-default.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -33,7 +35,6 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include "nm-default.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 #include "nm-dhcp-dhclient-utils.h"

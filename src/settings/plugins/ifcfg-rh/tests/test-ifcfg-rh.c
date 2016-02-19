@@ -18,7 +18,7 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -30,22 +30,22 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <nm-utils.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-8021x.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-ppp.h>
-#include <nm-setting-vpn.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-serial.h>
-#include <nm-setting-vlan.h>
-#include <nm-setting-dcb.h>
+#include "nm-utils.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-8021x.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-ppp.h"
+#include "nm-setting-vpn.h"
+#include "nm-setting-gsm.h"
+#include "nm-setting-cdma.h"
+#include "nm-setting-serial.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-dcb.h"
 #include "nm-core-internal.h"
 
 #include "NetworkManagerUtils.h"
@@ -54,7 +54,6 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
-#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

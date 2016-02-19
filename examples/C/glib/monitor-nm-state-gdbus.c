@@ -29,8 +29,6 @@
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` `pkg-config --cflags libnm` monitor-nm-state-gdbus.c -o monitor-nm-state-gdbus
  */
 
-#include "config.h"
-
 #include <gio/gio.h>
 #include <string.h>
 #include <nm-dbus-interface.h>

@@ -18,7 +18,7 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -38,7 +38,6 @@
 #include "nm-platform-utils.h"
 #include "nmp-object.h"
 #include "NetworkManagerUtils.h"
-#include "nm-default.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 

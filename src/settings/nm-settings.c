@@ -23,7 +23,7 @@
  * (C) Copyright 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -36,33 +36,32 @@
 #include <selinux/selinux.h>
 #endif
 
-#include <nm-dbus-interface.h>
-#include <nm-connection.h>
-#include <nm-setting-8021x.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-olpc-mesh.h>
-#include <nm-setting-ppp.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-serial.h>
-#include <nm-setting-vpn.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-adsl.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-bond.h>
-#include <nm-utils.h>
+#include "nm-dbus-interface.h"
+#include "nm-connection.h"
+#include "nm-setting-8021x.h"
+#include "nm-setting-bluetooth.h"
+#include "nm-setting-cdma.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-gsm.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-olpc-mesh.h"
+#include "nm-setting-ppp.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-serial.h"
+#include "nm-setting-vpn.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-adsl.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-bond.h"
+#include "nm-utils.h"
 #include "nm-core-internal.h"
 
 #include "nm-device-ethernet.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
-#include "nm-default.h"
 #include "nm-bus-manager.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"

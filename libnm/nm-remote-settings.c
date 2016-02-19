@@ -19,9 +19,8 @@
  * Copyright 2009 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-remote-settings.h"
 
 #include <string.h>

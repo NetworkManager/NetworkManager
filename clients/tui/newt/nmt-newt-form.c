@@ -24,7 +24,7 @@
  * "form" (aka dialog) to the user.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <fcntl.h>
 #include <string.h>

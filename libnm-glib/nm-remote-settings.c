@@ -19,13 +19,12 @@
  * Copyright 2009 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
-#include <NetworkManager.h>
-#include <nm-connection.h>
 
-#include "nm-default.h"
+#include "NetworkManager.h"
+#include "nm-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"

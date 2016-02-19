@@ -18,16 +18,15 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <netinet/ether.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-bond.h>
-#include <nm-utils.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-bond.h"
+#include "nm-utils.h"
 
-#include "nm-default.h"
 #include "nm-device-bond.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

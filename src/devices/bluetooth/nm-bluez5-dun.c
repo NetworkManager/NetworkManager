@@ -18,7 +18,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/socket.h>
 #include <bluetooth/sdp.h>
@@ -32,7 +32,6 @@
 
 #include "nm-bluez5-dun.h"
 #include "nm-bt-error.h"
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 struct _NMBluez5DunContext {

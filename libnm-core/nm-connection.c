@@ -20,10 +20,10 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
-#include "nm-default.h"
+
 #include "nm-connection.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"

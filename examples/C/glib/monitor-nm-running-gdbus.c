@@ -28,8 +28,6 @@
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` monitor-nm-running-gdbus.c -o monitor-nm-running-gdbus
  */
 
-#include "config.h"
-
 #include <gio/gio.h>
 
 static void

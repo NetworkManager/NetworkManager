@@ -13,7 +13,7 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-connection-provider.h"
 #include "nm-utils.h"

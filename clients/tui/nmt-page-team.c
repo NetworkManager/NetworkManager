@@ -21,9 +21,8 @@
  * @short_description: The editor page for Team connections
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-team.h"
 
 #include "nmt-slave-list.h"

@@ -34,13 +34,13 @@
  * to implement that then we should make it just an #NmtNewtEntry.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmtui.h"
 #include "nmt-device-entry.h"

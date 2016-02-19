@@ -18,15 +18,15 @@
  * (C) Copyright 2010 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include "nm-default.h"
+
 #include "utils.h"
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
 #include "nm-config.h"
 
 #define NM_CONFIG_KEYFILE_PATH_DEFAULT NMCONFDIR "/system-connections"

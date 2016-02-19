@@ -19,11 +19,10 @@
  */
 
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-default-route-manager.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"

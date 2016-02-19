@@ -19,13 +19,11 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
-
 #include <gudev/gudev.h>
 
-#include "nm-default.h"
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"

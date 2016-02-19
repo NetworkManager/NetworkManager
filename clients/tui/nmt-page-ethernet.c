@@ -21,9 +21,8 @@
  * @short_description: The editor page for Ethernet connections
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-ethernet.h"
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"

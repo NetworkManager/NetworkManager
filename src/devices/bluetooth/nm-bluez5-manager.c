@@ -20,13 +20,12 @@
  * Copyright (C) 2013 Intel Corporation.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"

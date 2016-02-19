@@ -19,15 +19,14 @@
  * Copyright 2009 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <netinet/ether.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-wimax.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-wimax.h"
 
-#include "nm-default.h"
 #include "nm-device-wimax.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"

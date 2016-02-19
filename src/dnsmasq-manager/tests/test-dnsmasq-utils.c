@@ -18,11 +18,10 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "nm-dnsmasq-utils.h"
 
 #include "nm-test-utils.h"

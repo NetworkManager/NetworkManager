@@ -18,9 +18,8 @@
  * (C) Copyright 2008 - 2012 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "utils.h"
 
 #include <stdlib.h>

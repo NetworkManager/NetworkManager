@@ -19,13 +19,12 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez4-manager.h"
 #include "nm-bluez4-adapter.h"

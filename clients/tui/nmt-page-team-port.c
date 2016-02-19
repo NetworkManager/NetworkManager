@@ -21,9 +21,8 @@
  * @short_description: The editor page for Team ports.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nmt-page-team-port.h"
 
 G_DEFINE_TYPE (NmtPageTeamPort, nmt_page_team_port, NMT_TYPE_EDITOR_PAGE)

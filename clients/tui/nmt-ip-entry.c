@@ -27,7 +27,7 @@
  * contains a valid IP address.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

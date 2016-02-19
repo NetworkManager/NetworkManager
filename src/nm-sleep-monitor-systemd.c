@@ -17,14 +17,13 @@
  * Author: Matthias Clasen <mclasen@redhat.com>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <gio/gunixfdlist.h>
 
-#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 

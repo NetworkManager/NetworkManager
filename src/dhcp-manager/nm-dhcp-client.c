@@ -17,9 +17,8 @@
  *
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-dhcp-client.h"
 
 #include <string.h>

@@ -14,13 +14,12 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "nm-default.h"
 #include "nm-arping-manager.h"
 #include "nm-platform.h"
 #include "nm-utils.h"

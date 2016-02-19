@@ -23,7 +23,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -37,7 +37,6 @@
 #include "shvar.h"
 
 #include "nm-core-internal.h"
-#include "nm-default.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 

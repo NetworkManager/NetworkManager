@@ -19,14 +19,12 @@
 #ifndef NM_SD_ADAPT_H
 #define NM_SD_ADAPT_H
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdbool.h>
 #include <syslog.h>
 #include <sys/resource.h>
 #include <time.h>
-
-#include "nm-default.h"
 
 #define noreturn G_GNUC_NORETURN
 

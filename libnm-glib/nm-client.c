@@ -19,14 +19,14 @@
  * Copyright 2007 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-client.h"
 
 #include <dbus/dbus-glib.h>
 #include <string.h>
-#include <nm-utils.h>
+
+#include "nm-utils.h"
 
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"

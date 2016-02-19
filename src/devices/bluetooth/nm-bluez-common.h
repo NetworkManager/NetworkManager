@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_BLUEZ_COMMON_H__
 #define __NETWORKMANAGER_BLUEZ_COMMON_H__
 
-#include "config.h"
-
 #define BLUETOOTH_CONNECT_DUN "dun"
 #define BLUETOOTH_CONNECT_NAP "nap"
 

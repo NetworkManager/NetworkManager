@@ -21,9 +21,8 @@
  * @short_description: The editor page for VLAN connections
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-editor-bindings.h"
 
 #include "nmt-page-vlan.h"

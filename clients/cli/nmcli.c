@@ -20,7 +20,7 @@
  */
 
 /* Generated configuration file */
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +33,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "nm-default.h"
 #include "polkit-agent.h"
 #include "nmcli.h"
 #include "utils.h"

@@ -19,7 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <dlfcn.h>
 #include <syslog.h>
@@ -37,7 +37,6 @@
 #include <systemd/sd-journal.h>
 #endif
 
-#include "nm-default.h"
 #include "nm-errors.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"

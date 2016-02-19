@@ -18,16 +18,15 @@
  * Copyright 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <arpa/inet.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-tun.h>
-#include <nm-utils.h>
+#include "nm-setting-connection.h"
+#include "nm-setting-tun.h"
+#include "nm-utils.h"
 
-#include "nm-default.h"
 #include "nm-device-tun.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

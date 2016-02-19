@@ -18,14 +18,13 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <syslog.h>
 
 #include "nm-rdisc.h"
 #include "nm-fake-rdisc.h"
-#include "nm-default.h"
 
 #include "nm-fake-platform.h"
 

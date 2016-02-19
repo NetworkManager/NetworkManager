@@ -18,11 +18,10 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-auth-manager.h"
 
-#include "nm-default.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"

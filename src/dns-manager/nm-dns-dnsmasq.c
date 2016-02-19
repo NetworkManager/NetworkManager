@@ -18,7 +18,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,7 +27,6 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
-#include "nm-default.h"
 #include "nm-dns-dnsmasq.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"

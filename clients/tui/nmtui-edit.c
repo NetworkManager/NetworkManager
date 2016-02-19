@@ -23,11 +23,11 @@
  * nmtui-edit implements editing #NMConnections.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #include "nmtui.h"
 #include "nmtui-edit.h"

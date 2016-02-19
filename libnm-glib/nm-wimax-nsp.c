@@ -18,15 +18,13 @@
  * Copyright 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wimax.h>
-
-#include "nm-default.h"
+#include "nm-connection.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wimax.h"
 #include "nm-wimax-nsp.h"
 #include "NetworkManager.h"
 #include "nm-types-private.h"

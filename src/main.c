@@ -19,7 +19,7 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <getopt.h>
 #include <locale.h>
@@ -35,7 +35,6 @@
 #include <string.h>
 #include <sys/resource.h>
 
-#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "main-utils.h"

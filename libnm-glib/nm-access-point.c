@@ -19,7 +19,7 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <netinet/ether.h>
@@ -30,7 +30,6 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-utils.h>
 
-#include "nm-default.h"
 #include "nm-access-point.h"
 #include "NetworkManager.h"
 #include "nm-types-private.h"

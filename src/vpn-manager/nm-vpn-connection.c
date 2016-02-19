@@ -19,7 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <sys/socket.h>
@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "nm-default.h"
 #include "nm-vpn-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

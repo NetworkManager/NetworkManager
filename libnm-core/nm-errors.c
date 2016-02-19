@@ -18,11 +18,10 @@
  * Copyright 2004 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-errors.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"

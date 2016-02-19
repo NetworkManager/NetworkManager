@@ -18,9 +18,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-dbus-helpers.h"
 
 #include <string.h>

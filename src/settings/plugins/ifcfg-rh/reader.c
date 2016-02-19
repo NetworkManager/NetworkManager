@@ -18,7 +18,7 @@
  * Copyright 2008 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -31,25 +31,24 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <nm-connection.h>
-#include <nm-dbus-interface.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-vlan.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-8021x.h>
-#include <nm-setting-bond.h>
-#include <nm-setting-team.h>
-#include <nm-setting-team-port.h>
-#include <nm-setting-bridge.h>
-#include <nm-setting-bridge-port.h>
-#include <nm-setting-dcb.h>
-#include <nm-setting-generic.h>
-#include "nm-default.h"
+#include "nm-connection.h"
+#include "nm-dbus-interface.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-8021x.h"
+#include "nm-setting-bond.h"
+#include "nm-setting-team.h"
+#include "nm-setting-team-port.h"
+#include "nm-setting-bridge.h"
+#include "nm-setting-bridge-port.h"
+#include "nm-setting-dcb.h"
+#include "nm-setting-generic.h"
 #include "nm-core-internal.h"
-#include <nm-utils.h>
+#include "nm-utils.h"
 
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"

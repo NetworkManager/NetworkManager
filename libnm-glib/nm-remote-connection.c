@@ -19,14 +19,13 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <NetworkManager.h>
-#include <nm-utils.h>
-#include <nm-setting-connection.h>
-#include "nm-default.h"
+#include "NetworkManager.h"
+#include "nm-utils.h"
+#include "nm-setting-connection.h"
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"

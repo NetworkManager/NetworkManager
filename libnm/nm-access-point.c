@@ -19,9 +19,8 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#include "config.h"
-
 #include "nm-default.h"
+
 #include "nm-access-point.h"
 
 #include <string.h>

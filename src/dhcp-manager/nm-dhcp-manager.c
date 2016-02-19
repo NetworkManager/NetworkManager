@@ -20,7 +20,7 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -32,7 +32,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "nm-default.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"

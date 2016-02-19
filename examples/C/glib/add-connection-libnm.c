@@ -27,8 +27,6 @@
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
  */
 
-#include "config.h"
-
 #include <glib.h>
 #include <NetworkManager.h>
 

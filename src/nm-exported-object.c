@@ -18,14 +18,13 @@
  * Copyright 2014-2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdarg.h>
 #include <string.h>
 
 #include "nm-exported-object.h"
 #include "nm-bus-manager.h"
-#include "nm-default.h"
 
 static GHashTable *prefix_counters;
 static gboolean quitting = FALSE;

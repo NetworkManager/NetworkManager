@@ -31,16 +31,14 @@
  * Robert Love <rml@novell.com>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <locale.h>
 
-#include <NetworkManager.h>
-
-#include "nm-default.h"
+#include "NetworkManager.h"
 
 #define PROGRESS_STEPS 15
 #define WAIT_STARTUP_TAG "wait-startup"

@@ -20,7 +20,7 @@
  * Copyright 2009 One Laptop per Child
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

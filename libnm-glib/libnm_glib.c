@@ -21,14 +21,14 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include "nm-default.h"
+
 #include "NetworkManager.h"
 #include "libnm_glib.h"
 

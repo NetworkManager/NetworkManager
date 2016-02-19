@@ -18,13 +18,12 @@
  * Copyright (C) 2009 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <gudev/gudev.h>
 
 #include "nm-rfkill-manager.h"
-#include "nm-default.h"
 
 typedef struct {
 	GUdevClient *client;

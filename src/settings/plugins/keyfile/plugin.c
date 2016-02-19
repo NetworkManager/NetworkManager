@@ -19,7 +19,7 @@
  * Copyright (C) 2008 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -29,12 +29,11 @@
 #include <gmodule.h>
 #include <glib/gstdio.h>
 
-#include <nm-connection.h>
-#include <nm-setting.h>
-#include <nm-setting-connection.h>
-#include <nm-utils.h>
+#include "nm-connection.h"
+#include "nm-setting.h"
+#include "nm-setting-connection.h"
+#include "nm-utils.h"
 #include "nm-config.h"
-#include "nm-default.h"
 #include "nm-core-internal.h"
 
 #include "plugin.h"

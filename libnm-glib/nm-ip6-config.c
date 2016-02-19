@@ -19,11 +19,11 @@
  * Copyright 2008 - 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include <nm-setting-ip6-config.h>
+#include "nm-setting-ip6-config.h"
 #include "nm-ip6-config.h"
 #include "NetworkManager.h"
 #include "nm-types-private.h"

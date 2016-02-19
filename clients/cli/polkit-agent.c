@@ -17,7 +17,7 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #if WITH_POLKIT_AGENT
 
@@ -26,7 +26,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "nm-default.h"
 #include "polkit-agent.h"
 #include "nm-polkit-listener.h"
 #include "common.h"

@@ -19,12 +19,12 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <stdlib.h>
-#include <nm-settings-plugin.h>
-#include "nm-default.h"
+
+#include "nm-settings-plugin.h"
 #include "wpa_parser.h"
 #include "net_parser.h"
 #include "net_utils.h"

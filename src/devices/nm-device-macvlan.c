@@ -18,11 +18,10 @@
  * Copyright 2013 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 
-#include "nm-default.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-private.h"
 #include "nm-connection-provider.h"

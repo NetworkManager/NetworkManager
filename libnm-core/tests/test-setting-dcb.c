@@ -19,11 +19,11 @@
  *
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
-#include <nm-utils.h>
-#include "nm-default.h"
+
+#include "nm-utils.h"
 #include "nm-setting-dcb.h"
 #include "nm-connection.h"
 #include "nm-errors.h"

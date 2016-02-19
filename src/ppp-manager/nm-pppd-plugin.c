@@ -20,6 +20,7 @@
  */
 
 #include "config.h"
+#define ___CONFIG_H__
 
 #include <string.h>
 #include <pppd/pppd.h>

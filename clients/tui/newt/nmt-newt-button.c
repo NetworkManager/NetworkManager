@@ -23,7 +23,7 @@
  * #NmtNewtButton implements a button widget.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include "nmt-newt-button.h"
 #include "nmt-newt-utils.h"

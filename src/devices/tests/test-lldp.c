@@ -18,7 +18,7 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <fcntl.h>
 #include <linux/if_tun.h>
@@ -26,7 +26,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "nm-default.h"
 #include "nm-lldp-listener.h"
 #include "test-common.h"
 

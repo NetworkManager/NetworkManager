@@ -37,7 +37,7 @@
  * section border into account as well.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 

@@ -18,13 +18,12 @@
  * Copyright (C) 2009 - 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <gudev/gudev.h>
 #include <gmodule.h>
 
-#include "nm-default.h"
 #include "nm-atm-manager.h"
 #include "nm-setting-adsl.h"
 #include "nm-device-adsl.h"

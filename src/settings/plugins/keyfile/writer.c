@@ -19,7 +19,7 @@
  * Copyright (C) 2008 - 2015 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -27,7 +27,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include "nm-default.h"
 #include "writer.h"
 #include "utils.h"
 #include "nm-keyfile-internal.h"

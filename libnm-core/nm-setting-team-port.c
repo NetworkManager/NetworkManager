@@ -18,7 +18,7 @@
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <string.h>
 #include <ctype.h>
