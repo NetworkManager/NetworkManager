@@ -429,7 +429,7 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
 		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *)); \
 		g_snprintf (_buf, sizeof (buf), \
-		            ""format"", __VA_ARGS__); \
+		            ""format"", ##__VA_ARGS__); \
 		_buf; \
 	})
 
@@ -440,7 +440,7 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 		G_STATIC_ASSERT (sizeof (char[MAX ((n_elements), 1)]) == (n_elements)); \
 		_buf = g_alloca (n_elements); \
 		g_snprintf (_buf, n_elements, \
-		            ""format"", __VA_ARGS__); \
+		            ""format"", ##__VA_ARGS__); \
 		_buf; \
 	})
 
