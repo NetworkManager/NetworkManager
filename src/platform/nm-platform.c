@@ -2370,6 +2370,24 @@ _to_string_dev (NMPlatform *self, int ifindex, char *buf, size_t size)
 
 /******************************************************************/
 
+gboolean
+nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	return nmp_utils_ethtool_set_wake_on_lan (ifname, wol, wol_password);
+}
+
+gboolean
+nm_platform_ethtool_get_link_speed (NMPlatform *self, const char *ifname, guint32 *out_speed)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	return nmp_utils_ethtool_get_link_speed (ifname, out_speed);
+}
+
+/******************************************************************/
+
 void
 nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, int plen)
 {

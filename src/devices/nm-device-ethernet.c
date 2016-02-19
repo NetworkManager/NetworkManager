@@ -1187,7 +1187,7 @@ wake_on_lan_enable (NMDevice *device)
 	}
 	wol = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 found:
-	return nmp_utils_ethtool_set_wake_on_lan (nm_device_get_iface (device), wol, password);
+	return nm_platform_ethtool_set_wake_on_lan (NM_PLATFORM_GET, nm_device_get_iface (device), wol, password);
 }
 
 /****************************************************************/
@@ -1533,7 +1533,7 @@ get_link_speed (NMDevice *device)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 speed;
 
-	if (!nmp_utils_ethtool_get_link_speed (nm_device_get_iface (device), &speed))
+	if (!nm_platform_ethtool_get_link_speed (NM_PLATFORM_GET, nm_device_get_iface (device), &speed))
 		return;
 	if (priv->speed == speed)
 		return;

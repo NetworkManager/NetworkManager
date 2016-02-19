@@ -31,6 +31,7 @@
 
 #include "nm-core-utils.h"
 #include "nm-setting-vlan.h"
+#include "nm-setting-wired.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -924,5 +925,8 @@ const char *nm_platform_addr_flags2str (unsigned flags, char *buf, gsize len);
 const char *nm_platform_route_scope2str (int scope, char *buf, gsize len);
 
 int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
+
+gboolean nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password);
+gboolean nm_platform_ethtool_get_link_speed (NMPlatform *self, const char *ifname, guint32 *out_speed);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */
