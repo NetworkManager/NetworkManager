@@ -157,8 +157,7 @@ plugins-=remove-me
         and <literal>dhcpcd</literal> options require the indicated
         clients to be installed. The <literal>internal</literal>
         option uses a built-in DHCP client which is not currently as
-        featureful as the external clients (and in particular, does
-        not yet support DHCPv6).</para>
+        featureful as the external clients.</para>
         <para>If this key is missing, available DHCP clients are
         looked for in this order: <literal>dhclient</literal>,
         <literal>dhcpcd</literal>,

@@ -53,6 +53,7 @@ typedef struct {
 	guint request_count;
 
 	gboolean privacy;
+	gboolean info_only;
 } NMDhcpSystemdPrivate;
 
 /************************************************************/
@@ -706,13 +707,134 @@ error:
 	return success;
 }
 
+static NMIP6Config *
+lease_to_ip6_config (const char *iface,
+                     int ifindex,
+                     sd_dhcp6_lease *lease,
+                     GHashTable *options,
+                     gboolean log_lease,
+                     gboolean info_only,
+                     GError **error)
+{
+	struct in6_addr tmp_addr, *dns;
+	uint32_t lft_pref, lft_valid;
+	NMIP6Config *ip6_config;
+	const char *addr_str;
+	char **domains;
+	GString *str;
+	int num, i;
+	gint32 ts;
+
+	g_return_val_if_fail (lease, NULL);
+	ip6_config = nm_ip6_config_new (ifindex);
+	ts = nm_utils_get_monotonic_timestamp_s ();
+	str = g_string_sized_new (30);
+
+	/* Addresses */
+	sd_dhcp6_lease_reset_address_iter (lease);
+	while (sd_dhcp6_lease_get_address (lease, &tmp_addr, &lft_pref, &lft_valid) >= 0) {
+		NMPlatformIP6Address address = {
+			.plen = 128,
+			.address = tmp_addr,
+			.timestamp = ts,
+			.lifetime = lft_valid,
+			.preferred = lft_pref,
+			.source = NM_IP_CONFIG_SOURCE_DHCP,
+		};
+
+		nm_ip6_config_add_address (ip6_config, &address);
+
+		addr_str = nm_utils_inet6_ntop (&tmp_addr, NULL);
+		g_string_append_printf (str, "%s%s", str->len ? " " : "", addr_str);
+
+		LOG_LEASE (LOGD_DHCP6,
+		           "  address %s",
+		           nm_platform_ip6_address_to_string (&address, NULL, 0));
+	};
+
+	if (str->len) {
+		add_option (options, dhcp6_requests, DHCP6_OPTION_IP_ADDRESS, str->str);
+		g_string_set_size (str , 0);
+	}
+
+	if (!info_only && nm_ip6_config_get_num_addresses (ip6_config) == 0) {
+		g_string_free (str, TRUE);
+		g_object_unref (ip6_config);
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_FAILED,
+		                     "no address received in managed mode");
+		return NULL;
+	}
+
+	/* DNS servers */
+	num = sd_dhcp6_lease_get_dns (lease, &dns);
+	if (num > 0) {
+		for (i = 0; i < num; i++) {
+			nm_ip6_config_add_nameserver (ip6_config, &dns[i]);
+			addr_str = nm_utils_inet6_ntop (&dns[i], NULL);
+			g_string_append_printf (str, "%s%s", str->len ? " " : "", addr_str);
+			LOG_LEASE (LOGD_DHCP6, "  nameserver %s", addr_str);
+		}
+		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DNS_SERVERS, str->str);
+		g_string_set_size (str, 0);
+	}
+
+	/* Search domains */
+	num = sd_dhcp6_lease_get_domains (lease, &domains);
+	if (num > 0) {
+		for (i = 0; i < num; i++) {
+			nm_ip6_config_add_search (ip6_config, domains[i]);
+			g_string_append_printf (str, "%s%s", str->len ? " " : "", domains[i]);
+			LOG_LEASE (LOGD_DHCP6, "  domain name '%s'", domains[i]);
+		}
+		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DOMAIN_LIST, str->str);
+		g_string_set_size (str, 0);
+	}
+
+	g_string_free (str, TRUE);
+
+	return ip6_config;
+}
+
 static void
 bound6_handle (NMDhcpSystemd *self)
 {
-	/* not yet supported... */
-	nm_log_warn (LOGD_DHCP6, "(%s): internal DHCP does not yet support DHCPv6",
-	             nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self)));
-	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
+	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
+	gs_unref_object NMIP6Config *ip6_config = NULL;
+	gs_unref_hashtable GHashTable *options = NULL;
+	gs_free_error GError *error = NULL;
+	sd_dhcp6_lease *lease;
+	int r;
+
+	r = sd_dhcp6_client_get_lease (priv->client6, &lease);
+	if (r < 0 || !lease) {
+		nm_log_warn (LOGD_DHCP6, "(%s): no lease!", iface);
+		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+		return;
+	}
+
+	nm_log_dbg (LOGD_DHCP6, "(%s): lease available", iface);
+
+	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+	ip6_config = lease_to_ip6_config (iface,
+	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
+	                                  lease,
+	                                  options,
+	                                  TRUE,
+	                                  priv->info_only,
+	                                  &error);
+
+	if (ip6_config) {
+		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
+		                          NM_DHCP_STATE_BOUND,
+		                          G_OBJECT (ip6_config),
+		                          options);
+	} else {
+		nm_log_warn (LOGD_DHCP6, "(%s): %s", iface, error->message);
+		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+	}
 }
 
 static void
@@ -762,6 +884,7 @@ ip6_start (NMDhcpClient *client,
 
 	g_free (priv->lease_file);
 	priv->lease_file = get_leasefile_path (iface, nm_dhcp_client_get_uuid (client), TRUE);
+	priv->info_only = info_only;
 
 	r = sd_dhcp6_client_new (&priv->client6);
 	if (r < 0) {
