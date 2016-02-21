@@ -928,12 +928,13 @@ can_auto_connect (NMDevice *device,
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
 
-	/* Always allow autoconnect for shared/Ad-Hoc/AP */
+	/* Always allow autoconnect for AP and non-autoconf Ad-Hoc */
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (   g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
-	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0
-	    || g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
+		return TRUE;
+	else if (   g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
+	         && g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0)
 		return TRUE;
 
 	/* Don't autoconnect to networks that have been tried at least once
