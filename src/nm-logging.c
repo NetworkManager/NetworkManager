@@ -41,6 +41,36 @@
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 
+typedef enum {
+	LOG_FORMAT_FLAG_NONE                                = 0,
+	LOG_FORMAT_FLAG_TIMESTAMP_DEBUG                     = (1LL << 0),
+	LOG_FORMAT_FLAG_TIMESTAMP_INFO                      = (1LL << 1),
+	LOG_FORMAT_FLAG_TIMESTAMP_ERROR                     = (1LL << 2),
+	LOG_FORMAT_FLAG_LOCATION_DEBUG                      = (1LL << 3),
+	LOG_FORMAT_FLAG_LOCATION_INFO                       = (1LL << 4),
+	LOG_FORMAT_FLAG_LOCATION_ERROR                      = (1LL << 5),
+	LOG_FORMAT_FLAG_ALIGN_LOCATION                      = (1LL << 6),
+
+	_LOG_FORMAT_FLAG_TIMESTAMP                          = LOG_FORMAT_FLAG_TIMESTAMP_DEBUG |
+	                                                      LOG_FORMAT_FLAG_TIMESTAMP_INFO |
+	                                                      LOG_FORMAT_FLAG_TIMESTAMP_ERROR,
+	_LOG_FORMAT_FLAG_LOCATION                           = LOG_FORMAT_FLAG_LOCATION_DEBUG |
+	                                                      LOG_FORMAT_FLAG_LOCATION_INFO |
+	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR,
+
+	_LOG_FORMAT_FLAG_LEVEL_DEBUG                        = LOG_FORMAT_FLAG_TIMESTAMP_DEBUG |
+	                                                      LOG_FORMAT_FLAG_LOCATION_DEBUG,
+	_LOG_FORMAT_FLAG_LEVEL_INFO                         = LOG_FORMAT_FLAG_TIMESTAMP_INFO |
+	                                                      LOG_FORMAT_FLAG_LOCATION_INFO,
+	_LOG_FORMAT_FLAG_LEVEL_ERROR                        = LOG_FORMAT_FLAG_TIMESTAMP_ERROR |
+	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR,
+
+	_LOG_FORMAT_FLAG_SYSLOG                             = _LOG_FORMAT_FLAG_TIMESTAMP |
+	                                                      LOG_FORMAT_FLAG_LOCATION_DEBUG |
+	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR |
+	                                                      LOG_FORMAT_FLAG_ALIGN_LOCATION,
+} LogFormatFlags;
+
 static void
 nm_log_handler (const gchar *log_domain,
                 GLogLevelFlags level,
@@ -57,18 +87,18 @@ typedef struct {
 	const char *level_str;
 	int syslog_level;
 	GLogLevelFlags g_log_level;
-	gboolean full_details;
+	LogFormatFlags log_format_level;
 } LogLevelDesc;
 
 static struct {
 	NMLogLevel log_level;
 	NMLogDomain logging[_LOGL_N_REAL];
 	gboolean logging_set_up;
+	LogFormatFlags log_format_flags;
 	enum {
 		LOG_BACKEND_GLIB,
 		LOG_BACKEND_SYSLOG,
 		LOG_BACKEND_JOURNAL,
-		LOG_BACKEND_JOURNAL_SYSLOG_STYLE,
 	} log_backend;
 	char *logging_domains_to_string;
 	const LogLevelDesc level_desc[_LOGL_N];
@@ -81,13 +111,13 @@ static struct {
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
 	.level_desc = {
-		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   TRUE  },
-		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   TRUE  },
-		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, FALSE },
-		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, FALSE },
-		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, TRUE  },
-		[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   FALSE },
-		[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   FALSE },
+		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
+		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
+		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_INFO },
+		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, _LOG_FORMAT_FLAG_LEVEL_INFO },
+		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, _LOG_FORMAT_FLAG_LEVEL_ERROR },
+		[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   0 },
+		[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   0 },
 	},
 	.domain_desc = {
 		{ LOGD_PLATFORM,  "PLATFORM" },
@@ -469,7 +499,9 @@ _nm_log_impl (const char *file,
 {
 	va_list args;
 	char *msg;
-	char *fullmsg = NULL;
+	char *fullmsg;
+	char s_buf_timestamp[64];
+	char s_buf_location[1024];
 	GTimeVal tv;
 
 	if ((guint) level >= G_N_ELEMENTS (global.logging))
@@ -491,10 +523,55 @@ _nm_log_impl (const char *file,
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
+	if (NM_FLAGS_ANY (global.log_format_flags, global.level_desc[level].log_format_level & _LOG_FORMAT_FLAG_TIMESTAMP)) {
+		g_get_current_time (&tv);
+		nm_sprintf_buf (s_buf_timestamp, " [%ld.%06ld]", tv.tv_sec, tv.tv_usec);
+	} else
+		s_buf_timestamp[0] = '\0';
+
+	s_buf_location[0] = '\0';
+	if (NM_FLAGS_ANY (global.log_format_flags, global.level_desc[level].log_format_level & _LOG_FORMAT_FLAG_LOCATION)) {
+#define MAX_LEN_FILE 37
+#define MAX_LEN_FUNC 26
+		gsize l = sizeof (s_buf_location);
+		char *p = s_buf_location, *p_buf;
+		gsize len;
+		char s_buf[MAX (MAX_LEN_FILE, MAX_LEN_FUNC) + 30];
+
+		if (file) {
+			if (NM_FLAGS_HAS (global.log_format_flags, LOG_FORMAT_FLAG_ALIGN_LOCATION)) {
+				/* left-align the "[file:line]" string, but truncate from left to MAX_LEN_FILE chars. */
+				len = strlen (file);
+				nm_sprintf_buf (s_buf, "[%s:%u]",
+				                len > MAX_LEN_FILE ? &file[len - MAX_LEN_FILE] : file,
+				                line);
+				len = strlen (s_buf);
+				if (len > MAX_LEN_FILE) {
+					p_buf = &s_buf[len - MAX_LEN_FILE];
+					p_buf[0] = '[';
+				} else
+					p_buf = s_buf;
+				nm_utils_strbuf_append (&p, &l, " %-"G_STRINGIFY (MAX_LEN_FILE)"s", p_buf);
+			} else
+				nm_utils_strbuf_append (&p, &l, " [%s:%u]", file, line);
+		}
+		if (func) {
+			if (NM_FLAGS_HAS (global.log_format_flags, LOG_FORMAT_FLAG_ALIGN_LOCATION)) {
+				/* left-align the "func():" string, but truncate from left to MAX_LEN_FUNC chars. */
+				len = strlen (func);
+				nm_sprintf_buf (s_buf, "%s():",
+				                len > MAX_LEN_FUNC ? &func[len - MAX_LEN_FUNC] : func);
+				len = strlen (s_buf);
+				nm_utils_strbuf_append (&p, &l, " %-"G_STRINGIFY (MAX_LEN_FUNC)"s",
+				                        len > MAX_LEN_FUNC ? &s_buf[len - MAX_LEN_FUNC] : s_buf);
+			} else
+				nm_utils_strbuf_append (&p, &l, " %s():", func);
+		}
+	}
+
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
-	case LOG_BACKEND_JOURNAL_SYSLOG_STYLE:
 		{
 			gint64 now, boottime;
 #define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
@@ -507,12 +584,12 @@ _nm_log_impl (const char *file,
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", global.level_desc[level].syslog_level);
-			if (   global.log_backend == LOG_BACKEND_JOURNAL_SYSLOG_STYLE
-			    && global.level_desc[level].full_details) {
-				g_get_current_time (&tv);
-				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s [%ld.%06ld] [%s:%u] %s(): %s", global.level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
-			} else
-				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", global.level_desc[level].level_str, msg);
+			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE="
+			                   "%-7s%s%s %s",
+			                   global.level_desc[level].level_str,
+			                   s_buf_timestamp,
+			                   s_buf_location,
+			                   msg);
 			_iovec_set_literal_string (iov, iov_free, i_field++, "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN);
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
 			{
@@ -558,8 +635,8 @@ _nm_log_impl (const char *file,
 					_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
 			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", global.level_desc[level].name);
-			_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func);
-			_iovec_set_format (iov, iov_free, i_field++, "CODE_FILE=%s", file);
+			_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func ?: "");
+			_iovec_set_format (iov, iov_free, i_field++, "CODE_FILE=%s", file ?: "");
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_LINE=%u", line);
 			_iovec_set_format (iov, iov_free, i_field++, "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000));
 			_iovec_set_format (iov, iov_free, i_field++, "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000));
@@ -579,21 +656,21 @@ _nm_log_impl (const char *file,
 		break;
 #endif
 	default:
-		if (global.level_desc[level].full_details) {
-			g_get_current_time (&tv);
-			fullmsg = g_strdup_printf ("%-7s [%ld.%06ld] [%s:%u] %s(): %s", global.level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
-		} else
-			fullmsg = g_strdup_printf ("%-7s %s", global.level_desc[level].level_str, msg);
+		fullmsg = g_strdup_printf ("%-7s%s%s %s",
+		                           global.level_desc[level].level_str,
+		                           s_buf_timestamp,
+		                           s_buf_location,
+		                           msg);
 
 		if (global.log_backend == LOG_BACKEND_SYSLOG)
 			syslog (global.level_desc[level].syslog_level, "%s", fullmsg);
 		else
 			g_log (G_LOG_DOMAIN, global.level_desc[level].g_log_level, "%s", fullmsg);
+		g_free (fullmsg);
 		break;
 	}
 
 	g_free (msg);
-	g_free (fullmsg);
 }
 
 /************************************************************************/
@@ -631,7 +708,6 @@ nm_log_handler (const gchar *log_domain,
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
-	case LOG_BACKEND_JOURNAL_SYSLOG_STYLE:
 		{
 			gint64 now, boottime;
 
@@ -660,6 +736,8 @@ nm_log_handler (const gchar *log_domain,
 void
 nm_logging_syslog_openlog (const char *logging_backend)
 {
+	LogFormatFlags log_format_flags;
+
 	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
 
@@ -669,12 +747,14 @@ nm_logging_syslog_openlog (const char *logging_backend)
 	if (strcmp (logging_backend, "debug") == 0) {
 		global.log_backend = LOG_BACKEND_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
+		log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
 #if SYSTEMD_JOURNAL
 	} else if (strcmp (logging_backend, "syslog") != 0) {
-		if (strcmp (logging_backend, "journal-syslog-style") != 0)
-			global.log_backend = LOG_BACKEND_JOURNAL;
+		if (strcmp (logging_backend, "journal-syslog-style") == 0)
+			log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
 		else
-			global.log_backend = LOG_BACKEND_JOURNAL_SYSLOG_STYLE;
+			log_format_flags = _LOG_FORMAT_FLAG_TIMESTAMP;
+		global.log_backend = LOG_BACKEND_JOURNAL;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
@@ -682,8 +762,11 @@ nm_logging_syslog_openlog (const char *logging_backend)
 #endif
 	} else {
 		global.log_backend = LOG_BACKEND_SYSLOG;
+		log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	}
+
+	global.log_format_flags = log_format_flags;
 
 	g_log_set_handler (G_LOG_DOMAIN,
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,

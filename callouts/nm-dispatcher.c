@@ -495,7 +495,13 @@ check_permissions (struct stat *s, const char **out_error_msg)
 static gboolean
 check_filename (const char *file_name)
 {
-	char *bad_suffixes[] = { "~", ".rpmsave", ".rpmorig", ".rpmnew", NULL };
+	static const char *bad_suffixes[] = {
+		"~",
+		".rpmsave",
+		".rpmorig",
+		".rpmnew",
+		".swp",
+	};
 	char *tmp;
 	guint i;
 
@@ -503,12 +509,12 @@ check_filename (const char *file_name)
 
 	if (file_name[0] == '.')
 		return FALSE;
-	for (i = 0; bad_suffixes[i]; i++) {
+	for (i = 0; i < G_N_ELEMENTS (bad_suffixes); i++) {
 		if (g_str_has_suffix (file_name, bad_suffixes[i]))
 			return FALSE;
 	}
 	tmp = g_strrstr (file_name, ".dpkg-");
-	if (tmp && (tmp == strrchr (file_name, '.')))
+	if (tmp && !strchr (&tmp[1], '.'))
 		return FALSE;
 	return TRUE;
 }
