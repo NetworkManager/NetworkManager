@@ -430,9 +430,11 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  *   yet initialized. Unrealized device are also unmanaged for this reason.
  * @NM_UNMANAGED_USER_EXPLICIT: %TRUE when unmanaged by explicit user decision
  *   (e.g. via a D-Bus command)
+ * @NM_UNMANAGED_USER_SETTINGS: %TRUE when unmanaged by user decision via
+ *   the settings plugin (for example keyfile.unmanaged-devices or ifcfg-rh's
+ *   NM_CONTROLLED=no)
  * @NM_UNMANAGED_BY_DEFAULT: %TRUE for certain device types where we unmanage
  *   them by default
- * @NM_UNMANAGED_USER_CONFIG: %TRUE when unmanaged by user decision (via unmanaged-specs)
  * @NM_UNMANAGED_USER_UDEV: %TRUE when unmanaged by user decision (via UDev rule)
  * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
  * @NM_UNMANAGED_IS_SLAVE: indicates that the device is enslaved. Note that
@@ -450,11 +452,11 @@ typedef enum { /*< skip >*/
 	NM_UNMANAGED_LOOPBACK      = (1LL <<  3),
 	NM_UNMANAGED_PLATFORM_INIT = (1LL <<  4),
 	NM_UNMANAGED_USER_EXPLICIT = (1LL <<  5),
+	NM_UNMANAGED_USER_SETTINGS = (1LL <<  6),
 
 	/* These flags can be non-effective and be overwritten
 	 * by other flags. */
 	NM_UNMANAGED_BY_DEFAULT    = (1LL <<  8),
-	NM_UNMANAGED_USER_CONFIG   = (1LL <<  9),
 	NM_UNMANAGED_USER_UDEV     = (1LL << 10),
 	NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 11),
 	NM_UNMANAGED_IS_SLAVE      = (1LL << 12),
