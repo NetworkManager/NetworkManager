@@ -9059,21 +9059,10 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 		mask &= ~NM_UNMANAGED_USER_SETTINGS;
 	}
 
-	if (NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_SETTINGS)) {
+	if (NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_UDEV)) {
 		/* configuration from udev or nm-config overwrites the by-default flag
 		 * which is based on the device type. */
 		flags &= ~NM_UNMANAGED_BY_DEFAULT;
-	}
-
-	if (NM_FLAGS_HAS (mask, NM_UNMANAGED_USER_SETTINGS)) {
-		/* configuration from configuration overwrites the setting
-		 * originating from udev.
-		 *
-		 * Actually, this check has no effect, because at this point,
-		 * the device also is NM_UNMANAGED_USER_SETTINGS. Thus clearing
-		 * NM_UNMANAGED_USER_UDEV doesn't change the outcome.
-		 * Just be explicit about this. */
-		flags &= ~NM_UNMANAGED_USER_UDEV;
 	}
 
 	if (   NM_FLAGS_HAS (mask, NM_UNMANAGED_IS_SLAVE)
@@ -9087,7 +9076,6 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 		 * are ignored. */
 
 		flags &= ~(  NM_UNMANAGED_BY_DEFAULT
-		           | NM_UNMANAGED_USER_SETTINGS
 		           | NM_UNMANAGED_USER_UDEV
 		           | NM_UNMANAGED_EXTERNAL_DOWN);
 	}
