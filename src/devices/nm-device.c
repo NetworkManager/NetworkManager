@@ -8968,7 +8968,7 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_unmanaged_flags2str, NMUnmanagedFlags,
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_PLATFORM_INIT, "platform-init"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_BY_DEFAULT, "by-default"),
-	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_CONFIG, "user-config"),
+	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_SETTINGS, "user-settings"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_UDEV, "user-udev"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_EXTERNAL_DOWN, "external-down"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_IS_SLAVE, "is-slave"),
@@ -9029,7 +9029,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 	 * Some flags are authoritative, meaning they always cause
 	 * the device to be unmanaged (e.g. @NM_UNMANAGED_PLATFORM_INIT).
 	 *
-	 * OTOH, some flags can be overwritten. For example NM_UNMANAGED_USER_CONFIG
+	 * OTOH, some flags can be overwritten. For example NM_UNMANAGED_USER_SETTINGS
 	 * is ignored once NM_UNMANAGED_USER_EXPLICIT is set. The idea is that
 	 * the flag from the configuration has no effect once the user explicitly
 	 * touches the unmanaged flags. */
@@ -9051,26 +9051,26 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 		flags &= ~NM_UNMANAGED_USER_EXPLICIT;
 	}
 
-	if (   NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_CONFIG)
-	    && !NM_FLAGS_ANY (flags, NM_UNMANAGED_USER_CONFIG)) {
-		/* NM_UNMANAGED_USER_CONFIG can only explicitly unmanage a device. It cannot
-		 * *manage* it. Having NM_UNMANAGED_USER_CONFIG explicitly not set, is the
+	if (   NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_SETTINGS)
+	    && !NM_FLAGS_ANY (flags, NM_UNMANAGED_USER_SETTINGS)) {
+		/* NM_UNMANAGED_USER_SETTINGS can only explicitly unmanage a device. It cannot
+		 * *manage* it. Having NM_UNMANAGED_USER_SETTINGS explicitly not set, is the
 		 * same as having it not set at all. */
-		mask &= ~NM_UNMANAGED_USER_CONFIG;
+		mask &= ~NM_UNMANAGED_USER_SETTINGS;
 	}
 
-	if (NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_CONFIG)) {
+	if (NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_SETTINGS)) {
 		/* configuration from udev or nm-config overwrites the by-default flag
 		 * which is based on the device type. */
 		flags &= ~NM_UNMANAGED_BY_DEFAULT;
 	}
 
-	if (NM_FLAGS_HAS (mask, NM_UNMANAGED_USER_CONFIG)) {
+	if (NM_FLAGS_HAS (mask, NM_UNMANAGED_USER_SETTINGS)) {
 		/* configuration from configuration overwrites the setting
 		 * originating from udev.
 		 *
 		 * Actually, this check has no effect, because at this point,
-		 * the device also is NM_UNMANAGED_USER_CONFIG. Thus clearing
+		 * the device also is NM_UNMANAGED_USER_SETTINGS. Thus clearing
 		 * NM_UNMANAGED_USER_UDEV doesn't change the outcome.
 		 * Just be explicit about this. */
 		flags &= ~NM_UNMANAGED_USER_UDEV;
@@ -9087,7 +9087,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 		 * are ignored. */
 
 		flags &= ~(  NM_UNMANAGED_BY_DEFAULT
-		           | NM_UNMANAGED_USER_CONFIG
+		           | NM_UNMANAGED_USER_SETTINGS
 		           | NM_UNMANAGED_USER_UDEV
 		           | NM_UNMANAGED_EXTERNAL_DOWN);
 	}
@@ -9294,7 +9294,7 @@ nm_device_set_unmanaged_by_user_config (NMDevice *self, const GSList *unmanaged_
 	unmanaged = nm_device_spec_match_list (self, unmanaged_specs);
 
 	nm_device_set_unmanaged_by_flags (self,
-	                                  NM_UNMANAGED_USER_CONFIG,
+	                                  NM_UNMANAGED_USER_SETTINGS,
 	                                  unmanaged,
 	                                  unmanaged
 	                                      ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED
