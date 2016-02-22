@@ -157,8 +157,13 @@ set_system_hostname (NMPolicy *self, const char *new_hostname, const char *msg)
 	const char *name;
 	int ret;
 
-	if (new_hostname)
-		g_warn_if_fail (strlen (new_hostname));
+	if (!new_hostname)
+		name = FALLBACK_HOSTNAME4;
+	else if (!new_hostname[0]) {
+		g_warn_if_reached ();
+		name = FALLBACK_HOSTNAME4;
+	} else
+		name = new_hostname;
 
 	old_hostname[HOST_NAME_MAX] = '\0';
 	errno = 0;
@@ -168,12 +173,10 @@ set_system_hostname (NMPolicy *self, const char *new_hostname, const char *msg)
 		       errno, strerror (errno));
 	} else {
 		/* Don't set the hostname if it isn't actually changing */
-		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
-		       || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
+		if (nm_streq (name, old_hostname))
 			return;
 	}
 
-	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
 	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
 	nm_settings_set_transient_hostname (priv->settings,
 	                                    name,
