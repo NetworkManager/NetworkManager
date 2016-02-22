@@ -191,13 +191,18 @@
         <varlistentry>
           <term><varname>DEVICE_IFACE</varname></term>
           <listitem><para>
-            The interface name of the device.
+            The interface name of the control interface of the device.
+            Depending on the device type, this differs from
+            <varname>DEVICE_IP_IFACE</varname>. For example for
+            ADSL devices, this could be 'atm0' or for WWAN devices
+            it might be 'ttyUSB0'.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>DEVICE_IP_IFACE</varname></term>
           <listitem><para>
-            The IP interface name of the device.
+            The IP interface name of the device. This is the network
+            interface on which IP addresses and routes will be configured.
           </para></listitem>
         </varlistentry>
         <varlistentry>
