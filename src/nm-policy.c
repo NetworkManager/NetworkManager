@@ -150,46 +150,14 @@ static void settings_set_hostname_cb (const char *hostname,
 }
 
 static void
-set_system_hostname (NMPolicy *self, const char *new_hostname, const char *msg)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char old_hostname[HOST_NAME_MAX + 1];
-	const char *name;
-	int ret;
-
-	if (!new_hostname)
-		name = FALLBACK_HOSTNAME4;
-	else if (!new_hostname[0]) {
-		g_warn_if_reached ();
-		name = FALLBACK_HOSTNAME4;
-	} else
-		name = new_hostname;
-
-	old_hostname[HOST_NAME_MAX] = '\0';
-	errno = 0;
-	ret = gethostname (old_hostname, HOST_NAME_MAX);
-	if (ret != 0) {
-		_LOGW (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
-		       errno, strerror (errno));
-	} else {
-		/* Don't set the hostname if it isn't actually changing */
-		if (nm_streq (name, old_hostname))
-			return;
-	}
-
-	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
-	nm_settings_set_transient_hostname (priv->settings,
-	                                    name,
-	                                    settings_set_hostname_cb,
-	                                    NULL);
-}
-
-static void
 _set_hostname (NMPolicy *policy,
                const char *new_hostname,
                const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	char old_hostname[HOST_NAME_MAX + 1];
+	const char *name;
+	int ret;
 
 	/* The incoming hostname *can* be NULL, which will get translated to
 	 * 'localhost.localdomain' or such in the hostname policy code, but we
@@ -221,9 +189,41 @@ _set_hostname (NMPolicy *policy,
 	priv->cur_hostname = g_strdup (new_hostname);
 	priv->hostname_changed = TRUE;
 
+	/* Notify the DNS manager of the hostname change so that the domain part, if
+	 * present, can be added to the search list.
+	 */
 	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
 
-	set_system_hostname (policy, priv->cur_hostname, msg);
+	 /* Finally, set kernel hostname */
+
+	if (!priv->cur_hostname)
+		name = FALLBACK_HOSTNAME4;
+	else if (!priv->cur_hostname[0]) {
+		g_warn_if_reached ();
+		name = FALLBACK_HOSTNAME4;
+	} else
+		name = priv->cur_hostname;
+
+	old_hostname[HOST_NAME_MAX] = '\0';
+	errno = 0;
+	ret = gethostname (old_hostname, HOST_NAME_MAX);
+	if (ret != 0) {
+		_LOGW (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
+		       errno, strerror (errno));
+	} else {
+		/* Don't set the hostname if it isn't actually changing */
+		if (nm_streq (name, old_hostname))
+			return;
+	}
+
+	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
+
+	/* Ask NMSettings to update the transient hostname using its
+	 * systemd-hostnamed proxy */
+	nm_settings_set_transient_hostname (priv->settings,
+	                                    name,
+	                                    settings_set_hostname_cb,
+	                                    NULL);
 }
 
 static void
