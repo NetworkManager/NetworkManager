@@ -516,6 +516,9 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->inotify_helper);
 
+	g_clear_pointer (&priv->unmanaged_spec, g_free);
+	g_clear_pointer (&priv->unrecognized_spec, g_free);
+
 	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->dispose (object);
 }
 
