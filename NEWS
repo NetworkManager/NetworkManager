@@ -64,12 +64,23 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The API for VPN plugins now supports multiple simultaneous connections.
     Most popular VPN plugins have been updated to support this functionality.
 * The libnm library now provides API to access VPN service definitions.
-* Fair amount of bugs was fixed and robustness was generally improved.
 * New DHCP_FQDN key in ifcfg files to configure the full FQDN to be sent to
     the DHCP servers.
 * The timeout for DHCP requests can now be modified using the
     'ipv4.dhcp-timeout' property.
 * Added multicast_snooping option to BRIDGING_OPTS ifcfg key.
+* Added support for detecting duplicate IPv4 addresses, with a timeout
+    configurable through the ipv4.dad-timeout connection property.
+* Fixed a race condition that could potentially lead to unauthorized access
+    to connection secrets (CVE-2016-0764).
+* dnsmasq configuration for shared connections can now be extended by
+    placing custom files in /etc/NetworkManager/dnsmasq-shared.d/.
+* Generic devices are no longer assumed unless explicitly requested by
+    user.
+* The reorder-header VLAN flag setting is now honored; to keep backwards
+    compatibility in behavior, an existing REORDER_HDR=0 ifcfg-rh key is
+    ignored; the flag must be disabled with VLAN_FLAGS=NO_REORDER_HDR.
+* Fair amount of bugs was fixed and robustness was generally improved.
 
 The following features were backported to 1.0.x releases from 1.0.0 to 1.0.8
 are also present in NetworkManager-1.2:
