@@ -2452,8 +2452,11 @@ _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *va
 static gboolean
 sysctl_set (NMPlatform *platform, const char *path, const char *value)
 {
-	int fd, len, nwrote, tries;
+	int fd, tries;
+	gssize nwrote;
+	gsize len;
 	char *actual;
+	gs_free char *actual_free = NULL;
 
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
@@ -2483,10 +2486,16 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	 * sysctl support partial writes so the LF must be added to the string we're
 	 * about to write.
 	 */
-	actual = g_strdup_printf ("%s\n", value);
+	len = strlen (value) + 1;
+	if (len > 512)
+		actual = actual_free = g_malloc (len + 1);
+	else
+		actual = g_alloca (len + 1);
+	memcpy (actual, value, len - 1);
+	actual[len - 1] = '\n';
+	actual[len] = '\0';
 
 	/* Try to write the entire value three times if a partial write occurs */
-	len = strlen (actual);
 	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
@@ -2505,7 +2514,6 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 		       path, value);
 	}
 
-	g_free (actual);
 	close (fd);
 	return (nwrote == len);
 }
