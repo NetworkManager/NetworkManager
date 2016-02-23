@@ -1819,9 +1819,21 @@ get_type_name (NMDevice *device)
 		return _("VLAN");
 	case NM_DEVICE_TYPE_ADSL:
 		return _("ADSL");
-	default:
-		return _("Unknown");
+	case NM_DEVICE_TYPE_MACVLAN:
+		return _("MACVLAN");
+	case NM_DEVICE_TYPE_VXLAN:
+		return _("VXLAN");
+	case NM_DEVICE_TYPE_IP_TUNNEL:
+		return _("IPTunnel");
+	case NM_DEVICE_TYPE_TUN:
+		return _("Tun");
+	case NM_DEVICE_TYPE_GENERIC:
+	case NM_DEVICE_TYPE_UNUSED1:
+	case NM_DEVICE_TYPE_UNUSED2:
+	case NM_DEVICE_TYPE_UNKNOWN:
+		break;
 	}
+	return _("Unknown");
 }
 
 static char *
