@@ -64,6 +64,7 @@ static NMDevice *
 new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	NMDeviceWifiCapabilities capabilities;
+	NM80211Mode mode;
 
 	g_return_val_if_fail (plink != NULL, NULL);
 	g_return_val_if_fail (NM_IN_SET (plink->type, NM_LINK_TYPE_WIFI, NM_LINK_TYPE_OLPC_MESH), NULL);
@@ -72,6 +73,16 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore,
 	                                        plink->ifindex,
 	                                        &capabilities)) {
 		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s) failed to initialize Wi-Fi driver for ifindex %d", plink->name, plink->ifindex);
+		return NULL;
+	}
+
+	/* Ignore monitor-mode and other unhandled interface types.
+	 * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
+	 * them if/when they change to a handled type.
+	 */
+	mode = nm_platform_wifi_get_mode (NM_PLATFORM_GET, plink->ifindex);
+	if (mode == NM_802_11_MODE_UNKNOWN) {
+		*out_ignore = TRUE;
 		return NULL;
 	}
 
