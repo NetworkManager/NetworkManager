@@ -52,6 +52,7 @@ devtype_to_name()
    17) echo "IPTunnel" ;;
    18) echo "MACVLAN" ;;
    19) echo "VXLAN" ;;
+   20) echo "Veth" ;;
     *) echo "Unknown" ;;
   esac
 }

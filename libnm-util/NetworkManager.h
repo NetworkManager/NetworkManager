@@ -155,6 +155,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_IP_TUNNEL: an IP tunnel interface
  * @NM_DEVICE_TYPE_MACVLAN: a MACVLAN interface
  * @NM_DEVICE_TYPE_VXLAN: a VXLAN interface
+ * @NM_DEVICE_TYPE_VETH: a VETH interface
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
@@ -182,6 +183,7 @@ typedef enum {
 	NM_DEVICE_TYPE_IP_TUNNEL  = 17,
 	NM_DEVICE_TYPE_MACVLAN    = 18,
 	NM_DEVICE_TYPE_VXLAN      = 19,
+	NM_DEVICE_TYPE_VETH       = 20,
 } NMDeviceType;
 
 /**

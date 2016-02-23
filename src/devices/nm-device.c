@@ -803,6 +803,8 @@ nm_device_get_priority (NMDevice *self)
 		return 600;
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return 650;
+	case NM_DEVICE_TYPE_VETH:
+		return 665;
 	case NM_DEVICE_TYPE_IP_TUNNEL:
 		return 675;
 	case NM_DEVICE_TYPE_MODEM:

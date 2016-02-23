@@ -43,6 +43,7 @@ devtypes = { 1 => "Ethernet",
              17 => "IPTunnel",
              18 => "MACVLAN",
              19 => "VXLAN",
+             20 => "Veth",
            }
 
 states = { 0   => "Unknown",
