@@ -2653,8 +2653,6 @@ typedef struct NameItem {
 
 static const NameItem nmc_generic_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2662,8 +2660,6 @@ static const NameItem nmc_ethernet_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
 	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NM_SETTING_DCB_SETTING_NAME,        NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
@@ -2671,8 +2667,6 @@ static const NameItem nmc_ethernet_settings [] = {
 static const NameItem nmc_infiniband_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL, NULL, TRUE  },
 	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL, NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL, NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2681,16 +2675,12 @@ static const NameItem nmc_wifi_settings [] = {
 	{ NM_SETTING_WIRELESS_SETTING_NAME,          "wifi",     NULL, TRUE  },
 	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, "wifi-sec", NULL, FALSE },
 	{ NM_SETTING_802_1X_SETTING_NAME,            NULL,       NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_wimax_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
 	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,   NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2699,8 +2689,6 @@ static const NameItem nmc_gsm_settings [] = {
 	{ NM_SETTING_GSM_SETTING_NAME,        NULL,       NULL, TRUE  },
 	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL, FALSE },
 	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2709,24 +2697,18 @@ static const NameItem nmc_cdma_settings [] = {
 	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,       NULL, TRUE  },
 	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL, FALSE },
 	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bluetooth_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,   NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_adsl_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
 	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,   NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2739,24 +2721,18 @@ static const NameItem nmc_pppoe_settings [] = {
 	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,       NULL, TRUE  },
 	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
 	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_olpc_mesh_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,        NULL, TRUE  },
 	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,        NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,        NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_vpn_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
 	{ NM_SETTING_VPN_SETTING_NAME,        NULL,   NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2764,8 +2740,6 @@ static const NameItem nmc_vlan_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
 	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2773,8 +2747,6 @@ static const NameItem nmc_bond_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_BOND_SETTING_NAME,       NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2782,8 +2754,6 @@ static const NameItem nmc_team_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2791,31 +2761,26 @@ static const NameItem nmc_bridge_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bond_slave_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_team_slave_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
 	{ NM_SETTING_TEAM_PORT_SETTING_NAME,  NULL,       NULL, TRUE  },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bridge_slave_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
 	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, TRUE  },
-	{ NM_SETTING_802_1X_SETTING_NAME,      NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
+
+static const NameItem nmc_no_slave_settings [] = {
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2823,16 +2788,12 @@ static const NameItem nmc_tun_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_TUN_SETTING_NAME,        NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_ip_tunnel_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,       NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2840,8 +2801,6 @@ static const NameItem nmc_macvlan_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,       NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2849,8 +2808,6 @@ static const NameItem nmc_vxlan_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
 	{ NM_SETTING_VXLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, FALSE },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,  NULL,       NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,  NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -2875,6 +2832,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ "bond-slave",                       NULL,        nmc_bond_slave_settings   },
 	{ "team-slave",                       NULL,        nmc_team_slave_settings   },
 	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
+	{ "no-slave",                         NULL,        nmc_no_slave_settings     },
 	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,        nmc_ip_tunnel_settings    },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,        nmc_macvlan_settings      },
@@ -2907,88 +2865,32 @@ get_name_alias (const char *name, const NameItem array[])
 }
 
 /*
- * Construct a string with names and aliases from the array formatted as:
+ * Construct a string with names and aliases from the arrays formatted as:
  * "name (alias), name, name (alias), name, name"
  *
  * Returns: string; the caller is responsible for freeing it.
  */
 static char *
-get_valid_options_string (const NameItem array[])
+get_valid_options_string (const NameItem *array, const NameItem *array_slv)
 {
-	const NameItem *iter = &array[0];
+	const NameItem *iter = array;
 	GString *str;
+	int i;
 
 	str = g_string_sized_new (150);
-	while (iter && iter->name) {
-		if (str->len)
-			g_string_append (str, ", ");
-		if (iter->alias)
-			g_string_append_printf (str, "%s (%s)", iter->name, iter->alias);
-		else
-			g_string_append (str, iter->name);
-		iter++;
+
+	for (i = 0; i < 2; i++, iter = array_slv) {
+		while (iter && iter->name) {
+			if (str->len)
+				g_string_append (str, ", ");
+			if (iter->alias)
+				g_string_append_printf (str, "%s (%s)", iter->name, iter->alias);
+			else
+				g_string_append (str, iter->name);
+			iter++;
+		}
 	}
 	return g_string_free (str, FALSE);
-}
-
-/*
- * Check if 'val' is valid string in either array->name or array->alias.
- * It accepts shorter string provided they are not ambiguous.
- * 'val' == NULL doesn't hurt.
- *
- * Returns: pointer to array->name string or NULL on failure.
- * The returned string must not be freed.
- */
-static const char *
-check_valid_name (const char *val, const NameItem array[], GError **error)
-{
-	const NameItem *iter;
-	GPtrArray *tmp_arr;
-	const char *str;
-	GError *tmp_err = NULL;
-
-	/* Create a temporary array that can be used in nmc_string_is_valid() */
-	tmp_arr = g_ptr_array_sized_new (30);
-	iter = &array[0];
-	while (iter && iter->name) {
-		g_ptr_array_add (tmp_arr, (gpointer) iter->name);
-		if (iter->alias)
-			g_ptr_array_add (tmp_arr, (gpointer) iter->alias);
-		iter++;
-	}
-	g_ptr_array_add (tmp_arr, (gpointer) NULL);
-
-	/* Check string validity */
-	str = nmc_string_is_valid (val, (const char **) tmp_arr->pdata, &tmp_err);
-	if (!str) {
-		if (tmp_err->code == 1)
-			g_propagate_error (error, tmp_err);
-		else {
-			/* We want to handle aliases, so construct own error message */
-			char *err_str = get_valid_options_string (array);
-			g_set_error (error, 1, 0, _("'%s' not among [%s]"),
-			             val ? val : "", err_str);
-			g_free (err_str);
-			g_clear_error (&tmp_err);
-		}
-		g_ptr_array_free (tmp_arr, TRUE);
-		return NULL;
-	}
-
-	/* Return a pointer to the found string in passed 'array' */
-	iter = &array[0];
-	while (iter && iter->name) {
-		if (   (iter->name && g_strcmp0 (iter->name, str) == 0)
-		    || (iter->alias && g_strcmp0 (iter->alias, str) == 0)) {
-			g_ptr_array_free (tmp_arr, TRUE);
-			return iter->name;
-		}
-		iter++;
-	}
-	/* We should not really come here */
-	g_ptr_array_free (tmp_arr, TRUE);
-	g_set_error (error, 1, 0, _("Unknown error"));
-	return NULL;
 }
 
 static const NameItem *
@@ -3000,10 +2902,78 @@ get_valid_settings_array (const char *con_type)
 		return NULL;
 
 	num = G_N_ELEMENTS (nmc_valid_connection_types);
-        for (i = 0; i < num; i++) {
-		if (!g_strcmp0 (con_type, nmc_valid_connection_types[i].name))
+	for (i = 0; i < num; i++) {
+		if (nm_streq0 (con_type, nmc_valid_connection_types[i].name))
 			return nmc_valid_connection_types[i].settings;
 	}
+	return NULL;
+}
+
+/*
+ * Check if 'val' is valid string in either array->name or array->alias for
+ * both array parameters (array & array_slv).
+ * It accepts shorter string provided they are not ambiguous.
+ * 'val' == NULL doesn't hurt.
+ *
+ * Returns: pointer to array->name string or NULL on failure.
+ * The returned string must not be freed.
+ */
+static const char *
+check_valid_name (const char *val, const NameItem *array, const NameItem *array_slv, GError **error)
+{
+	const NameItem *iter;
+	gs_unref_ptrarray GPtrArray *tmp_arr = NULL;
+	const char *str;
+	GError *tmp_err = NULL;
+	int i;
+
+	g_return_val_if_fail (val, NULL);
+	g_return_val_if_fail (array, NULL);
+
+	/* Create a temporary array that can be used in nmc_string_is_valid() */
+	tmp_arr = g_ptr_array_sized_new (32);
+	iter = array;
+	for (i = 0; i < 2; i++, iter = array_slv) {
+		while (iter && iter->name) {
+			g_ptr_array_add (tmp_arr, (gpointer) iter->name);
+			if (iter->alias)
+				g_ptr_array_add (tmp_arr, (gpointer) iter->alias);
+			iter++;
+		}
+	}
+	g_ptr_array_add (tmp_arr, (gpointer) NULL);
+
+	/* Check string validity */
+	str = nmc_string_is_valid (val, (const char **) tmp_arr->pdata, &tmp_err);
+	if (!str) {
+		if (tmp_err->code == 1)
+			g_propagate_error (error, tmp_err);
+		else {
+			/* We want to handle aliases, so construct own error message */
+			char *err_str = get_valid_options_string (array, array_slv);
+
+			g_set_error (error, 1, 0, _("'%s' not among [%s]"),
+			             val, err_str);
+			g_free (err_str);
+			g_clear_error (&tmp_err);
+		}
+		return NULL;
+	}
+
+	/* Return a pointer to the found string in passed 'array' */
+	iter = array;
+	for (i = 0; i < 2; i++, iter = array_slv) {
+		while (iter && iter->name) {
+			if (   nm_streq (iter->name, str)
+			    || nm_streq0 (iter->alias, str)) {
+				return iter->name;
+			}
+			iter++;
+		}
+	}
+
+	/* We should not really come here */
+	g_set_error (error, 1, 0, _("Unknown error"));
 	return NULL;
 }
 
@@ -3014,6 +2984,8 @@ is_setting_mandatory (NMConnection *connection, NMSetting *setting)
 	const char *c_type;
 	const NameItem *item;
 	const char *name;
+	const char *s_type;
+	char *slv_type;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -3027,6 +2999,18 @@ is_setting_mandatory (NMConnection *connection, NMSetting *setting)
 			return item->mandatory;
 		item++;
 	}
+
+	/* Let's give a try to parameters related to slave type */
+	s_type = nm_setting_connection_get_slave_type (s_con);
+	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
+	item = get_valid_settings_array (slv_type);
+	g_free (slv_type);
+	while (item && item->name) {
+		if (!strcmp (name, item->name))
+			return item->mandatory;
+		item++;
+	}
+
 	return FALSE;
 }
 
@@ -4482,11 +4466,11 @@ do_questionnaire_ip (NMConnection *connection)
 }
 
 static NMSetting *
-is_setting_valid (NMConnection *connection, const NameItem *valid_settings, char *setting)
+is_setting_valid (NMConnection *connection, const NameItem *valid_settings_main, const NameItem *valid_settings_slave, char *setting)
 {
 	const char *setting_name;
 
-	if (!(setting_name = check_valid_name (setting, valid_settings, NULL)))
+	if (!(setting_name = check_valid_name (setting, valid_settings_main, valid_settings_slave, NULL)))
 		return NULL;
 	return nm_connection_get_setting_by_name (connection, setting_name);
 }
@@ -4639,6 +4623,7 @@ read_connection_properties (NMConnection *connection,
 	const char *s_dot_p;
 	const char *value;
 	char **strv = NULL;
+	char *slv_type = NULL;
 	const char *setting_name;
 	gboolean append = FALSE;
 	gboolean remove = FALSE;
@@ -4647,6 +4632,16 @@ read_connection_properties (NMConnection *connection,
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
+
+	/* First check if we have a slave-type, as this would mean we will not
+	 * have ip properties but possibly others, slave-type specific.
+	 */
+	con_type = nm_setting_connection_get_slave_type (s_con);
+	if (!con_type)
+		con_type = "no";
+
+	slv_type = g_strdup_printf ("%s-slave", con_type);
+
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
 	/* Go through arguments and set properties */
@@ -4687,7 +4682,8 @@ read_connection_properties (NMConnection *connection,
 			goto finish;
 		}
 
-		setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type), &local);
+		setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type),
+		                                 get_valid_settings_array (slv_type), &local);
 		if (!setting_name) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("Error: invalid or not allowed setting '%s': %s."),
@@ -4759,6 +4755,7 @@ read_connection_properties (NMConnection *connection,
 finish:
 	if (strv)
 		g_strfreev (strv);
+	g_free (slv_type);
 	return success;
 }
 
@@ -6954,7 +6951,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (!type && nmc->ask) {
-		char *types_tmp = get_valid_options_string (nmc_valid_connection_types);
+		char *types_tmp = get_valid_options_string (nmc_valid_connection_types, NULL);
 		g_print ("Valid types: [%s]\n", types_tmp);
 		type = type_ask = nmc_readline (PROMPT_CON_TYPE);
 		g_free (types_tmp);
@@ -6967,7 +6964,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	if (type_ask)
 		type = g_strstrip (type_ask);
 
-	if (!(setting_name = check_valid_name (type, nmc_valid_connection_types, &error))) {
+	if (!(setting_name = check_valid_name (type, nmc_valid_connection_types, NULL, &error))) {
 		g_string_printf (nmc->return_text, _("Error: invalid connection type; %s."),
 		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -7250,18 +7247,48 @@ gen_connection_types (const char *text, int state)
 static char *
 gen_setting_names (const char *text, int state)
 {
-	static int list_idx, len;
+	static int list_idx, len, is_slv;
 	const char *s_name, *a_name;
 	const NameItem *valid_settings_arr;
+	NMSettingConnection *s_con;
+	const char *s_type = NULL;
+	char *slv_type;
 
 	if (!state) {
 		list_idx = 0;
 		len = strlen (text);
+		is_slv = 0;
 	}
 
-	valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
-	if (!valid_settings_arr)
-		return NULL;
+	if (!is_slv) {
+		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
+		if (!valid_settings_arr)
+			return NULL;
+		while (valid_settings_arr[list_idx].name) {
+			a_name = valid_settings_arr[list_idx].alias;
+			s_name = valid_settings_arr[list_idx].name;
+			list_idx++;
+			if (len == 0 && a_name)
+				return g_strdup_printf ("%s (%s)", s_name, a_name);
+			if (a_name && !strncmp (text, a_name, len))
+				return g_strdup (a_name);
+			if (s_name && !strncmp (text, s_name, len))
+				return g_strdup (s_name);
+		}
+
+		/* Let's give a try to parameters related to slave type */
+		list_idx = 0;
+		is_slv = 1;
+	}
+
+	/* is_slv */
+	s_con = nm_connection_get_setting_connection (nmc_tab_completion.connection);
+	if (s_con)
+		s_type = nm_setting_connection_get_slave_type (s_con);
+	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
+	valid_settings_arr = get_valid_settings_array (slv_type);
+	g_free (slv_type);
+
 	while (valid_settings_arr[list_idx].name) {
 		a_name = valid_settings_arr[list_idx].alias;
 		s_name = valid_settings_arr[list_idx].name;
@@ -7273,6 +7300,7 @@ gen_setting_names (const char *text, int state)
 		if (s_name && !strncmp (text, s_name, len))
 			return g_strdup (s_name);
 	}
+
 	return NULL;
 }
 
@@ -7285,8 +7313,10 @@ gen_property_names (const char *text, int state)
 	const char *line = rl_line_buffer;
 	const char *setting_name;
 	char **strv = NULL;
-	const NameItem *valid_settings_arr;
+	const NameItem *valid_settings_main;
+	const NameItem *valid_settings_slave;
 	const char *p1;
+	const char *slv_type;
 
 	/* Try to get the setting from 'line' - setting_name.property */
 	p1 = strchr (line, '.');
@@ -7296,8 +7326,23 @@ gen_property_names (const char *text, int state)
 
 		strv = g_strsplit (p1+1, ".", 2);
 
-		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
-		setting_name = check_valid_name (strv[0], valid_settings_arr, NULL);
+		valid_settings_main = get_valid_settings_array (nmc_tab_completion.con_type);
+
+		/* Support autocompletion of slave-connection parameters
+		 * guessing the slave type from the setting name already
+		 * typed (or autocompleted) */
+		if (nm_streq0 (strv[0], NM_SETTING_TEAM_PORT_SETTING_NAME))
+			slv_type = "team-slave";
+		else if (nm_streq0 (strv[0], NM_SETTING_BRIDGE_PORT_SETTING_NAME))
+			slv_type = "bridge-slave";
+		else
+			slv_type = "no-slave";
+		valid_settings_slave = get_valid_settings_array (slv_type);
+
+		setting_name = check_valid_name (strv[0],
+		                                 valid_settings_main,
+		                                 valid_settings_slave,
+		                                 NULL);
 		setting = nmc_setting_new_for_name (setting_name);
 	} else {
 		/* Else take the current setting, if any */
@@ -7575,16 +7620,30 @@ static void
 get_setting_and_property (const char *prompt, const char *line,
                           NMSetting **setting_out, char**property_out)
 {
-	const NameItem *valid_settings_arr;
+	const NameItem *valid_settings_main;
+	const NameItem *valid_settings_slave;
 	const char *setting_name;
 	NMSetting *setting = NULL;
 	char *property = NULL;
 	char *sett = NULL, *prop = NULL;
+	NMSettingConnection *s_con;
+	const char *s_type = NULL;
+	char *slv_type;
 
 	extract_setting_and_property (prompt, line, &sett, &prop);
 	if (sett) {
-		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
-		setting_name = check_valid_name (sett, valid_settings_arr, NULL);
+		/* Is this too much (and useless?) effort for an unlikely case? */
+		s_con = nm_connection_get_setting_connection (nmc_tab_completion.connection);
+		if (s_con)
+			s_type = nm_setting_connection_get_slave_type (s_con);
+		slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
+
+		valid_settings_main = get_valid_settings_array (nmc_tab_completion.con_type);
+		valid_settings_slave = get_valid_settings_array (slv_type);
+		g_free (slv_type);
+
+		setting_name = check_valid_name (sett, valid_settings_main,
+		                                 valid_settings_slave,  NULL);
 		setting = nmc_setting_new_for_name (setting_name);
 	} else
 		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
@@ -8786,13 +8845,13 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 }
 
 static NMSetting *
-create_setting_by_name (const char *name, const NameItem *valid_settings)
+create_setting_by_name (const char *name, const NameItem *valid_settings_main, const NameItem *valid_settings_slave)
 {
 	const char *setting_name;
 	NMSetting *setting = NULL;
 
 	/* Get a valid setting name */
-	setting_name = check_valid_name (name, valid_settings, NULL);
+	setting_name = check_valid_name (name, valid_settings_main, valid_settings_slave, NULL);
 
 	if (setting_name) {
 		setting = nmc_setting_new_for_name (setting_name);
@@ -8805,7 +8864,8 @@ create_setting_by_name (const char *name, const NameItem *valid_settings)
 
 static const char *
 ask_check_setting (const char *arg,
-                   const NameItem *valid_settings_arr,
+                   const NameItem *valid_settings_main,
+                   const NameItem *valid_settings_slave,
                    const char *valid_settings_str)
 {
 	char *setting_name_user;
@@ -8821,7 +8881,10 @@ ask_check_setting (const char *arg,
 	if (setting_name_user)
 		g_strstrip (setting_name_user);
 
-	if (!(setting_name = check_valid_name (setting_name_user, valid_settings_arr, &err))) {
+	if (!(setting_name = check_valid_name (setting_name_user,
+	                                       valid_settings_main,
+	                                       valid_settings_slave,
+	                                       &err))) {
 		g_print (_("Error: invalid setting name; %s\n"), err->message);
 		g_clear_error (&err);
 	}
@@ -8946,6 +9009,7 @@ menu_switch_to_level1 (NmCli *nmc,
 static gboolean
 editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
 {
+	NMSettingConnection *s_con;
 	NMRemoteConnection *rem_con;
 	NMRemoteConnection *con_tmp;
 	GWeakRef weak = { { NULL } };
@@ -8956,16 +9020,27 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	char *cmd_arg = NULL;
 	char *cmd_arg_s, *cmd_arg_p, *cmd_arg_v;
 	const char *BASE_PROMPT = "nmcli> ";
-	const NameItem *valid_settings_arr = NULL;
+	const NameItem *valid_settings_main = NULL;
+	const NameItem *valid_settings_slave = NULL;
 	char *valid_settings_str = NULL;
+	const char *s_type = NULL;
+	char *slv_type;
 	AddConnectionInfo *info = NULL;
 	gboolean dirty;
 	gboolean temp_changes;
 	GError *err1 = NULL;
 	NmcEditorMenuContext menu_ctx;
 
-	valid_settings_arr = get_valid_settings_array (connection_type);
-	valid_settings_str = get_valid_options_string (valid_settings_arr);
+	s_con = nm_connection_get_setting_connection (connection);
+	if (s_con)
+		s_type = nm_setting_connection_get_slave_type (s_con);
+	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
+
+	valid_settings_main = get_valid_settings_array (connection_type);
+	valid_settings_slave = get_valid_settings_array (slv_type);
+	g_free (slv_type);
+
+	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
@@ -9047,9 +9122,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				if (cmd_arg_s) {
 					/* setting provided as "setting.property" */
-					ss = is_setting_valid (connection, valid_settings_arr, cmd_arg_s);
+					ss = is_setting_valid (connection, valid_settings_main, valid_settings_slave, cmd_arg_s);
 					if (!ss) {
-						ss = create_setting_by_name (cmd_arg_s, valid_settings_arr);
+						ss = create_setting_by_name (cmd_arg_s, valid_settings_main, valid_settings_slave);
 						if (!ss) {
 							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
 							         cmd_arg_s, valid_settings_str);
@@ -9110,7 +9185,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				NMSetting *setting;
 				const char *user_arg = cmd_arg_s ? cmd_arg_s : cmd_arg_p;
 
-				setting_name = ask_check_setting (user_arg, valid_settings_arr, valid_settings_str);
+				setting_name = ask_check_setting (user_arg,
+								  valid_settings_main,
+								  valid_settings_slave,
+								  valid_settings_str);
 				if (!setting_name)
 					break;
 
@@ -9185,10 +9263,17 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
 				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
 				if (user_s) {
-					ss = is_setting_valid (connection, valid_settings_arr, user_s);
+					ss = is_setting_valid (connection,
+							       valid_settings_main,
+							       valid_settings_slave,
+							       user_s);
 					if (!ss) {
-						if (check_valid_name (user_s, valid_settings_arr, NULL))
-							g_print (_("Setting '%s' is not present in the connection.\n"), user_s);
+						if (check_valid_name (user_s,
+						                      valid_settings_main,
+						                      valid_settings_slave,
+						                      NULL))
+							g_print (_("Setting '%s' is not present in the connection.\n"),
+								 user_s);
 						else
 							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
 							         user_s, valid_settings_str);
@@ -9218,7 +9303,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					} else {
 						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;
-						s_tmp = is_setting_valid (connection, valid_settings_arr, cmd_arg_p);
+						s_tmp = is_setting_valid (connection,
+									  valid_settings_main,
+									  valid_settings_slave,
+									  cmd_arg_p);
 						if (s_tmp) {
 							/* Remove setting from the connection */
 							connection_remove_setting (connection, s_tmp);
@@ -9266,9 +9354,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
 				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
 				if (user_s) {
-					ss = is_setting_valid (connection, valid_settings_arr, user_s);
+					ss = is_setting_valid (connection,
+							       valid_settings_main,
+							       valid_settings_slave,
+							       user_s);
 					if (!ss) {
-						ss = create_setting_by_name (user_s, valid_settings_arr);
+						ss = create_setting_by_name (user_s,
+									     valid_settings_main,
+									     valid_settings_slave);
 						if (!ss) {
 							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
 							         user_s, valid_settings_str);
@@ -9291,7 +9384,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					} else {
 						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;
-						s_tmp = is_setting_valid (connection, valid_settings_arr, cmd_arg_p);
+						s_tmp = is_setting_valid (connection,
+									  valid_settings_main,
+									  valid_settings_slave,
+									  cmd_arg_p);
 						if (s_tmp)
 							print_setting_description (s_tmp);
 						else
@@ -9322,7 +9418,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					user_s = whole_setting ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
 					if (user_s) {
 						const char *s_name;
-						s_name = check_valid_name (user_s, valid_settings_arr, NULL);
+						s_name = check_valid_name (user_s,
+						                           valid_settings_main,
+						                           valid_settings_slave,
+						                           NULL);
 						if (!s_name) {
 							g_print (_("Error: unknown setting: '%s'\n"), user_s);
 							break;
@@ -9349,7 +9448,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						} else {
 							/* If the string is not a property, try it as a setting */
 							NMSetting *s_tmp;
-							s_tmp = is_setting_valid (connection, valid_settings_arr, cmd_arg_p);
+							s_tmp = is_setting_valid (connection,
+										  valid_settings_main,
+										  valid_settings_slave,
+										  cmd_arg_p);
 							if (s_tmp) {
 								/* Print the whole setting */
 								editor_show_setting (s_tmp, nmc);
@@ -9928,8 +10030,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		editor_init_existing_connection (connection);
 	} else {
 		/* New connection */
-		connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
-		tmp_str = get_valid_options_string (nmc_valid_connection_types);
+		connection_type = check_valid_name (type, nmc_valid_connection_types, NULL, &err1);
+		tmp_str = get_valid_options_string (nmc_valid_connection_types, NULL);
 
 		while (!connection_type) {
 			if (!type)
@@ -9940,7 +10042,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
-			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
+			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, NULL, &err1);
 			g_free (type_ask);
 		}
 		g_free (tmp_str);
