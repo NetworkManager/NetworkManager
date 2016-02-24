@@ -5496,9 +5496,9 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	if (s_ip6 && nm_setting_ip6_config_get_addr_gen_mode (s_ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
 		if (!nm_utils_ipv6_addr_set_stable_privacy (&lladdr,
 		                                            nm_device_get_iface (self),
-			                                    nm_connection_get_uuid (connection),
+		                                            nm_connection_get_uuid (connection),
 		                                            priv->linklocal6_dad_counter++,
-			                                    &error)) {
+		                                            &error)) {
 			_LOGW (LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
 			g_clear_error (&error);
 			linklocal6_failed (self);
@@ -5979,7 +5979,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 
 		if (enable) {
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
-			value = nm_platform_sysctl_get (NM_PLATFORM_GET, 
+			value = nm_platform_sysctl_get (NM_PLATFORM_GET,
 			                                nm_utils_ip6_property_path (nm_device_get_ip_iface (self), "disable_ipv6"));
 			if (g_strcmp0 (value, "0") == 0)
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
@@ -6854,12 +6854,12 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				 * then ensure dispatcher scripts get the DHCP lease information.
 				 */
 				nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
-						    nm_device_get_settings_connection (self),
-						    nm_device_get_applied_connection (self),
-						    self,
-						    NULL,
-						    NULL,
-						    NULL);
+				                    nm_device_get_settings_connection (self),
+				                    nm_device_get_applied_connection (self),
+				                    self,
+				                    NULL,
+				                    NULL,
+				                    NULL);
 			} else {
 				/* still waiting for first dhcp6 lease. */
 				return;
@@ -8960,7 +8960,7 @@ device_ipx_changed (NMPlatform *platform,
 
 		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
-                    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
+		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
 		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE))) {
 			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
 			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
