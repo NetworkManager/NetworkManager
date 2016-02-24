@@ -973,12 +973,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		else
 			method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 	} else if (!g_ascii_strcasecmp (value, "autoip")) {
-		g_free (value);
-		g_object_set (s_ip4,
-		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
-		              NULL);
-		return NM_SETTING (s_ip4);
+		method = NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL;
 	} else if (!g_ascii_strcasecmp (value, "shared")) {
 		int idx;
 
