@@ -367,4 +367,11 @@ _nm_g_hash_table_get_keys_as_array (GHashTable *hash_table,
 	})
 #endif
 
+#ifndef g_info
+/* g_info was only added with 2.39.2 */
+#define g_info(...)     g_log (G_LOG_DOMAIN,         \
+                               G_LOG_LEVEL_INFO,     \
+                               __VA_ARGS__)
+#endif
+
 #endif  /* __NM_GLIB_H__ */
