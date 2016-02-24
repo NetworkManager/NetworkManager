@@ -173,12 +173,12 @@ _LOG_R_D_enabled (const Request *request)
 	return request->debug;
 }
 
-#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_message, __VA_ARGS__)
-#define _LOG_R_I(_request, ...) _LOG(_request, NULL, TRUE,  g_message, __VA_ARGS__)
+#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_debug,   __VA_ARGS__)
+#define _LOG_R_I(_request, ...) _LOG(_request, NULL, TRUE,  g_info,    __VA_ARGS__)
 #define _LOG_R_W(_request, ...) _LOG(_request, NULL, TRUE,  g_warning, __VA_ARGS__)
 
-#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_message, __VA_ARGS__)
-#define _LOG_S_I(_script, ...)  _LOG(NULL, _script,  TRUE,  g_message, __VA_ARGS__)
+#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_debug,   __VA_ARGS__)
+#define _LOG_S_I(_script, ...)  _LOG(NULL, _script,  TRUE,  g_info,    __VA_ARGS__)
 #define _LOG_S_W(_script, ...)  _LOG(NULL, _script,  TRUE,  g_warning, __VA_ARGS__)
 
 /*****************************************************************************/
@@ -913,7 +913,16 @@ main (int argc, char **argv)
 	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
 	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
 
-	if (!debug)
+
+	if (debug) {
+		if (!g_getenv ("G_MESSAGES_DEBUG")) {
+			/* we log our regular messages using g_debug() and g_info().
+			 * When we redirect glib logging to syslog, there is no problem.
+			 * But in "debug" mode, glib will no print these messages unless
+			 * we set G_MESSAGES_DEBUG. */
+			g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
+		}
+	} else
 		logging_setup ();
 
 	loop = g_main_loop_new (NULL, FALSE);
