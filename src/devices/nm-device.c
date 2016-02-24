@@ -778,6 +778,7 @@ nm_device_get_priority (NMDevice *self)
 	switch (nm_device_get_device_type (self)) {
 	/* 50 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
 	case NM_DEVICE_TYPE_ETHERNET:
+	case NM_DEVICE_TYPE_VETH:
 		return 100;
 	case NM_DEVICE_TYPE_INFINIBAND:
 		return 150;
@@ -803,8 +804,6 @@ nm_device_get_priority (NMDevice *self)
 		return 600;
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return 650;
-	case NM_DEVICE_TYPE_VETH:
-		return 665;
 	case NM_DEVICE_TYPE_IP_TUNNEL:
 		return 675;
 	case NM_DEVICE_TYPE_MODEM:
