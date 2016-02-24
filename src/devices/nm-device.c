@@ -3661,6 +3661,28 @@ check_ip_failed (NMDevice *self, gboolean may_fail)
 	                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 }
 
+/*
+ * check_ip_done
+ *
+ * Progress the device to ip connectivity check state if IPv4 or IPv6 succeeded
+ */
+static void
+check_ip_done (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
+		return;
+
+	if (priv->ip4_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET))
+		return;
+
+	if (priv->ip6_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET6))
+		return;
+
+	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+}
+
 /*********************************************/
 /* IPv4 DAD stuff */
 
@@ -6242,8 +6264,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	} else if (ret == NM_ACT_STAGE_RETURN_FINISH) {
 		/* Early finish, nothing more to do */
 		priv->ip6_state = IP_DONE;
-		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		check_ip_done (self);
 	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
 		/* Wait for something to try IP config again */
 		priv->ip6_state = IP_WAIT;
@@ -6742,13 +6763,11 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 
 	arp_announce (self);
 
-	/* Enter the IP_CHECK state if this is the first method to complete */
-	priv->ip4_state = IP_DONE;
-
 	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
 
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+	/* Enter the IP_CHECK state if this is the first method to complete */
+	priv->ip4_state = IP_DONE;
+	check_ip_done (self);
 }
 
 static void
@@ -6847,14 +6866,12 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 			}
 		}
 
-		/* Enter the IP_CHECK state if this is the first method to complete */
-		priv->ip6_state = IP_DONE;
-
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
-		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		/* Enter the IP_CHECK state if this is the first method to complete */
+		priv->ip6_state = IP_DONE;
+		check_ip_done (self);
 	} else {
 		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
