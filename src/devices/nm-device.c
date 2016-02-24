@@ -3626,12 +3626,12 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 }
 
 /*
- * nm_device_check_ip_failed
+ * check_ip_failed
  *
  * Progress the device to appropriate state if both IPv4 and IPv6 failed
  */
 static void
-nm_device_check_ip_failed (NMDevice *self, gboolean may_fail)
+check_ip_failed (NMDevice *self, gboolean may_fail)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceState state;
@@ -3919,14 +3919,14 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 		if (r < 0) {
 			_LOGE (LOGD_AUTOIP4, "invalid IPv4 link-local address received, error %d.", r);
 			priv->ip4_state = IP_FAIL;
-			nm_device_check_ip_failed (self, FALSE);
+			check_ip_failed (self, FALSE);
 			return;
 		}
 
 		if ((address.s_addr & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
 			_LOGE (LOGD_AUTOIP4, "invalid address %08x received (not link-local).", address.s_addr);
 			priv->ip4_state = IP_FAIL;
-			nm_device_check_ip_failed (self, FALSE);
+			check_ip_failed (self, FALSE);
 			return;
 		}
 
@@ -3934,7 +3934,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 		if (config == NULL) {
 			_LOGE (LOGD_AUTOIP4, "failed to get IPv4LL config");
 			priv->ip4_state = IP_FAIL;
-			nm_device_check_ip_failed (self, FALSE);
+			check_ip_failed (self, FALSE);
 			return;
 		}
 
@@ -3945,7 +3945,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 			if (!ip4_config_merge_and_apply (self, config, TRUE, NULL)) {
 				_LOGE (LOGD_AUTOIP4, "failed to update IP4 config for autoip change.");
 				priv->ip4_state = IP_FAIL;
-				nm_device_check_ip_failed (self, FALSE);
+				check_ip_failed (self, FALSE);
 			}
 		} else
 			g_assert_not_reached ();
@@ -3955,7 +3955,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 	default:
 		_LOGW (LOGD_AUTOIP4, "IPv4LL address no longer valid after event %d.", event);
 		priv->ip4_state = IP_FAIL;
-		nm_device_check_ip_failed (self, FALSE);
+		check_ip_failed (self, FALSE);
 	}
 }
 
@@ -6304,7 +6304,7 @@ activate_stage3_ip_config_start (NMDevice *self)
 	    && !nm_device_activate_stage3_ip6_start (self))
 		return;
 
-	nm_device_check_ip_failed (self, TRUE);
+	check_ip_failed (self, TRUE);
 }
 
 static gboolean
@@ -6439,7 +6439,7 @@ activate_stage4_ip4_config_timeout (NMDevice *self)
 
 	priv->ip4_state = IP_FAIL;
 
-	nm_device_check_ip_failed (self, FALSE);
+	check_ip_failed (self, FALSE);
 }
 
 
@@ -6499,7 +6499,7 @@ activate_stage4_ip6_config_timeout (NMDevice *self)
 
 	priv->ip6_state = IP_FAIL;
 
-	nm_device_check_ip_failed (self, FALSE);
+	check_ip_failed (self, FALSE);
 }
 
 
