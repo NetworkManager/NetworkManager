@@ -1319,6 +1319,25 @@ test_read_wired_dhcp6_only (void)
 }
 
 static void
+test_read_wired_autoip (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingIPConfig *s_ip4;
+	char *unmanaged = NULL;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-autoip",
+	                                    NULL, TYPE_ETHERNET,
+	                                    &unmanaged);
+	g_assert (unmanaged == NULL);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
+	g_assert (!nm_setting_ip_config_get_may_fail (s_ip4));
+	g_assert (nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
+}
+
+static void
 test_read_onboot_no (void)
 {
 	NMConnection *connection;
@@ -8752,6 +8771,7 @@ int main (int argc, char **argv)
 	nmtst_add_test_func (TPATH "wired-ipv6-only/1", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only-1", "System test-wired-ipv6-only-1");
 
 	g_test_add_func (TPATH "wired/dhcpv6-only", test_read_wired_dhcp6_only);
+	g_test_add_func (TPATH "wired/autoip", test_read_wired_autoip);
 	g_test_add_func (TPATH "wired/onboot/no", test_read_onboot_no);
 	g_test_add_func (TPATH "wired/no-ip", test_read_noip);
 	g_test_add_func (TPATH "802-1x/peap/mschapv2", test_read_wired_8021x_peap_mschapv2);

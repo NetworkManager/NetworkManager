@@ -12,6 +12,7 @@ EXTRA_DIST = \
 	ifcfg-test-wired-shared-plus-ip \
 	ifcfg-test-wired-dhcp-send-hostname \
 	ifcfg-test-wired-dhcp6-only \
+	ifcfg-test-wired-autoip \
 	ifcfg-test-wired-global-gateway \
 	network-test-wired-global-gateway \
 	ifcfg-test-wired-global-gateway-ignore \
