@@ -2326,7 +2326,7 @@ nm_device_reapply_finish (NMDevice *device,
  *
  * Fetch the currently applied connection on the device.
  *
- * Returns: (transfer-full): a %NMConnection with the currently applied settings
+ * Returns: (transfer full): a %NMConnection with the currently applied settings
  *   or %NULL on error.
  *
  * Since: 1.2
@@ -2454,7 +2454,7 @@ nm_device_get_applied_connection_async  (NMDevice *device,
  *
  * Gets the result of a call to nm_device_get_applied_connection_async().
  *
- * Returns: (transfer-full): a currently applied %NMConnection or %NULL in case
+ * Returns: (transfer full): a currently applied %NMConnection or %NULL in case
  *   of error.
  *
  * Since: 1.2

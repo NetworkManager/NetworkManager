@@ -116,7 +116,7 @@ _sup_iface_last_ref (gpointer data,
  *   get the manager to release it, is by dropping all other references
  *   to the supplicant-interface (or destroying the manager).
  *
- * Retruns: (transfer-full): returns a #NMSupplicantInterface or %NULL.
+ * Returns: (transfer full): returns a #NMSupplicantInterface or %NULL.
  *   Must be unrefed at the end.
  * */
 NMSupplicantInterface *

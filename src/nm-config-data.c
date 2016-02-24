@@ -323,7 +323,7 @@ _nm_config_data_get_keyfile_user (const NMConfigData *self)
  * nm_config_data_get_groups:
  * @self: the #NMConfigData instance
  *
- * Returns: (transfer-full): the list of groups in the configuration. The order
+ * Returns: (transfer full): the list of groups in the configuration. The order
  * of the section is undefined, as the configuration gets merged from multiple
  * sources.
  */

@@ -108,7 +108,7 @@ _values_data_get_data (ValuesData *values_data,
  * @out_len: (allow-none): output the number of values
  *   that are returned.
  *
- * Returns: (transfer-none): %NULL if there are no values
+ * Returns: (transfer none): %NULL if there are no values
  *   or a %NULL terminated array of pointers.
  */
 void *const*

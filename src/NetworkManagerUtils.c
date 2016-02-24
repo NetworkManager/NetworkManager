@@ -1558,7 +1558,7 @@ nm_match_spec_match_config (const GSList *specs, guint cur_nm_version, const cha
  * any whitespace after the colon, so "interface-name: X" matches an interface
  * named " X".
  *
- * Returns: (transfer-full): the list of device specs.
+ * Returns: (transfer full): the list of device specs.
  */
 GSList *
 nm_match_spec_split (const char *value)
@@ -1653,7 +1653,7 @@ nm_match_spec_split (const char *value)
  * This is based on g_key_file_parse_string_as_value(), analog to
  * nm_match_spec_split() which is based on g_key_file_parse_value_as_string().
  *
- * Returns: (transfer-full): a joined list of device specs that can be
+ * Returns: (transfer full): a joined list of device specs that can be
  *   split again with nm_match_spec_split(). Note that
  *   nm_match_spec_split (nm_match_spec_join (specs)) yields the original
  *   result (which is not true the other way around because there are multiple
