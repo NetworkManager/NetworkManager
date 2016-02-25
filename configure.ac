@@ -397,7 +397,7 @@ if test "$nm_config_logging_backend_default" != 'debug' \
 fi
 if test "$nm_config_logging_backend_default" = ""; then
 	if test "$have_systemd_journal" = "yes"; then
-		nm_config_logging_backend_default='journal-syslog-style'
+		nm_config_logging_backend_default='journal'
 	else
 		nm_config_logging_backend_default='syslog'
 	fi

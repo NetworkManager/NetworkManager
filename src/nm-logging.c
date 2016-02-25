@@ -73,6 +73,8 @@ typedef enum {
 	                                                      LOG_FORMAT_FLAG_LOCATION_DEBUG |
 	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR |
 	                                                      LOG_FORMAT_FLAG_ALIGN_LOCATION,
+
+	_LOG_FORMAT_FLAG_DEFAULT                            = _LOG_FORMAT_FLAG_TIMESTAMP,
 } LogFormatFlags;
 
 void (*_nm_logging_clear_platform_logging_cache) (void);
@@ -116,6 +118,7 @@ static struct {
 } global = {
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
+	.log_format_flags = _LOG_FORMAT_FLAG_DEFAULT,
 	.level_desc = {
 		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
 		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
@@ -751,16 +754,13 @@ nm_logging_syslog_openlog (const char *logging_backend)
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_LOGGING_BACKEND_DEFAULT;
 
+	log_format_flags = _LOG_FORMAT_FLAG_DEFAULT;
+
 	if (strcmp (logging_backend, "debug") == 0) {
 		global.log_backend = LOG_BACKEND_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
-		log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
 #if SYSTEMD_JOURNAL
 	} else if (strcmp (logging_backend, "syslog") != 0) {
-		if (strcmp (logging_backend, "journal-syslog-style") == 0)
-			log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
-		else
-			log_format_flags = _LOG_FORMAT_FLAG_TIMESTAMP;
 		global.log_backend = LOG_BACKEND_JOURNAL;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
@@ -769,7 +769,6 @@ nm_logging_syslog_openlog (const char *logging_backend)
 #endif
 	} else {
 		global.log_backend = LOG_BACKEND_SYSLOG;
-		log_format_flags = _LOG_FORMAT_FLAG_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	}
 

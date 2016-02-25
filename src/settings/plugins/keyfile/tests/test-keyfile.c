@@ -1514,9 +1514,9 @@ test_read_wired_8021x_tls_blob_connection (void)
 	GBytes *blob;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*<warn>  keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	                       "*<warn> * keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*<warn>  keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	                       "*<warn> * keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Blob", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
@@ -1632,11 +1632,11 @@ test_read_wired_8021x_tls_old_connection (void)
 	gboolean success;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*<warn>  keyfile: 802-1x.ca-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
+	                       "*<warn> * keyfile: 802-1x.ca-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*<warn>  keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	                       "*<warn> * keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*<warn>  keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	                       "*<warn> * keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Old", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
