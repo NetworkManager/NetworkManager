@@ -2316,8 +2316,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	/* Set spoof MAC to the interface */
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
-	if (cloned_mac)
-		nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_WIFI);
+	nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_WIFI);
 
 	/* AP mode never uses a specific object or existing scanned AP */
 	if (priv->mode != NM_802_11_MODE_AP) {

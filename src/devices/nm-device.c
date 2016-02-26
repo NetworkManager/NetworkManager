@@ -10858,7 +10858,11 @@ nm_device_set_hw_addr (NMDevice *self, const char *addr,
 	const char *cur_addr = nm_device_get_hw_address (self);
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 
-	g_return_val_if_fail (addr != NULL, FALSE);
+	/* Fall back to the permanent address */
+	if (!addr)
+		addr = priv->perm_hw_addr;
+	if (!addr)
+		return FALSE;
 
 	/* Do nothing if current MAC is same */
 	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {

@@ -819,8 +819,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		if (s_wired) {
 			/* Set device MAC address if the connection wants to change it */
 			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-			if (cloned_mac)
-				nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_ETHER);
+			nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_ETHER);
 		}
 
 		/* If we're re-activating a PPPoE connection a short while after
