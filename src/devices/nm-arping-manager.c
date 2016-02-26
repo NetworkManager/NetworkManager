@@ -193,7 +193,12 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **er
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
 	argv[4] = nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex);
-	g_return_val_if_fail (argv[4], FALSE);
+	if (!argv[4]) {
+		/* The device was probably just removed. */
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "can't find a name for ifindex %d", priv->ifindex);
+		return FALSE;
+	}
 
 	priv->completed = 0;
 
@@ -306,7 +311,11 @@ send_announcements (NMArpingManager *self, const char *mode_arg)
 	AddressInfo *info;
 
 	argv[4] = nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex);
-	g_return_if_fail (argv[4]);
+	if (!argv[4]) {
+		/* The device was probably just removed. */
+		_LOGW ("can't find a name for ifindex %d", priv->ifindex);
+		return;
+	}
 
 	argv[0] = nm_utils_find_helper ("arping", NULL, NULL);
 	if (!argv[0]) {
