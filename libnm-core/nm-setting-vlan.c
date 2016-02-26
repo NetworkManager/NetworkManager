@@ -893,8 +893,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: flags
-	 * variable: REORDER_HDR, GVRP, MVRP, VLAN_FLAGS
-	 * values: "yes or "no" for REORDER_HDR, GVRP and MVRP; "LOOSE_BINDING" for VLAN_FLAGS
+	 * variable: GVRP, MVRP, VLAN_FLAGS
+	 * values: "yes or "no" for GVRP and MVRP; "LOOSE_BINDING" and "NO_REORDER_HDR" for VLAN_FLAGS
 	 * description: VLAN flags.
 	 * ---end---
 	 */
