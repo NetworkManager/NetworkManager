@@ -301,12 +301,15 @@ fail_stop (gpointer data)
 }
 
 static void
-schedule_fail_stop (NMVPNPlugin *plugin)
+schedule_fail_stop (NMVPNPlugin *plugin, guint timeout_secs)
 {
 	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 
 	nm_clear_g_source (&priv->fail_stop_id);
-	priv->fail_stop_id = g_idle_add (fail_stop, plugin);
+	if (timeout_secs)
+		priv->fail_stop_id = g_timeout_add_seconds (timeout_secs, fail_stop, plugin);
+	else
+		priv->fail_stop_id = g_idle_add (fail_stop, plugin);
 }
 
 static void
@@ -439,6 +442,7 @@ _connect_generic (NMVPNPlugin *plugin,
 	NMConnection *connection;
 	gboolean success = FALSE;
 	GError *local = NULL;
+	guint fail_stop_timeout = 0;
 
 	if (priv->state != NM_VPN_SERVICE_STATE_STOPPED &&
 	    priv->state != NM_VPN_SERVICE_STATE_INIT) {
@@ -457,7 +461,6 @@ _connect_generic (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-
 	priv->interactive = FALSE;
 	if (details && !vpn_class->connect_interactive) {
 		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED,
@@ -465,22 +468,29 @@ _connect_generic (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
+	nm_clear_g_source (&priv->fail_stop_id);
 
 	if (details) {
 		priv->interactive = TRUE;
-		success = vpn_class->connect_interactive (plugin, connection, details, error);
+		success = vpn_class->connect_interactive (plugin, connection, details, &local);
+		if (g_error_matches (local, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED)) {
+			/* Give NetworkManager a bit of time to fall back to Connect() */
+			fail_stop_timeout = 5;
+		}
+		g_propagate_error (error, local);
 	} else
 		success = vpn_class->connect (plugin, connection, error);
 
 	if (success) {
+		nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
+
 		/* Add a timer to make sure we do not wait indefinitely for the successful connect. */
 		connect_timer_start (plugin);
 	} else {
 		/* Stop the plugin from an idle handler so that the Connect
 		 * method return gets sent before the STOP StateChanged signal.
 		 */
-		schedule_fail_stop (plugin);
+		schedule_fail_stop (plugin, fail_stop_timeout);
 	}
 
 	g_object_unref (connection);
@@ -606,7 +616,7 @@ impl_vpn_plugin_new_secrets (NMVPNPlugin *plugin,
 		/* Stop the plugin from and idle handler so that the NewSecrets
 		 * method return gets sent before the STOP StateChanged signal.
 		 */
-		schedule_fail_stop (plugin);
+		schedule_fail_stop (plugin, 0);
 	}
 
 	g_object_unref (connection);
