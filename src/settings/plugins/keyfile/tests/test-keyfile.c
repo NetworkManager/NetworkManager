@@ -2630,8 +2630,7 @@ test_read_missing_vlan_setting (void)
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 0);
-	/* Ensure the VLAN flags are not set (0) */
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, NM_VLAN_FLAG_REORDER_HEADERS);
 
 	g_object_unref (connection);
 }
@@ -2657,8 +2656,7 @@ test_read_missing_vlan_flags (void)
 
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 444);
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "em1");
-	/* Ensure the VLAN flags are not set (0) */
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, NM_VLAN_FLAG_REORDER_HEADERS);
 
 	g_object_unref (connection);
 }
