@@ -138,5 +138,7 @@ LOG "See \"$TEMP_LATEST/\" which symlinks to \"$TEMPBASE\""
 LOG
 LOG "Result:"
 ls -dla "$TEMP_LATEST" "$(dirname "$TEMP_LATEST")/$TEMPBASE/" "$TEMP_LATEST"/RPMS/*/ "$TEMP_LATEST"/RPMS/*/*.rpm "$TEMP_LATEST"/SRPMS/ "$TEMP_LATEST"/SRPMS/*.rpm 2>/dev/null | sed 's/^/    /'
-
+LOG
+LOG "sudo $(which dnf &>/dev/null && echo dnf || echo yum) install '$TEMP_LATEST/RPMS'/*/*.rpm"
+LOG
 
