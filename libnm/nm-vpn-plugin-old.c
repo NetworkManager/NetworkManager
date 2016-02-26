@@ -273,12 +273,15 @@ fail_stop (gpointer data)
 }
 
 static void
-schedule_fail_stop (NMVpnPluginOld *plugin)
+schedule_fail_stop (NMVpnPluginOld *plugin, guint timeout_secs)
 {
 	NMVpnPluginOldPrivate *priv = NM_VPN_PLUGIN_OLD_GET_PRIVATE (plugin);
 
 	nm_clear_g_source (&priv->fail_stop_id);
-	priv->fail_stop_id = g_idle_add (fail_stop, plugin);
+	if (timeout_secs)
+		priv->fail_stop_id = g_timeout_add_seconds (timeout_secs, fail_stop, plugin);
+	else
+		priv->fail_stop_id = g_idle_add (fail_stop, plugin);
 }
 
 void
@@ -400,6 +403,7 @@ _connect_generic (NMVpnPluginOld *plugin,
 	NMConnection *connection;
 	gboolean success = FALSE;
 	GError *error = NULL;
+	guint fail_stop_timeout = 0;
 
 	if (priv->state != NM_VPN_SERVICE_STATE_STOPPED &&
 	    priv->state != NM_VPN_SERVICE_STATE_INIT) {
@@ -430,15 +434,21 @@ _connect_generic (NMVpnPluginOld *plugin,
 		return;
 	}
 
-	nm_vpn_plugin_old_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
+	nm_clear_g_source (&priv->fail_stop_id);
 
 	if (details) {
 		priv->interactive = TRUE;
 		success = vpn_class->connect_interactive (plugin, connection, details, &error);
+		if (g_error_matches (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED)) {
+			/* Give NetworkManager a bit of time to fall back to Connect() */
+			fail_stop_timeout = 5;
+		}
 	} else
 		success = vpn_class->connect (plugin, connection, &error);
 
 	if (success) {
+		nm_vpn_plugin_old_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
+
 		g_dbus_method_invocation_return_value (context, NULL);
 
 		/* Add a timer to make sure we do not wait indefinitely for the successful connect. */
@@ -449,7 +459,7 @@ _connect_generic (NMVpnPluginOld *plugin,
 		/* Stop the plugin from an idle handler so that the Connect
 		 * method return gets sent before the STOP StateChanged signal.
 		 */
-		schedule_fail_stop (plugin);
+		schedule_fail_stop (plugin, fail_stop_timeout);
 	}
 
 	g_object_unref (connection);
@@ -579,7 +589,7 @@ impl_vpn_plugin_old_new_secrets (NMVpnPluginOld *plugin,
 		/* Stop the plugin from and idle handler so that the NewSecrets
 		 * method return gets sent before the STOP StateChanged signal.
 		 */
-		schedule_fail_stop (plugin);
+		schedule_fail_stop (plugin, 0);
 	}
 
 	g_object_unref (connection);
