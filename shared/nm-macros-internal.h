@@ -24,12 +24,14 @@
 
 /********************************************************/
 
+#define nm_auto(fcn) __attribute ((cleanup(fcn)))
+
 /**
  * nm_auto_free:
  *
  * Call free() on a variable location when it goes out of scope.
  */
-#define nm_auto_free __attribute__ ((cleanup(_nm_auto_free_impl)))
+#define nm_auto_free nm_auto(_nm_auto_free_impl)
 GS_DEFINE_CLEANUP_FUNCTION(void*, _nm_auto_free_impl, free)
 
 /********************************************************/
