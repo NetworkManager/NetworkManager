@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "nm-sd-adapt.h"
-
 #include <net/ethernet.h>
 
 #include "sd-lldp.h"

@@ -19,8 +19,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 int asynchronous_job(void* (*func)(void *p), void *arg);
 
 int asynchronous_sync(void);

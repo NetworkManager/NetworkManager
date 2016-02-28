@@ -21,8 +21,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 #include <inttypes.h>
 #include <net/ethernet.h>
 

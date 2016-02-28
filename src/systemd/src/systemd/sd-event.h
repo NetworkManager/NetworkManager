@@ -20,8 +20,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 #include <inttypes.h>
 #include <signal.h>
 #include <sys/epoll.h>

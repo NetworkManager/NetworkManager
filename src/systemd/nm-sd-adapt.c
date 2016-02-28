@@ -18,7 +18,8 @@
 
 #include "nm-default.h"
 
-#include <glib.h>
+#include "nm-sd-adapt.h"
+
 #include <unistd.h>
 #include <errno.h>
 

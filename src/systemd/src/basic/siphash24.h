@@ -1,7 +1,5 @@
 #pragma once
 
-#include "nm-sd-adapt.h"
-
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "nm-sd-adapt.h"
-
 #define LLDP_MULTICAST_ADDR     { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }
 
 #define ETHERTYPE_LLDP          0x88cc

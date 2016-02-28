@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "nm-sd-adapt.h"
-
 #include "sd-event.h"
 
 #include "list.h"

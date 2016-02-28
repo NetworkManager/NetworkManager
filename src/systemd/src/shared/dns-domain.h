@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include "nm-sd-adapt.h"
 
 #include <errno.h>
 #include <stdbool.h>

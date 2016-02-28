@@ -20,8 +20,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 /* This is a private header; never even think of including this directly! */
 
 #if __INCLUDE_LEVEL__ <= 1
