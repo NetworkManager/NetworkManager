@@ -126,11 +126,13 @@ static guint
 lldp_neighbor_id_hash (gconstpointer ptr)
 {
 	const LLDPNeighbor *neigh = ptr;
+	guint hash;
 
-	return g_str_hash (neigh->chassis_id) ^
-	       g_str_hash (neigh->port_id) ^
-	       neigh->chassis_id_type ^
-	       (neigh->port_id_type * 33);
+	hash =   23423423u  + ((guint) (neigh->chassis_id ? g_str_hash (neigh->chassis_id) : 12321u));
+	hash = (hash * 33u) + ((guint) (neigh->port_id ? g_str_hash (neigh->port_id) : 34342343u));
+	hash = (hash * 33u) + ((guint) neigh->chassis_id_type);
+	hash = (hash * 33u) + ((guint) neigh->port_id_type);
+	return hash;
 }
 
 static gboolean
