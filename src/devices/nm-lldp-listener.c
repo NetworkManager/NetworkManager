@@ -226,7 +226,7 @@ static void
 process_lldp_neighbors (NMLldpListener *self)
 {
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-	sd_lldp_packet **packets = NULL;
+	nm_auto_free sd_lldp_packet **packets = NULL;
 	GHashTable *hash;
 	int num, i;
 
@@ -352,8 +352,6 @@ process_lldp_neighbors (NMLldpListener *self)
 next_packet:
 		sd_lldp_packet_unref (packets[i]);
 	}
-
-	g_free (packets);
 
 	if (lldp_hash_table_equal (priv->lldp_neighbors, hash)) {
 		g_hash_table_destroy (hash);
