@@ -547,8 +547,8 @@ ppp_stage3_ip_config_start (NMModem *self,
 	} else {
 		nm_log_err (LOGD_PPP, "(%s): error starting PPP: (%d) %s",
 		            nm_modem_get_uid (self),
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		            error->code,
+		            error->message);
 		g_error_free (error);
 
 		nm_exported_object_clear_and_unexport (&priv->ppp_manager);

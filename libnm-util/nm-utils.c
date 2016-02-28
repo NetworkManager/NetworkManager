@@ -1515,8 +1515,7 @@ nm_utils_uuid_generate_from_string (const char *s)
 
 	if (!nm_utils_init (&error)) {
 		g_warning ("error initializing crypto: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
+		           error->code, error->message);
 		if (error)
 			g_error_free (error);
 		return NULL;
@@ -1524,8 +1523,7 @@ nm_utils_uuid_generate_from_string (const char *s)
 
 	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid), &error)) {
 		g_warning ("error generating UUID: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
+		           error->code, error->message);
 		if (error)
 			g_error_free (error);
 		return NULL;

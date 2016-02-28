@@ -304,8 +304,8 @@ get_credentials (char *username, char *password)
 	if (!ret) {
 		g_warning ("nm-ppp-plugin: (%s): could not get secrets: (%d) %s",
 		           __func__,
-		           err ? err->code : -1,
-		           err->message ? err->message : "(unknown)");
+		           err->code,
+		           err->message);
 		g_error_free (err);
 		return -1;
 	}

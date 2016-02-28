@@ -885,7 +885,7 @@ new_secrets_commit_cb (NMSettingsConnection *self,
 {
 	if (error) {
 		_LOGW ("Error saving new secrets to backing storage: (%d) %s",
-		       error->code, error->message ? error->message : "(unknown)");
+		       error->code, error->message);
 	}
 }
 
@@ -1089,16 +1089,16 @@ get_secrets_done_cb (NMAgentManager *manager,
 			_LOGD ("(%s:%p) failed to update with agent secrets: (%d) %s",
 			       setting_name,
 			       info,
-			       local ? local->code : -1,
-			       (local && local->message) ? local->message : "(unknown)");
+			       local->code,
+			       local->message);
 		}
 		g_variant_unref (filtered_secrets);
 	} else {
 		_LOGD ("(%s:%p) failed to update with existing secrets: (%d) %s",
 		       setting_name,
 		       info,
-		       local ? local->code : -1,
-		       (local && local->message) ? local->message : "(unknown)");
+		       local->code,
+		       local->message);
 	}
 
 	applied_connection = info->applied_connection;

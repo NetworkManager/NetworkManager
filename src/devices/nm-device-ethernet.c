@@ -177,7 +177,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	dir = g_dir_open (parent_path, 0, &error);
 	if (!dir) {
 		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to open directory '%s': %s",
-		       parent_path, error && error->message ? error->message : "(unknown)");
+		       parent_path, error->message);
 		g_clear_error (&error);
 		goto out;
 	}
@@ -597,13 +597,13 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			if (!success) {
 				_LOGE (LOGD_DEVICE | LOGD_ETHER,
 				       "Activation: (ethernet) couldn't send security configuration to the supplicant: %s",
-				       error ? error->message : "<BUG>");
+				       error->message);
 				g_clear_error (&error);
 			}
 		} else {
 			_LOGE (LOGD_DEVICE | LOGD_ETHER,
 			       "Activation: (ethernet) couldn't build security configuration: %s",
-			       error ? error->message : "<BUG>");
+			       error->message);
 			g_clear_error (&error);
 		}
 

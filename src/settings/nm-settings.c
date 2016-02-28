@@ -1120,7 +1120,7 @@ nm_settings_add_connection (NMSettings *self,
 		nm_log_dbg (LOGD_SETTINGS, "Failed to add %s/'%s': %s",
 		            nm_connection_get_uuid (connection),
 		            nm_connection_get_id (connection),
-		            add_error ? add_error->message : "(unknown)");
+		            add_error->message);
 		g_clear_error (&add_error);
 	}
 
@@ -1211,7 +1211,7 @@ pk_add_cb (NMAuthChain *chain,
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_FAILED,
 		                     "Error checking authorization: %s",
-		                     chain_error->message ? chain_error->message : "(unknown)");
+		                     chain_error->message);
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -1294,7 +1294,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "The connection was invalid: %s",
-		                     tmp_error ? tmp_error->message : "(unknown)");
+		                     tmp_error->message);
 		g_error_free (tmp_error);
 		goto done;
 	}
@@ -1625,7 +1625,7 @@ pk_hostname_cb (NMAuthChain *chain,
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_FAILED,
 		                     "Error checking authorization: %s",
-		                     chain_error->message ? chain_error->message : "(unknown)");
+		                     chain_error->message);
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -1896,7 +1896,7 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	if (!added) {
 		nm_log_warn (LOGD_SETTINGS, "(%s) couldn't create default wired connection: %s",
 		             nm_device_get_iface (device),
-		             (error && error->message) ? error->message : "(unknown)");
+		             error->message);
 		g_clear_error (&error);
 		return;
 	}

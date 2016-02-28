@@ -812,8 +812,8 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 	                        DBUS_TYPE_G_OBJECT_PATH, path,
 	                        G_TYPE_INVALID,
 	                        G_TYPE_INVALID)) {
-		g_warning ("Could not deactivate connection '%s': %s", 
-		           path, error ? error->message : "(unknown)");
+		g_warning ("Could not deactivate connection '%s': %s",
+		           path, NM_G_ERROR_MSG (error));
 		g_clear_error (&error);
 	}
 }

@@ -1627,7 +1627,7 @@ get_existing_connection (NMManager *self, NMDevice *device, gboolean *out_genera
 		_LOGW (LOGD_SETTINGS, "(%s) Couldn't save generated connection '%s': %s",
 		       nm_device_get_iface (device),
 		       nm_connection_get_id (connection),
-		       (error && error->message) ? error->message : "(unknown)");
+		       error->message);
 		g_clear_error (&error);
 	}
 	g_object_unref (connection);
@@ -1660,8 +1660,8 @@ assume_connection (NMManager *self, NMDevice *device, NMSettingsConnection *conn
 	if (!active) {
 		_LOGW (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
 		       nm_connection_get_path (NM_CONNECTION (connection)),
-		       error ? error->code : -1,
-		       error && error->message ? error->message : "(unknown)");
+		       error->code,
+		       error->message);
 		g_error_free (error);
 		return FALSE;
 	}
@@ -3671,7 +3671,6 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 
 	path = nm_auth_chain_get_data (chain, "path");
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
-	active = active_connection_get_by_path (self, path);
 
 	if (auth_error) {
 		_LOGD (LOGD_CORE, "Disconnect request failed: %s", auth_error->message);
@@ -3689,9 +3688,10 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 		                                       path,
 		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
 		                                       &error))
-			g_assert (error);
+			nm_assert (error);
 	}
 
+	active = active_connection_get_by_path (self, path);
 	if (active) {
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE,
 		                            nm_active_connection_get_settings_connection (active),
@@ -4011,8 +4011,8 @@ _internal_enable (NMManager *self, gboolean enable)
 			/* Not a hard error */
 			_LOGW (LOGD_SUSPEND, "writing to state file %s failed: (%d) %s.",
 			       priv->state_file,
-			       err ? err->code : -1,
-			       (err && err->message) ? err->message : "unknown");
+			       err->code,
+			       err->message);
 		}
 	}
 
@@ -4973,8 +4973,8 @@ manager_radio_user_toggled (NMManager *self,
 		                                &error)) {
 			_LOGW (LOGD_CORE, "writing to state file %s failed: (%d) %s.",
 			       priv->state_file,
-			       error ? error->code : -1,
-			       (error && error->message) ? error->message : "unknown");
+			       error->code,
+			       error->message);
 			g_clear_error (&error);
 		}
 	}

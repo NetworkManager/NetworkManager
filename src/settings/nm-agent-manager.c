@@ -989,7 +989,7 @@ _con_get_request_start_validated (NMAuthChain *chain,
 	if (error) {
 		_LOGD (req->current, "agent "LOG_REQ_FMT" MODIFY check error: (%d) %s",
 		       LOG_REQ_ARG (req),
-		       error->code, error->message ? error->message : "(unknown)");
+		       error->code, error->message);
 		/* Try the next agent */
 		request_next_agent (req);
 	} else {

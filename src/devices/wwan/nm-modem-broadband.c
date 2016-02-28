@@ -464,7 +464,7 @@ connect_context_step (NMModemBroadband *self)
 			nm_log_warn (LOGD_MB, "(%s): Failed to connect '%s': %s",
 			             nm_modem_get_uid (NM_MODEM (self)),
 			             nm_connection_get_id (ctx->connection),
-			             error ? error->message : "unknown error");
+			             error->message);
 			g_clear_error (&error);
 
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
@@ -734,7 +734,7 @@ set_power_state_low_ready (MMModem *modem,
 		/* Log but ignore errors; not all modems support low power state */
 		nm_log_dbg (LOGD_MB, "(%s): failed to set modem low power state: %s",
 		            nm_modem_get_uid (NM_MODEM (self)),
-		            error && error->message ? error->message : "(unknown)");
+		            NM_G_ERROR_MSG (error));
 		g_clear_error (&error);
 	}
 
@@ -759,7 +759,7 @@ modem_disable_ready (MMModem *modem_iface,
 	} else {
 		nm_log_warn (LOGD_MB, "(%s): failed to disable modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		             NM_G_ERROR_MSG (error));
 		nm_modem_set_prev_state (NM_MODEM (self), "disable failed");
 		g_clear_error (&error);
 	}
@@ -778,7 +778,7 @@ modem_enable_ready (MMModem *modem_iface,
 	if (!mm_modem_enable_finish (modem_iface, res, &error)) {
 		nm_log_warn (LOGD_MB, "(%s) failed to enable modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		             NM_G_ERROR_MSG (error));
 		nm_modem_set_prev_state (NM_MODEM (self), "enable failed");
 		g_clear_error (&error);
 	}
@@ -1259,7 +1259,7 @@ get_sim_ready (MMModem *modem,
 	} else {
 		nm_log_warn (LOGD_MB, "(%s): failed to retrieve SIM object: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		             NM_G_ERROR_MSG (error));
 	}
 	g_clear_error (&error);
 	g_object_unref (self);

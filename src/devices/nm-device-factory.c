@@ -355,7 +355,7 @@ read_device_factory_paths (void)
 	if (!dir) {
 		nm_log_warn (LOGD_HW, "device plugin: failed to open directory %s: %s",
 		             NMPLUGINDIR,
-		             (error && error->message) ? error->message : "(unknown)");
+		             error->message);
 		g_clear_error (&error);
 		return NULL;
 	}
@@ -499,7 +499,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 		factory = create_func (&error);
 		if (!factory) {
 			nm_log_warn (LOGD_HW, "(%s): failed to initialize device factory: %s",
-			             item, error ? error->message : "unknown");
+			             item, NM_G_ERROR_MSG (error));
 			g_clear_error (&error);
 			g_module_close (plugin);
 			continue;

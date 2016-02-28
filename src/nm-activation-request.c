@@ -304,8 +304,7 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 			if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 			                   NULL, NULL, NULL, NULL, &status, &error)) {
 				nm_log_warn (LOGD_SHARING, "Error executing command: (%d) %s",
-				             error ? error->code : -1,
-				             (error && error->message) ? error->message : "(unknown)");
+				             error->code, error->message);
 				g_clear_error (&error);
 			} else if (WEXITSTATUS (status)) {
 				nm_log_warn (LOGD_SHARING, "** Command returned exit status %d.",

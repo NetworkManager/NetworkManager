@@ -98,8 +98,7 @@ constructor (GType type,
 		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: (%d) %s",
 		             __FILE__,
 		             __LINE__,
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		             error->code, error->message);
 		goto err;
 	}
 

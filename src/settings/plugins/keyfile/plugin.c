@@ -406,8 +406,8 @@ read_connections (NMSettingsPlugin *config)
 	if (!dir) {
 		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot read directory '%s': (%d) %s",
 		             nm_keyfile_plugin_get_path (),
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		             error->code,
+		             error->message);
 		g_clear_error (&error);
 		return;
 	}

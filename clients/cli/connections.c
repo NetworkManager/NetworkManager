@@ -2302,7 +2302,7 @@ nmc_activate_connection (NmCli *nmc,
 		/* Virtual connection may not have their interfaces created yet */
 		if (!device_found && !nm_connection_is_virtual (connection)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
-				     "%s", local && local->message ? local->message : _("unknown error"));
+			             "%s", local->message);
 			g_clear_error (&local);
 			return FALSE;
 		}
@@ -2450,8 +2450,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, pwds, activate_connection_cb, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."),
-		                 error ? error->message : _("unknown error"));
-		nmc->return_value = error ? error->code : NMC_RESULT_ERROR_CON_ACTIVATION;
+		                 error->message);
+		nmc->return_value = error->code;
 		g_clear_error (&error);
 		nmc->should_wait--;
 		goto error;
@@ -10724,7 +10724,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 
 	if (!nm_vpn_editor_plugin_export (plugin, path, connection, &error)) {
 		g_string_printf (nmc->return_text, _("Error: failed to export '%s': %s."),
-		                 nm_connection_get_id (connection), error ? error->message : "(unknown)");
+		                 nm_connection_get_id (connection), error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto finish;
 	}

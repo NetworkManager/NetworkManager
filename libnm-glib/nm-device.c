@@ -2202,8 +2202,8 @@ device_operation_cb (DBusGProxy *proxy,
 		           __func__,
 		           nm_object_get_path (NM_OBJECT (info->device)),
 		           info->method,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		           error->code,
+		           NM_G_ERROR_MSG (error));
 	}
 	g_clear_error (&error);
 
