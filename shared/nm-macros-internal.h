@@ -116,6 +116,26 @@ GS_DEFINE_CLEANUP_FUNCTION(void*, _nm_auto_free_impl, free)
 
 /********************************************************/
 
+/**
+ * NM_G_ERROR_MSG:
+ * @error: (allow none): the #GError instance
+ *
+ * All functions must follow the convention that when they
+ * return a failure, they must also set the GError to a valid
+ * message. For external API however, we want to be extra
+ * careful before accessing the error instance. Use NM_G_ERROR_MSG()
+ * which is safe to use on NULL.
+ *
+ * Returns: the error message.
+ **/
+static inline const char *
+NM_G_ERROR_MSG (GError *error)
+{
+	return error ? (error->message ? : "(null)") : "(no-error)"; \
+}
+
+/********************************************************/
+
 /* macro to return strlen() of a compile time string. */
 #define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
 
