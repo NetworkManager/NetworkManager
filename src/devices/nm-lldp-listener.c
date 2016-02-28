@@ -119,16 +119,20 @@ lldp_neighbor_id_equal (gconstpointer a, gconstpointer b)
 }
 
 static void
-lldp_neighbor_free (gpointer data)
+lldp_neighbor_free (LLDPNeighbor *neighbor)
 {
-	LLDPNeighbor *neighbor = data;
-
 	if (neighbor) {
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
 		g_hash_table_unref (neighbor->tlvs);
-		g_free (neighbor);
+		g_slice_free (LLDPNeighbor, neighbor);
 	}
+}
+
+static void
+lldp_neighbor_freep (LLDPNeighbor **ptr)
+{
+	lldp_neighbor_free (*ptr);
 }
 
 static gboolean
@@ -234,12 +238,12 @@ process_lldp_neighbors (NMLldpListener *self)
 	}
 
 	hash = g_hash_table_new_full (lldp_neighbor_id_hash, lldp_neighbor_id_equal,
-	                              lldp_neighbor_free, NULL);
+	                              (GDestroyNotify) lldp_neighbor_free, NULL);
 
 	for (i = 0; packets && i < num; i++) {
+		nm_auto (lldp_neighbor_freep) LLDPNeighbor *neigh = NULL;
 		uint8_t chassis_id_type, port_id_type, *chassis_id, *port_id, data8;
 		uint16_t chassis_id_len, port_id_len, len, data16;
-		LLDPNeighbor *neigh;
 		GValue *value;
 		char *str;
 		int r;
@@ -257,16 +261,14 @@ process_lldp_neighbors (NMLldpListener *self)
 		if (r < 0)
 			goto next_packet;
 
-		neigh = g_malloc0 (sizeof (LLDPNeighbor));
+		neigh = g_slice_new0 (LLDPNeighbor);
 		neigh->tlvs = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 		neigh->chassis_id_type = chassis_id_type;
 		neigh->port_id_type = port_id_type;
 		sd_lldp_packet_get_destination_type (packets[i], &neigh->dest);
 
-		if (chassis_id_len < 1) {
-			lldp_neighbor_free (neigh);
+		if (chassis_id_len < 1)
 			goto next_packet;
-		}
 
 		switch (chassis_id_type) {
 		case LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
@@ -280,14 +282,11 @@ process_lldp_neighbors (NMLldpListener *self)
 			break;
 		default:
 			nm_log_dbg (LOGD_DEVICE, "LLDP: unsupported chassis ID type %d", chassis_id_type);
-			lldp_neighbor_free (neigh);
 			goto next_packet;
 		}
 
-		if (port_id_len < 1) {
-			lldp_neighbor_free (neigh);
+		if (port_id_len < 1)
 			goto next_packet;
-		}
 
 		switch (port_id_type) {
 		case LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
@@ -301,7 +300,6 @@ process_lldp_neighbors (NMLldpListener *self)
 			break;
 		default:
 			nm_log_dbg (LOGD_DEVICE, "LLDP: unsupported port ID type %d", port_id_type);
-			lldp_neighbor_free (neigh);
 			goto next_packet;
 		}
 
@@ -350,6 +348,7 @@ process_lldp_neighbors (NMLldpListener *self)
 		            neigh->chassis_id, neigh->port_id);
 
 		g_hash_table_add (hash, neigh);
+		neigh = NULL;
 next_packet:
 		sd_lldp_packet_unref (packets[i]);
 	}
@@ -595,7 +594,7 @@ nm_lldp_listener_init (NMLldpListener *self)
 
 	priv->lldp_neighbors = g_hash_table_new_full (lldp_neighbor_id_hash,
 	                                              lldp_neighbor_id_equal,
-	                                              lldp_neighbor_free, NULL);
+	                                              (GDestroyNotify) lldp_neighbor_free, NULL);
 }
 
 NMLldpListener *
