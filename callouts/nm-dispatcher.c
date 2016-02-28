@@ -549,8 +549,7 @@ script_dispatch (ScriptInfo *script)
 			request->num_scripts_nowait++;
 		return TRUE;
 	} else {
-		_LOG_S_W (script, "complete: failed to execute script: %s (%d)",
-		          error->message, error->code);
+		_LOG_S_W (script, "complete: failed to execute script: %s", error->message);
 		script->result = DISPATCH_RESULT_EXEC_FAILED;
 		script->error = g_strdup (error->message);
 		request->num_scripts_done++;
@@ -594,8 +593,8 @@ find_scripts (const char *str_action)
 		dirname = NMD_SCRIPT_DIR_DEFAULT;
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
-		g_message ("find-scripts: Failed to open dispatcher directory '%s': (%d) %s",
-		           dirname, error->code, error->message);
+		g_message ("find-scripts: Failed to open dispatcher directory '%s': %s",
+		           dirname, error->message);
 		g_error_free (error);
 		return NULL;
 	}

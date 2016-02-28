@@ -486,8 +486,8 @@ _connect_generic (NMVpnServicePlugin *plugin,
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
 		                                       NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-		                                       "Invalid connection: (%d) %s",
-		                                       error->code, error->message);
+		                                       "Invalid connection: %s",
+		                                       error->message);
 		g_clear_error (&error);
 		return;
 	}
@@ -631,8 +631,8 @@ impl_vpn_service_plugin_new_secrets (NMVpnServicePlugin *plugin,
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
 		                                       NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-		                                       "Invalid connection: (%d) %s",
-		                                       error->code, error->message);
+		                                       "Invalid connection: %s",
+		                                       error->message);
 		g_clear_error (&error);
 		return;
 	}

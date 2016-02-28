@@ -455,8 +455,7 @@ _connect_generic (NMVPNPlugin *plugin,
 	connection = nm_connection_new_from_hash (properties, &local);
 	if (!connection) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-		             "Invalid connection: (%d) %s",
-		             local->code, local->message);
+		             "Invalid connection: %s", local->message);
 		g_clear_error (&local);
 		return FALSE;
 	}
@@ -537,9 +536,9 @@ impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
 		g_set_error (err,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		             "The connection was invalid: '%s' / '%s' invalid: %d.",
+		             "The connection was invalid: '%s' / '%s' invalid.",
 		             g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_err->domain)),
-		             cnfh_err->message, cnfh_err->code);
+		             cnfh_err->message);
 		g_error_free (cnfh_err);
 		return FALSE;
 	}
@@ -595,8 +594,8 @@ impl_vpn_plugin_new_secrets (NMVPNPlugin *plugin,
 	connection = nm_connection_new_from_hash (properties, &local);
 	if (!connection) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-		             "Invalid connection: (%d) %s",
-		             local->code, local->message);
+		             "Invalid connection: %s",
+		             local->message);
 		g_clear_error (&local);
 		return FALSE;
 	}

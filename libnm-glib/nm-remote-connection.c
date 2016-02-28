@@ -454,10 +454,10 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error))
 		g_signal_emit (self, signals[UPDATED], 0, new_settings);
 	else {
-		g_warning ("%s: error updating connection %s settings: (%d) %s",
+		g_warning ("%s: error updating connection %s settings: %s",
 		           __func__,
 		           nm_connection_get_path (NM_CONNECTION (self)),
-		           error->code, error->message);
+		           error->message);
 		g_clear_error (&error);
 
 		g_signal_emit (self, signals[REMOVED], 0);

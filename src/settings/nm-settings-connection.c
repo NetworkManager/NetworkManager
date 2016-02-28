@@ -883,10 +883,8 @@ new_secrets_commit_cb (NMSettingsConnection *self,
                        GError *error,
                        gpointer user_data)
 {
-	if (error) {
-		_LOGW ("Error saving new secrets to backing storage: (%d) %s",
-		       error->code, error->message);
-	}
+	if (error)
+		_LOGW ("Error saving new secrets to backing storage: %s", error->message);
 }
 
 static void
@@ -1086,18 +1084,16 @@ get_secrets_done_cb (NMAgentManager *manager,
 			}
 
 		} else {
-			_LOGD ("(%s:%p) failed to update with agent secrets: (%d) %s",
+			_LOGD ("(%s:%p) failed to update with agent secrets: %s",
 			       setting_name,
 			       info,
-			       local->code,
 			       local->message);
 		}
 		g_variant_unref (filtered_secrets);
 	} else {
-		_LOGD ("(%s:%p) failed to update with existing secrets: (%d) %s",
+		_LOGD ("(%s:%p) failed to update with existing secrets: %s",
 		       setting_name,
 		       info,
-		       local->code,
 		       local->message);
 	}
 
@@ -2219,8 +2215,7 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *self)
 		priv->timestamp = timestamp;
 		priv->timestamp_set = TRUE;
 	} else {
-		_LOGD ("failed to read connection timestamp: (%d) %s",
-		       err->code, err->message);
+		_LOGD ("failed to read connection timestamp: %s", err->message);
 		g_clear_error (&err);
 	}
 	g_key_file_free (timestamps_file);

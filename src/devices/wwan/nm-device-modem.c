@@ -157,8 +157,8 @@ modem_ip4_config_result (NMModem *modem,
 	g_return_if_fail (nm_device_activate_ip4_state_in_conf (device) == TRUE);
 
 	if (error) {
-		_LOGW (LOGD_MB | LOGD_IP4, "retrieving IPv4 configuration failed: (%d) %s",
-		       error->code, error->message);
+		_LOGW (LOGD_MB | LOGD_IP4, "retrieving IPv4 configuration failed: %s",
+		       error->message);
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
@@ -184,8 +184,7 @@ modem_ip6_config_result (NMModem *modem,
 	g_return_if_fail (nm_device_activate_ip6_state_in_conf (device) == TRUE);
 
 	if (error) {
-		_LOGW (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: (%d) %s",
-		       error->code, error->message);
+		_LOGW (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: %s", error->message);
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		return;

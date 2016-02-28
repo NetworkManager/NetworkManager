@@ -330,8 +330,8 @@ verify_request (NMSecretAgent *self,
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
 		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
-		             "Invalid connection: (%d) %s",
-		             local->code, local->message);
+		             "Invalid connection: %s",
+		             local->message);
 		g_clear_error (&local);
 	}
 

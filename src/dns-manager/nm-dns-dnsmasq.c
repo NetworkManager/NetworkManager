@@ -283,9 +283,9 @@ update (NMDnsPlugin *plugin,
 
 	/* Write out the config file */
 	if (!g_file_set_contents (CONFFILE, conf->str, -1, &error)) {
-		nm_log_warn (LOGD_DNS, "Failed to write dnsmasq config file %s: (%d) %s",
+		nm_log_warn (LOGD_DNS, "Failed to write dnsmasq config file %s: %s",
 		             CONFFILE,
-		             error->code, error->message);
+		             error->message);
 		g_clear_error (&error);
 		goto out;
 	}

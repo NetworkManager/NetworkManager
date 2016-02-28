@@ -574,9 +574,8 @@ fetch_connections_done (DBusGProxy *proxy,
 		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
 		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)
 		    && priv->service_running) {
-			g_warning ("%s: error fetching connections: (%d) %s.",
+			g_warning ("%s: error fetching connections: %s.",
 			           __func__,
-			           error->code,
 			           error->message ? error->message : "(unknown)");
 		}
 		g_clear_error (&error);

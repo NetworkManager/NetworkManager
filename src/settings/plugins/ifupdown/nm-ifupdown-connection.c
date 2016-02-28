@@ -95,10 +95,10 @@ constructor (GType type,
 	}
 
 	if (!ifupdown_update_connection_from_if_block (NM_CONNECTION (object), priv->ifblock, &error)) {
-		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: %s",
 		             __FILE__,
 		             __LINE__,
-		             error->code, error->message);
+		             error->message);
 		goto err;
 	}
 

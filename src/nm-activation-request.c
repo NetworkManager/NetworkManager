@@ -303,8 +303,8 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 			nm_log_info (LOGD_SHARING, "Executing: %s", cmd);
 			if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 			                   NULL, NULL, NULL, NULL, &status, &error)) {
-				nm_log_warn (LOGD_SHARING, "Error executing command: (%d) %s",
-				             error->code, error->message);
+				nm_log_warn (LOGD_SHARING, "Error executing command: %s",
+				             error->message);
 				g_clear_error (&error);
 			} else if (WEXITSTATUS (status)) {
 				nm_log_warn (LOGD_SHARING, "** Command returned exit status %d.",

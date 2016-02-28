@@ -362,9 +362,9 @@ dhclient_start (NMDhcpClient *client,
 			priv->lease_file = g_strdup (g_file_get_path (dst));
 		} else {
 			/* Failure; just use the existing leasefile */
-			nm_log_warn (log_domain, "Failed to copy leasefile %s to %s: (%d) %s",
+			nm_log_warn (log_domain, "Failed to copy leasefile %s to %s: %s",
 			             g_file_get_path (src), g_file_get_path (dst),
-			             error->code, error->message);
+			             error->message);
 			g_clear_error (&error);
 		}
 		g_object_unref (src);
@@ -378,9 +378,8 @@ dhclient_start (NMDhcpClient *client,
 		success = nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error);
 		g_free (escaped);
 		if (!success) {
-			nm_log_warn (log_domain, "(%s): failed to save DUID to %s: (%d) %s.",
+			nm_log_warn (log_domain, "(%s): failed to save DUID to %s: %s.",
 			             iface, priv->lease_file,
-			             error->code,
 			             error->message);
 			g_free (pid_file);
 			return FALSE;
@@ -577,8 +576,8 @@ get_duid (NMDhcpClient *client)
 		duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
 
 		if (error) {
-			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
-			             leasefile, error->code, error->message);
+			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': %s",
+			             leasefile, error->message);
 			g_clear_error (&error);
 		}
 		g_free (leasefile);
@@ -589,9 +588,8 @@ get_duid (NMDhcpClient *client)
 		nm_log_dbg (LOGD_DHCP, "Looking for default DHCPv6 DUID in '%s'.", priv->def_leasefile);
 		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
 		if (error) {
-			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
+			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': %s",
 			             priv->def_leasefile,
-			             error->code,
 			             error->message);
 			g_clear_error (&error);
 		}

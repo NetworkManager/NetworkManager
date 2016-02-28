@@ -246,8 +246,8 @@ pan_connection_check_create (NMBluezDevice *self)
 		priv->pan_connection = added;
 		nm_log_dbg (LOGD_BT, "bluez[%s] added new Bluetooth connection for NAP device: '%s' (%s)", priv->path, id, uuid);
 	} else {
-		nm_log_warn (LOGD_BT, "bluez[%s] couldn't add new Bluetooth connection for NAP device: '%s' (%s): %d / %s",
-		             priv->path, id, uuid, error->code, error->message);
+		nm_log_warn (LOGD_BT, "bluez[%s] couldn't add new Bluetooth connection for NAP device: '%s' (%s): %s",
+		             priv->path, id, uuid, error->message);
 		g_clear_error (&error);
 
 	}

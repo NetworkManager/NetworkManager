@@ -497,8 +497,8 @@ modem_ip4_config_result (NMModem *modem,
 
 	if (error) {
 		_LOGW (LOGD_MB | LOGD_IP4 | LOGD_BT,
-		       "retrieving IP4 configuration failed: (%d) %s",
-		       error->code, error->message);
+		       "retrieving IP4 configuration failed: %s",
+		       error->message);
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else

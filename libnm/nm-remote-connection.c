@@ -564,10 +564,9 @@ replace_settings (NMRemoteConnection *self, GVariant *new_settings)
 	GError *error = NULL;
 
 	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
-		g_warning ("%s: error updating connection %s settings: (%d) %s",
+		g_warning ("%s: error updating connection %s settings: %s",
 		           __func__,
 		           nm_connection_get_path (NM_CONNECTION (self)),
-		           error->code,
 		           error->message);
 		g_clear_error (&error);
 	}

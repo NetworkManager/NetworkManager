@@ -1402,11 +1402,10 @@ _nm_object_reload_property (NMObject *object,
 	                                     G_TYPE_INVALID,
 	                                     G_TYPE_VALUE, &value,
 	                                     G_TYPE_INVALID)) {
-		dbgmsg ("%s: Error getting '%s' for %s: (%d) %s\n",
+		dbgmsg ("%s: Error getting '%s' for %s: %s\n",
 		        __func__,
 		        prop_name,
 		        nm_object_get_path (object),
-		        err->code,
 		        err->message);
 		g_clear_error (&err);
 		return;

@@ -513,7 +513,7 @@ activate_info_complete (ActivateInfo *info,
 		                  error,
 		                  info->user_data);
 	} else if (error)
-		g_warning ("Device activation failed: (%d) %s", error->code, error->message);
+		g_warning ("Device activation failed: %s", error->message);
 
 	priv->pending_activations = g_slist_remove (priv->pending_activations, info);
 }
@@ -1839,8 +1839,8 @@ constructed (GObject *object)
 	GError *error = NULL;
 
 	if (!nm_utils_init (&error)) {
-		g_warning ("Couldn't initilize nm-utils/crypto system: %d %s",
-		           error->code, error->message);
+		g_warning ("Couldn't initilize nm-utils/crypto system: %s",
+		           error->message);
 		g_clear_error (&error);
 	}
 

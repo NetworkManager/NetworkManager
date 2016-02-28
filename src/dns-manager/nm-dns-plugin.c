@@ -175,8 +175,8 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 		nm_log_dbg (LOGD_DNS, "%s started with pid %d", priv->progname, priv->pid);
 		priv->watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) watch_cb, self);
 	} else {
-		nm_log_warn (LOGD_DNS, "Failed to spawn %s: (%d) %s",
-		             priv->progname, error->code, error->message);
+		nm_log_warn (LOGD_DNS, "Failed to spawn %s: %s",
+		             priv->progname, error->message);
 		g_clear_error (&error);
 	}
 

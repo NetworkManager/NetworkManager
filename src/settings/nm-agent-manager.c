@@ -263,8 +263,8 @@ agent_register_permissions_done (NMAuthChain *chain,
 	if (error) {
 		local = g_error_new (NM_AGENT_MANAGER_ERROR,
 		                     NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "Failed to request agent permissions: (%d) %s",
-		                     error->code, error->message);
+		                     "Failed to request agent permissions: %s",
+		                     error->message);
 		g_dbus_method_invocation_take_error (context, local);
 	} else {
 		agent = nm_auth_chain_steal_data (chain, "agent");
@@ -987,9 +987,9 @@ _con_get_request_start_validated (NMAuthChain *chain,
 	req->con.chain = NULL;
 
 	if (error) {
-		_LOGD (req->current, "agent "LOG_REQ_FMT" MODIFY check error: (%d) %s",
+		_LOGD (req->current, "agent "LOG_REQ_FMT" MODIFY check error: %s",
 		       LOG_REQ_ARG (req),
-		       error->code, error->message);
+		       error->message);
 		/* Try the next agent */
 		request_next_agent (req);
 	} else {

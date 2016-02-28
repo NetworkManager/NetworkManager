@@ -302,9 +302,8 @@ get_credentials (char *username, char *password)
 	                              G_DBUS_CALL_FLAGS_NONE, -1,
 	                              NULL, &err);
 	if (!ret) {
-		g_warning ("nm-ppp-plugin: (%s): could not get secrets: (%d) %s",
+		g_warning ("nm-ppp-plugin: (%s): could not get secrets: %s",
 		           __func__,
-		           err->code,
 		           err->message);
 		g_error_free (err);
 		return -1;

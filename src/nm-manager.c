@@ -1658,9 +1658,8 @@ assume_connection (NMManager *self, NMDevice *device, NMSettingsConnection *conn
 	g_object_unref (subject);
 
 	if (!active) {
-		_LOGW (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
+		_LOGW (LOGD_DEVICE, "assumed connection %s failed to activate: %s",
 		       nm_connection_get_path (NM_CONNECTION (connection)),
-		       error->code,
 		       error->message);
 		g_error_free (error);
 		return FALSE;
@@ -4009,9 +4008,8 @@ _internal_enable (NMManager *self, gboolean enable)
 		                                G_TYPE_BOOLEAN, (gpointer) &enable,
 		                                &err)) {
 			/* Not a hard error */
-			_LOGW (LOGD_SUSPEND, "writing to state file %s failed: (%d) %s.",
+			_LOGW (LOGD_SUSPEND, "writing to state file %s failed: %s",
 			       priv->state_file,
-			       err->code,
 			       err->message);
 		}
 	}
@@ -4971,9 +4969,8 @@ manager_radio_user_toggled (NMManager *self,
 		                                "main", rstate->key,
 		                                G_TYPE_BOOLEAN, (gpointer) &enabled,
 		                                &error)) {
-			_LOGW (LOGD_CORE, "writing to state file %s failed: (%d) %s.",
+			_LOGW (LOGD_CORE, "writing to state file %s failed: %s",
 			       priv->state_file,
-			       error->code,
 			       error->message);
 			g_clear_error (&error);
 		}
