@@ -307,7 +307,7 @@ process_lldp_neighbors (NMLldpListener *self)
 		case LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 		case LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
 		case LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
-			neigh->chassis_id = strndup ((char *) chassis_id, chassis_id_len);
+			neigh->chassis_id = g_strndup ((const char *) chassis_id, chassis_id_len);
 			break;
 		case LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 			neigh->chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
