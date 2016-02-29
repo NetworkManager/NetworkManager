@@ -4743,7 +4743,6 @@ link_vlan_change (NMPlatform *platform,
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_cache;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	unsigned flags;
 	const NMPObjectLnkVlan *lnk;
 	guint new_n_ingress_map = 0;
 	guint new_n_egress_map = 0;
@@ -4761,7 +4760,6 @@ link_vlan_change (NMPlatform *platform,
 	}
 
 	lnk = obj_cache->_link.netlink.lnk ? &obj_cache->_link.netlink.lnk->_lnk_vlan : NULL;
-	flags = obj_cache->link.flags;
 
 	flags_set &= flags_mask;
 

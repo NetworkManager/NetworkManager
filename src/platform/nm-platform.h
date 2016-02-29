@@ -147,9 +147,8 @@ struct _NMPlatformLink {
 	 * initialized with memset(0) has and unset value.*/
 	guint8 inet6_addr_gen_mode_inv;
 
-	/* IFF_* flags as u32. Note that ifi_flags in 'struct ifinfomsg' is declared as 'unsigned',
-	 * but libnl stores the flag internally as u32.  */
-	guint32 flags;
+	/* IFF_* flags. Note that the flags in 'struct ifinfomsg' are declared as 'unsigned'. */
+	guint flags;
 
 	/* @connected is mostly identical to (@flags & IFF_UP). Except for bridge/bond masters,
 	 * where we coerce the link as disconnect if it has no slaves. */

@@ -803,7 +803,7 @@ nm_platform_link_refresh (NMPlatform *self, int ifindex)
 	return TRUE;
 }
 
-static guint32
+static guint
 _link_get_flags (NMPlatform *self, int ifindex)
 {
 	const NMPlatformLink *pllink;
