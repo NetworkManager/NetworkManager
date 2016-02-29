@@ -136,7 +136,7 @@ get_lldp_neighbor_attribute (GVariant *neighbors,
 static void
 test_receive_frame (test_fixture *fixture, gconstpointer user_data)
 {
-	NMLldpListener *listener;
+	gs_unref_object NMLldpListener *listener = NULL;
 	GMainLoop *loop;
 	TestInfo info = { };
 	GVariant *neighbors, *attr;
