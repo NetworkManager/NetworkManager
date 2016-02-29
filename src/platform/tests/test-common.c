@@ -1282,7 +1282,7 @@ nmtstp_link_set_updown (gboolean external_command,
 		plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
 		g_assert (plink);
 
-		if (NM_FLAGS_HAS (plink->flags, IFF_UP) == !!up)
+		if (NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP) == !!up)
 			break;
 
 		/* for internal command, we expect not to reach this line.*/

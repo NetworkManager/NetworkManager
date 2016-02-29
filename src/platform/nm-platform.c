@@ -809,7 +809,7 @@ _link_get_flags (NMPlatform *self, int ifindex)
 	const NMPlatformLink *pllink;
 
 	pllink = nm_platform_link_get (self, ifindex);
-	return pllink ? pllink->flags : IFF_NOARP;
+	return pllink ? pllink->n_ifi_flags : IFF_NOARP;
 }
 
 /**
@@ -2967,19 +2967,19 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 		return buf;
 
 	str_flags = g_string_new (NULL);
-	if (NM_FLAGS_HAS (link->flags, IFF_NOARP))
+	if (NM_FLAGS_HAS (link->n_ifi_flags, IFF_NOARP))
 		g_string_append (str_flags, "NOARP,");
-	if (NM_FLAGS_HAS (link->flags, IFF_UP))
+	if (NM_FLAGS_HAS (link->n_ifi_flags, IFF_UP))
 		g_string_append (str_flags, "UP");
 	else
 		g_string_append (str_flags, "DOWN");
 	if (link->connected)
 		g_string_append (str_flags, ",LOWER_UP");
 
-	if (link->flags) {
+	if (link->n_ifi_flags) {
 		char str_flags_buf[64];
 
-		nm_platform_link_flags2str (link->flags, str_flags_buf, sizeof (str_flags_buf));
+		nm_platform_link_flags2str (link->n_ifi_flags, str_flags_buf, sizeof (str_flags_buf));
 		g_string_append_printf (str_flags, ";%s", str_flags_buf);
 	}
 
@@ -3683,7 +3683,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD_STR (a, b, name);
 	_CMP_FIELD (a, b, master);
 	_CMP_FIELD (a, b, parent);
-	_CMP_FIELD (a, b, flags);
+	_CMP_FIELD (a, b, n_ifi_flags);
 	_CMP_FIELD (a, b, connected);
 	_CMP_FIELD (a, b, mtu);
 	_CMP_FIELD_BOOL (a, b, initialized);

@@ -1498,7 +1498,7 @@ device_link_changed (NMDevice *self)
 		update_dynamic_ip_setup (self);
 
 	was_up = priv->up;
-	priv->up = NM_FLAGS_HAS (info.flags, IFF_UP);
+	priv->up = NM_FLAGS_HAS (info.n_ifi_flags, IFF_UP);
 
 	if (   priv->ifindex > 0
 	    && info.initialized
@@ -1778,7 +1778,7 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 	priv->ifindex = plink->ifindex;
 	_notify (self, PROP_IFINDEX);
 
-	priv->up = NM_FLAGS_HAS (plink->flags, IFF_UP);
+	priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
 	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
 		g_free (priv->driver);
 		priv->driver = g_strdup (plink->driver);
@@ -11046,7 +11046,7 @@ constructor (GType type,
 
 		if (pllink && link_type_compatible (self, pllink->type, NULL, NULL)) {
 			priv->ifindex = pllink->ifindex;
-			priv->up = NM_FLAGS_HAS (pllink->flags, IFF_UP);
+			priv->up = NM_FLAGS_HAS (pllink->n_ifi_flags, IFF_UP);
 		}
 	}
 

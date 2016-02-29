@@ -1255,7 +1255,7 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 
 	/* if native IFF_LOWER_UP is down, link.connected must also be down
 	 * regardless of the slaves. */
-	if (!NM_FLAGS_HAS (master->link.flags, IFF_LOWER_UP))
+	if (!NM_FLAGS_HAS (master->link.n_ifi_flags, IFF_LOWER_UP))
 		return !!master->link.connected;
 
 	if (potential_slave && NMP_OBJECT_GET_TYPE (potential_slave) != NMP_OBJECT_TYPE_LINK)

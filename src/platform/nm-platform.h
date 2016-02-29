@@ -148,9 +148,9 @@ struct _NMPlatformLink {
 	guint8 inet6_addr_gen_mode_inv;
 
 	/* IFF_* flags. Note that the flags in 'struct ifinfomsg' are declared as 'unsigned'. */
-	guint flags;
+	guint n_ifi_flags;
 
-	/* @connected is mostly identical to (@flags & IFF_UP). Except for bridge/bond masters,
+	/* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
 	 * where we coerce the link as disconnect if it has no slaves. */
 	gboolean connected;
 
