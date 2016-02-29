@@ -11519,168 +11519,168 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	/* Properties */
 	obj_properties[PROP_UDI] =
-		 g_param_spec_string (NM_DEVICE_UDI, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_UDI, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFACE] =
-		 g_param_spec_string (NM_DEVICE_IFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_IFACE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP_IFACE] =
-		 g_param_spec_string (NM_DEVICE_IP_IFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_IP_IFACE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DRIVER] =
-		 g_param_spec_string (NM_DEVICE_DRIVER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_DRIVER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DRIVER_VERSION] =
-		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_FIRMWARE_VERSION] =
-		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
-		                      NULL,
+	    g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
+	                         NULL,
 .		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS);
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_CAPABILITIES] =
-		 g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
+	                       0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_CARRIER] =
-		 g_param_spec_boolean (NM_DEVICE_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_MTU] =
-		 g_param_spec_uint (NM_DEVICE_MTU, "", "",
-		                    0, G_MAXUINT32, 1500,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_MTU, "", "",
+	                       0, G_MAXUINT32, 1500,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP4_ADDRESS] =
-		 g_param_spec_uint (NM_DEVICE_IP4_ADDRESS, "", "",
-		                    0, G_MAXUINT32, 0, /* FIXME */
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_IP4_ADDRESS, "", "",
+	                       0, G_MAXUINT32, 0, /* FIXME */
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP4_CONFIG] =
-		 g_param_spec_string (NM_DEVICE_IP4_CONFIG, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_IP4_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DHCP4_CONFIG] =
-		 g_param_spec_string (NM_DEVICE_DHCP4_CONFIG, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_DHCP4_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP6_CONFIG] =
-		 g_param_spec_string (NM_DEVICE_IP6_CONFIG, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_IP6_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DHCP6_CONFIG] =
-		 g_param_spec_string (NM_DEVICE_DHCP6_CONFIG, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_DHCP6_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_STATE] =
-		 g_param_spec_uint (NM_DEVICE_STATE, "", "",
-		                    0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_STATE, "", "",
+	                       0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_STATE_REASON] =
-		 g_param_spec_variant (NM_DEVICE_STATE_REASON, "", "",
-		                       G_VARIANT_TYPE ("(uu)"),
-		                       NULL,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_DEVICE_STATE_REASON, "", "",
+	                          G_VARIANT_TYPE ("(uu)"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ACTIVE_CONNECTION] =
-		 g_param_spec_string (NM_DEVICE_ACTIVE_CONNECTION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_ACTIVE_CONNECTION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DEVICE_TYPE] =
-		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
-		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
+	                       0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_LINK_TYPE] =
-		 g_param_spec_uint (NM_DEVICE_LINK_TYPE, "", "",
-		                    0, G_MAXUINT32, NM_LINK_TYPE_NONE,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_LINK_TYPE, "", "",
+	                       0, G_MAXUINT32, NM_LINK_TYPE_NONE,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_MANAGED] =
-		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AUTOCONNECT] =
-		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
-		                       DEFAULT_AUTOCONNECT,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
+	                          DEFAULT_AUTOCONNECT,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_FIRMWARE_MISSING] =
-		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NM_PLUGIN_MISSING] =
-		 g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_TYPE_DESC] =
-		 g_param_spec_string (NM_DEVICE_TYPE_DESC, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_TYPE_DESC, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_RFKILL_TYPE] =
-		 g_param_spec_uint (NM_DEVICE_RFKILL_TYPE, "", "",
-		                    RFKILL_TYPE_WLAN,
-		                    RFKILL_TYPE_MAX,
-		                    RFKILL_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_RFKILL_TYPE, "", "",
+	                       RFKILL_TYPE_WLAN,
+	                       RFKILL_TYPE_MAX,
+	                       RFKILL_TYPE_UNKNOWN,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFINDEX] =
-		 g_param_spec_int (NM_DEVICE_IFINDEX, "", "",
-		                   0, G_MAXINT, 0,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS);
+	    g_param_spec_int (NM_DEVICE_IFINDEX, "", "",
+	                      0, G_MAXINT, 0,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AVAILABLE_CONNECTIONS] =
-		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_PHYSICAL_PORT_ID] =
-		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IS_MASTER] =
-		 g_param_spec_boolean (NM_DEVICE_IS_MASTER, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_IS_MASTER, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_MASTER] =
-		 g_param_spec_object (NM_DEVICE_MASTER, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_object (NM_DEVICE_MASTER, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_HW_ADDRESS] =
-		 g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_HAS_PENDING_ACTION] =
-		 g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:metered:
@@ -11690,89 +11690,89 @@ nm_device_class_init (NMDeviceClass *klass)
 	 * Since: 1.2
 	 **/
 	obj_properties[PROP_METERED] =
-		 g_param_spec_uint (NM_DEVICE_METERED, "", "",
-		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_METERED, "", "",
+	                       0, G_MAXUINT32, NM_METERED_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_LLDP_NEIGHBORS] =
-		 g_param_spec_variant (NM_DEVICE_LLDP_NEIGHBORS, "", "",
-		                       G_VARIANT_TYPE ("aa{sv}"),
-		                       NULL,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_DEVICE_LLDP_NEIGHBORS, "", "",
+	                          G_VARIANT_TYPE ("aa{sv}"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_REAL] =
-		 g_param_spec_boolean (NM_DEVICE_REAL, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_REAL, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_SLAVES] =
-	     g_param_spec_boxed (NM_DEVICE_SLAVES, "", "",
-	                         G_TYPE_STRV,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boxed (NM_DEVICE_SLAVES, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
 	signals[STATE_CHANGED] =
-		g_signal_new (NM_DEVICE_STATE_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3,
-		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new (NM_DEVICE_STATE_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  G_STRUCT_OFFSET (NMDeviceClass, state_changed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 3,
+	                  G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[AUTOCONNECT_ALLOWED] =
-		g_signal_new ("autoconnect-allowed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              0,
-		              autoconnect_allowed_accumulator, NULL, NULL,
-		              G_TYPE_BOOLEAN, 0);
+	    g_signal_new ("autoconnect-allowed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  autoconnect_allowed_accumulator, NULL, NULL,
+	                  G_TYPE_BOOLEAN, 0);
 
 	signals[AUTH_REQUEST] =
-		g_signal_new (NM_DEVICE_AUTH_REQUEST,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              /* context, connection, permission, allow_interaction, callback, user_data */
-		              G_TYPE_NONE, 6, G_TYPE_DBUS_METHOD_INVOCATION, NM_TYPE_CONNECTION, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
+	    g_signal_new (NM_DEVICE_AUTH_REQUEST,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  /* context, connection, permission, allow_interaction, callback, user_data */
+	                  G_TYPE_NONE, 6, G_TYPE_DBUS_METHOD_INVOCATION, NM_TYPE_CONNECTION, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[IP4_CONFIG_CHANGED] =
-		g_signal_new (NM_DEVICE_IP4_CONFIG_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+	    g_signal_new (NM_DEVICE_IP4_CONFIG_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
 	signals[IP6_CONFIG_CHANGED] =
-		g_signal_new (NM_DEVICE_IP6_CONFIG_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+	    g_signal_new (NM_DEVICE_IP6_CONFIG_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
 	signals[REMOVED] =
-		g_signal_new (NM_DEVICE_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_DEVICE_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[RECHECK_AUTO_ACTIVATE] =
-		g_signal_new (NM_DEVICE_RECHECK_AUTO_ACTIVATE,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_DEVICE_RECHECK_AUTO_ACTIVATE,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[RECHECK_ASSUME] =
-		g_signal_new (NM_DEVICE_RECHECK_ASSUME,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_DEVICE_RECHECK_ASSUME,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_SKELETON,
