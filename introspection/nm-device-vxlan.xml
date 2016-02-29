@@ -58,8 +58,8 @@
 
     <property name="Ageing" type="u" access="read">
       <tp:docstring>
-        The interval at which the kernel purges stale cached addresses
-	(in kernel jiffies, ie, centiseconds).
+        The interval in seconds at which the kernel purges stale
+        cached addresses.
       </tp:docstring>
     </property>
 
