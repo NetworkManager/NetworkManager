@@ -5889,14 +5889,14 @@ cleanup_olpc:
 		gboolean success = FALSE;
 		char *username_ask = NULL;
 		const char *username = NULL;
-		char *protocol_ask = NULL;
-		const char *protocol = NULL;
+		char *protocol_ask = NULL, *protocol = NULL;
+		const char *protocol_c = NULL;
 		const char *password_c = NULL;
 		char *password = NULL;
 		const char *encapsulation_c = NULL;
 		char *encapsulation = NULL;
 		nmc_arg_t exp_args[] = { {"username",      TRUE, &username,        !ask},
-		                         {"protocol",      TRUE, &protocol,        !ask},
+		                         {"protocol",      TRUE, &protocol_c,      !ask},
 		                         {"password",      TRUE, &password_c,      FALSE},
 		                         {"encapsulation", TRUE, &encapsulation_c, FALSE},
 		                         {NULL} };
@@ -5913,14 +5913,15 @@ cleanup_olpc:
 		}
 
 #define PROMPT_ADSL_PROTO "(" NM_SETTING_ADSL_PROTOCOL_PPPOA "/" NM_SETTING_ADSL_PROTOCOL_PPPOE "/" NM_SETTING_ADSL_PROTOCOL_IPOATM "): "
-		if (!protocol && ask)
-			protocol = protocol_ask = nmc_readline (_("Protocol %s"), PROMPT_ADSL_PROTO);
-		if (!protocol) {
+		if (!protocol_c && ask)
+			protocol_c = protocol_ask = nmc_readline (_("Protocol %s"), PROMPT_ADSL_PROTO);
+		if (!protocol_c) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'protocol' is required."));
 			goto cleanup_adsl;
 		}
-		if (!check_adsl_protocol (&protocol_ask, error))
+		protocol = g_strdup (protocol_c);
+		if (!check_adsl_protocol (&protocol, error))
 			goto cleanup_adsl;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
@@ -5947,6 +5948,7 @@ cleanup_olpc:
 cleanup_adsl:
 		g_free (username_ask);
 		g_free (password);
+		g_free (protocol);
 		g_free (protocol_ask);
 		g_free (encapsulation);
 
