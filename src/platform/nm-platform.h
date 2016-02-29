@@ -119,13 +119,17 @@ struct _NMPlatformLink {
 	/* NMPlatform initializes this field with a static string. */
 	const char *driver;
 
-	gboolean initialized;
 	int master;
 
 	/* rtnl_link_get_link(), IFLA_LINK.
 	 * If IFLA_LINK_NETNSID indicates that the parent is in another namespace,
 	 * this field be set to (negative) NM_PLATFORM_LINK_OTHER_NETNS. */
 	int parent;
+
+	/* IFF_* flags. Note that the flags in 'struct ifinfomsg' are declared as 'unsigned'. */
+	guint n_ifi_flags;
+
+	guint mtu;
 
 	/* rtnl_link_get_arptype(), ifinfomsg.ifi_type. */
 	guint32 arptype;
@@ -147,14 +151,11 @@ struct _NMPlatformLink {
 	 * initialized with memset(0) has and unset value.*/
 	guint8 inet6_addr_gen_mode_inv;
 
-	/* IFF_* flags. Note that the flags in 'struct ifinfomsg' are declared as 'unsigned'. */
-	guint n_ifi_flags;
-
 	/* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
 	 * where we coerce the link as disconnect if it has no slaves. */
-	gboolean connected;
+	bool connected:1;
 
-	guint mtu;
+	bool initialized:1;
 };
 
 typedef enum { /*< skip >*/
@@ -362,16 +363,16 @@ extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
 
 typedef struct {
+	in_addr_t local;
+	in_addr_t remote;
 	int parent_ifindex;
 	guint16 input_flags;
 	guint16 output_flags;
 	guint32 input_key;
 	guint32 output_key;
-	in_addr_t local;
-	in_addr_t remote;
 	guint8 ttl;
 	guint8 tos;
-	gboolean path_mtu_discovery;
+	bool path_mtu_discovery:1;
 } NMPlatformLnkGre;
 
 typedef struct {
@@ -380,42 +381,42 @@ typedef struct {
 } NMPlatformLnkInfiniband;
 
 typedef struct {
-	int parent_ifindex;
 	struct in6_addr local;
 	struct in6_addr remote;
+	int parent_ifindex;
 	guint8 ttl;
 	guint8 tclass;
 	guint8 encap_limit;
-	guint flow_label;
 	guint8 proto;
+	guint flow_label;
 } NMPlatformLnkIp6Tnl;
 
 typedef struct {
-	int parent_ifindex;
 	in_addr_t local;
 	in_addr_t remote;
+	int parent_ifindex;
 	guint8 ttl;
 	guint8 tos;
-	gboolean path_mtu_discovery;
+	bool path_mtu_discovery:1;
 } NMPlatformLnkIpIp;
 
 typedef struct {
 	guint mode;
-	gboolean no_promisc;
-	gboolean tap;
+	bool no_promisc:1;
+	bool tap:1;
 } NMPlatformLnkMacvlan;
 
 typedef NMPlatformLnkMacvlan NMPlatformLnkMacvtap;
 
 typedef struct {
-	int parent_ifindex;
 	in_addr_t local;
 	in_addr_t remote;
+	int parent_ifindex;
 	guint8 ttl;
 	guint8 tos;
-	gboolean path_mtu_discovery;
-	guint16 flags;
 	guint8 proto;
+	bool path_mtu_discovery:1;
+	guint16 flags;
 } NMPlatformLnkSit;
 
 typedef struct {
@@ -425,33 +426,33 @@ typedef struct {
 } NMPlatformLnkVlan;
 
 typedef struct {
-	int parent_ifindex;
-	guint32 id;
-	in_addr_t group;
-	in_addr_t local;
 	struct in6_addr group6;
 	struct in6_addr local6;
-	guint8 tos;
-	guint8 ttl;
-	gboolean learning;
+	in_addr_t group;
+	in_addr_t local;
+	int parent_ifindex;
+	guint32 id;
 	guint32 ageing;
 	guint32 limit;
 	guint16 dst_port;
 	guint16 src_port_min;
 	guint16 src_port_max;
-	gboolean proxy;
-	gboolean rsc;
-	gboolean l2miss;
-	gboolean l3miss;
+	guint8 tos;
+	guint8 ttl;
+	bool learning:1;
+	bool proxy:1;
+	bool rsc:1;
+	bool l2miss:1;
+	bool l3miss:1;
 } NMPlatformLnkVxlan;
 
 typedef struct {
 	gint64 owner;
 	gint64 group;
 	const char *mode;
-	gboolean no_pi;
-	gboolean vnet_hdr;
-	gboolean multi_queue;
+	bool no_pi:1;
+	bool vnet_hdr:1;
+	bool multi_queue:1;
 } NMPlatformTunProperties;
 
 /******************************************************************/
