@@ -134,7 +134,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 	NMIP6Config *existing;
 	NMIP6Config *ip6_config;
 	static int system_support = -1;
-	guint ifa_flags = 0x00;
+	guint32 ifa_flags = 0x00;
 	int i;
 
 	if (system_support == -1) {

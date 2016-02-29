@@ -2450,7 +2450,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
                              struct in6_addr peer_address,
                              guint32 lifetime,
                              guint32 preferred,
-                             guint flags)
+                             guint32 flags)
 {
 	_CHECK_SELF (self, klass, FALSE);
 

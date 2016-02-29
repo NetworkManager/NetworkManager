@@ -1676,8 +1676,8 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 
 	if (!is_v4) {
 		obj->ip6_address.flags = tb[IFA_FLAGS]
-		                         ? nla_get_u32 (tb[IFA_FLAGS])
-		                         : ifa->ifa_flags;
+		                               ? nla_get_u32 (tb[IFA_FLAGS])
+		                               : ifa->ifa_flags;
 	}
 
 	if (is_v4) {
@@ -5214,7 +5214,7 @@ ip6_address_add (NMPlatform *platform,
                  struct in6_addr peer_addr,
                  guint32 lifetime,
                  guint32 preferred,
-                 guint flags)
+                 guint32 flags)
 {
 	NMPObject obj_id;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;

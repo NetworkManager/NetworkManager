@@ -45,7 +45,7 @@ test_cleanup_internal (void)
 	int preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 	int metric = 20;
 	int mss = 1000;
-	guint flags = 0;
+	guint32 flags = 0;
 
 	inet_pton (AF_INET, "192.0.2.1", &addr4);
 	inet_pton (AF_INET, "192.0.3.0", &network4);

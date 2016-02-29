@@ -937,7 +937,8 @@ ip6_address_add (NMPlatform *platform,
                  int plen,
                  struct in6_addr peer_addr,
                  guint32 lifetime,
-                 guint32 preferred, guint flags)
+                 guint32 preferred,
+                 guint32 flags)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP6Address address;

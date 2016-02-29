@@ -269,7 +269,7 @@ struct _NMPlatformIP6Address {
 	__NMPlatformIPAddress_COMMON;
 	struct in6_addr address;
 	struct in6_addr peer_address;
-	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
+	guint32 flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 };
 
 typedef union {
@@ -594,7 +594,7 @@ typedef struct {
 	                             struct in6_addr peer_address,
 	                             guint32 lifetime,
 	                             guint32 preferred_lft,
-	                             guint flags);
+	                             guint32 flags);
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 	const NMPlatformIP4Address *(*ip4_address_get) (NMPlatform *, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
@@ -861,7 +861,7 @@ gboolean nm_platform_ip6_address_add (NMPlatform *self,
                                       struct in6_addr peer_address,
                                       guint32 lifetime,
                                       guint32 preferred_lft,
-                                      guint flags);
+                                      guint32 flags);
 gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, GPtrArray **out_added_addresses);

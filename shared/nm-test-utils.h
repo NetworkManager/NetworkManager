@@ -1147,7 +1147,7 @@ nmtst_platform_ip6_address (const char *address, const char *peer_address, guint
 inline static NMPlatformIP6Address *
 nmtst_platform_ip6_address_full (const char *address, const char *peer_address, guint plen,
                                  int ifindex, NMIPConfigSource source, guint32 timestamp,
-                                 guint32 lifetime, guint32 preferred, guint flags)
+                                 guint32 lifetime, guint32 preferred, guint32 flags)
 {
 	NMPlatformIP6Address *addr = nmtst_platform_ip6_address (address, peer_address, plen);
 

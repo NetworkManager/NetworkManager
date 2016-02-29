@@ -5627,7 +5627,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int i;
 	int system_support;
-	guint ifa_flags = 0x00;
+	guint32 ifa_flags = 0x00;
 
 	/*
 	 * Check, whether kernel is recent enough to help user space handling RA.
