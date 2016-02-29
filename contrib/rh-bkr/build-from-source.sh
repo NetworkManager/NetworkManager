@@ -54,6 +54,7 @@ $SUDO yum install \
     libselinux-devel \
     polkit-devel \
     teamd-devel \
+    jansson-devel \
     -y
 
 # for the tests, let's pre-load some modules:
