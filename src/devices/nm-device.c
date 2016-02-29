@@ -94,8 +94,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_UDI,
 	PROP_IFACE,
 	PROP_IP_IFACE,
@@ -132,8 +131,7 @@ enum {
 	PROP_LLDP_NEIGHBORS,
 	PROP_REAL,
 	PROP_SLAVES,
-	LAST_PROP
-};
+);
 
 #define DEFAULT_AUTOCONNECT TRUE
 
@@ -655,7 +653,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 
 	/* Emit change notification */
 	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
+		_notify (self, PROP_IP_IFACE);
 	g_free (old_ip_iface);
 }
 
@@ -1354,7 +1352,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		return;
 
 	priv->carrier = carrier;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_CARRIER);
+	_notify (self, PROP_CARRIER);
 
 	if (priv->carrier) {
 		_LOGI (LOGD_DEVICE, "link connected");
@@ -1442,26 +1440,26 @@ device_link_changed (NMDevice *self)
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
 		priv->udi = g_strdup (udi);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+		_notify (self, PROP_UDI);
 	}
 
 	if (g_strcmp0 (info.driver, priv->driver)) {
 		/* Update driver to what udev gives us */
 		g_free (priv->driver);
 		priv->driver = g_strdup (info.driver);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
+		_notify (self, PROP_DRIVER);
 	}
 
 	/* Update MTU if it has changed. */
 	if (priv->mtu != info.mtu) {
 		priv->mtu = info.mtu;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_MTU);
+		_notify (self, PROP_MTU);
 	}
 
 	if (info.driver && g_strcmp0 (priv->driver, info.driver) != 0) {
 		g_free (priv->driver);
 		priv->driver = g_strdup (info.driver);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
+		_notify (self, PROP_DRIVER);
 	}
 
 	if (info.name[0] && strcmp (priv->iface, info.name) != 0) {
@@ -1473,9 +1471,9 @@ device_link_changed (NMDevice *self)
 		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
 		ip_ifname_changed = !priv->ip_iface;
 
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IFACE);
+		_notify (self, PROP_IFACE);
 		if (ip_ifname_changed)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
+			_notify (self, PROP_IP_IFACE);
 
 		/* Re-match available connections against the new interface name */
 		nm_device_recheck_available_connections (self);
@@ -1583,7 +1581,7 @@ device_ip_link_changed (NMDevice *self)
 		g_free (priv->ip_iface);
 		priv->ip_iface = g_strdup (pllink->name);
 
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
+		_notify (self, PROP_IP_IFACE);
 		update_dynamic_ip_setup (self);
 	}
 	return G_SOURCE_REMOVE;
@@ -1768,23 +1766,23 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 	if (udi && !g_strcmp0 (udi, priv->udi)) {
 		g_free (priv->udi);
 		priv->udi = g_strdup (udi);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+		_notify (self, PROP_UDI);
 	}
 
 	if (!g_strcmp0 (plink->name, priv->iface)) {
 		g_free (priv->iface);
 		priv->iface = g_strdup (plink->name);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IFACE);
+		_notify (self, PROP_IFACE);
 	}
 
 	priv->ifindex = plink->ifindex;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IFINDEX);
+	_notify (self, PROP_IFINDEX);
 
 	priv->up = NM_FLAGS_HAS (plink->flags, IFF_UP);
 	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
 		g_free (priv->driver);
 		priv->driver = g_strdup (plink->driver);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
+		_notify (self, PROP_DRIVER);
 	}
 }
 
@@ -1861,7 +1859,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	if (priv->ifindex > 0) {
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
+		_notify (self, PROP_PHYSICAL_PORT_ID);
 
 		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
 
@@ -1869,7 +1867,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 			priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_MTU);
+		_notify (self, PROP_MTU);
 
 		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
 		                                  priv->ifindex,
@@ -1877,9 +1875,9 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		                                  &priv->driver_version,
 		                                  &priv->firmware_version);
 		if (priv->driver_version)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER_VERSION);
+		    _notify (self, PROP_DRIVER_VERSION);
 		if (priv->firmware_version)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_FIRMWARE_VERSION);
+			_notify (self, PROP_FIRMWARE_VERSION);
 
 		if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
 			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ifindex);
@@ -1891,7 +1889,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	if (!priv->udi) {
 		/* Use a placeholder UDI until we get a real one */
 		priv->udi = g_strdup_printf ("/virtual/device/placeholder/%d", id++);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+		_notify (self, PROP_UDI);
 	}
 
 	/* trigger initial ip config change to initialize ip-config */
@@ -1921,7 +1919,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		priv->carrier = TRUE;
 	}
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
+	_notify (self, PROP_CAPABILITIES);
 
 	klass->realize_start_notify (self, plink);
 
@@ -1968,7 +1966,7 @@ nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 		device_recheck_slave_status (self, plink);
 
 	priv->real = TRUE;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
+	_notify (self, PROP_REAL);
 
 	nm_device_recheck_available_connections (self);
 
@@ -2063,32 +2061,32 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IFINDEX);
+		_notify (self, PROP_IFINDEX);
 	}
 	priv->ip_ifindex = 0;
 	if (priv->ip_iface) {
 		g_clear_pointer (&priv->ip_iface, g_free);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
+		_notify (self, PROP_IP_IFACE);
 	}
 	if (priv->driver_version) {
 		g_clear_pointer (&priv->driver_version, g_free);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER_VERSION);
+		_notify (self, PROP_DRIVER_VERSION);
 	}
 	if (priv->firmware_version) {
 		g_clear_pointer (&priv->firmware_version, g_free);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_FIRMWARE_VERSION);
+		_notify (self, PROP_FIRMWARE_VERSION);
 	}
 	if (priv->udi) {
 		g_clear_pointer (&priv->udi, g_free);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+		_notify (self, PROP_UDI);
 	}
 	if (priv->hw_addr) {
 		g_clear_pointer (&priv->hw_addr, g_free);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
+		_notify (self, PROP_HW_ADDRESS);
 	}
 	if (priv->physical_port_id) {
 		g_clear_pointer (&priv->physical_port_id, g_free);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
+		_notify (self, PROP_PHYSICAL_PORT_ID);
 	}
 
 	g_clear_pointer (&priv->perm_hw_addr, g_free);
@@ -2097,10 +2095,10 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
+	_notify (self, PROP_CAPABILITIES);
 
 	priv->real = FALSE;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_REAL);
+	_notify (self, PROP_REAL);
 
 	nm_device_set_autoconnect (self, DEFAULT_AUTOCONNECT);
 
@@ -2292,7 +2290,7 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 
 		/* no need to emit
 		 *
-		 *   g_object_notify (G_OBJECT (slave), NM_DEVICE_MASTER);
+		 *   _notify (slave, PROP_MASTER);
 		 *
 		 * because slave_priv->is_enslaved is not true, thus the value
 		 * didn't change yet. */
@@ -2476,8 +2474,8 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 				_LOGI (LOGD_DEVICE, "enslaved to %s", nm_device_get_iface (priv->master));
 
 			priv->is_enslaved = TRUE;
-			g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
-			g_object_notify (G_OBJECT (priv->master), NM_DEVICE_SLAVES);
+			_notify (self, PROP_MASTER);
+			_notify (priv->master, PROP_SLAVES);
 		} else if (activating) {
 			_LOGW (LOGD_DEVICE, "Activation: connection '%s' could not be enslaved",
 			       nm_connection_get_id (connection));
@@ -2535,8 +2533,8 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 
 	if (priv->is_enslaved) {
 		priv->is_enslaved = FALSE;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
-		g_object_notify (G_OBJECT (priv->master), NM_DEVICE_SLAVES);
+		_notify (self, PROP_MASTER);
+		_notify (priv->master, PROP_SLAVES);
 	}
 }
 
@@ -2667,7 +2665,7 @@ nm_device_set_autoconnect (NMDevice *self, gboolean autoconnect)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->autoconnect != autoconnect) {
 		priv->autoconnect = autoconnect;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_AUTOCONNECT);
+		_notify (self, PROP_AUTOCONNECT);
 	}
 }
 
@@ -3397,7 +3395,7 @@ lldp_neighbors_changed (NMLldpListener *lldp_listener, GParamSpec *pspec,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_LLDP_NEIGHBORS);
+	_notify (self, PROP_LLDP_NEIGHBORS);
 }
 
 static gboolean
@@ -3453,7 +3451,7 @@ activate_stage1_device_prepare (NMDevice *self)
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
 	/* Notify the new ActiveConnection along with the state change */
-	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
+	_notify (self, PROP_ACTIVE_CONNECTION);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
@@ -4187,7 +4185,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	if (priv->dhcp4_config) {
 		nm_exported_object_clear_and_unexport (&priv->dhcp4_config);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
+		_notify (self, PROP_DHCP4_CONFIG);
 	}
 }
 
@@ -4496,7 +4494,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		}
 
 		nm_dhcp4_config_set_options (priv->dhcp4_config, options);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
+		_notify (self, PROP_DHCP4_CONFIG);
 
 		if (priv->ip4_state == IP_CONF) {
 			connection = nm_device_get_applied_connection (self);
@@ -4912,7 +4910,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	if (priv->dhcp6_config) {
 		nm_exported_object_clear_and_unexport (&priv->dhcp6_config);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
+		_notify (self, PROP_DHCP6_CONFIG);
 	}
 }
 
@@ -5247,7 +5245,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 				priv->dhcp6_ip6_config = g_object_ref (ip6_config);
 				priv->dhcp6_event_id = g_strdup (event_id);
 				nm_dhcp6_config_set_options (priv->dhcp6_config, options);
-				g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
+				_notify (self, PROP_DHCP6_CONFIG);
 			}
 		}
 
@@ -6921,7 +6919,7 @@ clear_act_request (NMDevice *self)
 	nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);
 
 	g_clear_object (&priv->act_request);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
+	_notify (self, PROP_ACTIVE_CONNECTION);
 }
 
 static void
@@ -6953,7 +6951,7 @@ _update_ip4_address (NMDevice *self)
 		addr = nm_ip4_config_get_address (priv->ip4_config, 0)->address;
 		if (addr != priv->ip4_address) {
 			priv->ip4_address = addr;
-			g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
+			_notify (self, PROP_IP4_ADDRESS);
 		}
 	}
 }
@@ -7888,7 +7886,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		_update_ip4_address (self);
 
 		if (old_config != priv->ip4_config)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
+			_notify (self, PROP_IP4_CONFIG);
 		g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
 
 		if (old_config != priv->ip4_config)
@@ -8055,7 +8053,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	if (has_changes) {
 		if (old_config != priv->ip6_config)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
+			_notify (self, PROP_IP6_CONFIG);
 		g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
 
 		if (old_config != priv->ip6_config)
@@ -8561,7 +8559,7 @@ nm_device_set_firmware_missing (NMDevice *self, gboolean new_missing)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->firmware_missing != new_missing) {
 		priv->firmware_missing = new_missing;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_FIRMWARE_MISSING);
+		_notify (self, PROP_FIRMWARE_MISSING);
 	}
 }
 
@@ -8581,7 +8579,7 @@ nm_device_set_nm_plugin_missing (NMDevice *self, gboolean new_missing)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->nm_plugin_missing != new_missing) {
 		priv->nm_plugin_missing = new_missing;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_NM_PLUGIN_MISSING);
+		_notify (self, PROP_NM_PLUGIN_MISSING);
 	}
 }
 
@@ -9496,7 +9494,7 @@ nm_device_update_metered (NMDevice *self)
 	if (value != priv->metered) {
 		_LOGD (LOGD_DEVICE, "set metered value %d", value);
 		priv->metered = value;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_METERED);
+		_notify (self, PROP_METERED);
 	}
 }
 
@@ -9591,7 +9589,7 @@ nm_device_check_connection_available (NMDevice *self,
 static void
 available_connections_notify (NMDevice *self)
 {
-	g_object_notify ((GObject *) self, NM_DEVICE_AVAILABLE_CONNECTIONS);
+	_notify (self, PROP_AVAILABLE_CONNECTIONS);
 }
 
 static gboolean
@@ -9820,7 +9818,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 	_LOGD (LOGD_DEVICE, "add_pending_action (%d): '%s'", count, action);
 
 	if (count == 1)
-		g_object_notify (G_OBJECT (self), NM_DEVICE_HAS_PENDING_ACTION);
+		_notify (self, PROP_HAS_PENDING_ACTION);
 
 	return TRUE;
 }
@@ -9855,7 +9853,7 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 			g_free (iter->data);
 			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			if (priv->pending_actions == NULL)
-				g_object_notify (G_OBJECT (self), NM_DEVICE_HAS_PENDING_ACTION);
+				_notify (self, PROP_HAS_PENDING_ACTION);
 			return TRUE;
 		}
 		count++;
@@ -9978,7 +9976,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	/* Clear legacy IPv4 address property */
 	if (priv->ip4_address) {
 		priv->ip4_address = 0;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
+		_notify (self, PROP_IP4_ADDRESS);
 	}
 
 	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
@@ -10245,11 +10243,11 @@ ip_config_valid (NMDeviceState state)
 static void
 notify_ip_properties (NMDevice *self)
 {
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
+	_notify (self, PROP_IP_IFACE);
+	_notify (self, PROP_IP4_CONFIG);
+	_notify (self, PROP_DHCP4_CONFIG);
+	_notify (self, PROP_IP6_CONFIG);
+	_notify (self, PROP_DHCP6_CONFIG);
 }
 
 static void
@@ -10477,8 +10475,8 @@ _set_state_full (NMDevice *self,
 	    && state <= NM_DEVICE_STATE_ACTIVATED)
 		nm_device_set_autoconnect (self, TRUE);
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE_REASON);
+	_notify (self, PROP_STATE);
+	_notify (self, PROP_STATE_REASON);
 	g_signal_emit_by_name (self, NM_DEVICE_STATE_CHANGED, state, old_state, reason);
 
 	/* Post-process the event after internal notification */
@@ -10658,7 +10656,7 @@ _set_state_full (NMDevice *self,
 	priv->in_state_changed = FALSE;
 
 	if ((old_state > NM_DEVICE_STATE_UNMANAGED) != (state > NM_DEVICE_STATE_UNMANAGED))
-		g_object_notify (G_OBJECT (self), NM_DEVICE_MANAGED);
+		_notify (self, PROP_MANAGED);
 }
 
 void
@@ -10807,7 +10805,7 @@ nm_device_update_hw_address (NMDevice *self)
 			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
 
 			_LOGD (LOGD_HW | LOGD_DEVICE, "hardware address now %s", priv->hw_addr);
-			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
+			_notify (self, PROP_HW_ADDRESS);
 		}
 	} else {
 		/* Invalid or no hardware address */
@@ -10816,7 +10814,7 @@ nm_device_update_hw_address (NMDevice *self)
 			priv->hw_addr_len = 0;
 			_LOGD (LOGD_HW | LOGD_DEVICE,
 			       "previous hardware address is no longer valid");
-			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
+			_notify (self, PROP_HW_ADDRESS);
 		}
 	}
 }
@@ -11520,232 +11518,169 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_UDI,
+	obj_properties[PROP_UDI] =
 		 g_param_spec_string (NM_DEVICE_UDI, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IFACE,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IFACE] =
 		 g_param_spec_string (NM_DEVICE_IFACE, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IP_IFACE,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IP_IFACE] =
 		 g_param_spec_string (NM_DEVICE_IP_IFACE, "", "",
 		                      NULL,
 		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_DRIVER,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DRIVER] =
 		 g_param_spec_string (NM_DEVICE_DRIVER, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_DRIVER_VERSION,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DRIVER_VERSION] =
 		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_FIRMWARE_VERSION,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_FIRMWARE_VERSION] =
 		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
+.		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CAPABILITIES] =
 		 g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
 		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CARRIER] =
 		 g_param_spec_boolean (NM_DEVICE_CARRIER, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_MTU,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_MTU] =
 		 g_param_spec_uint (NM_DEVICE_MTU, "", "",
 		                    0, G_MAXUINT32, 1500,
 		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IP4_ADDRESS,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IP4_ADDRESS] =
 		 g_param_spec_uint (NM_DEVICE_IP4_ADDRESS, "", "",
 		                    0, G_MAXUINT32, 0, /* FIXME */
 		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IP4_CONFIG,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IP4_CONFIG] =
 		 g_param_spec_string (NM_DEVICE_IP4_CONFIG, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_DHCP4_CONFIG,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DHCP4_CONFIG] =
 		 g_param_spec_string (NM_DEVICE_DHCP4_CONFIG, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IP6_CONFIG,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IP6_CONFIG] =
 		 g_param_spec_string (NM_DEVICE_IP6_CONFIG, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_DHCP6_CONFIG,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DHCP6_CONFIG] =
 		 g_param_spec_string (NM_DEVICE_DHCP6_CONFIG, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_STATE,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_STATE] =
 		 g_param_spec_uint (NM_DEVICE_STATE, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
 		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_STATE_REASON,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_STATE_REASON] =
 		 g_param_spec_variant (NM_DEVICE_STATE_REASON, "", "",
 		                       G_VARIANT_TYPE ("(uu)"),
 		                       NULL,
 		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CONNECTION,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ACTIVE_CONNECTION] =
 		 g_param_spec_string (NM_DEVICE_ACTIVE_CONNECTION, "", "",
 		                      NULL,
 		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_DEVICE_TYPE,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DEVICE_TYPE] =
 		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_LINK_TYPE,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_LINK_TYPE] =
 		 g_param_spec_uint (NM_DEVICE_LINK_TYPE, "", "",
 		                    0, G_MAXUINT32, NM_LINK_TYPE_NONE,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_MANAGED,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_MANAGED] =
 		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
 		                       FALSE,
 		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_AUTOCONNECT,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_AUTOCONNECT] =
 		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
 		                       DEFAULT_AUTOCONNECT,
 		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_FIRMWARE_MISSING,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_FIRMWARE_MISSING] =
 		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_NM_PLUGIN_MISSING,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_NM_PLUGIN_MISSING] =
 		 g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_TYPE_DESC,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_TYPE_DESC] =
 		 g_param_spec_string (NM_DEVICE_TYPE_DESC, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_RFKILL_TYPE,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_RFKILL_TYPE] =
 		 g_param_spec_uint (NM_DEVICE_RFKILL_TYPE, "", "",
 		                    RFKILL_TYPE_WLAN,
 		                    RFKILL_TYPE_MAX,
 		                    RFKILL_TYPE_UNKNOWN,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IFINDEX,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IFINDEX] =
 		 g_param_spec_int (NM_DEVICE_IFINDEX, "", "",
 		                   0, G_MAXINT, 0,
 		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_AVAILABLE_CONNECTIONS,
+		                   G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_AVAILABLE_CONNECTIONS] =
 		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
 		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_PHYSICAL_PORT_ID,
+		                     G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PHYSICAL_PORT_ID] =
 		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
 		                      NULL,
 		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_IS_MASTER,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IS_MASTER] =
 		 g_param_spec_boolean (NM_DEVICE_IS_MASTER, "", "",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_MASTER,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_MASTER] =
 		 g_param_spec_object (NM_DEVICE_MASTER, "", "",
 		                      NM_TYPE_DEVICE,
 		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_HW_ADDRESS] =
 		 g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_HAS_PENDING_ACTION,
+		                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_HAS_PENDING_ACTION] =
 		 g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+		                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:metered:
@@ -11754,34 +11689,29 @@ nm_device_class_init (NMDeviceClass *klass)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_METERED,
+	obj_properties[PROP_METERED] =
 		 g_param_spec_uint (NM_DEVICE_METERED, "", "",
 		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
 		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_LLDP_NEIGHBORS,
+		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_LLDP_NEIGHBORS] =
 		 g_param_spec_variant (NM_DEVICE_LLDP_NEIGHBORS, "", "",
 		                       G_VARIANT_TYPE ("aa{sv}"),
 		                       NULL,
 		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-		(object_class, PROP_REAL,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_REAL] =
 		 g_param_spec_boolean (NM_DEVICE_REAL, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property
-	    (object_class, PROP_SLAVES,
+		                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_SLAVES] =
 	     g_param_spec_boxed (NM_DEVICE_SLAVES, "", "",
 	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
 	signals[STATE_CHANGED] =
