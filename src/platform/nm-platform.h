@@ -222,6 +222,11 @@ typedef struct {
 	guint32 timestamp; \
 	guint32 lifetime;   /* seconds since timestamp */ \
 	guint32 preferred;  /* seconds since timestamp */ \
+	\
+	/* ifa_flags in 'struct ifaddrmsg' from <linux/if_addr.h>, extended to 32 bit by
+	 * IFA_FLAGS attribute. */ \
+	guint32 n_ifa_flags; \
+	\
 	int plen; \
 	;
 
@@ -270,7 +275,6 @@ struct _NMPlatformIP6Address {
 	__NMPlatformIPAddress_COMMON;
 	struct in6_addr address;
 	struct in6_addr peer_address;
-	guint32 n_ifa_flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 };
 
 typedef union {

@@ -2368,6 +2368,26 @@ _to_string_dev (NMPlatform *self, int ifindex, char *buf, size_t size)
 	return buf;
 }
 
+#define TO_STRING_IFA_FLAGS_BUF_SIZE 256
+
+static const char *
+_to_string_ifa_flags (guint32 ifa_flags, char *buf, gsize size)
+{
+#define S_FLAGS_PREFIX " flags "
+	nm_assert (buf && size >= TO_STRING_IFA_FLAGS_BUF_SIZE && size > NM_STRLEN (S_FLAGS_PREFIX));
+
+	if (!ifa_flags)
+		buf[0] = '\0';
+	else {
+		nm_platform_addr_flags2str (ifa_flags, &buf[NM_STRLEN (S_FLAGS_PREFIX)], size - NM_STRLEN (S_FLAGS_PREFIX));
+		if (buf[NM_STRLEN (S_FLAGS_PREFIX)] == '\0')
+			buf[0] = '\0';
+		else
+			memcpy (buf, S_FLAGS_PREFIX, NM_STRLEN (S_FLAGS_PREFIX));
+	}
+	return buf;
+}
+
 /******************************************************************/
 
 gboolean
@@ -3364,6 +3384,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 const char *
 nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *buf, gsize len)
 {
+	char s_flags[TO_STRING_IFA_FLAGS_BUF_SIZE];
 	char s_address[INET_ADDRSTRLEN];
 	char s_peer[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
@@ -3401,10 +3422,11 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
 	g_snprintf (buf, len,
-	            "%s/%d lft %s pref %s%s%s%s%s src %s",
+	            "%s/%d lft %s pref %s%s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
+	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
 	            str_label,
 	            source_to_string (address->source));
 	g_free (str_peer);
@@ -3475,8 +3497,7 @@ NM_UTILS_ENUM2STR_DEFINE (nm_platform_route_scope2str, int,
 const char *
 nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len)
 {
-#define S_FLAGS_PREFIX " flags "
-	char s_flags[256];
+	char s_flags[TO_STRING_IFA_FLAGS_BUF_SIZE];
 	char s_address[INET6_ADDRSTRLEN];
 	char s_peer[INET6_ADDRSTRLEN];
 	char str_lft[30], str_pref[30], str_time[50];
@@ -3497,12 +3518,6 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 
 	_to_string_dev (NULL, address->ifindex, str_dev, sizeof (str_dev));
 
-	nm_platform_addr_flags2str (address->n_ifa_flags, &s_flags[NM_STRLEN (S_FLAGS_PREFIX)], sizeof (s_flags) - NM_STRLEN (S_FLAGS_PREFIX));
-	if (s_flags[NM_STRLEN (S_FLAGS_PREFIX)] == '\0')
-		s_flags[0] = '\0';
-	else
-		memcpy (s_flags, S_FLAGS_PREFIX, NM_STRLEN (S_FLAGS_PREFIX));
-
 	str_lft_p = _lifetime_to_string (address->timestamp,
 	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
 	                                 now, str_lft, sizeof (str_lft)),
@@ -3518,7 +3533,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
-	            s_flags,
+	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
 	            source_to_string (address->source));
 	g_free (str_peer);
 	return buf;
@@ -3843,6 +3858,7 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
+	_CMP_FIELD (a, b, n_ifa_flags);
 	_CMP_FIELD_STR (a, b, label);
 	return 0;
 }
