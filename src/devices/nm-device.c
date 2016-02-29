@@ -11546,7 +11546,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_FIRMWARE_VERSION] =
 	    g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
 	                         NULL,
-.		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_CAPABILITIES] =
 	    g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
