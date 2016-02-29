@@ -20,8 +20,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>

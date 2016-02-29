@@ -103,9 +103,9 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/basic/random-util.c \
 	systemd/src/basic/random-util.h \
 	systemd/src/basic/refcnt.h \
+	systemd/src/basic/set.h \
 	systemd/src/basic/siphash24.c \
 	systemd/src/basic/siphash24.h \
-	systemd/src/basic/set.h \
 	systemd/src/basic/socket-util.h \
 	systemd/src/basic/sparse-endian.h \
 	systemd/src/basic/stdio-util.h \
@@ -138,15 +138,15 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd-network/dhcp6-network.c \
 	systemd/src/libsystemd-network/dhcp6-option.c \
 	systemd/src/libsystemd-network/dhcp6-protocol.h \
-	systemd/src/libsystemd-network/lldp.h \
-	systemd/src/libsystemd-network/lldp-network.h \
+	systemd/src/libsystemd-network/lldp-internal.c \
+	systemd/src/libsystemd-network/lldp-internal.h \
 	systemd/src/libsystemd-network/lldp-network.c \
-	systemd/src/libsystemd-network/lldp-tlv.c \
-	systemd/src/libsystemd-network/lldp-tlv.h \
+	systemd/src/libsystemd-network/lldp-network.h \
 	systemd/src/libsystemd-network/lldp-port.c \
 	systemd/src/libsystemd-network/lldp-port.h \
-	systemd/src/libsystemd-network/lldp-internal.h \
-	systemd/src/libsystemd-network/lldp-internal.c \
+	systemd/src/libsystemd-network/lldp-tlv.c \
+	systemd/src/libsystemd-network/lldp-tlv.h \
+	systemd/src/libsystemd-network/lldp.h \
 	systemd/src/libsystemd-network/network-internal.c \
 	systemd/src/libsystemd-network/network-internal.h \
 	systemd/src/libsystemd-network/sd-dhcp-client.c \
@@ -164,11 +164,11 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/systemd/sd-dhcp-lease.h \
 	systemd/src/systemd/sd-dhcp6-client.h \
 	systemd/src/systemd/sd-dhcp6-lease.h \
-	systemd/src/systemd/sd-lldp.h \
 	systemd/src/systemd/sd-event.h \
 	systemd/src/systemd/sd-id128.h \
 	systemd/src/systemd/sd-ipv4acd.h \
 	systemd/src/systemd/sd-ipv4ll.h \
+	systemd/src/systemd/sd-lldp.h \
 	systemd/src/systemd/sd-ndisc.h
 
 libsystemd_nm_la_CPPFLAGS = \

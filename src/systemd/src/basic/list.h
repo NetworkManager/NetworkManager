@@ -19,8 +19,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 /* The head of the linked list. Use this in the structure that shall
  * contain the head of the linked list */
 #define LIST_HEAD(t,name)                                               \

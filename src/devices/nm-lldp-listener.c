@@ -65,6 +65,32 @@ typedef struct {
 
 static void process_lldp_neighbors (NMLldpListener *self);
 
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "lldp"
+#define _NMLOG_DOMAIN                     LOGD_DEVICE
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel _level = (level); \
+        \
+        if (nm_logging_enabled (_level, _NMLOG_DOMAIN)) { \
+            char _sbuf[64]; \
+            int _ifindex = (self) ? NM_LLDP_LISTENER_GET_PRIVATE (self)->ifindex : 0; \
+            \
+            _nm_log (_level, _NMLOG_DOMAIN, 0, \
+                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     ((_ifindex > 0) \
+                        ? nm_sprintf_buf (_sbuf, "[%p,%d]", (self), _ifindex) \
+                        : ((self) \
+                            ? nm_sprintf_buf (_sbuf, "[%p]", (self)) \
+                            : "")) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END \
+
+/*****************************************************************************/
+
 static void
 gvalue_destroy (gpointer data)
 {
@@ -100,11 +126,13 @@ static guint
 lldp_neighbor_id_hash (gconstpointer ptr)
 {
 	const LLDPNeighbor *neigh = ptr;
+	guint hash;
 
-	return g_str_hash (neigh->chassis_id) ^
-	       g_str_hash (neigh->port_id) ^
-	       neigh->chassis_id_type ^
-	       (neigh->port_id_type * 33);
+	hash =   23423423u  + ((guint) (neigh->chassis_id ? g_str_hash (neigh->chassis_id) : 12321u));
+	hash = (hash * 33u) + ((guint) (neigh->port_id ? g_str_hash (neigh->port_id) : 34342343u));
+	hash = (hash * 33u) + ((guint) neigh->chassis_id_type);
+	hash = (hash * 33u) + ((guint) neigh->port_id_type);
+	return hash;
 }
 
 static gboolean
@@ -119,16 +147,20 @@ lldp_neighbor_id_equal (gconstpointer a, gconstpointer b)
 }
 
 static void
-lldp_neighbor_free (gpointer data)
+lldp_neighbor_free (LLDPNeighbor *neighbor)
 {
-	LLDPNeighbor *neighbor = data;
-
 	if (neighbor) {
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
 		g_hash_table_unref (neighbor->tlvs);
-		g_free (neighbor);
+		g_slice_free (LLDPNeighbor, neighbor);
 	}
+}
+
+static void
+lldp_neighbor_freep (LLDPNeighbor **ptr)
+{
+	lldp_neighbor_free (*ptr);
 }
 
 static gboolean
@@ -207,8 +239,12 @@ lldp_hash_table_equal (GHashTable *a, GHashTable *b)
 static gboolean
 lldp_timeout (gpointer user_data)
 {
-	NMLldpListener *self = NM_LLDP_LISTENER (user_data);
-	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
+	NMLldpListener *self = user_data;
+	NMLldpListenerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), G_SOURCE_REMOVE);
+
+	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	priv->timer = 0;
 
@@ -222,24 +258,26 @@ static void
 process_lldp_neighbors (NMLldpListener *self)
 {
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-	sd_lldp_packet **packets = NULL;
+	nm_auto_free sd_lldp_packet **packets = NULL;
 	GHashTable *hash;
 	int num, i;
 
+	g_return_if_fail (priv->lldp_handle);
+
 	num = sd_lldp_get_packets (priv->lldp_handle, &packets);
 	if (num < 0) {
-		nm_log_dbg (LOGD_DEVICE, "LLDP: error %d retrieving neighbor packets for %s",
-		            num, priv->iface);
+		_LOGD ("process: error %d retrieving neighbor packets for %s",
+		        num, priv->iface);
 		return;
 	}
 
 	hash = g_hash_table_new_full (lldp_neighbor_id_hash, lldp_neighbor_id_equal,
-	                              lldp_neighbor_free, NULL);
+	                              (GDestroyNotify) lldp_neighbor_free, NULL);
 
 	for (i = 0; packets && i < num; i++) {
+		nm_auto (lldp_neighbor_freep) LLDPNeighbor *neigh = NULL;
 		uint8_t chassis_id_type, port_id_type, *chassis_id, *port_id, data8;
 		uint16_t chassis_id_len, port_id_len, len, data16;
-		LLDPNeighbor *neigh;
 		GValue *value;
 		char *str;
 		int r;
@@ -257,37 +295,32 @@ process_lldp_neighbors (NMLldpListener *self)
 		if (r < 0)
 			goto next_packet;
 
-		neigh = g_malloc0 (sizeof (LLDPNeighbor));
+		neigh = g_slice_new0 (LLDPNeighbor);
 		neigh->tlvs = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 		neigh->chassis_id_type = chassis_id_type;
 		neigh->port_id_type = port_id_type;
 		sd_lldp_packet_get_destination_type (packets[i], &neigh->dest);
 
-		if (chassis_id_len < 1) {
-			lldp_neighbor_free (neigh);
+		if (chassis_id_len < 1)
 			goto next_packet;
-		}
 
 		switch (chassis_id_type) {
 		case LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
 		case LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 		case LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
 		case LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
-			neigh->chassis_id = strndup ((char *) chassis_id, chassis_id_len);
+			neigh->chassis_id = g_strndup ((const char *) chassis_id, chassis_id_len);
 			break;
 		case LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 			neigh->chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
 			break;
 		default:
-			nm_log_dbg (LOGD_DEVICE, "LLDP: unsupported chassis ID type %d", chassis_id_type);
-			lldp_neighbor_free (neigh);
+			_LOGD ("process: unsupported chassis ID type %d", chassis_id_type);
 			goto next_packet;
 		}
 
-		if (port_id_len < 1) {
-			lldp_neighbor_free (neigh);
+		if (port_id_len < 1)
 			goto next_packet;
-		}
 
 		switch (port_id_type) {
 		case LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
@@ -300,8 +333,7 @@ process_lldp_neighbors (NMLldpListener *self)
 			neigh->port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
 			break;
 		default:
-			nm_log_dbg (LOGD_DEVICE, "LLDP: unsupported port ID type %d", port_id_type);
-			lldp_neighbor_free (neigh);
+			_LOGD ("process: unsupported port ID type %d", port_id_type);
 			goto next_packet;
 		}
 
@@ -346,15 +378,14 @@ process_lldp_neighbors (NMLldpListener *self)
 			g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME, value);
 		}
 
-		nm_log_dbg (LOGD_DEVICE, "LLDP: new neigh: CHASSIS='%s' PORT='%s'",
-		            neigh->chassis_id, neigh->port_id);
+		_LOGD ("process: new neigh: CHASSIS='%s' PORT='%s'",
+		        neigh->chassis_id, neigh->port_id);
 
 		g_hash_table_add (hash, neigh);
+		neigh = NULL;
 next_packet:
 		sd_lldp_packet_unref (packets[i]);
 	}
-
-	g_free (packets);
 
 	if (lldp_hash_table_equal (priv->lldp_neighbors, hash)) {
 		g_hash_table_destroy (hash);
@@ -380,6 +411,7 @@ lldp_event_handler (sd_lldp *lldp, int event, void *userdata)
 	NMLldpListenerPrivate *priv;
 
 	g_return_if_fail (NM_IS_LLDP_LISTENER (self));
+
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	if (priv->timer > 0) {
@@ -446,6 +478,7 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
 
 	priv->ifindex = ifindex;
 	priv->iface = strdup (iface);
+	_LOGD ("start");
 	return TRUE;
 
 err:
@@ -466,6 +499,7 @@ nm_lldp_listener_stop (NMLldpListener *self)
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	if (priv->lldp_handle) {
+		_LOGD ("stop");
 		sd_lldp_stop (priv->lldp_handle);
 		sd_lldp_detach_event (priv->lldp_handle);
 		sd_lldp_unref (priv->lldp_handle);
@@ -481,6 +515,7 @@ nm_lldp_listener_stop (NMLldpListener *self)
 	}
 
 	nm_clear_g_source (&priv->timer);
+	priv->ifindex = 0;
 }
 
 gboolean
@@ -595,7 +630,9 @@ nm_lldp_listener_init (NMLldpListener *self)
 
 	priv->lldp_neighbors = g_hash_table_new_full (lldp_neighbor_id_hash,
 	                                              lldp_neighbor_id_equal,
-	                                              lldp_neighbor_free, NULL);
+	                                              (GDestroyNotify) lldp_neighbor_free, NULL);
+
+	_LOGT ("lldp listener created");
 }
 
 NMLldpListener *
@@ -622,6 +659,8 @@ finalize (GObject *object)
 	g_hash_table_unref (priv->lldp_neighbors);
 
 	nm_clear_g_variant (&priv->variant);
+
+	_LOGT ("lldp listener destroyed");
 
 	G_OBJECT_CLASS (nm_lldp_listener_parent_class)->finalize (object);
 }

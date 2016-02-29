@@ -19,8 +19,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 #include <netinet/if_ether.h>
 
 #include "socket-util.h"

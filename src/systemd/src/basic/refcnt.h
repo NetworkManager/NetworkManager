@@ -19,8 +19,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "nm-sd-adapt.h"
-
 /* A type-safe atomic refcounter.
  *
  * DO NOT USE THIS UNLESS YOU ACTUALLY CARE ABOUT THREAD SAFETY! */
