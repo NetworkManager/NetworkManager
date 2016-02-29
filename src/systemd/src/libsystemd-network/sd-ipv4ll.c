@@ -54,7 +54,7 @@ struct sd_ipv4ll {
 
         /* External */
         be32_t claimed_address;
-        sd_ipv4ll_cb_t cb;
+        sd_ipv4ll_callback_t cb;
         void* userdata;
 };
 
@@ -162,7 +162,7 @@ int sd_ipv4ll_detach_event(sd_ipv4ll *ll) {
         return sd_ipv4acd_detach_event(ll->acd);
 }
 
-int sd_ipv4ll_attach_event(sd_ipv4ll *ll, sd_event *event, int priority) {
+int sd_ipv4ll_attach_event(sd_ipv4ll *ll, sd_event *event, int64_t priority) {
         int r;
 
         assert_return(ll, -EINVAL);
@@ -174,7 +174,7 @@ int sd_ipv4ll_attach_event(sd_ipv4ll *ll, sd_event *event, int priority) {
         return 0;
 }
 
-int sd_ipv4ll_set_callback(sd_ipv4ll *ll, sd_ipv4ll_cb_t cb, void *userdata) {
+int sd_ipv4ll_set_callback(sd_ipv4ll *ll, sd_ipv4ll_callback_t cb, void *userdata) {
         assert_return(ll, -EINVAL);
 
         ll->cb = cb;
@@ -183,7 +183,7 @@ int sd_ipv4ll_set_callback(sd_ipv4ll *ll, sd_ipv4ll_cb_t cb, void *userdata) {
         return 0;
 }
 
-int sd_ipv4ll_get_address(sd_ipv4ll *ll, struct in_addr *address){
+int sd_ipv4ll_get_address(sd_ipv4ll *ll, struct in_addr *address) {
         assert_return(ll, -EINVAL);
         assert_return(address, -EINVAL);
 

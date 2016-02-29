@@ -3,7 +3,7 @@
 /***
   This file is part of systemd.
 
-  Copyright 2010-2015 Lennart Poettering
+  Copyright 2014 Tom Gundersen
 
   systemd is free software; you can redistribute it and/or modify it
   under the terms of the GNU Lesser General Public License as published by
@@ -19,23 +19,19 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include <net/ethernet.h>
 #include <stdbool.h>
 
-#include "macro.h"
+#define ETHER_ADDR_FORMAT_STR "%02X%02X%02X%02X%02X%02X"
+#define ETHER_ADDR_FORMAT_VAL(x) (x).ether_addr_octet[0], (x).ether_addr_octet[1], (x).ether_addr_octet[2], (x).ether_addr_octet[3], (x).ether_addr_octet[4], (x).ether_addr_octet[5]
 
-bool hostname_is_set(void);
+#define ETHER_ADDR_TO_STRING_MAX (3*6)
+char* ether_addr_to_string(const struct ether_addr *addr, char buffer[ETHER_ADDR_TO_STRING_MAX]);
 
-char* gethostname_malloc(void);
-int gethostname_strict(char **ret);
+bool ether_addr_equal(const struct ether_addr *a, const struct ether_addr *b);
 
-bool hostname_is_valid(const char *s, bool allow_trailing_dot) _pure_;
-char* hostname_cleanup(char *s);
+#define ETHER_ADDR_NULL ((const struct ether_addr){})
 
-#define machine_name_is_valid(s) hostname_is_valid(s, false)
-
-bool is_localhost(const char *hostname);
-bool is_gateway_hostname(const char *hostname);
-
-int sethostname_idempotent(const char *s);
-
-int read_hostname_config(const char *path, char **hostname);
+static inline bool ether_addr_is_null(const struct ether_addr *addr) {
+        return ether_addr_equal(addr, &ETHER_ADDR_NULL);
+}

@@ -1235,8 +1235,7 @@ update_dynamic_ip_setup (NMDevice *self)
 		nm_lldp_listener_stop (priv->lldp_listener);
 		addr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &addr_length);
 
-		if (!nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self),
-		                             nm_device_get_iface (self), addr, addr_length, &error)) {
+		if (!nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error)) {
 			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be restarted: %s",
 			       priv->lldp_listener, error->message);
 			g_clear_error (&error);
@@ -3564,8 +3563,7 @@ activate_stage2_device_config (NMDevice *self)
 
 		addr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &addr_length);
 
-		if (nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self),
-		                            nm_device_get_iface (self), addr, addr_length, &error))
+		if (nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error))
 			_LOGD (LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
 		else {
 			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be started: %s",

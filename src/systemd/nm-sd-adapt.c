@@ -61,6 +61,20 @@ sd_event_source_set_priority (sd_event_source *s, int64_t priority)
 	return 0;
 }
 
+int
+sd_event_source_set_enabled (sd_event_source *s, int m)
+{
+	/* TODO */
+	g_return_val_if_reached (-EINVAL);
+}
+
+int
+sd_event_source_set_time (sd_event_source *s, uint64_t usec)
+{
+	/* TODO */
+	g_return_val_if_reached (-EINVAL);
+}
+
 sd_event_source*
 sd_event_source_unref (sd_event_source *s)
 {

@@ -42,9 +42,7 @@
 #include "parse-util.h"
 #include "path-util.h"
 #include "random-util.h"
-#if 0 /* NM_IGNORED */
 #include "stdio-util.h"
-#endif /* NM_IGNORED */
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
@@ -356,7 +354,7 @@ static int parse_env_file_internal(
                 case KEY:
                         if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
                                 n_key = 0;
                         } else if (c == '=') {
                                 state = PRE_VALUE;
@@ -380,7 +378,7 @@ static int parse_env_file_internal(
                 case PRE_VALUE:
                         if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
                                 key[n_key] = 0;
 
                                 if (value)
@@ -420,7 +418,7 @@ static int parse_env_file_internal(
                 case VALUE:
                         if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
 
                                 key[n_key] = 0;
 
@@ -539,7 +537,7 @@ static int parse_env_file_internal(
                                 state = COMMENT_ESCAPE;
                         else if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
                         }
                         break;
 
@@ -912,7 +910,7 @@ int get_proc_field(const char *filename, const char *pattern, const char *termin
                 /* Back off one char if there's nothing but whitespace
                    and zeros */
                 if (!*t || isspace(*t))
-                        t --;
+                        t--;
         }
 
         len = strcspn(t, terminator);

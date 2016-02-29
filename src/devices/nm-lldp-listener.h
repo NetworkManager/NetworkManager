@@ -42,8 +42,7 @@ typedef struct {
 
 GType nm_lldp_listener_get_type (void);
 NMLldpListener *nm_lldp_listener_new (void);
-gboolean nm_lldp_listener_start (NMLldpListener *self, int ifindex, const char *iface,
-                                 const guint8 *mac, guint mac_len, GError **error);
+gboolean nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error);
 void nm_lldp_listener_stop (NMLldpListener *self);
 gboolean nm_lldp_listener_is_running (NMLldpListener *self);
 

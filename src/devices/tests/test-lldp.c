@@ -330,9 +330,6 @@ _test_recv_data2_ttl1_check (GMainLoop *loop, NMLldpListener *listener)
 
 	_test_recv_data0_check (loop, listener);
 
-	g_test_skip ("the test is known to fail");
-	return;
-
 	/* wait for signal. */
 	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
 	                              nmtst_main_loop_quit_on_notify, loop);
@@ -396,10 +393,12 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 	TestRecvCallbackInfo info = { };
 	gsize i_frames;
 	gulong notify_id;
+	GError *error = NULL;
 
 	listener = nm_lldp_listener_new ();
 	g_assert (listener != NULL);
-	g_assert (nm_lldp_listener_start (listener, fixture->ifindex, TEST_IFNAME, fixture->mac, ETH_ALEN, NULL));
+	g_assert (nm_lldp_listener_start (listener, fixture->ifindex, &error));
+	g_assert_no_error (error);
 
 	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
 	                              (GCallback) lldp_neighbors_changed, &info);

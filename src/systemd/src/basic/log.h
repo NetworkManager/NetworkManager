@@ -195,7 +195,7 @@ void log_assert_failed_return(
 #ifdef LOG_TRACE
 #  define log_trace(...) log_debug(__VA_ARGS__)
 #else
-#  define log_trace(...) do {} while(0)
+#  define log_trace(...) do {} while (0)
 #endif
 
 /* Structured logging */

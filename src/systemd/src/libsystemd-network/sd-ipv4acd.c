@@ -94,7 +94,7 @@ struct sd_ipv4acd {
         struct ether_addr mac_addr;
         sd_event *event;
         int event_priority;
-        sd_ipv4acd_cb_t cb;
+        sd_ipv4acd_callback_t cb;
         void* userdata;
 };
 
@@ -430,7 +430,7 @@ int sd_ipv4acd_detach_event(sd_ipv4acd *ll) {
         return 0;
 }
 
-int sd_ipv4acd_attach_event(sd_ipv4acd *ll, sd_event *event, int priority) {
+int sd_ipv4acd_attach_event(sd_ipv4acd *ll, sd_event *event, int64_t priority) {
         int r;
 
         assert_return(ll, -EINVAL);
@@ -449,7 +449,7 @@ int sd_ipv4acd_attach_event(sd_ipv4acd *ll, sd_event *event, int priority) {
         return 0;
 }
 
-int sd_ipv4acd_set_callback(sd_ipv4acd *ll, sd_ipv4acd_cb_t cb, void *userdata) {
+int sd_ipv4acd_set_callback(sd_ipv4acd *ll, sd_ipv4acd_callback_t cb, void *userdata) {
         assert_return(ll, -EINVAL);
 
         ll->cb = cb;
@@ -458,7 +458,7 @@ int sd_ipv4acd_set_callback(sd_ipv4acd *ll, sd_ipv4acd_cb_t cb, void *userdata) 
         return 0;
 }
 
-int sd_ipv4acd_set_address(sd_ipv4acd *ll, const struct in_addr *address){
+int sd_ipv4acd_set_address(sd_ipv4acd *ll, const struct in_addr *address) {
         assert_return(ll, -EINVAL);
         assert_return(address, -EINVAL);
         assert_return(ll->state == IPV4ACD_STATE_INIT, -EBUSY);

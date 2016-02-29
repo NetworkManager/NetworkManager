@@ -48,7 +48,7 @@ test_lldp_create (void)
 	int ifindex = 1;
 	int r;
 
-	r = sd_lldp_new (ifindex, "lo", (struct ether_addr *) ((guint8[]) { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 }), &lldp);
+	r = sd_lldp_new (&lldp, ifindex);
 	g_assert (r == 0);
 	g_assert (lldp);
 
