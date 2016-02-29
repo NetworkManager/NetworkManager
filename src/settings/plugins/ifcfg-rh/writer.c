@@ -45,6 +45,7 @@
 #include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -1260,6 +1261,8 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	NMSettingConnection *s_con;
 	char *tmp;
 	guint32 vlan_flags = 0;
+	gsize s_buf_len;
+	char s_buf[50], *s_buf_ptr;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
@@ -1292,9 +1295,14 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	svSetValue (ifcfg, "GVRP", vlan_flags & NM_VLAN_FLAG_GVRP ? "yes" : "no", FALSE);
 
-	svSetValue (ifcfg, "VLAN_FLAGS", NULL, FALSE);
-	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
-		svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
+	nm_utils_strbuf_init (s_buf, &s_buf_ptr, &s_buf_len);
+
+	if (NM_FLAGS_HAS (vlan_flags, NM_VLAN_FLAG_LOOSE_BINDING))
+		nm_utils_strbuf_append_str (&s_buf_ptr, &s_buf_len, "LOOSE_BINDING");
+	if (!NM_FLAGS_HAS (vlan_flags, NM_VLAN_FLAG_REORDER_HEADERS))
+		nm_utils_strbuf_append (&s_buf_ptr, &s_buf_len, "%sNO_REORDER_HDR", s_buf[0] ? "," : "");
+
+	svSetValue (ifcfg, "VLAN_FLAGS", s_buf, FALSE);
 
 	svSetValue (ifcfg, "MVRP", vlan_flags & NM_VLAN_FLAG_MVRP ? "yes" : "no", FALSE);
 

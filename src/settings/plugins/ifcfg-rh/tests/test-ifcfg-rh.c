@@ -7230,7 +7230,7 @@ test_read_vlan_interface (void)
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
 	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==,
-	                 NM_VLAN_FLAG_GVRP | NM_VLAN_FLAG_LOOSE_BINDING);
+	                 NM_VLAN_FLAG_GVRP | NM_VLAN_FLAG_LOOSE_BINDING | NM_VLAN_FLAG_REORDER_HEADERS);
 
 	/* Ingress map */
 	g_assert_cmpint (nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP), ==, 2);
@@ -7278,8 +7278,7 @@ test_read_vlan_only_vlan_id (void)
 
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
-	/* Ensure that flags are 0 if both REORDER_HDR and VLAN_FLAGS are missing */
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, NM_VLAN_FLAG_REORDER_HEADERS);
 
 	g_object_unref (connection);
 }
@@ -7330,8 +7329,11 @@ test_read_vlan_reorder_hdr_1 (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*REORDER_HDR key is deprecated, use VLAN_FLAGS*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-1",
 	                                        NULL, TYPE_ETHERNET, NULL);
+	g_test_assert_expected_messages ();
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
 
@@ -7340,8 +7342,30 @@ test_read_vlan_reorder_hdr_1 (void)
 
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 3);
-	/* Check correct read of REORDER_HDR=1 */
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 1);
+	/* Check that REORDER_HDR=0 is ignored */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, NM_VLAN_FLAG_REORDER_HEADERS);
+
+	g_object_unref (connection);
+}
+
+static void
+test_read_vlan_reorder_hdr_2 (void)
+{
+	NMConnection *connection;
+	NMSettingVlan *s_vlan;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-2",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 3);
+	/* Check that VLAN_FLAGS=NO_REORDER_HDR works */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, NM_VLAN_FLAG_LOOSE_BINDING);
 
 	g_object_unref (connection);
 }
@@ -7362,8 +7386,9 @@ test_read_vlan_flags_1 (void)
 
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 44);
-	/* reorder_hdr and loose_binding */
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 5);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==,
+	                                            NM_VLAN_FLAG_LOOSE_BINDING |
+	                                            NM_VLAN_FLAG_REORDER_HEADERS);
 
 	g_object_unref (connection);
 }
@@ -7384,8 +7409,10 @@ test_read_vlan_flags_2 (void)
 
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 44);
-	/* gvrp and loose_binding */
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 6);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==,
+	                                            NM_VLAN_FLAG_GVRP |
+	                                            NM_VLAN_FLAG_LOOSE_BINDING |
+	                                            NM_VLAN_FLAG_REORDER_HEADERS);
 
 	g_object_unref (connection);
 }
@@ -8706,7 +8733,7 @@ test_read_vlan_trailing_spaces (void)
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan201");
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "enccw0.0.fb00");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 201);
-	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, NM_VLAN_FLAG_REORDER_HEADERS);
 
 	g_object_unref (connection);
 }
@@ -8836,6 +8863,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "vlan/read/only-device", test_read_vlan_only_device);
 	g_test_add_func (TPATH "vlan/read/physdev", test_read_vlan_physdev);
 	g_test_add_func (TPATH "vlan/read/reorder-hdr-1", test_read_vlan_reorder_hdr_1);
+	g_test_add_func (TPATH "vlan/read/reorder-hdr-2", test_read_vlan_reorder_hdr_2);
 	g_test_add_func (TPATH "wired/read/read-wake-on-lan", test_read_wired_wake_on_lan);
 
 	g_test_add_func (TPATH "wired/write/static", test_write_wired_static);

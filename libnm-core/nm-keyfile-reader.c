@@ -1278,10 +1278,7 @@ set_default_for_missing_key (NMSetting *setting, const char *property)
 {
 	/* Set a value different from the default value of the property's spec */
 
-	if (NM_IS_SETTING_VLAN (setting)) {
-		if (!strcmp (property, NM_SETTING_VLAN_FLAGS))
-			g_object_set (setting, property, (NMVlanFlags) 0, NULL);
-	} else if (NM_IS_SETTING_WIRELESS (setting)) {
+	if (NM_IS_SETTING_WIRELESS (setting)) {
 		if (!strcmp (property, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION))
 			g_object_set (setting, property, (NMSettingMacRandomization) NM_SETTING_MAC_RANDOMIZATION_NEVER, NULL);
 	}
@@ -1686,18 +1683,6 @@ nm_keyfile_read (GKeyFile *keyfile,
 			read_vpn_secrets (&info, s_vpn);
 			if (info.error)
 				goto out_error;
-		}
-	}
-
-	/* Make sure that if [vlan] group was missing we set vlan.flags to 0
-	 * for backwards compatibility */
-	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		if (!nm_connection_get_setting_vlan (connection)) {
-			NMSettingVlan *s_vlan;
-
-			s_vlan = NM_SETTING_VLAN (nm_setting_vlan_new ());
-			g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, 0, NULL);
-			nm_connection_add_setting (connection, NM_SETTING (s_vlan));
 		}
 	}
 
