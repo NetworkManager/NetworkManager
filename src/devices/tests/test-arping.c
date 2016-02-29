@@ -80,7 +80,7 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 
 	for (i = 0; info->peer_addresses[i]; i++) {
 		nmtstp_ip4_address_add (FALSE, fixture->ifindex1, info->peer_addresses[i],
-		                        24, 0, 3600, 1800, NULL);
+		                        24, 0, 3600, 1800, 0, NULL);
 	}
 
 	loop = g_main_loop_new (NULL, FALSE);

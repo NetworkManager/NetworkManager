@@ -117,6 +117,7 @@ void nmtstp_ip4_address_add (gboolean external_command,
                              in_addr_t peer_address,
                              guint32 lifetime,
                              guint32 preferred,
+                             guint32 flags,
                              const char *label);
 void nmtstp_ip6_address_add (gboolean external_command,
                              int ifindex,
@@ -125,7 +126,7 @@ void nmtstp_ip6_address_add (gboolean external_command,
                              struct in6_addr peer_address,
                              guint32 lifetime,
                              guint32 preferred,
-                             guint flags);
+                             guint32 flags);
 void nmtstp_ip4_address_del (gboolean external_command,
                              int ifindex,
                              in_addr_t address,

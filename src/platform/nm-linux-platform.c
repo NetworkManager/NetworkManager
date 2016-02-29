@@ -2223,7 +2223,7 @@ _nl_msg_new_address (int nlmsg_type,
 		NLA_PUT (msg, IFA_CACHEINFO, sizeof(ca), &ca);
 	}
 
-	if (flags & ~0xFF) {
+	if (flags & ~((guint32) 0xFF)) {
 		/* only set the IFA_FLAGS attribute, if they actually contain additional
 		 * flags that are not already set to am.ifa_flags.
 		 *
@@ -5182,6 +5182,7 @@ ip4_address_add (NMPlatform *platform,
                  in_addr_t peer_addr,
                  guint32 lifetime,
                  guint32 preferred,
+                 guint32 flags,
                  const char *label)
 {
 	NMPObject obj_id;
@@ -5194,7 +5195,7 @@ ip4_address_add (NMPlatform *platform,
 	                             &addr,
 	                             plen,
 	                             &peer_addr,
-	                             0,
+	                             flags,
 	                             nmp_utils_ip4_address_is_link_local (addr) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
 	                             lifetime,
 	                             preferred,

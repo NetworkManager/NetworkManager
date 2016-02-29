@@ -2453,6 +2453,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
                              in_addr_t peer_address,
                              guint32 lifetime,
                              guint32 preferred,
+                             guint32 flags,
                              const char *label)
 {
 	_CHECK_SELF (self, klass, FALSE);
@@ -2473,12 +2474,13 @@ nm_platform_ip4_address_add (NMPlatform *self,
 		addr.timestamp = 0; /* set it at zero, which to_string will treat as *now* */
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
+		addr.n_ifa_flags = flags;
 		if (label)
 			g_strlcpy (addr.label, label, sizeof (addr.label));
 
 		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr, NULL, 0));
 	}
-	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, label);
+	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags, label);
 }
 
 gboolean
@@ -2667,7 +2669,9 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
-		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen, known_address->peer_address, lifetime, preferred, known_address->label))
+		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
+		                                  known_address->peer_address, lifetime, preferred,
+		                                  0, known_address->label))
 			return FALSE;
 
 		if (out_added_addresses) {

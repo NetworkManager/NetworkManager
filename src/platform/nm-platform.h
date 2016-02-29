@@ -591,6 +591,7 @@ typedef struct {
 	                             in_addr_t peer_address,
 	                             guint32 lifetime,
 	                             guint32 preferred_lft,
+	                             guint32 flags,
 	                             const char *label);
 	gboolean (*ip6_address_add) (NMPlatform *,
 	                             int ifindex,
@@ -858,6 +859,7 @@ gboolean nm_platform_ip4_address_add (NMPlatform *self,
                                       in_addr_t peer_address,
                                       guint32 lifetime,
                                       guint32 preferred_lft,
+                                      guint32 flags,
                                       const char *label);
 gboolean nm_platform_ip6_address_add (NMPlatform *self,
                                       int ifindex,

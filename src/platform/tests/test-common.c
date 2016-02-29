@@ -563,8 +563,8 @@ _ip_address_add (gboolean external_command,
                  const NMIPAddr *peer_address,
                  guint32 lifetime,
                  guint32 preferred,
-                 const char *label,
-                 guint32 flags)
+                 guint32 flags,
+                 const char *label)
 {
 	gint64 end_time;
 
@@ -626,7 +626,6 @@ _ip_address_add (gboolean external_command,
 		gboolean success;
 
 		if (is_v4) {
-			g_assert (flags == 0);
 			success = nm_platform_ip4_address_add (NM_PLATFORM_GET,
 			                                       ifindex,
 			                                       address->addr4,
@@ -634,6 +633,7 @@ _ip_address_add (gboolean external_command,
 			                                       peer_address->addr4,
 			                                       lifetime,
 			                                       preferred,
+			                                       flags,
 			                                       label);
 		} else {
 			g_assert (label == NULL);
@@ -1006,6 +1006,7 @@ nmtstp_ip4_address_add (gboolean external_command,
                         in_addr_t peer_address,
                         guint32 lifetime,
                         guint32 preferred,
+                        guint32 flags,
                         const char *label)
 {
 	_ip_address_add (external_command,
@@ -1016,8 +1017,8 @@ nmtstp_ip4_address_add (gboolean external_command,
 	                 (NMIPAddr *) &peer_address,
 	                 lifetime,
 	                 preferred,
-	                 label,
-	                 0);
+	                 flags,
+	                 label);
 }
 
 void
@@ -1038,8 +1039,8 @@ nmtstp_ip6_address_add (gboolean external_command,
 	                 (NMIPAddr *) &peer_address,
 	                 lifetime,
 	                 preferred,
-	                 NULL,
-	                 flags);
+	                 flags,
+	                 NULL);
 }
 
 static void
