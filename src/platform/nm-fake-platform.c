@@ -953,7 +953,7 @@ ip6_address_add (NMPlatform *platform,
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
-	address.flags = flags;
+	address.n_ifa_flags = flags;
 
 	for (i = 0; i < priv->ip6_addresses->len; i++) {
 		NMPlatformIP6Address *item = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);

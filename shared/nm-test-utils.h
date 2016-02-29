@@ -1156,7 +1156,7 @@ nmtst_platform_ip6_address_full (const char *address, const char *peer_address, 
 	addr->timestamp = timestamp;
 	addr->lifetime = lifetime;
 	addr->preferred = preferred;
-	addr->flags = flags;
+	addr->n_ifa_flags = flags;
 
 	return addr;
 }

@@ -5476,7 +5476,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 
 			addr = nm_ip6_config_get_address (priv->ip6_config, i);
 			if (   IN6_IS_ADDR_LINKLOCAL (&addr->address)
-			    && !(addr->flags & IFA_F_DADFAILED)) {
+			    && !(addr->n_ifa_flags & IFA_F_DADFAILED)) {
 				/* Already have an LL address, nothing to do */
 				return;
 			}
@@ -5683,7 +5683,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
 			address.source = NM_IP_CONFIG_SOURCE_RDISC;
-			address.flags = ifa_flags;
+			address.n_ifa_flags = ifa_flags;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
 		}
@@ -8957,8 +8957,8 @@ device_ipx_changed (NMPlatform *platform,
 
 		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
-		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
-		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE))) {
+		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
+		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))) {
 			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
 			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
 		}

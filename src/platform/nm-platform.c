@@ -2469,7 +2469,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 		addr.timestamp = 0; /* set it to zero, which to_string will treat as *now* */
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
-		addr.flags = flags;
+		addr.n_ifa_flags = flags;
 
 		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr, NULL, 0));
 	}
@@ -2690,7 +2690,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
 		                                  known_address->plen, known_address->peer_address,
-		                                  lifetime, preferred, known_address->flags))
+		                                  lifetime, preferred, known_address->n_ifa_flags))
 			return FALSE;
 	}
 
@@ -3478,7 +3478,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 
 	_to_string_dev (NULL, address->ifindex, str_dev, sizeof (str_dev));
 
-	nm_platform_addr_flags2str (address->flags, &s_flags[NM_STRLEN (S_FLAGS_PREFIX)], sizeof (s_flags) - NM_STRLEN (S_FLAGS_PREFIX));
+	nm_platform_addr_flags2str (address->n_ifa_flags, &s_flags[NM_STRLEN (S_FLAGS_PREFIX)], sizeof (s_flags) - NM_STRLEN (S_FLAGS_PREFIX));
 	if (s_flags[NM_STRLEN (S_FLAGS_PREFIX)] == '\0')
 		s_flags[0] = '\0';
 	else
@@ -3846,7 +3846,7 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
-	_CMP_FIELD (a, b, flags);
+	_CMP_FIELD (a, b, n_ifa_flags);
 	return 0;
 }
 

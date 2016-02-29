@@ -222,8 +222,8 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 
 	/* tentative addresses are always sorted back... */
 	/* sort tentative addresses after non-tentative. */
-	tent1 = (a1->flags & IFA_F_TENTATIVE);
-	tent2 = (a2->flags & IFA_F_TENTATIVE);
+	tent1 = (a1->n_ifa_flags & IFA_F_TENTATIVE);
+	tent2 = (a2->n_ifa_flags & IFA_F_TENTATIVE);
 	if (tent1 != tent2)
 		return tent1 ? 1 : -1;
 
@@ -234,20 +234,20 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	if (p1 != p2)
 		return p1 > p2 ? -1 : 1;
 
-	ipv6_privacy1 = !!(a1->flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	ipv6_privacy2 = !!(a2->flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
 	if (ipv6_privacy1 || ipv6_privacy2) {
 		gboolean prefer_temp = ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR;
 		gboolean public1 = TRUE, public2 = TRUE;
 
 		if (ipv6_privacy1) {
-			if (a1->flags & IFA_F_TEMPORARY)
+			if (a1->n_ifa_flags & IFA_F_TEMPORARY)
 				public1 = prefer_temp;
 			else
 				public1 = !prefer_temp;
 		}
 		if (ipv6_privacy2) {
-			if (a2->flags & IFA_F_TEMPORARY)
+			if (a2->n_ifa_flags & IFA_F_TEMPORARY)
 				public2 = prefer_temp;
 			else
 				public2 = !prefer_temp;
@@ -262,8 +262,8 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 		return a1->source > a2->source ? -1 : 1;
 
 	/* sort permanent addresses before non-permanent. */
-	perm1 = (a1->flags & IFA_F_PERMANENT);
-	perm2 = (a2->flags & IFA_F_PERMANENT);
+	perm1 = (a1->n_ifa_flags & IFA_F_PERMANENT);
+	perm2 = (a2->n_ifa_flags & IFA_F_PERMANENT);
 	if (perm1 != perm2)
 		return perm1 ? -1 : 1;
 
@@ -717,7 +717,7 @@ nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6
 		const NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
 
 		if (item->plen <= plen && same_prefix (&item->address, network, item->plen) &&
-		    !(item->flags & IFA_F_NOPREFIXROUTE))
+		    !(item->n_ifa_flags & IFA_F_NOPREFIXROUTE))
 			return TRUE;
 	}
 
@@ -1376,7 +1376,7 @@ nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolea
 		const NMPlatformIP6Address *addr = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 
 		if (   ((!!IN6_IS_ADDR_LINKLOCAL (&addr->address)) == linklocal)
-		    && !(addr->flags & IFA_F_TENTATIVE))
+		    && !(addr->n_ifa_flags & IFA_F_TENTATIVE))
 			return addr;
 	}
 

@@ -1675,7 +1675,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_address.source = NM_IP_CONFIG_SOURCE_KERNEL;
 
 	if (!is_v4) {
-		obj->ip6_address.flags = tb[IFA_FLAGS]
+		obj->ip6_address.n_ifa_flags = tb[IFA_FLAGS]
 		                               ? nla_get_u32 (tb[IFA_FLAGS])
 		                               : ifa->ifa_flags;
 	}

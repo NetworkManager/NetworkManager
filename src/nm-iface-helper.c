@@ -191,7 +191,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
 			address.source = NM_IP_CONFIG_SOURCE_RDISC;
-			address.flags = ifa_flags;
+			address.n_ifa_flags = ifa_flags;
 
 			nm_ip6_config_add_address (ip6_config, &address);
 		}
@@ -333,8 +333,8 @@ ip6_address_changed (NMPlatform *platform,
                      NMPlatformSignalChangeType change_type,
                      NMRDisc *rdisc)
 {
-	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->flags & IFA_F_DADFAILED)
-	    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->flags & IFA_F_TENTATIVE))
+	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
+	    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))
 		nm_rdisc_dad_failed (rdisc, &addr->address);
 }
 
