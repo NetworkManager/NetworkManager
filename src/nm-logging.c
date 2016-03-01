@@ -32,6 +32,11 @@
 #include <strings.h>
 #include <string.h>
 
+#if defined (NO_SYSTEMD_JOURNAL) && defined (SYSTEMD_JOURNAL)
+#undef SYSTEMD_JOURNAL
+#define SYSTEMD_JOURNAL 0
+#endif
+
 #if SYSTEMD_JOURNAL
 #define SD_JOURNAL_SUPPRESS_LOCATION
 #include <systemd/sd-journal.h>
