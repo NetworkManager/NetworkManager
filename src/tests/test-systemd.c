@@ -20,6 +20,7 @@
 #include "nm-default.h"
 
 #include "sd-dhcp-client.h"
+#include "sd-lldp.h"
 
 #include "nm-test-utils.h"
 
@@ -40,6 +41,22 @@ test_dhcp_create (void)
 
 /*****************************************************************************/
 
+static void
+test_lldp_create (void)
+{
+	sd_lldp *lldp = NULL;
+	int ifindex = 1;
+	int r;
+
+	r = sd_lldp_new (ifindex, "lo", (struct ether_addr *) ((guint8[]) { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 }), &lldp);
+	g_assert (r == 0);
+	g_assert (lldp);
+
+	sd_lldp_unref (lldp);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -48,6 +65,7 @@ main (int argc, char **argv)
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "ALL");
 
 	g_test_add_func ("/systemd/dhcp/create", test_dhcp_create);
+	g_test_add_func ("/systemd/lldp/create", test_lldp_create);
 
 	return g_test_run ();
 }
