@@ -535,7 +535,7 @@ _nm_log_impl (const char *file,
 
 	if (NM_FLAGS_ANY (global.log_format_flags, global.level_desc[level].log_format_level & _LOG_FORMAT_FLAG_TIMESTAMP)) {
 		g_get_current_time (&tv);
-		nm_sprintf_buf (s_buf_timestamp, " [%ld.%06ld]", tv.tv_sec, tv.tv_usec);
+		nm_sprintf_buf (s_buf_timestamp, " [%ld.%04ld]", tv.tv_sec, (tv.tv_usec + 50) / 100);
 	} else
 		s_buf_timestamp[0] = '\0';
 
