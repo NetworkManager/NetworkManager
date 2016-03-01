@@ -94,7 +94,6 @@ get_lldp_neighbor_attribute (GVariant *neighbors,
 	GVariantIter iter, attrs_iter;
 	GVariant *variant, *attr_variant;
 	const char *attr_name;
-	GVariant *chassis_v, *port_v, *attr_v;
 
 	g_return_val_if_fail (g_variant_is_of_type (neighbors,
 	                                            G_VARIANT_TYPE ("aa{sv}")),
@@ -102,31 +101,34 @@ get_lldp_neighbor_attribute (GVariant *neighbors,
 	g_variant_iter_init (&iter, neighbors);
 
 	while (g_variant_iter_next (&iter, "@a{sv}", &variant)) {
-		g_variant_iter_init (&attrs_iter, variant);
-		chassis_v = NULL;
-		port_v = NULL;
-		attr_v = NULL;
+		gs_unref_variant GVariant *chassis_v = NULL;
+		gs_unref_variant GVariant *port_v = NULL;
+		gs_unref_variant GVariant *attr_v = NULL;
 
+		g_variant_iter_init (&attrs_iter, variant);
 		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_variant)) {
-			if (!g_strcmp0 (attr_name, NM_LLDP_ATTR_CHASSIS_ID))
+			if (!g_strcmp0 (attr_name, NM_LLDP_ATTR_CHASSIS_ID)) {
+				g_assert (!chassis_v);
 				chassis_v = attr_variant;
-			else if (!g_strcmp0 (attr_name, NM_LLDP_ATTR_PORT_ID))
+			} else if (!g_strcmp0 (attr_name, NM_LLDP_ATTR_PORT_ID)) {
+				g_assert (!port_v);
 				port_v = attr_variant;
-			else if (!g_strcmp0 (attr_name, name))
+			} else if (!g_strcmp0 (attr_name, name)) {
+				g_assert (!attr_v);
 				attr_v = attr_variant;
+			} else
+				g_variant_unref (attr_variant);
 		}
 
-		if (   g_variant_is_of_type (chassis_v, G_VARIANT_TYPE_STRING)
+		g_variant_unref (variant);
+
+		if (   chassis_v
+		    && port_v
+		    && g_variant_is_of_type (chassis_v, G_VARIANT_TYPE_STRING)
 		    && g_variant_is_of_type (port_v, G_VARIANT_TYPE_STRING)
 		    && !g_strcmp0 (chassis, g_variant_get_string (chassis_v, NULL))
-		    && !g_strcmp0 (port, g_variant_get_string (port_v, NULL))) {
-
-			g_variant_ref (attr_v);
-			g_variant_unref (variant);
-
-			return attr_v;
-		}
-		g_variant_unref (variant);
+		    && !g_strcmp0 (port, g_variant_get_string (port_v, NULL)))
+			return g_variant_ref (attr_v);
 	}
 
 	/* neighbor not found */
@@ -181,6 +183,7 @@ test_receive_frame (test_fixture *fixture, gconstpointer user_data)
 	g_assert (attr != NULL);
 	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
 	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "Port");
+	nm_clear_g_variant (&attr);
 
 	/* Check system name */
 	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
@@ -188,6 +191,7 @@ test_receive_frame (test_fixture *fixture, gconstpointer user_data)
 	g_assert (attr != NULL);
 	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
 	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "SYS");
+	nm_clear_g_variant (&attr);
 
 	/* Check destination */
 	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
@@ -196,6 +200,7 @@ test_receive_frame (test_fixture *fixture, gconstpointer user_data)
 	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
 	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==,
 	                 NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE);
+	nm_clear_g_variant (&attr);
 
 	g_clear_pointer (&loop, g_main_loop_unref);
 }
