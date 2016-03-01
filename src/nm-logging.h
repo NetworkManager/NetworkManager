@@ -243,6 +243,8 @@ void     nm_logging_syslog_openlog (const char *logging_backend);
 #define _LOG2t_err(errsv, ...) G_STMT_START { if (FALSE) { _NMLOG2_err (errsv, LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
+extern void (*_nm_logging_clear_platform_logging_cache) (void);
+
 /*****************************************************************************/
 
 #endif /* __NETWORKMANAGER_LOGGING_H__ */
