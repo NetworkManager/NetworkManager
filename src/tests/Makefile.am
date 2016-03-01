@@ -23,6 +23,7 @@ noinst_PROGRAMS = \
 	test-route-manager-linux \
 	test-route-manager-fake \
 	test-dcb \
+	test-systemd \
 	test-resolvconf-capture \
 	test-wired-defname \
 	test-utils
@@ -111,6 +112,20 @@ test_wired_defname_SOURCES = \
 test_wired_defname_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### systemd test #######
+
+test_systemd_CFLAGS = \
+	"-I$(srcdir)/../" \
+	"-I$(srcdir)/../platform" \
+	"-I$(srcdir)/../systemd/src/systemd"
+
+test_systemd_SOURCES = \
+	test-systemd.c
+
+test_systemd_LDADD = \
+	$(top_builddir)/src/libNetworkManager-base.la \
+	$(top_builddir)/src/libsystemd-nm.la
+
 ####### utils test #######
 
 test_utils_SOURCES = \
@@ -143,6 +158,7 @@ TESTS = \
 	test-resolvconf-capture \
 	test-general \
 	test-general-with-expect \
+	test-systemd \
 	test-wired-defname \
 	test-utils
 

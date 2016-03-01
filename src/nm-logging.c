@@ -32,14 +32,18 @@
 #include <strings.h>
 #include <string.h>
 
+#if defined (NO_SYSTEMD_JOURNAL) && defined (SYSTEMD_JOURNAL)
+#undef SYSTEMD_JOURNAL
+#define SYSTEMD_JOURNAL 0
+#endif
+
 #if SYSTEMD_JOURNAL
 #define SD_JOURNAL_SUPPRESS_LOCATION
 #include <systemd/sd-journal.h>
 #endif
 
 #include "nm-errors.h"
-#include "NetworkManagerUtils.h"
-#include "nm-linux-platform.h"
+#include "nm-core-utils.h"
 
 typedef enum {
 	LOG_FORMAT_FLAG_NONE                                = 0,
@@ -70,6 +74,8 @@ typedef enum {
 	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR |
 	                                                      LOG_FORMAT_FLAG_ALIGN_LOCATION,
 } LogFormatFlags;
+
+void (*_nm_logging_clear_platform_logging_cache) (void);
 
 static void
 nm_log_handler (const gchar *log_domain,
@@ -332,11 +338,12 @@ nm_logging_setup (const char  *level,
 		global.logging[i] = new_logging[i];
 
 	if (   had_platform_debug
+	    && _nm_logging_clear_platform_logging_cache
 	    && !nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		/* when debug logging is enabled, platform will cache all access to
 		 * sysctl. When the user disables debug-logging, we want to clear that
 		 * cache right away. */
-		_nm_linux_platform_sysctl_clear_cache ();
+		_nm_logging_clear_platform_logging_cache ();
 	}
 
 	if (unrecognized)

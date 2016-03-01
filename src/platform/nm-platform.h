@@ -27,10 +27,10 @@
 #include <linux/if_link.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-default.h"
-#include "NetworkManagerUtils.h"
-#include "nm-setting-vlan.h"
 #include "nm-core-types-internal.h"
+
+#include "nm-core-utils.h"
+#include "nm-setting-vlan.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))

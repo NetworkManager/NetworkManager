@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "nm-fake-platform.h"
+
 #include <errno.h>
 #include <unistd.h>
 #include <netinet/icmp6.h>
@@ -27,9 +29,9 @@
 #include <linux/rtnetlink.h>
 
 #include "nm-utils.h"
+
+#include "nm-core-utils.h"
 #include "nmp-object.h"
-#include "NetworkManagerUtils.h"
-#include "nm-fake-platform.h"
 
 #include "nm-test-utils.h"
 

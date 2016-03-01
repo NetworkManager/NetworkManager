@@ -22,8 +22,8 @@
 
 #include <linux/rtnetlink.h>
 
+#include "nm-core-utils.h"
 #include "test-common.h"
-#include "NetworkManagerUtils.h"
 
 #include "nm-test-utils.h"
 

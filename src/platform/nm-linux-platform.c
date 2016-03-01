@@ -19,6 +19,8 @@
  */
 #include "nm-default.h"
 
+#include "nm-linux-platform.h"
+
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -42,18 +44,15 @@
 #include <netlink/route/route.h>
 #include <gudev/gudev.h>
 
-#include "nm-core-internal.h"
-#include "NetworkManagerUtils.h"
-#include "nm-linux-platform.h"
-#include "nm-platform-utils.h"
-#include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
+#include "nm-setting-vlan.h"
+
+#include "nm-core-utils.h"
+#include "nmp-object.h"
+#include "nm-platform-utils.h"
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
-#include "nmp-object.h"
-
-/* This is only included for the translation of VLAN flags */
-#include "nm-setting-vlan.h"
 
 #define VLAN_FLAG_MVRP 0x8
 
@@ -2520,8 +2519,8 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 
 static GSList *sysctl_clear_cache_list;
 
-void
-_nm_linux_platform_sysctl_clear_cache (void)
+static void
+_nm_logging_clear_platform_logging_cache_impl (void)
 {
 	while (sysctl_clear_cache_list) {
 		NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (sysctl_clear_cache_list->data);
@@ -2541,6 +2540,7 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *co
 	const char *prev_value = NULL;
 
 	if (!priv->sysctl_get_prev_values) {
+		_nm_logging_clear_platform_logging_cache = _nm_logging_clear_platform_logging_cache_impl;
 		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
 		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	} else

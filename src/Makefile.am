@@ -184,6 +184,37 @@ libsystemd_nm_la_CPPFLAGS = \
 libsystemd_nm_la_LIBADD = \
 	$(GLIB_LIBS)
 
+######################
+# libsystemd-nm-base
+######################
+
+if ENABLE_TESTS
+noinst_LTLIBRARIES += \
+	libNetworkManager-base.la
+
+libNetworkManager_base_la_SOURCES = \
+	nm-core-utils.c \
+	nm-core-utils.h \
+	nm-logging.c \
+	nm-logging.h
+
+libNetworkManager_base_la_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src/platform \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DNO_SYSTEMD_JOURNAL \
+	-DPREFIX=\"$(prefix)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
+	$(GLIB_CFLAGS)
+
+libNetworkManager_base_la_LIBADD = \
+	$(top_builddir)/libnm-core/libnm-core.la \
+	$(GLIB_LIBS)
+endif
+
 ###########################################
 # NetworkManager
 ###########################################
@@ -404,6 +435,8 @@ libNetworkManager_la_SOURCES = \
 	nm-session-monitor.c \
 	nm-sleep-monitor.h \
 	nm-types.h \
+	nm-core-utils.c \
+	nm-core-utils.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
@@ -535,6 +568,8 @@ libnm_iface_helper_la_SOURCES = \
 	nm-logging.h \
 	nm-multi-index.c \
 	nm-multi-index.h \
+	nm-core-utils.c \
+	nm-core-utils.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
