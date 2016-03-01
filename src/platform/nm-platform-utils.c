@@ -18,6 +18,8 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
+#include "nm-default.h"
+
 #include "nm-platform-utils.h"
 
 #include <string.h>
@@ -30,10 +32,9 @@
 #include <linux/version.h>
 
 #include "nm-utils.h"
-#include "NetworkManagerUtils.h"
-#include "nm-default.h"
 #include "nm-setting-wired.h"
 
+#include "nm-core-utils.h"
 
 /******************************************************************
  * ethtool

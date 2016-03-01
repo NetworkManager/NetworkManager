@@ -19,6 +19,8 @@
  */
 #include "nm-default.h"
 
+#include "nm-linux-platform.h"
+
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -42,18 +44,15 @@
 #include <netlink/route/route.h>
 #include <gudev/gudev.h>
 
-#include "nm-core-internal.h"
-#include "NetworkManagerUtils.h"
-#include "nm-linux-platform.h"
-#include "nm-platform-utils.h"
-#include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
+#include "nm-setting-vlan.h"
+
+#include "nm-core-utils.h"
+#include "nmp-object.h"
+#include "nm-platform-utils.h"
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
-#include "nmp-object.h"
-
-/* This is only included for the translation of VLAN flags */
-#include "nm-setting-vlan.h"
 
 #define VLAN_FLAG_MVRP 0x8
 

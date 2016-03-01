@@ -38,7 +38,7 @@
 #endif
 
 #include "nm-errors.h"
-#include "NetworkManagerUtils.h"
+#include "nm-core-utils.h"
 
 typedef enum {
 	LOG_FORMAT_FLAG_NONE                                = 0,

@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "nm-platform.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -32,14 +34,13 @@
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 
-#include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-platform.h"
+#include "nm-core-internal.h"
+
+#include "nm-core-utils.h"
+#include "nm-enum-types.h"
 #include "nm-platform-utils.h"
 #include "nmp-object.h"
-#include "NetworkManagerUtils.h"
-#include "nm-enum-types.h"
-#include "nm-core-internal.h"
 
 /*****************************************************************************/
 

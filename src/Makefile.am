@@ -404,6 +404,8 @@ libNetworkManager_la_SOURCES = \
 	nm-session-monitor.c \
 	nm-sleep-monitor.h \
 	nm-types.h \
+	nm-core-utils.c \
+	nm-core-utils.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
@@ -535,6 +537,8 @@ libnm_iface_helper_la_SOURCES = \
 	nm-logging.h \
 	nm-multi-index.c \
 	nm-multi-index.h \
+	nm-core-utils.c \
+	nm-core-utils.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 

@@ -20,12 +20,14 @@
 
 #include "nm-default.h"
 
+#include "nmp-object.h"
+
 #include <unistd.h>
 
-#include "nmp-object.h"
-#include "nm-platform-utils.h"
-#include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+
+#include "nm-core-utils.h"
+#include "nm-platform-utils.h"
 
 /*********************************************************************************************/
 
