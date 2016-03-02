@@ -35,11 +35,11 @@ devtypes = { 1: "Ethernet",
              12: "ADSL",
              13: "Bridge",
              14: "Generic",
-             15: "Team"
-             16: "TUN"
-             17: "IPTunnel"
-             18: "MACVLAN"
-             19: "VXLAN"
+             15: "Team",
+             16: "TUN",
+             17: "IPTunnel",
+             18: "MACVLAN",
+             19: "VXLAN",
              20: "Veth"
            }
 
