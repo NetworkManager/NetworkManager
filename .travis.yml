@@ -12,6 +12,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install libnl-3-dev libndp-dev automake
 
+script: |
     sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no &&
     make -j4 &&
     ./contrib/travis/travis-check.sh
