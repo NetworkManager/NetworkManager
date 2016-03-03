@@ -175,5 +175,7 @@ nm_settings_plugin_add_connection (NMSettingsPlugin *config,
 	if (NM_SETTINGS_PLUGIN_GET_INTERFACE (config)->add_connection)
 		return NM_SETTINGS_PLUGIN_GET_INTERFACE (config)->add_connection (config, connection, save_to_disk, error);
 
+	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
+	                     "Plugin does not support adding connections");
 	return NULL;
 }
