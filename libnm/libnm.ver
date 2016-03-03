@@ -942,6 +942,8 @@ global:
 	nm_lldp_neighbor_unref;
 	nm_metered_get_type;
 	nm_setting_802_1x_check_cert_scheme;
+	nm_setting_802_1x_get_domain_suffix_match;
+	nm_setting_802_1x_get_phase2_domain_suffix_match;
 	nm_setting_bridge_get_multicast_snooping;
 	nm_setting_connection_autoconnect_slaves_get_type;
 	nm_setting_connection_get_autoconnect_slaves;
