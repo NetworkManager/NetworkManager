@@ -49,6 +49,16 @@
 
 #include "nmdbus-ppp-manager.h"
 
+#define _NMLOG_DOMAIN         LOGD_PPP
+#define _NMLOG_PREFIX_NAME    "ppp-manager"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
 static void _ppp_cleanup  (NMPPPManager *manager);
 static void _ppp_kill (NMPPPManager *manager);
 
@@ -185,7 +195,7 @@ monitor_cb (gpointer user_data)
 	strncpy (req.ifr_name, priv->ip_iface, sizeof (req.ifr_name));
 	if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
 		if (errno != ENODEV)
-			nm_log_warn (LOGD_PPP, "could not read ppp stats: %s", strerror (errno));
+			_LOGW ("could not read ppp stats: %s", strerror (errno));
 	} else {
 		g_signal_emit (manager, signals[STATS], 0, 
 		               stats.p.ppp_ibytes,
@@ -211,7 +221,7 @@ monitor_stats (NMPPPManager *manager)
 			g_source_remove (priv->monitor_id);
 		priv->monitor_id = g_timeout_add_seconds (5, monitor_cb, manager);
 	} else
-		nm_log_warn (LOGD_PPP, "could not monitor PPP stats: %s", strerror (errno));
+		_LOGW ("could not monitor PPP stats: %s", strerror (errno));
 }
 
 /*******************************************/
@@ -316,7 +326,7 @@ ppp_secrets_cb (NMActRequest *req,
 		goto out;
 
 	if (error) {
-		nm_log_warn (LOGD_PPP, "%s", error->message);
+		_LOGW ("%s", error->message);
 		g_dbus_method_invocation_return_gerror (priv->pending_secrets_context, error);
 		goto out;
 	}
@@ -324,7 +334,7 @@ ppp_secrets_cb (NMActRequest *req,
 	applied_connection = nm_act_request_get_applied_connection (req);
 
 	if (!extract_details_from_connection (applied_connection, priv->secrets_setting_name, &username, &password, &local)) {
-		nm_log_warn (LOGD_PPP, "%s", local->message);
+		_LOGW ("%s", local->message);
 		g_dbus_method_invocation_take_error (priv->pending_secrets_context, local);
 		goto out;
 	}
@@ -370,7 +380,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 			priv->pending_secrets_context = context;
 			ppp_secrets_cb (priv->act_req, priv->secrets_id, NULL, NULL, manager);
 		} else {
-			nm_log_warn (LOGD_PPP, "%s", error->message);
+			_LOGW ("%s", error->message);
 			g_dbus_method_invocation_take_error (priv->pending_secrets_context, error);
 		}
 		return;
@@ -419,7 +429,7 @@ set_ip_config_common (NMPPPManager *self,
 	const char *iface;
 
 	if (!g_variant_lookup (config_dict, iface_prop, "&s", &iface)) {
-		nm_log_err (LOGD_PPP, "no interface received!");
+		_LOGE ("no interface received!");
 		return FALSE;
 	}
 	if (priv->ip_iface == NULL)
@@ -450,7 +460,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	guint32 u32;
 	GVariantIter *iter;
 
-	nm_log_info (LOGD_PPP, "PPP manager (IPv4 Config Get) reply received.");
+	_LOGI ("(IPv4 Config Get) reply received.");
 
 	remove_timeout_handler (manager);
 
@@ -475,7 +485,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		address.source = NM_IP_CONFIG_SOURCE_PPP;
 		nm_ip4_config_add_address (config, &address);
 	} else {
-		nm_log_err (LOGD_PPP, "invalid IPv4 address received!");
+		_LOGE ("invalid IPv4 address received!");
 		goto out;
 	}
 
@@ -517,7 +527,7 @@ iid_value_to_ll6_addr (GVariant *dict,
 	guint64 iid;
 
 	if (!g_variant_lookup (dict, prop, "t", &iid)) {
-		nm_log_dbg (LOGD_PPP, "pppd plugin property '%s' missing or not a uint64", prop);
+		_LOGD ("pppd plugin property '%s' missing or not a uint64", prop);
 		return FALSE;
 	}
 	g_return_val_if_fail (iid != 0, FALSE);
@@ -545,7 +555,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	struct in6_addr a;
 	NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
 
-	nm_log_info (LOGD_PPP, "PPP manager (IPv6 Config Get) reply received.");
+	_LOGI ("(IPv6 Config Get) reply received.");
 
 	remove_timeout_handler (manager);
 
@@ -567,7 +577,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 			g_signal_emit (manager, signals[IP6_CONFIG], 0, priv->ip_iface, &iid, config);
 		}
 	} else
-		nm_log_err (LOGD_PPP, "invalid IPv6 address received!");
+		_LOGE ("invalid IPv6 address received!");
 
 	g_object_unref (config);
 	g_dbus_method_invocation_return_value (context, NULL);
@@ -771,7 +781,7 @@ ppp_exit_code (guint pppd_exit_status, GPid pid)
 		msg = "Unknown error";
 	}
 
-	nm_log_warn (LOGD_PPP, "pppd pid %d exited with error: %s", pid, msg);
+	_LOGW ("pppd pid %d exited with error: %s", pid, msg);
 }
 
 static void
@@ -788,13 +798,13 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 		if (err != 0)
 			ppp_exit_code (err, priv->pid);
 	} else if (WIFSTOPPED (status)) {
-		nm_log_info (LOGD_PPP, "pppd pid %d stopped unexpectedly with signal %d", priv->pid, WSTOPSIG (status));
+		_LOGI ("pppd pid %d stopped unexpectedly with signal %d", priv->pid, WSTOPSIG (status));
 	} else if (WIFSIGNALED (status)) {
-		nm_log_info (LOGD_PPP, "pppd pid %d died with signal %d", priv->pid, WTERMSIG (status));
+		_LOGI ("pppd pid %d died with signal %d", priv->pid, WTERMSIG (status));
 	} else
-		nm_log_info (LOGD_PPP, "pppd pid %d died from an unknown cause", priv->pid);
+		_LOGI ("pppd pid %d died from an unknown cause", priv->pid);
 
-	nm_log_dbg (LOGD_PPP, "pppd pid %d cleaned up", priv->pid);
+	_LOGD ("pppd pid %d cleaned up", priv->pid);
 	priv->pid = 0;
 	priv->ppp_watch_id = 0;
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
@@ -805,7 +815,7 @@ pppd_timed_out (gpointer data)
 {
 	NMPPPManager *manager = NM_PPP_MANAGER (data);
 
-	nm_log_warn (LOGD_PPP, "pppd timed out or didn't initialize our dbus module");
+	_LOGW ("pppd timed out or didn't initialize our dbus module");
 	_ppp_cleanup (manager);
 	_ppp_kill (manager);
 
@@ -1065,10 +1075,10 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	g_ptr_array_add (ppp_cmd->array, NULL);
 
-	nm_log_info (LOGD_PPP, "starting PPP connection");
+	_LOGI ("starting PPP connection");
 
 	cmd_str = nm_cmd_line_to_str (ppp_cmd);
-	nm_log_dbg (LOGD_PPP, "command line: %s", cmd_str);
+	_LOGD ("command line: %s", cmd_str);
 	g_free (cmd_str);
 
 	priv->pid = 0;
@@ -1079,7 +1089,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 		goto out;
 	}
 
-	nm_log_info (LOGD_PPP, "pppd started with pid %d", priv->pid);
+	_LOGI ("pppd started with pid %d", priv->pid);
 
 	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
 	priv->ppp_timeout_handler = g_timeout_add_seconds (timeout_secs, pppd_timed_out, manager);
