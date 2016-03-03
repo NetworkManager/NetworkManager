@@ -118,30 +118,32 @@ typedef enum  { /*< skip >*/
     } G_STMT_END
 
 
-#define _nm_log_ptr(level, domain, self, ...) \
-   nm_log ((level), (domain), "[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), self _NM_UTILS_MACRO_REST(__VA_ARGS__))
+#define _nm_log_ptr(level, domain, self, prefix, ...) \
+   nm_log ((level), (domain), "%s[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), (prefix) ?: "", self _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
 /* log a message for an object (with providing a generic @self pointer) */
-#define nm_log_ptr(level, domain, self, ...) \
+#define nm_log_ptr(level, domain, self, prefix, ...) \
     G_STMT_START { \
         NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare") \
         if ((level) <= LOGL_DEBUG) { \
-            _nm_log_ptr ((level), (domain), (self), __VA_ARGS__); \
+            _nm_log_ptr ((level), (domain), (self), (prefix), __VA_ARGS__); \
         } else { \
-            nm_log ((level), (domain), __VA_ARGS__); \
+            const char *__prefix = (prefix); \
+            \
+            nm_log ((level), (domain), "%s%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), __prefix ?: "", __prefix ? " " : "" _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
         NM_PRAGMA_WARNING_REENABLE \
     } G_STMT_END
 
 
-#define _nm_log_obj(level, domain, self, ...) \
-    _nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+#define _nm_log_obj(level, domain, self, prefix, ...) \
+    _nm_log_ptr ((level), (domain), (self), prefix, __VA_ARGS__)
 
 /* log a message for an object (with providing a @self pointer to a GObject).
  * Contrary to nm_log_ptr(), @self must be a GObject type (or %NULL).
  * As of now, nm_log_obj() is identical to nm_log_ptr(), but we might change that */
-#define nm_log_obj(level, domain, self, ...) \
-    nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+#define nm_log_obj(level, domain, self, prefix, ...) \
+    nm_log_ptr ((level), (domain), (self), prefix, __VA_ARGS__)
 
 
 void _nm_log_impl (const char *file,

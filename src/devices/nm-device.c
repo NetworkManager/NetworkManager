@@ -3164,7 +3164,7 @@ recheck_available (gpointer user_data)
 	}
 
 	if (new_state > NM_DEVICE_STATE_UNKNOWN) {
-		_LOGD (LOGD_DEVICE, "device is %savailable, %s %s",
+		_LOGD (LOGD_DEVICE, "is %savailable, %s %s",
 			   now_available ? "" : "not ",
 			   new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
 			   state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
@@ -8434,7 +8434,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	_LOGD (LOGD_HW, "bringing up device.");
+	_LOGD (LOGD_HW, "bringing up device");
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
 		if (!NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware))
@@ -8508,7 +8508,7 @@ nm_device_take_down (NMDevice *self, gboolean block)
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	_LOGD (LOGD_HW, "taking down device.");
+	_LOGD (LOGD_HW, "taking down device");
 
 	if (NM_DEVICE_GET_CLASS (self)->take_down) {
 		if (!NM_DEVICE_GET_CLASS (self)->take_down (self))
@@ -10355,7 +10355,7 @@ _set_state_full (NMDevice *self,
 	if (   (priv->state == state)
 	    && (   state != NM_DEVICE_STATE_UNAVAILABLE
 	        || !priv->firmware_missing)) {
-		_LOGD (LOGD_DEVICE, "device state change: %s -> %s (reason '%s') [%d %d %d]%s",
+		_LOGD (LOGD_DEVICE, "state change: %s -> %s (reason '%s') [%d %d %d]%s",
 		       state_to_string (old_state),
 		       state_to_string (state),
 		       reason_to_string (reason),
@@ -10366,7 +10366,7 @@ _set_state_full (NMDevice *self,
 		return;
 	}
 
-	_LOGI (LOGD_DEVICE, "device state change: %s -> %s (reason '%s') [%d %d %d]",
+	_LOGI (LOGD_DEVICE, "state change: %s -> %s (reason '%s') [%d %d %d]",
 	       state_to_string (old_state),
 	       state_to_string (state),
 	       reason_to_string (reason),
