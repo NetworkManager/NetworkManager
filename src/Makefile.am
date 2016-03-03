@@ -287,6 +287,7 @@ libNetworkManager_la_SOURCES = \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
+	dhcp-manager/nm-dhcp-client-logging.h \
 	dhcp-manager/nm-dhcp-utils.c \
 	dhcp-manager/nm-dhcp-utils.h \
 	dhcp-manager/nm-dhcp-listener.c \
@@ -462,6 +463,8 @@ nm_enum_types_sources = $(filter-out \
                               %/nm-device-private.h \
                               %/nm-rdisc-private.h \
                               %/wifi-utils-private.h \
+                              %/nm-dhcp-client-logging.h \
+                              %/nm-device-logging.h \
                               , $(libNetworkManager_la_SOURCES))
 
 BUILT_SOURCES = $(GLIB_GENERATED)
@@ -526,6 +529,7 @@ NetworkManager_LDFLAGS = -rdynamic
 libnm_iface_helper_la_SOURCES = \
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
+	dhcp-manager/nm-dhcp-client-logging.h \
 	dhcp-manager/nm-dhcp-utils.c \
 	dhcp-manager/nm-dhcp-utils.h \
 	dhcp-manager/nm-dhcp-manager.c \

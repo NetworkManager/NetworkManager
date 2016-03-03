@@ -33,6 +33,7 @@
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
+#include "nm-dhcp-client-logging.h"
 
 #include "sd-dhcp-client.h"
 #include "sd-dhcp6-client.h"
@@ -465,14 +466,14 @@ bound4_handle (NMDhcpSystemd *self)
 	GError *error = NULL;
 	int r;
 
-	nm_log_dbg (LOGD_DHCP4, "(%s): lease available", iface);
-
 	r = sd_dhcp_client_get_lease (priv->client4, &lease);
 	if (r < 0 || !lease) {
-		nm_log_warn (LOGD_DHCP4, "(%s): no lease!", iface);
+		_LOGW ("no lease!");
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
 		return;
 	}
+
+	_LOGD ("lease available");
 
 	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 	ip4_config = lease_to_ip4_config (iface,
@@ -499,7 +500,7 @@ bound4_handle (NMDhcpSystemd *self)
 		                          G_OBJECT (ip4_config),
 		                          options);
 	} else {
-		nm_log_warn (LOGD_DHCP4, "(%s): %s", iface, error->message);
+		_LOGW ("%s", error->message);
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
 		g_clear_error (&error);
 	}
@@ -513,11 +514,10 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (user_data);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
-	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
 
 	g_assert (priv->client4 == client);
 
-	nm_log_dbg (LOGD_DHCP4, "(%s): DHCPv4 client event %d", iface, event);
+	_LOGD ("client event %d", event);
 
 	switch (event) {
 	case SD_DHCP_CLIENT_EVENT_EXPIRED:
@@ -532,7 +532,7 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 		bound4_handle (self);
 		break;
 	default:
-		nm_log_warn (LOGD_DHCP4, "(%s): unhandled DHCP event %d", iface, event);
+		_LOGW ("unhandled DHCP event %d", event);
 		break;
 	}
 }
@@ -551,7 +551,8 @@ get_arp_type (const GByteArray *hwaddr)
 static gboolean
 ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last_ip4_address)
 {
-	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (client);
+	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (client);
 	const GByteArray *hwaddr;
 	sd_dhcp_lease *lease = NULL;
@@ -572,13 +573,13 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 
 	r = sd_dhcp_client_new (&priv->client4);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to create DHCPv4 client (%d)", iface, r);
+		_LOGW ("failed to create client (%d)", r);
 		return FALSE;
 	}
 
 	r = sd_dhcp_client_attach_event (priv->client4, NULL, 0);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to attach DHCP event (%d)", iface, r);
+		_LOGW ("failed to attach event (%d)", r);
 		goto error;
 	}
 
@@ -586,7 +587,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	if (hwaddr) {
 		arp_type= get_arp_type (hwaddr);
 		if (arp_type == ARPHRD_NONE) {
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to determine ARP type", iface);
+			_LOGW ("failed to determine ARP type");
 			goto error;
 		}
 
@@ -595,26 +596,26 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		                            hwaddr->len,
 		                            arp_type);
 		if (r < 0) {
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP MAC address (%d)", iface, r);
+			_LOGW ("failed to set MAC address (%d)", r);
 			goto error;
 		}
 	}
 
 	r = sd_dhcp_client_set_index (priv->client4, nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP ifindex (%d)", iface, r);
+		_LOGW ("failed to set ifindex (%d)", r);
 		goto error;
 	}
 
 	r = sd_dhcp_client_set_callback (priv->client4, dhcp_event_cb, client);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP callback (%d)", iface, r);
+		_LOGW ("failed to set callback (%d)", r);
 		goto error;
 	}
 
 	r = sd_dhcp_client_set_request_broadcast (priv->client4, true);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP broadcast (%d)", iface, r);
+		_LOGW ("failed to enable broadcast mode (%d)", r);
 		goto error;
 	}
 
@@ -628,7 +629,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	if (last_addr.s_addr) {
 		r = sd_dhcp_client_set_request_address (priv->client4, &last_addr);
 		if (r < 0) {
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to set last IPv4 address (%d)", iface, r);
+			_LOGW ("failed to set last IPv4 address (%d)", r);
 			goto error;
 		}
 	}
@@ -676,7 +677,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		free (prefix);
 
 		if (r < 0) {
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP hostname (%d)", iface, r);
+			_LOGW ("failed to set DHCP hostname (%d)", r);
 			goto error;
 		}
 	}
@@ -685,14 +686,14 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	if (fqdn) {
 		r = sd_dhcp_client_set_hostname (priv->client4, fqdn);
 		if (r < 0) {
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to set DHCP FQDN (%d)", iface, r);
+			_LOGW ("failed to set DHCP FQDN (%d)", r);
 			goto error;
 		}
 	}
 
 	r = sd_dhcp_client_start (priv->client4);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to start DHCP (%d)", iface, r);
+		_LOGW ("failed to start client (%d)", r);
 		goto error;
 	}
 
@@ -810,12 +811,12 @@ bound6_handle (NMDhcpSystemd *self)
 
 	r = sd_dhcp6_client_get_lease (priv->client6, &lease);
 	if (r < 0 || !lease) {
-		nm_log_warn (LOGD_DHCP6, "(%s): no lease!", iface);
+		_LOGW (" no lease!");
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
 		return;
 	}
 
-	nm_log_dbg (LOGD_DHCP6, "(%s): lease available", iface);
+	_LOGD ("lease available");
 
 	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 	ip6_config = lease_to_ip6_config (iface,
@@ -832,7 +833,7 @@ bound6_handle (NMDhcpSystemd *self)
 		                          G_OBJECT (ip6_config),
 		                          options);
 	} else {
-		nm_log_warn (LOGD_DHCP6, "(%s): %s", iface, error->message);
+		_LOGW ("%s", error->message);
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
 	}
 }
@@ -842,11 +843,10 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (user_data);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
-	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
 
 	g_assert (priv->client6 == client);
 
-	nm_log_dbg (LOGD_DHCP6, "(%s): DHCPv6 client event %d", iface, event);
+	_LOGD ("client event %d", event);
 
 	switch (event) {
 	case SD_DHCP6_CLIENT_EVENT_RETRANS_MAX:
@@ -860,7 +860,7 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 		bound6_handle (self);
 		break;
 	default:
-		nm_log_warn (LOGD_DHCP6, "(%s): unhandled DHCPv6 event %d", iface, event);
+		_LOGW ("unhandled event %d", event);
 		break;
 	}
 }
@@ -873,7 +873,8 @@ ip6_start (NMDhcpClient *client,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
-	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (client);
+	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (client);
 	const GByteArray *hwaddr;
 	int r, i;
@@ -888,7 +889,7 @@ ip6_start (NMDhcpClient *client,
 
 	r = sd_dhcp6_client_new (&priv->client6);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to create DHCPv6 client (%d)", iface, r);
+		_LOGW ("failed to create client (%d)", r);
 		return FALSE;
 	}
 
@@ -900,13 +901,13 @@ ip6_start (NMDhcpClient *client,
 	                              duid->data + 2,
 	                              duid->len - 2);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to create DHCPv6 client (%d)", iface, r);
+		_LOGW ("failed to set DUID (%d)", r);
 		return FALSE;
 	}
 
 	r = sd_dhcp6_client_attach_event (priv->client6, NULL, 0);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to attach DHCP event (%d)", iface, r);
+		_LOGW ("failed to attach event (%d)", r);
 		goto error;
 	}
 
@@ -917,20 +918,20 @@ ip6_start (NMDhcpClient *client,
 		                             hwaddr->len,
 		                             get_arp_type (hwaddr));
 		if (r < 0) {
-			nm_log_warn (LOGD_DHCP6, "(%s): failed to set DHCP MAC address (%d)", iface, r);
+			_LOGW ("failed to set MAC address (%d)", r);
 			goto error;
 		}
 	}
 
 	r = sd_dhcp6_client_set_index (priv->client6, nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to set DHCP ifindex (%d)", iface, r);
+		_LOGW ("failed to set ifindex (%d)", r);
 		goto error;
 	}
 
 	r = sd_dhcp6_client_set_callback (priv->client6, dhcp6_event_cb, client);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to set DHCP callback (%d)", iface, r);
+		_LOGW ("failed to set callback (%d)", r);
 		goto error;
 	}
 
@@ -942,13 +943,13 @@ ip6_start (NMDhcpClient *client,
 
 	r = sd_dhcp6_client_set_local_address (priv->client6, ll_addr);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to set local address (%d)", iface, r);
+		_LOGW ("failed to set local address (%d)", r);
 		goto error;
 	}
 
 	r = sd_dhcp6_client_start (priv->client6);
 	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to start DHCP (%d)", iface, r);
+		_LOGW ("failed to start client (%d)", r);
 		goto error;
 	}
 
@@ -963,7 +964,8 @@ error:
 static void
 stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 {
-	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (client);
+	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	int r = 0;
 
 	if (priv->client4) {
@@ -974,12 +976,8 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 		r = sd_dhcp6_client_stop (priv->client6);
 	}
 
-	if (r) {
-		nm_log_warn (priv->client6 ? LOGD_DHCP6 : LOGD_DHCP4,
-			         "(%s): failed to stop DHCP client (%d)",
-			         nm_dhcp_client_get_iface (client),
-			         r);
-	}
+	if (r)
+		_LOGW ("failed to stop client (%d)", r);
 }
 
 /***************************************************/
