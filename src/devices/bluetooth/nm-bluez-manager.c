@@ -38,6 +38,16 @@
 #include "nm-platform.h"
 #include "nm-dbus-compat.h"
 
+#define _NMLOG_DOMAIN        LOGD_BT
+#define _NMLOG_PREFIX_NAME   "bluez"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
 typedef struct {
 	int bluez_version;
 
@@ -146,12 +156,12 @@ manager_bdaddr_added_cb (NMBluez4Manager *bluez_mgr,
 	if (!device)
 		return;
 
-	nm_log_info (LOGD_BT, "BT device %s (%s) added (%s%s%s)",
-	             name,
-	             bdaddr,
-	             has_dun ? "DUN" : "",
-	             has_dun && has_nap ? " " : "",
-	             has_nap ? "NAP" : "");
+	_LOGI ("BT device %s (%s) added (%s%s%s)",
+	       name,
+	       bdaddr,
+	       has_dun ? "DUN" : "",
+	       has_dun && has_nap ? " " : "",
+	       has_nap ? "NAP" : "");
 	g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, device);
 	g_object_unref (device);
 }
@@ -163,7 +173,7 @@ setup_version_number (NMBluezManager *self, int bluez_version)
 
 	g_return_if_fail (!priv->bluez_version);
 
-	nm_log_info (LOGD_BT, "use BlueZ version %d", bluez_version);
+	_LOGI ("use BlueZ version %d", bluez_version);
 
 	priv->bluez_version = bluez_version;
 
@@ -235,7 +245,7 @@ check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, c
 		setup_bluez5 (self);
 		break;
 	default:
-		nm_log_dbg (LOGD_BT, "detecting BlueZ version failed: %s", reason);
+		_LOGD ("detecting BlueZ version failed: %s", reason);
 
 		/* cancel current attempts to detect the version. */
 		cleanup_checking (self, FALSE);
