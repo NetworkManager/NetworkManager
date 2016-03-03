@@ -39,6 +39,16 @@
 
 #define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 minutes for all scripts */
 
+#define _NMLOG_DOMAIN         LOGD_DISPATCH
+#define _NMLOG_PREFIX_NAME    "dispatcher"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
 static GDBusProxy *dispatcher_proxy;
 static GHashTable *requests = NULL;
 
@@ -332,8 +342,7 @@ dispatcher_results_process (guint request_id, DispatcherAction action, GVariantI
 	g_return_if_fail (results != NULL);
 
 	if (g_variant_iter_n_children (results) == 0) {
-		nm_log_dbg (LOGD_DISPATCH, "(%u) succeeded but no scripts invoked",
-		            request_id);
+		_LOGD ("(%u) succeeded but no scripts invoked", request_id);
 		return;
 	}
 
@@ -353,15 +362,16 @@ dispatcher_results_process (guint request_id, DispatcherAction action, GVariantI
 			script_validation_msg = " (unexpected path)";
 
 		if (result == DISPATCH_RESULT_SUCCESS) {
-			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded%s",
-			            request_id,
-			            script, script_validation_msg);
+			_LOGD ("(%u) %s succeeded%s",
+			       request_id,
+			       script, script_validation_msg);
 		} else {
-			nm_log_warn (LOGD_DISPATCH, "(%u) %s failed (%s): %s%s",
-			             request_id,
-			             script,
-			             dispatch_result_to_string (result),
-			             err, script_validation_msg);
+			_LOGW ("(%u) %s failed (%s): %s%s",
+			       request_id,
+			       script,
+			       dispatch_result_to_string (result),
+			       err,
+			       script_validation_msg);
 		}
 	}
 }
@@ -385,11 +395,11 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	} else {
 		if (_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
 			g_dbus_error_strip_remote_error (error);
-			nm_log_warn (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: %s",
-			             info->request_id, error->message);
+			_LOGW ("(%u) failed to call dispatcher scripts: %s",
+			       info->request_id, error->message);
 		} else {
-			nm_log_dbg (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: %s",
-			            info->request_id, error->message);
+			_LOGD ("(%u) failed to call dispatcher scripts: %s",
+			       info->request_id, error->message);
 		}
 		g_clear_error (&error);
 	}
@@ -474,21 +484,21 @@ _dispatcher_call (DispatcherAction action,
 
 	/* All actions except 'hostname' require a device */
 	if (action == DISPATCHER_ACTION_HOSTNAME) {
-		nm_log_dbg (LOGD_DISPATCH, "(%u) dispatching action '%s'%s",
-		            reqid, action_to_string (action),
-		            blocking
-		                ? " (blocking)"
-		                : (callback ? " (with callback)" : ""));
+		_LOGD ("(%u) dispatching action '%s'%s",
+		       reqid, action_to_string (action),
+		       blocking
+		           ? " (blocking)"
+		           : (callback ? " (with callback)" : ""));
 	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-		nm_log_dbg (LOGD_DISPATCH, "(%u) (%s) dispatching action '%s'%s",
-		            reqid,
-		            vpn_iface ? vpn_iface : nm_device_get_iface (device),
-		            action_to_string (action),
-		            blocking
-		                ? " (blocking)"
-		                : (callback ? " (with callback)" : ""));
+		_LOGD ("(%u) (%s) dispatching action '%s'%s",
+		       reqid,
+		       vpn_iface ? vpn_iface : nm_device_get_iface (device),
+		       action_to_string (action),
+		       blocking
+		           ? " (blocking)"
+		           : (callback ? " (with callback)" : ""));
 	}
 
 	if (!_get_monitor_by_action(action)->has_scripts) {
@@ -499,9 +509,9 @@ _dispatcher_call (DispatcherAction action,
 			info->callback = callback;
 			info->user_data = user_data;
 			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
-			nm_log_dbg (LOGD_DISPATCH, "(%u) simulate request; no scripts in %s",  reqid, _get_monitor_by_action(action)->dir);
+			_LOGD ("(%u) simulate request; no scripts in %s",  reqid, _get_monitor_by_action(action)->dir);
 		} else
-			nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in %s", reqid, _get_monitor_by_action(action)->dir);
+			_LOGD ("(%u) ignoring request; no scripts in %s", reqid, _get_monitor_by_action(action)->dir);
 		success = TRUE;
 		goto done;
 	}
@@ -592,7 +602,7 @@ _dispatcher_call (DispatcherAction action,
 			success = TRUE;
 		} else {
 			g_dbus_error_strip_remote_error (error);
-			nm_log_warn (LOGD_DISPATCH, "(%u) failed: %s", reqid, error->message);
+			_LOGW ("(%u) failed: %s", reqid, error->message);
 			g_clear_error (&error);
 			success = FALSE;
 		}
@@ -764,8 +774,7 @@ nm_dispatcher_call_cancel (guint call_id)
 	g_return_if_fail (info);
 
 	if (info && info->callback) {
-		nm_log_dbg (LOGD_DISPATCH, "(%u) cancelling dispatcher callback action",
-		            call_id);
+		_LOGD ("(%u) cancelling dispatcher callback action", call_id);
 		info->callback = NULL;
 	}
 }
@@ -797,19 +806,19 @@ dispatcher_dir_changed (GFileMonitor *monitor,
 		errsv = errno;
 		g_dir_close (dir);
 		if (item->has_scripts)
-			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' has scripts", item->description, item->dir);
+			_LOGD ("%s script directory '%s' has scripts", item->description, item->dir);
 		else if (errsv == 0)
-			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' has no scripts", item->description, item->dir);
+			_LOGD ("%s script directory '%s' has no scripts", item->description, item->dir);
 		else {
-			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' error reading (%s)", item->description, item->dir, strerror (errsv));
+			_LOGD ("%s script directory '%s' error reading (%s)", item->description, item->dir, strerror (errsv));
 			item->has_scripts = TRUE;
 		}
 	} else {
 		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' does not exist", item->description, item->dir);
+			_LOGD ("%s script directory '%s' does not exist", item->description, item->dir);
 			item->has_scripts = FALSE;
 		} else {
-			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' error (%s)", item->description, item->dir, error->message);
+			_LOGD ("%s script directory '%s' error (%s)", item->description, item->dir, error->message);
 			item->has_scripts = TRUE;
 		}
 		g_error_free (error);
@@ -843,7 +852,7 @@ nm_dispatcher_init (void)
 	                                                  NM_DISPATCHER_DBUS_INTERFACE,
 	                                                  NULL, &error);
 	if (!dispatcher_proxy) {
-		nm_log_err (LOGD_DISPATCH, "could not get dispatcher proxy! %s", error->message);
+		_LOGE ("could not get dispatcher proxy! %s", error->message);
 		g_clear_error (&error);
 	}
 }
