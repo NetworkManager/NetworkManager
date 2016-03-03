@@ -34,6 +34,16 @@
 #include "nm-exported-object.h"
 #include "NetworkManagerUtils.h"
 
+#define _NMLOG_DOMAIN       LOGD_CORE
+#define _NMLOG_PREFIX_NAME  "bus-manager"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
 enum {
 	DBUS_CONNECTION_CHANGED = 0,
 	PRIVATE_CONNECTION_NEW,
@@ -100,7 +110,7 @@ nm_bus_manager_setup (NMBusManager *instance)
 	already_setup = TRUE;
 	singleton_instance = instance;
 	nm_singleton_instance_register ();
-	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMBusManager", singleton_instance);
+	_LOGD ("setup %s singleton (%p)", "NMBusManager", singleton_instance);
 }
 
 /**************************************************************/
@@ -176,8 +186,7 @@ private_server_closed_connection (GDBusConnection *conn,
 	CloseConnectionInfo *info;
 
 	/* Clean up after the connection */
-	nm_log_dbg (LOGD_CORE, "(%s) closed connection %p on private socket.",
-	            s->tag, conn);
+	_LOGD ("(%s) closed connection %p on private socket", s->tag, conn);
 
 	info = g_slice_new0 (CloseConnectionInfo);
 	info->connection = conn;
@@ -210,8 +219,7 @@ private_server_new_connection (GDBusServer *server,
 	g_dbus_object_manager_server_set_connection (manager, conn);
 	g_hash_table_insert (s->obj_managers, manager, sender);
 
-	nm_log_dbg (LOGD_CORE, "(%s) accepted connection %p on private socket.",
-	            s->tag, conn);
+	_LOGD ("(%s) accepted connection %p on private socket", s->tag, conn);
 
 	/* Emit this for the manager */
 	g_signal_emit (s->manager,
@@ -256,7 +264,7 @@ private_server_new (const char *path,
 	unlink (path);
 	address = g_strdup_printf ("unix:path=%s", path);
 
-	nm_log_dbg (LOGD_CORE, "(%s) creating private socket %s.", tag, address);
+	_LOGD ("(%s) creating private socket %s", tag, address);
 
 	guid = g_dbus_generate_guid ();
 	auth_observer = g_dbus_auth_observer_new ();
@@ -271,8 +279,8 @@ private_server_new (const char *path,
 	g_object_unref (auth_observer);
 
 	if (!server) {
-		nm_log_warn (LOGD_CORE, "(%s) failed to set up private socket %s: %s",
-		             tag, address, error->message);
+		_LOGW ("(%s) failed to set up private socket %s: %s",
+		       tag, address, error->message);
 		g_error_free (error);
 		g_free (address);
 		return NULL;
@@ -547,8 +555,8 @@ nm_bus_manager_get_unix_user (NMBusManager *self,
 
 	/* Otherwise, a bus connection */
 	if (!_bus_get_unix_user (self, sender, out_uid, &error)) {
-		nm_log_warn (LOGD_CORE, "Failed to get unix user for dbus sender '%s': %s",
-		             sender, error->message);
+		_LOGW ("failed to get unix user for dbus sender '%s': %s",
+		       sender, error->message);
 		g_error_free (error);
 		return FALSE;
 	}
@@ -661,7 +669,7 @@ nm_bus_manager_reconnect (gpointer user_data)
 
 	if (nm_bus_manager_init_bus (self)) {
 		if (nm_bus_manager_start_service (self)) {
-			nm_log_info (LOGD_CORE, "reconnected to the system bus.");
+			_LOGI ("reconnected to the system bus");
 			g_signal_emit (self, signals[DBUS_CONNECTION_CHANGED],
 			               0, priv->connection);
 			priv->reconnect_id = 0;
@@ -695,7 +703,7 @@ closed_cb (GDBusConnection *connection,
 	NMBusManager *self = NM_BUS_MANAGER (user_data);
 
 	/* Clean up existing connection */
-	nm_log_warn (LOGD_CORE, "disconnected by the system bus.");
+	_LOGW ("disconnected by the system bus");
 
 	nm_bus_manager_cleanup (self);
 
@@ -711,7 +719,7 @@ nm_bus_manager_init_bus (NMBusManager *self)
 	GError *error = NULL;
 
 	if (priv->connection) {
-		nm_log_warn (LOGD_CORE, "DBus Manager already has a valid connection.");
+		_LOGW ("DBus Manager already has a valid connection");
 		return FALSE;
 	}
 
@@ -721,9 +729,9 @@ nm_bus_manager_init_bus (NMBusManager *self)
 		 * environments (eg, initrd) where we only want to use the private
 		 * socket.
 		 */
-		nm_log_info (LOGD_CORE, "Could not connect to the system bus (%s); only the "
-		             "private D-Bus socket will be available.",
-		             error->message);
+		_LOGI ("could not connect to the system bus (%s); only the "
+		       "private D-Bus socket will be available",
+		       error->message);
 		g_error_free (error);
 		return FALSE;
 	}
@@ -742,9 +750,9 @@ nm_bus_manager_init_bus (NMBusManager *self)
 	                                     NULL, &error);
 	if (!priv->proxy) {
 		g_clear_object (&priv->connection);
-		nm_log_warn (LOGD_CORE, "Could not create org.freedesktop.DBus proxy (%s); only the "
-		             "private D-Bus socket will be available.",
-		             error->message);
+		_LOGW ("could not create org.freedesktop.DBus proxy (%s); only the "
+		       "private D-Bus socket will be available",
+		       error->message);
 		g_error_free (error);
 		return FALSE;
 	}
@@ -770,7 +778,7 @@ nm_bus_manager_start_service (NMBusManager *self)
 	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 
 	if (priv->started) {
-		nm_log_err (LOGD_CORE, "Service has already started.");
+		_LOGE ("service has already started");
 		return FALSE;
 	}
 
@@ -787,8 +795,7 @@ nm_bus_manager_start_service (NMBusManager *self)
 	                                G_DBUS_CALL_FLAGS_NONE, -1,
 	                                NULL, &err);
 	if (!ret) {
-		nm_log_err (LOGD_CORE, "Could not acquire the NetworkManager service.\n"
-		            "  Error: '%s'", err->message);
+		_LOGE ("could not acquire the NetworkManager service: '%s'", err->message);
 		g_error_free (err);
 		return FALSE;
 	}
@@ -796,7 +803,7 @@ nm_bus_manager_start_service (NMBusManager *self)
 	g_variant_get (ret, "(u)", &result);
 
 	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		nm_log_err (LOGD_CORE, "Could not acquire the NetworkManager service as it is already taken.");
+		_LOGE ("could not acquire the NetworkManager service as it is already taken");
 		return FALSE;
 	}
 
@@ -940,8 +947,8 @@ nm_bus_manager_new_proxy (NMBusManager *self,
 	                        "g-interface-name", iface,
 	                        NULL);
 	if (!proxy) {
-		nm_log_warn (LOGD_CORE, "Could not create proxy for %s on connection %s: %s",
-		             iface, name, error->message);
+		_LOGW ("could not create proxy for %s on connection %s: %s",
+		       iface, name, error->message);
 		g_error_free (error);
 	}
 	return proxy;
