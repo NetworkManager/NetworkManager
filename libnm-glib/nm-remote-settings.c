@@ -503,7 +503,7 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 		if (!dbus_g_error_has_name (error, "org.freedesktop.NetworkManager.Settings.PermissionDenied"))
 			g_hash_table_remove (priv->pending, path);
 
-		if (print_once && error->code == DBUS_GERROR_LIMITS_EXCEEDED) {
+		if (print_once && g_error_matches (error, DBUS_GERROR, DBUS_GERROR_LIMITS_EXCEEDED)) {
 			g_printerr ("Warning: libnm-glib:%s(): a D-Bus limit exceeded: %s. The application might not work properly.\n"
 			            "Consider increasing max_replies_per_connection limit in /etc/dbus-1/system.d/org.freedesktop.NetworkManager.conf "
 			            "like <limit name=\"max_replies_per_connection\">2048</limit>",
@@ -574,9 +574,8 @@ fetch_connections_done (DBusGProxy *proxy,
 		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
 		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)
 		    && priv->service_running) {
-			g_warning ("%s: error fetching connections: (%d) %s.",
+			g_warning ("%s: error fetching connections: %s.",
 			           __func__,
-			           error->code,
 			           error->message ? error->message : "(unknown)");
 		}
 		g_clear_error (&error);

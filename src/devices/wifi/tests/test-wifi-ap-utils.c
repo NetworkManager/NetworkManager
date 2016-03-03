@@ -37,7 +37,7 @@
 	if (expected) { \
 		if (!success) { \
 			g_assert (error != NULL); \
-			g_warning ("Failed to complete connection: (%d) %s", error->code, error->message); \
+			g_warning ("Failed to complete connection: %s", error->message); \
 		} \
 		g_assert (success == TRUE); \
 		g_assert (error == NULL); \

@@ -139,8 +139,8 @@ _nm_active_connection_type_for_path (DBusGConnection *connection,
 		else
 			type = NM_TYPE_ACTIVE_CONNECTION;
 	} else {
-		g_warning ("Error in getting active connection 'Vpn' property: (%d) %s",
-		           error->code, error->message);
+		g_warning ("Error in getting active connection 'Vpn' property: %s",
+		           error->message);
 		g_error_free (error);
 		type = G_TYPE_INVALID;
 	}

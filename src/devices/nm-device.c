@@ -2883,7 +2883,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 		                                               &error))
 		{
 			_LOGE (LOGD_DEVICE, "master device '%s' failed to update slave connection: %s",
-			       nm_device_get_iface (master), error ? error->message : "(unknown error)");
+			       nm_device_get_iface (master), error->message);
 			g_error_free (error);
 			g_object_unref (connection);
 			return NULL;
@@ -6631,7 +6631,7 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 
 	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, config, &error)) {
 		_LOGE (LOGD_SHARING, "share: (%s) failed to start dnsmasq: %s",
-		       ip_iface, (error && error->message) ? error->message : "(unknown)");
+		       ip_iface, error->message);
 		g_error_free (error);
 		nm_act_request_set_shared (req, FALSE);
 		return FALSE;

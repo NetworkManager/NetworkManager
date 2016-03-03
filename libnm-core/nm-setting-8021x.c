@@ -2907,8 +2907,7 @@ set_property (GObject *object, guint prop_id,
 			g_bytes_unref (priv->ca_cert);
 		priv->ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CA_CERT, &error);
 		if (error) {
-			g_warning ("Error setting certificate (invalid data): (%d) %s",
-			           error->code, error->message);
+			g_warning ("Error setting certificate (invalid data): %s", error->message);
 			g_error_free (error);
 		}
 		break;
@@ -2929,8 +2928,7 @@ set_property (GObject *object, guint prop_id,
 			g_bytes_unref (priv->client_cert);
 		priv->client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CLIENT_CERT, &error);
 		if (error) {
-			g_warning ("Error setting certificate (invalid data): (%d) %s",
-			           error->code, error->message);
+			g_warning ("Error setting certificate (invalid data): %s", error->message);
 			g_error_free (error);
 		}
 		break;
@@ -2959,8 +2957,7 @@ set_property (GObject *object, guint prop_id,
 			g_bytes_unref (priv->phase2_ca_cert);
 		priv->phase2_ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CA_CERT, &error);
 		if (error) {
-			g_warning ("Error setting certificate (invalid data): (%d) %s",
-			           error->code, error->message);
+			g_warning ("Error setting certificate (invalid data): %s", error->message);
 			g_error_free (error);
 		}
 		break;
@@ -2981,8 +2978,7 @@ set_property (GObject *object, guint prop_id,
 			g_bytes_unref (priv->phase2_client_cert);
 		priv->phase2_client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CLIENT_CERT, &error);
 		if (error) {
-			g_warning ("Error setting certificate (invalid data): (%d) %s",
-			           error->code, error->message);
+			g_warning ("Error setting certificate (invalid data): %s", error->message);
 			g_error_free (error);
 		}
 		break;
@@ -3006,8 +3002,7 @@ set_property (GObject *object, guint prop_id,
 			g_bytes_unref (priv->private_key);
 		priv->private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PRIVATE_KEY, &error);
 		if (error) {
-			g_warning ("Error setting private key (invalid data): (%d) %s",
-			           error->code, error->message);
+			g_warning ("Error setting private key (invalid data): %s", error->message);
 			g_error_free (error);
 		}
 		break;
@@ -3023,8 +3018,7 @@ set_property (GObject *object, guint prop_id,
 			g_bytes_unref (priv->phase2_private_key);
 		priv->phase2_private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &error);
 		if (error) {
-			g_warning ("Error setting private key (invalid data): (%d) %s",
-			           error->code, error->message);
+			g_warning ("Error setting private key (invalid data): %s", error->message);
 			g_error_free (error);
 		}
 		break;
