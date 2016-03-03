@@ -34,6 +34,15 @@
 
 #define AUDIT_LOG_LEVEL LOGL_INFO
 
+#define _NMLOG_PREFIX_NAME    "audit"
+#define _NMLOG(level, domain, ...) \
+    G_STMT_START { \
+        nm_log ((level), (domain), \
+                "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+    } G_STMT_END
+
 typedef enum {
        BACKEND_LOG    = (1 << 0),
        BACKEND_AUDITD = (1 << 1),
@@ -154,7 +163,7 @@ nm_audit_log (NMAuditManager *self, GPtrArray *fields, const char *file,
 
 	if (nm_logging_enabled (AUDIT_LOG_LEVEL, LOGD_AUDIT)) {
 		msg = build_message (fields, BACKEND_LOG);
-		_nm_log_impl (file, line, func, AUDIT_LOG_LEVEL, LOGD_AUDIT, 0, "%s", msg);
+		_NMLOG (AUDIT_LOG_LEVEL, LOGD_AUDIT, "%s", msg);
 		g_free (msg);
 	}
 }
@@ -306,17 +315,16 @@ init_auditd (NMAuditManager *self)
 	                                      NM_CONFIG_DEFAULT_LOGGING_AUDIT)) {
 		if (priv->auditd_fd < 0) {
 			priv->auditd_fd = audit_open ();
-			if (priv->auditd_fd < 0) {
-				nm_log_err (LOGD_CORE, "failed to open auditd socket: %s",
-				            strerror (errno));
-			} else
-				nm_log_dbg (LOGD_CORE, "audit socket created");
+			if (priv->auditd_fd < 0)
+				_LOGE (LOGD_CORE, "failed to open auditd socket: %s", strerror (errno));
+			else
+				_LOGD (LOGD_CORE, "socket created");
 		}
 	} else {
 		if (priv->auditd_fd >= 0) {
 			audit_close (priv->auditd_fd);
 			priv->auditd_fd = -1;
-			nm_log_dbg (LOGD_CORE, "audit socket closed");
+			_LOGD (LOGD_CORE, "socket closed");
 		}
 	}
 }
