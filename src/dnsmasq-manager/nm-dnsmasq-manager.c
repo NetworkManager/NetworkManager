@@ -34,6 +34,16 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DOMAIN         LOGD_SHARING
+#define _NMLOG_PREFIX_NAME    "dnsmasq-manager"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
 typedef struct {
 	char *iface;
 	char *pidfile;
@@ -181,7 +191,7 @@ dm_exit_code (guint dm_exit_status)
 		break;
 	}
 
-	nm_log_warn (LOGD_SHARING, "dnsmasq exited with error: %s (%d)", msg, dm_exit_status);
+	_LOGW ("dnsmasq exited with error: %s (%d)", msg, dm_exit_status);
 }
 
 static void
@@ -196,11 +206,11 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 		if (err != 0)
 			dm_exit_code (err);
 	} else if (WIFSTOPPED (status)) {
-		nm_log_warn (LOGD_SHARING, "dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
+		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
 	} else if (WIFSIGNALED (status)) {
-		nm_log_warn (LOGD_SHARING, "dnsmasq died with signal %d", WTERMSIG (status));
+		_LOGW ("dnsmasq died with signal %d", WTERMSIG (status));
 	} else {
-		nm_log_warn (LOGD_SHARING, "dnsmasq died from an unknown cause");
+		_LOGW ("dnsmasq died from an unknown cause");
 	}
 
 	priv->pid = 0;
@@ -269,7 +279,7 @@ create_dm_cmd_line (const char *iface,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_FAILED,
 		                     error_desc);
-		nm_log_warn (LOGD_SHARING, "Failed to find DHCP address ranges: %s", error_desc);
+		_LOGW ("failed to find DHCP address ranges: %s", error_desc);
 		g_free (error_desc);
 		nm_cmd_line_destroy (cmd);
 		return NULL;
@@ -361,10 +371,8 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	g_ptr_array_add (dm_cmd->array, NULL);
 
-	nm_log_info (LOGD_SHARING, "Starting dnsmasq...");
-
-	nm_log_dbg (LOGD_SHARING, "Command line: %s",
-	            (cmd_str = nm_cmd_line_to_str (dm_cmd)));
+	_LOGI ("starting dnsmasq...");
+	_LOGD ("command line: %s", (cmd_str = nm_cmd_line_to_str (dm_cmd)));
 
 	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) dm_cmd->array->pdata, NULL,
@@ -374,7 +382,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 		goto out;
 	}
 
-	nm_log_dbg (LOGD_SHARING, "dnsmasq started with pid %d", priv->pid);
+	_LOGD ("dnsmasq started with pid %d", priv->pid);
 
 	priv->dm_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) dm_watch_cb, manager);
 
