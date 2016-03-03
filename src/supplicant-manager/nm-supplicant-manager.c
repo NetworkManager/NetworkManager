@@ -34,6 +34,16 @@
 
 G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 
+#define _NMLOG_DOMAIN         LOGD_SUPPLICANT
+#define _NMLOG_PREFIX_NAME    "supplicant"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
 typedef struct {
 	GDBusProxy *     proxy;
 	GCancellable *   cancellable;
@@ -133,7 +143,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 
 	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
+	_LOGD ("(%s): creating new supplicant interface", ifname);
 
 	/* assert against not requesting duplicate interfaces. */
 	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
@@ -195,9 +205,9 @@ update_capabilities (NMSupplicantManager *self)
 	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next)
 		nm_supplicant_interface_set_ap_support (ifaces->data, priv->ap_support);
 
-	nm_log_dbg (LOGD_SUPPLICANT, "AP mode is %ssupported",
-	            (priv->ap_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	                (priv->ap_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
+	_LOGD ("AP mode is %ssupported",
+	       (priv->ap_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
+	           (priv->ap_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
 
 	/* EAP-FAST */
 	priv->fast_supported = FALSE;
@@ -212,7 +222,7 @@ update_capabilities (NMSupplicantManager *self)
 		g_variant_unref (value);
 	}
 
-	nm_log_dbg (LOGD_SUPPLICANT, "EAP-FAST is %ssupported", priv->fast_supported ? "" : "not ");
+	_LOGD ("EAP-FAST is %ssupported", priv->fast_supported ? "" : "not ");
 }
 
 static void
@@ -270,7 +280,7 @@ wpas_die_count_reset_cb (gpointer user_data)
 	/* Reset the die count back to zero, which allows use of the supplicant again */
 	priv->die_count_reset_id = 0;
 	set_die_count (self, 0);
-	nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant die count reset");
+	_LOGI ("wpa_supplicant die count reset");
 	return FALSE;
 }
 
@@ -284,7 +294,7 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 	g_return_if_fail (proxy == priv->proxy);
 
 	owner = g_dbus_proxy_get_name_owner (proxy);
-	nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant %s", owner ? "running" : "stopped");
+	_LOGI ("wpa_supplicant %s", owner ? "running" : "stopped");
 
 	if (owner) {
 		set_running (self, TRUE);
@@ -301,9 +311,8 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 		set_die_count (self, priv->die_count + 1);
 
 		if (die_count_exceeded (priv->die_count)) {
-			nm_log_info (LOGD_SUPPLICANT,
-			             "wpa_supplicant die count %d; ignoring for 10 seconds",
-			             priv->die_count);
+			_LOGI ("wpa_supplicant die count %d; ignoring for 10 seconds",
+			       priv->die_count);
 		}
 
 		set_running (self, FALSE);
@@ -324,9 +333,8 @@ on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (!proxy) {
-		nm_log_warn (LOGD_SUPPLICANT,
-		             "Failed to acquire wpa_supplicant proxy: Wi-Fi and 802.1x will not be available (%s)",
-		             error->message);
+		_LOGW ("failed to acquire wpa_supplicant proxy: Wi-Fi and 802.1x will not be available (%s)",
+		       error->message);
 		g_clear_error (&error);
 		return;
 	}
