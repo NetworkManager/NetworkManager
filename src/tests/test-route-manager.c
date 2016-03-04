@@ -421,14 +421,16 @@ setup_dev1_ip6 (int ifindex)
 
 	/* Add some route outside of route manager. The route manager
 	 * should get rid of it upon sync. */
-	nm_platform_ip6_route_add (NM_PLATFORM_GET,
-	                           ifindex,
-	                           NM_IP_CONFIG_SOURCE_USER,
-	                           *nmtst_inet6_from_string ("2001:db8:8088::"),
-	                           48,
-	                           in6addr_any,
-	                           10,
-	                           0);
+	if (!nm_platform_ip6_route_add (NM_PLATFORM_GET,
+	                                ifindex,
+	                                NM_IP_CONFIG_SOURCE_USER,
+	                                *nmtst_inet6_from_string ("2001:db8:8088::"),
+	                                48,
+	                                in6addr_any,
+	                                10,
+	                                0)) {
+		g_assert_not_reached ();
+	}
 
 	route = nmtst_platform_ip6_route_full ("2001:db8:8086::",
 	                                       48,
