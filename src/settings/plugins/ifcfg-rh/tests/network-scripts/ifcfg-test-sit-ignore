@@ -1,0 +1,12 @@
+# this ifcfg-file represents a "sit" type without explicit TYPE.
+# Such connection types are not supported by NetworkManager and
+# the connection should be ignored based on the presence of
+# IPV6TUNNELIPV4.
+
+DEVICE=sit1
+BOOTPROTO=none
+ONBOOT=yes
+IPV6INIT=yes
+IPV6TUNNELIPV4=5.4.3.6
+IPV6TUNNELIPV4LOCAL=172.17.1.9
+IPV6ADDR=2001:470:2:3:4::2/64

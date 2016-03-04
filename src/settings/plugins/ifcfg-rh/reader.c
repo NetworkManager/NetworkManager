@@ -4993,7 +4993,16 @@ connection_from_file_full (const char *filename,
 		type = svGetValue (parsed, "TYPE", FALSE);
 
 	if (!type) {
+		gs_free char *tmp = NULL;
 		char *device;
+
+		if ((tmp = svGetValue (parsed, "IPV6TUNNELIPV4", FALSE))) {
+			if (out_ignore_error)
+				*out_ignore_error = TRUE;
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Ignoring unsupported connection due to IPV6TUNNELIPV4");
+			goto done;
+		}
 
 		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {

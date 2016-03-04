@@ -8735,6 +8735,20 @@ test_read_vlan_trailing_spaces (void)
 	g_object_unref (connection);
 }
 
+/*****************************************************************************/
+
+static void
+test_sit_read_ignore (void)
+{
+	gs_free_error GError *error = NULL;
+
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-sit-ignore",
+	                            NULL, TYPE_ETHERNET, &error);
+	nmtst_assert_error (error, 0, 0, "*Ignoring unsupported connection due to IPV6TUNNELIPV4*");
+}
+
+/*****************************************************************************/
+
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
@@ -8970,6 +8984,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "team/read-port", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
+
+	g_test_add_func (TPATH "sit/read/ignore", test_sit_read_ignore);
 
 	/* Stuff we expect to fail for now */
 	g_test_add_func (TPATH "pppoe/write-wired", test_write_wired_pppoe);
