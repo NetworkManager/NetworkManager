@@ -110,23 +110,24 @@
 
 /* general purpose functions that have no dependency on other nmtst functions */
 
-inline static void
-nmtst_assert_error (GError *error,
-                    GQuark expect_error_domain,
-                    gint expect_error_code,
-                    const char *expect_error_pattern)
-{
-	if (expect_error_domain)
-		g_assert_error (error, expect_error_domain, expect_error_code);
-	else
-		g_assert (error);
-	g_assert (error->message);
-	if (   expect_error_pattern
-	    && !g_pattern_match_simple (expect_error_pattern, error->message)) {
-		g_error ("error message does not have expected pattern '%s'. Instead it is '%s' (%s, %d)",
-		         expect_error_pattern, error->message, g_quark_to_string (error->domain), error->code);
-	}
-}
+#define nmtst_assert_error(error, expect_error_domain, expect_error_code, expect_error_pattern) \
+	G_STMT_START { \
+		GError *_error = (error); \
+		GQuark _expect_error_domain = (expect_error_domain); \
+		const char *_expect_error_pattern = (expect_error_pattern); \
+		\
+		if (_expect_error_domain) \
+			g_assert_error (_error, _expect_error_domain, (expect_error_code)); \
+		else \
+			g_assert (_error); \
+		g_assert (_error->message); \
+		if (   _expect_error_pattern \
+		    && !g_pattern_match_simple (_expect_error_pattern, _error->message)) { \
+			g_error ("%s:%d: error message does not have expected pattern '%s'. Instead it is '%s' (%s, %d)", \
+			         __FILE__, __LINE__, \
+			         _expect_error_pattern, _error->message, g_quark_to_string (_error->domain), _error->code); \
+		} \
+	} G_STMT_END
 
 #define NMTST_WAIT(max_wait_ms, wait) \
 	({ \
