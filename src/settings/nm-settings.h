@@ -71,6 +71,8 @@ typedef struct {
 	void (*agent_registered) (NMSettings *self, NMSecretAgent *agent);
 } NMSettingsClass;
 
+typedef void (*NMSettingsSetHostnameCb) (const char *name, gboolean result, gpointer user_data);
+
 GType nm_settings_get_type (void);
 
 NMSettings *nm_settings_new (void);
@@ -126,5 +128,10 @@ void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean qu
 gint nm_settings_sort_connections (gconstpointer a, gconstpointer b);
 
 gboolean nm_settings_get_startup_complete (NMSettings *self);
+
+void nm_settings_set_transient_hostname (NMSettings *self,
+                                         const char *hostname,
+                                         NMSettingsSetHostnameCb cb,
+                                         gpointer user_data);
 
 #endif  /* __NM_SETTINGS_H__ */

@@ -1527,6 +1527,65 @@ impl_settings_reload_connections (NMSettings *self,
 	g_dbus_method_invocation_return_value (context, g_variant_new ("(b)", TRUE));
 }
 
+typedef struct {
+	char *hostname;
+	NMSettingsSetHostnameCb cb;
+	gpointer user_data;
+} SetHostnameInfo;
+
+static void
+set_transient_hostname_done (GObject *object,
+                             GAsyncResult *res,
+                             gpointer user_data)
+{
+	GDBusProxy *proxy = G_DBUS_PROXY (object);
+	gs_free SetHostnameInfo *info = user_data;
+	gs_unref_variant GVariant *result = NULL;
+	gs_free_error GError *error = NULL;
+
+	result = g_dbus_proxy_call_finish (proxy, res, &error);
+
+	if (error) {
+		_LOGW ("couldn't set the system hostname to '%s' using hostnamed: %s",
+		       info->hostname, error->message);
+	}
+
+	info->cb (info->hostname, !error, info->user_data);
+	g_free (info->hostname);
+}
+
+void
+nm_settings_set_transient_hostname (NMSettings *self,
+                                    const char *hostname,
+                                    NMSettingsSetHostnameCb cb,
+                                    gpointer user_data)
+{
+	NMSettingsPrivate *priv;
+	SetHostnameInfo *info;
+
+	g_return_if_fail (NM_IS_SETTINGS (self));
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	if (!priv->hostname.hostnamed_proxy) {
+		cb (hostname, FALSE, user_data);
+		return;
+	}
+
+	info = g_new0 (SetHostnameInfo, 1);
+	info->hostname = g_strdup (hostname);
+	info->cb = cb;
+	info->user_data = user_data;
+
+	g_dbus_proxy_call (priv->hostname.hostnamed_proxy,
+	                   "SetHostname",
+	                   g_variant_new ("(sb)", hostname, FALSE),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   NULL,
+	                   set_transient_hostname_done,
+	                   info);
+}
+
 static gboolean
 write_hostname (NMSettingsPrivate *priv, const char *hostname)
 {

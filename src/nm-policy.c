@@ -127,43 +127,26 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"
 
-static gboolean
-set_system_hostname (const char *new_hostname, const char *msg)
+static void settings_set_hostname_cb (const char *hostname,
+                                      gboolean result,
+                                      gpointer user_data)
 {
-	char old_hostname[HOST_NAME_MAX + 1];
-	const char *name;
-	int ret;
+	int ret = 0;
 
-	if (new_hostname)
-		g_warn_if_fail (strlen (new_hostname));
+	if (!result) {
+		ret = sethostname (hostname, strlen (hostname));
+		if (ret != 0) {
+			int errsv = errno;
 
-	old_hostname[HOST_NAME_MAX] = '\0';
-	errno = 0;
-	ret = gethostname (old_hostname, HOST_NAME_MAX);
-	if (ret != 0) {
-		_LOGW (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
-		       errno, strerror (errno));
-	} else {
-		/* Don't set the hostname if it isn't actually changing */
-		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
-		       || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
-			return FALSE;
+			_LOGW (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
+			       hostname, errsv, strerror (errsv));
+			if (errsv == EPERM)
+				_LOGW (LOGD_DNS, "you should use hostnamed when systemd hardening is in effect!");
+		}
 	}
 
-	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
-
-	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
-	ret = sethostname (name, strlen (name));
-	if (ret != 0) {
-		int errsv = errno;
-
-		_LOGW (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
-		       name, errsv, strerror (errsv));
-		if (errsv == EPERM)
-			_LOGW (LOGD_DNS, "you should use hostnamed when systemd hardening is in effect!");
-	}
-
-	return (ret == 0);
+	if (!ret)
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -172,6 +155,9 @@ _set_hostname (NMPolicy *policy,
                const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	char old_hostname[HOST_NAME_MAX + 1];
+	const char *name;
+	int ret;
 
 	/* The incoming hostname *can* be NULL, which will get translated to
 	 * 'localhost.localdomain' or such in the hostname policy code, but we
@@ -203,10 +189,41 @@ _set_hostname (NMPolicy *policy,
 	priv->cur_hostname = g_strdup (new_hostname);
 	priv->hostname_changed = TRUE;
 
+	/* Notify the DNS manager of the hostname change so that the domain part, if
+	 * present, can be added to the search list.
+	 */
 	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
 
-	if (set_system_hostname (priv->cur_hostname, msg))
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
+	 /* Finally, set kernel hostname */
+
+	if (!priv->cur_hostname)
+		name = FALLBACK_HOSTNAME4;
+	else if (!priv->cur_hostname[0]) {
+		g_warn_if_reached ();
+		name = FALLBACK_HOSTNAME4;
+	} else
+		name = priv->cur_hostname;
+
+	old_hostname[HOST_NAME_MAX] = '\0';
+	errno = 0;
+	ret = gethostname (old_hostname, HOST_NAME_MAX);
+	if (ret != 0) {
+		_LOGW (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
+		       errno, strerror (errno));
+	} else {
+		/* Don't set the hostname if it isn't actually changing */
+		if (nm_streq (name, old_hostname))
+			return;
+	}
+
+	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
+
+	/* Ask NMSettings to update the transient hostname using its
+	 * systemd-hostnamed proxy */
+	nm_settings_set_transient_hostname (priv->settings,
+	                                    name,
+	                                    settings_set_hostname_cb,
+	                                    NULL);
 }
 
 static void
