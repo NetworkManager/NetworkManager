@@ -16,6 +16,7 @@ abrt-tui
 abrt-addon-ccpp
 libreport-rhel-bugzilla
 NetworkManager-wifi
+$VALGRIND
 %end
 
 %post --log=/dev/console --erroronfail
@@ -88,6 +89,11 @@ fi
 			<task name="/distribution/command" role="STANDALONE">
 				<params>
 					<param name="CMDS_TO_RUN" value="test -n '$BUILD_ID' || exit 0; wget 'http://cgit.freedesktop.org/NetworkManager/NetworkManager/plain/contrib/rh-bkr/build-from-source.sh?id=automation' -O /tmp/nm-build-from-source.sh &amp;&amp; BUILD_ID='$BUILD_ID' ARCH='$ARCH' sh /tmp/nm-build-from-source.sh"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="test -n '$VALGRIND' || exit 0; sed &quot;s,\(ExecStart=\)\(.*\),\1/bin/bash -c 'G_SLICE=always-malloc G_DEBUG=gc-friendly LOGNAME=root HOSTNAME=localhost exec -a /usr/sbin/NetworkManager /usr/bin/valgrind --num-callers=100 --vgdb=yes --suppressions=/mnt/tests/NetworkManager/runtime.suppressions --suppressions=$(ls /usr/src/debug/NetworkManager-*/valgrind.suppressions) \2',&quot; /usr/lib/systemd/system/NetworkManager.service &gt; /etc/systemd/system/NetworkManager-valgrind.service" />
 				</params>
 			</task>
 			<task name="/qe/desktop/simpletestharness" role="STANDALONE">

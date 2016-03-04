@@ -548,6 +548,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--bkr-write-job-id', help='If specified, write the job ID to the specified file.')
         self.parser.add_argument('--bkr-wait-completion', action='store_true', help='Whether to wait for completion of the beaker job')
         self.parser.add_argument('--bkr-job-results', help='If specified, write the job results to the specified file. Implies --bkr-wait-completion.')
+        self.parser.add_argument('--valgrind', action='store_true', help='setup the valgrind wrapper')
 
 
     def _prepare_rpms(self):
@@ -846,6 +847,11 @@ class CmdSubmit(CmdBase):
             return ''
         return None
 
+    def _get_var_for_VALGRIND(self, key):
+        if self._get_var('VALGRIND') is not None or self.options.valgrind:
+            return 'valgrind'
+        return ''
+
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
@@ -871,6 +877,7 @@ class CmdSubmit(CmdBase):
             'CONF_DHCP'         : 'dhclient',
             'CONF_DEBUG'        : 'RLIMIT_CORE,fatal-warnings',
             'RPM_LIST'          : _get_var_for_RPM_LIST,
+            'VALGRIND'          : _get_var_for_VALGRIND,
         }
     def _process_line_get(self, key, replacements):
         if key in replacements:
