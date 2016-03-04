@@ -1033,6 +1033,14 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, phase2_altsubject_match, phase2_altsubject_matches, "altsubject_match2", ';', FALSE, FALSE, error))
 		return FALSE;
 
+	/* Domain suffix match */
+	value = nm_setting_802_1x_get_domain_suffix_match (setting);
+	if (!add_string_val (self, value, "domain_suffix_match", FALSE, FALSE, error))
+		return FALSE;
+	value = nm_setting_802_1x_get_phase2_domain_suffix_match (setting);
+	if (!add_string_val (self, value, "domain_suffix_match2", FALSE, FALSE, error))
+		return FALSE;
+
 	/* Private key */
 	added = FALSE;
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
