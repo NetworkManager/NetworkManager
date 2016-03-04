@@ -1212,7 +1212,7 @@ free_devices (NMManager *manager, gboolean in_dispose)
 
 	if (all_devices && all_devices->len > 0)
 		devices = all_devices;
-	else if (devices && devices->len > 0)
+	else if (real_devices && real_devices->len > 0)
 		devices = real_devices;
 
 	if (real_devices && devices != real_devices) {
