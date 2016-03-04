@@ -77,6 +77,7 @@ EXTRA_DIST = \
 	ifcfg-test-ibft \
 	ifcfg-test-static-routes-legacy \
 	route-test-static-routes-legacy \
+	ifcfg-test-sit-ignore \
 	ifcfg-test-wired-static-routes \
 	route-test-wired-static-routes \
 	ifcfg-test-wired-static-routes-legacy \
