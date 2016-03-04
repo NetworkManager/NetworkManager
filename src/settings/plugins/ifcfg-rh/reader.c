@@ -4993,7 +4993,16 @@ connection_from_file_full (const char *filename,
 		type = svGetValue (parsed, "TYPE", FALSE);
 
 	if (!type) {
+		gs_free char *tmp = NULL;
 		char *device;
+
+		if ((tmp = svGetValue (parsed, "IPV6TUNNELIPV4", FALSE))) {
+			if (out_ignore_error)
+				*out_ignore_error = TRUE;
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Ignoring unsupported connection due to IPV6TUNNELIPV4");
+			goto done;
+		}
 
 		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {
@@ -5001,6 +5010,7 @@ connection_from_file_full (const char *filename,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
 			goto done;
 		}
+		g_assert (device[0]);
 
 		if (!strcmp (device, "lo")) {
 			if (out_ignore_error)
@@ -5018,8 +5028,51 @@ connection_from_file_full (const char *filename,
 				type = g_strdup (TYPE_VLAN);
 			else if (is_wifi_device (device, parsed))
 				type = g_strdup (TYPE_WIRELESS);
-			else
-				type = g_strdup (TYPE_ETHERNET);
+			else {
+				gs_free char *p_path = NULL;
+				char *p_device;
+				gsize i;
+
+				/* network-functions detects DEVICETYPE based on the ifcfg-* name and the existence
+				 * of a ifup script:
+				 *    [ -z "$DEVICETYPE" ] && DEVICETYPE=$(echo ${DEVICE} | sed "s/[0-9]*$//")
+				 * later...
+				 *    OTHERSCRIPT="/etc/sysconfig/network-scripts/ifup-${DEVICETYPE}"
+				 * */
+#define IFUP_PATH_PREFIX "/etc/sysconfig/network-scripts/ifup-"
+				i = strlen (device);
+				p_path = g_malloc (NM_STRLEN (IFUP_PATH_PREFIX) + i + 1);
+				p_device = &p_path[NM_STRLEN (IFUP_PATH_PREFIX)];
+				memcpy (p_device, device, i + 1);
+
+				/* strip trailing numbers */
+				while (i >= 1) {
+					i--;
+					if (p_device[i] < '0' || p_device[i] > '9')
+						break;
+					p_device[i] = '\0';
+				}
+
+				if (nm_streq (p_device, "eth"))
+					type = g_strdup (TYPE_ETHERNET);
+				else if (nm_streq (p_device, "wireless"))
+					type = g_strdup (TYPE_WIRELESS);
+				else if (p_device[0]) {
+					memcpy (p_path, IFUP_PATH_PREFIX, NM_STRLEN (IFUP_PATH_PREFIX));
+					if (access (p_path, X_OK) == 0) {
+						/* for all other types, this is not something we want to handle. */
+						if (out_ignore_error)
+							*out_ignore_error = TRUE;
+						g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+						             "Ignore script for unknown device type which has a matching %s script",
+						             p_path);
+						goto done;
+					}
+				}
+
+				if (!type)
+					type = g_strdup (TYPE_ETHERNET);
+			}
 		} else {
 			/* For the unit tests, there won't necessarily be any
 			 * adapters of the connection's type in the system so the

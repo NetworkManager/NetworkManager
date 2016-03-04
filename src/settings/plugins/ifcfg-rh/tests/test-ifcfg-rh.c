@@ -8735,6 +8735,20 @@ test_read_vlan_trailing_spaces (void)
 	g_object_unref (connection);
 }
 
+/*****************************************************************************/
+
+static void
+test_sit_read_ignore (void)
+{
+	gs_free_error GError *error = NULL;
+
+	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-sit-ignore",
+	                            NULL, TYPE_ETHERNET, &error);
+	nmtst_assert_error (error, 0, 0, "*Ignoring unsupported connection due to IPV6TUNNELIPV4*");
+}
+
+/*****************************************************************************/
+
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
@@ -8934,10 +8948,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/write-missing-ipv6", test_write_ethernet_missing_ipv6);
 	g_test_add_func (TPATH "write-dns-options", test_write_dns_options);
 
-	/* iSCSI / ibft */
 	g_test_add_func (TPATH "ibft/ignored", test_read_ibft_ignored);
 
-	/* Data Center Bridging (DCB) */
 	g_test_add_func (TPATH "dcb/read-basic", test_read_dcb_basic);
 	g_test_add_func (TPATH "dcb/write-basic", test_write_dcb_basic);
 	g_test_add_func (TPATH "dcb/default-app-priorities", test_read_dcb_default_app_priorities);
@@ -8953,7 +8965,6 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "fcoe/write-fabric", (gpointer) NM_SETTING_DCB_FCOE_MODE_FABRIC, test_write_fcoe_mode);
 	g_test_add_data_func (TPATH "fcoe/write-vn2vn", (gpointer) NM_SETTING_DCB_FCOE_MODE_VN2VN, test_write_fcoe_mode);
 
-	/* bonding */
 	g_test_add_func (TPATH "bond/read-master", test_read_bond_main);
 	g_test_add_func (TPATH "bond/read-slave", test_read_bond_slave);
 	g_test_add_func (TPATH "bond/read-slave-ib", test_read_bond_slave_ib);
@@ -8962,19 +8973,19 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "bond/write-slave-ib", test_write_bond_slave_ib);
 	g_test_add_func (TPATH "bond/bonding-opts-numeric-mode", test_read_bond_opts_mode_numeric);
 
-	/* bridging */
 	g_test_add_func (TPATH "bridge/read-master", test_read_bridge_main);
 	g_test_add_func (TPATH "bridge/write-master", test_write_bridge_main);
 	g_test_add_func (TPATH "bridge/read-component", test_read_bridge_component);
 	g_test_add_func (TPATH "bridge/write-component", test_write_bridge_component);
 	g_test_add_func (TPATH "bridge/read-missing-stp", test_read_bridge_missing_stp);
 
-	/* Team */
 	g_test_add_func (TPATH "team/read-master", test_read_team_master);
 	g_test_add_func (TPATH "team/write-master", test_write_team_master);
 	g_test_add_func (TPATH "team/read-port", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
+
+	g_test_add_func (TPATH "sit/read/ignore", test_sit_read_ignore);
 
 	/* Stuff we expect to fail for now */
 	g_test_add_func (TPATH "pppoe/write-wired", test_write_wired_pppoe);
