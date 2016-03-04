@@ -3560,9 +3560,6 @@ test_write_wired_static (void)
 	                        TEST_SCRATCH_DIR "/network-scripts/",
 	                        &testfile);
 
-	/* reread will be normalized, so we must normalize connection too. */
-	nm_connection_normalize (connection, NULL, NULL, NULL);
-
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	unlink (testfile);
 
