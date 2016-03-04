@@ -721,7 +721,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
-	NMConnection *connection;
+	NMSettingsConnection *connection;
 	guint64 timestamp = 0;
 	gboolean new_secrets = TRUE;
 
@@ -737,14 +737,14 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	connection = nm_act_request_get_applied_connection (req);
+	connection = nm_act_request_get_settings_connection (req);
 	g_assert (connection);
 
 	/* Ask for new secrets only if we've never activated this connection
 	 * before.  If we've connected before, don't bother the user with dialogs,
 	 * just retry or fail, and if we never connect the user can fix the
 	 * password somewhere else. */
-	if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp))
+	if (nm_settings_connection_get_timestamp (connection, &timestamp))
 		new_secrets = !timestamp;
 
 	if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE)
