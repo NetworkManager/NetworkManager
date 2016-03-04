@@ -582,6 +582,13 @@ write_8021x_setting (NMConnection *connection,
 		svSetValue (ifcfg, "IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES", str->str, FALSE);
 	g_string_free (str, TRUE);
 
+	svSetValue (ifcfg, "IEEE_8021X_DOMAIN_SUFFIX_MATCH",
+	            nm_setting_802_1x_get_domain_suffix_match (s_8021x),
+	            FALSE);
+	svSetValue (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH",
+	            nm_setting_802_1x_get_phase2_domain_suffix_match (s_8021x),
+	            FALSE);
+
 	success = write_8021x_certs (s_8021x, FALSE, ifcfg, error);
 	if (success) {
 		/* phase2/inner certs */

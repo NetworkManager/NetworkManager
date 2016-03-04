@@ -3415,6 +3415,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Since: 1.2
 	 **/
+	/* ---ifcfg-rh---
+	 * property: domain-suffix-match
+	 * description: Suffix to match domain of server certificate against.
+	 * variable: IEEE_8021X_DOMAIN_SUFFIX_MATCH(+)
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DOMAIN_SUFFIX_MATCH,
 		 g_param_spec_string (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH, "", "",
@@ -3672,6 +3678,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Since: 1.2
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-domain-suffix-match
+	 * description: Suffix to match domain of server certificate for phase 2 against.
+	 * variable: IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH(+)
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_DOMAIN_SUFFIX_MATCH,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, "", "",

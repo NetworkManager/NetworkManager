@@ -3076,6 +3076,13 @@ fill_8021x (shvarFile *ifcfg,
 	read_8021x_list_value (ifcfg, "IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES",
 	                       s_8021x, NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 
+	value = svGetValue (ifcfg, "IEEE_8021X_DOMAIN_SUFFIX_MATCH", FALSE);
+	g_object_set (s_8021x, NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH, value, NULL);
+	g_free (value);
+	value = svGetValue (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH", FALSE);
+	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, value, NULL);
+	g_free (value);
+
 	if (list)
 		g_strfreev (list);
 	if (keys)
