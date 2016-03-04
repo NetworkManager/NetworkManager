@@ -76,12 +76,15 @@
 
 #include "nmdbus-settings.h"
 
-#define LOG(level, ...) \
-	G_STMT_START { \
-		nm_log ((level), LOGD_CORE, \
-		        "settings: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__) \
-		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-	} G_STMT_END
+#define _NMLOG_DOMAIN         LOGD_SETTINGS
+#define _NMLOG_PREFIX_NAME    "settings"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
 
 /* LINKER CRACKROCK */
 #define EXPORT(sym) void * __export_##sym = &sym;
@@ -652,8 +655,8 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 
 	path = g_object_get_data (G_OBJECT (plugin), PLUGIN_MODULE_PATH);
 
-	nm_log_info (LOGD_SETTINGS, "Loaded settings plugin %s: %s%s%s%s", pname, pinfo,
-	             NM_PRINT_FMT_QUOTED (path, " (", path, ")", ""));
+	_LOGI ("loaded plugin %s: %s%s%s%s", pname, pinfo,
+	       NM_PRINT_FMT_QUOTED (path, " (", path, ")", ""));
 	g_free (pname);
 	g_free (pinfo);
 
@@ -719,12 +722,12 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		GObject *obj;
 
 		if (!*pname || strchr (pname, '/')) {
-			LOG (LOGL_WARN, "ignore invalid plugin \"%s\"", pname);
+			_LOGW ("ignore invalid plugin \"%s\"", pname);
 			continue;
 		}
 
 		if (!strcmp (pname, "ifcfg-suse")) {
-			LOG (LOGL_WARN, "skipping deprecated plugin ifcfg-suse");
+			_LOGW ("skipping deprecated plugin ifcfg-suse");
 			continue;
 		}
 
@@ -767,25 +770,25 @@ load_plugin:
 
 			if (stat (path, &st) != 0) {
 				errsv = errno;
-				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
+				_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
 				goto next;
 			}
 			if (!S_ISREG (st.st_mode)) {
-				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': not a file", pname, path);
+				_LOGW ("could not load plugin '%s' from file '%s': not a file", pname, path);
 				goto next;
 			}
 			if (st.st_uid != 0) {
-				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+				_LOGW ("could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
 				goto next;
 			}
 			if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
+				_LOGW ("could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
 				goto next;
 			}
 
 			plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 			if (!plugin) {
-				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s",
+				_LOGW ("could not load plugin '%s' from file '%s': %s",
 				     pname, path, g_module_error ());
 				goto next;
 			}
@@ -985,8 +988,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	}
 
 	if (!nm_connection_normalize (NM_CONNECTION (connection), NULL, NULL, &error)) {
-		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: %s",
-		             error->message);
+		_LOGW ("plugin provided invalid connection: %s", error->message);
 		g_error_free (error);
 		return;
 	}
@@ -1003,8 +1005,8 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		 * without the individual plugins being aware. Don't handle that at all, just
 		 * error out. That should not happen unless the admin misconfigured the system
 		 * to create conflicting connections. */
-		nm_log_warn (LOGD_SETTINGS, "plugin provided duplicate connection with UUID %s",
-		             nm_settings_connection_get_uuid (connection));
+		_LOGW ("plugin provided duplicate connection with UUID %s",
+		       nm_settings_connection_get_uuid (connection));
 		return;
 	}
 
@@ -1117,10 +1119,10 @@ nm_settings_add_connection (NMSettings *self,
 			claim_connection (self, added);
 			return added;
 		}
-		nm_log_dbg (LOGD_SETTINGS, "Failed to add %s/'%s': %s",
-		            nm_connection_get_uuid (connection),
-		            nm_connection_get_id (connection),
-		            add_error->message);
+		_LOGD ("Failed to add %s/'%s': %s",
+		       nm_connection_get_uuid (connection),
+		       nm_connection_get_id (connection),
+		       add_error->message);
 		g_clear_error (&add_error);
 	}
 
@@ -1492,7 +1494,7 @@ impl_settings_load_connections (NMSettings *self,
 
 		if (!iter) {
 			if (!g_path_is_absolute (filenames[i]))
-				nm_log_warn (LOGD_SETTINGS, "Connection filename '%s' is not an absolute path", filenames[i]);
+				_LOGW ("connection filename '%s' is not an absolute path", filenames[i]);
 			g_ptr_array_add (failures, (char *) filenames[i]);
 		}
 	}
@@ -1549,7 +1551,7 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 		                              NULL,
 		                              &error);
 		if (error)
-			nm_log_warn (LOGD_SETTINGS, "Could not set hostname: %s", error->message);
+			_LOGW ("could not set hostname: %s", error->message);
 
 		return !error;
 	}
@@ -1595,7 +1597,7 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 	g_free (hostname_eol);
 
 	if (!ret) {
-		nm_log_warn (LOGD_SETTINGS, "Could not save hostname to %s: %s", file, error->message);
+		_LOGW ("could not save hostname to %s: %s", file, error->message);
 		return FALSE;
 	}
 
@@ -1721,9 +1723,9 @@ hostname_maybe_changed (NMSettings *settings)
 	    || (!new_hostname && priv->hostname.value)
 	    || (priv->hostname.value && new_hostname && strcmp (priv->hostname.value, new_hostname))) {
 
-		nm_log_info (LOGD_SETTINGS, "hostname changed from %s%s%s to %s%s%s",
-		             NM_PRINT_FMT_QUOTED (priv->hostname.value, "\"", priv->hostname.value, "\"", "(none)"),
-		             NM_PRINT_FMT_QUOTED (new_hostname, "\"", new_hostname, "\"", "(none)"));
+		_LOGI ("hostname changed from %s%s%s to %s%s%s",
+		       NM_PRINT_FMT_QUOTED (priv->hostname.value, "\"", priv->hostname.value, "\"", "(none)"),
+		       NM_PRINT_FMT_QUOTED (new_hostname, "\"", new_hostname, "\"", "(none)"));
 		g_free (priv->hostname.value);
 		priv->hostname.value = new_hostname;
 		g_object_notify (G_OBJECT (settings), NM_SETTINGS_HOSTNAME);
@@ -1894,9 +1896,9 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	g_object_unref (connection);
 
 	if (!added) {
-		nm_log_warn (LOGD_SETTINGS, "(%s) couldn't create default wired connection: %s",
-		             nm_device_get_iface (device),
-		             error->message);
+		_LOGW ("(%s) couldn't create default wired connection: %s",
+		       nm_device_get_iface (device),
+		       error->message);
 		g_clear_error (&error);
 		return;
 	}
@@ -1909,9 +1911,9 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (default_wired_connection_removed_cb), self);
 
-	nm_log_info (LOGD_SETTINGS, "(%s): created default wired connection '%s'",
-	             nm_device_get_iface (device),
-	             nm_settings_connection_get_id (added));
+	_LOGI ("(%s): created default wired connection '%s'",
+	       nm_device_get_iface (device),
+	       nm_settings_connection_get_id (added));
 }
 
 void
@@ -2080,9 +2082,9 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 	hostname = g_variant_get_string (v_hostname, NULL);
 
 	if (g_strcmp0 (priv->hostname.value, hostname) != 0) {
-		nm_log_info (LOGD_SETTINGS, "hostname changed from %s%s%s to %s%s%s",
-		             NM_PRINT_FMT_QUOTED (priv->hostname.value, "\"", priv->hostname.value, "\"", "(none)"),
-		             NM_PRINT_FMT_QUOTED (hostname, "\"", hostname, "\"", "(none)"));
+		_LOGI ("hostname changed from %s%s%s to %s%s%s",
+		       NM_PRINT_FMT_QUOTED (priv->hostname.value, "\"", priv->hostname.value, "\"", "(none)"),
+		       NM_PRINT_FMT_QUOTED (hostname, "\"", hostname, "\"", "(none)"));
 		g_free (priv->hostname.value);
 		priv->hostname.value = g_strdup (hostname);
 		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
@@ -2170,19 +2172,19 @@ nm_settings_start (NMSettings *self, GError **error)
 	if (proxy) {
 		variant = g_dbus_proxy_get_cached_property (proxy, "StaticHostname");
 		if (variant) {
-			nm_log_info (LOGD_SETTINGS, "hostname: using hostnamed");
+			_LOGI ("hostname: using hostnamed");
 			priv->hostname.hostnamed_proxy = proxy;
 			g_signal_connect (proxy, "g-properties-changed",
 			                  G_CALLBACK (hostnamed_properties_changed), self);
 			hostnamed_properties_changed (proxy, NULL, NULL, self);
 			g_variant_unref (variant);
 		} else {
-			nm_log_info (LOGD_SETTINGS, "hostname: couldn't get property from hostnamed");
+			_LOGI ("hostname: couldn't get property from hostnamed");
 			g_object_unref (proxy);
 		}
 	} else {
-		nm_log_info (LOGD_SETTINGS, "hostname: hostnamed not used as proxy creation failed with: %s",
-		             local_error->message);
+		_LOGI ("hostname: hostnamed not used as proxy creation failed with: %s",
+		       local_error->message);
 		g_clear_error (&local_error);
 	}
 

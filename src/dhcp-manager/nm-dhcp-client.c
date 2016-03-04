@@ -35,6 +35,8 @@
 #include "nm-dhcp-utils.h"
 #include "nm-platform.h"
 
+#include "nm-dhcp-client-logging.h"
+
 typedef struct {
 	char *       iface;
 	int          ifindex;
@@ -204,7 +206,7 @@ state_to_string (NMDhcpState state)
 }
 
 static NMDhcpState
-reason_to_state (const char *iface, const char *reason)
+reason_to_state (NMDhcpClient *self, const char *iface, const char *reason)
 {
 	if (g_ascii_strcasecmp (reason, "bound") == 0 ||
 	    g_ascii_strcasecmp (reason, "bound6") == 0 ||
@@ -226,7 +228,7 @@ reason_to_state (const char *iface, const char *reason)
 	         g_ascii_strcasecmp (reason, "abend") == 0)
 		return NM_DHCP_STATE_FAIL;
 
-	nm_log_dbg (LOGD_DHCP, "(%s): unmapped DHCP state '%s'", iface, reason);
+	_LOGD ("unmapped DHCP state '%s'", reason);
 	return NM_DHCP_STATE_UNKNOWN;
 }
 
@@ -319,13 +321,10 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 			event_id = g_strdup_printf ("%s|%s", iaid, start);
 	}
 
-	nm_log_info (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
-	             "(%s): DHCPv%c state changed %s -> %s%s%s%s",
-	             priv->iface,
-	             priv->ipv6 ? '6' : '4',
-	             state_to_string (priv->state),
-	             state_to_string (new_state),
-	             NM_PRINT_FMT_QUOTED (event_id, ", event ID=\"", event_id, "\"", ""));
+	_LOGI ("state changed %s -> %s%s%s%s",
+	       state_to_string (priv->state),
+	       state_to_string (new_state),
+	       NM_PRINT_FMT_QUOTED (event_id, ", event ID=\"", event_id, "\"", ""));
 
 	priv->state = new_state;
 	g_signal_emit (G_OBJECT (self),
@@ -343,10 +342,7 @@ transaction_timeout (gpointer user_data)
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	priv->timeout_id = 0;
-	nm_log_warn (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
-	             "(%s): DHCPv%c request timed out.",
-	             priv->iface,
-	             priv->ipv6 ? '6' : '4');
+	_LOGW ("request timed out");
 	nm_dhcp_client_set_state (self, NM_DHCP_STATE_TIMEOUT, NULL, NULL);
 	return G_SOURCE_REMOVE;
 }
@@ -357,29 +353,20 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	NMDhcpClient *self = NM_DHCP_CLIENT (user_data);
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	NMDhcpState new_state;
-	guint64 log_domain;
-	guint ip_ver;
 
 	g_return_if_fail (priv->watch_id);
 	priv->watch_id = 0;
 
-	log_domain = priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
-	ip_ver = priv->ipv6 ? 6 : 4;
-
 	if (WIFEXITED (status))
-		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d exited with status %d",
-		             priv->iface, ip_ver, pid, WEXITSTATUS (status));
+		_LOGI ("client pid %d exited with status %d", pid, WEXITSTATUS (status));
 	else if (WIFSIGNALED (status))
-		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d killed by signal %d",
-		             priv->iface, ip_ver, pid, WTERMSIG (status));
+		_LOGI ("client pid %d killed by signal %d", pid, WTERMSIG (status));
 	else if (WIFSTOPPED(status))
-		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d stopped by signal %d",
-		             priv->iface, ip_ver, pid, WSTOPSIG (status));
+		_LOGI ("client pid %d stopped by signal %d", pid, WSTOPSIG (status));
 	else if (WIFCONTINUED (status))
-		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d resumed (by SIGCONT)",
-		             priv->iface, ip_ver, pid);
+		_LOGI ("client pid %d resumed (by SIGCONT)", pid);
 	else
-		nm_log_warn (LOGD_DHCP, "DHCP client died abnormally");
+		_LOGW ("client died abnormally");
 
 	if (!WIFEXITED (status))
 		new_state = NM_DHCP_STATE_FAIL;
@@ -434,8 +421,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	g_return_val_if_fail (priv->ipv6 == FALSE, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
-	             priv->iface, priv->timeout);
+	_LOGI ("activation: beginning transaction (timeout in %d seconds)", priv->timeout);
 
 	nm_dhcp_client_set_client_id (self, dhcp_client_id ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id) : NULL);
 
@@ -506,7 +492,7 @@ generate_duid_from_machine_id (void)
 	}
 
 	if (!success) {
-		nm_log_warn (LOGD_DHCP6, "Failed to read " SYSCONFDIR "/machine-id "
+		nm_log_warn (LOGD_DHCP6, "dhcp6: failed to read " SYSCONFDIR "/machine-id "
 		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
 		             "DHCPv6 DUID; creating non-persistent random DUID.");
 
@@ -546,7 +532,7 @@ get_duid (NMDhcpClient *self)
 
 		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
 			str = nm_dhcp_utils_duid_to_string (duid);
-			nm_log_dbg (LOGD_DHCP6, "Generated DUID %s", str);
+			_LOGD ("generated DUID %s", str);
 			g_free (str);
 		}
 	}
@@ -583,9 +569,9 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	if (!priv->duid)
 		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP)) {
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
 		str = nm_dhcp_utils_duid_to_string (priv->duid);
-		nm_log_dbg (LOGD_DHCP, "(%s): DHCPv6 DUID is '%s'", priv->iface, str);
+		_LOGD ("DUID is '%s'", str);
 		g_free (str);
 	}
 
@@ -594,8 +580,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	priv->info_only = info_only;
 
-	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
-	             priv->iface, priv->timeout);
+	_LOGI ("activation: beginning transaction (timeout in %d seconds)",
+	       priv->timeout);
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
@@ -645,8 +631,10 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 		}
 	}
 
-	if (remove (pid_file) == -1)
-		nm_log_dbg (LOGD_DHCP, "Could not remove dhcp pid file \"%s\": %d (%s)", pid_file, errno, g_strerror (errno));
+	if (remove (pid_file) == -1) {
+		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %d (%s)",
+		            pid_file, errno, g_strerror (errno));
+	}
 
 	g_free (proc_path);
 	g_free (pid_contents);
@@ -666,11 +654,10 @@ nm_dhcp_client_stop (NMDhcpClient *self, gboolean release)
 	/* Kill the DHCP client */
 	old_pid = priv->pid;
 	NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release, priv->duid);
-	if (old_pid > 0) {
-		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction, DHCP client pid %d",
-		             priv->iface, old_pid);
-	} else
-		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction", priv->iface);
+	if (old_pid > 0)
+		_LOGI ("canceled DHCP transaction, DHCP client pid %d", old_pid);
+	else
+		_LOGI ("canceled DHCP transaction");
 	g_assert (priv->pid == -1);
 
 	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, NULL, NULL);
@@ -710,7 +697,7 @@ bytearray_variant_to_string (GVariant *value, const char *key)
 
 	converted = str->str;
 	if (!g_utf8_validate (converted, -1, NULL))
-		nm_log_warn (LOGD_DHCP, "DHCP option '%s' couldn't be converted to UTF-8", key);
+		nm_log_warn (LOGD_DHCP, "dhcp: option '%s' couldn't be converted to UTF-8", key);
 	g_string_free (str, FALSE);
 	return converted;
 }
@@ -782,9 +769,9 @@ nm_dhcp_client_handle_event (gpointer unused,
 		return FALSE;
 
 	old_state = priv->state;
-	new_state = reason_to_state (priv->iface, reason);
-	nm_log_dbg (LOGD_DHCP, "(%s): DHCP reason '%s' -> state '%s'",
-	            iface, reason, state_to_string (new_state));
+	new_state = reason_to_state (self, priv->iface, reason);
+	_LOGD ("DHCP reason '%s' -> state '%s'",
+	       reason, state_to_string (new_state));
 
 	if (new_state == NM_DHCP_STATE_BOUND) {
 		GVariantIter iter;
@@ -817,7 +804,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 
 			/* Fail if no valid IP config was received */
 			if (ip_config == NULL) {
-				nm_log_warn (LOGD_DHCP, "(%s): DHCP client bound but IP config not received", iface);
+				_LOGW ("client bound but IP config not received");
 				new_state = NM_DHCP_STATE_FAIL;
 				g_clear_pointer (&str_options, g_hash_table_unref);
 			}

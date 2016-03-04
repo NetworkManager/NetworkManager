@@ -41,6 +41,7 @@
 #include "nm-dhcp-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
+#include "nm-dhcp-client-logging.h"
 
 G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
@@ -148,7 +149,8 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 }
 
 static gboolean
-merge_dhclient_config (const char *iface,
+merge_dhclient_config (NMDhcpDhclient *self,
+                       const char *iface,
                        const char *conf_file,
                        gboolean is_ip6,
                        GBytes *client_id,
@@ -169,8 +171,8 @@ merge_dhclient_config (const char *iface,
 		GError *read_error = NULL;
 
 		if (!g_file_get_contents (orig_path, &orig, NULL, &read_error)) {
-			nm_log_warn (LOGD_DHCP, "(%s): error reading dhclient%s configuration %s: %s",
-			             iface, is_ip6 ? "6" : "", orig_path, read_error->message);
+			_LOGW ("error reading dhclient configuration %s: %s",
+			       orig_path, read_error->message);
 			g_error_free (read_error);
 		}
 	}
@@ -185,7 +187,7 @@ merge_dhclient_config (const char *iface,
 }
 
 static char *
-find_existing_config (const char *iface, const char *uuid, gboolean ipv6)
+find_existing_config (NMDhcpDhclient *self, const char *iface, const char *uuid, gboolean ipv6)
 {
 	char *path;
 
@@ -195,20 +197,20 @@ find_existing_config (const char *iface, const char *uuid, gboolean ipv6)
 	 */
 	if (uuid) {
 		path = g_strdup_printf (NMCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", uuid);
-		nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+		_LOGD ("looking for existing config %s", path);
 		if (g_file_test (path, G_FILE_TEST_EXISTS))
 			return path;
 		g_free (path);
 	}
 
 	path = g_strdup_printf (NMCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
-	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+	_LOGD ("looking for existing config %s", path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (NMCONFDIR "/dhclient%s.conf", ipv6 ? "6" : "");
-	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+	_LOGD ("looking for existing config %s", path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
@@ -222,25 +224,25 @@ find_existing_config (const char *iface, const char *uuid, gboolean ipv6)
 	 * (including Fedora) don't even provide a default configuration file.
 	 */
 	path = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
-	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+	_LOGD ("looking for existing config %s", path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (SYSCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
-	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+	_LOGD ("looking for existing config %s", path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient%s.conf", ipv6 ? "6" : "");
-	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+	_LOGD ("looking for existing config %s", path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (SYSCONFDIR "/dhclient%s.conf", ipv6 ? "6" : "");
-	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
+	_LOGD ("looking for existing config %s", path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
@@ -256,7 +258,8 @@ find_existing_config (const char *iface, const char *uuid, gboolean ipv6)
  * config file along with the NM options.
  */
 static char *
-create_dhclient_config (const char *iface,
+create_dhclient_config (NMDhcpDhclient *self,
+                        const char *iface,
                         gboolean is_ip6,
                         const char *uuid,
                         GBytes *client_id,
@@ -272,26 +275,19 @@ create_dhclient_config (const char *iface,
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	new = g_strdup_printf (NMSTATEDIR "/dhclient%s-%s.conf", is_ip6 ? "6" : "", iface);
-	nm_log_dbg (is_ip6 ? LOGD_DHCP6 : LOGD_DHCP4,
-	            "(%s): creating composite dhclient config %s",
-	            iface, new);
+	_LOGD ("creating composite dhclient config %s", new);
 
-	orig = find_existing_config (iface, uuid, is_ip6);
-	if (orig) {
-		nm_log_dbg (is_ip6 ? LOGD_DHCP6 : LOGD_DHCP4,
-		            "(%s): merging existing dhclient config %s",
-		            iface, orig);
-	} else {
-		nm_log_dbg (is_ip6 ? LOGD_DHCP6 : LOGD_DHCP4,
-		            "(%s): no existing dhclient configuration to merge",
-		            iface);
-	}
+	orig = find_existing_config (self, iface, uuid, is_ip6);
+	if (orig)
+		_LOGD ("merging existing dhclient config %s", orig);
+	else
+		_LOGD ("no existing dhclient configuration to merge");
 
 	error = NULL;
-	success = merge_dhclient_config (iface, new, is_ip6, client_id, dhcp_anycast_addr, hostname, fqdn, orig, out_new_client_id, &error);
+	success = merge_dhclient_config (self, iface, new, is_ip6, client_id, dhcp_anycast_addr,
+			                         hostname, fqdn, orig, out_new_client_id, &error);
 	if (!success) {
-		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient%s configuration: %s",
-		             iface, is_ip6 ? "6" : "", error->message);
+		_LOGW ("error creating dhclient configuration: %s", error->message);
 		g_error_free (error);
 	}
 
@@ -307,14 +303,14 @@ dhclient_start (NMDhcpClient *client,
                 gboolean release,
                 pid_t *out_pid)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	GPtrArray *argv = NULL;
 	pid_t pid;
 	GError *error = NULL;
 	const char *iface, *uuid, *system_bus_address, *dhclient_path = NULL;
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
 	gboolean ipv6, success;
-	guint log_domain;
 	char *escaped, *preferred_leasefile_path = NULL;
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
@@ -323,11 +319,9 @@ dhclient_start (NMDhcpClient *client,
 	uuid = nm_dhcp_client_get_uuid (client);
 	ipv6 = nm_dhcp_client_get_ipv6 (client);
 
-	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
-
 	dhclient_path = nm_dhcp_dhclient_get_path ();
 	if (!dhclient_path) {
-		nm_log_warn (log_domain, "dhclient could not be found");
+		_LOGW ("dhclient could not be found");
 		return FALSE;
 	}
 
@@ -362,9 +356,9 @@ dhclient_start (NMDhcpClient *client,
 			priv->lease_file = g_strdup (g_file_get_path (dst));
 		} else {
 			/* Failure; just use the existing leasefile */
-			nm_log_warn (log_domain, "Failed to copy leasefile %s to %s: %s",
-			             g_file_get_path (src), g_file_get_path (dst),
-			             error->message);
+			_LOGW ("failed to copy leasefile %s to %s: %s",
+			       g_file_get_path (src), g_file_get_path (dst),
+			       error->message);
 			g_clear_error (&error);
 		}
 		g_object_unref (src);
@@ -378,9 +372,7 @@ dhclient_start (NMDhcpClient *client,
 		success = nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error);
 		g_free (escaped);
 		if (!success) {
-			nm_log_warn (log_domain, "(%s): failed to save DUID to %s: %s.",
-			             iface, priv->lease_file,
-			             error->message);
+			_LOGW ("failed to save DUID to %s: %s", priv->lease_file, error->message);
 			g_free (pid_file);
 			return FALSE;
 		}
@@ -436,19 +428,19 @@ dhclient_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, NULL);
 
 	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
-	nm_log_dbg (log_domain, "running: %s", cmd_str);
+	_LOGD ("running: %s", cmd_str);
 	g_free (cmd_str);
 
 	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
 	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 	                   nm_utils_setpgid, NULL, &pid, &error)) {
 		g_assert (pid > 0);
-		nm_log_info (log_domain, "dhclient started with pid %d", pid);
+		_LOGI ("dhclient started with pid %d", pid);
 		if (release == FALSE)
 			nm_dhcp_client_watch_child (client, pid);
 		priv->pid_file = pid_file;
 	} else {
-		nm_log_warn (log_domain, "dhclient failed to start: '%s'", error->message);
+		_LOGW ("dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
 		g_free (pid_file);
 	}
@@ -464,7 +456,8 @@ dhclient_start (NMDhcpClient *client,
 static gboolean
 ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last_ip4_address)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	GBytes *client_id;
 	gs_unref_bytes GBytes *new_client_id = NULL;
 	const char *iface, *uuid, *hostname, *fqdn;
@@ -476,14 +469,14 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	hostname = nm_dhcp_client_get_hostname (client);
 	fqdn = nm_dhcp_client_get_fqdn (client);
 
-	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, client_id, dhcp_anycast_addr,
+	priv->conf_file = create_dhclient_config (self, iface, FALSE, uuid, client_id, dhcp_anycast_addr,
 	                                          hostname, fqdn, &new_client_id);
 	if (priv->conf_file) {
 		if (new_client_id)
 			nm_dhcp_client_set_client_id (client, new_client_id);
 		success = dhclient_start (client, NULL, NULL, FALSE, NULL);
 	} else
-		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
+		_LOGW ("error creating dhclient configuration file");
 
 	return success;
 }
@@ -496,16 +489,17 @@ ip6_start (NMDhcpClient *client,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	const char *iface, *uuid, *hostname;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 	hostname = nm_dhcp_client_get_hostname (client);
 
-	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, NULL, NULL);
+	priv->conf_file = create_dhclient_config (self, iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, NULL, NULL);
 	if (!priv->conf_file) {
-		nm_log_warn (LOGD_DHCP6, "(%s): error creating dhclient6 configuration file.", iface);
+		_LOGW ("error creating dhclient configuration file");
 		return FALSE;
 	}
 
@@ -515,17 +509,18 @@ ip6_start (NMDhcpClient *client,
 static void
 stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 
 	/* Chain up to parent */
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
 
 	if (priv->conf_file)
 		if (remove (priv->conf_file) == -1)
-			nm_log_dbg (LOGD_DHCP, "Could not remove dhcp config file \"%s\": %d (%s)", priv->conf_file, errno, g_strerror (errno));
+			_LOGD ("could not remove dhcp config file \"%s\": %d (%s)", priv->conf_file, errno, g_strerror (errno));
 	if (priv->pid_file) {
 		if (remove (priv->pid_file) == -1)
-			nm_log_dbg (LOGD_DHCP, "Could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
+			_LOGD ("could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
 		g_free (priv->pid_file);
 		priv->pid_file = NULL;
 	}
@@ -561,7 +556,8 @@ state_changed (NMDhcpClient *client,
 static GByteArray *
 get_duid (NMDhcpClient *client)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	GByteArray *duid = NULL;
 	char *leasefile;
 	GError *error = NULL;
@@ -572,12 +568,12 @@ get_duid (NMDhcpClient *client)
 	                                    TRUE,
 	                                    NULL);
 	if (leasefile) {
-		nm_log_dbg (LOGD_DHCP, "Looking for DHCPv6 DUID in '%s'.", leasefile);
+		_LOGD ("looking for DUID in '%s'", leasefile);
 		duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
 
 		if (error) {
-			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': %s",
-			             leasefile, error->message);
+			_LOGW ("failed to read leasefile '%s': %s",
+			       leasefile, error->message);
 			g_clear_error (&error);
 		}
 		g_free (leasefile);
@@ -585,12 +581,12 @@ get_duid (NMDhcpClient *client)
 
 	if (!duid && priv->def_leasefile) {
 		/* Otherwise read the default machine-wide DUID */
-		nm_log_dbg (LOGD_DHCP, "Looking for default DHCPv6 DUID in '%s'.", priv->def_leasefile);
+		_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
 		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
 		if (error) {
-			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': %s",
-			             priv->def_leasefile,
-			             error->message);
+			_LOGW ("failed to read leasefile '%s': %s",
+			        priv->def_leasefile,
+			        error->message);
 			g_clear_error (&error);
 		}
 	}
