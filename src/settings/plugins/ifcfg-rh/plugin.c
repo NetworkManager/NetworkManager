@@ -207,8 +207,10 @@ update_connection (SettingsPluginIfcfg *self,
 		    && !protect_existing_connection
 		    && (!protected_connections || !g_hash_table_contains (protected_connections, connection)))
 			remove_connection (self, connection);
-		if (!source && !ignore_error)
-			_LOGW ("loading \"%s\" fails: %s", full_path, local ? local->message : "(unknown reason)");
+		if (!source) {
+			_NMLOG (ignore_error ? LOGL_DEBUG : LOGL_WARN,
+			        "loading \"%s\" fails: %s", full_path, local ? local->message : "(unknown reason)");
+		}
 		g_propagate_error (error, local);
 		return NULL;
 	}
