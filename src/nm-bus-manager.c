@@ -387,7 +387,7 @@ _bus_get_unix_pid (NMBusManager *self,
                    GError **error)
 {
 	guint32 unix_pid = G_MAXUINT32;
-	GVariant *ret;
+	gs_unref_variant GVariant *ret = NULL;
 
 	ret = _nm_dbus_proxy_call_sync (NM_BUS_MANAGER_GET_PRIVATE (self)->proxy,
 	                                "GetConnectionUnixProcessID",
@@ -411,7 +411,7 @@ _bus_get_unix_user (NMBusManager *self,
                     GError **error)
 {
 	guint32 unix_uid = G_MAXUINT32;
-	GVariant *ret;
+	gs_unref_variant GVariant *ret = NULL;
 
 	ret = _nm_dbus_proxy_call_sync (NM_BUS_MANAGER_GET_PRIVATE (self)->proxy,
 	                                "GetConnectionUnixUser",
@@ -769,7 +769,7 @@ gboolean
 nm_bus_manager_start_service (NMBusManager *self)
 {
 	NMBusManagerPrivate *priv;
-	GVariant *ret;
+	gs_unref_variant GVariant *ret = NULL;
 	int result;
 	GError *err = NULL;
 
