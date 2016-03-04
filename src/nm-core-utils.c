@@ -454,10 +454,11 @@ nm_utils_modprobe (GError **error, gboolean suppress_error_logging, const char *
 		nm_log (llevel, LOGD_CORE, "modprobe: '%s' failed: %s", ARGV_TO_STR (argv), local->message);
 		g_propagate_error (error, local);
 		return -1;
-	} else if (exit_status != 0)
+	} else if (exit_status != 0) {
 		nm_log (llevel, LOGD_CORE, "modprobe: '%s' exited with error %d%s%s%s%s%s%s", ARGV_TO_STR (argv), exit_status,
 		        std_out&&*std_out ? " (" : "", std_out&&*std_out ? _trunk_first_line (std_out) : "", std_out&&*std_out ? ")" : "",
 		        std_err&&*std_err ? " (" : "", std_err&&*std_err ? _trunk_first_line (std_err) : "", std_err&&*std_err ? ")" : "");
+	}
 
 	return exit_status;
 }

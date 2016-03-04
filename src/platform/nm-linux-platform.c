@@ -3925,7 +3925,7 @@ link_add (NMPlatform *platform,
 		 * bond0 automatically.
 		 */
 		if (!g_file_test ("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
-			nm_utils_modprobe (NULL, TRUE, "bonding", "max_bonds=0", NULL);
+			(void) nm_utils_modprobe (NULL, TRUE, "bonding", "max_bonds=0", NULL);
 	}
 
 	_LOGD ("link: add link '%s' of type '%s' (%d)",

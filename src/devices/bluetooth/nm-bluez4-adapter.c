@@ -203,7 +203,7 @@ get_properties_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 
 	properties = g_variant_get_child_value (ret, 0);
 
-	g_variant_lookup (properties, "Address", "s", &priv->address);
+	(void) g_variant_lookup (properties, "Address", "s", &priv->address);
 	if (g_variant_lookup (properties, "Devices", "^ao", &devices)) {
 		for (i = 0; devices[i]; i++)
 			device_created (priv->proxy, devices[i], self);
