@@ -458,6 +458,11 @@ cp ORIG-docs/libnm-glib/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-glib/
 cp ORIG-docs/libnm-util/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-util/
 %endif
 
+%if 0%{?__debug_package}
+mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
+cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
+%endif
+
 
 %check
 %if %{with test}
