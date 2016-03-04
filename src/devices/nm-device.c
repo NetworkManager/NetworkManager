@@ -9838,11 +9838,14 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 gboolean
 nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean assert_is_pending)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	GSList *iter, *next;
 	guint count = 0;
 
+	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (action, FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	for (iter = priv->pending_actions; iter; iter = next) {
 		next = iter->next;
