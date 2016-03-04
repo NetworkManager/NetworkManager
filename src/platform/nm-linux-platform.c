@@ -5853,22 +5853,22 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	if (g_udev_device_get_property (udev_device, "IFINDEX"))
-		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
-	else {
-		_LOGW ("(%s): udev-add: failed to get device's ifindex", ifname);
+	if (!g_udev_device_get_property (udev_device, "IFINDEX")) {
+		_LOGW ("udev-add[%s]failed to get device's ifindex", ifname);
 		return;
 	}
+	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	if (ifindex <= 0) {
-		_LOGW ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
+		_LOGW ("udev-add[%s]: retrieved invalid IFINDEX=%d", ifname, ifindex);
 		return;
 	}
 
 	if (!g_udev_device_get_sysfs_path (udev_device)) {
-		_LOGD ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
+		_LOGD ("udev-add[%s,%d]: couldn't determine device path; ignoring...", ifname, ifindex);
 		return;
 	}
 
+	_LOGT ("udev-add[%s,%d]: device added", ifname, ifindex);
 	cache_update_link_udev (platform, ifindex, udev_device);
 }
 
