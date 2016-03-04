@@ -5937,15 +5937,21 @@ static void
 nm_linux_platform_init (NMLinuxPlatform *self)
 {
 	NMLinuxPlatformPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate);
+	gboolean use_udev;
+
+	use_udev = access ("/sys", W_OK) == 0;
 
 	self->priv = priv;
 
 	priv->nlh_seq_next = 1;
-	priv->cache = nmp_cache_new ();
+	priv->cache = nmp_cache_new (use_udev);
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+
+	if (use_udev)
+		priv->udev_client = g_udev_client_new ((const char *[]) { "net", NULL });
 }
 
 static void
@@ -5953,14 +5959,12 @@ constructed (GObject *_object)
 {
 	NMPlatform *platform = NM_PLATFORM (_object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const char *udev_subsys[] = { "net", NULL };
 	int channel_flags;
 	gboolean status;
 	int nle;
-	GUdevEnumerator *enumerator;
-	GList *devices, *iter;
 
-	_LOGD ("create");
+	_LOGD ("create (%s udev)",
+	       nmp_cache_use_udev_get (priv->cache) ? "use" : "no");
 
 	priv->nlh = nl_socket_alloc ();
 	g_assert (priv->nlh);
@@ -5992,15 +5996,11 @@ constructed (GObject *_object)
 
 	channel_flags = g_io_channel_get_flags (priv->event_channel);
 	status = g_io_channel_set_flags (priv->event_channel,
-		channel_flags | G_IO_FLAG_NONBLOCK, NULL);
+	                                 channel_flags | G_IO_FLAG_NONBLOCK, NULL);
 	g_assert (status);
 	priv->event_id = g_io_add_watch (priv->event_channel,
 	                                (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
 	                                 event_handler, platform);
-
-	/* Set up udev monitoring */
-	priv->udev_client = g_udev_client_new (udev_subsys);
-	g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
 
 	/* complete construction of the GObject instance before populating the cache. */
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
@@ -6016,19 +6016,27 @@ constructed (GObject *_object)
 
 	delayed_action_handle_all (platform, FALSE);
 
-	/* And read initial device list */
-	enumerator = g_udev_enumerator_new (priv->udev_client);
-	g_udev_enumerator_add_match_subsystem (enumerator, "net");
+	/* Set up udev monitoring */
+	if (priv->udev_client) {
+		GUdevEnumerator *enumerator;
+		GList *devices, *iter;
 
-	g_udev_enumerator_add_match_is_initialized (enumerator);
+		g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
 
-	devices = g_udev_enumerator_execute (enumerator);
-	for (iter = devices; iter; iter = g_list_next (iter)) {
-		udev_device_added (platform, G_UDEV_DEVICE (iter->data));
-		g_object_unref (G_UDEV_DEVICE (iter->data));
+		/* And read initial device list */
+		enumerator = g_udev_enumerator_new (priv->udev_client);
+		g_udev_enumerator_add_match_subsystem (enumerator, "net");
+
+		g_udev_enumerator_add_match_is_initialized (enumerator);
+
+		devices = g_udev_enumerator_execute (enumerator);
+		for (iter = devices; iter; iter = g_list_next (iter)) {
+			udev_device_added (platform, G_UDEV_DEVICE (iter->data));
+			g_object_unref (G_UDEV_DEVICE (iter->data));
+		}
+		g_list_free (devices);
+		g_object_unref (enumerator);
 	}
-	g_list_free (devices);
-	g_object_unref (enumerator);
 }
 
 static void
@@ -6046,6 +6054,11 @@ dispose (GObject *object)
 	g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
 
 	g_clear_pointer (&priv->prune_candidates, g_hash_table_unref);
+
+	if (priv->udev_client) {
+		g_signal_handlers_disconnect_by_func (priv->udev_client, G_CALLBACK (handle_udev_event), platform);
+		g_clear_object (&priv->udev_client);
+	}
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->dispose (object);
 }
@@ -6066,7 +6079,6 @@ nm_linux_platform_finalize (GObject *object)
 	g_io_channel_unref (priv->event_channel);
 	nl_socket_free (priv->nlh);
 
-	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->wifi_data);
 
 	if (priv->sysctl_get_prev_values) {
