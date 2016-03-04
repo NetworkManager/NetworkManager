@@ -788,6 +788,12 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
 }
 
+static NMDeviceCapabilities
+get_generic_capabilities (NMDevice *dev)
+{
+	return NM_DEVICE_CAP_IS_SOFTWARE;
+}
+
 static void
 unrealize_notify (NMDevice *device)
 {
@@ -876,6 +882,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
