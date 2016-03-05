@@ -31,7 +31,7 @@
 
 %global _hardened_build 1
 
-%global git_sha_version %(test -n '%{git_sha}' && echo '.%{git_sha}')
+%global git_sha_version %{?git_sha:.%{git_sha}}
 
 ###############################################################################
 
