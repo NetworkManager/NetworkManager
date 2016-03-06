@@ -101,7 +101,7 @@ wifi_wext_get_mode (WifiData *data)
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 
 	if (ioctl (wext->fd, SIOCGIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
@@ -150,7 +150,7 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 		return FALSE;
 	}
 
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	if (ioctl (wext->fd, SIOCSIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting mode %d",
@@ -174,7 +174,7 @@ wifi_wext_set_powersave (WifiData *data, guint32 powersave)
 	} else
 		wrq.u.power.disabled = 1;
 
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	if (ioctl (wext->fd, SIOCSIWPOWER, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting powersave %" G_GUINT32_FORMAT,
@@ -193,7 +193,7 @@ wifi_wext_get_freq (WifiData *data)
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	if (ioctl (wext->fd, SIOCGIWFREQ, &wrq) < 0) {
 		nm_log_warn (LOGD_HW | LOGD_WIFI,
 		             "(%s): error getting frequency: %s",
@@ -227,7 +227,7 @@ wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (wrq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	if (ioctl (wext->fd, SIOCGIWAP, &wrq) < 0) {
 		nm_log_warn (LOGD_HW | LOGD_WIFI,
 		             "(%s): error getting associated BSSID: %s",
@@ -246,7 +246,7 @@ wifi_wext_get_rate (WifiData *data)
 	int err;
 
 	memset (&wrq, 0, sizeof (wrq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	err = ioctl (wext->fd, SIOCGIWRATE, &wrq);
 	return ((err == 0) ? wrq.u.bitrate.value / 1000 : 0);
 }
@@ -356,7 +356,7 @@ wifi_wext_get_qual (WifiData *data)
 	wrq.u.data.pointer = &stats;
 	wrq.u.data.length = sizeof (stats);
 	wrq.u.data.flags = 1;  /* Clear updated flag */
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 
 	if (ioctl (wext->fd, SIOCGIWSTATS, &wrq) < 0) {
 		nm_log_warn (LOGD_HW | LOGD_WIFI,
@@ -393,7 +393,7 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 
 	if (channel > 0) {
 		wrq.u.freq.flags = IW_FREQ_FIXED;
@@ -425,7 +425,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 	wrq.u.essid.length = len;
 	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
 
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	if (ioctl (wext->fd, SIOCSIWESSID, &wrq) == 0)
 		return TRUE;
 
@@ -448,7 +448,7 @@ wext_can_scan (WifiDataWext *wext)
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	if (ioctl (wext->fd, SIOCSIWSCAN, &wrq) < 0) {
 		if (errno == EOPNOTSUPP)
 			return FALSE;
@@ -466,7 +466,7 @@ wext_get_range (WifiDataWext *wext,
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	g_strlcpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
 	wrq.u.data.pointer = (caddr_t) range;
 	wrq.u.data.length = sizeof (struct iw_range);
 
@@ -666,7 +666,7 @@ wifi_wext_is_wifi (const char *iface)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd >= 0) {
-		strncpy (iwr.ifr_ifrn.ifrn_name, iface, IFNAMSIZ);
+		g_strlcpy (iwr.ifr_ifrn.ifrn_name, iface, IFNAMSIZ);
 		if (ioctl (fd, SIOCGIWNAME, &iwr) == 0)
 			is_wifi = TRUE;
 		close (fd);
