@@ -4835,7 +4835,7 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
 	if (fd < 0)
 		return FALSE;
 
-	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	nm_utils_ifname_cpy (ifr.ifr_name, name);
 	ifr.ifr_flags = tap ? IFF_TAP : IFF_TUN;
 
 	if (!pi)

@@ -27,7 +27,10 @@
 #include <sys/types.h>
 
 #include "nm-lldp-listener.h"
+
 #include "test-common.h"
+
+#include "nm-test-utils.h"
 
 typedef struct {
 	int ifindex;
@@ -48,7 +51,7 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 	g_assert (fd >= 0);
 
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-	strncpy (ifr.ifr_name, TEST_IFNAME, IFNAMSIZ);
+	nm_utils_ifname_cpy (ifr.ifr_name, TEST_IFNAME);
 	g_assert (ioctl (fd, TUNSETIFF, &ifr) >= 0);
 
 	/* Bring the interface up */

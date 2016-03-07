@@ -412,4 +412,6 @@ guint nm_utils_parse_debug_string (const char *string,
                                    const GDebugKey *keys,
                                    guint nkeys);
 
+void nm_utils_ifname_cpy (char *dst, const char *name);
+
 #endif /* __NM_CORE_UTILS_H__ */

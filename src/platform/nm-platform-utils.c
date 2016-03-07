@@ -56,7 +56,7 @@ ethtool_get (const char *name, gpointer edata)
 	nm_assert (strlen (name) < IFNAMSIZ);
 
 	memset (&ifr, 0, sizeof (ifr));
-	strcpy (ifr.ifr_name, name);
+	nm_utils_ifname_cpy (ifr.ifr_name, name);
 	ifr.ifr_data = edata;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
@@ -344,7 +344,7 @@ nmp_utils_mii_supports_carrier_detect (const char *ifname)
 	}
 
 	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
+	nm_utils_ifname_cpy (ifr.ifr_name, ifname);
 
 	errno = 0;
 	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
@@ -513,13 +513,14 @@ gboolean
 nmp_utils_device_exists (const char *name)
 {
 #define SYS_CLASS_NET "/sys/class/net/"
-	char sysdir[NM_STRLEN (SYS_CLASS_NET) + IFNAMSIZ] = SYS_CLASS_NET;
+	char sysdir[NM_STRLEN (SYS_CLASS_NET) + IFNAMSIZ];
 
 	if (   !name
 	    || strlen (name) >= IFNAMSIZ
 	    || !nm_utils_is_valid_path_component (name))
 		g_return_val_if_reached (FALSE);
 
-	strcpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], name);
+	memcpy (sysdir, SYS_CLASS_NET, NM_STRLEN (SYS_CLASS_NET));
+	nm_utils_ifname_cpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], name);
 	return g_file_test (sysdir, G_FILE_TEST_EXISTS);
 }
