@@ -188,7 +188,7 @@ routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, 
 static gint
 _addresses_sort_cmp_get_prio (in_addr_t addr)
 {
-	if (nmp_utils_ip4_address_is_link_local (addr))
+	if (nm_utils_ip4_address_is_link_local (addr))
 		return 0;
 	return 1;
 }

@@ -30,6 +30,8 @@
 
 /*****************************************************************************/
 
+#define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
+
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) \
 static TYPE *singleton_instance
 
@@ -413,5 +415,20 @@ guint nm_utils_parse_debug_string (const char *string,
                                    guint nkeys);
 
 void nm_utils_ifname_cpy (char *dst, const char *name);
+
+guint32 nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
+                                                       guint32 duration,
+                                                       guint32 now,
+                                                       guint32 padding);
+
+gboolean nm_utils_lifetime_get (guint32 timestamp,
+                                guint32 lifetime,
+                                guint32 preferred,
+                                guint32 now,
+                                guint32 padding,
+                                guint32 *out_lifetime,
+                                guint32 *out_preferred);
+
+gboolean nm_utils_ip4_address_is_link_local (in_addr_t addr);
 
 #endif /* __NM_CORE_UTILS_H__ */

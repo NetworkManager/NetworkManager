@@ -178,8 +178,6 @@ typedef enum {
 	NM_PLATFORM_SIGNAL_REMOVED,
 } NMPlatformSignalChangeType;
 
-#define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
-
 typedef enum { /*< skip >*/
 	NM_PLATFORM_GET_ROUTE_FLAGS_NONE                            = 0,
 

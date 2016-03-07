@@ -5196,7 +5196,7 @@ ip4_address_add (NMPlatform *platform,
 	                             plen,
 	                             &peer_addr,
 	                             flags,
-	                             nmp_utils_ip4_address_is_link_local (addr) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
+	                             nm_utils_ip4_address_is_link_local (addr) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
 	                             lifetime,
 	                             preferred,
 	                             label);
