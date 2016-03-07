@@ -1142,9 +1142,17 @@ nm_dns_manager_add_ip4_config (NMDnsManager *self,
 
 	switch (cfg_type) {
 	case NM_DNS_IP_CONFIG_TYPE_VPN:
+		if (priv->ip4_vpn_config && priv->ip4_vpn_config != config) {
+			priv->configs = g_slist_remove (priv->configs, priv->ip4_vpn_config);
+			g_object_unref (priv->ip4_vpn_config);
+		}
 		priv->ip4_vpn_config = config;
 		break;
 	case NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE:
+		if (priv->ip4_device_config && priv->ip4_device_config != config) {
+			priv->configs = g_slist_remove (priv->configs, priv->ip4_device_config);
+			g_object_unref (priv->ip4_device_config);
+		}
 		priv->ip4_device_config = config;
 		break;
 	default:
@@ -1215,9 +1223,17 @@ nm_dns_manager_add_ip6_config (NMDnsManager *self,
 
 	switch (cfg_type) {
 	case NM_DNS_IP_CONFIG_TYPE_VPN:
+		if (priv->ip6_vpn_config && priv->ip6_vpn_config != config) {
+			priv->configs = g_slist_remove (priv->configs, priv->ip6_vpn_config);
+			g_object_unref (priv->ip6_vpn_config);
+		}
 		priv->ip6_vpn_config = config;
 		break;
 	case NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE:
+		if (priv->ip6_device_config && priv->ip6_device_config != config) {
+			priv->configs = g_slist_remove (priv->configs, priv->ip6_device_config);
+			g_object_unref (priv->ip6_device_config);
+		}
 		priv->ip6_device_config = config;
 		break;
 	default:
