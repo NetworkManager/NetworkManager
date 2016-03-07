@@ -399,9 +399,7 @@ GHashTable *nmp_cache_lookup_all_to_hash (const NMPCache *cache,
 gboolean nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *master, const NMPObject *potential_slave, const NMPObject *ignore_slave);
 const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex (const NMPCache *cache, int master_ifindex, const NMPObject *potential_slave, const NMPObject *ignore_slave);
 
-gboolean nmp_cache_use_udev_detect (void);
 gboolean nmp_cache_use_udev_get (const NMPCache *cache);
-gboolean nmp_cache_use_udev_set (NMPCache *cache, gboolean use_udev);
 
 void ASSERT_nmp_cache_is_consistent (const NMPCache *cache);
 
@@ -411,7 +409,7 @@ NMPCacheOpsType nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPOb
 NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache, int ifindex, GUdevDevice *udev_device, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
 NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
 
-NMPCache *nmp_cache_new (void);
+NMPCache *nmp_cache_new (gboolean use_udev);
 void nmp_cache_free (NMPCache *cache);
 
 #endif /* __NMP_OBJECT_H__ */

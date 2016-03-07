@@ -140,6 +140,14 @@ if [ $RESULT -ne 0 -a $RESULT -ne 77 ]; then
 fi
 
 if [ $HAS_ERRORS -eq 0 ]; then
+	# valgrind doesn't support setns syscall and spams the logfile.
+	# hack around it...
+	if [ "$(basename "$TEST")" = 'test-link-linux' -a -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
+		HAS_ERRORS=1
+	fi
+fi
+
+if [ $HAS_ERRORS -eq 0 ]; then
 	# shouldn't actually happen...
 	echo "valgrind succeeded, but log is not empty: '`realpath "$LOGFILE"`'" >&2
 	exit 1

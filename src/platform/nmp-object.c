@@ -174,10 +174,6 @@ _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 			 * nmp_cache_use_udev_get(). It is on purpose not to test
 			 * for a writable /sys on every call. A minor reason for that is
 			 * performance, but the real reason is reproducibility.
-			 *
-			 * If you want to support changing of whether udev is enabled,
-			 * reset the value via nmp_cache_use_udev_set() carefully -- and
-			 * possibly update the links in the cache accordingly.
 			 * */
 			initialized = TRUE;
 		}
@@ -1192,30 +1188,11 @@ _vt_cmd_obj_init_cache_id_ipx_route (const NMPObject *obj, NMPCacheIdType id_typ
 /******************************************************************/
 
 gboolean
-nmp_cache_use_udev_detect ()
-{
-	return access ("/sys", W_OK) == 0;
-}
-
-gboolean
 nmp_cache_use_udev_get (const NMPCache *cache)
 {
 	g_return_val_if_fail (cache, TRUE);
 
 	return cache->use_udev;
-}
-
-gboolean
-nmp_cache_use_udev_set (NMPCache *cache, gboolean use_udev)
-{
-	g_return_val_if_fail (cache, FALSE);
-
-	use_udev = !!use_udev;
-	if (use_udev == cache->use_udev)
-		return FALSE;
-
-	cache->use_udev = use_udev;
-	return TRUE;
 }
 
 /******************************************************************/
@@ -1858,7 +1835,7 @@ nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject 
 /******************************************************************/
 
 NMPCache *
-nmp_cache_new ()
+nmp_cache_new (gboolean use_udev)
 {
 	NMPCache *cache = g_new (NMPCache, 1);
 
@@ -1870,7 +1847,7 @@ nmp_cache_new ()
 	                                       (NMMultiIndexFuncEqual) nmp_cache_id_equal,
 	                                       (NMMultiIndexFuncClone) nmp_cache_id_clone,
 	                                       (NMMultiIndexFuncDestroy) nmp_cache_id_destroy);
-	cache->use_udev = nmp_cache_use_udev_detect ();
+	cache->use_udev = !!use_udev;
 	return cache;
 }
 

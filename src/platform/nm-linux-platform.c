@@ -50,6 +50,7 @@
 
 #include "nm-core-utils.h"
 #include "nmp-object.h"
+#include "nmp-netns.h"
 #include "nm-platform-utils.h"
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
@@ -221,6 +222,7 @@ static void do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActi
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 static void cache_prune_candidates_prune (NMPlatform *platform);
 static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks);
+static void _assert_netns_current (NMPlatform *platform);
 
 /*****************************************************************************/
 
@@ -646,6 +648,8 @@ _linktype_get_type (NMPlatform *platform,
                     const char **out_kind)
 {
 	guint i;
+
+	_assert_netns_current (platform);
 
 	if (completed_from_cache) {
 		const NMPObject *obj;
@@ -2410,11 +2414,22 @@ void
 nm_linux_platform_setup (void)
 {
 	g_object_new (NM_TYPE_LINUX_PLATFORM,
+	              NM_PLATFORM_NETNS_SUPPORT, FALSE,
 	              NM_PLATFORM_REGISTER_SINGLETON, TRUE,
 	              NULL);
 }
 
 /******************************************************************/
+
+static void
+_assert_netns_current (NMPlatform *platform)
+{
+#if NM_MORE_ASSERTS
+	nm_assert (NM_IS_LINUX_PLATFORM (platform));
+
+	nm_assert (NM_IN_SET (nm_platform_netns_get (platform), NULL, nmp_netns_get_current ()));
+#endif
+}
 
 static void
 _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
@@ -2449,6 +2464,7 @@ _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *va
 static gboolean
 sysctl_set (NMPlatform *platform, const char *path, const char *value)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	int fd, tries;
 	gssize nwrote;
 	gsize len;
@@ -2463,6 +2479,9 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	          || g_str_has_prefix (path, "/sys/"));
 	/* Don't write to suspicious locations */
 	g_assert (!strstr (path, "/../"));
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
@@ -2578,6 +2597,7 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *co
 static char *
 sysctl_get (NMPlatform *platform, const char *path)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	GError *error = NULL;
 	char *contents;
 
@@ -2586,6 +2606,9 @@ sysctl_get (NMPlatform *platform, const char *path)
 	          || g_str_has_prefix (path, "/sys/"));
 	/* Don't write to suspicious locations */
 	g_assert (!strstr (path, "/../"));
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return NULL;
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
 		/* We assume FAILED means EOPNOTSUP */
@@ -2650,6 +2673,9 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 	nm_assert (obj || cache_op == NMP_CACHE_OPS_UNCHANGED);
 	nm_assert (!obj || cache_op == NMP_CACHE_OPS_REMOVED || obj == nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
 	nm_assert (!obj || cache_op != NMP_CACHE_OPS_REMOVED || obj != nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
+
+	/* we raise the signals inside the namespace of the NMPlatform instance. */
+	_assert_netns_current (platform);
 
 	switch (cache_op) {
 	case NMP_CACHE_OPS_ADDED:
@@ -4135,9 +4161,13 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	const char *name = nm_platform_link_get_name (platform, ifindex);
 
 	if (!name)
+		return FALSE;
+
+	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
 	/* We use netlink for the actual carrier detection, but netlink can't tell
@@ -4150,12 +4180,16 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	const NMPObject *obj;
 
 	obj = cache_lookup_link (platform, ifindex);
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!obj || obj->link.arptype != ARPHRD_ETHER)
+		return FALSE;
+
+	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
 	return nmp_utils_ethtool_supports_vlans (obj->link.name);
@@ -4196,6 +4230,11 @@ link_get_permanent_address (NMPlatform *platform,
                             guint8 *buf,
                             size_t *length)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
+
 	return nmp_utils_ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
 }
 
@@ -4975,15 +5014,19 @@ wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 
 	return wifi_data;
 }
+#define WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, retval) \
+	nm_auto_pop_netns NMPNetns *netns = NULL; \
+	WifiData *wifi_data; \
+	if (!nm_platform_netns_push (platform, &netns)) \
+		return retval; \
+	wifi_data = wifi_get_wifi_data (platform, ifindex); \
+	if (!wifi_data) \
+		return retval;
 
 static gboolean
 wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return FALSE;
-
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	if (caps)
 		*caps = wifi_utils_get_caps (wifi_data);
 	return TRUE;
@@ -4992,90 +5035,64 @@ wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabiliti
 static gboolean
 wifi_get_bssid (NMPlatform *platform, int ifindex, guint8 *bssid)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return FALSE;
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	return wifi_utils_get_bssid (wifi_data, bssid);
 }
 
 static guint32
 wifi_get_frequency (NMPlatform *platform, int ifindex)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return 0;
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
 	return wifi_utils_get_freq (wifi_data);
 }
 
 static gboolean
 wifi_get_quality (NMPlatform *platform, int ifindex)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return FALSE;
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	return wifi_utils_get_qual (wifi_data);
 }
 
 static guint32
 wifi_get_rate (NMPlatform *platform, int ifindex)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return FALSE;
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	return wifi_utils_get_rate (wifi_data);
 }
 
 static NM80211Mode
 wifi_get_mode (NMPlatform *platform, int ifindex)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return NM_802_11_MODE_UNKNOWN;
-
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, NM_802_11_MODE_UNKNOWN);
 	return wifi_utils_get_mode (wifi_data);
 }
 
 static void
 wifi_set_mode (NMPlatform *platform, int ifindex, NM80211Mode mode)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (wifi_data)
-		wifi_utils_set_mode (wifi_data, mode);
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
+	wifi_utils_set_mode (wifi_data, mode);
 }
 
 static void
 wifi_set_powersave (NMPlatform *platform, int ifindex, guint32 powersave)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (wifi_data)
-		wifi_utils_set_powersave (wifi_data, powersave);
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
+	wifi_utils_set_powersave (wifi_data, powersave);
 }
 
 static guint32
 wifi_find_frequency (NMPlatform *platform, int ifindex, const guint32 *freqs)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return 0;
-
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
 	return wifi_utils_find_freq (wifi_data, freqs);
 }
 
 static void
 wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean running)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (wifi_data)
-		wifi_utils_indicate_addressing_running (wifi_data, running);
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
+	wifi_utils_indicate_addressing_running (wifi_data, running);
 }
 
 /******************************************************************/
@@ -5083,33 +5100,21 @@ wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean ru
 static guint32
 mesh_get_channel (NMPlatform *platform, int ifindex)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return 0;
-
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
 	return wifi_utils_get_mesh_channel (wifi_data);
 }
 
 static gboolean
 mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return FALSE;
-
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	return wifi_utils_set_mesh_channel (wifi_data, channel);
 }
 
 static gboolean
 mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 {
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return FALSE;
-
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	return wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
 }
 
@@ -5118,7 +5123,11 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 static gboolean
 link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMLinkType type = nm_platform_link_get_type (platform, ifindex);
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
 
 	if (type == NM_LINK_TYPE_ETHERNET)
 		return nmp_utils_ethtool_get_wake_on_lan (nm_platform_link_get_name (platform, ifindex));
@@ -5140,6 +5149,11 @@ link_get_driver_info (NMPlatform *platform,
                       char **out_driver_version,
                       char **out_fw_version)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
+
 	return nmp_utils_ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
 	                                          out_driver_name,
 	                                          out_driver_version,
@@ -5721,6 +5735,7 @@ out:
 static gboolean
 event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int r, nle;
 	struct pollfd pfd;
@@ -5732,6 +5747,9 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 		guint32 seq_number;
 		gint64 timeout_abs_ns;
 	} data_next;
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
 
 	while (TRUE) {
 
@@ -5837,7 +5855,14 @@ cache_update_link_udev (NMPlatform *platform, int ifindex, GUdevDevice *udev_dev
 	NMPCacheOpsType cache_op;
 
 	cache_op = nmp_cache_update_link_udev (priv->cache, ifindex, udev_device, &obj_cache, &was_visible, cache_pre_hook, platform);
-	do_emit_signal (platform, obj_cache, cache_op, was_visible);
+
+	if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+		nm_auto_pop_netns NMPNetns *netns = NULL;
+
+		if (!nm_platform_netns_push (platform, &netns))
+			return;
+		do_emit_signal (platform, obj_cache, cache_op, was_visible);
+	}
 }
 
 static void
@@ -5908,12 +5933,16 @@ handle_udev_event (GUdevClient *client,
                    GUdevDevice *udev_device,
                    gpointer user_data)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMPlatform *platform = NM_PLATFORM (user_data);
 	const char *subsys;
 	const char *ifindex;
 	guint64 seqnum;
 
 	g_return_if_fail (action != NULL);
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return;
 
 	/* A bit paranoid */
 	subsys = g_udev_device_get_subsystem (udev_device);
@@ -5937,15 +5966,22 @@ static void
 nm_linux_platform_init (NMLinuxPlatform *self)
 {
 	NMLinuxPlatformPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate);
+	gboolean use_udev;
+
+	use_udev =    nmp_netns_is_initial ()
+	           && access ("/sys", W_OK) == 0;
 
 	self->priv = priv;
 
 	priv->nlh_seq_next = 1;
-	priv->cache = nmp_cache_new ();
+	priv->cache = nmp_cache_new (use_udev);
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+
+	if (use_udev)
+		priv->udev_client = g_udev_client_new ((const char *[]) { "net", NULL });
 }
 
 static void
@@ -5953,14 +5989,22 @@ constructed (GObject *_object)
 {
 	NMPlatform *platform = NM_PLATFORM (_object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const char *udev_subsys[] = { "net", NULL };
 	int channel_flags;
 	gboolean status;
 	int nle;
-	GUdevEnumerator *enumerator;
-	GList *devices, *iter;
 
-	_LOGD ("create");
+	nm_assert (!platform->_netns || platform->_netns == nmp_netns_get_current ());
+
+	_LOGD ("create (%s netns, %s, %s udev)",
+	       !platform->_netns ? "ignore" : "use",
+	       !platform->_netns && nmp_netns_is_initial ()
+	           ? "initial netns"
+	           : (!nmp_netns_get_current ()
+	                ? "no netns support"
+	                : nm_sprintf_bufa (100, "in netns[%p]%s",
+	                                   nmp_netns_get_current (),
+	                                   nmp_netns_get_current () == nmp_netns_get_initial () ? "/main" : "")),
+	       nmp_cache_use_udev_get (priv->cache) ? "use" : "no");
 
 	priv->nlh = nl_socket_alloc ();
 	g_assert (priv->nlh);
@@ -5992,15 +6036,11 @@ constructed (GObject *_object)
 
 	channel_flags = g_io_channel_get_flags (priv->event_channel);
 	status = g_io_channel_set_flags (priv->event_channel,
-		channel_flags | G_IO_FLAG_NONBLOCK, NULL);
+	                                 channel_flags | G_IO_FLAG_NONBLOCK, NULL);
 	g_assert (status);
 	priv->event_id = g_io_add_watch (priv->event_channel,
 	                                (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
 	                                 event_handler, platform);
-
-	/* Set up udev monitoring */
-	priv->udev_client = g_udev_client_new (udev_subsys);
-	g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
 
 	/* complete construction of the GObject instance before populating the cache. */
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
@@ -6016,19 +6056,27 @@ constructed (GObject *_object)
 
 	delayed_action_handle_all (platform, FALSE);
 
-	/* And read initial device list */
-	enumerator = g_udev_enumerator_new (priv->udev_client);
-	g_udev_enumerator_add_match_subsystem (enumerator, "net");
+	/* Set up udev monitoring */
+	if (priv->udev_client) {
+		GUdevEnumerator *enumerator;
+		GList *devices, *iter;
 
-	g_udev_enumerator_add_match_is_initialized (enumerator);
+		g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
 
-	devices = g_udev_enumerator_execute (enumerator);
-	for (iter = devices; iter; iter = g_list_next (iter)) {
-		udev_device_added (platform, G_UDEV_DEVICE (iter->data));
-		g_object_unref (G_UDEV_DEVICE (iter->data));
+		/* And read initial device list */
+		enumerator = g_udev_enumerator_new (priv->udev_client);
+		g_udev_enumerator_add_match_subsystem (enumerator, "net");
+
+		g_udev_enumerator_add_match_is_initialized (enumerator);
+
+		devices = g_udev_enumerator_execute (enumerator);
+		for (iter = devices; iter; iter = g_list_next (iter)) {
+			udev_device_added (platform, G_UDEV_DEVICE (iter->data));
+			g_object_unref (G_UDEV_DEVICE (iter->data));
+		}
+		g_list_free (devices);
+		g_object_unref (enumerator);
 	}
-	g_list_free (devices);
-	g_object_unref (enumerator);
 }
 
 static void
@@ -6046,6 +6094,11 @@ dispose (GObject *object)
 	g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
 
 	g_clear_pointer (&priv->prune_candidates, g_hash_table_unref);
+
+	if (priv->udev_client) {
+		g_signal_handlers_disconnect_by_func (priv->udev_client, G_CALLBACK (handle_udev_event), platform);
+		g_clear_object (&priv->udev_client);
+	}
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->dispose (object);
 }
@@ -6066,7 +6119,6 @@ nm_linux_platform_finalize (GObject *object)
 	g_io_channel_unref (priv->event_channel);
 	nl_socket_free (priv->nlh);
 
-	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->wifi_data);
 
 	if (priv->sysctl_get_prev_values) {

@@ -311,6 +311,8 @@ libNetworkManager_la_SOURCES = \
 	dnsmasq-manager/nm-dnsmasq-utils.c \
 	dnsmasq-manager/nm-dnsmasq-utils.h \
 	\
+	platform/nmp-netns.c \
+	platform/nmp-netns.h \
 	platform/nm-fake-platform.c \
 	platform/nm-fake-platform.h \
 	platform/nm-linux-platform.c \
@@ -541,6 +543,8 @@ libnm_iface_helper_la_SOURCES = \
 	platform/nm-platform.h \
 	platform/nm-platform-utils.c \
 	platform/nm-platform-utils.h \
+	platform/nmp-netns.c \
+	platform/nmp-netns.h \
 	platform/nmp-object.c \
 	platform/nmp-object.h \
 	platform/wifi/wifi-utils-nl80211.c \

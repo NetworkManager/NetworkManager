@@ -22,6 +22,7 @@
 
 #include <linux/rtnetlink.h>
 
+#include "nm-platform-utils.h"
 #include "nm-linux-platform.h"
 
 #include "nm-test-utils.h"
