@@ -352,7 +352,7 @@ static int parse_env_file_internal(
                 case KEY:
                         if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
                                 n_key = 0;
                         } else if (c == '=') {
                                 state = PRE_VALUE;
@@ -376,7 +376,7 @@ static int parse_env_file_internal(
                 case PRE_VALUE:
                         if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
                                 key[n_key] = 0;
 
                                 if (value)
@@ -416,7 +416,7 @@ static int parse_env_file_internal(
                 case VALUE:
                         if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
 
                                 key[n_key] = 0;
 
@@ -535,7 +535,7 @@ static int parse_env_file_internal(
                                 state = COMMENT_ESCAPE;
                         else if (strchr(newline, c)) {
                                 state = PRE_KEY;
-                                line ++;
+                                line++;
                         }
                         break;
 
@@ -588,7 +588,7 @@ static int parse_env_file_push(
         va_list aq, *ap = userdata;
 
         if (!utf8_is_valid(key)) {
-                _cleanup_free_ char *p;
+                _cleanup_free_ char *p = NULL;
 
                 p = utf8_escape_invalid(key);
                 log_error("%s:%u: invalid UTF-8 in key '%s', ignoring.", strna(filename), line, p);
@@ -596,7 +596,7 @@ static int parse_env_file_push(
         }
 
         if (value && !utf8_is_valid(value)) {
-                _cleanup_free_ char *p;
+                _cleanup_free_ char *p = NULL;
 
                 p = utf8_escape_invalid(value);
                 log_error("%s:%u: invalid UTF-8 value for key %s: '%s', ignoring.", strna(filename), line, key, p);
@@ -908,7 +908,7 @@ int get_proc_field(const char *filename, const char *pattern, const char *termin
                 /* Back off one char if there's nothing but whitespace
                    and zeros */
                 if (!*t || isspace(*t))
-                        t --;
+                        t--;
         }
 
         len = strcspn(t, terminator);
@@ -1069,7 +1069,7 @@ int fflush_and_check(FILE *f) {
 
 /* This is much like like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern, int flags) {
-        _cleanup_umask_ mode_t u;
+        _cleanup_umask_ mode_t u = 0;
         int fd;
 
         assert(pattern);
