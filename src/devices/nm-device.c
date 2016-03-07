@@ -7926,9 +7926,10 @@ _replace_vpn_config_in_list (GSList **plist, GObject *old, GObject *new)
 {
 	GSList *old_link;
 
-	/* Below, assert that we have an @old instance to replace and that
-	 * @new is not yet tracked. But still, behave correctly in any
-	 * case. */
+	/* Below, assert that @new is not yet tracked, but still behave
+	 * correctly in any case. Don't complain for missing @old since
+	 * it could have been removed when the parent device became
+	 * unmanaged. */
 
 	if (   old
 	    && (old_link = g_slist_find (*plist, old))) {
@@ -7947,12 +7948,9 @@ _replace_vpn_config_in_list (GSList **plist, GObject *old, GObject *new)
 			*plist = g_slist_append (*plist, g_object_ref (new));
 		else
 			g_return_val_if_reached (TRUE);
-		g_return_val_if_fail (!old, TRUE);
 		return TRUE;
 	}
 
-	/* return FALSE if both @old and @new are unset. */
-	g_return_val_if_fail (!old, FALSE);
 	return FALSE;
 }
 
