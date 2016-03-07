@@ -788,10 +788,10 @@ class CmdSubmit(CmdBase):
             vt = None
         if vn is not None:
             return '<distro_name op="=" value="%s"/>' % (vn)
+        ret = '<distro_family op="=" value="%s"/>' % self._get_var('DISTRO_FAMILY')
         if vt is not None:
-            vt = self._get_var('DISTRO_TAG', True)
-            return '<distro_family op="=" value="%s"/><distro_tag op="=" value="%s"/>' % (self._get_var('DISTRO_FAMILY'), vt)
-        return None
+            ret = ret + '<distro_tag op="=" value="%s"/>' % self._get_var('DISTRO_TAG', True)
+        return ret
 
     def _get_var_for_RESERVESYS(self, key):
         v = self._get_var('RESERVESYS')
