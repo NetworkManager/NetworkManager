@@ -1,0 +1,9 @@
+{
+global:
+	nm*;
+	_nm*;
+	NM*;
+	_NM*;
+local:
+	*;
+};
