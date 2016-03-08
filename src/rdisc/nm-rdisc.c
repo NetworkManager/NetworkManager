@@ -28,6 +28,8 @@
 #include "nm-rdisc-private.h"
 
 #include "nm-utils.h"
+#include "nm-platform.h"
+#include "nmp-netns.h"
 
 #include <nm-setting-ip6-config.h>
 
@@ -46,6 +48,10 @@ typedef struct {
 
 G_DEFINE_TYPE (NMRDisc, nm_rdisc, G_TYPE_OBJECT)
 
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PLATFORM,
+);
+
 enum {
 	CONFIG_CHANGED,
 	RA_TIMEOUT,
@@ -53,6 +59,31 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+/******************************************************************/
+
+NMPNetns *
+nm_rdisc_netns_get (NMRDisc *self)
+{
+	g_return_val_if_fail (NM_IS_RDISC (self), NULL);
+
+	return self->_netns;
+}
+
+gboolean
+nm_rdisc_netns_push (NMRDisc *self, NMPNetns **netns)
+{
+	g_return_val_if_fail (NM_IS_RDISC (self), FALSE);
+
+	if (   self->_netns
+	    && !nmp_netns_push (self->_netns)) {
+		NM_SET_OUT (netns, NULL);
+		return FALSE;
+	}
+
+	NM_SET_OUT (netns, self->_netns);
+	return TRUE;
+}
 
 /******************************************************************/
 
@@ -317,9 +348,13 @@ nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 static gboolean
 send_rs (NMRDisc *rdisc)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDiscClass *klass = NM_RDISC_GET_CLASS (rdisc);
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 	GError *error = NULL;
+
+	if (!nm_rdisc_netns_push (rdisc, &netns))
+		return G_SOURCE_REMOVE;
 
 	if (klass->send_rs (rdisc, &error)) {
 		_LOGD ("router solicitation sent");
@@ -383,6 +418,7 @@ rdisc_ra_timeout_cb (gpointer user_data)
 void
 nm_rdisc_start (NMRDisc *rdisc)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 	NMRDiscClass *klass = NM_RDISC_GET_CLASS (rdisc);
 	guint ra_wait_secs;
@@ -390,6 +426,9 @@ nm_rdisc_start (NMRDisc *rdisc)
 	g_assert (klass->start);
 
 	_LOGD ("starting router discovery: %d", rdisc->ifindex);
+
+	if (!nm_rdisc_netns_push (rdisc, &netns))
+		return;
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	ra_wait_secs = CLAMP (rdisc->rtr_solicitations * rdisc->rtr_solicitation_interval, 30, 120);
@@ -669,9 +708,40 @@ dns_domain_free (gpointer data)
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMRDisc *self = NM_RDISC (object);
+
+	switch (prop_id) {
+	case PROP_PLATFORM:
+		/* construct-only */
+		self->_platform = g_value_get_object (value) ? : NM_PLATFORM_GET;
+		if (!self->_platform)
+			g_return_if_reached ();
+
+		g_object_ref (self->_platform);
+
+		self->_netns = nm_platform_netns_get (self->_platform);
+		if (self->_netns)
+			g_object_ref (self->_netns);
+
+		g_return_if_fail (!self->_netns || self->_netns == nmp_netns_get_current ());
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_rdisc_init (NMRDisc *rdisc)
 {
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
+
+	rdisc->_netns = nmp_netns_get_current ();
+	if (rdisc->_netns)
+		g_object_ref (rdisc->_netns);
 
 	rdisc->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
 	rdisc->addresses = g_array_new (FALSE, FALSE, sizeof (NMRDiscAddress));
@@ -715,6 +785,9 @@ finalize (GObject *object)
 	g_array_unref (rdisc->dns_servers);
 	g_array_unref (rdisc->dns_domains);
 
+	g_clear_object (&rdisc->_netns);
+	g_clear_object (&rdisc->_platform);
+
 	G_OBJECT_CLASS (nm_rdisc_parent_class)->finalize (object);
 }
 
@@ -725,9 +798,18 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMRDiscPrivate));
 
+	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	klass->config_changed = config_changed;
+
+	obj_properties[PROP_PLATFORM] =
+	    g_param_spec_object (NM_RDISC_PLATFORM, "", "",
+	                         NM_TYPE_PLATFORM,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[CONFIG_CHANGED] =
 	    g_signal_new (NM_RDISC_CONFIG_CHANGED,

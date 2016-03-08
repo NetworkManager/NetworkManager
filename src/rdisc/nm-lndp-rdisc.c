@@ -31,6 +31,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
+#include "nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME                "rdisc-lndp"
 
@@ -273,9 +274,14 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 static gboolean
 event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
 	_LOGD ("processing libndp events");
+
+	if (!nm_rdisc_netns_push (rdisc, &netns))
+		return G_SOURCE_CONTINUE;
+
 	ndp_callall_eventfd_handler (priv->ndp);
 	return G_SOURCE_CONTINUE;
 }
@@ -298,40 +304,50 @@ start (NMRDisc *rdisc)
 /******************************************************************/
 
 static inline gint32
-ipv6_sysctl_get (const char *ifname, const char *property, gint32 defval)
+ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, gint32 defval)
 {
-	return nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, nm_utils_ip6_property_path (ifname, property), defval);
+	return nm_platform_sysctl_get_int32 (platform, nm_utils_ip6_property_path (ifname, property), defval);
 }
 
 NMRDisc *
-nm_lndp_rdisc_new (int ifindex,
+nm_lndp_rdisc_new (NMPlatform *platform,
+                   int ifindex,
                    const char *ifname,
                    const char *uuid,
                    NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                    GError **error)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDisc *rdisc;
 	NMLNDPRDiscPrivate *priv;
 	int errsv;
 
+	g_return_val_if_fail (NM_IS_PLATFORM (platform), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	rdisc = g_object_new (NM_TYPE_LNDP_RDISC, NULL);
+	if (!nm_platform_netns_push (platform, &netns))
+		return NULL;
+
+	rdisc = g_object_new (NM_TYPE_LNDP_RDISC,
+	                      NM_RDISC_PLATFORM, platform,
+	                      NULL);
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
 	rdisc->uuid = g_strdup (uuid);
 	rdisc->addr_gen_mode = addr_gen_mode;
 
-	rdisc->max_addresses = ipv6_sysctl_get (ifname, "max_addresses",
+	rdisc->max_addresses = ipv6_sysctl_get (platform, ifname, "max_addresses",
 	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);
-	rdisc->rtr_solicitations = ipv6_sysctl_get (ifname, "router_solicitations",
+	rdisc->rtr_solicitations = ipv6_sysctl_get (platform, ifname, "router_solicitations",
 	                                            NM_RDISC_RTR_SOLICITATIONS_DEFAULT);
-	rdisc->rtr_solicitation_interval = ipv6_sysctl_get (ifname, "router_solicitation_interval",
+	rdisc->rtr_solicitation_interval = ipv6_sysctl_get (platform, ifname, "router_solicitation_interval",
 	                                                    NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT);
 
 	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+
 	errsv = ndp_open (&priv->ndp);
+
 	if (errsv != 0) {
 		errsv = errsv > 0 ? errsv : -errsv;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,

@@ -74,6 +74,7 @@ typedef enum {
 } NMIPConfigSource;
 
 /* platform */
+typedef struct _NMPlatform           NMPlatform;
 typedef struct _NMPlatformIP4Address NMPlatformIP4Address;
 typedef struct _NMPlatformIP4Route   NMPlatformIP4Route;
 typedef struct _NMPlatformIP6Address NMPlatformIP6Address;
