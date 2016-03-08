@@ -725,11 +725,11 @@ nm_log_handler (const gchar *log_domain,
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			sd_journal_send ("PRIORITY=%d", syslog_priority,
-			                 "MESSAGE=%s", str_if_set (message, ""),
+			                 "MESSAGE=%s", message ?: "",
 			                 "SYSLOG_IDENTIFIER=%s", G_LOG_DOMAIN,
 			                 "SYSLOG_PID=%ld", (long) getpid (),
 			                 "SYSLOG_FACILITY=GLIB",
-			                 "GLIB_DOMAIN=%s", str_if_set (log_domain, ""),
+			                 "GLIB_DOMAIN=%s", log_domain ?: "",
 			                 "GLIB_LEVEL=%d", (int) (level & G_LOG_LEVEL_MASK),
 			                 "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000),
 			                 "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000),
@@ -738,7 +738,7 @@ nm_log_handler (const gchar *log_domain,
 		break;
 #endif
 	default:
-		syslog (syslog_priority, "%s", str_if_set (message, ""));
+		syslog (syslog_priority, "%s", message ?: "");
 		break;
 	}
 }

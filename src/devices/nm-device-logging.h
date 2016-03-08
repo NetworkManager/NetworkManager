@@ -36,7 +36,7 @@ _nm_device_log_self_to_device (t *self) \
 #define _NMLOG(level, domain, ...) \
     nm_log_obj ((level), (domain), (self), "device", \
                 "(%s): " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                (self) ? str_if_set (nm_device_get_iface (_nm_device_log_self_to_device (self)), "(null)") : "(none)" \
+                (self) ? (nm_device_get_iface (_nm_device_log_self_to_device (self)) ?: "(null)") : "(none)" \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
 #endif /* __NETWORKMANAGER_DEVICE_LOGGING_H__ */

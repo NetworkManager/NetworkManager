@@ -1664,7 +1664,7 @@ test_create_many_links (gconstpointer user_data)
 	guint n_devices = GPOINTER_TO_UINT (user_data);
 
 	if (n_devices > 100 && nmtst_test_quick ()) {
-		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", str_if_set (g_get_prgname (), "test-link-linux"));
+		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", g_get_prgname () ?: "test-link-linux");
 		g_test_skip ("Skip long running test");
 		return;
 	}

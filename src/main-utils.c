@@ -178,7 +178,7 @@ void
 nm_main_utils_ensure_root ()
 {
 	if (getuid () != 0) {
-		fprintf (stderr, _("You must be root to run %s!\n"), str_if_set (g_get_prgname (), ""));
+		fprintf (stderr, _("You must be root to run %s!\n"), g_get_prgname () ?: "");
 		exit (1);
 	}
 }

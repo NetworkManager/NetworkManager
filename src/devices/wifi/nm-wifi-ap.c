@@ -741,7 +741,7 @@ nm_ap_dump (NMAccessPoint *self,
 
 	nm_log_dbg (LOGD_WIFI_SCAN, "%s[%s%c] %-32s[%s%u %3u%% %c W:%04X R:%04X] [%3u] %s%s",
 	            prefix,
-	            str_if_set (priv->address, "(none)"),
+	            priv->address ?: "(none)",
 	            mode_to_char (self),
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	            chan > 99 ? "" : (chan > 9 ? " " : "  "),

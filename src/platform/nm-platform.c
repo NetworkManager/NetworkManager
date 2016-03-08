@@ -3081,7 +3081,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            str_flags->str,
 	            link->mtu, master,
 	            link->arptype,
-	            str_if_set (str_link_type, "???"),
+	            str_link_type ?: "???",
 	            link->kind ? (g_strcmp0 (str_link_type, link->kind) ? "/" : "*") : "?",
 	            link->kind && g_strcmp0 (str_link_type, link->kind) ? link->kind : "",
 	            link->initialized ? " init" : " not-init",

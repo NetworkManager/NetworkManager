@@ -431,7 +431,7 @@ main (int argc, char **argv)
 	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
 	if (nmtst_test_quick ()) {
-		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", str_if_set (g_get_prgname (), "test-rdisc-fake"));
+		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", g_get_prgname () ?: "test-rdisc-fake");
 		return g_test_run ();
 	}
 

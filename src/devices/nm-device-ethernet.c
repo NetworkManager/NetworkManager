@@ -158,7 +158,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	dev = (GUdevDevice *) nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex);
 	if (!dev) {
 		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device %d '%s' with udev",
-		       ifindex, str_if_set (nm_device_get_iface (NM_DEVICE (self)), "(null)"));
+		       ifindex, nm_device_get_iface (NM_DEVICE (self)) ?: "(null)");
 		goto out;
 	}
 	g_object_ref (dev);

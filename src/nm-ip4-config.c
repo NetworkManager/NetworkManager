@@ -1315,7 +1315,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 		g_message ("    nis: %s", nm_utils_inet4_ntop (tmp, NULL));
 	}
 
-	g_message (" nisdmn: %s", str_if_set (nm_ip4_config_get_nis_domain (config), "(none)"));
+	g_message (" nisdmn: %s", nm_ip4_config_get_nis_domain (config) ?: "(none)");
 
 	/* WINS */
 	for (i = 0; i < nm_ip4_config_get_num_wins (config); i++) {

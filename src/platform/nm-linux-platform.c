@@ -4018,7 +4018,7 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 		return nm_link_type_to_string (obj->link.type);
 	}
 	/* Link type not detected. Fallback to rtnl_link_get_type()/IFLA_INFO_KIND. */
-	return str_if_set (obj->link.kind, "unknown");
+	return obj->link.kind ?: "unknown";
 }
 
 static gboolean

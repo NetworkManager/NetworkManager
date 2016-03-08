@@ -196,7 +196,7 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
 	            "]",
 	            _NMLOG_PREFIX_NAME,
 	            self,
-	            con ? "," : "--", con ? str_if_set (nm_connection_get_uuid (con), "??") : "",
+	            con ? "," : "--", con ? (nm_connection_get_uuid (con) ?: "??") : "",
 	            con ? "," : "", NM_PRINT_FMT_QUOTED (id, "\"", id, "\"", con ? "??" : ""),
 	            priv->ip_ifindex,
 	            priv->ip_iface ? ":" : "", NM_PRINT_FMT_QUOTED (priv->ip_iface, "(", priv->ip_iface, ")", "")
