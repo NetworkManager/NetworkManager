@@ -3881,12 +3881,16 @@ do_change_link (NMPlatform *platform,
                 int ifindex,
                 struct nl_msg *nlmsg)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
 	char s_buf[256];
 	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
 	NMLogLevel log_level = LOGL_DEBUG;
 	const char *log_result = "failure", *log_detail = "";
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
 
 retry:
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
