@@ -668,6 +668,32 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 }
 
 /**
+ * nm_platform_link_set_netns:
+ * @self: platform instance
+ * @ifindex: Interface index
+ * @netns_fd: the file descriptor for the new netns.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd)
+{
+	const NMPlatformLink *pllink;
+
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (netns_fd > 0, FALSE);
+
+	pllink = nm_platform_link_get (self, ifindex);
+	if (!pllink)
+		return FALSE;
+
+	_LOGD ("link: ifindex %d changing network namespace to %d", ifindex, netns_fd);
+	return klass->link_set_netns (self, ifindex, netns_fd);
+}
+
+/**
  * nm_platform_link_get_index:
  * @self: platform instance
  * @name: Interface name
