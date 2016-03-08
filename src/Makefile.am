@@ -629,7 +629,8 @@ dbusservice_DATA = org.freedesktop.NetworkManager.conf
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
-	$(NetworkManager_DATA)
+	$(NetworkManager_DATA) \
+	NetworkManager.ver
 
 rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
