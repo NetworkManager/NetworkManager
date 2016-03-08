@@ -31,6 +31,8 @@
 #define NM_IS_ROUTE_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_ROUTE_MANAGER))
 #define NM_ROUTE_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ROUTE_MANAGER, NMRouteManagerClass))
 
+#define NM_ROUTE_MANAGER_PLATFORM "platform"
+
 struct _NMRouteManager {
 	GObject parent;
 };
@@ -48,5 +50,6 @@ gboolean nm_route_manager_route_flush (NMRouteManager *self, int ifindex);
 void nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *self, GArray *device_route_purge_list);
 
 NMRouteManager *nm_route_manager_get (void);
+NMRouteManager *nm_route_manager_new (NMPlatform *platform);
 
 #endif  /* NM_ROUTE_MANAGER_H */
