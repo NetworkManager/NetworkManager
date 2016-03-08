@@ -125,7 +125,8 @@ complete_connection (NMDevice *device,
 	if (s_adsl && !nm_setting_verify (NM_SETTING (s_adsl), NULL, error))
 		return FALSE;
 
-	nm_utils_complete_generic (connection,
+	nm_utils_complete_generic (NM_PLATFORM_GET,
+	                           connection,
 	                           NM_SETTING_ADSL_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,

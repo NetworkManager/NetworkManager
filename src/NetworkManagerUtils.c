@@ -127,7 +127,8 @@ get_new_connection_name (const GSList *existing,
 }
 
 static char *
-get_new_connection_ifname (const GSList *existing,
+get_new_connection_ifname (NMPlatform *platform,
+                           const GSList *existing,
                            const char *prefix)
 {
 	int i;
@@ -138,7 +139,7 @@ get_new_connection_ifname (const GSList *existing,
 	for (i = 0; i < 500; i++) {
 		name = g_strdup_printf ("%s%d", prefix, i);
 
-		if (nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name))
+		if (nm_platform_link_get_by_ifname (platform, name))
 			goto next;
 
 		for (iter = existing, found = FALSE; iter; iter = g_slist_next (iter)) {
@@ -205,7 +206,8 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 }
 
 void
-nm_utils_complete_generic (NMConnection *connection,
+nm_utils_complete_generic (NMPlatform *platform,
+                           NMConnection *connection,
                            const char *ctype,
                            const GSList *existing,
                            const char *preferred_id,
@@ -241,7 +243,7 @@ nm_utils_complete_generic (NMConnection *connection,
 
 	/* Add an interface name, if requested */
 	if (ifname_prefix && !nm_setting_connection_get_interface_name (s_con)) {
-		ifname = get_new_connection_ifname (existing, ifname_prefix);
+		ifname = get_new_connection_ifname (platform, existing, ifname_prefix);
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, ifname, NULL);
 		g_free (ifname);
 	}

@@ -1388,7 +1388,8 @@ complete_connection (NMDevice *device,
 	/* Default to an ethernet-only connection, but if a PPPoE setting was given
 	 * then PPPoE should be our connection type.
 	 */
-	nm_utils_complete_generic (connection,
+	nm_utils_complete_generic (NM_PLATFORM_GET,
+	                           connection,
 	                           s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,

@@ -97,7 +97,8 @@ complete_connection (NMDevice *device,
 {
 	NMSettingBond *s_bond;
 
-	nm_utils_complete_generic (connection,
+	nm_utils_complete_generic (NM_PLATFORM_GET,
+	                           connection,
 	                           NM_SETTING_BOND_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,

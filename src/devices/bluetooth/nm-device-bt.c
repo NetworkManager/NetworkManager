@@ -20,12 +20,13 @@
 
 #include "nm-default.h"
 
+#include "nm-device-bt.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
-#include "nm-device-bt.h"
 #include "nm-device-private.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-setting-connection.h"
@@ -39,6 +40,7 @@
 #include "nm-utils.h"
 #include "nm-bt-error.h"
 #include "nm-bt-enum-types.h"
+#include "nm-platform.h"
 
 #include "nmdbus-device-bt.h"
 
@@ -315,7 +317,8 @@ complete_connection (NMDevice *device,
 		return FALSE;
 	}
 
-	nm_utils_complete_generic (connection,
+	nm_utils_complete_generic (NM_PLATFORM_GET,
+	                           connection,
 	                           NM_SETTING_BLUETOOTH_SETTING_NAME,
 	                           existing_connections,
 	                           preferred,

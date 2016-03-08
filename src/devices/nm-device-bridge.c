@@ -103,7 +103,8 @@ complete_connection (NMDevice *device,
 {
 	NMSettingBridge *s_bridge;
 
-	nm_utils_complete_generic (connection,
+	nm_utils_complete_generic (NM_PLATFORM_GET,
+	                           connection,
 	                           NM_SETTING_BRIDGE_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,
