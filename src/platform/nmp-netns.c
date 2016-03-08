@@ -27,6 +27,9 @@
 
 #include "NetworkManagerUtils.h"
 
+#define PROC_SELF_NS_MNT "/proc/self/ns/mnt"
+#define PROC_SELF_NS_NET "/proc/self/ns/net"
+
 /*********************************************************************************************/
 
 #define _NMLOG_DOMAIN        LOGD_PLATFORM
@@ -193,7 +196,7 @@ _netns_new (GError **error)
 	int fd_net, fd_mnt;
 	int errsv;
 
-	fd_net = open ("/proc/self/ns/net", O_RDONLY);
+	fd_net = open (PROC_SELF_NS_NET, O_RDONLY);
 	if (fd_net == -1) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -202,7 +205,7 @@ _netns_new (GError **error)
 		return NULL;
 	}
 
-	fd_mnt = open ("/proc/self/ns/mnt", O_RDONLY);
+	fd_mnt = open (PROC_SELF_NS_MNT, O_RDONLY);
 	if (fd_mnt == -1) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
