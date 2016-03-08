@@ -930,6 +930,7 @@ set_secrets_not_required (NMConnection *connection, GVariant *dict)
 				g_variant_unref (val);
 			}
 		}
+		g_variant_unref (setting_dict);
 	}
 }
 

@@ -313,6 +313,7 @@ construct_device_dhcp6_items (GSList *items, GVariant *dhcp6_config)
 		tmp = g_variant_get_string (val, NULL);
 		items = g_slist_prepend (items, g_strdup_printf ("DHCP6_%s=%s", ucased, tmp));
 		g_free (ucased);
+		g_variant_unref (val);
 	}
 	return items;
 }

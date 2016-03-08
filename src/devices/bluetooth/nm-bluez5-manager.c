@@ -213,6 +213,7 @@ get_managed_objects_cb (GDBusProxy *proxy,
 		                            G_VARIANT_TYPE_DICTIONARY)) {
 			device_added (proxy, path, self);
 		}
+		g_variant_unref (ifaces);
 	}
 
 	g_variant_unref (variant);

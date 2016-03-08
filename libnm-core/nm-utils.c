@@ -2084,8 +2084,7 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 		if (   !g_variant_lookup (route_var, "dest", "&s", &dest)
 		    || !g_variant_lookup (route_var, "prefix", "u", &prefix)) {
 			g_warning ("Ignoring invalid address");
-			g_variant_unref (route_var);
-			continue;
+			goto next;
 		}
 		if (!g_variant_lookup (route_var, "next-hop", "&s", &next_hop))
 			next_hop = NULL;
@@ -2098,8 +2097,7 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 		if (!route) {
 			g_warning ("Ignoring invalid route: %s", error->message);
 			g_clear_error (&error);
-			g_variant_unref (route_var);
-			continue;
+			goto next;
 		}
 
 		g_variant_iter_init (&attrs_iter, route_var);
@@ -2113,6 +2111,8 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 		}
 
 		g_ptr_array_add (routes, route);
+next:
+		g_variant_unref (route_var);
 	}
 
 	return routes;
