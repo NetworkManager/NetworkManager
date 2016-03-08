@@ -7937,7 +7937,7 @@ _replace_vpn_config_in_list (GSList **plist, GObject *old, GObject *new)
 			if (new)
 				old_link->data = g_object_ref (new);
 			else
-				*plist = g_slist_remove_link (*plist, old_link);
+				*plist = g_slist_delete_link (*plist, old_link);
 			g_object_unref (old);
 		}
 		return TRUE;
