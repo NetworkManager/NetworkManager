@@ -1627,9 +1627,9 @@ link_option_path (NMPlatform *self, int master, const char *category, const char
 		return NULL;
 
 	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
-	                        ASSERT_VALID_PATH_COMPONENT (name),
-	                        ASSERT_VALID_PATH_COMPONENT (category),
-	                        ASSERT_VALID_PATH_COMPONENT (option));
+	                        NM_ASSERT_VALID_PATH_COMPONENT (name),
+	                        NM_ASSERT_VALID_PATH_COMPONENT (category),
+	                        NM_ASSERT_VALID_PATH_COMPONENT (option));
 }
 
 static gboolean
@@ -1918,7 +1918,7 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 	/* Could not get the link information via netlink. To support older kernels,
 	 * fallback to reading sysfs. */
 
-	iface = ASSERT_VALID_PATH_COMPONENT (plink->name);
+	iface = NM_ASSERT_VALID_PATH_COMPONENT (plink->name);
 
 	/* Fall back to reading sysfs */
 	path = g_strdup_printf ("/sys/class/net/%s/mode", iface);

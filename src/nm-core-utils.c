@@ -2508,8 +2508,8 @@ _get_property_path (const char *ifname,
 	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
 	int len;
 
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
-	property = ASSERT_VALID_PATH_COMPONENT (property);
+	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
+	property = NM_ASSERT_VALID_PATH_COMPONENT (property);
 
 	len = g_snprintf (path,
 	                  sizeof (path),
@@ -2574,7 +2574,7 @@ nm_utils_is_valid_path_component (const char *name)
 }
 
 const char *
-ASSERT_VALID_PATH_COMPONENT (const char *name)
+NM_ASSERT_VALID_PATH_COMPONENT (const char *name)
 {
 	if (G_LIKELY (nm_utils_is_valid_path_component (name)))
 		return name;

@@ -4271,7 +4271,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	if (!ifname)
 		return NULL;
 
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
 	id = sysctl_get (platform, path);
@@ -4291,7 +4291,7 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	if (!ifname)
 		return 0;
 
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/dev_id", ifname);
 	id = sysctl_get (platform, path);
@@ -4967,7 +4967,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMP
 
 	ifname = g_strdup_printf ("%s.%04x", obj_parent->link.name, p_key);
 
-	path = g_strdup_printf ("/sys/class/net/%s/create_child", ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name));
+	path = g_strdup_printf ("/sys/class/net/%s/create_child", NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name));
 	id = g_strdup_printf ("0x%04x", p_key);
 	if (!nm_platform_sysctl_set (platform, path, id))
 		return FALSE;

@@ -85,7 +85,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
 
 	mode_path = g_strdup_printf ("/sys/class/net/%s/mode",
-	                             ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (dev)));
+	                             NM_ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (dev)));
 	if (!g_file_test (mode_path, G_FILE_TEST_EXISTS)) {
 		g_free (mode_path);
 

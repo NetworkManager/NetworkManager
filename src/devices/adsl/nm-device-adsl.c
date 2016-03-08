@@ -535,7 +535,7 @@ carrier_update_cb (gpointer user_data)
 	char *path;
 
 	path  = g_strdup_printf ("/sys/class/atm/%s/carrier",
-	                         ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
+	                         NM_ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
 	carrier = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET, path, 10, 0, 1, -1);
 	g_free (path);
 

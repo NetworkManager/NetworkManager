@@ -117,7 +117,7 @@ adsl_add (NMAtmManager *self, GUdevDevice *udev_device)
 	nm_log_dbg (LOGD_HW, "(%s): found ATM device", ifname);
 
 	atm_index_path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
-	                                  ASSERT_VALID_PATH_COMPONENT (ifname));
+	                                  NM_ASSERT_VALID_PATH_COMPONENT (ifname));
 	atm_index = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET,
 	                                                      atm_index_path,
 	                                                      10, 0, G_MAXINT,
