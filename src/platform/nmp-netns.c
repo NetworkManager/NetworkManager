@@ -24,6 +24,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "NetworkManagerUtils.h"
 
@@ -578,6 +580,84 @@ nmp_netns_is_initial (void)
 }
 
 /*********************************************************************************************/
+
+gboolean
+nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
+{
+	gs_free char *dirname = NULL;
+	int errsv;
+	int fd;
+	nm_auto_pop_netns NMPNetns *netns_pop = NULL;
+
+	g_return_val_if_fail (NMP_IS_NETNS (self), FALSE);
+	g_return_val_if_fail (filename && filename[0] == '/', FALSE);
+
+	if (!nmp_netns_push_type (self, CLONE_NEWNET))
+		return FALSE;
+	netns_pop = self;
+
+	dirname = g_path_get_dirname (filename);
+	if (mkdir (dirname, 0) != 0) {
+		errsv = errno;
+		if (errsv != EEXIST) {
+			_LOGE (self, "bind: failed to create directory %s: %s",
+			       dirname, g_strerror (errsv));
+			return FALSE;
+		}
+	}
+
+	if ((fd = creat (filename, S_IRUSR | S_IRGRP | S_IROTH)) == -1) {
+		errsv = errno;
+		_LOGE (self, "bind: failed to create %s: %s",
+		       filename, g_strerror (errsv));
+		return FALSE;
+	}
+	close (fd);
+
+	if (mount (PROC_SELF_NS_NET, filename, "none", MS_BIND, NULL) != 0) {
+		errsv = errno;
+		_LOGE (self, "bind: failed to mount %s to %s: %s",
+		       PROC_SELF_NS_NET, filename, g_strerror (errsv));
+		unlink (filename);
+		return FALSE;
+	}
+
+	if (out_fd) {
+		if ((fd = open (filename, O_RDONLY)) == -1) {
+			errsv = errno;
+			_LOGE (self, "bind: failed to open %s: %s", filename, g_strerror (errsv));
+			umount2 (filename, MNT_DETACH);
+			unlink (filename);
+			return FALSE;
+		}
+		*out_fd = fd;
+	}
+
+	return TRUE;
+}
+
+gboolean
+nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename)
+{
+	int errsv;
+
+	g_return_val_if_fail (NMP_IS_NETNS (self), FALSE);
+	g_return_val_if_fail (filename && filename[0] == '/', FALSE);
+
+	if (umount2 (filename, MNT_DETACH) != 0) {
+		errsv = errno;
+		_LOGE (self, "bind: failed to unmount2 %s: %s", filename, g_strerror (errsv));
+		return FALSE;
+	}
+	if (unlink (filename) != 0) {
+		errsv = errno;
+		_LOGE (self, "bind: failed to unlink %s: %s", filename, g_strerror (errsv));
+		return FALSE;
+	}
+	return TRUE;
+}
+
+/******************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,

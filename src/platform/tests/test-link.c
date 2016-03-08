@@ -21,6 +21,9 @@
 #include "nm-default.h"
 
 #include <sched.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "nmp-object.h"
 #include "nmp-netns.h"
@@ -2236,6 +2239,59 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 
 /*****************************************************************************/
 
+static void
+test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
+{
+#define P_VAR_RUN                "/var/run"
+#define P_VAR_RUN_NETNS          "/var/run/netns"
+#define P_VAR_RUN_NETNS_BINDNAME "/var/run/netns/"P_NETNS_BINDNAME
+#define P_NETNS_BINDNAME         "nmtst-iproute2-netns"
+	gs_unref_object NMPlatform *platform_0 = NULL;
+	gs_unref_object NMPlatform *platform_1 = NULL;
+	gs_unref_object NMPlatform *platform_2 = NULL;
+	nm_auto_pop_netns NMPNetns *netns_pop = NULL;
+	NMPlatform *platforms[3];
+	NMPNetns *netns;
+	int i;
+
+	if (_test_netns_check_skip ())
+		return;
+
+	g_assert_cmpint (mount ("tmpfs", P_VAR_RUN, "tmpfs", MS_NOATIME | MS_NODEV | MS_NOSUID, "mode=0755,size=32K"), ==, 0);
+	g_assert_cmpint (mkdir (P_VAR_RUN_NETNS, 755), ==, 0);
+
+	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platforms[1] = platform_1 = _test_netns_create_platform ();
+	platforms[2] = platform_2 = _test_netns_create_platform ();
+
+	i = nmtst_get_rand_int () % 4;
+	if (i != 3)
+		g_assert (nm_platform_netns_push (platforms[i], &netns_pop));
+
+	i = (nmtst_get_rand_int () % 2) + 1;
+	netns = nm_platform_netns_get (platforms[i]);
+
+	_ADD_DUMMY (platforms[i], "dummy2b");
+
+	g_assert (!g_file_test (P_VAR_RUN_NETNS_BINDNAME, G_FILE_TEST_EXISTS));
+	g_assert_cmpint (nmtstp_run_command ("ip netns exec "P_NETNS_BINDNAME" true 2>/dev/null"), !=, 0);
+
+	g_assert (nmp_netns_bind_to_path (netns, P_VAR_RUN_NETNS_BINDNAME, NULL));
+
+	g_assert (g_file_test (P_VAR_RUN_NETNS_BINDNAME, G_FILE_TEST_EXISTS));
+	g_assert_cmpint (nmtstp_run_command ("ip netns exec "P_NETNS_BINDNAME" true"), ==, 0);
+	g_assert_cmpint (nmtstp_run_command ("ip netns exec "P_NETNS_BINDNAME" ip link show dummy2b 1>/dev/null"), ==, 0);
+
+	g_assert (nmp_netns_bind_to_path_destroy (netns, P_VAR_RUN_NETNS_BINDNAME));
+
+	g_assert (!g_file_test (P_VAR_RUN_NETNS_BINDNAME, G_FILE_TEST_EXISTS));
+	g_assert_cmpint (nmtstp_run_command ("ip netns exec "P_NETNS_BINDNAME" true 2>/dev/null"), !=, 0);
+
+	g_assert_cmpint (umount (P_VAR_RUN), ==, 0);
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -2286,5 +2342,6 @@ setup_tests (void)
 		g_test_add_vtable ("/general/netns/general", 0, NULL, _test_netns_setup, test_netns_general, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/set-netns", 0, NULL, _test_netns_setup, test_netns_set_netns, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/push", 0, NULL, _test_netns_setup, test_netns_push, _test_netns_teardown);
+		g_test_add_vtable ("/general/netns/bind-to-path", 0, NULL, _test_netns_setup, test_netns_bind_to_path, _test_netns_teardown);
 	}
 }

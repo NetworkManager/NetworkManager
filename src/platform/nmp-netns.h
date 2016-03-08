@@ -68,4 +68,7 @@ _nm_auto_pop_netns (NMPNetns **p)
 
 #define nm_auto_pop_netns __attribute__((cleanup(_nm_auto_pop_netns)))
 
+gboolean nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd);
+gboolean nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename);
+
 #endif /* __NMP_NETNS_UTILS_H__ */
