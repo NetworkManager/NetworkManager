@@ -17,11 +17,15 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <sys/wait.h>
 
+#if 0 /* NM_IGNORED */
 #include "sd-daemon.h"
+#endif
 #include "sd-event.h"
 #include "sd-id128.h"
 
@@ -30,11 +34,17 @@
 #include "hashmap.h"
 #include "list.h"
 #include "macro.h"
+#if 0 /* NM_IGNORED */
 #include "missing.h"
+#endif
 #include "prioq.h"
+#if 0 /* NM_IGNORED */
 #include "process-util.h"
+#endif
 #include "set.h"
+#if 0 /* NM_IGNORED */
 #include "signal-util.h"
+#endif
 #include "string-table.h"
 #include "string-util.h"
 #include "time-util.h"
@@ -1126,6 +1136,7 @@ fail:
         return r;
 }
 
+#if 0 /* NM_IGNORED */
 static int signal_exit_callback(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
         assert(s);
 
@@ -1192,6 +1203,7 @@ _public_ int sd_event_add_signal(
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 _public_ int sd_event_add_child(
                 sd_event *e,
@@ -2818,6 +2830,7 @@ _public_ int sd_event_default(sd_event **ret) {
         return 1;
 }
 
+#if 0 /* NM_IGNORED */
 _public_ int sd_event_get_tid(sd_event *e, pid_t *tid) {
         assert_return(e, -EINVAL);
         assert_return(tid, -EINVAL);
@@ -2889,3 +2902,4 @@ _public_ int sd_event_get_watchdog(sd_event *e) {
 
         return e->watchdog;
 }
+#endif /* NM_IGNORED */

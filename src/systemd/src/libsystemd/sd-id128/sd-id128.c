@@ -155,7 +155,6 @@ _public_ int sd_id128_get_machine(sd_id128_t *ret) {
         return 0;
 }
 
-#if 0 /* NM_IGNORED */
 _public_ int sd_id128_get_boot(sd_id128_t *ret) {
         static thread_local sd_id128_t saved_boot_id;
         static thread_local bool saved_boot_id_valid = false;
@@ -211,6 +210,7 @@ _public_ int sd_id128_get_boot(sd_id128_t *ret) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 _public_ int sd_id128_randomize(sd_id128_t *ret) {
         sd_id128_t t;
         int r;

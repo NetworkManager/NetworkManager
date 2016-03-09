@@ -26,6 +26,8 @@
 #include <sys/resource.h>
 #include <time.h>
 
+guint nm_sd_event_attach_default (void);
+
 #define noreturn G_GNUC_NORETURN
 
 #ifndef CLOCK_BOOTTIME
@@ -115,6 +117,14 @@ G_STMT_START { \
 #define ETHERTYPE_LLDP 0x88cc
 #endif
 
+#ifndef HAVE_SECURE_GETENV
+#  ifdef HAVE___SECURE_GETENV
+#    define secure_getenv __secure_getenv
+#  else
+#    error neither secure_getenv nor __secure_getenv is available
+#  endif
+#endif
+
 /*****************************************************************************/
 
 /* work around missing uchar.h */
@@ -122,6 +132,14 @@ typedef guint16 char16_t;
 typedef guint32 char32_t;
 
 /*****************************************************************************/
+
+#define PID_TO_PTR(p) ((void*) ((uintptr_t) p))
+
+static inline int
+sd_notify (int unset_environment, const char *state)
+{
+	return 0;
+}
 
 /* Can't include both net/if.h and linux/if.h; so have to define this here */
 #ifndef IFNAMSIZ

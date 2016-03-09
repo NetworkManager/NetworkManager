@@ -20,233 +20,126 @@
 
 #include "nm-sd-adapt.h"
 
-#include <unistd.h>
-#include <errno.h>
-
 #include "sd-event.h"
 #include "fd-util.h"
-#include "time-util.h"
 
-struct sd_event_source {
-	guint refcount;
-	guint id;
-	gpointer user_data;
+/*****************************************************************************/
 
-	GIOChannel *channel;
+int
+asynchronous_close (int fd) {
+	safe_close (fd);
+	return -1;
+}
 
-	union {
-		struct {
-			sd_event_io_handler_t cb;
-		} io;
-		struct {
-			sd_event_time_handler_t cb;
-			uint64_t usec;
-		} time;
-	};
-};
+/*****************************************************************************
+ * Integrating sd_event into glib. Taken and adjusted from
+ * https://www.freedesktop.org/software/systemd/man/sd_event_get_fd.html
+ *****************************************************************************/
 
-static struct sd_event_source *
-source_new (void)
+typedef struct SDEventSource {
+	GSource source;
+	GPollFD pollfd;
+	sd_event *event;
+	guint *default_source_id;
+} SDEventSource;
+
+static gboolean
+event_prepare (GSource *source, gint *timeout_)
 {
-	struct sd_event_source *source;
+	return sd_event_prepare (((SDEventSource *) source)->event) > 0;
+}
 
-	source = g_slice_new0 (struct sd_event_source);
-	source->refcount = 1;
+static gboolean
+event_check (GSource *source)
+{
+	return sd_event_wait (((SDEventSource *) source)->event, 0) > 0;
+}
+
+static gboolean
+event_dispatch (GSource *source, GSourceFunc callback, gpointer user_data)
+{
+	return sd_event_dispatch (((SDEventSource *)source)->event) > 0;
+}
+
+static void
+event_finalize (GSource *source)
+{
+	SDEventSource *s;
+
+	s = (SDEventSource *) source;
+	sd_event_unref (s->event);
+	if (s->default_source_id)
+		*s->default_source_id = 0;
+}
+
+static SDEventSource *
+event_create_source (sd_event *event, guint *default_source_id)
+{
+	static GSourceFuncs event_funcs = {
+		.prepare = event_prepare,
+		.check = event_check,
+		.dispatch = event_dispatch,
+		.finalize = event_finalize,
+	};
+	SDEventSource *source;
+
+	g_return_val_if_fail (event, NULL);
+
+	source = (SDEventSource *) g_source_new (&event_funcs, sizeof (SDEventSource));
+
+	source->event = sd_event_ref (event);
+	source->pollfd.fd = sd_event_get_fd (event);
+	source->pollfd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+	source->default_source_id = default_source_id;
+
+	g_source_add_poll ((GSource *) source, &source->pollfd);
+
 	return source;
 }
 
-int
-sd_event_source_set_priority (sd_event_source *s, int64_t priority)
+static guint
+event_attach (sd_event *event, GMainContext *context)
 {
-	return 0;
-}
+	SDEventSource *source;
+	guint id;
+	int r;
+	sd_event *e = event;
+	guint *p_default_source_id = NULL;
 
-int
-sd_event_source_set_enabled (sd_event_source *s, int m)
-{
-	/* TODO */
-	g_return_val_if_reached (-EINVAL);
-}
+	if (!e) {
+		static guint default_source_id = 0;
 
-int
-sd_event_source_set_time (sd_event_source *s, uint64_t usec)
-{
-	/* TODO */
-	g_return_val_if_reached (-EINVAL);
-}
-
-sd_event_source*
-sd_event_source_unref (sd_event_source *s)
-{
-
-	if (!s)
-		return NULL;
-
-	g_return_val_if_fail (s->refcount, NULL);
-
-	s->refcount--;
-	if (s->refcount == 0) {
-		if (s->id)
-			g_source_remove (s->id);
-		if (s->channel) {
-			/* Don't shut down the channel since systemd will soon close
-			 * the file descriptor itself, which would cause -EBADF.
-			 */
-			g_io_channel_unref (s->channel);
+		if (default_source_id) {
+			/* The default event cannot be registered multiple times. */
+			g_return_val_if_reached (0);
 		}
-		g_slice_free (struct sd_event_source, s);
+
+		r = sd_event_default (&e);
+		if (r < 0)
+			g_return_val_if_reached (0);
+
+		p_default_source_id = &default_source_id;
 	}
-	return NULL;
+
+	source = event_create_source (e, p_default_source_id);
+	id = g_source_attach ((GSource *) source, context);
+	g_source_unref ((GSource *) source);
+
+
+	if (!event) {
+		*p_default_source_id = id;
+		sd_event_unref (e);
+	}
+
+	g_return_val_if_fail (id, 0);
+	return id;
 }
 
-int
-sd_event_source_set_description(sd_event_source *s, const char *description)
+guint
+nm_sd_event_attach_default (void)
 {
-	if (!s)
-		return -EINVAL;
-
-	g_source_set_name_by_id (s->id, description);
-	return 0;
+	return event_attach (NULL, NULL);
 }
 
-static gboolean
-io_ready (GIOChannel *channel, GIOCondition condition, struct sd_event_source *source)
-{
-	int r, revents = 0;
-	gboolean result;
-
-	if (condition & G_IO_IN)
-		revents |= EPOLLIN;
-	if (condition & G_IO_OUT)
-		revents |= EPOLLOUT;
-	if (condition & G_IO_PRI)
-		revents |= EPOLLPRI;
-	if (condition & G_IO_ERR)
-		revents |= EPOLLERR;
-	if (condition & G_IO_HUP)
-		revents |= EPOLLHUP;
-
-	source->refcount++;
-
-	r = source->io.cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
-	if (r < 0 || source->refcount <= 1) {
-		source->id = 0;
-		result = G_SOURCE_REMOVE;
-	} else
-		result = G_SOURCE_CONTINUE;
-
-	sd_event_source_unref (source);
-
-	return result;
-}
-
-int
-sd_event_add_io (sd_event *e, sd_event_source **s, int fd, uint32_t events, sd_event_io_handler_t callback, void *userdata)
-{
-	struct sd_event_source *source;
-	GIOChannel *channel;
-	GIOCondition condition = 0;
-
-	/* systemd supports floating sd_event_source by omitting the @s argument.
-	 * We don't have such users and don't implement floating references. */
-	g_return_val_if_fail (s, -EINVAL);
-
-	channel = g_io_channel_unix_new (fd);
-	if (!channel)
-		return -EINVAL;
-
-	source = source_new ();
-	source->io.cb = callback;
-	source->user_data = userdata;
-	source->channel = channel;
-
-	if (events & EPOLLIN)
-		condition |= G_IO_IN;
-	if (events & EPOLLOUT)
-		condition |= G_IO_OUT;
-	if (events & EPOLLPRI)
-		condition |= G_IO_PRI;
-	if (events & EPOLLERR)
-		condition |= G_IO_ERR;
-	if (events & EPOLLHUP)
-		condition |= G_IO_HUP;
-
-	g_io_channel_set_encoding (source->channel, NULL, NULL);
-	g_io_channel_set_buffered (source->channel, FALSE);
-	source->id = g_io_add_watch (source->channel, condition, (GIOFunc) io_ready, source);
-
-	*s = source;
-	return 0;
-}
-
-static gboolean
-time_ready (struct sd_event_source *source)
-{
-	source->refcount++;
-
-	source->time.cb (source, source->time.usec, source->user_data);
-	source->id = 0;
-
-	sd_event_source_unref (source);
-
-	return G_SOURCE_REMOVE;
-}
-
-int
-sd_event_add_time(sd_event *e, sd_event_source **s, clockid_t clock, uint64_t usec, uint64_t accuracy, sd_event_time_handler_t callback, void *userdata)
-{
-	struct sd_event_source *source;
-	uint64_t n = now (clock);
-
-	/* systemd supports floating sd_event_source by omitting the @s argument.
-	 * We don't have such users and don't implement floating references. */
-	g_return_val_if_fail (s, -EINVAL);
-
-	source = source_new ();
-	source->time.cb = callback;
-	source->user_data = userdata;
-	source->time.usec = usec;
-
-	if (usec > 1000)
-		usec = n < usec - 1000 ? usec - n : 1000;
-	source->id = g_timeout_add (usec / 1000, (GSourceFunc) time_ready, source);
-
-	*s = source;
-	return 0;
-}
-
-/* sd_event is basically a GMainContext; but since we only
- * ever use the default context, nothing to do here.
- */
-
-int
-sd_event_default (sd_event **e)
-{
-	*e = GUINT_TO_POINTER (1);
-	return 0;
-}
-
-sd_event*
-sd_event_ref (sd_event *e)
-{
-	return e;
-}
-
-sd_event*
-sd_event_unref (sd_event *e)
-{
-	return NULL;
-}
-
-int
-sd_event_now (sd_event *e, clockid_t clock, uint64_t *usec)
-{
-	*usec = now (clock);
-	return 0;
-}
-
-int asynchronous_close(int fd) {
-	safe_close(fd);
-	return -1;
-}
+/*****************************************************************************/
 

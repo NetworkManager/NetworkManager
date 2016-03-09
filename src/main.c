@@ -50,6 +50,7 @@
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
 #include "nm-exported-object.h"
+#include "nm-sd-adapt.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -271,6 +272,7 @@ main (int argc, char *argv[])
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
 	NMConfigCmdLineOptions *config_cli;
+	guint sd_id = 0;
 
 	nm_g_type_init ();
 
@@ -474,8 +476,11 @@ main (int argc, char *argv[])
 
 	success = TRUE;
 
-	if (configure_and_quit == FALSE)
+	if (configure_and_quit == FALSE) {
+		sd_id = nm_sd_event_attach_default ();
+
 		g_main_loop_run (main_loop);
+	}
 
 done:
 	nm_exported_object_class_set_quitting ();
@@ -486,5 +491,8 @@ done:
 		unlink (global_opt.pidfile);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
+
+	nm_clear_g_source (&sd_id);
+
 	exit (success ? 0 : 1);
 }
