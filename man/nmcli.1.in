@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2010 - 2015 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "12 August 2015"
+.TH NMCLI "1" "2016-03-09" "NetworkManager 1.2"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager

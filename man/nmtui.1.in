@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2014 Red Hat, Inc.
 .\"
-.TH NMTUI "1" "6 November 2014"
+.TH NMTUI "1" "2014-11-06" "NetworkManager 1.2"
 
 .SH NAME
 nmtui \- Text User Interface for controlling NetworkManager

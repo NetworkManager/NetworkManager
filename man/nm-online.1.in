@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NM-ONLINE "1" "25 March 2014"
+.TH NM-ONLINE "1" "2014-03-25" "NetworkManager 1.2"
 
 .SH NAME
 nm-online \- ask NetworkManager whether the network is connected

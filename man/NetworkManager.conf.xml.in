@@ -17,7 +17,7 @@ Copyright 2010 - 2014 Red Hat, Inc.
     <manvolnum>5</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Configuration</refmiscinfo>
-    <refmiscinfo class="version">1.0</refmiscinfo>
+    <refmiscinfo class="version">1.2</refmiscinfo>
   </refmeta>
 
   <refnamediv>
