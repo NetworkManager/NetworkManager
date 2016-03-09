@@ -544,6 +544,7 @@ finalize (GObject *object)
 	NMSettingIPTunnel *setting = NM_SETTING_IP_TUNNEL (object);
 	NMSettingIPTunnelPrivate *priv = NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting);
 
+	g_free (priv->parent);
 	g_free (priv->local);
 	g_free (priv->remote);
 	g_free (priv->input_key);
