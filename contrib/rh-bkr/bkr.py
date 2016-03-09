@@ -849,6 +849,8 @@ class CmdSubmit(CmdBase):
 
     def _get_var_for_VALGRIND(self, key):
         if self._get_var('VALGRIND') is not None or self.options.valgrind:
+            if self._get_var_for_SELINUX_DISABLED('SELINUX_DISABLED') == '':
+                raise Exception("Valgrind wrapping won't work with SELinux enabled")
             return 'valgrind'
         return ''
 
