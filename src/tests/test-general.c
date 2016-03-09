@@ -1221,7 +1221,31 @@ test_nm_utils_strbuf_append (void)
 	}
 }
 
-/*******************************************/
+/*****************************************************************************/
+
+static void
+test_duplicate_decl_specifier (void)
+{
+	/* have some static variables, so that the result is certainly not optimized out. */
+	static const int v_const[1] = { 1 };
+	static int v_result[1] = { };
+	const const int v2 = 3;
+
+	/* Test that we don't get a compiler warning about duplicate const specifier.
+	 * C99 allows that and it can easily happen in macros. */
+
+#define TEST_MAX(a, b) \
+	({ \
+		const typeof(a) _a = (a); \
+		const typeof(b) _b = (b); \
+		\
+		(_a > _b ? _a : _b); \
+	})
+
+	v_result[0] = TEST_MAX (v_const[0], nmtst_get_rand_int () % 5) + v2;
+}
+
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 
@@ -1254,6 +1278,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 	g_test_add_func ("/general/nm_match_spec_match_config", test_nm_match_spec_match_config);
+	g_test_add_func ("/general/duplicate_decl_specifier", test_duplicate_decl_specifier);
 
 	return g_test_run ();
 }
