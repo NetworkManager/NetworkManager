@@ -70,13 +70,6 @@ _LOG_DECLARE_SELF (NMDevice);
 
 #include "nmdbus-device.h"
 
-static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
-static gboolean ip_config_valid (NMDeviceState state);
-static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, NMDeviceStateReason *reason);
-static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
-static void nm_device_start_ip_check (NMDevice *self);
-static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
-
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) ((o)->priv)
@@ -414,6 +407,12 @@ static void _set_state_full (NMDevice *self,
 
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
+static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
+static gboolean ip_config_valid (NMDeviceState state);
+static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, NMDeviceStateReason *reason);
+static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
+static void nm_device_start_ip_check (NMDevice *self);
+static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
 
 /***********************************************************/
 
