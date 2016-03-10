@@ -170,6 +170,141 @@ _test_recv_data0_check (NMLldpListener *listener)
 TEST_RECV_DATA_DEFINE (_test_recv_data0,       1, _test_recv_data0_check,  &_test_recv_data0_frame0);
 TEST_RECV_DATA_DEFINE (_test_recv_data0_twice, 1, _test_recv_data0_check,  &_test_recv_data0_frame0, &_test_recv_data0_frame0);
 
+
+TEST_RECV_FRAME_DEFINE (_test_recv_data1_frame0,
+	/* lldp.detailed.pcap from
+	 * https://wiki.wireshark.org/SampleCaptures#Link_Layer_Discovery_Protocol_.28LLDP.29 */
+
+	/* ethernet header */
+	0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e, /* destination mac */
+	0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0, /* source mac */
+	0x88, 0xcc,                         /* ethernet type */
+
+	0x02, 0x07, 0x04, 0x00, 0x01, 0x30, /* Chassis Subtype */
+	0xf9, 0xad, 0xa0,
+	0x04, 0x04, 0x05, 0x31, 0x2f, 0x31, /* Port Subtype */
+	0x06, 0x02, 0x00, 0x78,             /* Time To Live */
+	0x08, 0x17, 0x53, 0x75, 0x6d, 0x6d, /* Port Description */
+	0x69, 0x74, 0x33, 0x30, 0x30, 0x2d,
+	0x34, 0x38, 0x2d, 0x50, 0x6f, 0x72,
+	0x74, 0x20, 0x31, 0x30, 0x30, 0x31,
+	0x00,
+	0x0a, 0x0d, 0x53, 0x75, 0x6d, 0x6d, /* System Name */
+	0x69, 0x74, 0x33, 0x30, 0x30, 0x2d,
+	0x34, 0x38, 0x00,
+	0x0c, 0x4c, 0x53, 0x75, 0x6d, 0x6d, /* System Description */
+	0x69, 0x74, 0x33, 0x30, 0x30, 0x2d,
+	0x34, 0x38, 0x20, 0x2d, 0x20, 0x56,
+	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x20, 0x37, 0x2e, 0x34, 0x65, 0x2e,
+	0x31, 0x20, 0x28, 0x42, 0x75, 0x69,
+	0x6c, 0x64, 0x20, 0x35, 0x29, 0x20,
+	0x62, 0x79, 0x20, 0x52, 0x65, 0x6c,
+	0x65, 0x61, 0x73, 0x65, 0x5f, 0x4d,
+	0x61, 0x73, 0x74, 0x65, 0x72, 0x20,
+	0x30, 0x35, 0x2f, 0x32, 0x37, 0x2f,
+	0x30, 0x35, 0x20, 0x30, 0x34, 0x3a,
+	0x35, 0x33, 0x3a, 0x31, 0x31, 0x00,
+	0x0e, 0x04, 0x00, 0x14, 0x00, 0x14, /* Capabilities */
+	0x10, 0x0e, 0x07, 0x06, 0x00, 0x01, /* Management Address */
+	0x30, 0xf9, 0xad, 0xa0, 0x02, 0x00,
+	0x00, 0x03, 0xe9, 0x00,
+	0xfe, 0x07, 0x00, 0x12, 0x0f, 0x02, /* IEEE 802.3 - Power Via MDI */
+	0x07, 0x01, 0x00,
+	0xfe, 0x09, 0x00, 0x12, 0x0f, 0x01, /* IEEE 802.3 - MAC/PHY Configuration/Status */
+	0x03, 0x6c, 0x00, 0x00, 0x10,
+	0xfe, 0x09, 0x00, 0x12, 0x0f, 0x03, /* IEEE 802.3 - Link Aggregation */
+	0x01, 0x00, 0x00, 0x00, 0x00,
+	0xfe, 0x06, 0x00, 0x12, 0x0f, 0x04, /* IEEE 802.3 - Maximum Frame Size */
+	0x05, 0xf2,
+	0xfe, 0x06, 0x00, 0x80, 0xc2, 0x01, /* IEEE 802.1 - Port VLAN ID */
+	0x01, 0xe8,
+	0xfe, 0x07, 0x00, 0x80, 0xc2, 0x02, /* IEEE 802.1 - Port and Protocol VLAN ID */
+	0x01, 0x00, 0x00,
+	0xfe, 0x17, 0x00, 0x80, 0xc2, 0x03, /* IEEE 802.1 - VLAN Name */
+	0x01, 0xe8, 0x10, 0x76, 0x32, 0x2d,
+	0x30, 0x34, 0x38, 0x38, 0x2d, 0x30,
+	0x33, 0x2d, 0x30, 0x35, 0x30, 0x35,
+	0x00,
+	0xfe, 0x05, 0x00, 0x80, 0xc2, 0x04, /* IEEE 802.1 - Protocol Identity */
+	0x00,
+	0x00, 0x00                          /* End of LLDPDU */
+);
+
+static void
+_test_recv_data1_check (NMLldpListener *listener)
+{
+	GVariant *neighbors, *attr;
+	gs_unref_variant GVariant *neighbor = NULL;
+
+	neighbors = nm_lldp_listener_get_neighbors (listener);
+	nmtst_assert_variant_is_of_type (neighbors, G_VARIANT_TYPE ("aa{sv}"));
+	g_assert_cmpint (g_variant_n_children (neighbors), ==, 1);
+
+	neighbor = get_lldp_neighbor (neighbors,
+	                              LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:30:F9:AD:A0",
+	                              LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/1");
+	g_assert (neighbor);
+	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 10);
+
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_DESTINATION, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, NM_LLDP_DEST_NEAREST_BRIDGE);
+	nm_clear_g_variant (&attr);
+
+	/* unsupported: Time To Live */
+
+	/* Port Description */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_PORT_DESCRIPTION, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "Summit300-48-Port 1001");
+	nm_clear_g_variant (&attr);
+
+	/* System Name */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_SYSTEM_NAME, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "Summit300-48");
+	nm_clear_g_variant (&attr);
+
+	/* System Description */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "Summit300-48 - Version 7.4e.1 (Build 5) by Release_Master 05/27/05 04:53:11");
+	nm_clear_g_variant (&attr);
+
+	/* Capabilities */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, G_VARIANT_TYPE_UINT32);
+	nmtst_assert_variant_uint32 (attr, 20);
+	nm_clear_g_variant (&attr);
+
+	/* unsupported: Management Address */
+	/* unsupported: IEEE 802.3 - Power Via MDI */
+	/* unsupported: IEEE 802.3 - MAC/PHY Configuration/Status */
+	/* unsupported: IEEE 802.3 - Link Aggregation */
+	/* unsupported: IEEE 802.3 - Maximum Frame Size*/
+
+	/* IEEE 802.1 - Port VLAN ID */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PVID, G_VARIANT_TYPE_UINT32);
+	nmtst_assert_variant_uint32 (attr, 488);
+	nm_clear_g_variant (&attr);
+
+	/* IEEE 802.1 - Port and Protocol VLAN ID */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID, G_VARIANT_TYPE_UINT32);
+	nmtst_assert_variant_uint32 (attr, 0);
+	nm_clear_g_variant (&attr);
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS, G_VARIANT_TYPE_UINT32);
+	nmtst_assert_variant_uint32 (attr, 1);
+	nm_clear_g_variant (&attr);
+
+	/* IEEE 802.1 - VLAN Name */
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "v2-0488-03-0505");
+	nm_clear_g_variant (&attr);
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_VID, G_VARIANT_TYPE_UINT32);
+	nmtst_assert_variant_uint32 (attr, 488);
+	nm_clear_g_variant (&attr);
+
+	/* unsupported: IEEE 802.1 - Protocol Identity */
+}
+
+TEST_RECV_DATA_DEFINE (_test_recv_data1,       1, _test_recv_data1_check,  &_test_recv_data1_frame0);
+
 static void
 _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 {
@@ -271,4 +406,5 @@ setup_tests (void)
 	g_test_add (testpath, TestRecvFixture, testdata, _test_recv_fixture_setup, test_recv, _test_recv_fixture_teardown)
 	_TEST_ADD_RECV ("/lldp/recv/0",       &_test_recv_data0);
 	_TEST_ADD_RECV ("/lldp/recv/0_twice", &_test_recv_data0_twice);
+	_TEST_ADD_RECV ("/lldp/recv/1",       &_test_recv_data1);
 }
