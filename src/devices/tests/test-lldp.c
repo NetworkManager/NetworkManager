@@ -32,62 +32,7 @@
 
 #include "nm-test-utils.h"
 
-typedef struct {
-	int ifindex;
-	int fd;
-	guint8 mac[ETH_ALEN];
-} test_fixture;
-
-#define TEST_IFNAME "nm-tap-test0"
-
-static void
-fixture_setup (test_fixture *fixture, gconstpointer user_data)
-{
-	const NMPlatformLink *link;
-	struct ifreq ifr = { };
-	int fd, s;
-
-	fd = open ("/dev/net/tun", O_RDWR);
-	g_assert (fd >= 0);
-
-	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-	nm_utils_ifname_cpy (ifr.ifr_name, TEST_IFNAME);
-	g_assert (ioctl (fd, TUNSETIFF, &ifr) >= 0);
-
-	/* Bring the interface up */
-	s = socket (AF_INET, SOCK_DGRAM, 0);
-	g_assert (s >= 0);
-	ifr.ifr_flags |= IFF_UP;
-	g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
-	close (s);
-
-	nm_platform_process_events (NM_PLATFORM_GET);
-	link = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, TEST_IFNAME);
-	g_assert (link);
-	fixture->ifindex = link->ifindex;
-	fixture->fd = fd;
-	memcpy (fixture->mac, link->addr.data, ETH_ALEN);
-}
-
-typedef struct {
-	int num_called;
-} TestInfo;
-
-static gboolean
-loop_quit (gpointer user_data)
-{
-	g_main_loop_quit ((GMainLoop *) user_data);
-	return G_SOURCE_REMOVE;
-}
-
-static void
-lldp_neighbors_changed (NMLldpListener *lldp_listener, GParamSpec *pspec,
-                        gpointer user_data)
-{
-	TestInfo *info = user_data;
-
-	info->num_called++;
-}
+/*****************************************************************************/
 
 static GVariant *
 get_lldp_neighbor_attribute (GVariant *neighbors,
@@ -138,12 +83,69 @@ get_lldp_neighbor_attribute (GVariant *neighbors,
 	return NULL;
 }
 
+typedef struct {
+	int ifindex;
+	int fd;
+	guint8 mac[ETH_ALEN];
+} TestRecvFixture;
+
+#define TEST_IFNAME "nm-tap-test0"
+
 static void
-test_receive_frame (test_fixture *fixture, gconstpointer user_data)
+_test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
+{
+	const NMPlatformLink *link;
+	struct ifreq ifr = { };
+	int fd, s;
+
+	fd = open ("/dev/net/tun", O_RDWR);
+	g_assert (fd >= 0);
+
+	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+	nm_utils_ifname_cpy (ifr.ifr_name, TEST_IFNAME);
+	g_assert (ioctl (fd, TUNSETIFF, &ifr) >= 0);
+
+	/* Bring the interface up */
+	s = socket (AF_INET, SOCK_DGRAM, 0);
+	g_assert (s >= 0);
+	ifr.ifr_flags |= IFF_UP;
+	g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
+	close (s);
+
+	nm_platform_process_events (NM_PLATFORM_GET);
+	link = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, TEST_IFNAME);
+	g_assert (link);
+	fixture->ifindex = link->ifindex;
+	fixture->fd = fd;
+	memcpy (fixture->mac, link->addr.data, ETH_ALEN);
+}
+
+typedef struct {
+	int num_called;
+} TestRecvCallbackInfo;
+
+static gboolean
+loop_quit (gpointer user_data)
+{
+	g_main_loop_quit ((GMainLoop *) user_data);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+lldp_neighbors_changed (NMLldpListener *lldp_listener, GParamSpec *pspec,
+                        gpointer user_data)
+{
+	TestRecvCallbackInfo *info = user_data;
+
+	info->num_called++;
+}
+
+static void
+test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 {
 	gs_unref_object NMLldpListener *listener = NULL;
 	GMainLoop *loop;
-	TestInfo info = { };
+	TestRecvCallbackInfo info = { };
 	GVariant *neighbors, *attr;
 	uint8_t frame[] = {
 		/* Ethernet header */
@@ -209,10 +211,12 @@ test_receive_frame (test_fixture *fixture, gconstpointer user_data)
 }
 
 static void
-fixture_teardown (test_fixture *fixture, gconstpointer user_data)
+_test_recv_fixture_teardown (TestRecvFixture *fixture, gconstpointer user_data)
 {
 	nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex);
 }
+
+/*****************************************************************************/
 
 void
 init_tests (int *argc, char ***argv)
@@ -223,6 +227,5 @@ init_tests (int *argc, char ***argv)
 void
 setup_tests (void)
 {
-	g_test_add ("/lldp/receive_frame", test_fixture, NULL, fixture_setup,
-	            test_receive_frame, fixture_teardown);
+	g_test_add ("/lldp/recv", TestRecvFixture, NULL, _test_recv_fixture_setup, test_recv, _test_recv_fixture_teardown);
 }
