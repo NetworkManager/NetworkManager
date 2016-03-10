@@ -336,13 +336,6 @@ typedef struct {
 	int num_called;
 } TestRecvCallbackInfo;
 
-static gboolean
-loop_quit (gpointer user_data)
-{
-	g_main_loop_quit ((GMainLoop *) user_data);
-	return G_SOURCE_REMOVE;
-}
-
 static void
 lldp_neighbors_changed (NMLldpListener *lldp_listener, GParamSpec *pspec,
                         gpointer user_data)
@@ -368,7 +361,6 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 	g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
 	                  (GCallback) lldp_neighbors_changed, &info);
 	loop = g_main_loop_new (NULL, FALSE);
-	g_timeout_add (500, loop_quit, loop);
 
 	for (i_frames = 0; i_frames < data->frames_len; i_frames++) {
 		const TestRecvFrame *f = data->frames[i_frames];
@@ -376,7 +368,8 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 		g_assert (write (fixture->fd, f->frame, f->frame_len) == f->frame_len);
 	}
 
-	g_main_loop_run (loop);
+	if (nmtst_main_loop_run (loop, 500))
+		g_assert_not_reached ();
 
 	g_assert_cmpint (info.num_called, ==, data->expected_num_called);
 
