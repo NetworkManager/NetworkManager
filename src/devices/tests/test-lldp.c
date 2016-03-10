@@ -89,7 +89,87 @@ typedef struct {
 	guint8 mac[ETH_ALEN];
 } TestRecvFixture;
 
+typedef struct {
+	gsize frame_len;
+	const uint8_t *frame;
+} TestRecvFrame;
+#define TEST_RECV_FRAME_DEFINE(name, ...) \
+	static const guint8 _##name##_v[] = { __VA_ARGS__ }; \
+	static const TestRecvFrame name = { \
+		.frame_len = sizeof (_##name##_v), \
+		.frame = _##name##_v, \
+	}
+
+typedef struct {
+	guint expected_num_called;
+	gsize frames_len;
+	const TestRecvFrame *frames[10];
+	void (*check) (NMLldpListener *listener);
+} TestRecvData;
+#define TEST_RECV_DATA_DEFINE(name, _expected_num_called, _check, ...) \
+	static const TestRecvData name = { \
+		.expected_num_called = _expected_num_called, \
+		.check = _check, \
+		.frames_len = NM_NARG (__VA_ARGS__), \
+		.frames = { __VA_ARGS__ }, \
+	}
+
 #define TEST_IFNAME "nm-tap-test0"
+
+TEST_RECV_FRAME_DEFINE (_test_recv_data0_frame0,
+	/* Ethernet header */
+	0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
+	0x88, 0xcc,                             /* Ethertype */
+	/* LLDP mandatory TLVs */
+	0x02, 0x07, 0x04, 0x00, 0x01, 0x02,     /* Chassis: MAC, 00:01:02:03:04:05 */
+	0x03, 0x04, 0x05,
+	0x04, 0x04, 0x05, 0x31, 0x2f, 0x33,     /* Port: interface name, "1/3" */
+	0x06, 0x02, 0x00, 0x78,                 /* TTL: 120 seconds */
+	/* LLDP optional TLVs */
+	0x08, 0x04, 0x50, 0x6f, 0x72, 0x74,     /* Port Description: "Port" */
+	0x0a, 0x03, 0x53, 0x59, 0x53,           /* System Name: "SYS" */
+	0x0c, 0x04, 0x66, 0x6f, 0x6f, 0x00,     /* System Description: "foo" (NULL-terminated) */
+	0x00, 0x00                              /* End Of LLDPDU */
+);
+
+static void
+_test_recv_data0_check (NMLldpListener *listener)
+{
+	GVariant *neighbors, *attr;
+
+	neighbors = nm_lldp_listener_get_neighbors (listener);
+	nmtst_assert_variant_is_of_type (neighbors, G_VARIANT_TYPE ("aa{sv}"));
+	g_assert_cmpint (g_variant_n_children (neighbors), ==, 1);
+
+	/* Check port description */
+	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
+	                                    NM_LLDP_ATTR_PORT_DESCRIPTION);
+	g_assert (attr != NULL);
+	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "Port");
+	nm_clear_g_variant (&attr);
+
+	/* Check system name */
+	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
+	                                    NM_LLDP_ATTR_SYSTEM_NAME);
+	g_assert (attr != NULL);
+	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "SYS");
+	nm_clear_g_variant (&attr);
+
+	/* Check destination */
+	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
+	                                    NM_LLDP_ATTR_DESTINATION);
+	g_assert (attr != NULL);
+	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==,
+	                 NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE);
+	nm_clear_g_variant (&attr);
+}
+
+TEST_RECV_DATA_DEFINE (_test_recv_data0,       1, _test_recv_data0_check,  &_test_recv_data0_frame0);
+TEST_RECV_DATA_DEFINE (_test_recv_data0_twice, 1, _test_recv_data0_check,  &_test_recv_data0_frame0, &_test_recv_data0_frame0);
 
 static void
 _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
@@ -112,9 +192,7 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 	g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
 	close (s);
 
-	nm_platform_process_events (NM_PLATFORM_GET);
-	link = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, TEST_IFNAME);
-	g_assert (link);
+	link = nmtstp_assert_wait_for_link (TEST_IFNAME, NM_LINK_TYPE_TAP, 100);
 	fixture->ifindex = link->ifindex;
 	fixture->fd = fd;
 	memcpy (fixture->mac, link->addr.data, ETH_ALEN);
@@ -143,26 +221,11 @@ lldp_neighbors_changed (NMLldpListener *lldp_listener, GParamSpec *pspec,
 static void
 test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 {
+	const TestRecvData *data = user_data;
 	gs_unref_object NMLldpListener *listener = NULL;
 	GMainLoop *loop;
 	TestRecvCallbackInfo info = { };
-	GVariant *neighbors, *attr;
-	uint8_t frame[] = {
-		/* Ethernet header */
-		0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
-		0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
-		0x88, 0xcc,                             /* Ethertype */
-		/* LLDP mandatory TLVs */
-		0x02, 0x07, 0x04, 0x00, 0x01, 0x02,     /* Chassis: MAC, 00:01:02:03:04:05 */
-		0x03, 0x04, 0x05,
-		0x04, 0x04, 0x05, 0x31, 0x2f, 0x33,     /* Port: interface name, "1/3" */
-		0x06, 0x02, 0x00, 0x78,                 /* TTL: 120 seconds */
-		/* LLDP optional TLVs */
-		0x08, 0x04, 0x50, 0x6f, 0x72, 0x74,     /* Port Description: "Port" */
-		0x0a, 0x03, 0x53, 0x59, 0x53,           /* System Name: "SYS" */
-		0x0c, 0x04, 0x66, 0x6f, 0x6f, 0x00,     /* System Description: "foo" (NULL-terminated) */
-		0x00, 0x00                              /* End Of LLDPDU */
-	};
+	gsize i_frames;
 
 	listener = nm_lldp_listener_new ();
 	g_assert (listener != NULL);
@@ -171,41 +234,19 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 	g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
 	                  (GCallback) lldp_neighbors_changed, &info);
 	loop = g_main_loop_new (NULL, FALSE);
-	g_timeout_add_seconds (1, loop_quit, loop);
+	g_timeout_add (500, loop_quit, loop);
 
-	g_assert (write (fixture->fd, frame, sizeof (frame)) == sizeof (frame));
-	g_assert (write (fixture->fd, frame, sizeof (frame)) == sizeof (frame));
+	for (i_frames = 0; i_frames < data->frames_len; i_frames++) {
+		const TestRecvFrame *f = data->frames[i_frames];
+
+		g_assert (write (fixture->fd, f->frame, f->frame_len) == f->frame_len);
+	}
 
 	g_main_loop_run (loop);
 
-	g_assert_cmpint (info.num_called, ==, 1);
-	neighbors = nm_lldp_listener_get_neighbors (listener);
-	g_assert (neighbors != NULL);
+	g_assert_cmpint (info.num_called, ==, data->expected_num_called);
 
-	/* Check port description */
-	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
-	                                    NM_LLDP_ATTR_PORT_DESCRIPTION);
-	g_assert (attr != NULL);
-	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
-	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "Port");
-	nm_clear_g_variant (&attr);
-
-	/* Check system name */
-	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
-	                                    NM_LLDP_ATTR_SYSTEM_NAME);
-	g_assert (attr != NULL);
-	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
-	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "SYS");
-	nm_clear_g_variant (&attr);
-
-	/* Check destination */
-	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
-	                                    NM_LLDP_ATTR_DESTINATION);
-	g_assert (attr != NULL);
-	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
-	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==,
-	                 NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE);
-	nm_clear_g_variant (&attr);
+	data->check (listener);
 
 	g_clear_pointer (&loop, g_main_loop_unref);
 }
@@ -227,5 +268,8 @@ init_tests (int *argc, char ***argv)
 void
 setup_tests (void)
 {
-	g_test_add ("/lldp/recv", TestRecvFixture, NULL, _test_recv_fixture_setup, test_recv, _test_recv_fixture_teardown);
+#define _TEST_ADD_RECV(testpath, testdata) \
+	g_test_add (testpath, TestRecvFixture, testdata, _test_recv_fixture_setup, test_recv, _test_recv_fixture_teardown)
+	_TEST_ADD_RECV ("/lldp/recv/0",       &_test_recv_data0);
+	_TEST_ADD_RECV ("/lldp/recv/0_twice", &_test_recv_data0_twice);
 }
