@@ -3000,71 +3000,71 @@ int main (int argc, char **argv)
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	/* The tests */
-	g_test_add_func ("/keyfile/test_read_valid_wired_connection ", test_read_valid_wired_connection);
-	g_test_add_func ("/keyfile/test_write_wired_connection ", test_write_wired_connection);
+	g_test_add_func ("/keyfile/test_read_valid_wired_connection", test_read_valid_wired_connection);
+	g_test_add_func ("/keyfile/test_write_wired_connection", test_write_wired_connection);
 
-	g_test_add_func ("/keyfile/test_read_ip6_wired_connection ", test_read_ip6_wired_connection);
-	g_test_add_func ("/keyfile/test_write_ip6_wired_connection ", test_write_ip6_wired_connection);
+	g_test_add_func ("/keyfile/test_read_ip6_wired_connection", test_read_ip6_wired_connection);
+	g_test_add_func ("/keyfile/test_write_ip6_wired_connection", test_write_ip6_wired_connection);
 
-	g_test_add_func ("/keyfile/test_read_wired_mac_case ", test_read_wired_mac_case);
-	g_test_add_func ("/keyfile/test_read_mac_old_format ", test_read_mac_old_format);
-	g_test_add_func ("/keyfile/test_read_mac_ib_old_format ", test_read_mac_ib_old_format);
+	g_test_add_func ("/keyfile/test_read_wired_mac_case", test_read_wired_mac_case);
+	g_test_add_func ("/keyfile/test_read_mac_old_format", test_read_mac_old_format);
+	g_test_add_func ("/keyfile/test_read_mac_ib_old_format", test_read_mac_ib_old_format);
 
-	g_test_add_func ("/keyfile/test_read_valid_wireless_connection ", test_read_valid_wireless_connection);
-	g_test_add_func ("/keyfile/test_write_wireless_connection ", test_write_wireless_connection);
+	g_test_add_func ("/keyfile/test_read_valid_wireless_connection", test_read_valid_wireless_connection);
+	g_test_add_func ("/keyfile/test_write_wireless_connection", test_write_wireless_connection);
 
-	g_test_add_func ("/keyfile/test_read_string_ssid ", test_read_string_ssid);
-	g_test_add_func ("/keyfile/test_write_string_ssid ", test_write_string_ssid);
+	g_test_add_func ("/keyfile/test_read_string_ssid", test_read_string_ssid);
+	g_test_add_func ("/keyfile/test_write_string_ssid", test_write_string_ssid);
 
-	g_test_add_func ("/keyfile/test_read_intlist_ssid ", test_read_intlist_ssid);
-	g_test_add_func ("/keyfile/test_write_intlist_ssid ", test_write_intlist_ssid);
+	g_test_add_func ("/keyfile/test_read_intlist_ssid", test_read_intlist_ssid);
+	g_test_add_func ("/keyfile/test_write_intlist_ssid", test_write_intlist_ssid);
 
-	g_test_add_func ("/keyfile/test_read_intlike_ssid ", test_read_intlike_ssid);
-	g_test_add_func ("/keyfile/test_write_intlike_ssid ", test_write_intlike_ssid);
+	g_test_add_func ("/keyfile/test_read_intlike_ssid", test_read_intlike_ssid);
+	g_test_add_func ("/keyfile/test_write_intlike_ssid", test_write_intlike_ssid);
 
-	g_test_add_func ("/keyfile/test_read_intlike_ssid_2 ", test_read_intlike_ssid_2);
-	g_test_add_func ("/keyfile/test_write_intlike_ssid_2 ", test_write_intlike_ssid_2);
+	g_test_add_func ("/keyfile/test_read_intlike_ssid_2", test_read_intlike_ssid_2);
+	g_test_add_func ("/keyfile/test_write_intlike_ssid_2", test_write_intlike_ssid_2);
 
-	g_test_add_func ("/keyfile/test_read_bt_dun_connection ", test_read_bt_dun_connection);
-	g_test_add_func ("/keyfile/test_write_bt_dun_connection ", test_write_bt_dun_connection);
+	g_test_add_func ("/keyfile/test_read_bt_dun_connection", test_read_bt_dun_connection);
+	g_test_add_func ("/keyfile/test_write_bt_dun_connection", test_write_bt_dun_connection);
 
-	g_test_add_func ("/keyfile/test_read_gsm_connection ", test_read_gsm_connection);
-	g_test_add_func ("/keyfile/test_write_gsm_connection ", test_write_gsm_connection);
+	g_test_add_func ("/keyfile/test_read_gsm_connection", test_read_gsm_connection);
+	g_test_add_func ("/keyfile/test_write_gsm_connection", test_write_gsm_connection);
 
-	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_blob_connection ", test_read_wired_8021x_tls_blob_connection);
-	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_bad_path_connection ", test_read_wired_8021x_tls_bad_path_connection);
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_blob_connection", test_read_wired_8021x_tls_blob_connection);
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_bad_path_connection", test_read_wired_8021x_tls_bad_path_connection);
 
-	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_old_connection ", test_read_wired_8021x_tls_old_connection);
-	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_new_connection ", test_read_wired_8021x_tls_new_connection);
-	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_path ", test_write_wired_8021x_tls_connection_path);
-	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_blob ", test_write_wired_8021x_tls_connection_blob);
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_old_connection", test_read_wired_8021x_tls_old_connection);
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_new_connection", test_read_wired_8021x_tls_new_connection);
+	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_path", test_write_wired_8021x_tls_connection_path);
+	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_blob", test_write_wired_8021x_tls_connection_blob);
 
-	g_test_add_func ("/keyfile/test_read_infiniband_connection ", test_read_infiniband_connection);
-	g_test_add_func ("/keyfile/test_write_infiniband_connection ", test_write_infiniband_connection);
+	g_test_add_func ("/keyfile/test_read_infiniband_connection", test_read_infiniband_connection);
+	g_test_add_func ("/keyfile/test_write_infiniband_connection", test_write_infiniband_connection);
 
-	g_test_add_func ("/keyfile/test_read_bridge_main ", test_read_bridge_main);
-	g_test_add_func ("/keyfile/test_write_bridge_main ", test_write_bridge_main);
-	g_test_add_func ("/keyfile/test_read_bridge_component ", test_read_bridge_component);
-	g_test_add_func ("/keyfile/test_write_bridge_component ", test_write_bridge_component);
+	g_test_add_func ("/keyfile/test_read_bridge_main", test_read_bridge_main);
+	g_test_add_func ("/keyfile/test_write_bridge_main", test_write_bridge_main);
+	g_test_add_func ("/keyfile/test_read_bridge_component", test_read_bridge_component);
+	g_test_add_func ("/keyfile/test_write_bridge_component", test_write_bridge_component);
 
-	g_test_add_func ("/keyfile/test_read_new_wired_group_name ", test_read_new_wired_group_name);
-	g_test_add_func ("/keyfile/test_write_new_wired_group_name ", test_write_new_wired_group_name);
-	g_test_add_func ("/keyfile/test_read_new_wireless_group_names ", test_read_new_wireless_group_names);
-	g_test_add_func ("/keyfile/test_write_new_wireless_group_names ", test_write_new_wireless_group_names);
+	g_test_add_func ("/keyfile/test_read_new_wired_group_name", test_read_new_wired_group_name);
+	g_test_add_func ("/keyfile/test_write_new_wired_group_name", test_write_new_wired_group_name);
+	g_test_add_func ("/keyfile/test_read_new_wireless_group_names", test_read_new_wireless_group_names);
+	g_test_add_func ("/keyfile/test_write_new_wireless_group_names", test_write_new_wireless_group_names);
 
-	g_test_add_func ("/keyfile/test_read_missing_vlan_setting ", test_read_missing_vlan_setting);
-	g_test_add_func ("/keyfile/test_read_missing_vlan_flags ", test_read_missing_vlan_flags);
-	g_test_add_func ("/keyfile/test_read_missing_id_uuid ", test_read_missing_id_uuid);
+	g_test_add_func ("/keyfile/test_read_missing_vlan_setting", test_read_missing_vlan_setting);
+	g_test_add_func ("/keyfile/test_read_missing_vlan_flags", test_read_missing_vlan_flags);
+	g_test_add_func ("/keyfile/test_read_missing_id_uuid", test_read_missing_id_uuid);
 
 	g_test_add_func ("/keyfile/test_read_minimal", test_read_minimal);
 	g_test_add_func ("/keyfile/test_read_minimal_slave", test_read_minimal_slave);
 
-	g_test_add_func ("/keyfile/test_read_enum_property ", test_read_enum_property);
-	g_test_add_func ("/keyfile/test_write_enum_property ", test_write_enum_property);
-	g_test_add_func ("/keyfile/test_read_flags_property ", test_read_flags_property);
-	g_test_add_func ("/keyfile/test_write_flags_property ", test_write_flags_property);
+	g_test_add_func ("/keyfile/test_read_enum_property", test_read_enum_property);
+	g_test_add_func ("/keyfile/test_write_enum_property", test_write_enum_property);
+	g_test_add_func ("/keyfile/test_read_flags_property", test_read_flags_property);
+	g_test_add_func ("/keyfile/test_write_flags_property", test_write_flags_property);
 
-	g_test_add_func ("/keyfile/test_nm_keyfile_plugin_utils_escape_filename ", test_nm_keyfile_plugin_utils_escape_filename);
+	g_test_add_func ("/keyfile/test_nm_keyfile_plugin_utils_escape_filename", test_nm_keyfile_plugin_utils_escape_filename);
 
 	return g_test_run ();
 }
