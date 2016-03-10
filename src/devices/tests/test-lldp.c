@@ -28,6 +28,8 @@
 
 #include "nm-lldp-listener.h"
 
+#include "lldp.h"
+
 #include "test-common.h"
 
 #include "nm-test-utils.h"
@@ -35,52 +37,51 @@
 /*****************************************************************************/
 
 static GVariant *
-get_lldp_neighbor_attribute (GVariant *neighbors,
-                             const char *chassis, const char *port,
-                             const char *name)
+get_lldp_neighbor (GVariant *neighbors,
+                   int chassis_id_type,
+                   const char *chassis_id,
+                   int port_id_type,
+                   const char *port_id)
 {
-	GVariantIter iter, attrs_iter;
-	GVariant *variant, *attr_variant;
-	const char *attr_name;
+	GVariantIter iter;
+	GVariant *variant;
+	GVariant *result = NULL;
 
-	g_return_val_if_fail (g_variant_is_of_type (neighbors,
-	                                            G_VARIANT_TYPE ("aa{sv}")),
-	                      NULL);
+	nmtst_assert_variant_is_of_type (neighbors, G_VARIANT_TYPE ("aa{sv}"));
+
+	g_assert (chassis_id_type >= -1 && chassis_id_type <= G_MAXUINT8);
+	g_assert (port_id_type >= -1 && port_id_type <= G_MAXUINT8);
+
 	g_variant_iter_init (&iter, neighbors);
-
 	while (g_variant_iter_next (&iter, "@a{sv}", &variant)) {
-		gs_unref_variant GVariant *chassis_v = NULL;
-		gs_unref_variant GVariant *port_v = NULL;
-		gs_unref_variant GVariant *attr_v = NULL;
+		gs_unref_variant GVariant *v_chassis_id_type = NULL;
+		gs_unref_variant GVariant *v_chassis_id = NULL;
+		gs_unref_variant GVariant *v_port_id_type = NULL;
+		gs_unref_variant GVariant *v_port_id = NULL;
 
-		g_variant_iter_init (&attrs_iter, variant);
-		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_variant)) {
-			if (!g_strcmp0 (attr_name, NM_LLDP_ATTR_CHASSIS_ID)) {
-				g_assert (!chassis_v);
-				chassis_v = attr_variant;
-			} else if (!g_strcmp0 (attr_name, NM_LLDP_ATTR_PORT_ID)) {
-				g_assert (!port_v);
-				port_v = attr_variant;
-			} else if (!g_strcmp0 (attr_name, name)) {
-				g_assert (!attr_v);
-				attr_v = attr_variant;
-			} else
-				g_variant_unref (attr_variant);
-		}
+		v_chassis_id_type = g_variant_lookup_value (variant, NM_LLDP_ATTR_CHASSIS_ID_TYPE, G_VARIANT_TYPE_UINT32);
+		g_assert (v_chassis_id_type);
 
-		g_variant_unref (variant);
+		v_chassis_id = g_variant_lookup_value (variant, NM_LLDP_ATTR_CHASSIS_ID, G_VARIANT_TYPE_STRING);
+		g_assert (v_chassis_id);
 
-		if (   chassis_v
-		    && port_v
-		    && g_variant_is_of_type (chassis_v, G_VARIANT_TYPE_STRING)
-		    && g_variant_is_of_type (port_v, G_VARIANT_TYPE_STRING)
-		    && !g_strcmp0 (chassis, g_variant_get_string (chassis_v, NULL))
-		    && !g_strcmp0 (port, g_variant_get_string (port_v, NULL)))
-			return g_variant_ref (attr_v);
+		v_port_id_type = g_variant_lookup_value (variant, NM_LLDP_ATTR_PORT_ID_TYPE, G_VARIANT_TYPE_UINT32);
+		g_assert (v_port_id_type);
+
+		v_port_id = g_variant_lookup_value (variant, NM_LLDP_ATTR_PORT_ID, G_VARIANT_TYPE_STRING);
+		g_assert (v_port_id);
+
+		if (   nm_streq (g_variant_get_string (v_chassis_id, NULL), chassis_id)
+		    && nm_streq (g_variant_get_string (v_port_id, NULL), port_id)
+		    && NM_IN_SET (chassis_id_type, -1, g_variant_get_uint32 (v_chassis_id_type))
+		    && NM_IN_SET (port_id_type, -1, g_variant_get_uint32 (v_port_id_type))) {
+			g_assert (!result);
+			result = variant;
+		} else
+			g_variant_unref (variant);
 	}
 
-	/* neighbor not found */
-	return NULL;
+	return result;
 }
 
 typedef struct {
@@ -137,34 +138,32 @@ static void
 _test_recv_data0_check (NMLldpListener *listener)
 {
 	GVariant *neighbors, *attr;
+	gs_unref_variant GVariant *neighbor = NULL;
 
 	neighbors = nm_lldp_listener_get_neighbors (listener);
 	nmtst_assert_variant_is_of_type (neighbors, G_VARIANT_TYPE ("aa{sv}"));
 	g_assert_cmpint (g_variant_n_children (neighbors), ==, 1);
 
-	/* Check port description */
-	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
-	                                    NM_LLDP_ATTR_PORT_DESCRIPTION);
-	g_assert (attr != NULL);
-	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
-	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "Port");
+	neighbor = get_lldp_neighbor (neighbors,
+	                              LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:02:03:04:05",
+	                              LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/3");
+	g_assert (neighbor);
+	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 4);
+
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_PORT_DESCRIPTION, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "Port");
 	nm_clear_g_variant (&attr);
 
-	/* Check system name */
-	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
-	                                    NM_LLDP_ATTR_SYSTEM_NAME);
-	g_assert (attr != NULL);
-	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
-	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==, "SYS");
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_SYSTEM_NAME, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "SYS");
 	nm_clear_g_variant (&attr);
 
-	/* Check destination */
-	attr = get_lldp_neighbor_attribute (neighbors, "00:01:02:03:04:05", "1/3",
-	                                    NM_LLDP_ATTR_DESTINATION);
-	g_assert (attr != NULL);
-	g_assert (g_variant_is_of_type (attr, G_VARIANT_TYPE_STRING));
-	g_assert_cmpstr (g_variant_get_string (attr, NULL), ==,
-	                 NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE);
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_DESTINATION, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE);
+	nm_clear_g_variant (&attr);
+
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, G_VARIANT_TYPE_STRING);
+	nmtst_assert_variant_string (attr, "foo");
 	nm_clear_g_variant (&attr);
 }
 
