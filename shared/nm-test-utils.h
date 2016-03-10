@@ -1774,6 +1774,34 @@ nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *keyfi
 
 #ifdef __NM_CONNECTION_H__
 
+#define nmtst_assert_variant_is_of_type(variant, type) \
+	G_STMT_START { \
+		GVariant *_variantx = (variant); \
+		\
+		g_assert (_variantx); \
+		g_assert (g_variant_is_of_type (_variantx, (type))); \
+	} G_STMT_END
+
+#define nmtst_assert_variant_uint32(variant, val) \
+	G_STMT_START { \
+		GVariant *_variant = (variant); \
+		\
+		nmtst_assert_variant_is_of_type (_variant, G_VARIANT_TYPE_UINT32); \
+		g_assert_cmpint (g_variant_get_uint32 (_variant), ==, (val)); \
+	} G_STMT_END
+
+#define nmtst_assert_variant_string(variant, str) \
+	G_STMT_START { \
+		gsize _l; \
+		GVariant *_variant = (variant); \
+		const char *_str = (str); \
+		\
+		nmtst_assert_variant_is_of_type (_variant, G_VARIANT_TYPE_STRING); \
+		g_assert (_str); \
+		g_assert_cmpstr (g_variant_get_string (_variant, &_l), ==, _str); \
+		g_assert_cmpint (_l, ==, strlen (_str)); \
+	} G_STMT_END
+
 typedef enum {
 	NMTST_VARIANT_EDITOR_CONNECTION,
 	NMTST_VARIANT_EDITOR_SETTING,
