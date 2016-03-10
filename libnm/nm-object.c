@@ -205,24 +205,6 @@ deferred_notify_cb (gpointer data)
 	if (priv->reload_remaining)
 		return G_SOURCE_REMOVE;
 
-	/* If not all added object are finished yet, then defer the deferred
-	 * notification. */
-	for (iter = priv->notify_items; iter; iter = g_slist_next (iter)) {
-		NotifyItem *item = iter->data;
-		NMObjectPrivate *item_priv;
-
-		if (!item->changed)
-			continue;
-
-		item_priv = NM_OBJECT_GET_PRIVATE (item->changed);
-		if (!item_priv->inited) {
-			if (!g_slist_find (item_priv->waiters, object))
-				item_priv->waiters = g_slist_prepend (item_priv->waiters,
-				                                      g_object_ref (object));
-			return G_SOURCE_REMOVE;
-		}
-	}
-
 	/* Clear priv->notify_items early so that an NMObject subclass that
 	 * listens to property changes can queue up other property changes
 	 * during the g_object_notify() call separately from the property
@@ -458,6 +440,32 @@ _nm_object_create (GType type, GDBusConnection *connection, const char *path)
 	return object;
 }
 
+typedef struct {
+	NMObject *self;
+	PropertyInfo *pi;
+
+	GObject **objects;
+	int length, remaining;
+
+	GPtrArray *array;
+	const char *property_name;
+} ObjectCreatedData;
+
+static void
+odata_free (gpointer data)
+{
+	ObjectCreatedData *odata = data;
+
+	g_object_unref (odata->self);
+	g_free (odata->objects);
+	if (odata->array)
+		g_ptr_array_unref (odata->array);
+	g_slice_free (ObjectCreatedData, odata);
+}
+
+static void object_property_maybe_complete (ObjectCreatedData *odata);
+
+
 typedef void (*NMObjectCreateCallbackFunc) (GObject *, const char *, gpointer);
 typedef struct {
 	char *path;
@@ -497,13 +505,13 @@ create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 	if (object) {
 		NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-		/* Re-queue notification checks for whoever was waiting for
-		 * this object to initialize. */
+		/* There are some object properties whose creation couldn't proceed
+		 * because it depended on this object. */
 		while (priv->waiters) {
-			NMObject *item = priv->waiters->data;
-			priv->waiters = g_slist_remove (priv->waiters, item);
-			_nm_object_defer_notify (item);
-			g_object_unref (item);
+			ObjectCreatedData *odata = priv->waiters->data;
+
+			priv->waiters = g_slist_remove (priv->waiters, odata);
+			object_property_maybe_complete (odata);
 		}
 	}
 }
@@ -656,17 +664,6 @@ add_to_object_array_unique (GPtrArray *array, GObject *obj)
 	}
 }
 
-typedef struct {
-	NMObject *self;
-	PropertyInfo *pi;
-
-	GObject **objects;
-	int length, remaining;
-
-	GPtrArray *array;
-	const char *property_name;
-} ObjectCreatedData;
-
 /* Places items from 'needles' that are not in 'haystack' into 'diff' */
 static void
 array_diff (GPtrArray *needles, GPtrArray *haystack, GPtrArray *diff)
@@ -700,19 +697,59 @@ queue_added_removed_signal (NMObject *self,
 	_nm_object_queue_notify_full (self, NULL, signal_prefix, added, changed);
 }
 
+static gboolean
+already_awaits (ObjectCreatedData *odata, GObject *object)
+{
+	NMObject *self = odata->self;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	GSList *iter;
+
+	if ((GObject *)odata->self == object)
+		return TRUE;
+
+	for (iter = priv->waiters; iter; iter = g_slist_next (iter)) {
+		if (already_awaits (iter->data, object))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 static void
-object_property_complete (ObjectCreatedData *odata)
+object_property_maybe_complete (ObjectCreatedData *odata)
 {
 	NMObject *self = odata->self;
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	PropertyInfo *pi = odata->pi;
 	gboolean different = TRUE;
+	int i;
+
+	/* Only complete the array property load when all the objects are initialized. */
+	for (i = 0; i < odata->length; i++) {
+		GObject *obj = odata->objects[i];
+		NMObjectPrivate *obj_priv;
+
+		/* Could not load the object. Perhaps it was removed. */
+		if (!obj)
+			continue;
+
+		obj_priv = NM_OBJECT_GET_PRIVATE (obj);
+		if (!obj_priv->inited) {
+
+			/* The object is not finished because we block its creation. */
+			if (already_awaits (odata, obj))
+				continue;
+
+			if (!g_slist_find (obj_priv->waiters, odata))
+				obj_priv->waiters = g_slist_prepend (obj_priv->waiters, odata);
+			return;
+		}
+	}
 
 	if (odata->array) {
 		GPtrArray *pi_old = *((GPtrArray **) pi->field);
 		GPtrArray *old = odata->array;
 		GPtrArray *new;
-		int i;
 
 		/* Build up new array */
 		new = g_ptr_array_new_full (odata->length, g_object_unref);
@@ -776,11 +813,7 @@ object_property_complete (ObjectCreatedData *odata)
 	if (--priv->reload_remaining == 0)
 		reload_complete (self, FALSE);
 
-	g_object_unref (self);
-	g_free (odata->objects);
-	if (odata->array)
-		g_ptr_array_unref (odata->array);
-	g_slice_free (ObjectCreatedData, odata);
+	odata_free (odata);
 }
 
 static void
@@ -799,7 +832,7 @@ object_created (GObject *obj, const char *path, gpointer user_data)
 
 	odata->objects[--odata->remaining] = obj;
 	if (!odata->remaining)
-		object_property_complete (odata);
+		object_property_maybe_complete (odata);
 }
 
 static gboolean
@@ -874,7 +907,7 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	priv->reload_remaining++;
 
 	if (npaths == 0) {
-		object_property_complete (odata);
+		object_property_maybe_complete (odata);
 		return TRUE;
 	}
 
@@ -1754,7 +1787,7 @@ dispose (GObject *object)
 	g_slist_free_full (priv->notify_items, (GDestroyNotify) notify_item_free);
 	priv->notify_items = NULL;
 
-	g_slist_free_full (priv->waiters, g_object_unref);
+	g_slist_free_full (priv->waiters, odata_free);
 	g_clear_pointer (&priv->proxies, g_hash_table_unref);
 	g_clear_object (&priv->properties_proxy);
 
