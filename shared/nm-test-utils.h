@@ -853,6 +853,18 @@ nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
 	return loopx != NULL;
 }
 
+inline static void
+_nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	GMainLoop *loop = user_data;
+
+	g_assert (G_IS_OBJECT (object));
+	g_assert (loop);
+
+	g_main_loop_quit (loop);
+}
+#define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
+
 /*****************************************************************************/
 
 inline static const char *
