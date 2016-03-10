@@ -304,7 +304,7 @@ test_nm_utils_kill_child (void)
 	test_nm_utils_kill_child_sync_do ("test-s-2", pid2s, SIGTERM, 3000, TRUE,  &expected_exit_47);
 
 	/* send invalid signal. */
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*kill child process 'test-s-3-0' (*): failed to send Unexpected signal: Invalid argument (22)");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*kill child process 'test-s-3-0' (*): failed to send Unexpected signal: Invalid argument (22)");
 	test_nm_utils_kill_child_sync_do ("test-s-3-0", pid3s, -1, 0, FALSE, NULL);
 
 	/* really kill pid3s */
@@ -314,7 +314,7 @@ test_nm_utils_kill_child (void)
 
 	/* pid3s should not be a valid process, hence the call should fail. Note, that there
 	 * is a race here. */
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*kill child process 'test-s-3-2' (*): failed due to unexpected return value -1 by waitpid (No child processes, 10) after sending no signal (0)");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*kill child process 'test-s-3-2' (*): failed due to unexpected return value -1 by waitpid (No child processes, 10) after sending no signal (0)");
 	test_nm_utils_kill_child_sync_do ("test-s-3-2", pid3s, 0, 0, FALSE, NULL);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-s-4' (*): waiting up to 1 milliseconds for process to terminate normally after sending SIGTERM (15)...");
@@ -340,7 +340,7 @@ test_nm_utils_kill_child (void)
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-a-2' (*): invoke callback: terminated normally with status 47");
 	test_nm_utils_kill_child_async_do ("test-a-2", pid2a, SIGTERM, 3000, TRUE, &expected_exit_47);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*kill child process 'test-a-3-0' (*): unexpected error sending Unexpected signal: Invalid argument (22)");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*kill child process 'test-a-3-0' (*): unexpected error sending Unexpected signal: Invalid argument (22)");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-a-3-0' (*): invoke callback: killing child failed");
 	/* coverity[negative_returns] */
 	test_nm_utils_kill_child_async_do ("test-a-3-0", pid3a, -1, 1000 / 2, FALSE, NULL);
@@ -351,7 +351,7 @@ test_nm_utils_kill_child (void)
 
 	/* pid3a should not be a valid process, hence the call should fail. Note, that there
 	 * is a race here. */
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*kill child process 'test-a-3-2' (*): failed due to unexpected return value -1 by waitpid (No child processes, 10) after sending no signal (0)");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*kill child process 'test-a-3-2' (*): failed due to unexpected return value -1 by waitpid (No child processes, 10) after sending no signal (0)");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-a-3-2' (*): invoke callback: killing child failed");
 	test_nm_utils_kill_child_async_do ("test-a-3-2", pid3a, 0, 0, FALSE, NULL);
 

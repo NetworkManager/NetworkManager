@@ -88,33 +88,33 @@ test_read_valid_wired_connection (void)
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 	gboolean success;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.addresses:*semicolon at the end*addresses1*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.addresses:*semicolon at the end*addresses2*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*missing prefix length*address4*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*missing prefix length*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*missing prefix length*address4*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*missing prefix length*address5*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.routes*semicolon at the end*routes2*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.routes*semicolon at the end*routes3*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.routes*semicolon at the end*routes5*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.routes*semicolon at the end*routes8*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*missing prefix length*address4*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.address*semicolon at the end*address5*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*missing prefix length*address5*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.address*semicolon at the end*address7*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.routes*semicolon at the end*routes1*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.route*semicolon at the end*route6*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", NULL);
 	g_test_assert_expected_messages ();
@@ -537,11 +537,11 @@ test_read_wired_mac_case (void)
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
 	gboolean success;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.addresses*semicolon at the end*addresses1*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv4.addresses*semicolon at the end*addresses2*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.routes*semicolon at the end*routes1*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_MAC_Case", NULL);
 	g_test_assert_expected_messages ();
@@ -1513,9 +1513,9 @@ test_read_wired_8021x_tls_blob_connection (void)
 	gboolean success;
 	GBytes *blob;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Blob", &error);
 	g_assert_no_error (error);
@@ -1576,7 +1576,7 @@ test_read_wired_8021x_tls_bad_path_connection (void)
 	char *tmp2;
 	gboolean success;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Path_Missing", &error);
 	g_test_assert_expected_messages ();
@@ -1631,11 +1631,11 @@ test_read_wired_8021x_tls_old_connection (void)
 	const char *tmp;
 	gboolean success;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.ca-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Old", &error);
 	g_assert_no_error (error);

@@ -149,13 +149,13 @@ test_wifi_open (void)
 
 	config = nm_supplicant_config_new ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'ssid' value 'Test SSID'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'scan_ssid' value '1'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'freq_list' value *");
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
@@ -166,7 +166,7 @@ test_wifi_open (void)
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'key_mgmt' value 'NONE'");
 	g_assert (nm_supplicant_config_add_no_security (config, &error));
 	g_assert_no_error (error);
@@ -254,13 +254,13 @@ test_wifi_wep_key (const char *detail,
 
 	config = nm_supplicant_config_new ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'ssid' value 'Test SSID'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'scan_ssid' value '1'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'freq_list' value *");
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
@@ -271,11 +271,11 @@ test_wifi_wep_key (const char *detail,
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'key_mgmt' value 'NONE'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'wep_key0' value *");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'wep_tx_keyidx' value '0'");
 	g_assert (nm_supplicant_config_add_setting_wireless_security (config,
 	                                                              s_wsec,
@@ -399,13 +399,13 @@ test_wifi_wpa_psk (const char *detail,
 
 	config = nm_supplicant_config_new ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'ssid' value 'Test SSID'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'scan_ssid' value '1'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'freq_list' value *");
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
@@ -416,15 +416,15 @@ test_wifi_wpa_psk (const char *detail,
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'key_mgmt' value 'WPA-PSK'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'psk' value *");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'proto' value 'WPA RSN'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'pairwise' value 'TKIP CCMP'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'group' value 'TKIP CCMP'");
 	g_assert (nm_supplicant_config_add_setting_wireless_security (config,
 	                                                              s_wsec,
@@ -546,13 +546,13 @@ test_wifi_eap (void)
 
 	config = nm_supplicant_config_new ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'ssid' value 'Test SSID'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'scan_ssid' value '1'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'bssid' value '11:22:33:44:55:66'*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'freq_list' value *");
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
@@ -563,25 +563,25 @@ test_wifi_eap (void)
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'key_mgmt' value 'WPA-EAP'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'proto' value 'WPA RSN'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'pairwise' value 'TKIP CCMP'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'group' value 'TKIP CCMP'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*Config: added 'eap' value 'TLS'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*Config: added 'fragment_size' value '1086'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "* Config: added 'ca_cert' value '*/test-ca-cert.pem'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "* Config: added 'private_key' value '*/test-cert.p12'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*Config: added 'bgscan' value 'simple:30:-65:300'");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*Config: added 'proactive_key_caching' value '1'");
 	g_assert (nm_supplicant_config_add_setting_wireless_security (config,
 	                                                              s_wsec,

@@ -343,7 +343,7 @@ test_config_no_auto_default (void)
 	g_assert (!nm_config_get_no_auto_default_for_device (config, dev3));
 	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: update * (no-auto-default)*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update * (no-auto-default)*");
 	nm_config_set_no_auto_default_for_device (config, dev3);
 	g_test_assert_expected_messages ();
 
@@ -556,9 +556,9 @@ _set_values_user (NMConfig *config,
 	config_data_before = g_object_ref (nm_config_get_data (config));
 
 	if (expected_changes != NM_CONFIG_CHANGE_NONE)
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: update *");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update *");
 	else
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGHUP (no changes from disk)*");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGHUP (no changes from disk)*");
 
 	nm_config_reload (config, SIGHUP);
 
@@ -600,7 +600,7 @@ _set_values_intern (NMConfig *config,
 	                  &config_changed_data);
 
 	if (expected_changes != NM_CONFIG_CHANGE_NONE)
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: update *");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update *");
 
 	nm_config_set_values (config, keyfile_intern, TRUE, FALSE);
 
@@ -863,15 +863,15 @@ test_config_signal (void)
 	                  &expected);
 
 	expected = NM_CONFIG_CHANGE_SIGUSR1;
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGUSR1");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGUSR1");
 	nm_config_reload (config, SIGUSR1);
 
 	expected = NM_CONFIG_CHANGE_SIGUSR2;
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGUSR2");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGUSR2");
 	nm_config_reload (config, SIGUSR2);
 
 	expected = NM_CONFIG_CHANGE_SIGHUP;
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGHUP (no changes from disk)*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGHUP (no changes from disk)*");
 	nm_config_reload (config, SIGHUP);
 
 
@@ -884,7 +884,7 @@ test_config_signal (void)
 	                  G_CALLBACK (_test_signal_config_changed_cb2),
 	                  &expected);
 	expected = NM_CONFIG_CHANGE_SIGUSR2;
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGUSR2");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGUSR2");
 	nm_config_reload (config, SIGUSR2);
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb2, &expected);
 

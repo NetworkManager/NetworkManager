@@ -331,7 +331,7 @@ test_dhclient_invalid_classless_routes_1 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*ignoring invalid classless static routes*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);
@@ -362,7 +362,7 @@ test_dhcpcd_invalid_classless_routes_1 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*ignoring invalid classless static routes*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);
@@ -395,7 +395,7 @@ test_dhclient_invalid_classless_routes_2 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*ignoring invalid classless static routes*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);
@@ -428,7 +428,7 @@ test_dhcpcd_invalid_classless_routes_2 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*ignoring invalid classless static routes*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);
@@ -461,7 +461,7 @@ test_dhclient_invalid_classless_routes_3 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*ignoring invalid classless static routes*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);
@@ -489,7 +489,7 @@ test_dhcpcd_invalid_classless_routes_3 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*DHCP provided invalid classless static route*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);
@@ -598,7 +598,7 @@ test_invalid_escaped_domain_searches (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*invalid domain search*");
 	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
 	g_assert (ip4_config);

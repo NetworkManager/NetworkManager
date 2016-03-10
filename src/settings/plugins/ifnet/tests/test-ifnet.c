@@ -134,7 +134,7 @@ test_convert_ipv4_config_block (void)
 	check_ip_block (iblock, "192.168.4.121", 24, "202.117.16.1");
 	destroy_ip_block (iblock);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*Can't handle IPv4 address*202.117.16.1211*");
 	iblock = convert_ip4_config_block ("eth2");
 	g_test_assert_expected_messages ();
@@ -142,7 +142,7 @@ test_convert_ipv4_config_block (void)
 	check_ip_block (iblock, "192.168.4.121", 24, NULL);
 	destroy_ip_block (iblock);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*missing netmask or prefix*");
 	iblock = convert_ip4_config_block ("eth3");
 	g_assert (iblock == NULL);
@@ -216,9 +216,9 @@ test_new_connection (void)
 	GError *error = NULL;
 	NMConnection *connection;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*Can't handle IPv4 address*202.117.16.1211*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*Can't handle IPv6 address*202.117.16.1211*");
 	connection = ifnet_update_connection_from_config_block ("eth2", NULL, &error);
 	g_test_assert_expected_messages ();
@@ -306,9 +306,9 @@ test_add_connection (void)
 	kill_backup (&backup);
 	g_object_unref (connection);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*Can't handle ipv4 address: brd, missing netmask or prefix*");
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*Can't handle ipv4 address: 202.117.16.255, missing netmask or prefix*");
 	connection = ifnet_update_connection_from_config_block ("myxjtu2", basepath, NULL);
 	g_test_assert_expected_messages ();
@@ -349,7 +349,7 @@ test_missing_config (void)
 	GError *error = NULL;
 	NMConnection *connection;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*Unknown config for eth8*");
 	connection = ifnet_update_connection_from_config_block ("eth8", NULL, &error);
 	g_test_assert_expected_messages ();

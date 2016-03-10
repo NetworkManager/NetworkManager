@@ -181,7 +181,7 @@ test_read_ibft_malformed (gconstpointer user_data)
 
 	g_assert (g_file_test (iscsiadm_path, G_FILE_TEST_EXISTS));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*malformed iscsiadm record*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*malformed iscsiadm record*");
 
 	success = read_ibft_blocks (iscsiadm_path, &blocks, &error);
 	g_assert_no_error (error);
