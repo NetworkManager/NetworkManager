@@ -538,6 +538,8 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 	LLDPNeighbor *neigh;
 	char *dest_str = NULL;
 
+	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), FALSE);
+
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	if (priv->variant)
