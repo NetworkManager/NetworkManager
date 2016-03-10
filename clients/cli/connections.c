@@ -11123,8 +11123,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 			g_thread_unref (editor_thread);
 		} else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "monitor") == 0) {
-			nmc->return_value = do_connection_monitor (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "reload") == 0) {
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "load") == 0) {
@@ -11158,6 +11156,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_connection_import (nmc, temporary, argc, argv);
 		} else if (matches(*argv, "export") == 0) {
 			nmc->return_value = do_connection_export (nmc, argc-1, argv+1);
+		} else if (matches(*argv, "monitor") == 0) {
+			nmc->return_value = do_connection_monitor (nmc, argc-1, argv+1);
 		} else {
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);

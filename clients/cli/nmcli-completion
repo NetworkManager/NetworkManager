@@ -1325,7 +1325,7 @@ _nmcli()
                         ;;
 
                     de|del|dele|delet|delete| \
-                    m|mo|mon|moni|monit|monito|monitor)
+                    mon|moni|monit|monito|monitor)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
