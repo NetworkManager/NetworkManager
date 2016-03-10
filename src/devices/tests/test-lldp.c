@@ -105,7 +105,7 @@ typedef struct {
 	guint expected_num_called;
 	gsize frames_len;
 	const TestRecvFrame *frames[10];
-	void (*check) (NMLldpListener *listener);
+	void (*check) (GMainLoop *loop, NMLldpListener *listener);
 } TestRecvData;
 #define TEST_RECV_DATA_DEFINE(name, _expected_num_called, _check, ...) \
 	static const TestRecvData name = { \
@@ -135,7 +135,7 @@ TEST_RECV_FRAME_DEFINE (_test_recv_data0_frame0,
 );
 
 static void
-_test_recv_data0_check (NMLldpListener *listener)
+_test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
 {
 	GVariant *neighbors, *attr;
 	gs_unref_variant GVariant *neighbor = NULL;
@@ -232,7 +232,7 @@ TEST_RECV_FRAME_DEFINE (_test_recv_data1_frame0,
 );
 
 static void
-_test_recv_data1_check (NMLldpListener *listener)
+_test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 {
 	GVariant *neighbors, *attr;
 	gs_unref_variant GVariant *neighbor = NULL;
@@ -305,6 +305,48 @@ _test_recv_data1_check (NMLldpListener *listener)
 
 TEST_RECV_DATA_DEFINE (_test_recv_data1,       1, _test_recv_data1_check,  &_test_recv_data1_frame0);
 
+TEST_RECV_FRAME_DEFINE (_test_recv_data2_frame0_ttl1,
+	/* Ethernet header */
+	0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
+	0x88, 0xcc,                             /* Ethertype */
+	/* LLDP mandatory TLVs */
+	0x02, 0x07, 0x04, 0x00, 0x01, 0x02,     /* Chassis: MAC, 00:01:02:03:04:05 */
+	0x03, 0x04, 0x05,
+	0x04, 0x04, 0x05, 0x31, 0x2f, 0x33,     /* Port: interface name, "1/3" */
+	0x06, 0x02, 0x00, 0x01,                 /* TTL: 1 seconds */
+	/* LLDP optional TLVs */
+	0x08, 0x04, 0x50, 0x6f, 0x72, 0x74,     /* Port Description: "Port" */
+	0x0a, 0x03, 0x53, 0x59, 0x53,           /* System Name: "SYS" */
+	0x0c, 0x04, 0x66, 0x6f, 0x6f, 0x00,     /* System Description: "foo" (NULL-terminated) */
+	0x00, 0x00                              /* End Of LLDPDU */
+);
+
+static void
+_test_recv_data2_ttl1_check (GMainLoop *loop, NMLldpListener *listener)
+{
+	gulong notify_id;
+	GVariant *neighbors;
+
+	_test_recv_data0_check (loop, listener);
+
+	g_test_skip ("the test is known to fail");
+	return;
+
+	/* wait for signal. */
+	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
+	                              nmtst_main_loop_quit_on_notify, loop);
+	if (!nmtst_main_loop_run (loop, 20000))
+		g_assert_not_reached ();
+	nm_clear_g_signal_handler (listener, &notify_id);
+
+	neighbors = nm_lldp_listener_get_neighbors (listener);
+	nmtst_assert_variant_is_of_type (neighbors, G_VARIANT_TYPE ("aa{sv}"));
+	g_assert_cmpint (g_variant_n_children (neighbors), ==, 0);
+}
+
+TEST_RECV_DATA_DEFINE (_test_recv_data2_ttl1, 1, _test_recv_data2_ttl1_check,  &_test_recv_data2_frame0_ttl1);
+
 static void
 _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 {
@@ -353,13 +395,14 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 	GMainLoop *loop;
 	TestRecvCallbackInfo info = { };
 	gsize i_frames;
+	gulong notify_id;
 
 	listener = nm_lldp_listener_new ();
 	g_assert (listener != NULL);
 	g_assert (nm_lldp_listener_start (listener, fixture->ifindex, TEST_IFNAME, fixture->mac, ETH_ALEN, NULL));
 
-	g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
-	                  (GCallback) lldp_neighbors_changed, &info);
+	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
+	                              (GCallback) lldp_neighbors_changed, &info);
 	loop = g_main_loop_new (NULL, FALSE);
 
 	for (i_frames = 0; i_frames < data->frames_len; i_frames++) {
@@ -373,7 +416,9 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 
 	g_assert_cmpint (info.num_called, ==, data->expected_num_called);
 
-	data->check (listener);
+	nm_clear_g_signal_handler (listener, &notify_id);
+
+	data->check (loop, listener);
 
 	g_clear_pointer (&loop, g_main_loop_unref);
 }
@@ -400,4 +445,5 @@ setup_tests (void)
 	_TEST_ADD_RECV ("/lldp/recv/0",       &_test_recv_data0);
 	_TEST_ADD_RECV ("/lldp/recv/0_twice", &_test_recv_data0_twice);
 	_TEST_ADD_RECV ("/lldp/recv/1",       &_test_recv_data1);
+	_TEST_ADD_RECV ("/lldp/recv/2_ttl1",  &_test_recv_data2_ttl1);
 }
