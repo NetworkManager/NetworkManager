@@ -3066,8 +3066,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 static gboolean
 nm_device_can_assume_connections (NMDevice *self)
 {
-	return   !!NM_DEVICE_GET_CLASS (self)->update_connection
-	      && !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
+	return   !!NM_DEVICE_GET_CLASS (self)->update_connection;
 }
 
 /**
