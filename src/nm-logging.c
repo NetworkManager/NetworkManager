@@ -111,7 +111,7 @@ static struct {
 	char *logging_domains_to_string;
 	const LogLevelDesc level_desc[_LOGL_N];
 
-#define _DOMAIN_DESC_LEN 36
+#define _DOMAIN_DESC_LEN 37
 	/* Would be nice to use C99 flexible array member here,
 	 * but that feature doesn't seem well supported. */
 	const LogDesc domain_desc[_DOMAIN_DESC_LEN];
@@ -164,6 +164,7 @@ static struct {
 		{ LOGD_DCB,       "DCB" },
 		{ LOGD_DISPATCH,  "DISPATCH" },
 		{ LOGD_AUDIT,     "AUDIT" },
+		{ LOGD_SYSTEMD,   "SYSTEMD" },
 		{ 0, NULL }
 		/* keep _DOMAIN_DESC_LEN in sync */
 	},
