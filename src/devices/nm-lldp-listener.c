@@ -50,12 +50,9 @@ typedef struct {
 	GVariant     *variant;
 } NMLldpListenerPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMLldpListener,
 	PROP_NEIGHBORS,
-
-	LAST_PROP
-};
+);
 
 G_DEFINE_TYPE (NMLldpListener, nm_lldp_listener, G_TYPE_OBJECT)
 
@@ -644,7 +641,7 @@ process_lldp_neighbors (NMLldpListener *self)
 
 	if (changed) {
 		nm_clear_g_variant (&priv->variant);
-		g_object_notify (G_OBJECT (self), NM_LLDP_LISTENER_NEIGHBORS);
+		_notify (self, PROP_NEIGHBORS);
 	}
 
 	/* Since the processing of the neighbor list is potentially
@@ -751,7 +748,7 @@ nm_lldp_listener_stop (NMLldpListener *self)
 		g_hash_table_remove_all (priv->lldp_neighbors);
 		if (size) {
 			nm_clear_g_variant (&priv->variant);
-			g_object_notify (G_OBJECT (self), NM_LLDP_LISTENER_NEIGHBORS);
+			_notify (self, PROP_NEIGHBORS);
 		}
 	}
 
@@ -863,12 +860,13 @@ nm_lldp_listener_class_init (NMLldpListenerClass *klass)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 
-	g_object_class_install_property
-		(object_class, PROP_NEIGHBORS,
-		 g_param_spec_variant (NM_LLDP_LISTENER_NEIGHBORS, "", "",
-		                       G_VARIANT_TYPE ("aa{sv}"),
-		                       NULL,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NEIGHBORS] =
+	    g_param_spec_variant (NM_LLDP_LISTENER_NEIGHBORS, "", "",
+	                          G_VARIANT_TYPE ("aa{sv}"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
