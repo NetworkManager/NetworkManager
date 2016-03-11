@@ -16,19 +16,10 @@
  * Copyright (C) 2014 - 2016 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#ifndef __NM_SD_H__
+#define __NM_SD_H__
 
-#include "nm-sd-adapt.h"
+guint nm_sd_event_attach_default (void);
 
-#include "fd-util.h"
-
-/*****************************************************************************/
-
-int
-asynchronous_close (int fd) {
-	safe_close (fd);
-	return -1;
-}
-
-/*****************************************************************************/
+#endif /* __NM_SD_H__ */
 

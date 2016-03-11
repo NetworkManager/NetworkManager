@@ -64,6 +64,8 @@ SYSTEMD_NM_CFLAGS_PATHS = \
 	-I$(top_srcdir)/src/systemd
 
 libsystemd_nm_la_SOURCES = \
+	systemd/nm-sd.c \
+	systemd/nm-sd.h \
 	systemd/nm-sd-adapt.c \
 	systemd/nm-sd-adapt.h \
 	systemd/src/basic/alloc-util.c \

@@ -38,7 +38,6 @@
 #include "sd-dhcp-client.h"
 #include "sd-dhcp6-client.h"
 
-/* we use a private systemd header, thus need to include nm-sd-adapt.h. */
 #include "nm-sd-adapt.h"
 #include "dhcp-lease-internal.h"
 

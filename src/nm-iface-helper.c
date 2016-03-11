@@ -36,15 +36,15 @@
  * Forward declare if_nametoindex. */
 extern unsigned int if_nametoindex (const char *__ifname);
 
+#include "main-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "nm-dhcp-manager.h"
-#include "main-utils.h"
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-utils.h"
 #include "nm-setting-ip6-config.h"
-#include "nm-sd-adapt.h"
+#include "nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION

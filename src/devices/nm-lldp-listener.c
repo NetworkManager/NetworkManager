@@ -20,14 +20,18 @@
 
 #include "nm-default.h"
 
+#include "nm-lldp-listener.h"
+
 #include <net/ethernet.h>
 #include <errno.h>
 
-#include "sd-lldp.h"
-#include "lldp.h"
-#include "nm-lldp-listener.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
+
+#include "sd-lldp.h"
+
+#include "nm-sd-adapt.h"
+#include "lldp.h"
 
 #define MAX_NEIGHBORS         4096
 #define MIN_UPDATE_INTERVAL   2

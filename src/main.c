@@ -35,9 +35,9 @@
 #include <string.h>
 #include <sys/resource.h>
 
+#include "main-utils.h"
 #include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
-#include "main-utils.h"
 #include "nm-manager.h"
 #include "nm-linux-platform.h"
 #include "nm-bus-manager.h"
@@ -50,7 +50,7 @@
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
 #include "nm-exported-object.h"
-#include "nm-sd-adapt.h"
+#include "nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION

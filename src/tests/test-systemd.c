@@ -19,10 +19,11 @@
 
 #include "nm-default.h"
 
+#include "nm-sd.h"
+
 #include "sd-dhcp-client.h"
 #include "sd-lldp.h"
 #include "sd-event.h"
-#include "nm-sd-adapt.h"
 
 #include "nm-test-utils.h"
 

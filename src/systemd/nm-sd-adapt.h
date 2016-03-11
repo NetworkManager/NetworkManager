@@ -26,8 +26,6 @@
 #include <sys/resource.h>
 #include <time.h>
 
-guint nm_sd_event_attach_default (void);
-
 #define noreturn G_GNUC_NORETURN
 
 #ifndef CLOCK_BOOTTIME
