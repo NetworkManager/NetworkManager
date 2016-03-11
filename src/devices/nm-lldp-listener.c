@@ -70,6 +70,8 @@ typedef struct {
 	struct ether_addr destination_address;
 
 	GHashTable *tlvs;
+
+	GVariant *variant;
 } LldpNeighbor;
 
 static void process_lldp_neighbors (NMLldpListener *self);
@@ -215,6 +217,7 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
 		g_hash_table_unref (neighbor->tlvs);
+		g_clear_pointer (&neighbor->variant, g_variant_unref);
 		g_slice_free (LldpNeighbor, neighbor);
 	}
 }
@@ -472,6 +475,9 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	gpointer key, val;
 	const char *dest_str;
 
+	if (neigh->variant)
+		return neigh->variant;
+
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 
 	g_variant_builder_add (&builder, "{sv}",
@@ -516,7 +522,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		}
 	}
 
-	return g_variant_builder_end (&builder);
+	return (neigh->variant = g_variant_ref_sink (g_variant_builder_end (&builder)));
 }
 
 /*****************************************************************************/
@@ -767,18 +773,15 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
-	if (priv->variant)
-		goto out;
+	if (!priv->variant) {
+		g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
+		g_hash_table_iter_init (&iter, priv->lldp_neighbors);
 
-	g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
-	g_hash_table_iter_init (&iter, priv->lldp_neighbors);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &neigh))
+			g_variant_builder_add_value (&array_builder, lldp_neighbor_to_variant (neigh));
 
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &neigh))
-		g_variant_builder_add_value (&array_builder, lldp_neighbor_to_variant (neigh));
-
-	priv->variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
-
-out:
+		priv->variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
+	}
 	return priv->variant;
 }
 
