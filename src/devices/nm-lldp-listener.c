@@ -69,6 +69,8 @@ typedef struct {
 
 	struct ether_addr destination_address;
 
+	bool valid:1;
+
 	GHashTable *tlvs;
 
 	GVariant *variant;
@@ -276,7 +278,6 @@ static LldpNeighbor *
 lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 {
 	nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
-	LldpNeighbor *neigh_result;
 	uint8_t chassis_id_type, port_id_type;
 	uint16_t data16;
 	uint8_t *data8;
@@ -321,7 +322,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	if (r < 0) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "failed getting destination address: %s", g_strerror (-r));
-		return NULL;
+		goto out;
 	}
 
 	switch (chassis_id_type) {
@@ -337,7 +338,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	default:
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "unsupported chassis-id type %d", chassis_id_type);
-		return NULL;
+		goto out;
 	}
 
 	switch (port_id_type) {
@@ -353,7 +354,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	default:
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "unsupported port-id type %d", port_id_type);
-		return NULL;
+		goto out;
 	}
 
 	if (sd_lldp_neighbor_get_port_description (neighbor_sd, &str) == 0) {
@@ -380,7 +381,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	if (r < 0) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "failed reading tlv (rewind): %s", g_strerror (-r));
-		return NULL;
+		goto out;
 	}
 	do {
 		guint8 oui[3];
@@ -392,7 +393,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				continue;
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 			             "failed reading tlv: %s", g_strerror (-r));
-			return NULL;
+			goto out;
 		}
 
 		if (!(   memcmp (oui, LLDP_OUI_802_1, sizeof (oui)) == 0
@@ -462,9 +463,10 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		}
 	} while (sd_lldp_neighbor_tlv_next (neighbor_sd) > 0);
 
-	neigh_result = neigh;
-	neigh = NULL;
-	return neigh_result;
+	neigh->valid = TRUE;
+
+out:
+	return nm_unauto (&neigh);
 }
 
 static GVariant *
@@ -555,7 +557,7 @@ process_lldp_neighbors (NMLldpListener *self)
 	int num, i;
 	GError *parse_error = NULL, **p_parse_error;
 	gboolean changed = FALSE;
-	LldpNeighbor *neigh, *neigh_old;
+	LldpNeighbor *neigh_old;
 
 	g_return_if_fail (priv->lldp_handle);
 
@@ -577,8 +579,10 @@ process_lldp_neighbors (NMLldpListener *self)
 	p_parse_error = _LOGT_ENABLED () ? &parse_error : NULL;
 
 	for (i = 0; neighbors && i < num; i++) {
+		nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
+
 		neigh = lldp_neighbor_new (neighbors[i], p_parse_error);
-		if (!neigh) {
+		if (!neigh || !neigh->valid) {
 			if (p_parse_error) {
 				_LOGT ("process: %s", parse_error->message);
 				g_clear_error (&parse_error);
@@ -588,10 +592,8 @@ process_lldp_neighbors (NMLldpListener *self)
 
 		neigh_old = g_hash_table_lookup (priv->lldp_neighbors, neigh);
 		if (neigh_old) {
-			if (lldp_neighbor_equal (neigh_old, neigh)) {
-				lldp_neighbor_free (neigh);
+			if (lldp_neighbor_equal (neigh_old, neigh))
 				continue;
-			}
 			if (prune_list) {
 				if (g_hash_table_remove (prune_list, neigh_old))
 					changed = TRUE;
@@ -605,7 +607,6 @@ process_lldp_neighbors (NMLldpListener *self)
 		    && i >= MAX_NEIGHBORS
 		    && (g_hash_table_size (priv->lldp_neighbors) - (prune_list ? g_hash_table_size (prune_list) : 0)) > MAX_NEIGHBORS) {
 			_LOGT ("process: skip remaining neighbors due to overall limit of %d", MAX_NEIGHBORS);
-			lldp_neighbor_free (neigh);
 			break;
 		}
 
@@ -614,7 +615,7 @@ process_lldp_neighbors (NMLldpListener *self)
 		        neigh->chassis_id, neigh->port_id);
 
 		changed = TRUE;
-		g_hash_table_add (priv->lldp_neighbors, neigh);
+		g_hash_table_add (priv->lldp_neighbors, nm_unauto (&neigh));
 	}
 
 	for (i = 0; neighbors && i < num; i++)
