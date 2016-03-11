@@ -34,7 +34,7 @@
 #include "lldp.h"
 
 #define MAX_NEIGHBORS         4096
-#define MIN_UPDATE_INTERVAL   2
+#define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NS_PER_SECOND)
 
 #define LLDP_MAC_NEAREST_BRIDGE          ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }))
 #define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 }))
@@ -45,8 +45,11 @@ typedef struct {
 	int           ifindex;
 	sd_lldp      *lldp_handle;
 	GHashTable   *lldp_neighbors;
-	guint         timer;
-	guint         num_pending_events;
+
+	/* the timestamp in nsec until which we delay updates. */
+	gint64        ratelimit_next;
+	guint         ratelimit_id;
+
 	GVariant     *variant;
 } NMLldpListenerPrivate;
 
@@ -72,8 +75,6 @@ typedef struct {
 
 	GVariant *variant;
 } LldpNeighbor;
-
-static void process_lldp_neighbors (NMLldpListener *self);
 
 /*****************************************************************************/
 
@@ -529,8 +530,15 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 
 /*****************************************************************************/
 
+static void
+data_changed_notify (NMLldpListener *self, NMLldpListenerPrivate *priv)
+{
+	nm_clear_g_variant (&priv->variant);
+	_notify (self, PROP_NEIGHBORS);
+}
+
 static gboolean
-lldp_timeout (gpointer user_data)
+data_changed_timeout (gpointer user_data)
 {
 	NMLldpListener *self = user_data;
 	NMLldpListenerPrivate *priv;
@@ -539,12 +547,90 @@ lldp_timeout (gpointer user_data)
 
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
-	priv->timer = 0;
-
-	if (priv->num_pending_events)
-		process_lldp_neighbors (self);
-
+	priv->ratelimit_id = 0;
+	priv->ratelimit_next = nm_utils_get_monotonic_timestamp_ns() + MIN_UPDATE_INTERVAL_NS;
+	data_changed_notify (self, priv);
 	return G_SOURCE_REMOVE;
+}
+
+static void
+data_changed_schedule (NMLldpListener *self)
+{
+	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
+	gint64 now;
+
+	now = nm_utils_get_monotonic_timestamp_ns ();
+	if (now >= priv->ratelimit_next) {
+		nm_clear_g_source (&priv->ratelimit_id);
+		priv->ratelimit_next = now + MIN_UPDATE_INTERVAL_NS;
+		data_changed_notify (self, priv);
+	} else if (!priv->ratelimit_id)
+		priv->ratelimit_id = g_timeout_add (NM_UTILS_NS_TO_MSEC_CEIL (priv->ratelimit_next - now), data_changed_timeout, self);
+}
+
+static void
+process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboolean neighbor_valid)
+{
+	NMLldpListenerPrivate *priv;
+	nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
+	LldpNeighbor *neigh_old;
+	gs_free_error GError *parse_error = NULL;
+	GError **p_parse_error;
+	gboolean changed = FALSE;
+
+	g_return_if_fail (NM_IS_LLDP_LISTENER (self));
+
+	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->lldp_handle);
+	g_return_if_fail (neighbor_sd);
+
+	p_parse_error = _LOGT_ENABLED () ? &parse_error : NULL;
+
+	neigh = lldp_neighbor_new (neighbor_sd, p_parse_error);
+	if (!neigh) {
+		_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
+		return;
+	}
+
+	if (!neigh->valid)
+		neighbor_valid = FALSE;
+
+	neigh_old = g_hash_table_lookup (priv->lldp_neighbors, neigh);
+	if (neigh_old) {
+		if (!neighbor_valid) {
+			_LOGT ("process: %s neigh: "LOG_NEIGH_FMT"%s%s%s",
+			       "remove", LOG_NEIGH_ARG (neigh),
+			       NM_PRINT_FMT_QUOTED (parse_error, " (failed to parse: ", parse_error->message, ")", ""));
+
+			g_hash_table_remove (priv->lldp_neighbors, neigh_old);
+			changed = TRUE;
+			goto done;
+		} else if (lldp_neighbor_equal (neigh_old, neigh))
+			return;
+	} else if (!neighbor_valid) {
+		if (parse_error)
+			_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
+		return;
+	}
+
+	/* ensure that we have at most MAX_NEIGHBORS entires */
+	if (   !neigh_old /* only matters in the "add" case. */
+	    && (g_hash_table_size (priv->lldp_neighbors) + 1 > MAX_NEIGHBORS)) {
+		_LOGT ("process: ignore neighbor due to overall limit of %d", MAX_NEIGHBORS);
+		return;
+	}
+
+	_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
+	        neigh_old ? "update" : "new",
+	        LOG_NEIGH_ARG (neigh));
+
+	changed = TRUE;
+	g_hash_table_add (priv->lldp_neighbors, nm_unauto (&neigh));
+
+done:
+	if (changed)
+		data_changed_schedule (self);
 }
 
 static void
@@ -639,35 +725,14 @@ process_lldp_neighbors (NMLldpListener *self)
 		g_hash_table_unref (prune_list);
 	}
 
-	if (changed) {
-		nm_clear_g_variant (&priv->variant);
-		_notify (self, PROP_NEIGHBORS);
-	}
-
-	/* Since the processing of the neighbor list is potentially
-	 * expensive when there are many neighbors, coalesce multiple
-	 * events arriving in short time.
-	 */
-	priv->timer = g_timeout_add_seconds (MIN_UPDATE_INTERVAL, lldp_timeout, self);
-	priv->num_pending_events = 0;
+	if (changed)
+		data_changed_schedule (self);
 }
 
 static void
 lldp_event_handler (sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, void *userdata)
 {
-	NMLldpListener *self = userdata;
-	NMLldpListenerPrivate *priv;
-
-	g_return_if_fail (NM_IS_LLDP_LISTENER (self));
-
-	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-
-	if (priv->timer > 0) {
-		priv->num_pending_events++;
-		return;
-	}
-
-	process_lldp_neighbors (self);
+	process_lldp_neighbor (userdata, n, event != SD_LLDP_EVENT_REMOVED);
 }
 
 gboolean
@@ -718,6 +783,9 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 
 	priv->ifindex = ifindex;
 	_LOGD ("start");
+
+	process_lldp_neighbors (self);
+
 	return TRUE;
 
 err:
@@ -733,6 +801,7 @@ nm_lldp_listener_stop (NMLldpListener *self)
 {
 	NMLldpListenerPrivate *priv;
 	guint size;
+	gboolean changed = FALSE;
 
 	g_return_if_fail (NM_IS_LLDP_LISTENER (self));
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
@@ -746,14 +815,16 @@ nm_lldp_listener_stop (NMLldpListener *self)
 
 		size = g_hash_table_size (priv->lldp_neighbors);
 		g_hash_table_remove_all (priv->lldp_neighbors);
-		if (size) {
-			nm_clear_g_variant (&priv->variant);
-			_notify (self, PROP_NEIGHBORS);
-		}
+		if (size || priv->ratelimit_id)
+			changed = TRUE;
 	}
 
-	nm_clear_g_source (&priv->timer);
+	nm_clear_g_source (&priv->ratelimit_id);
+	priv->ratelimit_next = 0;
 	priv->ifindex = 0;
+
+	if (changed)
+		data_changed_notify (self, priv);
 }
 
 gboolean

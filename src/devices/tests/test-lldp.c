@@ -335,7 +335,7 @@ _test_recv_data2_ttl1_check (GMainLoop *loop, NMLldpListener *listener)
 	/* wait for signal. */
 	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
 	                              nmtst_main_loop_quit_on_notify, loop);
-	if (!nmtst_main_loop_run (loop, 20000))
+	if (!nmtst_main_loop_run (loop, 5000))
 		g_assert_not_reached ();
 	nm_clear_g_signal_handler (listener, &notify_id);
 
