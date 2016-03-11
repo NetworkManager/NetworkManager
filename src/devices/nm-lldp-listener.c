@@ -467,35 +467,6 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 /*****************************************************************************/
 
 static gboolean
-lldp_hash_table_equal (GHashTable *a, GHashTable *b)
-{
-	GHashTableIter iter;
-	gpointer val;
-
-	g_return_val_if_fail (a, FALSE);
-	g_return_val_if_fail (b, FALSE);
-
-	if (g_hash_table_size (a) != g_hash_table_size (b))
-		return FALSE;
-
-	g_hash_table_iter_init (&iter, a);
-	while (g_hash_table_iter_next (&iter, NULL, &val)) {
-		LldpNeighbor *neigh_a, *neigh_b;
-
-		neigh_a = val;
-		neigh_b = g_hash_table_lookup (b, val);
-
-		if (!neigh_b)
-			return FALSE;
-
-		if (!lldp_neighbor_equal (neigh_a, neigh_b))
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 lldp_timeout (gpointer user_data)
 {
 	NMLldpListener *self = user_data;
@@ -518,9 +489,12 @@ process_lldp_neighbors (NMLldpListener *self)
 {
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 	nm_auto_free sd_lldp_neighbor **neighbors = NULL;
-	GHashTable *hash;
+	GHashTable *prune_list = NULL;
+	GHashTableIter iter;
 	int num, i;
 	GError *parse_error = NULL, **p_parse_error;
+	gboolean changed = FALSE;
+	LldpNeighbor *neigh, *neigh_old;
 
 	g_return_if_fail (priv->lldp_handle);
 
@@ -531,39 +505,74 @@ process_lldp_neighbors (NMLldpListener *self)
 		return;
 	}
 
-	hash = g_hash_table_new_full (lldp_neighbor_id_hash, lldp_neighbor_id_equal,
-	                              (GDestroyNotify) lldp_neighbor_free, NULL);
+	if (g_hash_table_size (priv->lldp_neighbors) > 0) {
+		prune_list = g_hash_table_new (NULL, NULL);
+		g_hash_table_iter_init (&iter, priv->lldp_neighbors);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &neigh_old, NULL)) {
+			g_hash_table_add (prune_list, neigh_old);
+		}
+	}
 
 	p_parse_error = _LOGT_ENABLED () ? &parse_error : NULL;
 
 	for (i = 0; neighbors && i < num; i++) {
-		LldpNeighbor *neigh;
-
-		if (i >= MAX_NEIGHBORS)
-			break;
-
 		neigh = lldp_neighbor_new (neighbors[i], p_parse_error);
 		if (!neigh) {
 			if (p_parse_error) {
-				_LOGT ("parse: %s", parse_error->message);
+				_LOGT ("process: %s", parse_error->message);
 				g_clear_error (&parse_error);
 			}
 			continue;
 		}
 
-		_LOGD ("process: new neigh: CHASSIS='%s' PORT='%s'",
+		neigh_old = g_hash_table_lookup (priv->lldp_neighbors, neigh);
+		if (neigh_old) {
+			if (lldp_neighbor_equal (neigh_old, neigh)) {
+				lldp_neighbor_free (neigh);
+				continue;
+			}
+			if (prune_list) {
+				if (g_hash_table_remove (prune_list, neigh_old))
+					changed = TRUE;
+				if (g_hash_table_size (prune_list) == 0)
+					g_clear_pointer (&prune_list, g_hash_table_unref);
+			}
+		}
+
+		/* ensure that we have at most MAX_NEIGHBORS entires */
+		if (   !neigh_old /* only matters in the "add" case. */
+		    && i >= MAX_NEIGHBORS
+		    && (g_hash_table_size (priv->lldp_neighbors) - (prune_list ? g_hash_table_size (prune_list) : 0)) > MAX_NEIGHBORS) {
+			_LOGT ("process: skip remaining neighbors due to overall limit of %d", MAX_NEIGHBORS);
+			lldp_neighbor_free (neigh);
+			break;
+		}
+
+		_LOGD ("process: %s neigh: CHASSIS='%s' PORT='%s'",
+		        neigh_old ? "update" : "new",
 		        neigh->chassis_id, neigh->port_id);
-		g_hash_table_add (hash, neigh);
+
+		changed = TRUE;
+		g_hash_table_add (priv->lldp_neighbors, neigh);
 	}
 
 	for (i = 0; neighbors && i < num; i++)
 		sd_lldp_neighbor_unref (neighbors[i]);
 
-	if (lldp_hash_table_equal (priv->lldp_neighbors, hash)) {
-		g_hash_table_destroy (hash);
-	} else {
-		g_hash_table_destroy (priv->lldp_neighbors);
-		priv->lldp_neighbors = hash;
+	if (prune_list) {
+		g_hash_table_iter_init (&iter, prune_list);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &neigh_old, NULL)) {
+			_LOGD ("process: %s neigh: CHASSIS='%s' PORT='%s'",
+			        "remove",
+			        neigh_old->chassis_id, neigh_old->port_id);
+			if (!g_hash_table_remove (priv->lldp_neighbors, neigh_old))
+				g_warn_if_reached ();
+			changed = TRUE;
+		}
+		g_hash_table_unref (prune_list);
+	}
+
+	if (changed) {
 		nm_clear_g_variant (&priv->variant);
 		g_object_notify (G_OBJECT (self), NM_LLDP_LISTENER_NEIGHBORS);
 	}
