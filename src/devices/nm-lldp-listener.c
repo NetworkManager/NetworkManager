@@ -102,6 +102,9 @@ static void process_lldp_neighbors (NMLldpListener *self);
         } \
     } G_STMT_END \
 
+#define LOG_NEIGH_FMT        "CHASSIS=%s%s%s PORT=%s%s%s"
+#define LOG_NEIGH_ARG(neigh) NM_PRINT_FMT_QUOTE_STRING ((neigh)->chassis_id), NM_PRINT_FMT_QUOTE_STRING ((neigh)->port_id)
+
 /*****************************************************************************/
 
 static gboolean
@@ -584,7 +587,12 @@ process_lldp_neighbors (NMLldpListener *self)
 		neigh = lldp_neighbor_new (neighbors[i], p_parse_error);
 		if (!neigh || !neigh->valid) {
 			if (p_parse_error) {
-				_LOGT ("process: %s", parse_error->message);
+				if (neigh)
+					_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
+				else {
+					_LOGT ("process: failed to parse neighbor "LOG_NEIGH_FMT": %s",
+					       LOG_NEIGH_ARG (neigh), parse_error->message);
+				}
 				g_clear_error (&parse_error);
 			}
 			continue;
@@ -610,9 +618,9 @@ process_lldp_neighbors (NMLldpListener *self)
 			break;
 		}
 
-		_LOGD ("process: %s neigh: CHASSIS='%s' PORT='%s'",
+		_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
 		        neigh_old ? "update" : "new",
-		        neigh->chassis_id, neigh->port_id);
+		        LOG_NEIGH_ARG (neigh));
 
 		changed = TRUE;
 		g_hash_table_add (priv->lldp_neighbors, nm_unauto (&neigh));
@@ -624,9 +632,9 @@ process_lldp_neighbors (NMLldpListener *self)
 	if (prune_list) {
 		g_hash_table_iter_init (&iter, prune_list);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &neigh_old, NULL)) {
-			_LOGD ("process: %s neigh: CHASSIS='%s' PORT='%s'",
+			_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
 			        "remove",
-			        neigh_old->chassis_id, neigh_old->port_id);
+			        LOG_NEIGH_ARG (neigh_old));
 			if (!g_hash_table_remove (priv->lldp_neighbors, neigh_old))
 				g_warn_if_reached ();
 			changed = TRUE;
