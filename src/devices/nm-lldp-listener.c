@@ -70,7 +70,7 @@ typedef struct {
 	struct ether_addr destination_address;
 
 	GHashTable *tlvs;
-} LLDPNeighbor;
+} LldpNeighbor;
 
 static void process_lldp_neighbors (NMLldpListener *self);
 
@@ -185,7 +185,7 @@ gvalue_new_uint_u16 (const void *data)
 static guint
 lldp_neighbor_id_hash (gconstpointer ptr)
 {
-	const LLDPNeighbor *neigh = ptr;
+	const LldpNeighbor *neigh = ptr;
 	guint hash;
 
 	hash =   23423423u  + ((guint) (neigh->chassis_id ? g_str_hash (neigh->chassis_id) : 12321u));
@@ -198,7 +198,7 @@ lldp_neighbor_id_hash (gconstpointer ptr)
 static gboolean
 lldp_neighbor_id_equal (gconstpointer a, gconstpointer b)
 {
-	const LLDPNeighbor *x = a, *y = b;
+	const LldpNeighbor *x = a, *y = b;
 
 	return x->chassis_id_type == y->chassis_id_type &&
 	       x->port_id_type == y->port_id_type &&
@@ -207,24 +207,24 @@ lldp_neighbor_id_equal (gconstpointer a, gconstpointer b)
 }
 
 static void
-lldp_neighbor_free (LLDPNeighbor *neighbor)
+lldp_neighbor_free (LldpNeighbor *neighbor)
 {
 	if (neighbor) {
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
 		g_hash_table_unref (neighbor->tlvs);
-		g_slice_free (LLDPNeighbor, neighbor);
+		g_slice_free (LldpNeighbor, neighbor);
 	}
 }
 
 static void
-lldp_neighbor_freep (LLDPNeighbor **ptr)
+lldp_neighbor_freep (LldpNeighbor **ptr)
 {
 	lldp_neighbor_free (*ptr);
 }
 
 static gboolean
-lldp_neighbor_equal (LLDPNeighbor *a, LLDPNeighbor *b)
+lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 {
 	GHashTableIter iter;
 	gpointer k, v;
@@ -281,7 +281,7 @@ lldp_hash_table_equal (GHashTable *a, GHashTable *b)
 
 	g_hash_table_iter_init (&iter, a);
 	while (g_hash_table_iter_next (&iter, NULL, &val)) {
-		LLDPNeighbor *neigh_a, *neigh_b;
+		LldpNeighbor *neigh_a, *neigh_b;
 
 		neigh_a = val;
 		neigh_b = g_hash_table_lookup (b, val);
@@ -335,7 +335,7 @@ process_lldp_neighbors (NMLldpListener *self)
 	                              (GDestroyNotify) lldp_neighbor_free, NULL);
 
 	for (i = 0; neighbors && i < num; i++) {
-		nm_auto (lldp_neighbor_freep) LLDPNeighbor *neigh = NULL;
+		nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
 		uint8_t chassis_id_type, port_id_type;
 		uint16_t data16;
 		uint8_t *data8;
@@ -361,7 +361,7 @@ process_lldp_neighbors (NMLldpListener *self)
 		if (port_id_len < 1)
 			goto next_neighbor;
 
-		neigh = g_slice_new0 (LLDPNeighbor);
+		neigh = g_slice_new0 (LldpNeighbor);
 		neigh->tlvs = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 		neigh->chassis_id_type = chassis_id_type;
 		neigh->port_id_type = port_id_type;
@@ -649,7 +649,7 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 	GVariantBuilder array_builder, neigh_builder;
 	GHashTableIter iter;
 	NMLldpListenerPrivate *priv;
-	LLDPNeighbor *neigh;
+	LldpNeighbor *neigh;
 
 	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), FALSE);
 
