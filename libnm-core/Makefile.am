@@ -13,7 +13,8 @@ AM_CPPFLAGS = \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
 	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS)
+	$(CODE_COVERAGE_CFLAGS) \
+	$(JANSSON_CFLAGS)
 
 noinst_LTLIBRARIES = libnm-core.la
 
@@ -35,7 +36,8 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 libnm_core_la_LIBADD =			\
 	$(GLIB_LIBS)			\
-	$(UUID_LIBS)
+	$(UUID_LIBS)			\
+	$(JANSSON_LIBS)
 
 libnm_core_la_LDFLAGS =			\
 	$(CODE_COVERAGE_LDFLAGS)

@@ -27,6 +27,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-team
@@ -82,7 +83,41 @@ nm_setting_team_get_config (NMSettingTeam *setting)
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	return _nm_connection_verify_required_interface_name (connection, error);
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+
+	if (!_nm_connection_verify_required_interface_name (connection, error))
+		return FALSE;
+
+	if (priv->config) {
+		if (!_nm_utils_check_valid_json (priv->config, error)) {
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_TEAM_SETTING_NAME,
+			                NM_SETTING_TEAM_CONFIG);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	NMSettingClass *parent_class;
+
+	if (nm_streq0 (prop_spec->name, NM_SETTING_TEAM_CONFIG)) {
+		return _nm_utils_team_config_equal (NM_SETTING_TEAM_GET_PRIVATE (setting)->config,
+		                                    NM_SETTING_TEAM_GET_PRIVATE (other)->config,
+		                                    FALSE);
+	}
+
+	/* Otherwise chain up to parent to handle generic compare */
+	parent_class = NM_SETTING_CLASS (nm_setting_team_parent_class);
+	return parent_class->compare_property (setting, other, prop_spec, flags);
 }
 
 static void
@@ -142,10 +177,11 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	g_type_class_add_private (setting_class, sizeof (NMSettingTeamPrivate));
 
 	/* virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+	object_class->set_property     = set_property;
+	object_class->get_property     = get_property;
+	object_class->finalize         = finalize;
+	parent_class->compare_property = compare_property;
+	parent_class->verify           = verify;
 
 	/* Properties */
 	/**

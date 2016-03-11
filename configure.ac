@@ -553,6 +553,18 @@ else
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
 
+PKG_CHECK_MODULES(JANSSON, jansson, [have_jansson=yes], [have_jansson=no])
+AC_ARG_ENABLE(json-validation, AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]),
+		[enable_json_validation=${enableval}], [enable_json_validation=${have_jansson}])
+if (test "${enable_json_validation}" = "yes"); then
+	if test x"$have_jansson" = x"no"; then
+		AC_MSG_ERROR(Jansson is required for JSON validation)
+	fi
+	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+else
+	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
+fi
+
 # we usually compile with polkit support. --enable-polkit=yes|no only sets the
 # default configuration for main.auth-polkit. User can always enable/disable polkit
 # autorization via config. Only when specifying --enable-polkit=disabled, we do
@@ -1178,4 +1190,5 @@ echo "  more-asserts: $more_asserts"
 echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
+echo "  JSON validation: $enable_json_validation"
 echo
