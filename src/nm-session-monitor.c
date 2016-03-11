@@ -80,7 +80,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 #ifdef SESSION_TRACKING_SYSTEMD
 static gboolean
-sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
+st_sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
 {
 	int status;
 
@@ -97,7 +97,7 @@ sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
 }
 
 static gboolean
-sd_changed (GIOChannel *stream, GIOCondition condition, gpointer user_data)
+st_sd_changed (GIOChannel *stream, GIOCondition condition, gpointer user_data)
 {
 	NMSessionMonitor *monitor = user_data;
 
@@ -109,7 +109,7 @@ sd_changed (GIOChannel *stream, GIOCondition condition, gpointer user_data)
 }
 
 static void
-sd_init (NMSessionMonitor *monitor)
+st_sd_init (NMSessionMonitor *monitor)
 {
 	int status;
 	GIOChannel *stream;
@@ -123,13 +123,13 @@ sd_init (NMSessionMonitor *monitor)
 	}
 
 	stream = g_io_channel_unix_new (sd_login_monitor_get_fd (monitor->sd.monitor));
-	monitor->sd.watch = g_io_add_watch (stream, G_IO_IN, sd_changed, monitor);
+	monitor->sd.watch = g_io_add_watch (stream, G_IO_IN, st_sd_changed, monitor);
 
 	g_io_channel_unref (stream);
 }
 
 static void
-sd_finalize (NMSessionMonitor *monitor)
+st_sd_finalize (NMSessionMonitor *monitor)
 {
 	g_clear_pointer (&monitor->sd.monitor, sd_login_monitor_unref);
 	g_source_remove (monitor->sd.watch);
@@ -383,7 +383,7 @@ nm_session_monitor_session_exists (NMSessionMonitor *self,
 	g_return_val_if_fail (NM_IS_SESSION_MONITOR (self), FALSE);
 
 #ifdef SESSION_TRACKING_SYSTEMD
-	if (sd_session_exists (self, uid, active))
+	if (st_sd_session_exists (self, uid, active))
 		return TRUE;
 #endif
 
@@ -401,7 +401,7 @@ static void
 nm_session_monitor_init (NMSessionMonitor *monitor)
 {
 #ifdef SESSION_TRACKING_SYSTEMD
-	sd_init (monitor);
+	st_sd_init (monitor);
 #endif
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
@@ -413,7 +413,7 @@ static void
 nm_session_monitor_finalize (GObject *object)
 {
 #ifdef SESSION_TRACKING_SYSTEMD
-	sd_finalize (NM_SESSION_MONITOR (object));
+	st_sd_finalize (NM_SESSION_MONITOR (object));
 #endif
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
