@@ -118,6 +118,7 @@ wifi_wext_get_mode (WifiData *data)
 	case IW_MODE_MASTER:
 		return NM_802_11_MODE_AP;
 	case IW_MODE_INFRA:
+	case IW_MODE_AUTO: /* hack for WEXT devices reporting IW_MODE_AUTO */
 		return NM_802_11_MODE_INFRA;
 	default:
 		break;
