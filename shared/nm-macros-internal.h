@@ -313,6 +313,26 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
+static inline gpointer
+nm_g_object_ref (gpointer obj)
+{
+	/* g_object_ref() doesn't accept NULL. */
+	if (obj)
+		g_object_ref (obj);
+	return obj;
+}
+
+static inline void
+nm_g_object_unref (gpointer obj)
+{
+	/* g_object_unref() doesn't accept NULL. Usully, we workaround that
+	 * by using g_clear_object(), but sometimes that is not convinient
+	 * (for example as as destroy function for a hash table that can contain
+	 * NULL values). */
+	if (obj)
+		g_object_unref (obj);
+}
+
 static inline gboolean
 nm_clear_g_source (guint *id)
 {
