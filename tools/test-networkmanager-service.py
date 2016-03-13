@@ -1082,7 +1082,7 @@ class Settings(dbus.service.Object):
         con = Connection(self.bus, path, settings, self.delete_connection, verify_connection)
 
         uuid = con.get_uuid()
-        if uuid in [c.get_uuid() for c in self.connections.itervalues()]:
+        if uuid in [c.get_uuid() for c in self.connections.values()]:
             raise InvalidSettingException('cannot add duplicate connection with uuid %s' % (uuid))
 
         self.counter = self.counter + 1
