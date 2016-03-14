@@ -42,6 +42,9 @@
 #define VLAN_FLAGS 0
 #define MTU 1357
 
+#define _ADD_DUMMY(platform, name) \
+	g_assert_cmpint (nm_platform_link_dummy_add ((platform), (name), NULL), ==, NM_PLATFORM_ERROR_SUCCESS)
+
 static void
 test_bogus(void)
 {
@@ -1865,6 +1868,24 @@ _test_netns_teardown (gpointer fixture, gconstpointer test_data)
 	SETUP ();
 }
 
+static NMPlatform *
+_test_netns_create_platform (void)
+{
+	NMPNetns *netns;
+	NMPlatform *platform;
+
+	netns = nmp_netns_new ();
+	g_assert (NMP_IS_NETNS (netns));
+
+	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	g_assert (NM_IS_LINUX_PLATFORM (platform));
+
+	nmp_netns_pop (netns);
+	g_object_unref (netns);
+
+	return platform;
+}
+
 static gboolean
 _test_netns_check_skip (void)
 {
@@ -1900,7 +1921,6 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 {
 	gs_unref_object NMPlatform *platform_1 = NULL;
 	gs_unref_object NMPlatform *platform_2 = NULL;
-	gs_unref_object NMPNetns *netns_2 = NULL;
 	NMPNetns *netns_tmp;
 	char sbuf[100];
 	int i, j, k;
@@ -1910,18 +1930,12 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 		return;
 
 	platform_1 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
-
-	netns_2 = nmp_netns_new ();
-	platform_2 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
-	nmp_netns_pop (netns_2);
+	platform_2 = _test_netns_create_platform ();
 
 	/* add some dummy devices. The "other-*" devices are there to bump the ifindex */
 	for (k = 0; k < 2; k++) {
 		NMPlatform *p = (k == 0 ? platform_1 : platform_2);
 		const char *id = (k == 0 ? "a" : "b");
-
-#define _ADD_DUMMY(platform, name) \
-			g_assert_cmpint (nm_platform_link_dummy_add ((platform), (name), NULL), ==, NM_PLATFORM_ERROR_SUCCESS)
 
 		for (i = 0, j = nmtst_get_rand_int () % 5; i < j; i++)
 			_ADD_DUMMY (p, nm_sprintf_buf (sbuf, "other-a-%s-%02d", id, i));
@@ -1935,8 +1949,6 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 
 		for (i = 0, j = nmtst_get_rand_int () % 5; i < j; i++)
 			_ADD_DUMMY (p, nm_sprintf_buf (sbuf, "other-c-%s-%02d", id, i));
-
-#undef _ADD_DUMMY
 	}
 
 	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nm_platform_link_get_by_ifname (platform_1, "dummy1_")->ifindex));
@@ -1985,7 +1997,6 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	}
 
 	g_assert (nm_platform_netns_push (platform_2, &netns_tmp));
-	g_assert (netns_tmp == netns_2);
 
 	if (ethtool_support) {
 		g_assert ( nmp_utils_ethtool_get_driver_info ("dummy1_", NULL, NULL, NULL));
@@ -1997,6 +2008,45 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	}
 
 	nmp_netns_pop (netns_tmp);
+}
+
+/*****************************************************************************/
+
+static void
+test_netns_set_netns (gpointer fixture, gconstpointer test_data)
+{
+	NMPlatform *platforms[3];
+	gs_unref_object NMPlatform *platform_0 = NULL;
+	gs_unref_object NMPlatform *platform_1 = NULL;
+	gs_unref_object NMPlatform *platform_2 = NULL;
+	nm_auto_pop_netns NMPNetns *netns_pop = NULL;
+	int i;
+
+	if (_test_netns_check_skip ())
+		return;
+
+	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platforms[1] = platform_1 = _test_netns_create_platform ();
+	platforms[2] = platform_2 = _test_netns_create_platform ();
+
+	i = nmtst_get_rand_int () % 4;
+	if (i != 3)
+		g_assert (nm_platform_netns_push (platforms[i], &netns_pop));
+
+#define LINK_MOVE_NAME "link-move"
+	g_assert (!nm_platform_link_get_by_ifname (platform_1, LINK_MOVE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (platform_2, LINK_MOVE_NAME));
+	_ADD_DUMMY (platform_1, LINK_MOVE_NAME);
+	g_assert ( nm_platform_link_get_by_ifname (platform_1, LINK_MOVE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (platform_2, LINK_MOVE_NAME));
+	g_assert (nm_platform_link_set_netns (platform_1,
+	                                      nm_platform_link_get_by_ifname (platform_1, LINK_MOVE_NAME)->ifindex,
+	                                      nmp_netns_get_fd_net (nm_platform_netns_get (platform_2))));
+	g_assert (!nm_platform_link_get_by_ifname (platform_1, LINK_MOVE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (platform_2, LINK_MOVE_NAME));
+	nmtstp_assert_wait_for_link (platform_2, LINK_MOVE_NAME, NM_LINK_TYPE_DUMMY, 100);
+	g_assert (!nm_platform_link_get_by_ifname (platform_1, LINK_MOVE_NAME));
+	g_assert ( nm_platform_link_get_by_ifname (platform_2, LINK_MOVE_NAME));
 }
 
 /*****************************************************************************/
@@ -2049,5 +2099,6 @@ setup_tests (void)
 		g_test_add_func ("/link/nl-bugs/spurious-dellink", test_nl_bugs_spuroius_dellink);
 
 		g_test_add_vtable ("/general/netns/general", 0, NULL, _test_netns_setup, test_netns_general, _test_netns_teardown);
+		g_test_add_vtable ("/general/netns/set-netns", 0, NULL, _test_netns_setup, test_netns_set_netns, _test_netns_teardown);
 	}
 }
