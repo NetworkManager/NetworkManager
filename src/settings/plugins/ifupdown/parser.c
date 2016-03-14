@@ -113,13 +113,12 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wireless_l);
 			nm_log_info (LOGD_SETTINGS, "wireless setting key: %s='%s'", newkey, curr->data);
 			if(newkey && !strcmp("ssid", newkey)) {
-				GByteArray *ssid;
+				GBytes *ssid;
 				gint len = strlen(curr->data);
 
-				ssid = g_byte_array_sized_new (len);
-				g_byte_array_append (ssid, (const guint8 *) curr->data, len);
+				ssid = g_bytes_new (curr->data, len);
 				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-				g_byte_array_free (ssid, TRUE);
+				g_bytes_unref (ssid);
 				nm_log_info (LOGD_SETTINGS, "setting wireless ssid = %d", len);
 			} else {
 				g_object_set(wireless_setting,
@@ -131,13 +130,12 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wpa_l);
 
 			if(newkey && !strcmp("ssid", newkey)) {
-				GByteArray *ssid;
+				GBytes *ssid;
 				gint len = strlen(curr->data);
 
-				ssid = g_byte_array_sized_new (len);
-				g_byte_array_append (ssid, (const guint8 *) curr->data, len);
+				ssid = g_bytes_new (curr->data, len);
 				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-				g_byte_array_free (ssid, TRUE);
+				g_bytes_unref (ssid);
 				nm_log_info (LOGD_SETTINGS, "setting wpa ssid = %d", len);
 			} else if(newkey) {
 
