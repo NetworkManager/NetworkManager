@@ -362,11 +362,17 @@ eap_peap_reader (const char *eap_method,
 		}
 
 		pos = strchr (*iter, '=');
-		pos++;
-		lower = g_ascii_strdown (pos, -1);
-		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower,
-			      NULL);
-		g_free (lower);
+		if (pos && *pos) {
+			pos++;
+			lower = g_ascii_strdown (pos, -1);
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower,
+				      NULL);
+			g_free (lower);
+		} else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				     "No IEEE_8021X_INNER_AUTH_METHOD.");
+			goto done;
+		}
 		break;
 	}
 
