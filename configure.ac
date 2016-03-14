@@ -323,7 +323,7 @@ if (test "$with_udev_dir" != 'no'); then
 		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
 	fi
 	if (test "$with_udev_dir" = 'yes'); then
-		with_udev_dir="/lib/udev"
+		with_udev_dir="\$(prefix)/lib/udev"
 	fi
 	UDEV_DIR="$with_udev_dir"
 	AC_SUBST(UDEV_DIR)
