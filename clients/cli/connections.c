@@ -1641,13 +1641,13 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 		invisibles = get_invisible_active_connections (nmc);
 		for (i = 0; i < invisibles->len; i++)
 			fill_output_connection_for_invisible (invisibles->pdata[i], nmc);
-		g_ptr_array_free (invisibles, FALSE);
+		g_ptr_array_free (invisibles, TRUE);
 
 		/* Sort the connections and fill the output data */
 		sorted_cons = sort_connections (nmc->connections, nmc, order);
 		for (i = 0; i < sorted_cons->len; i++)
 			fill_output_connection (sorted_cons->pdata[i], nmc, active_only);
-		g_ptr_array_free (sorted_cons, FALSE);
+		g_ptr_array_free (sorted_cons, TRUE);
 
 		print_data (nmc);  /* Print all data */
 	} else {
