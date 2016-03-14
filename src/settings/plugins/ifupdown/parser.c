@@ -318,11 +318,9 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, curr->key+wireless_l);
 			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wireless_l);
 			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wireless_l);
-			if(!newkey || !dupe_func) {
-				nm_log_warn (LOGD_SETTINGS, "no (wireless) mapping found for key: %s",
-				             curr->key);
+			if(!newkey || !dupe_func)
 				goto next;
-			}
+
 			property_value = (*dupe_func) (curr->data, connection);
 			nm_log_info (LOGD_SETTINGS, "setting wireless security key: %s=%s",
 			             newkey, property_value);
@@ -353,9 +351,9 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, curr->key+wpa_l);
 			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wpa_l);
 			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wpa_l);
-			if(!newkey || !dupe_func) {
+			if(!newkey || !dupe_func)
 				goto next;
-			}
+
 			property_value = (*dupe_func) (curr->data, connection);
 			nm_log_info (LOGD_SETTINGS, "setting wpa security key: %s=%s",
 			             newkey,
