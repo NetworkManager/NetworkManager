@@ -318,18 +318,21 @@ nmp_netns_new (void)
 		return NULL;
 	}
 
-	if (mount ("", "/", "none", MS_SLAVE | MS_REC, NULL)) {
-		_LOGE (NULL, "failed mount --make-rslave: %s", error->message);
+	if (mount ("", "/", "none", MS_SLAVE | MS_REC, NULL) != 0) {
+		errsv = errno;
+		_LOGE (NULL, "failed mount --make-rslave: %s", g_strerror (errsv));
 		goto err_out;
 	}
 
-	if (umount2 ("/sys", MNT_DETACH) < 0) {
-		_LOGE (NULL, "failed umount /sys: %s", error->message);
+	if (umount2 ("/sys", MNT_DETACH) != 0) {
+		errsv = errno;
+		_LOGE (NULL, "failed umount /sys: %s", g_strerror (errsv));
 		goto err_out;
 	}
 
-	if (mount ("sysfs", "/sys", "sysfs", 0, NULL) < 0) {
-		_LOGE (NULL, "failed mount /sys: %s", error->message);
+	if (mount ("sysfs", "/sys", "sysfs", 0, NULL) != 0) {
+		errsv = errno;
+		_LOGE (NULL, "failed mount /sys: %s", g_strerror (errsv));
 		goto err_out;
 	}
 
