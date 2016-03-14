@@ -37,8 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_IFUPDOWN_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IFUPDOWN_CONNECTION))
 #define NM_IFUPDOWN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionClass))
 
-#define NM_IFUPDOWN_CONNECTION_IFBLOCK "ifblock"
-
 typedef struct {
 	NMSettingsConnection parent;
 } NMIfupdownConnection;
