@@ -26,7 +26,6 @@
 %global obsoletes_nmver 1:0.9.9.95-1
 
 %global systemd_dir %{_prefix}/lib/systemd/system
-%global udev_dir %{_prefix}/lib/udev
 %global nmlibdir %{_prefix}/lib/%{name}
 
 %global _hardened_build 1
@@ -399,7 +398,6 @@ intltoolize --automake --copy --force
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
 	--with-systemdsystemunitdir=%{systemd_dir} \
-	--with-udev-dir=%{udev_dir} \
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-tests=yes \
 	--with-valgrind=no \
@@ -542,7 +540,7 @@ fi
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_libdir}/pppd/%{ppp_version}/nm-pppd-plugin.so
 %{_datadir}/polkit-1/actions/*.policy
-%{udev_dir}/rules.d/*.rules
+%{_prefix}/lib/udev/rules.d/*.rules
 # systemd stuff
 %{systemd_dir}/NetworkManager.service
 %{systemd_dir}/NetworkManager-wait-online.service
