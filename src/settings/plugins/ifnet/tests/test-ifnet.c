@@ -245,7 +245,7 @@ test_new_connection (void)
 static void
 kill_backup (char **path)
 {
-	if (path) {
+	if (*path) {
 		unlink (*path);
 		g_free (*path);
 		*path = NULL;
@@ -349,10 +349,8 @@ test_missing_config (void)
 	GError *error = NULL;
 	NMConnection *connection;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*Unknown config for eth8*");
 	connection = ifnet_update_connection_from_config_block ("eth8", NULL, &error);
-	g_test_assert_expected_messages ();
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (connection == NULL && error != NULL);
 }
 

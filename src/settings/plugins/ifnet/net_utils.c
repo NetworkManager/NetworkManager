@@ -800,18 +800,27 @@ gchar *backup_file (const gchar* target)
 {
 	GFile *source, *backup;
 	gchar* backup_path;
-	GError **error = NULL;
+	GError *error = NULL;
 
 	source = g_file_new_for_path (target);
+
+	if (!g_file_query_exists (source, NULL)) {
+		g_object_unref (source);
+		return NULL;
+	}
+
 	backup_path = g_strdup_printf ("%s.bak", target);
 	backup = g_file_new_for_path (backup_path);
 
-	g_file_copy (source, backup, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, error);
-	if (error && *error) {
-		nm_log_warn (LOGD_SETTINGS, "Backup failed: %s", (*error)->message);
+	if (!g_file_copy (source, backup, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, &error)) {
+		nm_log_warn (LOGD_SETTINGS, "Backup failed: %s", error->message);
 		g_free (backup_path);
 		backup_path = NULL;
+		g_error_free (error);
 	}
+
+	g_object_unref (source);
+	g_object_unref (backup);
 
 	return backup_path;
 }

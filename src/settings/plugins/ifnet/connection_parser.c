@@ -519,7 +519,7 @@ read_mac_address (const char *conn_name, const char **mac, GError **error)
 	return TRUE;
 }
 
-static void
+static gboolean
 make_wired_connection_setting (NMConnection *connection,
                                const char *conn_name,
                                GError **error)
@@ -544,22 +544,21 @@ make_wired_connection_setting (NMConnection *connection,
 				      (guint32) mtu, NULL);
 	}
 
-	if (read_mac_address (conn_name, &mac, error)) {
-		if (mac) {
-			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS,
-				      mac, NULL);
-		}
-	} else {
+	if (!read_mac_address (conn_name, &mac, error)) {
 		g_object_unref (s_wired);
-		s_wired = NULL;
+		return FALSE;
 	}
-	if (s_wired)
-		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	if (mac)
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	return TRUE;
 }
 
 /* add NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
  * NM_SETTING_IP_CONFIG_DHCP_CLIENT_ID in future*/
-static void
+static gboolean
 make_ip4_setting (NMConnection *connection,
                   const char *conn_name,
                   GError **error)
@@ -584,7 +583,7 @@ make_ip4_setting (NMConnection *connection,
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						 "Unknown config for %s", conn_name);
 			g_object_unref (ip4_setting);
-			return;
+			return FALSE;
 		}
 		if (strstr (method, "dhcp"))
 			g_object_set (ip4_setting,
@@ -597,19 +596,19 @@ make_ip4_setting (NMConnection *connection,
 						  NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 						  NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE, NULL);
 			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
-			return;
+			return TRUE;
 		} else if (strstr (method, "shared")) {
 			g_object_set (ip4_setting,
 						  NM_SETTING_IP_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_SHARED,
 						  NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE, NULL);
 			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
-			return;
+			return TRUE;
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						 "Unknown config for %s", conn_name);
 			g_object_unref (ip4_setting);
-			return;
+			return FALSE;
 		}
 		nm_log_info (LOGD_SETTINGS, "Using %s method for %s", method, conn_name);
 	}else {
@@ -619,7 +618,7 @@ make_ip4_setting (NMConnection *connection,
 				     "Ifnet plugin: can't aquire ip configuration for %s",
 				     conn_name);
 			g_object_unref (ip4_setting);
-			return;
+			return FALSE;
 		}
 		/************** add all ip settings to the connection**********/
 		while (iblock) {
@@ -741,9 +740,11 @@ make_ip4_setting (NMConnection *connection,
 
 	/* Finally add setting to connection */
 	nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
+
+	return TRUE;
 }
 
-static void
+static gboolean
 make_ip6_setting (NMConnection *connection,
                   const char *conn_name,
                   GError **error)
@@ -881,12 +882,12 @@ make_ip6_setting (NMConnection *connection,
 
 done:
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-	return;
+	return TRUE;
 
 error:
 	g_object_unref (s_ip6);
 	nm_log_warn (LOGD_SETTINGS, "    Ignore IPv6 for %s", conn_name);
-	return;
+	return FALSE;
 }
 
 static NMSetting *
@@ -1023,14 +1024,6 @@ make_leap_setting (const char *ssid, GError **error)
 
 	wsec =
 	    NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
-
-	value = wpa_get_value (ssid, "key_mgmt");
-	if (!value || strcmp (value, "IEEE8021X"))
-		goto error;	/* Not LEAP */
-
-	value = wpa_get_value (ssid, "eap");
-	if (!value || strcasecmp (value, "LEAP"))
-		goto error;	/* Not LEAP */
 
 	value = wpa_get_value (ssid, "password");
 	if (value && strlen (value))
@@ -1450,12 +1443,6 @@ make_wpa_setting (const char *ssid,
 	if (value)
 		adhoc = strcmp (value, "1") == 0 ? TRUE : FALSE;
 
-	value = wpa_get_value (ssid, "key_mgmt");
-	/* Not WPA or Dynamic WEP */
-	if (!value)
-		goto error;
-	if (strcmp (value, "WPA-PSK") && strcmp (value, "WPA-EAP"))
-		goto error;
 	/* Pairwise and Group ciphers */
 	fill_wpa_ciphers (ssid, wsec, FALSE, adhoc);
 	fill_wpa_ciphers (ssid, wsec, TRUE, adhoc);
@@ -1470,6 +1457,7 @@ make_wpa_setting (const char *ssid,
 
 	}
 
+	value = wpa_get_value (ssid, "key_mgmt");
 	if (!strcmp (value, "WPA-PSK")) {
 		char *psk = parse_wpa_psk (wpa_get_value (ssid, "psk"), error);
 
@@ -1528,8 +1516,6 @@ make_wireless_security_setting (const char *conn_name,
 	g_return_val_if_fail (conn_name != NULL
 			      && strcmp (ifnet_get_data (conn_name, "type"),
 					 "ppp") != 0, NULL);
-	if (!wpa_get_value (conn_name, "ssid"))
-		return NULL;
 	nm_log_info (LOGD_SETTINGS, "updating wireless security settings (%s).", conn_name);
 
 	ssid = conn_name;
@@ -1537,19 +1523,22 @@ make_wireless_security_setting (const char *conn_name,
 	if (value)
 		adhoc = strcmp (value, "1") == 0 ? TRUE : FALSE;
 
-	if (!adhoc) {
-		wsec = make_leap_setting (ssid, error);
-		if (error && *error)
-			goto error;
-	}
-	if (!wsec) {
+	value = wpa_get_value (ssid, "key_mgmt");
+	if (!adhoc && g_strcmp0 (value, "IEEE8021X") == 0) {
+		value = wpa_get_value (ssid, "eap");
+		if (value && strcasecmp (value, "LEAP") == 0) {
+			wsec = make_leap_setting (ssid, error);
+			if (wsec == NULL)
+				goto error;
+		}
+	} else if (g_strcmp0 (value, "WPA-PSK") == 0 || g_strcmp0 (value, "WPA-EAP") == 0) {
 		wsec = make_wpa_setting (ssid, basepath, s_8021x, error);
-		if (error && *error)
+		if (wsec == NULL)
 			goto error;
 	}
 	if (!wsec) {
 		wsec = make_wep_setting (ssid, error);
-		if (error && *error)
+		if (wsec == NULL)
 			goto error;
 	}
 
@@ -1565,7 +1554,7 @@ error:
 }
 
 /* Currently only support username and password */
-static void
+static gboolean
 make_pppoe_connection_setting (NMConnection *connection,
                                const char *conn_name,
                                GError **error)
@@ -1581,7 +1570,7 @@ make_pppoe_connection_setting (NMConnection *connection,
 	if (!value) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "ppp requires at lease a username");
-		return;
+		return FALSE;
 	}
 	g_object_set (s_pppoe, NM_SETTING_PPPOE_USERNAME, value, NULL);
 
@@ -1597,6 +1586,8 @@ make_pppoe_connection_setting (NMConnection *connection,
 	/* PPP setting */
 	s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+
+	return TRUE;
 }
 
 NMConnection *
@@ -1650,18 +1641,13 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type)
 	    || !strcmp (NM_SETTING_PPPOE_SETTING_NAME, type)) {
 		/* wired setting */
-		make_wired_connection_setting (connection, conn_name, error);
-		if (error && *error) {
-			nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
+		if (!make_wired_connection_setting (connection, conn_name, error))
 			goto error;
-		}
+
 		/* pppoe setting */
-		if (!strcmp (NM_SETTING_PPPOE_SETTING_NAME, type))
-			make_pppoe_connection_setting (connection, conn_name,
-						       error);
-		if (error && *error) {
-			nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
-			goto error;
+		if (!strcmp (NM_SETTING_PPPOE_SETTING_NAME, type)) {
+			if (!make_pppoe_connection_setting (connection, conn_name, error))
+				goto error;
 		}
 	} else if (!strcmp (NM_SETTING_WIRELESS_SETTING_NAME, type)) {
 		/* wireless setting */
@@ -1672,50 +1658,33 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 			goto error;
 		nm_connection_add_setting (connection, wireless_setting);
 
-		if (error && *error) {
-			nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
-			goto error;
-		}
-
 		/* wireless security setting */
-		wsec = make_wireless_security_setting (conn_name, basepath, &s_8021x, error);
-		if (wsec) {
+		if (wpa_get_value (conn_name, "ssid")) {
+			wsec = make_wireless_security_setting (conn_name, basepath, &s_8021x, error);
+			if (!wsec)
+				goto error;
 			nm_connection_add_setting (connection, NM_SETTING (wsec));
 			if (s_8021x)
 				nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 		}
-
-		if (error && *error) {
-			nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
-			goto error;
-		}
-
 	} else
 		goto error;
 
 	/* IPv4 setting */
-	make_ip4_setting (connection, conn_name, error);
-	if (error && *error) {
-		nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
+	if (!make_ip4_setting (connection, conn_name, error))
 		goto error;
-	}
 
 	/* IPv6 setting */
-	make_ip6_setting (connection, conn_name, error);
-	if (error && *error) {
-		nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
+	if (!make_ip6_setting (connection, conn_name, error))
+		goto error;
+
+	if (nm_connection_verify (connection, error)) {
+		nm_log_info (LOGD_SETTINGS, "Connection verified %s:%d", conn_name, success);
+	} else {
 		goto error;
 	}
 
-	success = nm_connection_verify (connection, error);
-	if (error && *error)
-		nm_log_warn (LOGD_SETTINGS, "Found error: %s", (*error)->message);
-	else
-		nm_log_info (LOGD_SETTINGS, "Connection verified %s:%d", conn_name, success);
-	if (!success)
-		goto error;
 	return connection;
-
 error:
 	g_object_unref (connection);
 	return NULL;
@@ -2499,8 +2468,8 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 	return success;
 }
 
-static gboolean
-write_route6_file (NMSettingIPConfig *s_ip6, const char *conn_name, GError **error)
+static void
+write_route6_file (NMSettingIPConfig *s_ip6, const char *conn_name)
 {
 	NMIPRoute *route;
 	const char *next_hop;
@@ -2508,11 +2477,10 @@ write_route6_file (NMSettingIPConfig *s_ip6, const char *conn_name, GError **err
 	GString *routes_string;
 	const char *old_routes;
 
-	g_return_val_if_fail (s_ip6 != NULL, FALSE);
+	g_return_if_fail (s_ip6 != NULL);
 	num = nm_setting_ip_config_get_num_routes (s_ip6);
-	if (num == 0) {
-		return TRUE;
-	}
+	if (num == 0)
+		return;
 
 	old_routes = ifnet_get_data (conn_name, "routes");
 	routes_string = g_string_new (old_routes);
@@ -2533,8 +2501,6 @@ write_route6_file (NMSettingIPConfig *s_ip6, const char *conn_name, GError **err
 	if (num > 0)
 		ifnet_set_data (conn_name, "routes", routes_string->str);
 	g_string_free (routes_string, TRUE);
-
-	return TRUE;
 }
 
 static gboolean
@@ -2651,9 +2617,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 		g_string_free (searches, TRUE);
 	}
 
-	write_route6_file (s_ip6, conn_name, error);
-	if (error && *error)
-		return FALSE;
+	write_route6_file (s_ip6, conn_name);
 	return TRUE;
 }
 

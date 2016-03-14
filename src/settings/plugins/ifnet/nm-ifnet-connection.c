@@ -68,6 +68,8 @@ nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 	else {
 		tmp = ifnet_update_connection_from_config_block (conn_name, NULL, &error);
 		if (!tmp) {
+			nm_log_warn (LOGD_SETTINGS, "Could not read connection '%s': %s",
+			             conn_name, error->message);
 			g_error_free (error);
 			return NULL;
 		}
@@ -79,11 +81,14 @@ nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
 	g_assert (object);
 	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
-	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                         tmp,
-	                                         update_unsaved,
-	                                         NULL,
-	                                         NULL);
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                              tmp,
+	                                              update_unsaved,
+	                                              NULL,
+	                                              NULL)) {
+		g_object_unref (object);
+		return NULL;
+	}
 	g_object_unref (tmp);
 
 	return NM_IFNET_CONNECTION (object);
