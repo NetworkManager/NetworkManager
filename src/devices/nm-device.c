@@ -334,6 +334,7 @@ typedef struct _NMDevicePrivate {
 	GSList *       vpn6_configs;   /* VPNs which use this device */
 	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	guint32        ip6_mtu;
+	NMIP6Config *  dad6_ip6_config;
 
 	NMRDisc *      rdisc;
 	gulong         rdisc_changed_id;
@@ -7091,6 +7092,57 @@ nm_device_activate_ip4_state_done (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == IP_DONE;
 }
 
+/*
+ * Returns a NMIP6Config containing NM-configured addresses which
+ * have the tentative flag, or NULL if none is present.
+ */
+static NMIP6Config *
+dad6_get_pending_addresses (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIP6Config *confs[] = { priv->ac_ip6_config,
+	                         priv->dhcp6.ip6_config,
+	                         priv->con_ip6_config,
+	                         priv->wwan_ip6_config };
+	const NMPlatformIP6Address *addr, *pl_addr;
+	NMIP6Config *dad6_config = NULL;
+	guint i, j, num;
+	int ifindex;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	/* We are interested only in addresses that we have explicitly configured,
+	 * not in externally added ones.
+	 */
+	for (i = 0; i < G_N_ELEMENTS (confs); i++) {
+		if (confs[i]) {
+			num = nm_ip6_config_get_num_addresses (confs[i]);
+			for (j = 0; j < num; j++) {
+				addr = nm_ip6_config_get_address (confs[i], j);
+				pl_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET,
+				                                       ifindex,
+				                                       addr->address,
+				                                       addr->plen);
+				if (   pl_addr
+				    && NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_TENTATIVE)
+				    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_DADFAILED)
+				    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
+					_LOGt (LOGD_DEVICE, "IPv6 DAD: pending address %s",
+					       nm_platform_ip6_address_to_string (pl_addr, NULL, 0));
+
+					if (!dad6_config)
+						dad6_config = nm_ip6_config_new (ifindex);
+
+					nm_ip6_config_add_address (dad6_config, pl_addr);
+				}
+			}
+		}
+	}
+
+	return dad6_config;
+}
+
 static void
 activate_stage5_ip6_config_commit (NMDevice *self)
 {
@@ -7132,13 +7184,20 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				return;
 			}
 		}
-
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
-		/* Enter the IP_CHECK state if this is the first method to complete */
-		priv->ip6_state = IP_DONE;
-		check_ip_done (self);
+		/* Check if we have to wait for DAD */
+		if (priv->ip6_state == IP_CONF && !priv->dad6_ip6_config) {
+			priv->dad6_ip6_config = dad6_get_pending_addresses (self);
+			if (priv->dad6_ip6_config) {
+				_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: waiting termination");
+			} else {
+				/* No tentative addresses, proceed right away */
+				priv->ip6_state = IP_DONE;
+				check_ip_done (self);
+			}
+		}
 	} else {
 		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
 		nm_device_ip_method_failed (self, AF_INET6, reason);
@@ -7346,6 +7405,7 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	if (nm_clear_g_source (&priv->queued_ip6_config_id))
 		_LOGD (LOGD_DEVICE, "clearing queued IP6 config change");
 
+	g_clear_object (&priv->dad6_ip6_config);
 	dhcp6_cleanup (self, cleanup_type, FALSE);
 	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
@@ -9218,7 +9278,7 @@ queued_ip6_config_change (gpointer user_data)
 
 	if (   nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex)
 	    && priv->state < NM_DEVICE_STATE_DEACTIVATING) {
-		/* Handle DAD falures */
+		/* Handle DAD failures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
 			NMPlatformIP6Address *addr = iter->data;
 
@@ -9248,6 +9308,19 @@ queued_ip6_config_change (gpointer user_data)
 
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	priv->dad6_failed_addrs = NULL;
+
+	/* Check if DAD is still pending */
+	if (   priv->ip6_state == IP_CONF
+	    && priv->dad6_ip6_config
+	    && priv->ext_ip6_config_captured) {
+		if (!nm_ip6_config_has_any_dad_pending (priv->ext_ip6_config_captured,
+		                                        priv->dad6_ip6_config)) {
+			_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
+			g_clear_object (&priv->dad6_ip6_config);
+			priv->ip6_state = IP_DONE;
+			check_ip_done (self);
+		}
+	}
 
 	set_unmanaged_external_down (self, TRUE);
 
@@ -10331,6 +10404,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_clear_object (&priv->ext_ip6_config_captured);
 	g_clear_object (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
+	g_clear_object (&priv->dad6_ip6_config);
 
 	g_slist_free_full (priv->vpn4_configs, g_object_unref);
 	priv->vpn4_configs = NULL;

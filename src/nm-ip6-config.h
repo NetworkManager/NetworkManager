@@ -90,6 +90,8 @@ const NMPlatformIP6Address *nm_ip6_config_get_address (const NMIP6Config *config
 const NMPlatformIP6Address *nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolean linklocal);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *config, const NMPlatformIP6Address *address);
 gboolean nm_ip6_config_addresses_sort (NMIP6Config *config, NMSettingIP6ConfigPrivacy use_temporary);
+gboolean nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
+                                            const NMIP6Config *candidates);
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);

@@ -1421,6 +1421,47 @@ nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolea
 	return NULL;
 }
 
+/**
+ * nm_ip6_config_has_dad_pending_addresses
+ * @self: configuration containing the addresses to check
+ * @candidates: configuration with the list of addresses we are
+ *   interested in
+ *
+ * Check whether there are addresses with DAD pending in @self, that
+ * are also contained in @candidates.
+ *
+ * Returns: %TRUE if at least one matching address was found, %FALSE
+ *   otherwise
+ */
+gboolean
+nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
+                                   const NMIP6Config *candidates)
+{
+	const NMPlatformIP6Address *addr, *addr_c;
+	guint i, j, num, num_c;
+
+	num = nm_ip6_config_get_num_addresses (self);
+
+	for (i = 0; i < num; i++) {
+		addr = nm_ip6_config_get_address (self, i);
+		if (   NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_TENTATIVE)
+		    && !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_DADFAILED)
+		    && !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
+
+			num_c = nm_ip6_config_get_num_addresses (candidates);
+
+			for (j = 0; j < num_c; j++) {
+				addr_c = nm_ip6_config_get_address (candidates, j);
+				if (   addresses_are_duplicate (addr, addr_c)
+				    && addr->plen == addr_c->plen)
+					return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 /******************************************************************/
 
 void
