@@ -1851,7 +1851,7 @@ again:
 /******************************************************************/
 
 static void
-test_netns_general_setup (gpointer fixture, gconstpointer test_data)
+_test_netns_setup (gpointer fixture, gconstpointer test_data)
 {
 	/* the singleton platform instance has netns support disabled.
 	 * Destroy the instance before the test and re-create it afterwards. */
@@ -1859,11 +1859,41 @@ test_netns_general_setup (gpointer fixture, gconstpointer test_data)
 }
 
 static void
-test_netns_general_teardown (gpointer fixture, gconstpointer test_data)
+_test_netns_teardown (gpointer fixture, gconstpointer test_data)
 {
 	/* re-create platform instance */
 	SETUP ();
 }
+
+static gboolean
+_test_netns_check_skip (void)
+{
+	static int support = -1;
+	static int support_errsv = 0;
+	NMPNetns *netns;
+
+	netns = nmp_netns_get_current ();
+	if (!netns) {
+		g_test_skip ("No netns support");
+		return TRUE;
+	}
+
+	g_assert (nmp_netns_get_fd_net (netns) > 0);
+
+	if (support == -1) {
+		support = (setns (nmp_netns_get_fd_net (netns), CLONE_NEWNET) == 0);
+		if (!support)
+			support_errsv = errno;
+	}
+	if (!support) {
+			_LOGD ("setns() failed with \"%s\". This indicates missing support (valgrind?)", g_strerror (support_errsv));
+			g_test_skip ("No netns support (setns failed)");
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/******************************************************************/
 
 static void
 test_netns_general (gpointer fixture, gconstpointer test_data)
@@ -1873,22 +1903,11 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	gs_unref_object NMPNetns *netns_2 = NULL;
 	NMPNetns *netns_tmp;
 	char sbuf[100];
-	int i, j, k, errsv;
+	int i, j, k;
 	gboolean ethtool_support;
 
-	netns_tmp = nmp_netns_get_current ();
-	if (!netns_tmp) {
-		g_test_skip ("No netns support");
+	if (_test_netns_check_skip ())
 		return;
-	}
-
-	g_assert (nmp_netns_get_fd_net (netns_tmp) > 0);
-	if (setns (nmp_netns_get_fd_net (netns_tmp), CLONE_NEWNET) != 0) {
-		errsv = errno;
-		_LOGD ("setns() failed with \"%s\". This indicates missing support (valgrind?)", g_strerror (errsv));
-		g_test_skip ("No netns support (setns failed)");
-		return;
-	}
 
 	platform_1 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
 
@@ -2029,6 +2048,6 @@ setup_tests (void)
 		g_test_add_func ("/link/nl-bugs/spurious-newlink", test_nl_bugs_spuroius_newlink);
 		g_test_add_func ("/link/nl-bugs/spurious-dellink", test_nl_bugs_spuroius_dellink);
 
-		g_test_add_vtable ("/general/netns/general", 0, NULL, test_netns_general_setup, test_netns_general, test_netns_general_teardown);
+		g_test_add_vtable ("/general/netns/general", 0, NULL, _test_netns_setup, test_netns_general, _test_netns_teardown);
 	}
 }
