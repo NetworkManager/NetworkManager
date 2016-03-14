@@ -46,7 +46,7 @@ nm_ifupdown_connection_new (if_block *block)
 
 	object = g_object_new (NM_TYPE_IFUPDOWN_CONNECTION, NULL);
 
-	if (!ifupdown_update_connection_from_if_block (NM_CONNECTION (object), priv->ifblock, &error)) {
+	if (!ifupdown_update_connection_from_if_block (NM_CONNECTION (object), block, &error)) {
 		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: (%d) %s",
 		             __FILE__,
 		             __LINE__,
