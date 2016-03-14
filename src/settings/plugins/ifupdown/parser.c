@@ -94,6 +94,7 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 	const gchar* value = ifparser_getkey (block, "inet");
 	struct _Mapping mapping[] = {
 		{"ssid", "ssid"},
+		{"essid", "ssid"},
 		{ NULL, NULL}
 	};
 
