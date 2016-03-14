@@ -96,6 +96,7 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 	struct _Mapping mapping[] = {
 		{"ssid", "ssid"},
 		{"essid", "ssid"},
+		{"mode", "mode"},
 		{ NULL, NULL}
 	};
 
@@ -121,6 +122,15 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
 				g_bytes_unref (ssid);
 				nm_log_info (LOGD_SETTINGS, "setting wireless ssid = %d", len);
+			} else if(newkey && !strcmp("mode", newkey)) {
+				if (!g_ascii_strcasecmp (curr->data, "Managed") || !g_ascii_strcasecmp (curr->data, "Auto"))
+					g_object_set (wireless_setting, NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA, NULL);
+				else if (!g_ascii_strcasecmp (curr->data, "Ad-Hoc"))
+					g_object_set (wireless_setting, NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_ADHOC, NULL);
+				else if (!g_ascii_strcasecmp (curr->data, "Master"))
+					g_object_set (wireless_setting, NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_AP, NULL);
+				else
+					nm_log_warn (LOGD_SETTINGS, "Invalid mode '%s' (not 'Ad-Hoc', 'Ap', 'Managed', or 'Auto')", curr->data);
 			} else {
 				g_object_set(wireless_setting,
 					   newkey, curr->data,
