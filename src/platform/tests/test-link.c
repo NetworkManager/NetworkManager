@@ -692,7 +692,7 @@ test_software_detect (gconstpointer user_data)
 	const gboolean ext = test_data->external_command;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
-	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+	ifindex_parent = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	switch (test_data->link_type) {
 	case NM_LINK_TYPE_GRE: {
@@ -854,7 +854,7 @@ test_software_detect (gconstpointer user_data)
 		g_assert_not_reached ();
 	}
 
-	ifindex = nmtstp_assert_wait_for_link (DEVICE_NAME, test_data->link_type, 100)->ifindex;
+	ifindex = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, DEVICE_NAME, test_data->link_type, 100)->ifindex;
 
 	nmtstp_link_set_updown (-1, ifindex_parent, TRUE);
 
@@ -1139,10 +1139,10 @@ test_vlan_set_xgress (void)
 	int ifindex, ifindex_parent;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
-	ifindex_parent = nmtstp_assert_wait_for_link (PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+	ifindex_parent = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	nmtstp_run_command_check ("ip link add name %s link %s type vlan id 1245", DEVICE_NAME, PARENT_NAME);
-	ifindex = nmtstp_assert_wait_for_link (DEVICE_NAME, NM_LINK_TYPE_VLAN, 100)->ifindex;
+	ifindex = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, DEVICE_NAME, NM_LINK_TYPE_VLAN, 100)->ifindex;
 
 	/* ingress-qos-map */
 
@@ -1687,8 +1687,8 @@ test_nl_bugs_veth (void)
 
 	/* create veth pair. */
 	nmtstp_run_command_check ("ip link add dev %s type veth peer name %s", IFACE_VETH0, IFACE_VETH1);
-	ifindex_veth0 = nmtstp_assert_wait_for_link (IFACE_VETH0, NM_LINK_TYPE_VETH, 100)->ifindex;
-	ifindex_veth1 = nmtstp_assert_wait_for_link (IFACE_VETH1, NM_LINK_TYPE_VETH, 100)->ifindex;
+	ifindex_veth0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_VETH0, NM_LINK_TYPE_VETH, 100)->ifindex;
+	ifindex_veth1 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_VETH1, NM_LINK_TYPE_VETH, 100)->ifindex;
 
 	/* assert that nm_platform_link_veth_get_properties() returns the expected peer ifindexes. */
 	g_assert (nm_platform_link_veth_get_properties (NM_PLATFORM_GET, ifindex_veth0, &i));
@@ -1724,7 +1724,7 @@ test_nl_bugs_veth (void)
 
 	nmtstp_run_command_check ("ip link set %s netns %ld", IFACE_VETH1, (long) nmtstp_namespace_handle_get_pid (ns_handle));
 	NMTST_WAIT_ASSERT (100, {
-		nmtstp_wait_for_signal (50);
+		nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 		nm_platform_process_events (NM_PLATFORM_GET);
 
 		pllink_veth1 = nm_platform_link_get (NM_PLATFORM_GET, ifindex_veth1);
@@ -1738,8 +1738,8 @@ test_nl_bugs_veth (void)
 
 out:
 	nmtstp_link_del (-1, ifindex_veth0, IFACE_VETH0);
-	g_assert (!nmtstp_link_get (ifindex_veth0, IFACE_VETH0));
-	g_assert (!nmtstp_link_get (ifindex_veth1, IFACE_VETH1));
+	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_veth0, IFACE_VETH0));
+	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_veth1, IFACE_VETH1));
 	nmtstp_namespace_handle_release (ns_handle);
 }
 
@@ -1757,16 +1757,16 @@ test_nl_bugs_spuroius_newlink (void)
 	/* see https://bugzilla.redhat.com/show_bug.cgi?id=1285719 */
 
 	nmtstp_run_command_check ("ip link add %s type dummy", IFACE_DUMMY0);
-	ifindex_dummy0 = nmtstp_assert_wait_for_link (IFACE_DUMMY0, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+	ifindex_dummy0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_DUMMY0, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	nmtstp_run_command_check ("ip link add %s type bond", IFACE_BOND0);
-	ifindex_bond0 = nmtstp_assert_wait_for_link (IFACE_BOND0, NM_LINK_TYPE_BOND, 100)->ifindex;
+	ifindex_bond0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_BOND0, NM_LINK_TYPE_BOND, 100)->ifindex;
 
 	nmtstp_link_set_updown (-1, ifindex_bond0, TRUE);
 
 	nmtstp_run_command_check ("ip link set %s master %s", IFACE_DUMMY0, IFACE_BOND0);
 	NMTST_WAIT_ASSERT (100, {
-		nmtstp_wait_for_signal (50);
+		nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 
 		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_dummy0);
 		g_assert (pllink);
@@ -1777,7 +1777,7 @@ test_nl_bugs_spuroius_newlink (void)
 	nmtstp_run_command_check ("ip link del %s",  IFACE_BOND0);
 
 	wait_for_settle = TRUE;
-	nmtstp_wait_for_signal (50);
+	nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 again:
 	nm_platform_process_events (NM_PLATFORM_GET);
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_bond0);
@@ -1785,11 +1785,11 @@ again:
 
 	if (wait_for_settle) {
 		wait_for_settle = FALSE;
-		NMTST_WAIT (300, { nmtstp_wait_for_signal (50); });
+		NMTST_WAIT (300, { nmtstp_wait_for_signal (NM_PLATFORM_GET, 50); });
 		goto again;
 	}
 
-	g_assert (!nmtstp_link_get (ifindex_bond0, IFACE_BOND0));
+	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_bond0, IFACE_BOND0));
 	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
@@ -1807,16 +1807,16 @@ test_nl_bugs_spuroius_dellink (void)
 	/* see https://bugzilla.redhat.com/show_bug.cgi?id=1285719 */
 
 	nmtstp_run_command_check ("ip link add %s type dummy", IFACE_DUMMY0);
-	ifindex_dummy0 = nmtstp_assert_wait_for_link (IFACE_DUMMY0, NM_LINK_TYPE_DUMMY, 100)->ifindex;
+	ifindex_dummy0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_DUMMY0, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	nmtstp_run_command_check ("ip link add %s type bridge", IFACE_BRIDGE0);
-	ifindex_bridge0 = nmtstp_assert_wait_for_link (IFACE_BRIDGE0, NM_LINK_TYPE_BRIDGE, 100)->ifindex;
+	ifindex_bridge0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_BRIDGE0, NM_LINK_TYPE_BRIDGE, 100)->ifindex;
 
 	nmtstp_link_set_updown (-1, ifindex_bridge0, TRUE);
 
 	nmtstp_run_command_check ("ip link set %s master %s", IFACE_DUMMY0, IFACE_BRIDGE0);
 	NMTST_WAIT_ASSERT (100, {
-		nmtstp_wait_for_signal (50);
+		nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 
 		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_dummy0);
 		g_assert (pllink);
@@ -1829,7 +1829,7 @@ test_nl_bugs_spuroius_dellink (void)
 	nmtstp_run_command_check ("ip link set %s nomaster",  IFACE_DUMMY0);
 
 	wait_for_settle = TRUE;
-	nmtstp_wait_for_signal (50);
+	nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 again:
 	nm_platform_process_events (NM_PLATFORM_GET);
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex_bridge0);
@@ -1840,7 +1840,7 @@ again:
 
 	if (wait_for_settle) {
 		wait_for_settle = FALSE;
-		NMTST_WAIT (300, { nmtstp_wait_for_signal (50); });
+		NMTST_WAIT (300, { nmtstp_wait_for_signal (NM_PLATFORM_GET, 50); });
 		goto again;
 	}
 
