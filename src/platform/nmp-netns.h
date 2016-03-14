@@ -49,6 +49,7 @@ GType nmp_netns_get_type (void);
 NMPNetns *nmp_netns_new (void);
 
 gboolean nmp_netns_push (NMPNetns *self);
+gboolean nmp_netns_push_type (NMPNetns *self, int ns_types);
 gboolean nmp_netns_pop (NMPNetns *self);
 
 NMPNetns *nmp_netns_get_current (void);

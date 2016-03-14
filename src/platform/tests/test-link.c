@@ -1951,13 +1951,13 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 			_ADD_DUMMY (p, nm_sprintf_buf (sbuf, "other-c-%s-%02d", id, i));
 	}
 
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nm_platform_link_get_by_ifname (platform_1, "dummy1_")->ifindex));
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy2a/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nm_platform_link_get_by_ifname (platform_1, "dummy2a")->ifindex));
+	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex));
+	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy2a/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_1, 0, "dummy2a", NM_LINK_TYPE_DUMMY)->ifindex));
 	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy2b/ifindex"), ==, NULL);
 
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nm_platform_link_get_by_ifname (platform_2, "dummy1_")->ifindex));
+	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_2, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex));
 	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy2a/ifindex"), ==, NULL);
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy2b/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nm_platform_link_get_by_ifname (platform_2, "dummy2b")->ifindex));
+	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy2b/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_2, 0, "dummy2b", NM_LINK_TYPE_DUMMY)->ifindex));
 
 	for (i = 0; i < 10; i++) {
 		NMPlatform *pl;
@@ -2051,6 +2051,191 @@ test_netns_set_netns (gpointer fixture, gconstpointer test_data)
 
 /*****************************************************************************/
 
+static char *
+_get_current_namespace_id (int ns_type)
+{
+	const char *p;
+	GError *error = NULL;
+	char *id;
+
+	switch (ns_type) {
+	case CLONE_NEWNET:
+		p = "/proc/self/ns/net";
+		break;
+	case CLONE_NEWNS:
+		p = "/proc/self/ns/mnt";
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
+	id = g_file_read_link (p, &error);
+	g_assert_no_error (error);
+	g_assert (id);
+	return id;
+}
+
+static char *
+_get_sysctl_value (const char *path)
+{
+	char *data = NULL;
+	gs_free_error GError *error = NULL;
+
+	if (!g_file_get_contents (path, &data, NULL, &error)) {
+		nmtst_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT, NULL);
+		g_assert (!data);
+	} else {
+		g_assert_no_error (error);
+		g_assert (data);
+		g_strstrip (data);
+	}
+	return data;
+}
+
+static void
+test_netns_push (gpointer fixture, gconstpointer test_data)
+{
+	gs_unref_object NMPlatform *platform_0 = NULL;
+	gs_unref_object NMPlatform *platform_1 = NULL;
+	gs_unref_object NMPlatform *platform_2 = NULL;
+	nm_auto_pop_netns NMPNetns *netns_pop = NULL;
+	gs_unref_ptrarray GPtrArray *device_names = g_ptr_array_new_with_free_func (g_free);
+	int i, j;
+	const int ns_types_list[] = { CLONE_NEWNET, CLONE_NEWNS, CLONE_NEWNET | CLONE_NEWNS };
+	const int ns_types_test[] = { CLONE_NEWNET, CLONE_NEWNS };
+	typedef struct {
+		NMPlatform *platform;
+		const char *device_name;
+		const char *sysctl_path;
+		const char *sysctl_value;
+		const char *ns_net;
+		const char *ns_mnt;
+	} PlatformData;
+	PlatformData pl[3] = { };
+	PlatformData *pl_base;
+	struct {
+		PlatformData *pl;
+		int ns_types;
+	} stack[6] = { };
+	int nstack;
+
+	if (_test_netns_check_skip ())
+		return;
+
+	pl[0].platform = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	pl[1].platform = platform_1 = _test_netns_create_platform ();
+	pl[2].platform = platform_2 = _test_netns_create_platform ();
+
+	pl_base = &pl[0];
+	i = nmtst_get_rand_int () % (G_N_ELEMENTS (pl) + 1);
+	if (i < G_N_ELEMENTS (pl)) {
+		pl_base = &pl[i];
+		g_assert (nm_platform_netns_push (pl[i].platform, &netns_pop));
+	}
+
+	for (i = 0; i < G_N_ELEMENTS (pl); i++) {
+		nm_auto_pop_netns NMPNetns *netns_free = NULL;
+		char *tmp;
+
+		g_assert (nm_platform_netns_push (pl[i].platform, &netns_free));
+
+		tmp = g_strdup_printf ("nmtst-dev-%d", i);
+		g_ptr_array_add (device_names, tmp);
+		pl[i].device_name = tmp;
+
+		tmp = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/disable_ipv6", pl[i].device_name);
+		g_ptr_array_add (device_names, tmp);
+		pl[i].sysctl_path = tmp;
+
+		pl[i].sysctl_value = nmtst_get_rand_int () % 2 ? "1" : "0";
+
+		_ADD_DUMMY (pl[i].platform, pl[i].device_name);
+
+		g_assert (nm_platform_sysctl_set (pl[i].platform, pl[i].sysctl_path, pl[i].sysctl_value));
+
+		tmp = _get_current_namespace_id (CLONE_NEWNET);
+		g_ptr_array_add (device_names, tmp);
+		pl[i].ns_net = tmp;
+
+		tmp = _get_current_namespace_id (CLONE_NEWNS);
+		g_ptr_array_add (device_names, tmp);
+		pl[i].ns_mnt = tmp;
+	}
+
+	nstack = nmtst_get_rand_int () % (G_N_ELEMENTS (stack) + 1);
+	for (i = 0; i < nstack; i++) {
+		stack[i].pl = &pl[nmtst_get_rand_int () % G_N_ELEMENTS (pl)];
+		stack[i].ns_types = ns_types_list[nmtst_get_rand_int () % G_N_ELEMENTS (ns_types_list)];
+
+		nmp_netns_push_type (nm_platform_netns_get (stack[i].pl->platform), stack[i].ns_types);
+	}
+
+	/* pop some again. */
+	for (i = nmtst_get_rand_int () % (nstack + 1); i > 0; i--) {
+		g_assert (nstack > 0);
+		nstack--;
+		nmp_netns_pop (nm_platform_netns_get (stack[nstack].pl->platform));
+	}
+
+	for (i = 0; i < G_N_ELEMENTS (ns_types_test); i++) {
+		int ns_type = ns_types_test[i];
+		PlatformData *p;
+		gs_free char *current_namespace_id = NULL;
+
+		p = pl_base;
+		for (j = nstack; j >= 1; ) {
+			j--;
+			if (NM_FLAGS_HAS (stack[j].ns_types, ns_type)) {
+				p = stack[j].pl;
+				break;
+			}
+		}
+
+		current_namespace_id = _get_current_namespace_id (ns_type);
+
+		if (ns_type == CLONE_NEWNET) {
+			g_assert_cmpstr (current_namespace_id, ==, p->ns_net);
+			for (j = 0; j < G_N_ELEMENTS (pl); j++) {
+				gs_free char *data = NULL;
+
+				if (p == &pl[j])
+					g_assert_cmpint (nmtstp_run_command ("ip link show %s 1>/dev/null", pl[j].device_name), ==, 0);
+				else
+					g_assert_cmpint (nmtstp_run_command ("ip link show %s 2>/dev/null", pl[j].device_name), !=, 0);
+
+				data = _get_sysctl_value (pl[j].sysctl_path);
+				if (p == &pl[j])
+					g_assert_cmpstr (data, ==, pl[j].sysctl_value);
+				else
+					g_assert (!data);
+			}
+		} else if (ns_type == CLONE_NEWNS) {
+			g_assert_cmpstr (current_namespace_id, ==, p->ns_mnt);
+			for (j = 0; j < G_N_ELEMENTS (pl); j++) {
+				char path[600];
+				gs_free char *data = NULL;
+
+				nm_sprintf_buf (path, "/sys/devices/virtual/net/%s/ifindex", pl[j].device_name);
+
+				data = _get_sysctl_value (path);
+				if (p == &pl[j])
+					g_assert_cmpstr (data, ==, nm_sprintf_buf (path, "%d", nmtstp_link_get_typed (p->platform, 0, p->device_name, NM_LINK_TYPE_DUMMY)->ifindex));
+				else
+					g_assert (!data);
+			}
+		} else
+			g_assert_not_reached ();
+	}
+
+
+	for (i = nstack; i >= 1; ) {
+		i--;
+		nmp_netns_pop (nm_platform_netns_get (stack[i].pl->platform));
+	}
+}
+
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -2100,5 +2285,6 @@ setup_tests (void)
 
 		g_test_add_vtable ("/general/netns/general", 0, NULL, _test_netns_setup, test_netns_general, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/set-netns", 0, NULL, _test_netns_setup, test_netns_set_netns, _test_netns_teardown);
+		g_test_add_vtable ("/general/netns/push", 0, NULL, _test_netns_setup, test_netns_push, _test_netns_teardown);
 	}
 }
