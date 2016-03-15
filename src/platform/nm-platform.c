@@ -49,8 +49,6 @@ const NMIPAddr nm_ip_addr_zero = NMIPAddrInit;
 
 /*****************************************************************************/
 
-#define ADDRESS_LIFETIME_PADDING 5
-
 G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Address, address));
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
@@ -2615,7 +2613,7 @@ nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr addr
 }
 
 static gboolean
-array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint64 now, guint32 padding)
+array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint64 now)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -2629,7 +2627,7 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 			guint32 lifetime, preferred;
 
 			if (nm_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
-			                           now, padding, &lifetime, &preferred))
+			                           now, &lifetime, &preferred))
 				return TRUE;
 		}
 	}
@@ -2638,7 +2636,7 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 }
 
 static gboolean
-array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address, gint64 now, guint32 padding)
+array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address, gint64 now)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -2650,7 +2648,7 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 			guint32 lifetime, preferred;
 
 			if (nm_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
-			                           now, padding, &lifetime, &preferred))
+			                           now, &lifetime, &preferred))
 				return TRUE;
 		}
 	}
@@ -2689,7 +2687,7 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 	for (i = 0; i < addresses->len; i++) {
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (!array_contains_ip4_address (known_addresses, address, now, ADDRESS_LIFETIME_PADDING))
+		if (!array_contains_ip4_address (known_addresses, address, now))
 			nm_platform_ip4_address_delete (self, ifindex, address->address, address->plen, address->peer_address);
 	}
 	g_array_free (addresses, TRUE);
@@ -2706,7 +2704,7 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		guint32 lifetime, preferred;
 
 		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                            now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
+		                            now, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
@@ -2754,7 +2752,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
 			continue;
 
-		if (!array_contains_ip6_address (known_addresses, address, now, ADDRESS_LIFETIME_PADDING))
+		if (!array_contains_ip6_address (known_addresses, address, now))
 			nm_platform_ip6_address_delete (self, ifindex, address->address, address->plen);
 	}
 	g_array_free (addresses, TRUE);
@@ -2768,7 +2766,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		guint32 lifetime, preferred;
 
 		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                            now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
+		                            now, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
@@ -3012,7 +3010,7 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 		return "forever";
 
 	g_snprintf (buf, buf_size, "%usec",
-	            nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now, 0));
+	            nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now));
 	return buf;
 }
 

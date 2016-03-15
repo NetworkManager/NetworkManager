@@ -2976,8 +2976,7 @@ nm_utils_ip4_address_is_link_local (in_addr_t addr)
 guint32
 nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
                                                guint32 duration,
-                                               guint32 now,
-                                               guint32 padding)
+                                               guint32 now)
 {
 	gint64 t;
 
@@ -2998,9 +2997,6 @@ nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
 	/* For timestamp > now, just accept it and calculate the expected(?) result. */
 	t = (gint64) timestamp + (gint64) duration - (gint64) now;
 
-	/* Optional padding to avoid potential races. */
-	t += (gint64) padding;
-
 	if (t <= 0)
 		return 0;
 	if (t >= NM_PLATFORM_LIFETIME_PERMANENT)
@@ -3013,7 +3009,6 @@ nm_utils_lifetime_get (guint32 timestamp,
                        guint32 lifetime,
                        guint32 preferred,
                        guint32 now,
-                       guint32 padding,
                        guint32 *out_lifetime,
                        guint32 *out_preferred)
 {
@@ -3030,13 +3025,13 @@ nm_utils_lifetime_get (guint32 timestamp,
 	} else {
 		if (!now)
 			now = nm_utils_get_monotonic_timestamp_s ();
-		t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now, padding);
+		t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now);
 		if (!t_lifetime) {
 			*out_lifetime = 0;
 			*out_preferred = 0;
 			return FALSE;
 		}
-		t_preferred = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now, padding);
+		t_preferred = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now);
 
 		*out_lifetime = t_lifetime;
 		*out_preferred = MIN (t_preferred, t_lifetime);

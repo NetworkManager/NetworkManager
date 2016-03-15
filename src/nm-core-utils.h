@@ -402,14 +402,12 @@ void nm_utils_ifname_cpy (char *dst, const char *name);
 
 guint32 nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
                                                        guint32 duration,
-                                                       guint32 now,
-                                                       guint32 padding);
+                                                       guint32 now);
 
 gboolean nm_utils_lifetime_get (guint32 timestamp,
                                 guint32 lifetime,
                                 guint32 preferred,
                                 guint32 now,
-                                guint32 padding,
                                 guint32 *out_lifetime,
                                 guint32 *out_preferred);
 
