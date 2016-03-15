@@ -394,8 +394,10 @@ nm_connection_replace_settings (NMConnection *connection,
  * Deep-copies the settings of @new_conenction and replaces the settings of @connection
  * with the copied settings.
  *
- * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
- * if they were not
+ * Returns: %TRUE if the settings were valid after replacing the connection, %FALSE
+ * if they were not. Regardless of whether %TRUE or %FALSE is returned, the connection
+ * is successfully replaced. %FALSE only means, that after the operation that the
+ * connection does not verifiy.
  *
  * Since: 0.9.10
  **/
@@ -411,8 +413,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* When 'connection' and 'new_connection' are the same object simply return
 	 * in order not to destroy 'connection' */
