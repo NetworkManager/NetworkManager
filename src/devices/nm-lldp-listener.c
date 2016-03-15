@@ -634,102 +634,6 @@ done:
 }
 
 static void
-process_lldp_neighbors (NMLldpListener *self)
-{
-	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-	nm_auto_free sd_lldp_neighbor **neighbors = NULL;
-	GHashTable *prune_list = NULL;
-	GHashTableIter iter;
-	int num, i;
-	GError *parse_error = NULL, **p_parse_error;
-	gboolean changed = FALSE;
-	LldpNeighbor *neigh_old;
-
-	g_return_if_fail (priv->lldp_handle);
-
-	num = sd_lldp_get_neighbors (priv->lldp_handle, &neighbors);
-	if (num < 0) {
-		_LOGD ("process: error %d retrieving neighbor packets for %s",
-		        num, priv->iface);
-		return;
-	}
-
-	if (g_hash_table_size (priv->lldp_neighbors) > 0) {
-		prune_list = g_hash_table_new (NULL, NULL);
-		g_hash_table_iter_init (&iter, priv->lldp_neighbors);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &neigh_old, NULL)) {
-			g_hash_table_add (prune_list, neigh_old);
-		}
-	}
-
-	p_parse_error = _LOGT_ENABLED () ? &parse_error : NULL;
-
-	for (i = 0; neighbors && i < num; i++) {
-		nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
-
-		neigh = lldp_neighbor_new (neighbors[i], p_parse_error);
-		if (!neigh || !neigh->valid) {
-			if (p_parse_error) {
-				if (neigh)
-					_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
-				else {
-					_LOGT ("process: failed to parse neighbor "LOG_NEIGH_FMT": %s",
-					       LOG_NEIGH_ARG (neigh), parse_error->message);
-				}
-				g_clear_error (&parse_error);
-			}
-			continue;
-		}
-
-		neigh_old = g_hash_table_lookup (priv->lldp_neighbors, neigh);
-		if (neigh_old) {
-			if (lldp_neighbor_equal (neigh_old, neigh))
-				continue;
-			if (prune_list) {
-				if (g_hash_table_remove (prune_list, neigh_old))
-					changed = TRUE;
-				if (g_hash_table_size (prune_list) == 0)
-					g_clear_pointer (&prune_list, g_hash_table_unref);
-			}
-		}
-
-		/* ensure that we have at most MAX_NEIGHBORS entires */
-		if (   !neigh_old /* only matters in the "add" case. */
-		    && i >= MAX_NEIGHBORS
-		    && (g_hash_table_size (priv->lldp_neighbors) - (prune_list ? g_hash_table_size (prune_list) : 0)) > MAX_NEIGHBORS) {
-			_LOGT ("process: skip remaining neighbors due to overall limit of %d", MAX_NEIGHBORS);
-			break;
-		}
-
-		_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
-		        neigh_old ? "update" : "new",
-		        LOG_NEIGH_ARG (neigh));
-
-		changed = TRUE;
-		g_hash_table_add (priv->lldp_neighbors, nm_unauto (&neigh));
-	}
-
-	for (i = 0; neighbors && i < num; i++)
-		sd_lldp_neighbor_unref (neighbors[i]);
-
-	if (prune_list) {
-		g_hash_table_iter_init (&iter, prune_list);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &neigh_old, NULL)) {
-			_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
-			        "remove",
-			        LOG_NEIGH_ARG (neigh_old));
-			if (!g_hash_table_remove (priv->lldp_neighbors, neigh_old))
-				g_warn_if_reached ();
-			changed = TRUE;
-		}
-		g_hash_table_unref (prune_list);
-	}
-
-	if (changed)
-		data_changed_schedule (self);
-}
-
-static void
 lldp_event_handler (sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, void *userdata)
 {
 	process_lldp_neighbor (userdata, n, event != SD_LLDP_EVENT_REMOVED);
@@ -760,18 +664,20 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 		return FALSE;
 	}
 
-	ret = sd_lldp_attach_event (priv->lldp_handle, NULL, 0);
-	if (ret < 0) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		                     "attach event failed");
-		goto err_free;
-	}
-
 	ret = sd_lldp_set_callback (priv->lldp_handle, lldp_event_handler, self);
 	if (ret < 0) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "set callback failed");
 		goto err;
+	}
+
+	priv->ifindex = ifindex;
+
+	ret = sd_lldp_attach_event (priv->lldp_handle, NULL, 0);
+	if (ret < 0) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                     "attach event failed");
+		goto err_free;
 	}
 
 	ret = sd_lldp_start (priv->lldp_handle);
@@ -781,10 +687,7 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 		goto err;
 	}
 
-	priv->ifindex = ifindex;
 	_LOGD ("start");
-
-	process_lldp_neighbors (self);
 
 	return TRUE;
 
@@ -793,6 +696,7 @@ err:
 err_free:
 	sd_lldp_unref (priv->lldp_handle);
 	priv->lldp_handle = NULL;
+	priv->ifindex = 0;
 	return FALSE;
 }
 
