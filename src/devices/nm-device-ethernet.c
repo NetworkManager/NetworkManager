@@ -1499,6 +1499,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_wired);
 	}
 
+	g_object_set (nm_connection_get_setting_connection (connection),
+	              NM_SETTING_CONNECTION_TYPE, nm_connection_get_setting_pppoe (connection)
+	                                          ? NM_SETTING_PPPOE_SETTING_NAME
+	                                          : NM_SETTING_WIRED_SETTING_NAME, NULL);
+
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
