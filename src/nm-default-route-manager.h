@@ -33,7 +33,7 @@
 #define NM_IS_DEFAULT_ROUTE_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEFAULT_ROUTE_MANAGER))
 #define NM_DEFAULT_ROUTE_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManagerClass))
 
-
+#define NM_DEFAULT_ROUTE_MANAGER_PLATFORM "platform"
 
 struct _NMDefaultRouteManager {
 	GObject parent;
@@ -46,6 +46,7 @@ typedef struct {
 GType nm_default_route_manager_get_type (void);
 
 NMDefaultRouteManager *nm_default_route_manager_get (void);
+NMDefaultRouteManager *nm_default_route_manager_new (NMPlatform *platform);
 
 void nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *manager, gpointer source);
 void nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *manager, gpointer source);

@@ -3569,7 +3569,8 @@ impl_manager_add_and_activate_connection (NMManager *self,
 			goto error;
 		}
 
-		nm_utils_complete_generic (connection,
+		nm_utils_complete_generic (NM_PLATFORM_GET,
+		                           connection,
 		                           NM_SETTING_VPN_SETTING_NAME,
 		                           all_connections,
 		                           NULL,

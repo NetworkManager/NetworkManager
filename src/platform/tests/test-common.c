@@ -338,30 +338,32 @@ _wait_for_signal_timeout (gpointer user_data)
 }
 
 gboolean
-nmtstp_wait_for_signal (guint timeout_ms)
+nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms)
 {
 	WaitForSignalData data = { 0 };
-
 	gulong id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
+
+	if (!platform)
+		platform = NM_PLATFORM_GET;
 
 	data.loop = g_main_loop_new (NULL, FALSE);
 
-	id_link        = g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
-	id_ip4_address = g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
-	id_ip6_address = g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
-	id_ip4_route   = g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
-	id_ip6_route   = g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_link        = g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_ip4_address = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_ip6_address = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_ip4_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_ip6_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 
 	if (timeout_ms != 0)
 		data.id = g_timeout_add (timeout_ms, _wait_for_signal_timeout, &data);
 
 	g_main_loop_run (data.loop);
 
-	g_assert (nm_clear_g_signal_handler (NM_PLATFORM_GET, &id_link));
-	g_assert (nm_clear_g_signal_handler (NM_PLATFORM_GET, &id_ip4_address));
-	g_assert (nm_clear_g_signal_handler (NM_PLATFORM_GET, &id_ip6_address));
-	g_assert (nm_clear_g_signal_handler (NM_PLATFORM_GET, &id_ip4_route));
-	g_assert (nm_clear_g_signal_handler (NM_PLATFORM_GET, &id_ip6_route));
+	g_assert (nm_clear_g_signal_handler (platform, &id_link));
+	g_assert (nm_clear_g_signal_handler (platform, &id_ip4_address));
+	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_address));
+	g_assert (nm_clear_g_signal_handler (platform, &id_ip4_route));
+	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_route));
 
 	if (nm_clear_g_source (&data.id))
 		g_assert (timeout_ms != 0 && !data.timeout);
@@ -372,7 +374,7 @@ nmtstp_wait_for_signal (guint timeout_ms)
 }
 
 gboolean
-nmtstp_wait_for_signal_until (gint64 until_ms)
+nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 {
 	gint64 now;
 
@@ -382,19 +384,19 @@ nmtstp_wait_for_signal_until (gint64 until_ms)
 		if (until_ms < now)
 			return FALSE;
 
-		if (nmtstp_wait_for_signal (MAX (1, until_ms - now)))
+		if (nmtstp_wait_for_signal (platform, MAX (1, until_ms - now)))
 			return TRUE;
 	}
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
+nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
 {
-	return nmtstp_wait_for_link_until (ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
+nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
 {
 	const NMPlatformLink *plink;
 	gint64 now;
@@ -402,7 +404,7 @@ nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, g
 	while (TRUE) {
 		now = nm_utils_get_monotonic_timestamp_ms ();
 
-		plink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
+		plink = nm_platform_link_get_by_ifname (platform ?: NM_PLATFORM_GET, ifname);
 		if (   plink
 		    && (expected_link_type == NM_LINK_TYPE_NONE || plink->type == expected_link_type))
 			return plink;
@@ -410,22 +412,22 @@ nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, g
 		if (until_ms < now)
 			return NULL;
 
-		nmtstp_wait_for_signal (MAX (1, until_ms - now));
+		nmtstp_wait_for_signal (platform, MAX (1, until_ms - now));
 	}
 }
 
 const NMPlatformLink *
-nmtstp_assert_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
+nmtstp_assert_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
 {
-	return nmtstp_assert_wait_for_link_until (ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+	return nmtstp_assert_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
 }
 
 const NMPlatformLink *
-nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
+nmtstp_assert_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
 {
 	const NMPlatformLink *plink;
 
-	plink = nmtstp_wait_for_link_until (ifname, expected_link_type, until_ms);
+	plink = nmtstp_wait_for_link_until (platform, ifname, expected_link_type, until_ms);
 	g_assert (plink);
 	return plink;
 }
@@ -686,20 +688,20 @@ _ip_address_add (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (end_time));
+		g_assert (nmtstp_wait_for_signal_until (NM_PLATFORM_GET, end_time));
 	} while (TRUE);
 }
 
-#define _assert_pllink(success, pllink, name, type) \
+#define _assert_pllink(platform, success, pllink, name, type) \
 	G_STMT_START { \
 		const NMPlatformLink *_pllink = (pllink); \
 		\
 		if ((success)) { \
 			g_assert (_pllink); \
-			g_assert (_pllink == nmtstp_link_get_typed (_pllink->ifindex, (name), (type))); \
+			g_assert (_pllink == nmtstp_link_get_typed (platform, _pllink->ifindex, (name), (type))); \
 		} else { \
 			g_assert (!_pllink); \
-			g_assert (!nmtstp_link_get (0, (name))); \
+			g_assert (!nmtstp_link_get (platform, 0, (name))); \
 		} \
 	} G_STMT_END
 
@@ -718,12 +720,12 @@ nmtstp_link_dummy_add (gboolean external_command,
 		success = !nmtstp_run_command ("ip link add %s type dummy",
 		                                name);
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_DUMMY, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, NM_LINK_TYPE_DUMMY, 100);
 	} else
 		success = nm_platform_link_dummy_add (NM_PLATFORM_GET, name, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
 	g_assert (success);
-	_assert_pllink (success, pllink, name, NM_LINK_TYPE_DUMMY);
+	_assert_pllink (NM_PLATFORM_GET, success, pllink, name, NM_LINK_TYPE_DUMMY);
 	return pllink;
 }
 
@@ -755,11 +757,11 @@ nmtstp_link_gre_add (gboolean external_command,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_GRE, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, NM_LINK_TYPE_GRE, 100);
 	} else
 		success = nm_platform_link_gre_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	_assert_pllink (success, pllink, name, NM_LINK_TYPE_GRE);
+	_assert_pllink (NM_PLATFORM_GET, success, pllink, name, NM_LINK_TYPE_GRE);
 
 	return pllink;
 }
@@ -806,11 +808,11 @@ nmtstp_link_ip6tnl_add (gboolean external_command,
 		                                lnk->encap_limit,
 		                                lnk->flow_label);
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IP6TNL, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, NM_LINK_TYPE_IP6TNL, 100);
 	} else
 		success = nm_platform_link_ip6tnl_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	_assert_pllink (success, pllink, name, NM_LINK_TYPE_IP6TNL);
+	_assert_pllink (NM_PLATFORM_GET, success, pllink, name, NM_LINK_TYPE_IP6TNL);
 
 	return pllink;
 }
@@ -843,11 +845,11 @@ nmtstp_link_ipip_add (gboolean external_command,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_IPIP, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, NM_LINK_TYPE_IPIP, 100);
 	} else
 		success = nm_platform_link_ipip_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	_assert_pllink (success, pllink, name, NM_LINK_TYPE_IPIP);
+	_assert_pllink (NM_PLATFORM_GET, success, pllink, name, NM_LINK_TYPE_IPIP);
 
 	return pllink;
 }
@@ -888,11 +890,11 @@ nmtstp_link_macvlan_add (gboolean external_command,
 		                                modes[lnk->mode],
 		                                lnk->no_promisc ? "nopromisc" : "");
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (name, link_type, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, link_type, 100);
 	} else
 		success = nm_platform_link_macvlan_add (NM_PLATFORM_GET, name, parent, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	_assert_pllink (success, pllink, name, link_type);
+	_assert_pllink (NM_PLATFORM_GET, success, pllink, name, link_type);
 
 	return pllink;
 }
@@ -930,11 +932,11 @@ nmtstp_link_sit_add (gboolean external_command,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_SIT, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, NM_LINK_TYPE_SIT, 100);
 	} else
 		success = nm_platform_link_sit_add (NM_PLATFORM_GET, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	_assert_pllink (success, pllink, name, NM_LINK_TYPE_SIT);
+	_assert_pllink (NM_PLATFORM_GET, success, pllink, name, NM_LINK_TYPE_SIT);
 
 	return pllink;
 }
@@ -983,7 +985,7 @@ nmtstp_link_vxlan_add (gboolean external_command,
 		/* Older versions of iproute2 don't support adding vxlan devices.
 		 * On failure, fallback to using platform code. */
 		if (err == 0)
-			pllink = nmtstp_assert_wait_for_link (name, NM_LINK_TYPE_VXLAN, 100);
+			pllink = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, name, NM_LINK_TYPE_VXLAN, 100);
 		else
 			_LOGI ("Adding vxlan device via iproute2 failed. Assume iproute2 is not up to the task.");
 	}
@@ -1128,7 +1130,7 @@ _ip_address_del (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (end_time));
+		g_assert (nmtstp_wait_for_signal_until (NM_PLATFORM_GET, end_time));
 	} while (TRUE);
 }
 
@@ -1162,14 +1164,18 @@ nmtstp_ip6_address_del (gboolean external_command,
 }
 
 const NMPlatformLink *
-nmtstp_link_get_typed (int ifindex,
+nmtstp_link_get_typed (NMPlatform *platform,
+                       int ifindex,
                        const char *name,
                        NMLinkType link_type)
 {
 	const NMPlatformLink *pllink = NULL;
 
+	if (!platform)
+		platform = NM_PLATFORM_GET;
+
 	if (ifindex > 0) {
-		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		pllink = nm_platform_link_get (platform, ifindex);
 
 		if (pllink) {
 			g_assert_cmpint (pllink->ifindex, ==, ifindex);
@@ -1177,12 +1183,12 @@ nmtstp_link_get_typed (int ifindex,
 				g_assert_cmpstr (name, ==, pllink->name);
 		} else {
 			if (name)
-				g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name));
+				g_assert (!nm_platform_link_get_by_ifname (platform, name));
 		}
 	} else {
 		g_assert (name);
 
-		pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name);
+		pllink = nm_platform_link_get_by_ifname (platform, name);
 
 		if (pllink)
 			g_assert_cmpstr (name, ==, pllink->name);
@@ -1197,10 +1203,11 @@ nmtstp_link_get_typed (int ifindex,
 }
 
 const NMPlatformLink *
-nmtstp_link_get (int ifindex,
+nmtstp_link_get (NMPlatform *platform,
+                 int ifindex,
                  const char *name)
 {
-	return nmtstp_link_get_typed (ifindex, name, NM_LINK_TYPE_NONE);
+	return nmtstp_link_get_typed (platform, ifindex, name, NM_LINK_TYPE_NONE);
 }
 
 void
@@ -1213,7 +1220,7 @@ nmtstp_link_del (gboolean external_command,
 	gboolean success;
 	gs_free char *name_copy = NULL;
 
-	pllink = nmtstp_link_get (ifindex, name);
+	pllink = nmtstp_link_get (NM_PLATFORM_GET, ifindex, name);
 
 	g_assert (pllink);
 
@@ -1243,7 +1250,7 @@ nmtstp_link_del (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (end_time));
+		g_assert (nmtstp_wait_for_signal_until (NM_PLATFORM_GET, end_time));
 	} while (TRUE);
 }
 
@@ -1289,7 +1296,7 @@ nmtstp_link_set_updown (gboolean external_command,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (end_time));
+		g_assert (nmtstp_wait_for_signal_until (NM_PLATFORM_GET, end_time));
 	} while (TRUE);
 }
 

@@ -28,7 +28,8 @@
 
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
-void nm_utils_complete_generic (NMConnection *connection,
+void nm_utils_complete_generic (NMPlatform *platform,
+                                NMConnection *connection,
                                 const char *ctype,
                                 const GSList *existing,
                                 const char *preferred_id,

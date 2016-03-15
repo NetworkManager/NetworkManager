@@ -71,6 +71,8 @@
  *
  * "TRACE", this is shorthand for "log-level=TRACE".
  *
+ * "D", this is shorthand for "log-level=TRACE,no-expect-message".
+ *
  * "sudo-cmd=PATH": when running root tests as normal user, the test will execute
  *   itself by invoking sudo at PATH.
  *   For example
@@ -341,9 +343,14 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			} else if (!g_ascii_strncasecmp (debug, "log-level=", strlen ("log-level="))) {
 				g_free (c_log_level);
 				log_level = c_log_level = g_strdup (&debug[strlen ("log-level=")]);
+			} else if (!g_ascii_strcasecmp (debug, "D")) {
+				/* shorthand for "log-level=TRACE,no-expect-message" */
+				g_free (c_log_level);
+				log_level = c_log_level = g_strdup ("TRACE");
+				no_expect_message = TRUE;
 			} else if (!g_ascii_strcasecmp (debug, "TRACE")) {
 				g_free (c_log_level);
-				log_level = c_log_level = g_strdup (debug);
+				log_level = c_log_level = g_strdup ("TRACE");
 			} else if (!g_ascii_strncasecmp (debug, "log-domains=", strlen ("log-domains="))) {
 				g_free (c_log_domains);
 				log_domains = c_log_domains = g_strdup (&debug[strlen ("log-domains=")]);

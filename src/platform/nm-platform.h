@@ -491,6 +491,9 @@ typedef struct {
 	gboolean (*link_get_unmanaged) (NMPlatform *, int ifindex, gboolean *unmanaged);
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);
+
+	gboolean (*link_set_netns) (NMPlatform *, int ifindex, int netns_fd);
+
 	void (*process_events) (NMPlatform *self);
 
 	gboolean (*link_set_up) (NMPlatform *, int ifindex, gboolean *out_no_firmware);
@@ -697,6 +700,8 @@ NMPlatformError nm_platform_link_bridge_add (NMPlatform *self, const char *name,
 NMPlatformError nm_platform_link_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
 NMPlatformError nm_platform_link_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
+
+gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
 
 /* convienience methods to lookup the link and access fields of NMPlatformLink. */
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);

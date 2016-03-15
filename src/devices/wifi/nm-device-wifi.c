@@ -845,7 +845,8 @@ complete_connection (NMDevice *device,
 
 	str_ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 
-	nm_utils_complete_generic (connection,
+	nm_utils_complete_generic (NM_PLATFORM_GET,
+	                           connection,
 	                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                           existing_connections,
 	                           str_ssid,

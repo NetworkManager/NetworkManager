@@ -49,6 +49,7 @@ GType nmp_netns_get_type (void);
 NMPNetns *nmp_netns_new (void);
 
 gboolean nmp_netns_push (NMPNetns *self);
+gboolean nmp_netns_push_type (NMPNetns *self, int ns_types);
 gboolean nmp_netns_pop (NMPNetns *self);
 
 NMPNetns *nmp_netns_get_current (void);
@@ -66,5 +67,8 @@ _nm_auto_pop_netns (NMPNetns **p)
 }
 
 #define nm_auto_pop_netns __attribute__((cleanup(_nm_auto_pop_netns)))
+
+gboolean nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd);
+gboolean nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename);
 
 #endif /* __NMP_NETNS_UTILS_H__ */

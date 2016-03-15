@@ -647,7 +647,8 @@ complete_connection (NMModem *_self,
 		if (!nm_setting_gsm_get_number (s_gsm))
 			g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
 
-		nm_utils_complete_generic (connection,
+		nm_utils_complete_generic (NM_PLATFORM_GET,
+		                           connection,
 		                           NM_SETTING_GSM_SETTING_NAME,
 		                           existing_connections,
 		                           NULL,
@@ -670,7 +671,8 @@ complete_connection (NMModem *_self,
 		if (!nm_setting_cdma_get_number (s_cdma))
 			g_object_set (G_OBJECT (s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
 
-		nm_utils_complete_generic (connection,
+		nm_utils_complete_generic (NM_PLATFORM_GET,
+		                           connection,
 		                           NM_SETTING_CDMA_SETTING_NAME,
 		                           existing_connections,
 		                           NULL,

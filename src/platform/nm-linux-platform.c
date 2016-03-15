@@ -3881,12 +3881,16 @@ do_change_link (NMPlatform *platform,
                 int ifindex,
                 struct nl_msg *nlmsg)
 {
+	nm_auto_pop_netns NMPNetns *netns = NULL;
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
 	char s_buf[256];
 	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
 	NMLogLevel log_level = LOGL_DEBUG;
 	const char *log_result = "failure", *log_detail = "";
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
 
 retry:
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result);
@@ -4045,6 +4049,31 @@ link_refresh (NMPlatform *platform, int ifindex)
 {
 	do_request_link (platform, ifindex, NULL);
 	return !!cache_lookup_link (platform, ifindex);
+}
+
+static gboolean
+link_set_netns (NMPlatform *platform,
+                int ifindex,
+                int netns_fd)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+	_LOGD ("link: move link %d to network namespace with fd %d", ifindex, netns_fd);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          0,
+	                          ifindex,
+	                          NULL,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	NLA_PUT (nlmsg, IFLA_NET_NS_FD, 4, &netns_fd);
+	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
 }
 
 static NMPlatformError
@@ -6159,6 +6188,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_lnk = link_get_lnk;
 
 	platform_class->link_refresh = link_refresh;
+
+	platform_class->link_set_netns = link_set_netns;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

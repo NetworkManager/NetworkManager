@@ -91,13 +91,13 @@ void link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, N
 int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
 #define nmtstp_run_command_check(...) do { g_assert_cmpint (nmtstp_run_command (__VA_ARGS__), ==, 0); } while (0)
 
-gboolean nmtstp_wait_for_signal (guint timeout_ms);
-gboolean nmtstp_wait_for_signal_until (gint64 until_ms);
-const NMPlatformLink *nmtstp_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
-const NMPlatformLink *nmtstp_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
+gboolean nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms);
+gboolean nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms);
+const NMPlatformLink *nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
+const NMPlatformLink *nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
 
-const NMPlatformLink *nmtstp_assert_wait_for_link (const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
-const NMPlatformLink *nmtstp_assert_wait_for_link_until (const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
+const NMPlatformLink *nmtstp_assert_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
+const NMPlatformLink *nmtstp_assert_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
 
 int nmtstp_run_command_check_external_global (void);
 gboolean nmtstp_run_command_check_external (int external_command);
@@ -137,8 +137,8 @@ void nmtstp_ip6_address_del (gboolean external_command,
                              struct in6_addr address,
                              int plen);
 
-const NMPlatformLink *nmtstp_link_get_typed (int ifindex, const char *name, NMLinkType link_type);
-const NMPlatformLink *nmtstp_link_get (int ifindex, const char *name);
+const NMPlatformLink *nmtstp_link_get_typed (NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type);
+const NMPlatformLink *nmtstp_link_get (NMPlatform *platform, int ifindex, const char *name);
 
 void nmtstp_link_set_updown (gboolean external_command,
                              int ifindex,

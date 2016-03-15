@@ -314,7 +314,7 @@ test_ip4_zero_gateway (void)
 	nmtstp_run_command_check ("ip route add 1.2.3.2/32 dev %s", DEVICE_NAME);
 
 	NMTST_WAIT_ASSERT (100, {
-		nmtstp_wait_for_signal (10);
+		nmtstp_wait_for_signal (NM_PLATFORM_GET, 10);
 		if (   nm_platform_ip4_route_get (NM_PLATFORM_GET, ifindex, nmtst_inet4_from_string ("1.2.3.1"), 32, 0)
 		    && nm_platform_ip4_route_get (NM_PLATFORM_GET, ifindex, nmtst_inet4_from_string ("1.2.3.2"), 32, 0))
 			break;
@@ -322,7 +322,7 @@ test_ip4_zero_gateway (void)
 
 	nmtstp_run_command_check ("ip route flush dev %s", DEVICE_NAME);
 
-	nmtstp_wait_for_signal (50);
+	nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 	nm_platform_process_events (NM_PLATFORM_GET);
 }
 
