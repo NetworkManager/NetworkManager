@@ -90,6 +90,18 @@ static const BondDefault defaults[] = {
 	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
 	{ NM_SETTING_BOND_OPTION_LACP_RATE,        "slow",       NM_BOND_OPTION_TYPE_BOTH, 0, 1,
 	  { "slow", "fast", NULL } },
+	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,     "",           NM_BOND_OPTION_TYPE_IFNAME },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO,"65535",      NM_BOND_OPTION_TYPE_INT, 1, 65535 },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,  "",           NM_BOND_OPTION_TYPE_MAC },
+	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, "0",          NM_BOND_OPTION_TYPE_INT, 0, 1023},
+	{ NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE,"0",          NM_BOND_OPTION_TYPE_INT, 0, 1},
+	{ NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS,  "any",        NM_BOND_OPTION_TYPE_BOTH, 0, 1, {"any", "all"}},
+	{ NM_SETTING_BOND_OPTION_MIN_LINKS,        "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,     "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_NUM_UNSOL_NA,     "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE,"1",          NM_BOND_OPTION_TYPE_INT, 0, 65535 },
+	{ NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,   "1",          NM_BOND_OPTION_TYPE_INT, 0, 1 },
+	{ NM_SETTING_BOND_OPTION_LP_INTERVAL,      "1",          NM_BOND_OPTION_TYPE_INT, 1, G_MAXINT },
 };
 
 /**
@@ -270,6 +282,8 @@ nm_setting_bond_validate_option (const char *name,
 				        || validate_list (name, value, &defaults[i]));
 			case NM_BOND_OPTION_TYPE_IP:
 				return validate_ip (name, value);
+			case NM_BOND_OPTION_TYPE_MAC:
+				return nm_utils_hwaddr_valid (value, ETH_ALEN);
 			case NM_BOND_OPTION_TYPE_IFNAME:
 				return validate_ifname (name, value);
 			}
@@ -456,6 +470,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	GHashTableIter iter;
 	const char *key, *value;
 	int mode, miimon = 0, arp_interval = 0;
+	int num_grat_arp = -1, num_unsol_na = -1;
 	const char *mode_orig, *mode_new;
 	const char *arp_ip_target = NULL;
 	const char *lacp_rate;
@@ -480,6 +495,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 	if (value)
 		arp_interval = atoi (value);
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
+	if (value)
+		num_grat_arp = atoi (value);
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
+	if (value)
+		num_unsol_na = atoi (value);
 
 	/* Can only set one of miimon and arp_interval */
 	if (miimon > 0 && arp_interval > 0) {
@@ -654,6 +675,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' option is only valid with mode '%s'"),
 		             NM_SETTING_BOND_OPTION_LACP_RATE, "802.3ad");
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return FALSE;
+	}
+
+	if (   (num_grat_arp != -1 && num_unsol_na != -1)
+	    && (num_grat_arp != num_unsol_na)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' and '%s' cannot have different values"),
+		             NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,
+		             NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
