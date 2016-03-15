@@ -2613,7 +2613,7 @@ nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr addr
 }
 
 static gboolean
-array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint64 now)
+array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint32 now)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -2636,7 +2636,7 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 }
 
 static gboolean
-array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address, gint64 now)
+array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address, gint32 now)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -2677,7 +2677,7 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int i;
 
 	_CHECK_SELF (self, klass, FALSE);
@@ -2740,7 +2740,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 {
 	GArray *addresses;
 	NMPlatformIP6Address *address;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int i;
 
 	/* Delete unknown addresses */

@@ -2976,9 +2976,11 @@ nm_utils_ip4_address_is_link_local (in_addr_t addr)
 guint32
 nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
                                                guint32 duration,
-                                               guint32 now)
+                                               gint32 now)
 {
 	gint64 t;
+
+	nm_assert (now >= 0);
 
 	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
 		return NM_PLATFORM_LIFETIME_PERMANENT;
@@ -3008,11 +3010,13 @@ gboolean
 nm_utils_lifetime_get (guint32 timestamp,
                        guint32 lifetime,
                        guint32 preferred,
-                       guint32 now,
+                       gint32 now,
                        guint32 *out_lifetime,
                        guint32 *out_preferred)
 {
 	guint32 t_lifetime, t_preferred;
+
+	nm_assert (now >= 0);
 
 	if (lifetime == 0) {
 		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
@@ -3023,7 +3027,7 @@ nm_utils_lifetime_get (guint32 timestamp,
 		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
 		g_return_val_if_fail (timestamp == 0 && preferred == 0, TRUE);
 	} else {
-		if (!now)
+		if (now <= 0)
 			now = nm_utils_get_monotonic_timestamp_s ();
 		t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now);
 		if (!t_lifetime) {
