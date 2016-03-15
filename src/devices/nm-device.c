@@ -4244,6 +4244,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	gboolean routes_full_sync;
 	gboolean ignore_auto_routes = FALSE;
 	gboolean ignore_auto_dns = FALSE;
+	gboolean auto_method = FALSE;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -4259,6 +4260,10 @@ ip4_config_merge_and_apply (NMDevice *self,
 		if (s_ip4) {
 			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip4);
 			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip4);
+
+			if (nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
+			               NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+				auto_method = TRUE;
 		}
 	}
 
@@ -4314,10 +4319,12 @@ ip4_config_merge_and_apply (NMDevice *self,
 		goto END_ADD_DEFAULT_ROUTE;
 	}
 
-	if (nm_device_uses_generated_assumed_connection (self)) {
-		/* a generate-assumed-connection always detects the default route from platform */
+	/* a generated-assumed connection detects the default route from the platform,
+	 * but if the IP method is automatic we need to update the default route to
+	 * maintain connectivity.
+	 */
+	if (nm_device_uses_generated_assumed_connection (self) && !auto_method)
 		goto END_ADD_DEFAULT_ROUTE;
-	}
 
 	/* At this point, we treat assumed and non-assumed connections alike.
 	 * For assumed connections we do that because we still manage RA and DHCP
@@ -4964,6 +4971,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean routes_full_sync;
 	gboolean ignore_auto_routes = FALSE;
 	gboolean ignore_auto_dns = FALSE;
+	gboolean auto_method = FALSE;
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
@@ -4973,6 +4981,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 		if (s_ip6) {
 			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip6);
 			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip6);
+
+			if (NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
+			                  NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+			                  NM_SETTING_IP6_CONFIG_METHOD_DHCP))
+				auto_method = TRUE;
 		}
 	}
 
@@ -5036,10 +5049,12 @@ ip6_config_merge_and_apply (NMDevice *self,
 		goto END_ADD_DEFAULT_ROUTE;
 	}
 
-	if (nm_device_uses_generated_assumed_connection (self)) {
-		/* a generate-assumed-connection always detects the default route from platform */
+	/* a generated-assumed connection detects the default route from the platform,
+	 * but if the IP method is automatic we need to update the default route to
+	 * maintain connectivity.
+	 */
+	if (nm_device_uses_generated_assumed_connection (self) && !auto_method)
 		goto END_ADD_DEFAULT_ROUTE;
-	}
 
 	/* At this point, we treat assumed and non-assumed connections alike.
 	 * For assumed connections we do that because we still manage RA and DHCP
