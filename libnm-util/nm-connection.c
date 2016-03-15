@@ -396,8 +396,8 @@ nm_connection_replace_settings (NMConnection *connection,
  *
  * Returns: %TRUE if the settings were valid after replacing the connection, %FALSE
  * if they were not. Regardless of whether %TRUE or %FALSE is returned, the connection
- * is successfully replaced. %FALSE only means, that after the operation that the
- * connection does not verifiy.
+ * is successfully replaced. %FALSE only means, that the connection does not verify
+ * at the end of the operation.
  *
  * Since: 0.9.10
  **/
