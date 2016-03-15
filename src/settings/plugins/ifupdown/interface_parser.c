@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Tom Parker <palfrey@tevp.net>
@@ -50,7 +50,6 @@ void add_block(const char *type, const char* name)
 		last = ret;
 	}
 	last_data = NULL;
-	//printf("added block '%s' with type '%s'\n",name,type);
 }
 
 void add_data(const char *key,const char *data)
@@ -58,14 +57,15 @@ void add_data(const char *key,const char *data)
 	if_data *ret;
 	char *idx;
 
-	// Check if there is a block where we can attach our data
+	/* Check if there is a block where we can attach our data */
 	if (first == NULL)
 		return;
 
 	ret = (if_data*) calloc(1,sizeof(struct _if_data));
 	ret->key = g_strdup(key);
-	// Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
-	// When querying keys via ifparser_getkey(), use '-'.
+
+	/* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
+	 * When querying keys via ifparser_getkey(), use '-'. */
 	while ((idx = strrchr(ret->key, '_'))) {
 		*idx = '-';
 	}
@@ -81,10 +81,9 @@ void add_data(const char *key,const char *data)
 		last_data->next = ret;
 		last_data = last_data->next;
 	}
-	//printf("added data '%s' with key '%s'\n",data,key);
 }
 
-// join values in src with spaces into dst;  dst needs to be large enough
+/* join values in src with spaces into dst;  dst needs to be large enough */
 static char *join_values_with_spaces(char *dst, char **src)
 {
 	if (dst != NULL) {
@@ -112,7 +111,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 	int skip_long_line = 0;
 	int offs = 0;
 
-	// Check if interfaces file exists and open it
+	/* Check if interfaces file exists and open it */
 	if (!g_file_test (eni_file, G_FILE_TEST_EXISTS)) {
 		if (!quiet)
 			nm_log_warn (LOGD_SETTINGS, "interfaces file %s doesn't exist\n", eni_file);
@@ -130,8 +129,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 	while (!feof(inp))
 	{
-		char *token[128];	// 255 chars can only be split into 127 tokens
-		char value[255];	// large enough to join previously split tokens
+		char *token[128];	/* 255 chars can only be split into 127 tokens */
+		char value[255];	/* large enough to join previously split tokens */
 		char *safeptr;
 		int toknum;
 		int len = 0;
@@ -141,7 +140,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			break;
 
 		len = strlen(line);
-		// skip over-long lines
+		/* skip over-long lines */
 		if (!feof(inp) && len > 0 &&  line[len-1] != '\n') {
 			if (!skip_long_line) {
 				if (!quiet)
@@ -151,35 +150,33 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			continue;
 		}
 
-		// trailing '\n' found: remove it & reset offset to 0
+		/* trailing '\n' found: remove it & reset offset to 0 */
 		if (len > 0 && line[len-1] == '\n') {
 			line[--len] = '\0';
 			offs = 0;
 		}
 
-		// if we're in long_line_skip mode, terminate it for real next line
+		/* if we're in long_line_skip mode, terminate it for real next line */
 		if (skip_long_line) {
 			if (len == 0 || line[len-1] != '\\')
 				skip_long_line = 0;
 			continue;
 		}
 
-		// unwrap wrapped lines
+		/* unwrap wrapped lines */
 		if (len > 0 && line[len-1] == '\\') {
 			offs = len - 1;
 			continue;
 		}
 
-		//printf(">>%s<<\n", line);
-
 #define SPACES	" \t"
-		// tokenize input;
+		/* tokenize input; */
 		for (toknum = 0, token[toknum] = strtok_r(line, SPACES, &safeptr);
 		     token[toknum] != NULL;
 		     toknum++, token[toknum] = strtok_r(NULL, SPACES, &safeptr))
 			;
 
-		// ignore comments and empty lines
+		/* ignore comments and empty lines */
 		if (toknum == 0 || *token[0]=='#')
 			continue;
 
@@ -192,11 +189,11 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			continue;
 		}
 
-		// There are five different stanzas:
-		// iface, mapping, auto, allow-* and source.
-		// Create a block for each of them except source.
+		/* There are five different stanzas:
+		 * iface, mapping, auto, allow-* and source.
+		 * Create a block for each of them except source.  */
 
-		// iface stanza takes at least 3 parameters
+		/* iface stanza takes at least 3 parameters */
 		if (strcmp(token[0], "iface") == 0) {
 			if (toknum < 4) {
 				if (!quiet) {
@@ -209,8 +206,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			skip_to_block = 0;
 			add_data(token[2], join_values_with_spaces(value, token + 3));
 		}
-		// auto and allow-auto stanzas are equivalent,
-		// both can take multiple interfaces as parameters: add one block for each
+		/* auto and allow-auto stanzas are equivalent,
+		 * both can take multiple interfaces as parameters: add one block for each */
 		else if (strcmp(token[0], "auto") == 0 ||
 			 strcmp(token[0], "allow-auto") == 0) {
 			int i;
@@ -222,14 +219,14 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			add_block(token[0], join_values_with_spaces(value, token + 1));
 			skip_to_block = 0;
 		}
-		// allow-* can take multiple interfaces as parameters: add one block for each
+		/* allow-* can take multiple interfaces as parameters: add one block for each */
 		else if (strncmp(token[0],"allow-",6) == 0) {
 			int i;
 			for (i = 1; i < toknum; i++)
 				add_block(token[0], token[i]);
 			skip_to_block = 0;
 		}
-		// source stanza takes one or more filepaths as parameters
+		/* source stanza takes one or more filepaths as parameters */
 		else if (strcmp(token[0], "source") == 0) {
 			int i;
 			char *en_dir;

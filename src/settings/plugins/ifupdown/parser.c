@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /* NetworkManager system settings service (ifupdown)
  *
@@ -368,7 +368,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			             newkey,
 #ifdef DEBUG_SECRETS
 			             property_value
-#else // DEBUG_SECRETS
+#else /* DEBUG_SECRETS */
 			             !strcmp("key", newkey) ||
 			             !strcmp("leap-password", newkey) ||
 			             !strcmp("pin", newkey) ||
@@ -379,7 +379,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			             !strcmp("wep-key3", newkey) ||
 			             NULL ?
 			             "<omitted>" : property_value
-#endif // DEBUG_SECRETS
+#endif /* DEBUG_SECRETS */
 			             );
 
 			if (type_map_func) {

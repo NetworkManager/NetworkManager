@@ -93,13 +93,13 @@ static void
 settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class);
 
 static void
-SettingsPluginIfupdown_init (NMSettingsPlugin *config);
+init (NMSettingsPlugin *config);
 
 /* Returns the plugins currently known list of connections.  The returned
  * list is freed by the system settings service.
  */
 static GSList*
-SettingsPluginIfupdown_get_connections (NMSettingsPlugin *config);
+get_connections (NMSettingsPlugin *config);
 
 /*
  * Return a list of device specifications which NetworkManager should not
@@ -107,27 +107,27 @@ SettingsPluginIfupdown_get_connections (NMSettingsPlugin *config);
  * each element must be allocated using g_malloc() or its variants.
  */
 static GSList*
-SettingsPluginIfupdown_get_unmanaged_specs (NMSettingsPlugin *config);
+get_unmanaged_specs (NMSettingsPlugin *config);
 
 
 /*  GObject */
 static void
-GObject__get_property (GObject *object, guint prop_id,
+get_property (GObject *object, guint prop_id,
 				   GValue *value, GParamSpec *pspec);
 
 static void
-GObject__set_property (GObject *object, guint prop_id,
+set_property (GObject *object, guint prop_id,
 				   const GValue *value, GParamSpec *pspec);
 
 static void
-GObject__dispose (GObject *object);
+dispose (GObject *object);
 
 static void
 settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	plugin_iface->init = SettingsPluginIfupdown_init;
-	plugin_iface->get_connections = SettingsPluginIfupdown_get_connections;
-	plugin_iface->get_unmanaged_specs = SettingsPluginIfupdown_get_unmanaged_specs;
+	plugin_iface->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
 }
 
 static void
@@ -137,9 +137,9 @@ settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class)
 
 	g_type_class_add_private (req_class, sizeof (SettingsPluginIfupdownPrivate));
 
-	object_class->dispose = GObject__dispose;
-	object_class->get_property = GObject__get_property;
-	object_class->set_property = GObject__set_property;
+	object_class->dispose = dispose;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
 	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
@@ -292,7 +292,7 @@ handle_uevent (GUdevClient *client,
 }
 
 static void
-SettingsPluginIfupdown_init (NMSettingsPlugin *config)
+init (NMSettingsPlugin *config)
 {
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (config);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
@@ -447,7 +447,7 @@ SettingsPluginIfupdown_init (NMSettingsPlugin *config)
  * list is freed by the system settings service.
  */
 static GSList*
-SettingsPluginIfupdown_get_connections (NMSettingsPlugin *config)
+get_connections (NMSettingsPlugin *config)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
 	GSList *connections;
@@ -471,7 +471,7 @@ SettingsPluginIfupdown_get_connections (NMSettingsPlugin *config)
  * each element must be allocated using g_malloc() or its variants.
  */
 static GSList*
-SettingsPluginIfupdown_get_unmanaged_specs (NMSettingsPlugin *config)
+get_unmanaged_specs (NMSettingsPlugin *config)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
 	GSList *specs = NULL;
@@ -504,7 +504,7 @@ settings_plugin_ifupdown_init (SettingsPluginIfupdown *plugin)
 }
 
 static void
-GObject__get_property (GObject *object, guint prop_id,
+get_property (GObject *object, guint prop_id,
                        GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
@@ -524,7 +524,7 @@ GObject__get_property (GObject *object, guint prop_id,
 }
 
 static void
-GObject__set_property (GObject *object, guint prop_id,
+set_property (GObject *object, guint prop_id,
 				   const GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
@@ -535,7 +535,7 @@ GObject__set_property (GObject *object, guint prop_id,
 }
 
 static void
-GObject__dispose (GObject *object)
+dispose (GObject *object)
 {
 	SettingsPluginIfupdown *plugin = SETTINGS_PLUGIN_IFUPDOWN (object);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
