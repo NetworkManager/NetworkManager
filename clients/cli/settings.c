@@ -123,30 +123,32 @@ NmcOutputField nmc_fields_setting_8021X[] = {
 	SETTING_FIELD (NM_SETTING_802_1X_CA_PATH),                            /* 6 */
 	SETTING_FIELD (NM_SETTING_802_1X_SUBJECT_MATCH),                      /* 7 */
 	SETTING_FIELD (NM_SETTING_802_1X_ALTSUBJECT_MATCHES),                 /* 8 */
-	SETTING_FIELD (NM_SETTING_802_1X_CLIENT_CERT),                        /* 9 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPVER),                     /* 10 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPLABEL),                   /* 11 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING),           /* 12 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTH),                        /* 13 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTHEAP),                     /* 14 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_CERT),                     /* 15 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_PATH),                     /* 16 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH),               /* 17 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES),          /* 18 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CLIENT_CERT),                 /* 19 */
-	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD),                           /* 20 */
-	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_FLAGS),                     /* 21 */
-	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_RAW),                       /* 22 */
-	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS),                 /* 23 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY),                        /* 24 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD),               /* 25 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS),         /* 26 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY),                 /* 27 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD),        /* 28 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS),  /* 29 */
-	SETTING_FIELD (NM_SETTING_802_1X_PIN),                                /* 30 */
-	SETTING_FIELD (NM_SETTING_802_1X_PIN_FLAGS),                          /* 31 */
-	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS),                    /* 32 */
+	SETTING_FIELD (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH),                /* 9 */
+	SETTING_FIELD (NM_SETTING_802_1X_CLIENT_CERT),                        /* 10 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPVER),                     /* 11 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPLABEL),                   /* 12 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING),           /* 13 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTH),                        /* 14 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTHEAP),                     /* 15 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_CERT),                     /* 16 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_PATH),                     /* 17 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH),               /* 18 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES),          /* 19 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH),         /* 20 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CLIENT_CERT),                 /* 21 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD),                           /* 22 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_FLAGS),                     /* 23 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_RAW),                       /* 24 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS),                 /* 25 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY),                        /* 26 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD),               /* 27 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS),         /* 28 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY),                 /* 29 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD),        /* 30 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS),  /* 31 */
+	SETTING_FIELD (NM_SETTING_802_1X_PIN),                                /* 32 */
+	SETTING_FIELD (NM_SETTING_802_1X_PIN_FLAGS),                          /* 33 */
+	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS),                    /* 34 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_802_1X_ALL     "name"","\
@@ -158,6 +160,7 @@ NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_CA_PATH","\
                                           NM_SETTING_802_1X_SUBJECT_MATCH","\
                                           NM_SETTING_802_1X_ALTSUBJECT_MATCHES","\
+                                          NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH","\
                                           NM_SETTING_802_1X_CLIENT_CERT","\
                                           NM_SETTING_802_1X_PHASE1_PEAPVER","\
                                           NM_SETTING_802_1X_PHASE1_PEAPLABEL","\
@@ -168,6 +171,7 @@ NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_PHASE2_CA_PATH","\
                                           NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH","\
                                           NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES","\
+                                          NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH","\
                                           NM_SETTING_802_1X_PHASE2_CLIENT_CERT","\
                                           NM_SETTING_802_1X_PASSWORD","\
                                           NM_SETTING_802_1X_PASSWORD_FLAGS","\
@@ -999,6 +1003,7 @@ DEFINE_GETTER (nmc_property_802_1X_get_pac_file, NM_SETTING_802_1X_PAC_FILE)
 DEFINE_GETTER (nmc_property_802_1X_get_ca_path, NM_SETTING_802_1X_CA_PATH)
 DEFINE_GETTER (nmc_property_802_1X_get_subject_match, NM_SETTING_802_1X_SUBJECT_MATCH)
 DEFINE_GETTER (nmc_property_802_1X_get_altsubject_matches, NM_SETTING_802_1X_ALTSUBJECT_MATCHES)
+DEFINE_GETTER (nmc_property_802_1X_get_domain_suffix_match, NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH)
 DEFINE_GETTER (nmc_property_802_1X_get_phase1_peapver, NM_SETTING_802_1X_PHASE1_PEAPVER)
 DEFINE_GETTER (nmc_property_802_1X_get_phase1_peaplabel, NM_SETTING_802_1X_PHASE1_PEAPLABEL)
 DEFINE_GETTER (nmc_property_802_1X_get_phase1_fast_provisioning, NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING)
@@ -1007,6 +1012,7 @@ DEFINE_GETTER (nmc_property_802_1X_get_phase2_autheap, NM_SETTING_802_1X_PHASE2_
 DEFINE_GETTER (nmc_property_802_1X_get_phase2_ca_path, NM_SETTING_802_1X_PHASE2_CA_PATH)
 DEFINE_GETTER (nmc_property_802_1X_get_phase2_subject_match, NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH)
 DEFINE_GETTER (nmc_property_802_1X_get_phase2_altsubject_matches, NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_domain_suffix_match, NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH)
 DEFINE_GETTER (nmc_property_802_1X_get_password, NM_SETTING_802_1X_PASSWORD)
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_password_flags, NM_SETTING_802_1X_PASSWORD_FLAGS)
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_password_raw_flags, NM_SETTING_802_1X_PASSWORD_RAW_FLAGS)
@@ -5673,6 +5679,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, DOMAIN_SUFFIX_MATCH),
+	                    nmc_property_802_1X_get_domain_suffix_match,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, CLIENT_CERT),
 	                    nmc_property_802_1X_get_client_cert,
 	                    nmc_property_802_1X_set_client_cert,
@@ -5740,6 +5753,13 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_get_phase2_altsubject_matches,
 	                    nmc_property_802_1X_set_phase2_altsubject_matches,
 	                    nmc_property_802_1X_remove_phase2_altsubject_matches,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_DOMAIN_SUFFIX_MATCH),
+	                    nmc_property_802_1X_get_phase2_domain_suffix_match,
+	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -7956,30 +7976,32 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 	set_val_str (arr, 6, nmc_property_802_1X_get_ca_path (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 7, nmc_property_802_1X_get_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 8, nmc_property_802_1X_get_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_802_1X_get_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_802_1X_get_phase1_peapver (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_802_1X_get_phase1_peaplabel (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_802_1X_get_phase1_fast_provisioning (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_802_1X_get_phase2_auth (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_802_1X_get_phase2_autheap (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_802_1X_get_phase2_ca_cert (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_802_1X_get_phase2_ca_path (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_802_1X_get_phase2_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 18, nmc_property_802_1X_get_phase2_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 19, nmc_property_802_1X_get_phase2_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 20, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password));
-	set_val_str (arr, 21, nmc_property_802_1X_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 22, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password_raw));
-	set_val_str (arr, 23, nmc_property_802_1X_get_password_raw_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 24, nmc_property_802_1X_get_private_key (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 25, GET_SECRET (secrets, setting, nmc_property_802_1X_get_private_key_password));
-	set_val_str (arr, 26, nmc_property_802_1X_get_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 27, nmc_property_802_1X_get_phase2_private_key (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 28, GET_SECRET (secrets, setting, nmc_property_802_1X_get_phase2_private_key_password));
-	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 30, GET_SECRET (secrets, setting, nmc_property_802_1X_get_pin));
-	set_val_str (arr, 31, nmc_property_802_1X_get_pin_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 32, nmc_property_802_1X_get_system_ca_certs (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_802_1X_get_domain_suffix_match (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_802_1X_get_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_802_1X_get_phase1_peapver (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_802_1X_get_phase1_peaplabel (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_802_1X_get_phase1_fast_provisioning (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_802_1X_get_phase2_auth (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_802_1X_get_phase2_autheap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_802_1X_get_phase2_ca_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_802_1X_get_phase2_ca_path (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 18, nmc_property_802_1X_get_phase2_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 19, nmc_property_802_1X_get_phase2_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 20, nmc_property_802_1X_get_phase2_domain_suffix_match (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 21, nmc_property_802_1X_get_phase2_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 22, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password));
+	set_val_str (arr, 23, nmc_property_802_1X_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 24, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password_raw));
+	set_val_str (arr, 25, nmc_property_802_1X_get_password_raw_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 26, nmc_property_802_1X_get_private_key (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 27, GET_SECRET (secrets, setting, nmc_property_802_1X_get_private_key_password));
+	set_val_str (arr, 28, nmc_property_802_1X_get_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 30, GET_SECRET (secrets, setting, nmc_property_802_1X_get_phase2_private_key_password));
+	set_val_str (arr, 31, nmc_property_802_1X_get_phase2_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 32, GET_SECRET (secrets, setting, nmc_property_802_1X_get_pin));
+	set_val_str (arr, 33, nmc_property_802_1X_get_pin_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 34, nmc_property_802_1X_get_system_ca_certs (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

@@ -80,6 +80,7 @@ typedef struct {
 	char *ca_path;
 	char *subject_match;
 	GSList *altsubject_matches;
+	char *domain_suffix_match;
 	GBytes *client_cert;
 	char *phase1_peapver;
 	char *phase1_peaplabel;
@@ -90,6 +91,7 @@ typedef struct {
 	char *phase2_ca_path;
 	char *phase2_subject_match;
 	GSList *phase2_altsubject_matches;
+	char *phase2_domain_suffix_match;
 	GBytes *phase2_client_cert;
 	char *password;
 	NMSettingSecretFlags password_flags;
@@ -116,6 +118,7 @@ enum {
 	PROP_CA_PATH,
 	PROP_SUBJECT_MATCH,
 	PROP_ALTSUBJECT_MATCHES,
+	PROP_DOMAIN_SUFFIX_MATCH,
 	PROP_CLIENT_CERT,
 	PROP_PHASE1_PEAPVER,
 	PROP_PHASE1_PEAPLABEL,
@@ -126,6 +129,7 @@ enum {
 	PROP_PHASE2_CA_PATH,
 	PROP_PHASE2_SUBJECT_MATCH,
 	PROP_PHASE2_ALTSUBJECT_MATCHES,
+	PROP_PHASE2_DOMAIN_SUFFIX_MATCH,
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PASSWORD,
 	PROP_PASSWORD_FLAGS,
@@ -850,6 +854,22 @@ nm_setting_802_1x_clear_altsubject_matches (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_domain_suffix_match:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:domain-suffix-match property.
+ *
+ * Since: 1.2
+ **/
+const char *
+nm_setting_802_1x_get_domain_suffix_match (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->domain_suffix_match;
+}
+
+/**
  * nm_setting_802_1x_get_client_cert_scheme:
  * @setting: the #NMSetting8021x
  *
@@ -1296,6 +1316,22 @@ nm_setting_802_1x_get_num_phase2_altsubject_matches (NMSetting8021x *setting)
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);
 
 	return g_slist_length (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_altsubject_matches);
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_domain_suffix_match:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:phase2-domain-suffix-match property.
+ *
+ * Since: 1.2
+ **/
+const char *
+nm_setting_802_1x_get_phase2_domain_suffix_match (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_domain_suffix_match;
 }
 
 /**
@@ -2827,6 +2863,7 @@ finalize (GObject *object)
 	g_free (priv->anonymous_identity);
 	g_free (priv->ca_path);
 	g_free (priv->subject_match);
+	g_free (priv->domain_suffix_match);
 	g_free (priv->phase1_peapver);
 	g_free (priv->phase1_peaplabel);
 	g_free (priv->phase1_fast_provisioning);
@@ -2834,6 +2871,7 @@ finalize (GObject *object)
 	g_free (priv->phase2_autheap);
 	g_free (priv->phase2_ca_path);
 	g_free (priv->phase2_subject_match);
+	g_free (priv->phase2_domain_suffix_match);
 	g_free (priv->password);
 	if (priv->password_raw)
 		g_bytes_unref (priv->password_raw);
@@ -2877,6 +2915,15 @@ set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error
 	return bytes;
 }
 
+static char *
+_g_value_dup_string_not_empty (const GValue *value)
+{
+	const gchar *str;
+
+	str = g_value_get_string (value);
+	return str && str[0] ? g_strdup (str) : NULL;
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -2917,11 +2964,15 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SUBJECT_MATCH:
 		g_free (priv->subject_match);
-		priv->subject_match = g_value_dup_string (value);
+		priv->subject_match = _g_value_dup_string_not_empty (value);
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->altsubject_matches, g_free);
 		priv->altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
+		break;
+	case PROP_DOMAIN_SUFFIX_MATCH:
+		g_free (priv->domain_suffix_match);
+		priv->domain_suffix_match = _g_value_dup_string_not_empty (value);
 		break;
 	case PROP_CLIENT_CERT:
 		if (priv->client_cert)
@@ -2967,11 +3018,15 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_SUBJECT_MATCH:
 		g_free (priv->phase2_subject_match);
-		priv->phase2_subject_match = g_value_dup_string (value);
+		priv->phase2_subject_match = _g_value_dup_string_not_empty (value);
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->phase2_altsubject_matches, g_free);
 		priv->phase2_altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
+		break;
+	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
+		g_free (priv->phase2_domain_suffix_match);
+		priv->phase2_domain_suffix_match = _g_value_dup_string_not_empty (value);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		if (priv->phase2_client_cert)
@@ -3077,6 +3132,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ALTSUBJECT_MATCHES:
 		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches, TRUE));
 		break;
+	case PROP_DOMAIN_SUFFIX_MATCH:
+		g_value_set_string (value, priv->domain_suffix_match);
+		break;
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, priv->client_cert);
 		break;
@@ -3106,6 +3164,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
 		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches, TRUE));
+		break;
+	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
+		g_value_set_string (value, priv->phase2_domain_suffix_match);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, priv->phase2_client_cert);
@@ -3313,7 +3374,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Substring to be matched against the subject of the certificate presented
 	 * by the authentication server. When unset, no verification of the
-	 * authentication server certificate's subject is performed.
+	 * authentication server certificate's subject is performed.  This property
+	 * provides little security, if any, and its use is deprecated in favor of
+	 * NMSetting8021x:domain-suffix-match.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: subject-match
@@ -3349,6 +3412,30 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSetting8021x:domain-suffix-match:
+	 *
+	 * Constraint for server domain name. If set, this FQDN is used as a suffix
+	 * match requirement for dNSName element(s) of the certificate presented by
+	 * the authentication server.  If a matching dNSName is found, this
+	 * constraint is met.  If no dNSName values are present, this constraint is
+	 * matched against SubjectName CN using same suffix match comparison.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: domain-suffix-match
+	 * description: Suffix to match domain of server certificate against.
+	 * variable: IEEE_8021X_DOMAIN_SUFFIX_MATCH(+)
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_DOMAIN_SUFFIX_MATCH,
+		 g_param_spec_string (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:client-cert:
@@ -3550,7 +3637,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Substring to be matched against the subject of the certificate presented
 	 * by the authentication server during the inner "phase 2"
 	 * authentication. When unset, no verification of the authentication server
-	 * certificate's subject is performed.
+	 * certificate's subject is performed.  This property provides little security,
+	 * if any, and its use is deprecated in favor of
+	 * NMSetting8021x:phase2-domain-suffix-match.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: phase2-subject-match
@@ -3585,6 +3674,31 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSetting8021x:phase2-domain-suffix-match:
+	 *
+	 * Constraint for server domain name. If set, this FQDN is used as a suffix
+	 * match requirement for dNSName element(s) of the certificate presented by
+	 * the authentication server during the inner "phase 2" authentication.  If
+	 * a matching dNSName is found, this constraint is met.  If no dNSName
+	 * values are present, this constraint is matched against SubjectName CN
+	 * using same suffix match comparison.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-domain-suffix-match
+	 * description: Suffix to match domain of server certificate for phase 2 against.
+	 * variable: IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH(+)
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_PHASE2_DOMAIN_SUFFIX_MATCH,
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-client-cert:

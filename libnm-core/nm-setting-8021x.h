@@ -89,6 +89,7 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 #define NM_SETTING_802_1X_CA_PATH "ca-path"
 #define NM_SETTING_802_1X_SUBJECT_MATCH "subject-match"
 #define NM_SETTING_802_1X_ALTSUBJECT_MATCHES "altsubject-matches"
+#define NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH "domain-suffix-match"
 #define NM_SETTING_802_1X_CLIENT_CERT "client-cert"
 #define NM_SETTING_802_1X_PHASE1_PEAPVER "phase1-peapver"
 #define NM_SETTING_802_1X_PHASE1_PEAPLABEL "phase1-peaplabel"
@@ -99,6 +100,7 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 #define NM_SETTING_802_1X_PHASE2_CA_PATH "phase2-ca-path"
 #define NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH "phase2-subject-match"
 #define NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES "phase2-altsubject-matches"
+#define NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH "phase2-domain-suffix-match"
 #define NM_SETTING_802_1X_PHASE2_CLIENT_CERT "phase2-client-cert"
 #define NM_SETTING_802_1X_PASSWORD "password"
 #define NM_SETTING_802_1X_PASSWORD_FLAGS "password-flags"
@@ -190,6 +192,8 @@ void              nm_setting_802_1x_remove_altsubject_match          (NMSetting8
 gboolean          nm_setting_802_1x_remove_altsubject_match_by_value (NMSetting8021x *setting,
                                                                       const char *altsubject_match);
 void              nm_setting_802_1x_clear_altsubject_matches         (NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_2
+const char *      nm_setting_802_1x_get_domain_suffix_match          (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_client_cert_scheme      (NMSetting8021x *setting);
 GBytes *               nm_setting_802_1x_get_client_cert_blob        (NMSetting8021x *setting);
@@ -231,6 +235,8 @@ void              nm_setting_802_1x_remove_phase2_altsubject_match          (NMS
 gboolean          nm_setting_802_1x_remove_phase2_altsubject_match_by_value (NMSetting8021x *setting,
                                                                              const char *phase2_altsubject_match);
 void              nm_setting_802_1x_clear_phase2_altsubject_matches         (NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_2
+const char *      nm_setting_802_1x_get_phase2_domain_suffix_match          (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_client_cert_scheme   (NMSetting8021x *setting);
 GBytes *               nm_setting_802_1x_get_phase2_client_cert_blob     (NMSetting8021x *setting);
