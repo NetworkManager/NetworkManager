@@ -40,6 +40,35 @@
 #define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 }))
 #define LLDP_MAC_NEAREST_CUSTOMER_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 }))
 
+typedef enum {
+	LLDP_ATTR_TYPE_NONE,
+	LLDP_ATTR_TYPE_UINT32,
+	LLDP_ATTR_TYPE_STRING,
+} LldpAttrType;
+
+typedef enum {
+	/* the order of the enum values determines the order of the fields in
+	 * the variant. */
+	LLDP_ATTR_ID_PORT_DESCRIPTION,
+	LLDP_ATTR_ID_SYSTEM_NAME,
+	LLDP_ATTR_ID_SYSTEM_DESCRIPTION,
+	LLDP_ATTR_ID_SYSTEM_CAPABILITIES,
+	LLDP_ATTR_ID_IEEE_802_1_PVID,
+	LLDP_ATTR_ID_IEEE_802_1_PPVID,
+	LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
+	LLDP_ATTR_ID_IEEE_802_1_VID,
+	LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
+	_LLDP_PROP_ID_COUNT,
+} LldpAttrId;
+
+typedef struct {
+	LldpAttrType attr_type;
+	union {
+		guint32 v_uint32;
+		char *v_string;
+	};
+} LldpAttrData;
+
 typedef struct {
 	char         *iface;
 	int           ifindex;
@@ -71,7 +100,7 @@ typedef struct {
 
 	bool valid:1;
 
-	GHashTable *tlvs;
+	LldpAttrData attrs[_LLDP_PROP_ID_COUNT];
 
 	GVariant *variant;
 } LldpNeighbor;
@@ -115,76 +144,116 @@ ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
 	return memcmp (a1, a2, ETH_ALEN) == 0;
 }
 
+static guint32
+_access_uint8 (const void *data)
+{
+	return *((const guint8 *) data);
+}
+
+static guint32
+_access_uint16 (const void *data)
+{
+	guint16 v;
+
+	memcpy (&v, data, sizeof (v));
+	return ntohs (v);
+}
+
+/*****************************************************************************/
+
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_lldp_attr_id_to_name, LldpAttrId,
+	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_PORT_DESCRIPTION,        NM_LLDP_ATTR_PORT_DESCRIPTION),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,             NM_LLDP_ATTR_SYSTEM_NAME),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_DESCRIPTION,      NM_LLDP_ATTR_SYSTEM_DESCRIPTION),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_CAPABILITIES,     NM_LLDP_ATTR_SYSTEM_CAPABILITIES),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PVID,         NM_LLDP_ATTR_IEEE_802_1_PVID),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID,        NM_LLDP_ATTR_IEEE_802_1_PPVID),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,  NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,          NM_LLDP_ATTR_IEEE_802_1_VID),
+	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,    NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_PROP_ID_COUNT),
+);
+
+_NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType,
+	NM_UTILS_LOOKUP_DEFAULT_WARN (LLDP_ATTR_TYPE_NONE),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_PORT_DESCRIPTION,            LLDP_ATTR_TYPE_STRING),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,                 LLDP_ATTR_TYPE_STRING),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_DESCRIPTION,          LLDP_ATTR_TYPE_STRING),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_CAPABILITIES,         LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PVID,             LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID,            LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,      LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VID,              LLDP_ATTR_TYPE_UINT32),
+	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,        LLDP_ATTR_TYPE_STRING),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_PROP_ID_COUNT),
+);
+
 static void
-gvalue_destroy (gpointer data)
+_lldp_attr_set_str (LldpAttrData *pdata, LldpAttrId attr_id, const char *v_string)
 {
-	GValue *value = (GValue *) data;
+	nm_assert (pdata);
+	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_STRING);
 
-	g_value_unset (value);
-	g_slice_free (GValue, value);
+	pdata = &pdata[attr_id];
+
+	/* we ignore duplicate fields silently. */
+	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE)
+		return;
+	pdata->attr_type = LLDP_ATTR_TYPE_STRING;
+	pdata->v_string = g_strdup (v_string ?: "");
 }
 
-static GValue *
-gvalue_new_str (const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str ?: "");
-	return value;
-}
-
-static GValue *
-gvalue_new_str_ptr (const void *str, gsize len)
+static void
+_lldp_attr_set_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, const void *str, gsize len)
 {
 	const char *s = str;
 	const char *tmp;
 	gsize len0 = len;
 	gs_free char *str_free = NULL;
-	gs_free char *str_escaped = NULL;
+
+	nm_assert (pdata);
+	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_STRING);
+
+	pdata = &pdata[attr_id];
+
+	/* we ignore duplicate fields silently. */
+	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE)
+		return;
+
+	pdata->attr_type = LLDP_ATTR_TYPE_STRING;
 
 	/* truncate at first NUL, including removing trailing NULs*/
 	tmp = memchr (s, '\0', len);
 	if (tmp)
 		len = tmp - s;
 
-	if (!len)
-		return gvalue_new_str ("");
+	if (!len) {
+		pdata->v_string = g_strdup ("");
+		return;
+	}
 
 	if (len0 <= len || s[len] != '\0') {
 		/* hmpf, g_strescape needs a trailing NUL. Need to clone */
 		s = str_free = g_strndup (s, len);
 	}
 
-	str_escaped = g_strescape (s, NULL);
-	return gvalue_new_str (str_escaped);
+	pdata->v_string = g_strescape (s, NULL);
 }
 
-static GValue *
-gvalue_new_uint (guint val)
+static void
+_lldp_attr_set_uint32 (LldpAttrData *pdata, LldpAttrId attr_id, guint32 v_uint32)
 {
-	GValue *value;
+	nm_assert (pdata);
+	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_UINT32);
 
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_UINT);
-	g_value_set_uint (value, val);
-	return value;
-}
+	pdata = &pdata[attr_id];
 
-static GValue *
-gvalue_new_uint_u8 (const void *data)
-{
-	return gvalue_new_uint (*((const guint8 *) data));
-}
-
-static GValue *
-gvalue_new_uint_u16 (const void *data)
-{
-	guint16 v;
-
-	memcpy (&v, data, sizeof (v));
-	return gvalue_new_uint (ntohs (v));
+	/* we ignore duplicate fields silently. */
+	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE)
+		return;
+	pdata->attr_type = LLDP_ATTR_TYPE_UINT32;
+	pdata->v_uint32 = v_uint32;
 }
 
 /*****************************************************************************/
@@ -227,10 +296,15 @@ lldp_neighbor_id_equal (gconstpointer a, gconstpointer b)
 static void
 lldp_neighbor_free (LldpNeighbor *neighbor)
 {
+	LldpAttrId attr_id;
+
 	if (neighbor) {
 		g_free (neighbor->chassis_id);
 		g_free (neighbor->port_id);
-		g_hash_table_unref (neighbor->tlvs);
+		for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+			if (neighbor->attrs[attr_id].attr_type == LLDP_ATTR_TYPE_STRING)
+				g_free (neighbor->attrs[attr_id].v_string);
+		}
 		g_clear_pointer (&neighbor->variant, g_variant_unref);
 		g_slice_free (LldpNeighbor, neighbor);
 	}
@@ -245,42 +319,34 @@ lldp_neighbor_freep (LldpNeighbor **ptr)
 static gboolean
 lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 {
-	GHashTableIter iter;
-	gpointer k, v;
+	LldpAttrId attr_id;
 
-	g_return_val_if_fail (a && a->tlvs, FALSE);
-	g_return_val_if_fail (b && b->tlvs, FALSE);
+	nm_assert (a);
+	nm_assert (b);
 
 	if (   a->chassis_id_type != b->chassis_id_type
 	    || a->port_id_type != b->port_id_type
 	    || ether_addr_equal (&a->destination_address, &b->destination_address)
-	    || g_strcmp0 (a->chassis_id, b->chassis_id)
-	    || g_strcmp0 (a->port_id, b->port_id))
+	    || !nm_streq0 (a->chassis_id, b->chassis_id)
+	    || !nm_streq0 (a->port_id, b->port_id))
 		return FALSE;
 
-	if (g_hash_table_size (a->tlvs) != g_hash_table_size (b->tlvs))
-		return FALSE;
-
-	g_hash_table_iter_init (&iter, a->tlvs);
-	while (g_hash_table_iter_next (&iter, &k, &v)) {
-		GValue *value_a, *value_b;
-
-		value_a = v;
-		value_b = g_hash_table_lookup (b->tlvs, k);
-
-		if (!value_b)
+	for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+		if (a->attrs[attr_id].attr_type != b->attrs[attr_id].attr_type)
 			return FALSE;
-
-		g_return_val_if_fail (G_VALUE_TYPE (value_a) == G_VALUE_TYPE (value_b), FALSE);
-
-		if (G_VALUE_HOLDS_STRING (value_a)) {
-			if (g_strcmp0 (g_value_get_string (value_a), g_value_get_string (value_b)))
+		switch (a->attrs[attr_id].attr_type) {
+		case LLDP_ATTR_TYPE_UINT32:
+			if (a->attrs[attr_id].v_uint32 != b->attrs[attr_id].v_uint32)
 				return FALSE;
-		} else if (G_VALUE_HOLDS_UINT (value_a)) {
-			if (g_value_get_uint (value_a) != g_value_get_uint (value_b))
+			break;
+		case LLDP_ATTR_TYPE_STRING:
+			if (!nm_streq (a->attrs[attr_id].v_string, b->attrs[attr_id].v_string))
 				return FALSE;
-		} else
-			g_return_val_if_reached (FALSE);
+			break;
+		default:
+			nm_assert (a->attrs[attr_id].attr_type == LLDP_ATTR_TYPE_NONE);
+			break;
+		}
 	}
 
 	return TRUE;
@@ -295,7 +361,6 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	uint8_t *data8;
 	const void *chassis_id, *port_id;
 	gsize chassis_id_len, port_id_len, len;
-	GValue *value;
 	const char *str;
 	int r;
 
@@ -326,7 +391,6 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	}
 
 	neigh = g_slice_new0 (LldpNeighbor);
-	neigh->tlvs = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 	neigh->chassis_id_type = chassis_id_type;
 	neigh->port_id_type = port_id_type;
 
@@ -369,25 +433,17 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		goto out;
 	}
 
-	if (sd_lldp_neighbor_get_port_description (neighbor_sd, &str) == 0) {
-		value = gvalue_new_str (str);
-		g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_PORT_DESCRIPTION, value);
-	}
+	if (sd_lldp_neighbor_get_port_description (neighbor_sd, &str) == 0)
+		_lldp_attr_set_str (neigh->attrs, LLDP_ATTR_ID_PORT_DESCRIPTION, str);
 
-	if (sd_lldp_neighbor_get_system_name (neighbor_sd, &str) == 0) {
-		value = gvalue_new_str (str);
-		g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_SYSTEM_NAME, value);
-	}
+	if (sd_lldp_neighbor_get_system_name (neighbor_sd, &str) == 0)
+		_lldp_attr_set_str (neigh->attrs, LLDP_ATTR_ID_SYSTEM_NAME, str);
 
-	if (sd_lldp_neighbor_get_system_description (neighbor_sd, &str) == 0) {
-		value = gvalue_new_str (str);
-		g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, value);
-	}
+	if (sd_lldp_neighbor_get_system_description (neighbor_sd, &str) == 0)
+		_lldp_attr_set_str (neigh->attrs, LLDP_ATTR_ID_SYSTEM_DESCRIPTION, str);
 
-	if (sd_lldp_neighbor_get_system_capabilities (neighbor_sd, &data16) == 0) {
-		value = gvalue_new_uint (data16);
-		g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, value);
-	}
+	if (sd_lldp_neighbor_get_system_capabilities (neighbor_sd, &data16) == 0)
+		_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_SYSTEM_CAPABILITIES, data16);
 
 	r = sd_lldp_neighbor_tlv_rewind (neighbor_sd);
 	if (r < 0) {
@@ -442,16 +498,16 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 			case LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
 				if (len != 2)
 					continue;
-				g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PVID,
-				                     gvalue_new_uint_u16 (data8));
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PVID,
+				                       _access_uint16 (data8));
 				break;
 			case LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
 				if (len != 3)
 					continue;
-				g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS,
-				                     gvalue_new_uint_u8 (&data8[0]));
-				g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_PPVID,
-				                     gvalue_new_uint_u16 (&data8[1]));
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
+				                       _access_uint8 (&data8[0]));
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID,
+				                       _access_uint16 (&data8[1]));
 				break;
 			case LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
 				int l;
@@ -463,10 +519,10 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				if (len != 3 + l)
 					continue;
 
-				g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VID,
-				                     gvalue_new_uint_u16 (&data8[0]));
-				g_hash_table_insert (neigh->tlvs, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME,
-				                     gvalue_new_str_ptr (&data8[3], len));
+				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID,
+				                       _access_uint16 (&data8[0]));
+				_lldp_attr_set_str_ptr (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
+				                        &data8[3], len);
 				break;
 			}
 			default:
@@ -485,9 +541,8 @@ static GVariant *
 lldp_neighbor_to_variant (LldpNeighbor *neigh)
 {
 	GVariantBuilder builder;
-	GHashTableIter val_iter;
-	gpointer key, val;
 	const char *dest_str;
+	LldpAttrId attr_id;
 
 	if (neigh->variant)
 		return neigh->variant;
@@ -521,18 +576,23 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		                       g_variant_new_string (dest_str));
 	}
 
-	g_hash_table_iter_init (&val_iter, neigh->tlvs);
-	while (g_hash_table_iter_next (&val_iter, &key, &val)) {
-		GValue *item = val;
+	for (attr_id = 0; attr_id < _LLDP_PROP_ID_COUNT; attr_id++) {
+		const LldpAttrData *data = &neigh->attrs[attr_id];
 
-		if (G_VALUE_HOLDS_STRING (item)) {
+		nm_assert (NM_IN_SET (data->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
+		switch (data->attr_type) {
+		case LLDP_ATTR_TYPE_UINT32:
 			g_variant_builder_add (&builder, "{sv}",
-			                       key,
-			                       g_variant_new_string (g_value_get_string (item)));
-		} else if (G_VALUE_HOLDS_UINT (item)) {
+			                       _lldp_attr_id_to_name (attr_id),
+			                       g_variant_new_uint32 (data->v_uint32));
+			break;
+		case LLDP_ATTR_TYPE_STRING:
 			g_variant_builder_add (&builder, "{sv}",
-			                       key,
-			                       g_variant_new_uint32 (g_value_get_uint (item)));
+			                       _lldp_attr_id_to_name (attr_id),
+			                       g_variant_new_string (data->v_string));
+			break;
+		default:
+			break;
 		}
 	}
 
