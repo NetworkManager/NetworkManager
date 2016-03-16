@@ -82,7 +82,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
     ignored; the flag must be disabled with VLAN_FLAGS=NO_REORDER_HDR.
 * Fair amount of bugs was fixed and robustness was generally improved.
 
-The following features were backported to 1.0.x releases from 1.0.0 to 1.0.8
+The following features were backported to 1.0.x releases from 1.0.0 to 1.0.10
 are also present in NetworkManager-1.2:
 
 * Added support for handling VPN secrets to nmtui and nmcli agent.
