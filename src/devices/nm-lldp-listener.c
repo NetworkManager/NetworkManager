@@ -202,15 +202,26 @@ lldp_neighbor_id_hash (gconstpointer ptr)
 	return hash;
 }
 
+static int
+lldp_neighbor_id_cmp (gconstpointer a, gconstpointer b)
+{
+	const LldpNeighbor *x = a, *y = b;
+	int c;
+
+	if (x->chassis_id_type != y->chassis_id_type)
+		return x->chassis_id_type < y->chassis_id_type ? -1 : 1;
+	if (x->port_id_type != y->port_id_type)
+		return x->port_id_type < y->port_id_type ? -1 : 1;
+	c = g_strcmp0 (x->chassis_id, y->chassis_id);
+	if (c == 0)
+		c = g_strcmp0 (x->port_id, y->port_id);
+	return c < 0 ? -1 : (c > 0 ? 1 : 0);
+}
+
 static gboolean
 lldp_neighbor_id_equal (gconstpointer a, gconstpointer b)
 {
-	const LldpNeighbor *x = a, *y = b;
-
-	return x->chassis_id_type == y->chassis_id_type &&
-	       x->port_id_type == y->port_id_type &&
-	       !g_strcmp0 (x->chassis_id, y->chassis_id) &&
-	       !g_strcmp0 (x->port_id, y->port_id);
+	return lldp_neighbor_id_cmp (a, b) == 0;
 }
 
 static void
@@ -745,10 +756,9 @@ nm_lldp_listener_is_running (NMLldpListener *self)
 GVariant *
 nm_lldp_listener_get_neighbors (NMLldpListener *self)
 {
-	GVariantBuilder array_builder;
-	GHashTableIter iter;
 	NMLldpListenerPrivate *priv;
-	LldpNeighbor *neigh;
+	GVariantBuilder array_builder;
+	GList *neighbors, *iter;
 
 	g_return_val_if_fail (NM_IS_LLDP_LISTENER (self), FALSE);
 
@@ -756,11 +766,11 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 
 	if (!priv->variant) {
 		g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
-		g_hash_table_iter_init (&iter, priv->lldp_neighbors);
-
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &neigh))
-			g_variant_builder_add_value (&array_builder, lldp_neighbor_to_variant (neigh));
-
+		neighbors = g_hash_table_get_keys (priv->lldp_neighbors);
+		neighbors = g_list_sort (neighbors, lldp_neighbor_id_cmp);
+		for (iter = neighbors; iter; iter = iter->next)
+			g_variant_builder_add_value (&array_builder, lldp_neighbor_to_variant (iter->data));
+		g_list_free (neighbors);
 		priv->variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
 	}
 	return priv->variant;
