@@ -32,6 +32,7 @@
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
 #include "nm-setting-infiniband.h"
+#include "nm-core-internal.h"
 
 /**
  * SECTION:nm-setting-bond
@@ -57,14 +58,6 @@ enum {
 	LAST_PROP
 };
 
-enum {
-	TYPE_INT,
-	TYPE_STR,
-	TYPE_BOTH,
-	TYPE_IP,
-	TYPE_IFNAME,
-};
-
 typedef struct {
 	const char *opt;
 	const char *val;
@@ -75,27 +68,27 @@ typedef struct {
 } BondDefault;
 
 static const BondDefault defaults[] = {
-	{ NM_SETTING_BOND_OPTION_MODE,             "balance-rr", TYPE_BOTH, 0, 6,
+	{ NM_SETTING_BOND_OPTION_MODE,             "balance-rr", NM_BOND_OPTION_TYPE_BOTH, 0, 6,
 	  { "balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb", NULL } },
-	{ NM_SETTING_BOND_OPTION_MIIMON,           "100",        TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_DOWNDELAY,        "0",          TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_UPDELAY,          "0",          TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,     "0",          TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,    "",           TYPE_IP },
-	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,     "0",          TYPE_BOTH, 0, 3,
+	{ NM_SETTING_BOND_OPTION_MIIMON,           "100",        NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_DOWNDELAY,        "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_UPDELAY,          "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,     "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,    "",           NM_BOND_OPTION_TYPE_IP },
+	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,     "none",       NM_BOND_OPTION_TYPE_BOTH, 0, 3,
 	  { "none", "active", "backup", "all", NULL } },
-	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           TYPE_IFNAME },
-	{ NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           NM_BOND_OPTION_TYPE_IFNAME },
+	{ NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, "always",     NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "always", "better", "failure", NULL } },
-	{ NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,    "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,    "none",       NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "none", "active", "follow", NULL } },
-	{ NM_SETTING_BOND_OPTION_USE_CARRIER,      "1",          TYPE_INT, 0, 1 },
-	{ NM_SETTING_BOND_OPTION_AD_SELECT,        "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_USE_CARRIER,      "1",          NM_BOND_OPTION_TYPE_INT, 0, 1 },
+	{ NM_SETTING_BOND_OPTION_AD_SELECT,        "stable",     NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "stable", "bandwidth", "count", NULL } },
-	{ NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, "layer2",     NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "layer2", "layer3+4", "layer2+3", NULL } },
-	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          TYPE_INT, 0, 255 },
-	{ NM_SETTING_BOND_OPTION_LACP_RATE,        "0",          TYPE_BOTH, 0, 1,
+	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_LACP_RATE,        "slow",       NM_BOND_OPTION_TYPE_BOTH, 0, 1,
 	  { "slow", "fast", NULL } },
 };
 
@@ -268,16 +261,16 @@ nm_setting_bond_validate_option (const char *name,
 			if (value == NULL)
 				return TRUE;
 			switch (defaults[i].opt_type) {
-			case TYPE_INT:
+			case NM_BOND_OPTION_TYPE_INT:
 				return validate_int (name, value, &defaults[i]);
-			case TYPE_STR:
+			case NM_BOND_OPTION_TYPE_STRING:
 				return validate_list (name, value, &defaults[i]);
-			case TYPE_BOTH:
+			case NM_BOND_OPTION_TYPE_BOTH:
 				return (   validate_int (name, value, &defaults[i])
 				        || validate_list (name, value, &defaults[i]));
-			case TYPE_IP:
+			case NM_BOND_OPTION_TYPE_IP:
 				return validate_ip (name, value);
-			case TYPE_IFNAME:
+			case NM_BOND_OPTION_TYPE_IFNAME:
 				return validate_ifname (name, value);
 			}
 			return FALSE;
@@ -428,6 +421,29 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
 		if (g_strcmp0 (defaults[i].opt, name) == 0)
 			return defaults[i].val;
+	}
+	/* Any option that passes nm_setting_bond_validate_option() should also be found in defaults */
+	g_assert_not_reached ();
+}
+
+/**
+ * nm_setting_bond_get_option_type:
+ * @setting: the #NMSettingBond
+ * @name: the name of the option
+ *
+ * Returns: the type of the bond option.
+ **/
+NMBondOptionType
+_nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NM_BOND_OPTION_TYPE_INT);
+	g_return_val_if_fail (nm_setting_bond_validate_option (name, NULL), NM_BOND_OPTION_TYPE_INT);
+
+	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
+		if (nm_streq0 (defaults[i].opt, name))
+			return defaults[i].opt_type;
 	}
 	/* Any option that passes nm_setting_bond_validate_option() should also be found in defaults */
 	g_assert_not_reached ();

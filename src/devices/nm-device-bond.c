@@ -160,16 +160,23 @@ update_connection (NMDevice *device, NMConnection *connection)
 	while (options && *options) {
 		gs_free char *value = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, *options);
 		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
+		char *p;
 
-		if (value && !ignore_if_zero (*options, value) && (g_strcmp0 (value, defvalue) != 0)) {
+		if (_nm_setting_bond_get_option_type (s_bond, *options) == NM_BOND_OPTION_TYPE_BOTH) {
+			p = strchr (value, ' ');
+			if (p)
+				*p = '\0';
+		}
+
+		if (   value
+		    && value[0]
+		    && !ignore_if_zero (*options, value)
+		    && !nm_streq0 (value, defvalue)) {
 			/* Replace " " with "," for arp_ip_targets from the kernel */
 			if (strcmp (*options, "arp_ip_target") == 0) {
-				char *p = value;
-
-				while (p && *p) {
+				for (p = value; *p; p++) {
 					if (*p == ' ')
 						*p = ',';
-					p++;
 				}
 			}
 
