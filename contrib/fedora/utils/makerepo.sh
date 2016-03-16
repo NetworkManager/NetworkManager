@@ -224,6 +224,19 @@ detect_build_type() {
     fi
 }
 
+detect_dirname() {
+	local BUILD_TYPE="$1"
+	local suffix="$2"
+	local DIRNAME
+
+	DIRNAME="$(ls -1 "$BUILD_TYPE"*"$suffix" 2>/dev/null)"
+	if [[ "$(printf '%s\n' "$DIRNAME" | wc -l)" != 1 ]]; then
+		return 1
+	fi
+	printf '%s' "${DIRNAME%$suffix}"
+	return 0
+}
+
 BUILD_TYPE=
 detect_build_type 'NetworkManager-[0-9]*' NetworkManager.spec
 detect_build_type 'network-manager-applet-[0-9]*' network-manager-applet.spec
@@ -239,7 +252,20 @@ detect_build_type 'libqmi-[0-9]*' libqmi.spec
 detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
 detect_build_type 'iproute2-*' iproute.spec
 
-[[ -n "$BUILD_TYPE" ]] || die "Could not detect dist-git type"
+if [[ -z "$BUILD_TYPE" ]]; then
+	SPEC="$(ls -1 *.spec 2>/dev/null | head -n1)"
+	BUILD_TYPE="${SPEC%.spec}"
+	[[ -n "$BUILD_TYPE" ]] || die "Failed to detect repository type (no spec file)"
+
+	DIRNAME="$(detect_dirname "$BUILD_TYPE" .tar.gz)"
+	[[ -n "$DIRNAME" ]] || DIRNAME="$(detect_dirname "$BUILD_TYPE" .tar.bz)"
+	[[ -n "$DIRNAME" ]] || DIRNAME="$(detect_dirname "$BUILD_TYPE" .tar.xz)"
+	[[ -n "$DIRNAME" ]] || DIRNAME="$(detect_dirname "$BUILD_TYPE" .tgz)"
+	[[ -n "$DIRNAME" ]] || die "Failed to detect repository type (no package file)"
+
+	[[ -d "$DIRNAME" ]] || die "Failed to detect repository type (no directory)"
+	[[ -f sources ]] || die "Failed to detect repository type (no sources file)"
+fi
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 if [[ "x$CURRENT_BRANCH" != x && -f "./.git/makerepo.gitignore-$CURRENT_BRANCH" ]]; then
