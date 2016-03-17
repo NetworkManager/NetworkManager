@@ -61,7 +61,7 @@
 #include "nmdbus-device.h"
 
 static GType _nm_device_decide_type (GVariant *value);
-gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
+static gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
 static NMLldpNeighbor *nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor);
 
 G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
@@ -2712,7 +2712,7 @@ nm_device_connection_valid (NMDevice *device, NMConnection *connection)
 	return nm_device_connection_compatible (device, connection, NULL);
 }
 
-gboolean
+static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	const char *config_iface, *device_iface;
