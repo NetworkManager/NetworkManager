@@ -287,8 +287,10 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 #if NM_MORE_ASSERTS
 #define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
+#define nm_assert_not_reached() G_STMT_START { g_assert_not_reached (); } G_STMT_END
 #else
 #define nm_assert(cond) G_STMT_START { if (FALSE) { if (cond) { } } } G_STMT_END
+#define nm_assert_not_reached() G_STMT_START { ; } G_STMT_END
 #endif
 
 /*****************************************************************************/
@@ -310,6 +312,18 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 	nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
 	g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
 }
+
+/*****************************************************************************/
+
+#define nm_unauto(pp)                                               \
+    ({                                                              \
+        G_STATIC_ASSERT (sizeof *(pp) == sizeof (gpointer));        \
+        gpointer *_pp = (gpointer *) (pp);                          \
+        gpointer _p = *_pp;                                         \
+                                                                    \
+        *_pp = NULL;                                                \
+        _p;                                                         \
+    })
 
 /*****************************************************************************/
 
