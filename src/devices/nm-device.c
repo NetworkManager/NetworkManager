@@ -413,6 +413,7 @@ static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, N
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
+static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
 
 /***********************************************************/
 
@@ -1063,6 +1064,38 @@ find_slave_info (NMDevice *self, NMDevice *slave)
 	return NULL;
 }
 
+static void
+apply_mtu_from_config (NMDevice *self)
+{
+	const char *method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+	NMSettingIPConfig *s_ip4;
+	NMSettingWired *s_wired;
+	guint32 mtu;
+
+	/* Devices having an IPv4 configuration will set MTU during the commit
+	 * stage, so it is an error to call this function if the IPv4 method is not
+	 * 'disabled'.
+	 */
+	s_ip4 = (NMSettingIPConfig *)
+		nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
+	if (s_ip4)
+		method = nm_setting_ip_config_get_method (s_ip4);
+	g_return_if_fail (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED));
+
+	s_wired  = (NMSettingWired *)
+		nm_device_get_applied_setting (self, NM_TYPE_SETTING_WIRED);
+
+	if (s_wired) {
+		mtu = nm_setting_wired_get_mtu (s_wired);
+		if (mtu) {
+			_LOGD (LOGD_DEVICE | LOGD_IP,
+			       "setting MTU of device without IP4 config to %u",
+			       mtu);
+			nm_device_set_mtu (self, mtu);
+		}
+	}
+}
+
 /**
  * nm_device_master_enslave_slave:
  * @self: the master device
@@ -1119,6 +1152,11 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 		if (NM_DEVICE_GET_PRIVATE (self)->ip6_state == IP_WAIT)
 			nm_device_activate_stage3_ip6_start (self);
 	}
+
+	/* Since slave devices don't have their own IP configuration,
+	 * set the MTU here.
+	 */
+	apply_mtu_from_config (slave);
 
 	return success;
 }
@@ -4908,7 +4946,8 @@ act_stage3_ip4_config_start (NMDevice *self,
 		} else
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
-		/* Nothing to do... */
+		apply_mtu_from_config (self);
+		/* Nothing else to do... */
 		ret = NM_ACT_STAGE_RETURN_STOP;
 	} else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
