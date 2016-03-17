@@ -245,6 +245,9 @@ validate_permissions_type (GVariant *variant, GError **error)
  *
  * Returns: %TRUE if connection was updated, %FALSE if @new_settings could not
  *   be deserialized (in which case @connection will be unchanged).
+ *   Only exception is the NM_SETTING_PARSE_FLAGS_NORMALIZE flag: if normalization
+ *   fails, the input @connection is already modified and the original settings
+ *   are lost.
  **/
 gboolean
 _nm_connection_replace_settings (NMConnection *connection,
@@ -257,7 +260,7 @@ _nm_connection_replace_settings (NMConnection *connection,
 	const char *setting_name;
 	GVariant *setting_dict;
 	GSList *settings = NULL, *s;
-	gboolean changed;
+	gboolean changed, success;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION), FALSE);
@@ -339,9 +342,21 @@ _nm_connection_replace_settings (NMConnection *connection,
 
 	g_slist_free (settings);
 
+	/* If verification/normalization fails, the original connection
+	 * is already lost. From an API point of view, it would be nicer
+	 * not to touch the input argument if we fail at the end.
+	 * However, that would require creating a temporary connection
+	 * to validate it first. As none of the caller cares about the
+	 * state of the @connection when normalization fails, just do it
+	 * this way. */
+	if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_NORMALIZE))
+		success = nm_connection_normalize (connection, NULL, NULL, error);
+	else
+		success = TRUE;
+
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
-	return TRUE;
+	return success;
 }
 
 /**

@@ -104,6 +104,7 @@ typedef enum { /*< skip >*/
 	NM_SETTING_PARSE_FLAGS_NONE                     = 0,
 	NM_SETTING_PARSE_FLAGS_STRICT                   = 1LL << 0,
 	NM_SETTING_PARSE_FLAGS_BEST_EFFORT              = 1LL << 1,
+	NM_SETTING_PARSE_FLAGS_NORMALIZE                = 1LL << 2,
 
 	_NM_SETTING_PARSE_FLAGS_LAST,
 	NM_SETTING_PARSE_FLAGS_ALL                      = ((_NM_SETTING_PARSE_FLAGS_LAST - 1) << 1) - 1,
@@ -113,6 +114,10 @@ gboolean _nm_connection_replace_settings (NMConnection *connection,
                                           GVariant *new_settings,
                                           NMSettingParseFlags parse_flags,
                                           GError **error);
+
+NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
+                                                   NMSettingParseFlags parse_flags,
+                                                   GError       **error);
 
 guint32 _nm_setting_get_setting_priority (NMSetting *setting);
 
