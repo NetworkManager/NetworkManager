@@ -409,7 +409,8 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	NMConnectionPrivate *priv;
 	GHashTableIter iter;
 	NMSetting *setting;
-	gboolean changed, valid;
+	gboolean changed = FALSE;
+	gboolean valid;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
@@ -418,7 +419,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	/* When 'connection' and 'new_connection' are the same object simply return
 	 * in order not to destroy 'connection' */
 	if (connection == new_connection)
-		return TRUE;
+		goto out;
 
 	/* No need to validate permissions like nm_connection_replace_settings()
 	 * since we're dealing with an NMConnection which has already done that.
@@ -435,6 +436,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 		changed = TRUE;
 	}
 
+out:
 	valid =  nm_connection_verify (connection, error);
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
