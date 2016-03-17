@@ -739,10 +739,6 @@ nm_rdisc_init (NMRDisc *rdisc)
 {
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 
-	rdisc->_netns = nmp_netns_get_current ();
-	if (rdisc->_netns)
-		g_object_ref (rdisc->_netns);
-
 	rdisc->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
 	rdisc->addresses = g_array_new (FALSE, FALSE, sizeof (NMRDiscAddress));
 	rdisc->routes = g_array_new (FALSE, FALSE, sizeof (NMRDiscRoute));
