@@ -1002,9 +1002,8 @@ client_devices_changed_cb (GObject *client,
 
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0.1");
 
-	if (nm_device_get_active_connection (device))
-		info->remaining--;
-	else {
+	if (!nm_device_get_active_connection (device)) {
+		info->remaining++;
 		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
 		                  G_CALLBACK (device_ac_changed_cb), info);
 	}
@@ -1094,8 +1093,10 @@ test_activate_virtual (void)
 	g_signal_connect (client, "notify::" NM_CLIENT_DEVICES,
 	                  G_CALLBACK (client_devices_changed_cb), &info);
 
-	/* As with test_active_connections() above, except that now we're waiting
-	 * for NMClient:devices to change rather than NMDevice:active-connections.
+	/* We're expecting a client::devices change, client::activate callback,
+	 * and a device::active-connection change.
+	 * The client::devices callback can hook a client::active-connections
+	 * change and bump this if the property is not yet loaded.
 	 */
 	info.remaining = 3;
 
