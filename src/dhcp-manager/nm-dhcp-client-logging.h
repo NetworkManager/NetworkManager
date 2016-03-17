@@ -25,11 +25,18 @@
 #include "nm-dhcp-client.h"
 
 #define _NMLOG_PREFIX_NAME    "dhcp"
+#define _NMLOG_DOMAIN         LOGD_DHCP
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         const NMLogLevel _level = (level); \
         \
-        if (nm_logging_enabled (_level, LOGD_DHCP)) { \
+        /* we check first for LOGD_DHCP instead of the correct domain.
+         * In the worst case, we guess wrong and enter the block.
+         *
+         * Same for the _NMLOG_ENABLED() macro. Probably it would be more
+         * expensive to determine the correct value then what we could
+         * safe. */ \
+        if (nm_logging_enabled (_level, _NMLOG_DOMAIN)) { \
             NMDhcpClient *_self = (NMDhcpClient *) (self); \
             const char *__ifname = _self ? nm_dhcp_client_get_iface (_self) : NULL; \
             const NMLogDomain _domain = !_self \
