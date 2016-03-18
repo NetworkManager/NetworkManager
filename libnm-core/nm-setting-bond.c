@@ -709,6 +709,63 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+static gboolean
+options_hash_match (NMSettingBond *s_bond, GHashTable *options1, GHashTable *options2)
+{
+	GHashTableIter iter;
+	const char *key, *value, *value2;
+
+	g_hash_table_iter_init (&iter, options1);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+		value2 = g_hash_table_lookup (options2, key);
+
+		if (!value2) {
+			if (nm_streq (key, "num_grat_arp"))
+				value2 = g_hash_table_lookup (options2, "num_unsol_na");
+			else if (nm_streq (key, "num_unsol_na"))
+				value2 = g_hash_table_lookup (options2, "num_grat_arp");
+		}
+
+		if (value2) {
+			if (nm_streq (value, value2))
+				continue;
+		} else {
+			if (nm_streq (value, nm_setting_bond_get_option_default (s_bond, key)))
+				continue;
+		}
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+options_equal (NMSettingBond *s_bond, GHashTable *options1, GHashTable *options2)
+{
+	return    options_hash_match (s_bond, options1, options2)
+	       && options_hash_match (s_bond, options2, options1);
+}
+
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	NMSettingClass *parent_class;
+
+	if (nm_streq0 (prop_spec->name, NM_SETTING_BOND_OPTIONS)) {
+		return options_equal (NM_SETTING_BOND (setting),
+		                      NM_SETTING_BOND_GET_PRIVATE (setting)->options,
+		                      NM_SETTING_BOND_GET_PRIVATE (other)->options);
+	}
+
+	/* Otherwise chain up to parent to handle generic compare */
+	parent_class = NM_SETTING_CLASS (nm_setting_bond_parent_class);
+	return parent_class->compare_property (setting, other, prop_spec, flags);
+}
+
 static void
 nm_setting_bond_init (NMSettingBond *setting)
 {
@@ -772,10 +829,11 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	g_type_class_add_private (setting_class, sizeof (NMSettingBondPrivate));
 
 	/* virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+	object_class->set_property     = set_property;
+	object_class->get_property     = get_property;
+	object_class->finalize         = finalize;
+	parent_class->verify           = verify;
+	parent_class->compare_property = compare_property;
 
 	/* Properties */
 	/**
