@@ -1863,6 +1863,8 @@ typedef enum {
 			 \
 			if (__cur_setting_name) \
 				g_variant_builder_add (&__connection_builder, "{sa{sv}}", __cur_setting_name, &__setting_builder); \
+			else \
+				g_variant_builder_clear (&__setting_builder); \
 			g_variant_iter_free (__setting_iter); \
 		} \
 		 \
