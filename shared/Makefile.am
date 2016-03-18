@@ -4,6 +4,8 @@ EXTRA_DIST = \
      nm-default.h \
      nm-glib.h \
      nm-macros-internal.h \
+     nm-shared-utils.c \
+     nm-shared-utils.h \
      nm-test-libnm-utils.h \
      nm-test-utils.h \
      nm-test-utils-impl.c \
