@@ -53,4 +53,11 @@ gboolean nm_utils_error_is_cancelled (GError *error,
 
 /******************************************************************************/
 
+gboolean nm_g_object_set_property (GObject *object,
+                                   const gchar  *property_name,
+                                   const GValue *value,
+                                   GError **error);
+
+/******************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */

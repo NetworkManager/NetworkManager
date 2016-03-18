@@ -134,3 +134,95 @@ nm_utils_error_is_cancelled (GError *error,
 }
 
 /*****************************************************************************/
+
+/**
+ * nm_g_object_set_property:
+ * @object: the target object
+ * @property_name: the property name
+ * @value: the #GValue to set
+ * @error: (allow-none): optional error argument
+ *
+ * A reimplementation of g_object_set_property(), but instead
+ * returning an error instead of logging a warning. All g_object_set*()
+ * versions in glib require you to not pass invalid types or they will
+ * log a g_warning() -- without reporting an error. We don't want that,
+ * so we need to hack error checking around it.
+ *
+ * Returns: whether the value was successfully set.
+ */
+gboolean
+nm_g_object_set_property (GObject *object,
+                          const gchar  *property_name,
+                          const GValue *value,
+                          GError **error)
+{
+	GParamSpec *pspec;
+	nm_auto_unset_gvalue GValue tmp_value = G_VALUE_INIT;
+	GObjectClass *klass;
+
+	g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
+	g_return_val_if_fail (property_name != NULL, FALSE);
+	g_return_val_if_fail (G_IS_VALUE (value), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	/* g_object_class_find_property() does g_param_spec_get_redirect_target(),
+	 * where we differ from a plain g_object_set_property(). */
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (object), property_name);
+
+	if (!pspec) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("object class '%s' has no property named '%s'"),
+		             G_OBJECT_TYPE_NAME (object),
+		             property_name);
+		return FALSE;
+	}
+	if (!(pspec->flags & G_PARAM_WRITABLE)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("property '%s' of object class '%s' is not writable"),
+		             pspec->name,
+		             G_OBJECT_TYPE_NAME (object));
+		return FALSE;
+	}
+	if ((pspec->flags & G_PARAM_CONSTRUCT_ONLY)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("construct property \"%s\" for object '%s' can't be set after construction"),
+		             pspec->name, G_OBJECT_TYPE_NAME (object));
+		return FALSE;
+	}
+
+	klass = g_type_class_peek (pspec->owner_type);
+	if (klass == NULL) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("'%s::%s' is not a valid property name; '%s' is not a GObject subtype"),
+		            g_type_name (pspec->owner_type), pspec->name, g_type_name (pspec->owner_type));
+		return FALSE;
+	}
+
+	/* provide a copy to work from, convert (if necessary) and validate */
+	g_value_init (&tmp_value, pspec->value_type);
+	if (!g_value_transform (value, &tmp_value)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("unable to set property '%s' of type '%s' from value of type '%s'"),
+		             pspec->name,
+		             g_type_name (pspec->value_type),
+		             G_VALUE_TYPE_NAME (value));
+		return FALSE;
+	}
+	if (   g_param_value_validate (pspec, &tmp_value)
+	    && !(pspec->flags & G_PARAM_LAX_VALIDATION)) {
+		gs_free char *contents = g_strdup_value_contents (value);
+
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("value \"%s\" of type '%s' is invalid or out of range for property '%s' of type '%s'"),
+		             contents,
+		             G_VALUE_TYPE_NAME (value),
+		             pspec->name,
+		             g_type_name (pspec->value_type));
+		return FALSE;
+	}
+
+	g_object_set_property (object, property_name, &tmp_value);
+	return TRUE;
+}
+
+/*****************************************************************************/
