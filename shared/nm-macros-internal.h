@@ -36,6 +36,13 @@
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 GS_DEFINE_CLEANUP_FUNCTION(void*, _nm_auto_free_impl, free)
 
+static inline void
+_nm_auto_unset_gvalue_impl (GValue *v)
+{
+	g_value_unset (v);
+}
+#define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue_impl)
+
 /********************************************************/
 
 /* http://stackoverflow.com/a/11172679 */
