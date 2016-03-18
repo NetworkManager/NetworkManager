@@ -474,11 +474,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_SETTING_BOND_OPTION_MIIMON,
 		             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return FALSE;
 	}
 
 	/* Verify bond mode */
-	mode_orig = value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
-	if (!value) {
+	mode_orig = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
+	if (!mode_orig) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -487,7 +488,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
-	mode = nm_utils_bond_mode_string_to_int (value);
+	mode = nm_utils_bond_mode_string_to_int (mode_orig);
 	if (mode == -1) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -497,24 +498,24 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
-	mode_new = value = nm_utils_bond_mode_int_to_string (mode);
+	mode_new = nm_utils_bond_mode_int_to_string (mode);
 
 	/* Make sure mode is compatible with other settings */
-	if (   strcmp (value, "balance-alb") == 0
-	    || strcmp (value, "balance-tlb") == 0) {
+	if (   strcmp (mode_new, "balance-alb") == 0
+	    || strcmp (mode_new, "balance-tlb") == 0) {
 		if (arp_interval > 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s=%s' is incompatible with '%s > 0'"),
-			             NM_SETTING_BOND_OPTION_MODE, value, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+			             NM_SETTING_BOND_OPTION_MODE, mode_new, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 	}
 
 	primary = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_PRIMARY);
-	if (strcmp (value, "active-backup") == 0) {
+	if (strcmp (mode_new, "active-backup") == 0) {
 		if (primary && !nm_utils_iface_valid_name (primary)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -538,12 +539,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (nm_connection_get_setting_infiniband (connection)) {
-		if (strcmp (value, "active-backup") != 0) {
+		if (strcmp (mode_new, "active-backup") != 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s=%s' is not a valid configuration for '%s'"),
-			             NM_SETTING_BOND_OPTION_MODE, value, NM_SETTING_INFINIBAND_SETTING_NAME);
+			             NM_SETTING_BOND_OPTION_MODE, mode_new, NM_SETTING_INFINIBAND_SETTING_NAME);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
@@ -629,8 +630,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	lacp_rate = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_LACP_RATE);
 	if (   lacp_rate
-	    && (g_strcmp0 (value, "802.3ad") != 0 && g_strcmp0 (value, "4") != 0)
-	    && (strcmp (lacp_rate, "slow") != 0 && strcmp (lacp_rate, "0") != 0)) {
+	    && g_strcmp0 (mode_new, "802.3ad")
+	    && strcmp (lacp_rate, "slow") != 0
+	    && strcmp (lacp_rate, "0") != 0) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
