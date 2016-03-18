@@ -100,6 +100,20 @@
 	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
+typedef enum { /*< skip >*/
+	NM_SETTING_PARSE_FLAGS_NONE                     = 0,
+	NM_SETTING_PARSE_FLAGS_STRICT                   = 1LL << 0,
+	NM_SETTING_PARSE_FLAGS_BEST_EFFORT              = 1LL << 1,
+
+	_NM_SETTING_PARSE_FLAGS_LAST,
+	NM_SETTING_PARSE_FLAGS_ALL                      = ((_NM_SETTING_PARSE_FLAGS_LAST - 1) << 1) - 1,
+} NMSettingParseFlags;
+
+gboolean _nm_connection_replace_settings (NMConnection *connection,
+                                          GVariant *new_settings,
+                                          NMSettingParseFlags parse_flags,
+                                          GError **error);
+
 guint32 _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);

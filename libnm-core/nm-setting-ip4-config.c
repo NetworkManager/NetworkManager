@@ -313,19 +313,23 @@ ip4_addresses_get (NMSetting  *setting,
 	return ret;
 }
 
-static void
+static gboolean
 ip4_addresses_set (NMSetting  *setting,
                    GVariant   *connection_dict,
                    const char *property,
-                   GVariant   *value)
+                   GVariant   *value,
+                   NMSettingParseFlags parse_flags,
+                   GError    **error)
 {
 	GPtrArray *addrs;
 	GVariant *s_ip4;
 	char **labels, *gateway = NULL;
 	int i;
 
+	/* FIXME: properly handle errors */
+
 	if (!_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
-		return;
+		return TRUE;
 
 	addrs = nm_utils_ip4_addresses_from_variant (value, &gateway);
 
@@ -344,6 +348,7 @@ ip4_addresses_set (NMSetting  *setting,
 	              NULL);
 	g_ptr_array_unref (addrs);
 	g_free (gateway);
+	return TRUE;
 }
 
 static GVariant *
@@ -399,21 +404,26 @@ ip4_address_data_get (NMSetting    *setting,
 	return ret;
 }
 
-static void
+static gboolean
 ip4_address_data_set (NMSetting  *setting,
                       GVariant   *connection_dict,
                       const char *property,
-                      GVariant   *value)
+                      GVariant   *value,
+                      NMSettingParseFlags parse_flags,
+                      GError    **error)
 {
 	GPtrArray *addrs;
 
+	/* FIXME: properly handle errors */
+
 	/* Ignore 'address-data' if we're going to process 'addresses' */
 	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
-		return;
+		return TRUE;
 
 	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET);
 	g_object_set (setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
 	g_ptr_array_unref (addrs);
+	return TRUE;
 }
 
 static GVariant *
@@ -430,20 +440,25 @@ ip4_routes_get (NMSetting  *setting,
 	return ret;
 }
 
-static void
+static gboolean
 ip4_routes_set (NMSetting  *setting,
                 GVariant   *connection_dict,
                 const char *property,
-                GVariant   *value)
+                GVariant   *value,
+                NMSettingParseFlags parse_flags,
+                GError    **error)
 {
 	GPtrArray *routes;
 
+	/* FIXME: properly handle errors */
+
 	if (!_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
-		return;
+		return TRUE;
 
 	routes = nm_utils_ip4_routes_from_variant (value);
 	g_object_set (setting, property, routes, NULL);
 	g_ptr_array_unref (routes);
+	return TRUE;
 }
 
 static GVariant *
@@ -461,21 +476,26 @@ ip4_route_data_get (NMSetting    *setting,
 	return ret;
 }
 
-static void
+static gboolean
 ip4_route_data_set (NMSetting  *setting,
                     GVariant   *connection_dict,
                     const char *property,
-                    GVariant   *value)
+                    GVariant   *value,
+                    NMSettingParseFlags parse_flags,
+                    GError    **error)
 {
 	GPtrArray *routes;
 
+	/* FIXME: properly handle errors */
+
 	/* Ignore 'route-data' if we're going to process 'routes' */
 	if (_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
-		return;
+		return TRUE;
 
 	routes = nm_utils_ip_routes_from_variant (value, AF_INET);
 	g_object_set (setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
 	g_ptr_array_unref (routes);
+	return TRUE;
 }
 
 

@@ -692,16 +692,19 @@ _override_flags_get (NMSetting *setting, const char *property)
 	return g_variant_new_uint32 (nm_setting_vlan_get_flags ((NMSettingVlan *) setting));
 }
 
-static void
+static gboolean
 _override_flags_not_set (NMSetting *setting,
-                          GVariant *connection_dict,
-                          const char *property)
+                         GVariant *connection_dict,
+                         const char *property,
+                         NMSettingParseFlags parse_flags,
+                         GError **error)
 {
 	/* we changed the default value for FLAGS. When an older client
 	 * doesn't serialize the property, we assume it is the old default. */
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_VLAN_FLAGS, (NMVlanFlags) 0,
 	              NULL);
+	return TRUE;
 }
 
 static GSList *

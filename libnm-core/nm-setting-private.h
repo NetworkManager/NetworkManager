@@ -126,6 +126,7 @@ GVariant   *_nm_setting_to_dbus       (NMSetting *setting,
 NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        GVariant *setting_dict,
                                        GVariant *connection_dict,
+                                       NMSettingParseFlags parse_flags,
                                        GError **error);
 
 typedef GVariant * (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
@@ -133,13 +134,17 @@ typedef GVariant * (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
 typedef GVariant * (*NMSettingPropertySynthFunc)  (NMSetting     *setting,
                                                    NMConnection  *connection,
                                                    const char    *property);
-typedef void       (*NMSettingPropertySetFunc)    (NMSetting     *setting,
+typedef gboolean   (*NMSettingPropertySetFunc)    (NMSetting     *setting,
                                                    GVariant      *connection_dict,
                                                    const char    *property,
-                                                   GVariant      *value);
-typedef void       (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
+                                                   GVariant      *value,
+                                                   NMSettingParseFlags parse_flags,
+                                                   GError       **error);
+typedef gboolean   (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
                                                    GVariant      *connection_dict,
-                                                   const char    *property);
+                                                   const char    *property,
+                                                   NMSettingParseFlags parse_flags,
+                                                   GError       **error);
 
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,

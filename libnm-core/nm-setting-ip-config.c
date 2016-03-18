@@ -2464,17 +2464,22 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
+static gboolean
 ip_gateway_set (NMSetting  *setting,
                 GVariant   *connection_dict,
                 const char *property,
-                GVariant   *value)
+                GVariant   *value,
+                NMSettingParseFlags parse_flags,
+                GError    **error)
 {
+	/* FIXME: properly handle errors */
+
 	/* Don't set from 'gateway' if we're going to use the gateway in 'addresses' */
 	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "gateway"))
-		return;
+		return TRUE;
 
 	g_object_set (setting, property, g_variant_get_string (value, NULL), NULL);
+	return TRUE;
 }
 
 static void

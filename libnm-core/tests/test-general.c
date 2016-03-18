@@ -1025,7 +1025,7 @@ test_setting_new_from_dbus (void)
 	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (s_wsec);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NULL);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, NULL);
 	g_variant_unref (dict);
 
 	g_assert (s_wsec);
@@ -1054,7 +1054,7 @@ test_setting_new_from_dbus_transform (void)
 	                                                  dbus_mac_address, ETH_ALEN, 1));
 	dict = g_variant_builder_end (&builder);
 
-	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, dict, NULL, &error);
+	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
@@ -1080,7 +1080,7 @@ test_setting_new_from_dbus_enum (void)
 	                       g_variant_new_int32 (NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
 	dict = g_variant_builder_end (&builder);
 
-	s_ip6 = (NMSettingIP6Config *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_IP6_CONFIG, dict, NULL, &error);
+	s_ip6 = (NMSettingIP6Config *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_IP6_CONFIG, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (s_ip6), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
@@ -1099,7 +1099,7 @@ test_setting_new_from_dbus_enum (void)
 	                                             NM_SETTING_SECRET_FLAG_NOT_SAVED));
 	dict = g_variant_builder_end (&builder);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, &error);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_type (s_wsec), ==, NM_WEP_KEY_TYPE_KEY);
@@ -1116,7 +1116,7 @@ test_setting_new_from_dbus_enum (void)
 	                       g_variant_new_byte ('E'));
 	dict = g_variant_builder_end (&builder);
 
-	s_serial = (NMSettingSerial *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_SERIAL, dict, NULL, &error);
+	s_serial = (NMSettingSerial *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_SERIAL, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpint (nm_setting_serial_get_parity (s_serial), ==, NM_SETTING_SERIAL_PARITY_EVEN);
