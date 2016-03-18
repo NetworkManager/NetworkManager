@@ -413,6 +413,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           const char *last_ip4_address)
 {
 	NMDhcpClientPrivate *priv;
+	gs_unref_bytes GBytes *tmp = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
@@ -423,7 +424,9 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 	_LOGI ("activation: beginning transaction (timeout in %d seconds)", priv->timeout);
 
-	nm_dhcp_client_set_client_id (self, dhcp_client_id ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id) : NULL);
+	if (dhcp_client_id)
+		tmp = nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id);
+	nm_dhcp_client_set_client_id (self, tmp);
 
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
