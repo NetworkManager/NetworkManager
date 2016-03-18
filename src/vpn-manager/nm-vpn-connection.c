@@ -1945,7 +1945,7 @@ nm_vpn_service_daemon_exec (NMVpnConnection *self, GError **error)
 
 	if (success) {
 		_LOGI ("Started the VPN service, PID %ld", (long int) pid);
-		priv->start_timeout = g_timeout_add_seconds (5, _daemon_exec_timeout, g_object_ref (self));
+		priv->start_timeout = g_timeout_add_seconds (5, _daemon_exec_timeout, self);
 	} else {
 		g_set_error (error,
 		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
@@ -2400,6 +2400,8 @@ dispose (GObject *object)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (object);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->start_timeout);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
 
