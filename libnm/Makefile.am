@@ -1,5 +1,7 @@
 include $(GLIB_MAKEFILE)
 
+@GNOME_CODE_COVERAGE_RULES@
+
 SUBDIRS = . tests
 
 AM_CPPFLAGS = \
@@ -15,7 +17,8 @@ AM_CPPFLAGS = \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	-DNMRUNDIR=\"$(nmrundir)\"
+	-DNMRUNDIR=\"$(nmrundir)\" \
+	$(CODE_COVERAGE_CFLAGS)
 
 include $(top_srcdir)/libnm-core/Makefile.libnm-core
 
@@ -138,6 +141,9 @@ libnm_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
 	$(GUDEV_LIBS)
+
+libnm_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS)
 
 SYMBOL_VIS_FILE=$(srcdir)/libnm.ver
 
