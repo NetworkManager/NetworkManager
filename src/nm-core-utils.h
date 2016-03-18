@@ -91,31 +91,6 @@ GETTER (void) \
 
 /*****************************************************************************/
 
-/**
- * NMUtilsError:
- * @NM_UTILS_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_UTILS_ERROR_CANCELLED_DISPOSING: when disposing an object that has
- *   pending aynchronous operations, the operation is cancelled with this
- *   error reason. Depending on the usage, this might indicate a bug because
- *   usually the target object should stay alive as long as there are pending
- *   operations.
- */
-typedef enum {
-	NM_UTILS_ERROR_UNKNOWN = 0,                 /*< nick=Unknown >*/
-	NM_UTILS_ERROR_CANCELLED_DISPOSING,         /*< nick=CancelledDisposing >*/
-} NMUtilsError;
-
-#define NM_UTILS_ERROR (nm_utils_error_quark ())
-GQuark nm_utils_error_quark (void);
-
-void nm_utils_error_set_cancelled (GError **error,
-                                   gboolean is_disposing,
-                                   const char *instance_name);
-gboolean nm_utils_error_is_cancelled (GError *error,
-                                      gboolean consider_is_disposing);
-
-/*****************************************************************************/
-
 gint nm_utils_ascii_str_to_bool (const char *str,
                                  gint default_value);
 
