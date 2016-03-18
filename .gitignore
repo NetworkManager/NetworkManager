@@ -153,6 +153,7 @@ test-*.trs
 /libnm-core/tests/test-need-secrets
 /libnm-core/tests/test-secrets
 /libnm-core/tests/test-setting-8021x
+/libnm-core/tests/test-setting-bond
 /libnm-core/tests/test-setting-dcb
 
 /libnm-glib/nm-secret-agent-glue.h
