@@ -179,8 +179,6 @@ GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
                                       char **out_password,
                                       GError **error);
 
-gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
-
 gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
                                      const char *signal_name,
                                      const GVariantType *signature,
