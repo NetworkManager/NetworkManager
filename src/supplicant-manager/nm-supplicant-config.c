@@ -728,8 +728,8 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	} else {
 		/* 802.1x for Dynamic WEP and WPA-Enterprise */
 		if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
-		    if (!setting_8021x)
-		    	return FALSE;
+			if (!setting_8021x)
+				return FALSE;
 			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, con_uuid, mtu, FALSE))
 				return FALSE;
 		}
