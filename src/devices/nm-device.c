@@ -4672,10 +4672,7 @@ reserve_shared_ip (NMDevice *self, NMSettingIPConfig *s_ip4, NMPlatformIP4Addres
 			}
 		}
 		nm_platform_ip4_address_set_addr (address, start + count, 24);
-
-		g_hash_table_insert (shared_ips,
-		                     GUINT_TO_POINTER (address->address),
-		                     GUINT_TO_POINTER (TRUE));
+		g_hash_table_add (shared_ips, GUINT_TO_POINTER (address->address));
 	}
 
 	return TRUE;
