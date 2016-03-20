@@ -761,7 +761,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	} else {
 		/* 802.1x for Dynamic WEP and WPA-Enterprise */
 		if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
-		    if (!setting_8021x) {
+			if (!setting_8021x) {
 				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 				             "Cannot set key-mgmt %s with missing 8021x setting", key_mgmt);
 				return FALSE;
