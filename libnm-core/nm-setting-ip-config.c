@@ -2510,6 +2510,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	 *
 	 * For methods that imply no upstream network, such as "shared" or
 	 * "link-local", these properties must be empty.
+	 *
+	 * For IPv4 method "shared", the IP subnet can be configured by adding one
+	 * manual IPv4 address or otherwise 10.42.x.0/24 is chosen.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
