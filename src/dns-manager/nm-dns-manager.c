@@ -964,7 +964,7 @@ update_dns (NMDnsManager *self,
 	nis_domain = rc.nis_domain;
 
 	/* Let any plugins do their thing first */
-	if (update && priv->plugin) {
+	if (priv->plugin) {
 		NMDnsPlugin *plugin = priv->plugin;
 		const char *plugin_name = nm_dns_plugin_get_name (plugin);
 		GSList *vpn_configs = NULL, *dev_configs = NULL, *other_configs = NULL;
@@ -1369,15 +1369,17 @@ static void
 init_resolv_conf_mode (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	const char *mode;
+	const char *mode, *mode_unknown;
 	int fd, flags;
+	gboolean immutable = FALSE;
 
 	g_clear_object (&priv->plugin);
+	priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 	if (!g_strcmp0 (mode, "none")) {
-		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
-		goto out;
+		_LOGI ("%s%s", "set resolv-conf-mode: ", "none");
+		return;
 	}
 
 	fd = open (_PATH_RESCONF, O_RDONLY);
@@ -1385,37 +1387,39 @@ init_resolv_conf_mode (NMDnsManager *self)
 		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) == -1)
 			flags = 0;
 		close (fd);
-
-		if (flags & FS_IMMUTABLE_FL) {
-			_LOGI ("set resolv-conf-mode: none -- " _PATH_RESCONF " is immutable");
-			priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
-			return;
-		}
+		immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
 	}
 
-	if (!g_strcmp0 (mode, "dnsmasq")) {
-		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
-		priv->plugin = nm_dns_dnsmasq_new ();
-	} else if (!g_strcmp0 (mode, "unbound")) {
-		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
-		priv->plugin = nm_dns_unbound_new ();
-	} else {
-		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT;
-		if (mode && g_strcmp0 (mode, "default") != 0) {
-			_LOGW ("set resolve-conf-mode: default -- unknown configuration '%s'", mode);
-			return;
-		}
-		mode = "default";
-	}
+	if (NM_IN_STRSET (mode, "dnsmasq", "unbound")) {
+		if (!immutable)
+			priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
+		if (nm_streq (mode, "dnsmasq"))
+			priv->plugin = nm_dns_dnsmasq_new ();
+		else
+			priv->plugin = nm_dns_unbound_new ();
 
-	if (priv->plugin) {
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_CHILD_QUIT, G_CALLBACK (plugin_child_quit), self);
+
+		_NMLOG (immutable ? LOGL_WARN : LOGL_INFO,
+		        "%s%s%s%s%s%s",
+		        "set resolv-conf-mode: ",
+		        immutable ? "none" : mode,
+		        ", plugin=\"", nm_dns_plugin_get_name (priv->plugin), "\"",
+		        immutable ? ", resolv.conf immutable" : "");
+		return;
 	}
 
-out:
-	_LOGI ("set resolv-conf-mode: %s%s%s%s", mode,
-	       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=\"", nm_dns_plugin_get_name (priv->plugin), "\"", ""));
+	if (!immutable)
+		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT;
+
+	mode_unknown = mode && !nm_streq (mode, "default") ? mode : NULL;
+	_NMLOG (mode_unknown ? LOGL_WARN : LOGL_INFO,
+	        "%s%s%s%s%s%s",
+	        "set resolv-conf-mode: ",
+	        immutable ? "none" : "default",
+	        NM_PRINT_FMT_QUOTED (mode_unknown, " -- unknown configuration '", mode_unknown, "'", ""),
+	        immutable ? ", resolv.conf immutable" : "");
 }
 
 static void
