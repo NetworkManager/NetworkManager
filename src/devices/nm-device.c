@@ -1210,19 +1210,25 @@ is_unmanaged_external_down (NMDevice *self, gboolean consider_can)
 
 	/* Manage externally-created software interfaces only when they are IFF_UP */
 	if (   priv->ifindex <= 0
-	    || !priv->up)
+	    || !priv->up
+	    || !nm_platform_link_can_assume (NM_PLATFORM_GET, priv->ifindex))
 		return NM_UNMAN_FLAG_OP_SET_UNMANAGED;
 
 	return NM_UNMAN_FLAG_OP_SET_MANAGED;
 }
 
 static void
-set_unmanaged_external_down (NMDevice *self)
+set_unmanaged_external_down (NMDevice *self, gboolean only_if_unmanaged)
 {
 	NMUnmanFlagOp ext_flags;
 
 	if (!nm_device_get_unmanaged_mask (self, NM_UNMANAGED_EXTERNAL_DOWN))
 		return;
+
+	if (only_if_unmanaged) {
+		if (!nm_device_get_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN))
+			return;
+	}
 
 	ext_flags = is_unmanaged_external_down (self, FALSE);
 	if (ext_flags != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
@@ -1562,7 +1568,7 @@ device_link_changed (NMDevice *self)
 		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
 	}
 
-	set_unmanaged_external_down (self);
+	set_unmanaged_external_down (self, FALSE);
 
 	device_recheck_slave_status (self, &info);
 	return G_SOURCE_REMOVE;
@@ -8879,6 +8885,8 @@ queued_ip4_config_change (gpointer user_data)
 	update_ip4_config (self, FALSE);
 	g_object_unref (self);
 
+	set_unmanaged_external_down (self, TRUE);
+
 	return FALSE;
 }
 
@@ -8932,6 +8940,8 @@ queued_ip6_config_change (gpointer user_data)
 	priv->dad6_failed_addrs = NULL;
 
 	g_object_unref (self);
+
+	set_unmanaged_external_down (self, TRUE);
 
 	return FALSE;
 }
