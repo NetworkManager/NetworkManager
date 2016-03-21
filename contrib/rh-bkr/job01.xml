@@ -83,7 +83,7 @@ fi
 			<partitions/>
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
-					<param name="PKGARGNAME" value="python-setuptools python-netaddr pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark git firewalld psmisc bridge-utils"/>
+					<param name="PKGARGNAME" value="python-setuptools python-netaddr pexpect bash-completion iw net-tools teamd radvd wireshark git firewalld psmisc bridge-utils"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
