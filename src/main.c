@@ -309,12 +309,7 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_not_running_pidfile (global_opt.pidfile);
 
-	/* Ensure state directory exists */
-	if (g_mkdir_with_parents (NMSTATEDIR, 0700) != 0) {
-		fprintf (stderr, "Cannot create '%s': %s", NMSTATEDIR, strerror (errno));
-		exit (1);
-	}
-
+	nm_main_utils_ensure_statedir ();
 	nm_main_utils_ensure_rundir ();
 
 	/* When running from the build directory, determine our build directory

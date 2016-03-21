@@ -27,6 +27,7 @@ void     nm_main_utils_ensure_root (void);
 
 void     nm_main_utils_setup_signals (GMainLoop *main_loop);
 
+void     nm_main_utils_ensure_statedir (void);
 void     nm_main_utils_ensure_rundir (void);
 
 gboolean nm_main_utils_write_pidfile (const char *pidfile);
