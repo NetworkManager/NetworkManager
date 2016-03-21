@@ -528,6 +528,8 @@ typedef struct {
 	gboolean (*link_enslave) (NMPlatform *, int master, int slave);
 	gboolean (*link_release) (NMPlatform *, int master, int slave);
 
+	gboolean (*link_can_assume) (NMPlatform *, int ifindex);
+
 	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
 	gboolean (*link_vlan_change) (NMPlatform *self,
 	                              int ifindex,
@@ -716,6 +718,8 @@ gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtils
 gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
 int nm_platform_link_get_master (NMPlatform *self, int slave);
+
+gboolean nm_platform_link_can_assume (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanaged);
 gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
