@@ -161,6 +161,13 @@ typedef struct {
 	GPtrArray *nis_servers;
 } NMResolvConfData;
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
+	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE,       "none"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF, "resolvconf"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,  "netconfig"),
+);
+
 static void
 add_string_item (GPtrArray *array, const char *str)
 {
@@ -1374,7 +1381,7 @@ static void
 init_resolv_conf_manager (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	const char *man, *desc = "";
+	const char *man;
 
 	man = nm_config_data_get_rc_manager (nm_config_get_data (priv->config));
 	if (!g_strcmp0 (man, "none"))
@@ -1395,19 +1402,7 @@ init_resolv_conf_manager (NMDnsManager *self)
 			_LOGW ("unknown resolv.conf manager '%s'", man);
 	}
 
-	switch (priv->rc_manager) {
-	case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
-		desc = "resolvconf";
-		break;
-	case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
-		desc = "netconfig";
-		break;
-	case NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE:
-		desc = "none";
-		break;
-	}
-
-	_LOGI ("using resolv.conf manager '%s'", desc);
+	_LOGI ("using resolv.conf manager '%s'", _rc_manager_to_string (priv->rc_manager));
 }
 
 static void
