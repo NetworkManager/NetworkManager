@@ -164,8 +164,10 @@ typedef struct {
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE,       "none"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,       "file"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF, "resolvconf"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,  "netconfig"),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY),
 );
 
 static void
@@ -461,15 +463,10 @@ create_resolv_conf (char **searches,
 }
 
 static gboolean
-write_resolv_conf (FILE *f,
-                   char **searches,
-                   char **nameservers,
-                   char **options,
-                   GError **error)
+write_resolv_conf_contents (FILE *f,
+                            const char *content,
+                            GError **error)
 {
-	gs_free char *content = NULL;
-
-	content = create_resolv_conf (searches, nameservers, options);
 	if (fprintf (f, "%s", content) < 0) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
@@ -480,6 +477,19 @@ write_resolv_conf (FILE *f,
 	}
 
 	return TRUE;
+}
+
+static gboolean
+write_resolv_conf (FILE *f,
+                   char **searches,
+                   char **nameservers,
+                   char **options,
+                   GError **error)
+{
+	gs_free char *content = NULL;
+
+	content = create_resolv_conf (searches, nameservers, options);
+	return write_resolv_conf_contents (f, content, error);
 }
 
 static SpawnResult
@@ -554,24 +564,40 @@ update_resolv_conf (NMDnsManager *self,
                     char **nameservers,
                     char **options,
                     GError **error,
-                    gboolean install_etc)
+                    NMDnsManagerResolvConfManager rc_manager)
 {
 	FILE *f;
 	struct stat st;
 	gboolean success;
+	gs_free char *content = NULL;
+	SpawnResult write_file_result = SR_SUCCESS;
 
 	/* If we are not managing /etc/resolv.conf and it points to
 	 * MY_RESOLV_CONF, don't write the private DNS configuration to
 	 * MY_RESOLV_CONF otherwise we would overwrite the changes done by
 	 * some external application.
-	 */
-	if (!install_etc) {
+	 *
+	 * This is the only situation, where we don't try to update our
+	 * internal resolv.conf file. */
+	if (rc_manager == _NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY) {
 		gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
 
 		if (g_strcmp0 (path, MY_RESOLV_CONF) == 0) {
 			_LOGD ("not updating " MY_RESOLV_CONF
 			       " since it points to " _PATH_RESCONF);
 			return SR_SUCCESS;
+		}
+	}
+
+	content = create_resolv_conf (searches, nameservers, options);
+
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
+		/* we first write to /etc/resolv.conf directly. If that fails,
+		 * we still continue to write to runstatedir but remember the
+		 * error. */
+		if (!g_file_set_contents (_PATH_RESCONF, content, -1, error)) {
+			write_file_result = SR_ERROR;
+			error = NULL;
 		}
 	}
 
@@ -585,7 +611,7 @@ update_resolv_conf (NMDnsManager *self,
 		return SR_ERROR;
 	}
 
-	success = write_resolv_conf (f, searches, nameservers, options, error);
+	success = write_resolv_conf_contents (f, content, error);
 
 	if (fclose (f) < 0) {
 		if (success) {
@@ -613,7 +639,10 @@ update_resolv_conf (NMDnsManager *self,
 		return SR_ERROR;
 	}
 
-	if (!install_etc)
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE)
+		return write_file_result;
+
+	if (rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE)
 		return SR_SUCCESS;
 
 	/* A symlink pointing to NM's own resolv.conf (MY_RESOLV_CONF) is always
@@ -988,7 +1017,8 @@ update_dns (NMDnsManager *self,
 	if (update) {
 		switch (priv->rc_manager) {
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE:
-			result = update_resolv_conf (self, searches, nameservers, options, error, TRUE);
+		case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
+			result = update_resolv_conf (self, searches, nameservers, options, error, priv->rc_manager);
 			resolv_conf_updated = TRUE;
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
@@ -1005,7 +1035,7 @@ update_dns (NMDnsManager *self,
 		if (result == SR_NOTFOUND) {
 			_LOGD ("update-dns: program not available, writing to resolv.conf");
 			g_clear_error (error);
-			result = update_resolv_conf (self, searches, nameservers, options, error, TRUE);
+			result = update_resolv_conf (self, searches, nameservers, options, error, NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE);
 			resolv_conf_updated = TRUE;
 		}
 	}
@@ -1013,7 +1043,7 @@ update_dns (NMDnsManager *self,
 	/* Unless we've already done it, update private resolv.conf in NMRUNDIR
 	   ignoring any errors */
 	if (!resolv_conf_updated)
-		update_resolv_conf (self, searches, nameservers, options, NULL, FALSE);
+		update_resolv_conf (self, searches, nameservers, options, NULL, _NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY);
 
 	/* signal that resolv.conf was changed */
 	if (update && result == SR_SUCCESS)
@@ -1397,6 +1427,8 @@ init_resolv_conf_manager (NMDnsManager *self)
 	man = nm_config_data_get_rc_manager (nm_config_get_data (priv->config));
 	if (!g_strcmp0 (man, "none"))
 		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE;
+	else if (nm_streq0 (man, "file"))
+		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
 	else if (!g_strcmp0 (man, "resolvconf"))
 		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
 	else if (!g_strcmp0 (man, "netconfig"))
