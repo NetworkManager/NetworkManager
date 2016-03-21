@@ -2716,19 +2716,12 @@ autoconnect_slaves (NMManager *self,
 static gboolean
 _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **error)
 {
-	gboolean success;
-
 	g_assert (NM_IS_VPN_CONNECTION (active));
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
-	success = nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
-	                                              NM_VPN_CONNECTION (active),
-	                                              error);
-	if (success)
-		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
-	else
-		nm_exported_object_unexport (NM_EXPORTED_OBJECT (active));
-	return success;
+	return nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
+	                                           NM_VPN_CONNECTION (active),
+	                                           error);
 }
 
 /* Traverse the device to disconnected state. This means that the device is ready
@@ -2951,7 +2944,6 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 	/* Export the new ActiveConnection to clients and start it on the device */
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
-	g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	return TRUE;
 }
