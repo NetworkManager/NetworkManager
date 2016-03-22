@@ -29,8 +29,6 @@
 #include "NetworkManagerUtils.h"
 
 typedef struct {
-	gboolean disposed;
-
 	GPid pid;
 	guint watch_id;
 	char *progname;
@@ -227,13 +225,8 @@ static void
 dispose (GObject *object)
 {
 	NMDnsPlugin *self = NM_DNS_PLUGIN (object);
-	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
-
-		nm_dns_plugin_child_kill (self);
-	}
+	nm_dns_plugin_child_kill (self);
 
 	G_OBJECT_CLASS (nm_dns_plugin_parent_class)->dispose (object);
 }
