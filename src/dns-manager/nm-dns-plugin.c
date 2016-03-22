@@ -133,6 +133,12 @@ watch_cb (GPid pid, gint status, gpointer user_data)
 	g_free (priv->progname);
 	priv->progname = NULL;
 
+	if (priv->pidfile) {
+		unlink (priv->pidfile);
+		g_free (priv->pidfile);
+		priv->pidfile = NULL;
+	}
+
 	g_signal_emit (self, signals[CHILD_QUIT], 0, status);
 }
 
