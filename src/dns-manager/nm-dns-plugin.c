@@ -254,21 +254,21 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 
 	/* signals */
 	signals[FAILED] =
-		g_signal_new (NM_DNS_PLUGIN_FAILED,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDnsPluginClass, failed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
+	    g_signal_new (NM_DNS_PLUGIN_FAILED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDnsPluginClass, failed),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 
 	signals[CHILD_QUIT] =
-		g_signal_new (NM_DNS_PLUGIN_CHILD_QUIT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDnsPluginClass, child_quit),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__INT,
-					  G_TYPE_NONE, 1, G_TYPE_INT);
+	    g_signal_new (NM_DNS_PLUGIN_CHILD_QUIT,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDnsPluginClass, child_quit),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__INT,
+	                  G_TYPE_NONE, 1, G_TYPE_INT);
 }
 
