@@ -15,7 +15,10 @@
 abrt-tui
 abrt-addon-ccpp
 libreport-rhel-bugzilla
+NetworkManager
 NetworkManager-wifi
+NetworkManager-tui
+NetworkManager-adsl
 $VALGRIND
 %end
 
