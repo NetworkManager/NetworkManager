@@ -46,7 +46,20 @@ typedef struct {
 	guint32 foo;
 } NMDnsDnsmasqPrivate;
 
-/*******************************************/
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN         LOGD_DNS
+#define _NMLOG_PREFIX_NAME    "dnsmasq"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s[%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME, \
+                (self) \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 static gboolean
 add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
@@ -246,7 +259,7 @@ update (NMDnsPlugin *plugin,
 
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, NULL);
 	if (!dm_binary) {
-		nm_log_warn (LOGD_DNS, "Could not find dnsmasq binary");
+		_LOGW ("could not find dnsmasq binary");
 		return FALSE;
 	}
 
@@ -283,16 +296,16 @@ update (NMDnsPlugin *plugin,
 
 	/* Write out the config file */
 	if (!g_file_set_contents (CONFFILE, conf->str, -1, &error)) {
-		nm_log_warn (LOGD_DNS, "Failed to write dnsmasq config file %s: %s",
-		             CONFFILE,
-		             error->message);
+		_LOGW ("failed to write dnsmasq config file %s: %s",
+		       CONFFILE,
+		       error->message);
 		g_clear_error (&error);
 		goto out;
 	}
 	ignored = chmod (CONFFILE, 0644);
 
-	nm_log_dbg (LOGD_DNS, "dnsmasq local caching DNS configuration:");
-	nm_log_dbg (LOGD_DNS, "%s", conf->str);
+	_LOGD ("dnsmasq local caching DNS configuration:");
+	_LOGD ("%s", conf->str);
 
 	argv[idx++] = dm_binary;
 	argv[idx++] = "--no-resolv";  /* Use only commandline */
@@ -350,18 +363,17 @@ child_quit (NMDnsPlugin *plugin, gint status)
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
 		if (err) {
-			nm_log_warn (LOGD_DNS, "dnsmasq exited with error: %s (%d)",
-			             dm_exit_code_to_msg (err),
-			             err);
+			_LOGW ("dnsmasq exited with error: %s (%d)",
+			       dm_exit_code_to_msg (err),
+			       err);
 		} else
 			failed = FALSE;
-	} else if (WIFSTOPPED (status)) {
-		nm_log_warn (LOGD_DNS, "dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
-	} else if (WIFSIGNALED (status)) {
-		nm_log_warn (LOGD_DNS, "dnsmasq died with signal %d", WTERMSIG (status));
-	} else {
-		nm_log_warn (LOGD_DNS, "dnsmasq died from an unknown cause");
-	}
+	} else if (WIFSTOPPED (status))
+		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
+	else if (WIFSIGNALED (status))
+		_LOGW ("dnsmasq died with signal %d", WTERMSIG (status));
+	else
+		_LOGW ("dnsmasq died from an unknown cause");
 	unlink (CONFFILE);
 
 	if (failed)
