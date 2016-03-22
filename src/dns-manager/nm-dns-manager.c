@@ -100,14 +100,11 @@ NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
             const NMDnsManager *const __self = (self); \
             \
             _nm_log (__level, _NMLOG_DOMAIN, 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     ((__self == singleton_instance) \
-                        ? _NMLOG_PREFIX_NAME \
-                        : ({ \
-                                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-                                __prefix; \
-                           }) \
-                     ) \
+                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     ((!__self || __self == singleton_instance) \
+                        ? "" \
+                        : nm_sprintf_buf (__prefix, "[%p]", __self)) \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
