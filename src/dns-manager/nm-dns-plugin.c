@@ -25,6 +25,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "nm-core-internal.h"
+
 #include "nm-dns-plugin.h"
 #include "NetworkManagerUtils.h"
 
@@ -102,34 +104,46 @@ _clear_pidfile (NMDnsPlugin *self)
 static void
 kill_existing (const char *progname, const char *pidfile, const char *kill_match)
 {
-	char *contents = NULL;
 	glong pid;
-	char *proc_path = NULL;
-	char *cmdline_contents = NULL;
+	gs_free char *contents = NULL;
+	gs_free char *cmdline_contents = NULL;
+	guint64 start_time;
+	char proc_path[256];
+	gs_free GError *error = NULL;
 
-	if (!g_file_get_contents (pidfile, &contents, NULL, NULL))
+	if (!pidfile)
 		return;
 
-	pid = strtol (contents, NULL, 10);
-	if (pid < 1 || pid > INT_MAX)
+	if (!kill_match)
+		g_return_if_reached ();
+
+	if (!g_file_get_contents (pidfile, &contents, NULL, &error)) {
+		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
+			return;
+		goto out;
+	}
+
+	pid = _nm_utils_ascii_str_to_int64 (contents, 10, 2, INT_MAX, -1);
+	if (pid == -1)
 		goto out;
 
-	proc_path = g_strdup_printf ("/proc/%ld/cmdline", pid);
+	start_time = nm_utils_get_start_time_for_pid (pid, NULL, NULL);
+	if (start_time == 0)
+		goto out;
+
+	nm_sprintf_buf (proc_path, "/proc/%ld/cmdline", pid);
 	if (!g_file_get_contents (proc_path, &cmdline_contents, NULL, NULL))
 		goto out;
 
-	if (strstr (cmdline_contents, kill_match)) {
-		if (kill (pid, 0) == 0) {
-			nm_log_dbg (LOGD_DNS, "Killing stale %s child process %ld", progname, pid);
-			kill (pid, SIGKILL);
-		}
-		unlink (pidfile);
-	}
+	if (!strstr (cmdline_contents, kill_match))
+		goto out;
+
+	nm_utils_kill_process_sync (pid, start_time, SIGKILL, LOGD_DNS,
+	                            progname ?: "<dns-process>",
+	                            0, 0, 1000);
 
 out:
-	g_free (cmdline_contents);
-	g_free (proc_path);
-	g_free (contents);
+	unlink (pidfile);
 }
 
 static void
@@ -165,13 +179,11 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 	g_free (priv->progname);
 	priv->progname = g_path_get_basename (argv[0]);
 
-	if (pidfile) {
-		g_return_val_if_fail (kill_match != NULL, 0);
-		kill_existing (priv->progname, pidfile, kill_match);
+	kill_existing (priv->progname, pidfile, kill_match);
 
-		g_free (priv->pidfile);
-		priv->pidfile = g_strdup (pidfile);
-	}
+	g_warn_if_fail (priv->pidfile == NULL);
+	g_clear_pointer (&priv->pidfile, g_free);
+	priv->pidfile = g_strdup (pidfile);
 
 	nm_log_info (LOGD_DNS, "DNS: starting %s...", priv->progname);
 	cmdline = g_strjoinv (" ", (char **) argv);
