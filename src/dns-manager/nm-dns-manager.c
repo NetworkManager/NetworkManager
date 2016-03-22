@@ -125,6 +125,9 @@ typedef struct {
 
 	NMDnsManagerResolvConfMode resolv_conf_mode;
 	NMDnsManagerResolvConfManager rc_manager;
+	char *last_mode;
+	bool last_immutable:1;
+	bool mode_initialized:1;
 	NMDnsPlugin *plugin;
 
 	NMConfig *config;
@@ -1363,6 +1366,26 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 
 /******************************************************************/
 
+static bool
+_get_resconf_immutable (int *immutable_cached)
+{
+	int fd, flags;
+	int immutable;
+
+	immutable = *immutable_cached;
+	if (!NM_IN_SET (immutable, FALSE, TRUE)) {
+		immutable = FALSE;
+		fd = open (_PATH_RESCONF, O_RDONLY);
+		if (fd != -1) {
+			if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
+				immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
+			close (fd);
+		}
+		*immutable_cached = immutable;
+	}
+	return immutable;
+}
+
 NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
 static void
@@ -1370,25 +1393,34 @@ init_resolv_conf_mode (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	const char *mode, *mode_unknown;
-	int fd, flags;
-	gboolean immutable = FALSE;
+	int immutable = -1;
 
+	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
+
+	if (   priv->mode_initialized
+	    && nm_streq0 (mode, priv->last_mode)
+	    && (   nm_streq0 (mode, "none")
+	        || priv->last_immutable == _get_resconf_immutable (&immutable))) {
+		/* we call init_resolv_conf_mode() on every SIGHUP to possibly reload
+		 * when either "mode" or "immutable" changed. However, we don't want to
+		 * re-create the plugin, when the paramters didn't actually change. So
+		 * detect that we would recreate the same plugin and return early. */
+		return;
+	}
+
+	priv->mode_initialized = TRUE;
+	g_free (priv->last_mode);
+	priv->last_mode = g_strdup (mode);
+	priv->last_immutable = FALSE;
 	g_clear_object (&priv->plugin);
 	priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 
-	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
-	if (!g_strcmp0 (mode, "none")) {
+	if (nm_streq0 (mode, "none")) {
 		_LOGI ("%s%s", "set resolv-conf-mode: ", "none");
 		return;
 	}
 
-	fd = open (_PATH_RESCONF, O_RDONLY);
-	if (fd != -1) {
-		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) == -1)
-			flags = 0;
-		close (fd);
-		immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
-	}
+	priv->last_immutable = _get_resconf_immutable (&immutable);
 
 	if (NM_IN_STRSET (mode, "dnsmasq", "unbound")) {
 		if (!immutable)
@@ -1461,8 +1493,15 @@ config_changed_cb (NMConfig *config,
 {
 	GError *error = NULL;
 
-	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_DNS_MODE))
+	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_DNS_MODE |
+	                           NM_CONFIG_CHANGE_SIGHUP)) {
+		/* reload the resolv-conf mode also on SIGHUP (when DNS_MODE didn't change).
+		 * The reason is, that the configuration also depends on whether resolv.conf
+		 * is immutable, thus, without the configuration changing, we always want to
+		 * re-configure the mode. */
 		init_resolv_conf_mode (self);
+	}
+
 	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_RC_MANAGER))
 		init_resolv_conf_manager (self);
 
@@ -1512,6 +1551,8 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
 		g_clear_object (&priv->plugin);
 	}
+
+	g_clear_pointer (&priv->last_mode, g_free);
 
 	/* If we're quitting, leave a valid resolv.conf in place, not one
 	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
