@@ -90,6 +90,18 @@ nm_dns_plugin_get_name (NMDnsPlugin *self)
 /********************************************/
 
 static void
+_clear_pidfile (NMDnsPlugin *self)
+{
+	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
+
+	if (priv->pidfile) {
+		unlink (priv->pidfile);
+		g_free (priv->pidfile);
+		priv->pidfile = NULL;
+	}
+}
+
+static void
 kill_existing (const char *progname, const char *pidfile, const char *kill_match)
 {
 	char *contents = NULL;
@@ -133,11 +145,7 @@ watch_cb (GPid pid, gint status, gpointer user_data)
 	g_free (priv->progname);
 	priv->progname = NULL;
 
-	if (priv->pidfile) {
-		unlink (priv->pidfile);
-		g_free (priv->pidfile);
-		priv->pidfile = NULL;
-	}
+	_clear_pidfile (self);
 
 	g_signal_emit (self, signals[CHILD_QUIT], 0, status);
 }
@@ -203,11 +211,7 @@ nm_dns_plugin_child_kill (NMDnsPlugin *self)
 		priv->progname = NULL;
 	}
 
-	if (priv->pidfile) {
-		unlink (priv->pidfile);
-		g_free (priv->pidfile);
-		priv->pidfile = NULL;
-	}
+	_clear_pidfile (self);
 
 	return TRUE;
 }
