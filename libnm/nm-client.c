@@ -1189,6 +1189,9 @@ nm_client_deactivate_connection_finish (NMClient *client,
  * Returns: (transfer none) (element-type NMRemoteConnection): an array
  * containing all connections provided by the remote settings service.  The
  * returned array is owned by the #NMClient object and should not be modified.
+ *
+ * The connections are as received from D-Bus and might not validate according
+ * to nm_connection_verify().
  **/
 const GPtrArray *
 nm_client_get_connections (NMClient *client)
@@ -1207,6 +1210,9 @@ nm_client_get_connections (NMClient *client)
  *
  * Returns: (transfer none): the remote connection object on success, or %NULL if no
  *  matching object was found.
+ *
+ * The connection is as received from D-Bus and might not validate according
+ * to nm_connection_verify().
  **/
 NMRemoteConnection *
 nm_client_get_connection_by_id (NMClient *client, const char *id)
@@ -1226,6 +1232,9 @@ nm_client_get_connection_by_id (NMClient *client, const char *id)
  *
  * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
  *  not known
+ *
+ * The connection is as received from D-Bus and might not validate according
+ * to nm_connection_verify().
  **/
 NMRemoteConnection *
 nm_client_get_connection_by_path (NMClient *client, const char *path)
@@ -1245,6 +1254,9 @@ nm_client_get_connection_by_path (NMClient *client, const char *path)
  *
  * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
  *  not known
+ *
+ * The connection is as received from D-Bus and might not validate according
+ * to nm_connection_verify().
  **/
 NMRemoteConnection *
 nm_client_get_connection_by_uuid (NMClient *client, const char *uuid)
