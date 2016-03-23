@@ -7735,7 +7735,7 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 
 	must_queue = _carrier_wait_check_act_request_must_queue (self, req);
 
-	if (!priv->act_request && !must_queue) {
+	if (!priv->act_request && !must_queue && nm_device_is_real (self)) {
 		/* Just activate immediately */
 		if (!_device_activate (self, req))
 			g_assert_not_reached ();
