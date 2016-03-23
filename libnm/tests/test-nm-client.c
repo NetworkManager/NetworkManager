@@ -1309,9 +1309,7 @@ test_connection_invalid (void)
 	                                       FALSE,
 	                                       &path2);
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection /org/freedesktop/NetworkManager/Settings/Connection/3 settings: *");
 	client = nm_client_new (NULL, &error);
-	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 
 	connections = nm_client_get_connections (client);
@@ -1385,9 +1383,7 @@ test_connection_invalid (void)
 	                                          variant,
 	                                          FALSE);
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection /org/freedesktop/NetworkManager/Settings/Connection/3 settings: *");
 	nmtst_main_loop_run (loop, 100);
-	g_test_assert_expected_messages ();
 
 	connections = nm_client_get_connections (client);
 	g_assert (connections);

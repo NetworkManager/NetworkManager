@@ -26,6 +26,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
+#include "nm-core-internal.h"
 
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
@@ -563,13 +564,11 @@ replace_settings (NMRemoteConnection *self, GVariant *new_settings)
 {
 	GError *error = NULL;
 
-	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
-		g_warning ("%s: error updating connection %s settings: %s",
-		           __func__,
-		           nm_connection_get_path (NM_CONNECTION (self)),
-		           error->message);
+	if (!_nm_connection_replace_settings ((NMConnection *) self,
+	                                      new_settings,
+	                                      NM_SETTING_PARSE_FLAGS_BEST_EFFORT,
+	                                      &error))
 		g_clear_error (&error);
-	}
 }
 
 static void
