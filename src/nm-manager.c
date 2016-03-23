@@ -3599,7 +3599,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 */
 	connection = nm_simple_connection_new ();
 	if (settings && g_variant_n_children (settings))
-		nm_connection_replace_settings (connection, settings, NULL);
+		_nm_connection_replace_settings (connection, settings, NM_SETTING_PARSE_FLAGS_STRICT, NULL);
 
 	subject = validate_activation_request (self,
 	                                       context,
