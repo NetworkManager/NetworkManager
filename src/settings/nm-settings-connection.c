@@ -1736,7 +1736,8 @@ settings_connection_update_helper (NMSettingsConnection *self,
 	/* Check if the settings are valid first */
 	if (new_settings) {
 		tmp = _nm_simple_connection_new_from_dbus (new_settings,
-		                                           NM_SETTING_PARSE_FLAGS_NORMALIZE,
+		                                             NM_SETTING_PARSE_FLAGS_STRICT
+		                                           | NM_SETTING_PARSE_FLAGS_NORMALIZE,
 		                                           &error);
 		if (!tmp)
 			goto error;

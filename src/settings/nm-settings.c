@@ -1408,7 +1408,8 @@ impl_settings_add_connection_helper (NMSettings *self,
 	GError *error = NULL;
 
 	connection = _nm_simple_connection_new_from_dbus (settings,
-	                                                  NM_SETTING_PARSE_FLAGS_NORMALIZE,
+	                                                    NM_SETTING_PARSE_FLAGS_STRICT
+	                                                  | NM_SETTING_PARSE_FLAGS_NORMALIZE,
 	                                                  &error);
 
 	if (connection) {
