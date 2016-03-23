@@ -288,9 +288,13 @@ no-auto-default=*
         <term><varname>rc-manager</varname></term>
         <listitem><para>Set the <filename>resolv.conf</filename>
         management mode. The default value depends on how NetworkManager
-        was built.</para>
-        <para><literal>none</literal>: NetworkManager will directly
-        write changes to <filename>resolv.conf</filename>.</para>
+        was built. Regardless of this setting, NetworkManager will
+        always write resolv.conf to its runtime state directory.</para>
+        <para><literal>none</literal>: NetworkManager will symlink
+        <filename>/etc/resolv.conf</filename> to its private
+        resolv.conf file in the runtime state directory.</para>
+        <para><literal>file</literal>: NetworkManager will write
+        <filename>/etc/resolv.conf</filename> as file.</para>
         <para><literal>resolvconf</literal>: NetworkManager will run
         resolvconf to update the DNS configuration.</para>
         <para><literal>netconfig</literal>: NetworkManager will run
