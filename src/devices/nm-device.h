@@ -472,6 +472,7 @@ typedef enum {
 const char *nm_unmanaged_flags2str (NMUnmanagedFlags flags, char *buf, gsize len);
 
 gboolean nm_device_get_managed (NMDevice *device, gboolean for_user_request);
+NMUnmanagedFlags nm_device_get_unmanaged_mask (NMDevice *device, NMUnmanagedFlags flag);
 NMUnmanagedFlags nm_device_get_unmanaged_flags (NMDevice *device, NMUnmanagedFlags flag);
 void nm_device_set_unmanaged_flags (NMDevice *device,
                                     NMUnmanagedFlags flags,

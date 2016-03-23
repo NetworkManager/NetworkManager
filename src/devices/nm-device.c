@@ -9125,6 +9125,24 @@ nm_device_get_managed (NMDevice *self, gboolean for_user_request)
 }
 
 /**
+ * nm_device_get_unmanaged_mask:
+ * @self: the #NMDevice
+ * @flag: the unmanaged flags to check.
+ *
+ * Return the unmanaged flags mask set on this device.
+ *
+ * Returns: the flags of the device ( & @flag)
+ */
+NMUnmanagedFlags
+nm_device_get_unmanaged_mask (NMDevice *self, NMUnmanagedFlags flag)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_UNMANAGED_NONE);
+	g_return_val_if_fail (flag != NM_UNMANAGED_NONE, NM_UNMANAGED_NONE);
+
+	return NM_DEVICE_GET_PRIVATE (self)->unmanaged_mask & flag;
+}
+
+/**
  * nm_device_get_unmanaged_flags:
  * @self: the #NMDevice
  * @flag: the unmanaged flags to check.
@@ -9136,8 +9154,8 @@ nm_device_get_managed (NMDevice *self, gboolean for_user_request)
 NMUnmanagedFlags
 nm_device_get_unmanaged_flags (NMDevice *self, NMUnmanagedFlags flag)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (flag != NM_UNMANAGED_NONE, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_UNMANAGED_NONE);
+	g_return_val_if_fail (flag != NM_UNMANAGED_NONE, NM_UNMANAGED_NONE);
 
 	return NM_DEVICE_GET_PRIVATE (self)->unmanaged_flags & flag;
 }
