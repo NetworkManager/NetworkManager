@@ -1195,7 +1195,8 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 static gboolean
 can_unmanaged_external_down (NMDevice *self)
 {
-	return nm_device_is_software (self) && !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
+	return    !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned
+	       && nm_device_is_software (self);
 }
 
 static void
