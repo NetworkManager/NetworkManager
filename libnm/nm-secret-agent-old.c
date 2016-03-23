@@ -27,6 +27,7 @@
 #include "nm-enum-types.h"
 #include "nm-dbus-helpers.h"
 #include "nm-simple-connection.h"
+#include "nm-core-internal.h"
 
 #include "nmdbus-secret-agent.h"
 #include "nmdbus-agent-manager.h"
@@ -273,7 +274,7 @@ verify_request (NMSecretAgentOld *self,
 
 	/* Make sure the given connection is valid */
 	g_assert (out_connection);
-	connection = nm_simple_connection_new_from_dbus (connection_dict, &local);
+	connection = _nm_simple_connection_new_from_dbus (connection_dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &local);
 	if (connection) {
 		nm_connection_set_path (connection, connection_path);
 		*out_connection = connection;
