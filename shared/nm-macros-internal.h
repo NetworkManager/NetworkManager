@@ -22,6 +22,8 @@
 #ifndef __NM_MACROS_INTERNAL_H__
 #define __NM_MACROS_INTERNAL_H__
 
+#include <stdlib.h>
+
 /********************************************************/
 
 #define nm_auto(fcn) __attribute ((cleanup(fcn)))
