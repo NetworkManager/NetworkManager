@@ -59,6 +59,8 @@ typedef struct {
 	NMActiveConnection *master;
 	gboolean master_ready;
 
+	NMActiveConnection *parent;
+
 	gboolean assumed;
 
 	NMAuthChain *chain;
@@ -98,6 +100,7 @@ enum {
 enum {
 	DEVICE_CHANGED,
 	DEVICE_METERED_CHANGED,
+	PARENT_ACTIVE,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -678,6 +681,69 @@ nm_active_connection_get_assumed (NMActiveConnection *self)
 
 /****************************************************************/
 
+static void unwatch_parent (NMActiveConnection *self);
+
+static void
+parent_destroyed (gpointer user_data, GObject *parent)
+{
+	NMActiveConnection *self = user_data;
+
+	unwatch_parent (self);
+	g_signal_emit (self, signals[PARENT_ACTIVE], 0, NULL);
+}
+
+static void
+parent_state_cb (NMActiveConnection *parent_ac,
+                 GParamSpec *pspec,
+                 gpointer user_data)
+{
+	NMActiveConnection *self = user_data;
+	NMActiveConnectionState parent_state = nm_active_connection_get_state (parent_ac);
+
+	if (parent_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		return;
+
+	unwatch_parent (self);
+	g_signal_emit (self, signals[PARENT_ACTIVE], 0, parent_ac);
+}
+
+static void
+unwatch_parent (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	g_signal_handlers_disconnect_by_func (priv->parent,
+	                                      (GCallback) parent_state_cb,
+	                                      self);
+	g_object_weak_unref ((GObject *) priv->parent, parent_destroyed, self);
+	priv->parent = NULL;
+}
+
+/**
+ * nm_active_connection_set_parent:
+ * @self: the #NMActiveConnection
+ * @parent: The #NMActiveConnection that must be active before the manager
+ * can proceed progressing the device to disconnected state for us.
+ *
+ * Sets the parent connection of @self. A "parent-active" signal will be
+ * emitted when the parent connection becomes active.
+ */
+void
+nm_active_connection_set_parent (NMActiveConnection *self, NMActiveConnection *parent)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->parent == NULL);
+	priv->parent = parent;
+	g_signal_connect (priv->parent,
+	                  "notify::" NM_ACTIVE_CONNECTION_STATE,
+	                  (GCallback) parent_state_cb,
+	                  self);
+	g_object_weak_ref ((GObject *) priv->parent, parent_destroyed, self);
+}
+
+/****************************************************************/
+
 static void
 auth_done (NMAuthChain *chain,
            GError *error,
@@ -1028,6 +1094,10 @@ dispose (GObject *object)
 		                                      self);
 	}
 	g_clear_object (&priv->master);
+
+	if (priv->parent)
+		unwatch_parent (self);
+
 	g_clear_object (&priv->subject);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
@@ -1207,6 +1277,14 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		              G_STRUCT_OFFSET (NMActiveConnectionClass, device_metered_changed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
+
+	signals[PARENT_ACTIVE] =
+		g_signal_new (NM_ACTIVE_CONNECTION_PARENT_ACTIVE,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMActiveConnectionClass, parent_active),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1, NM_TYPE_ACTIVE_CONNECTION);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ac_class),
 	                                        NMDBUS_TYPE_ACTIVE_CONNECTION_SKELETON,
