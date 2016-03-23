@@ -10400,7 +10400,8 @@ _set_state_full (NMDevice *self,
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		if (available_connections_del_all (self))
 			available_connections_notify (self);
-		_clear_queued_act_request (priv);
+		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
+			_clear_queued_act_request (priv);
 	}
 
 	/* Update the available connections list when a device first becomes available */
