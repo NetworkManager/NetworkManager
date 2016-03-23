@@ -465,7 +465,7 @@ _connect_generic (NMVpnPluginOld *plugin,
 		return;
 	}
 
-	connection = nm_simple_connection_new_from_dbus (properties, &error);
+	connection = _nm_simple_connection_new_from_dbus (properties, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &error);
 	if (!connection) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
@@ -547,7 +547,7 @@ impl_vpn_plugin_old_need_secrets (NMVpnPluginOld *plugin,
 	gboolean needed;
 	GError *error = NULL;
 
-	connection = nm_simple_connection_new_from_dbus (properties, &error);
+	connection = _nm_simple_connection_new_from_dbus (properties, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &error);
 	if (!connection) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
@@ -606,7 +606,7 @@ impl_vpn_plugin_old_new_secrets (NMVpnPluginOld *plugin,
 		return;
 	}
 
-	connection = nm_simple_connection_new_from_dbus (properties, &error);
+	connection = _nm_simple_connection_new_from_dbus (properties, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &error);
 	if (!connection) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
