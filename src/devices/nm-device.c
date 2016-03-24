@@ -1217,6 +1217,28 @@ is_unmanaged_external_down (NMDevice *self, gboolean consider_can)
 }
 
 static void
+set_unmanaged_external_down (NMDevice *self)
+{
+	NMUnmanFlagOp ext_flags;
+
+	if (!nm_device_get_unmanaged_mask (self, NM_UNMANAGED_EXTERNAL_DOWN))
+		return;
+
+	ext_flags = is_unmanaged_external_down (self, FALSE);
+	if (ext_flags != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
+		/* Ensure the assume check is queued before any queued state changes
+		 * from the transition to UNAVAILABLE.
+		 */
+		nm_device_queue_recheck_assume (self);
+	}
+
+	nm_device_set_unmanaged_by_flags (self,
+	                                  NM_UNMANAGED_EXTERNAL_DOWN,
+	                                  ext_flags,
+	                                  NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+}
+
+static void
 update_dynamic_ip_setup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -1536,22 +1558,7 @@ device_link_changed (NMDevice *self)
 		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
 	}
 
-	if (nm_device_get_unmanaged_mask (self, NM_UNMANAGED_EXTERNAL_DOWN)) {
-		NMUnmanFlagOp ext_flags;
-
-		ext_flags = is_unmanaged_external_down (self, FALSE);
-		if (ext_flags != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
-			/* Ensure the assume check is queued before any queued state changes
-			 * from the transition to UNAVAILABLE.
-			 */
-			nm_device_queue_recheck_assume (self);
-		}
-
-		nm_device_set_unmanaged_by_flags (self,
-		                                  NM_UNMANAGED_EXTERNAL_DOWN,
-		                                  ext_flags,
-		                                  NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-	}
+	set_unmanaged_external_down (self);
 
 	device_recheck_slave_status (self, &info);
 	return G_SOURCE_REMOVE;
