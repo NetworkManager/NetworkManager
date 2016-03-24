@@ -2723,6 +2723,37 @@ _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **er
 	return success;
 }
 
+/* Traverse the device to disconnected state. This means that the device is ready
+ * for connection and will proceed activating if there's an activation request
+ * enqueued.
+ */
+static void
+unmanaged_to_disconnected (NMDevice *device)
+{
+	/* when creating the software device, it can happen that the device is
+	 * still unmanaged by NM_UNMANAGED_PLATFORM_INIT because we didn't yet
+	 * get the udev event. At this point, we can no longer delay the activation
+	 * and force the device to be managed. */
+	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+
+	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_USER_EXPLICIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+
+	g_return_if_fail (nm_device_get_managed (device, FALSE));
+
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
+		nm_device_state_changed (device,
+					 NM_DEVICE_STATE_UNAVAILABLE,
+					 NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	}
+
+	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
+	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
+		nm_device_state_changed (device,
+					 NM_DEVICE_STATE_DISCONNECTED,
+					 NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	}
+}
+
 static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
@@ -2846,28 +2877,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	if (existing)
 		nm_device_steal_connection (existing, connection);
 
-	/* when creating the software device, it can happen that the device is
-	 * still unmanaged by NM_UNMANAGED_PLATFORM_INIT because we didn't yet
-	 * get the udev event. At this point, we can no longer delay the activation
-	 * and force the device to be managed. */
-	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
-
-	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_USER_EXPLICIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
-
-	g_return_val_if_fail (nm_device_get_managed (device, FALSE), FALSE);
-
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_UNAVAILABLE,
-		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-	}
-
-	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
-	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-	}
+	/* Make the device ready for activation. */
+	unmanaged_to_disconnected (device);
 
 	/* Export the new ActiveConnection to clients and start it on the device */
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
