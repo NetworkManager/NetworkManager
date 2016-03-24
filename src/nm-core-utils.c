@@ -1009,7 +1009,6 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 
 	g_return_if_fail (pid > 0);
 	g_return_if_fail (log_name != NULL);
-	g_return_if_fail (wait_before_kill_msec > 0);
 
 	start_time0 = nm_utils_get_start_time_for_pid (pid, &p_state, NULL);
 	if (start_time0 == 0) {
@@ -1047,12 +1046,12 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 		return;
 	}
 
-	/* wait for the process to terminated... */
+	/* wait for the process to terminate... */
 
 	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
 
 	sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
-	if (sig != SIGKILL)
+	if (sig != SIGKILL && wait_before_kill_msec)
 		wait_until_sigkill = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 	else
 		wait_until_sigkill = 0;
