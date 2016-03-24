@@ -370,7 +370,7 @@ class RpmScheme_ParseWebsite(RpmScheme):
     def pattern_is_default(self):
         return self._pattern is None
     def is_matching_url(self, url):
-        p = '^.*/([^/]+\.(src|%s)\.rpm)$' % (self.arch_re)
+        p = '^.*/([^/]+\.(src|noarch|%s)\.rpm)$' % (self.arch_re)
         if re.match(p, url):
             if re.search(self.pattern, url):
                 return True
