@@ -4,56 +4,56 @@
   <interface name="org.freedesktop.NetworkManager.Device.Tun">
 
     <property name="Owner" type="x" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The uid of the tunnel owner, or -1 if it has no owner.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Group" type="x" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The gid of the tunnel group, or -1 if it has no owner.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Mode" type="s" access="read">
-      <tp:docstring>
-        The tunnel mode, either "tun" or "tap".
-      </tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
+        The tunnel mode, either &quot;tun&quot; or &quot;tap&quot;.
+      " />
     </property>
 
     <property name="NoPi" type="b" access="read">
-      <tp:docstring>
-        The tunnel's "TUN_NO_PI" flag; true if no protocol info is
+      <annotation name="org.gtk.GDBus.DocString" value="
+        The tunnel's &quot;TUN_NO_PI&quot; flag; true if no protocol info is
 	prepended to the tunnel packets.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="VnetHdr" type="b" access="read">
-      <tp:docstring>
-        The tunnel's "TUN_VNET_HDR" flag; true if the tunnel packets
+      <annotation name="org.gtk.GDBus.DocString" value="
+        The tunnel's &quot;TUN_VNET_HDR&quot; flag; true if the tunnel packets
 	include a virtio network header.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="MultiQueue" type="b" access="read">
-      <tp:docstring>
-        The tunnel's "TUN_TAP_MQ" flag; true if callers can connect to
+      <annotation name="org.gtk.GDBus.DocString" value="
+        The tunnel's &quot;TUN_TAP_MQ&quot; flag; true if callers can connect to
         the tap device multiple times, for multiple send/receive
         queues.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="HwAddress" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Hardware address of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary mapping property names to variant boxed values
-            </tp:docstring>
+            " />
         </arg>
     </signal>
 

@@ -4,81 +4,81 @@
   <interface name="org.freedesktop.NetworkManager.Device.IPTunnel">
 
     <property name="Mode" type="u" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The tunneling mode.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Parent" type="o" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The object path of the parent device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Local" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The local endpoint of the tunnel.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Remote" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The remote endpoint of the tunnel.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Ttl" type="y" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The TTL assigned to tunneled packets. 0 is a special value
         meaning that packets inherit the TTL value
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Tos" type="y" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The type of service (IPv4) or traffic class (IPv6) assigned to
         tunneled packets.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="PathMtuDiscovery" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Whether path MTU discovery is enabled on this tunnel.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="InputKey" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The key used for incoming packets.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="OutputKey" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The key used for outgoing packets.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="EncapsulationLimit" type="y" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         How many additional levels of encapsulation are permitted to
         be prepended to packets. This property applies only to IPv6
         tunnels.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="FlowLabel" type="u" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The flow label to assign to tunnel packets. This property
         applies only to IPv6 tunnels.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary mapping property names to variant boxed values
-            </tp:docstring>
+            " />
         </arg>
     </signal>
 

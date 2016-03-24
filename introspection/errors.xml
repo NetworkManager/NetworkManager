@@ -4,21 +4,21 @@
   <tp:copyright>Copyright (C) 2008 Novell, Inc.</tp:copyright>
 
   <tp:error name="Unknown Connection">
-    <tp:docstring>
+    <annotation name="org.gtk.GDBus.DocString" value="
         Connection was not provided by the settings service.
-    </tp:docstring>
+    " />
   </tp:error>
 
   <tp:error name="Unknown Device">
-    <tp:docstring>
+    <annotation name="org.gtk.GDBus.DocString" value="
         Unknown device.
-    </tp:docstring>
+    " />
   </tp:error>
 
   <tp:error name="Permission Denied">
-    <tp:docstring>
+    <annotation name="org.gtk.GDBus.DocString" value="
     User does not have the permission to activate this connection.
-    </tp:docstring>
+    " />
   </tp:error>
 
 </tp:errors>

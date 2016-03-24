@@ -4,43 +4,43 @@
   <interface name="org.freedesktop.NetworkManager.Device.Bluetooth">
 
     <property name="HwAddress" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Bluetooth hardware address of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Name" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Bluetooth name of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="BtCapabilities" type="u" access="read" tp:type="NM_BT_CAPABILITIES">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Bluetooth capabilities of the device (either DUN or NAP).
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary mapping property names to variant boxed values
-            </tp:docstring>
+            " />
         </arg>
     </signal>
 
     <tp:flags name="NM_BT_CAPABILITIES" value-prefix="NM_BT_CAPABILITY" type="u">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Flags describing the capabilities of a Bluetooth device.
-      </tp:docstring>
+      " />
       <tp:flag suffix="NONE" value="0x0">
-        <tp:docstring>The device has no recognized capabilities.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device has no recognized capabilities." />
       </tp:flag>
       <tp:flag suffix="DUN" value="0x1">
-        <tp:docstring>The device supports Bluetooth Dial-Up Networking.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports Bluetooth Dial-Up Networking." />
       </tp:flag>
       <tp:flag suffix="PAN" value="0x2">
-        <tp:docstring>The device supports Bluetooth Personal Area Networking.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports Bluetooth Personal Area Networking." />
       </tp:flag>
     </tp:flags>
 

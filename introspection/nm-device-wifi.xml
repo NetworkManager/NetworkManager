@@ -6,164 +6,164 @@
 
     <method name="GetAccessPoints">
       <arg name="access_points" type="ao" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           List of access point object paths.
-        </tp:docstring>
+        " />
       </arg>
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         DEPRECATED.  Get the list of access points visible to this device.  Note
         that this list does not include access points which hide their SSID.  To
         retrieve a list of all access points (including hidden ones) use the
         GetAllAccessPoints() method.
-      </tp:docstring>
+      " />
     </method>
 
     <method name="GetAllAccessPoints">
       <arg name="access_points" type="ao" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           List of access point object paths.
-        </tp:docstring>
+        " />
       </arg>
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Get the list of all access points visible to this device, including
         hidden ones for which the SSID is not yet known.
-      </tp:docstring>
+      " />
     </method>
 
     <method name="RequestScan">
       <arg name="options" type="a{sv}" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Options of scan.
-          Currently 'ssids' option with value of "aay" type is supported.
-        </tp:docstring>
+          Currently 'ssids' option with value of &quot;aay&quot; type is supported.
+        " />
       </arg>
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Request the device to scan
-      </tp:docstring>
+      " />
     </method>
 
     <property name="HwAddress" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The active hardware address of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="PermHwAddress" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The permanent hardware address of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Mode" type="u" access="read" tp:type="NM_802_11_MODE">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The operating mode of the wireless device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Bitrate" type="u" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The bit rate currently used by the wireless device, in kilobits/second (Kb/s).
-      </tp:docstring>
+      " />
     </property>
 
     <property name="AccessPoints" type="ao" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         List of object paths of access point visible to this wireless device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="ActiveAccessPoint" type="o" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Object path of the access point currently used by the wireless device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WirelessCapabilities" type="u" access="read" tp:type="NM_802_11_DEVICE_CAP">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The capabilities of the wireless device.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary containing the FIXME: check changed parameters.
-            </tp:docstring>
+            " />
         </arg>
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
             Emitted when the wireless device's properties changed.
-        </tp:docstring>
+        " />
     </signal>
 
     <signal name="AccessPointAdded">
         <arg name="access_point" type="o">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 The object path of the newly found access point.
-            </tp:docstring>
+            " />
         </arg>
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
             Emitted when a new access point is found by the device.
-        </tp:docstring>
+        " />
     </signal>
 
     <signal name="AccessPointRemoved">
       <arg name="access_point" type="o">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 The object path of the access point that has disappeared.
-            </tp:docstring>
+            " />
         </arg>
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
             Emitted when an access point disappears from view of the device.
-        </tp:docstring>
+        " />
     </signal>
 
     <tp:flags name="NM_802_11_DEVICE_CAP" type="u">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Flags describing the capabilities of a wireless device.
-      </tp:docstring>
+      " />
       <tp:flag suffix="NONE" value="0x0">
-        <tp:docstring>Null capability - syntactic sugar for no capabilities supported.  Do not AND this with other capabilities!</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="Null capability - syntactic sugar for no capabilities supported.  Do not AND this with other capabilities!" />
       </tp:flag>
       <tp:flag suffix="CIPHER_WEP40" value="0x1">
-        <tp:docstring>The device supports the 40-bit WEP cipher.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports the 40-bit WEP cipher." />
       </tp:flag>
       <tp:flag suffix="CIPHER_WEP104" value="0x2">
-        <tp:docstring>The device supports the 104-bit WEP cipher.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports the 104-bit WEP cipher." />
       </tp:flag>
       <tp:flag suffix="CIPHER_TKIP" value="0x4">
-        <tp:docstring>The device supports the TKIP cipher.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports the TKIP cipher." />
       </tp:flag>
       <tp:flag suffix="CIPHER_CCMP" value="0x8">
-        <tp:docstring>The device supports the CCMP cipher.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports the CCMP cipher." />
       </tp:flag>
       <tp:flag suffix="WPA" value="0x10">
-        <tp:docstring>The device supports the WPA encryption/authentication protocol.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports the WPA encryption/authentication protocol." />
       </tp:flag>
       <tp:flag suffix="RSN" value="0x20">
-        <tp:docstring>The device supports the RSN encryption/authentication protocol.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports the RSN encryption/authentication protocol." />
       </tp:flag>
       <tp:flag suffix="AP" value="0x40">
-        <tp:docstring>The device supports Access Point mode.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports Access Point mode." />
       </tp:flag>
       <tp:flag suffix="ADHOC" value="0x80">
-        <tp:docstring>The device supports Ad-Hoc mode.</tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="The device supports Ad-Hoc mode." />
       </tp:flag>
       <tp:flag suffix="FREQ_VALID" value="0x100">
-	<tp:docstring>
+	<annotation name="org.gtk.GDBus.DocString" value="
 	  The device properly reports information about supported
 	  frequencies and thus both NM_802_11_DEVICE_CAP_FREQ_2GHZ and
 	  NM_802_11_DEVICE_CAP_FREQ_5GHZ are valid.
-	</tp:docstring>
+	" />
       </tp:flag>
       <tp:flag suffix="FREQ_2GHZ" value="0x200">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The device supports 2.4GHz frequencies.
-        </tp:docstring>
+        " />
       </tp:flag>
       <tp:flag suffix="FREQ_5GHZ" value="0x400">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The device supports 5GHz frequencies.
-        </tp:docstring>
+        " />
       </tp:flag>
     </tp:flags>
   </interface>

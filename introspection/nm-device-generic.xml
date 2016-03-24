@@ -4,22 +4,22 @@
   <interface name="org.freedesktop.NetworkManager.Device.Generic">
 
     <property name="HwAddress" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Hardware address of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="TypeDescription" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         A (non-localized) description of the interface type, if known.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary mapping property names to variant boxed values
-            </tp:docstring>
+            " />
         </arg>
     </signal>
 

@@ -5,213 +5,213 @@
     <annotation name="org.gtk.GDBus.C.Name" value="Manager"/>
 
     <method name="GetDevices">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Get the list of realized network devices.
-      </tp:docstring>
+      " />
       <arg name="devices" type="ao" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           List of object paths of network devices known to the system.  This
           list does not include device placeholders (see GetAllDevices()).
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="GetAllDevices">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Get the list of all network devices.
-      </tp:docstring>
+      " />
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_all_devices"/>
       <arg name="devices" type="ao" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           List of object paths of network devices and device placeholders
           (eg, devices that do not yet exist but which can be automatically
           created by NetworkManager if one of their AvailableConnections
           was activated).
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="GetDeviceByIpIface">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Return the object path of the network device referenced by its IP
         interface name.  Note that some devices (usually modems) only have an
         IP interface name when they are connected.
-      </tp:docstring>
+      " />
       <arg name="iface" type="s" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Interface name of the device to find.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="device" type="o" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Object path of the network device.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="ActivateConnection">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Activate a connection using the supplied device.
-      </tp:docstring>
+      " />
       <arg name="connection" type="o" direction="in">
-        <tp:docstring>
-          The connection to activate.  If "/" is given, a valid device path must
+        <annotation name="org.gtk.GDBus.DocString" value="
+          The connection to activate.  If &quot;/&quot; is given, a valid device path must
           be given, and NetworkManager picks the best connection to activate for
           the given device.  VPN connections must always pass a valid connection
           path.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="device" type="o" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The object path of device to be activated for physical connections.
           This parameter is ignored for VPN connections, because the
           specific_object (if provided) specifies the device to use.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="specific_object" type="o" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The path of a connection-type-specific object this activation should use. 
           This parameter is currently ignored for wired and mobile broadband connections,
-          and the value of "/" should be used (ie, no specific object).  For WiFi
+          and the value of &quot;/&quot; should be used (ie, no specific object).  For WiFi
           connections, pass the object path of a specific AP from the card's scan
-          list, or "/" to pick an AP automatically.  For VPN connections, pass
+          list, or &quot;/&quot; to pick an AP automatically.  For VPN connections, pass
           the object path of an ActiveConnection object that should serve as the
-          "base" connection (to which the VPN connections lifetime will be tied),
-          or pass "/" and NM will automatically use the current default device.
-        </tp:docstring>
+          &quot;base&quot; connection (to which the VPN connections lifetime will be tied),
+          or pass &quot;/&quot; and NM will automatically use the current default device.
+        " />
       </arg>
       <arg name="active_connection" type="o" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The path of the active connection object representing this active connection.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="AddAndActivateConnection">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Adds a new connection using the given details (if any) as a template
         (automatically filling in missing settings with the capabilities of the
         given device and specific object), then activate the new connection.
         Cannot be used for VPN connections at this time.
-      </tp:docstring>
+      " />
       <arg name="connection" type="a{sa{sv}}" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Connection settings and properties; if incomplete missing settings will
           be automatically completed using the given device and specific object.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="device" type="o" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The object path of device to be activated using the given connection.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="specific_object" type="o" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The path of a connection-type-specific object this activation should use. 
           This parameter is currently ignored for wired and mobile broadband connections,
-          and the value of "/" should be used (ie, no specific object).  For WiFi
+          and the value of &quot;/&quot; should be used (ie, no specific object).  For WiFi
           connections, pass the object path of a specific AP from the card's scan
           list, which will be used to complete the details of the newly added
           connection.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="path" type="o" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Object path of the new connection that was just added.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="active_connection" type="o" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The path of the active connection object representing this active connection.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="DeactivateConnection">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Deactivate an active connection.
-      </tp:docstring>
+      " />
       <arg name="active_connection" type="o" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The currently active connection to deactivate.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="Sleep">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Control the NetworkManager daemon's sleep state.  When asleep, all
         interfaces that it manages are deactivated.  When awake, devices are
         available to be activated.  This command should not be called directly
         by users or clients; it is intended for system suspend/resume tracking.
-      </tp:docstring>
+      " />
       <arg name="sleep" type="b" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Indicates whether the NetworkManager daemon should sleep or wake.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="Enable">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Control whether overall networking is enabled or disabled.  When
         disabled, all interfaces that NM manages are deactivated.  When enabled,
         all managed interfaces are re-enabled and available to be activated.
         This command should be used by clients that provide to users the ability
         to enable/disable all networking.
-      </tp:docstring>
+      " />
       <arg name="enable" type="b" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           If FALSE, indicates that all networking should be disabled.  If TRUE,
           indicates that NetworkManager should begin managing network devices.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="GetPermissions">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Returns the permissions a caller has for various authenticated operations
         that NetworkManager provides, like Enable/Disable networking, changing
         WiFi, WWAN, and WiMAX state, etc.
-      </tp:docstring>
+      " />
       <arg name="permissions" type="a{ss}" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Dictionary of available permissions and results.  Each permission
-          is represented by a name (ie "org.freedesktop.NetworkManager.Foobar")
-          and each result is one of the following values: "yes" (the permission
-          is available), "auth" (the permission is available after a successful
-          authentication), or "no" (the permission is denied).  Clients may use
+          is represented by a name (ie &quot;org.freedesktop.NetworkManager.Foobar&quot;)
+          and each result is one of the following values: &quot;yes&quot; (the permission
+          is available), &quot;auth&quot; (the permission is available after a successful
+          authentication), or &quot;no&quot; (the permission is denied).  Clients may use
           these values in the UI to indicate the ability to perform certain
           operations.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <signal name="CheckPermissions">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Emitted when system authorization details change, indicating that
         clients may wish to recheck permissions with GetPermissions.
-      </tp:docstring>
+      " />
     </signal>
 
     <method name="SetLogging">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Set logging verbosity and which operations are logged.
-      </tp:docstring>
+      " />
       <arg name="level" type="s" direction="in">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           One of [ERR, WARN, INFO, DEBUG, TRACE, OFF, KEEP].
           This level is applied to the domains as specified in the domains
-          argument. Except for the special level "KEEP", all unmentioned
-          domains are disabled entirely. "KEEP" is special and allows
+          argument. Except for the special level &quot;KEEP&quot;, all unmentioned
+          domains are disabled entirely. &quot;KEEP&quot; is special and allows
           not to change the current setting except for the specified
           domains. E.g. level=KEEP and domains=PLATFORM:DEBUG will only
           touch the platform domain.
-        </tp:docstring>
+        " />
       </arg>
       <arg name="domains" type="s" direction="in">
-        <tp:docstring>
-          A combination of logging domains separated by commas (','), or "NONE"
+        <annotation name="org.gtk.GDBus.DocString" value="
+          A combination of logging domains separated by commas (','), or &quot;NONE&quot;
           to disable logging.  Each domain enables logging for operations
           related to that domain.  Available domains are: [PLATFORM, RFKILL, ETHER,
           WIFI, BT, MB, DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS,
@@ -224,308 +224,308 @@
           and a log level (eg, 'WIFI:DEBUG').  If an empty string is given, the
           log level is changed but the current set of log domains remains
           unchanged.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="GetLogging">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Get current logging verbosity level and operations domains.
-      </tp:docstring>
+      " />
       <arg name="level" type="s" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           One of [ERR, WARN, INFO, DEBUG, TRACE].
-        </tp:docstring>
+        " />
       </arg>
       <arg name="domains" type="s" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           For available domains see SetLogging() call.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="CheckConnectivity">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
 	Re-check the network connectivity state.
-      </tp:docstring>
+      " />
       <arg name="connectivity" type="u" tp:type="NM_CONNECTIVITY" direction="out">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The current connectivity state.
-        </tp:docstring>
+        " />
       </arg>
     </method>
 
     <method name="state">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The overall networking state as determined by the NetworkManager daemon,
         based on the state of network devices under it's management.
-      </tp:docstring>
+      " />
       <arg name="state" type="u" direction="out" tp:type="NM_STATE"/>
     </method>
 
     <property name="Devices" type="ao" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The list of realized network devices. Realized devices are those which
         have backing resources (eg from the kernel or a management daemon like
         ModemManager, teamd, etc).
-      </tp:docstring>
+      " />
     </property>
 
     <property name="AllDevices" type="ao" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The list of both realized and un-realized network devices. Un-realized
         devices are software devices which do not yet have backing resources,
         but for which backing resources can be created if the device is
         activated.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="NetworkingEnabled" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if overall networking is currently enabled or not.  See the
         Enable() method.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WirelessEnabled" type="b" access="readwrite">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if wireless is currently enabled or not.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WirelessHardwareEnabled" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if the wireless hardware is currently enabled, i.e. the state of the RF kill switch.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WwanEnabled" type="b" access="readwrite">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if mobile broadband devices are currently enabled or not.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WwanHardwareEnabled" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if the mobile broadband hardware is currently enabled, i.e. the state of the RF kill switch.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WimaxEnabled" type="b" access="readwrite">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if WiMAX devices are currently enabled or not.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="WimaxHardwareEnabled" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates if the WiMAX hardware is currently enabled, i.e. the state of the RF kill switch.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="ActiveConnections" type="ao" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         List of active connection object paths.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="PrimaryConnection" type="o" access="read">
-      <tp:docstring>
-        The object path of the "primary" active connection being used
+      <annotation name="org.gtk.GDBus.DocString" value="
+        The object path of the &quot;primary&quot; active connection being used
         to access the network. In particular, if there is no VPN
         active, or the VPN does not have the default route, then this
         indicates the connection that has the default route. If there
         is a VPN active with the default route, then this indicates
         the connection that contains the route to the VPN endpoint.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="PrimaryConnectionType" type="s" access="read">
-      <tp:docstring>
-        The connection type of the "primary" active connection being
+      <annotation name="org.gtk.GDBus.DocString" value="
+        The connection type of the &quot;primary&quot; active connection being
         used to access the network. This is the same as the Type
         property on the object indicated by PrimaryConnection.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Metered" type="u" access="read" tp:type="NM_METERED">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates whether the connectivity is metered. This is equivalent
         to the metered property of the device associated with the primary
         connection.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="ActivatingConnection" type="o" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The object path of an active connection that is currently
         being activated and which is expected to become the new
         PrimaryConnection when it finishes activating.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Startup" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates whether NM is still starting up; this becomes FALSE
         when NM has finished attempting to activate every connection
         that it might be able to activate at startup.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Version" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         NetworkManager version.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="State" type="u" access="read" tp:type="NM_STATE">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The overall state of the NetworkManager daemon.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="StateChanged">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         NetworkManager's state changed.
-      </tp:docstring>
+      " />
       <arg name="state" type="u" tp:type="NM_STATE">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The new state of NetworkManager.
-        </tp:docstring>
+        " />
       </arg>
     </signal>
 
     <property name="Connectivity" type="u" access="read" tp:type="NM_CONNECTIVITY">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The network connectivity state.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="GlobalDnsConfiguration" type="a{sv}" access="readwrite">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Dictionary of global DNS settings where the key is one of
-        "searches", "options" and "domains".  The values for the
-        "searches" and "options" keys are string arrays describing the
+        &quot;searches&quot;, &quot;options&quot; and &quot;domains&quot;.  The values for the
+        &quot;searches&quot; and &quot;options&quot; keys are string arrays describing the
         list of search domains and resolver options, respectively.
-        The value of the "domains" key is a second-level dictionary,
+        The value of the &quot;domains&quot; key is a second-level dictionary,
         where each key is a domain name, and each key's value is a
-        third-level dictionary with the keys "servers" and
-        "options". "servers" is a string array of DNS servers,
-        "options" is a string array of domain-specific options.
-      </tp:docstring>
+        third-level dictionary with the keys &quot;servers&quot; and
+        &quot;options&quot;. &quot;servers&quot; is a string array of DNS servers,
+        &quot;options&quot; is a string array of domain-specific options.
+      " />
     </property>
 
     <signal name="PropertiesChanged">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         NetworkManager's properties changed.
-      </tp:docstring>
+      " />
       <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The changed properties.
-        </tp:docstring>
+        " />
       </arg>
     </signal>
 
     <signal name="DeviceAdded">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         A device was added to the system
-      </tp:docstring>
+      " />
       <arg name="device_path" type="o">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The object path of the newly added device.
-        </tp:docstring>
+        " />
       </arg>
     </signal>
 
     <signal name="DeviceRemoved">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         A device was removed from the system, and is no longer available.
-      </tp:docstring>
+      " />
       <arg name="device_path" type="o">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The object path of the device that was just removed.
-        </tp:docstring>
+        " />
       </arg>
     </signal>
 
     <tp:enum name="NM_STATE" type="u">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Describes the overall state of the daemon.
-      </tp:docstring>
+      " />
       <tp:enumvalue suffix="UNKNOWN" value="0">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Networking state is unknown.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="ASLEEP" value="10">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Networking is inactive and all devices are disabled.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="DISCONNECTED" value="20">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           There is no active network connection.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="DISCONNECTING" value="30">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Network connections are being cleaned up.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="CONNECTING" value="40">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           A network device is connecting to a network and there is no other
           available network connection.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="CONNECTED_LOCAL" value="50">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           A network device is connected, but there is only link-local connectivity.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="CONNECTED_SITE" value="60">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           A network device is connected, but there is only site-local connectivity.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="CONNECTED_GLOBAL" value="70">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           A network device is connected, with global network connectivity.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
     </tp:enum>
 
     <tp:enum name="NM_CONNECTIVITY" type="u">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Describes the network-connectivity state.
-      </tp:docstring>
+      " />
       <tp:enumvalue suffix="UNKNOWN" value="0">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           Network connectivity is unknown.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="NONE" value="1">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The host is not connected to any network.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="PORTAL" value="2">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The host is behind a captive portal and cannot reach the
           full Internet.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="LIMITED" value="3">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           The host is connected to a network, but does not appear to
 	  be able to reach the full Internet.
-        </tp:docstring>
+        " />
       </tp:enumvalue>
       <tp:enumvalue suffix="FULL" value="4">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
 	  The host is connected to a network, and appears to be able
 	  to reach the full Internet
-        </tp:docstring>
+        " />
       </tp:enumvalue>
     </tp:enum>
 
