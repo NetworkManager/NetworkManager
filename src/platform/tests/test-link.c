@@ -2257,9 +2257,6 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	g_assert_cmpint (mount ("tmpfs", P_VAR_RUN, "tmpfs", MS_NOATIME | MS_NODEV | MS_NOSUID, "mode=0755,size=32K"), ==, 0);
-	g_assert_cmpint (mkdir (P_VAR_RUN_NETNS, 755), ==, 0);
-
 	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
@@ -2267,6 +2264,9 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 	i = nmtst_get_rand_int () % 4;
 	if (i != 3)
 		g_assert (nm_platform_netns_push (platforms[i], &netns_pop));
+
+	g_assert_cmpint (mount ("tmpfs", P_VAR_RUN, "tmpfs", MS_NOATIME | MS_NODEV | MS_NOSUID, "mode=0755,size=32K"), ==, 0);
+	g_assert_cmpint (mkdir (P_VAR_RUN_NETNS, 755), ==, 0);
 
 	i = (nmtst_get_rand_int () % 2) + 1;
 	netns = nm_platform_netns_get (platforms[i]);
