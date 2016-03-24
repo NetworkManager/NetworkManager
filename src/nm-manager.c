@@ -226,6 +226,9 @@ static void active_connection_state_changed (NMActiveConnection *active,
 static void active_connection_default_changed (NMActiveConnection *active,
                                                GParamSpec *pspec,
                                                NMManager *self);
+static void active_connection_parent_active (NMActiveConnection *active,
+                                             NMActiveConnection *parent_ac,
+                                             NMManager *self);
 
 /* Returns: whether to notify D-Bus of the removal or not */
 static gboolean
@@ -244,6 +247,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
 		g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
 		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
+		g_signal_handlers_disconnect_by_func (active, active_connection_parent_active, self);
 
 		if (   nm_active_connection_get_assumed (active)
 		    && (connection = nm_active_connection_get_settings_connection (active))
@@ -2754,6 +2758,40 @@ unmanaged_to_disconnected (NMDevice *device)
 	}
 }
 
+/* The parent connection is ready; we can proceed realizing the device and
+ * progressing the device to disconencted state.
+ */
+static void
+active_connection_parent_active (NMActiveConnection *active,
+                                 NMActiveConnection *parent_ac,
+                                 NMManager *self)
+{
+	NMDevice *device = nm_active_connection_get_device (active);
+	GError *error = NULL;
+
+	g_signal_handlers_disconnect_by_func (active,
+	                                      (GCallback) active_connection_parent_active,
+	                                      self);
+
+	if (parent_ac) {
+		NMSettingsConnection *connection = nm_active_connection_get_settings_connection (active);
+		NMDevice *parent = nm_active_connection_get_device (parent_ac);
+
+		if (nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
+			/* We can now proceed to disconnected state so that activation proceeds. */
+			unmanaged_to_disconnected (device);
+		} else {
+			nm_log_warn (LOGD_CORE, "Could not realize device '%s': %s",
+			             nm_device_get_iface (device), error->message);
+			nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+		}
+	} else {
+		nm_log_warn (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
+		             nm_device_get_iface (device));
+		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+	}
+}
+
 static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
@@ -2813,9 +2851,35 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		NMDevice *parent;
 
 		parent = find_parent_device_for_connection (self, (NMConnection *) connection, NULL);
-		if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, error)) {
-			g_prefix_error (error, "%s failed to create resources: ", nm_device_get_iface (device));
-			return FALSE;
+
+		if (parent && !nm_device_is_real (parent)) {
+			NMSettingsConnection *parent_con;
+			NMActiveConnection *parent_ac;
+
+			parent_con = nm_device_get_best_connection (parent, NULL, error);
+			if (!parent_con) {
+				g_prefix_error (error, "%s failed to create parent: ", nm_device_get_iface (device));
+				return FALSE;
+			}
+
+			parent_ac = nm_manager_activate_connection (self, parent_con, NULL, parent, subject, error);
+			if (!parent_ac) {
+				g_prefix_error (error, "%s failed to activate parent: ", nm_device_get_iface (device));
+				return FALSE;
+			}
+
+			/* We can't realize now; defer until the parent device is ready. */
+			g_signal_connect (active,
+			                  NM_ACTIVE_CONNECTION_PARENT_ACTIVE,
+			                  (GCallback) active_connection_parent_active,
+			                  self);
+			nm_active_connection_set_parent (active, parent_ac);
+		} else {
+			/* We can realize now; no need to wait for a parent device. */
+			if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, error)) {
+				g_prefix_error (error, "%s failed to create resources: ", nm_device_get_iface (device));
+				return FALSE;
+			}
 		}
 	}
 
@@ -2877,8 +2941,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	if (existing)
 		nm_device_steal_connection (existing, connection);
 
-	/* Make the device ready for activation. */
-	unmanaged_to_disconnected (device);
+	/* If the device is there, we can ready it for the activation. */
+	if (nm_device_is_real (device))
+		unmanaged_to_disconnected (device);
 
 	/* Export the new ActiveConnection to clients and start it on the device */
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
