@@ -142,8 +142,6 @@
     </section>
   </chapter>
 
-  <xi:include href="migrating-to-09.xml" />
-
   <index>
     <title>Index</title>
   </index>
