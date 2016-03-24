@@ -142,6 +142,17 @@
     </section>
   </chapter>
 
+  <chapter id="manpages">
+    <title>UNIX Manual Pages</title>
+    <xi:include href="xml/NetworkManager.xml"/>
+    <xi:include href="xml/NetworkManager.conf.xml"/>
+    <xi:include href="xml/nmcli-examples.xml"/>
+    <xi:include href="xml/nm-settings.xml"><xi:fallback /></xi:include>
+    <xi:include href="xml/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
+    <xi:include href="xml/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
+  </chapter>
+
+
   <index>
     <title>Index</title>
   </index>
