@@ -212,7 +212,8 @@ client_start (NMDhcpManager *self,
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
 	/* Ensure we have a usable DHCP client */
-	g_return_val_if_fail (priv->client_type != 0, NULL);
+	if (priv->client_type == G_TYPE_INVALID)
+		return NULL;
 
 	/* Kill any old client instance */
 	client = get_client_for_ifindex (self, ifindex, ipv6);
@@ -337,6 +338,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       gboolean ipv6,
                                       guint32 default_route_metric)
 {
+	NMDhcpManagerPrivate *priv;
 	ClientDesc *desc;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
@@ -344,7 +346,11 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 	g_return_val_if_fail (ifindex >= -1, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	desc = find_client_desc (NULL, NM_DHCP_MANAGER_GET_PRIVATE (self)->client_type);
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	if (priv->client_type == G_TYPE_INVALID)
+		return NULL;
+
+	desc = find_client_desc (NULL, priv->client_type);
 	if (desc && desc->get_lease_configs_func)
 		return desc->get_lease_configs_func (iface, ifindex, uuid, ipv6, default_route_metric);
 	return NULL;
