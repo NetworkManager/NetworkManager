@@ -104,16 +104,18 @@ EXPORT(nm_settings_connection_replace_and_commit)
 #define HOSTNAMED_SERVICE_PATH      "/org/freedesktop/hostname1"
 #define HOSTNAMED_SERVICE_INTERFACE "org.freedesktop.hostname1"
 
-#define HOSTNAME_FILE_DEFAULT   "/etc/hostname"
-#define HOSTNAME_FILE_SUSE      "/etc/HOSTNAME"
-#define HOSTNAME_FILE_GENTOO    "/etc/conf.d/hostname"
-#define IFCFG_DIR               SYSCONFDIR "/sysconfig/network"
-#define CONF_DHCP               IFCFG_DIR "/dhcp"
+#define HOSTNAME_FILE_DEFAULT        "/etc/hostname"
+#define HOSTNAME_FILE_UCASE_HOSTNAME "/etc/HOSTNAME"
+#define HOSTNAME_FILE_GENTOO         "/etc/conf.d/hostname"
+#define IFCFG_DIR                    SYSCONFDIR "/sysconfig/network"
+#define CONF_DHCP                    IFCFG_DIR "/dhcp"
 
 #define PLUGIN_MODULE_PATH      "plugin-module-path"
 
 #if defined(HOSTNAME_PERSIST_SUSE)
-#define HOSTNAME_FILE           HOSTNAME_FILE_SUSE
+#define HOSTNAME_FILE           HOSTNAME_FILE_UCASE_HOSTNAME
+#elif defined(HOSTNAME_PERSIST_SLACKWARE)
+#define HOSTNAME_FILE           HOSTNAME_FILE_UCASE_HOSTNAME
 #elif defined(HOSTNAME_PERSIST_GENTOO)
 #define HOSTNAME_FILE           HOSTNAME_FILE_GENTOO
 #else

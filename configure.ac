@@ -350,21 +350,25 @@ PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes],[have_sy
 AM_CONDITIONAL(HAVE_SYSTEMD_200, test "${have_systemd_200}" = "yes")
 
 # Hostname persist mode
-AC_ARG_WITH(hostname-persist, AS_HELP_STRING([--with-hostname-persist=default|suse|gentoo],
+AC_ARG_WITH(hostname-persist, AS_HELP_STRING([--with-hostname-persist=default|suse|gentoo|slackware],
 	[Hostname persist method]))
 
 AS_IF([test "$with_hostname_persist" = "suse"], hostname_persist=suse)
 AS_IF([test "$with_hostname_persist" = "gentoo"], hostname_persist=gentoo)
+AS_IF([test "$with_hostname_persist" = "slackware"], hostname_persist=slackware)
 AS_IF([test "$with_hostname_persist" = "default"], hostname_persist=default)
 # if the method was not explicitly set, try to guess it from the enabled plugins
 AS_IF([test -z "$hostname_persist" -a "$distro_plugins" = "ifcfg-suse"], hostname_persist=suse)
 AS_IF([test -z "$hostname_persist" -a "$distro_plugins" = "ifnet"], hostname_persist=gentoo)
+AS_IF([test -z "$hostname_persist" -a -f /etc/slackware-version], hostname_persist=slackware)
 AS_IF([test -z "$hostname_persist"], hostname_persist=default)
 
 if test "$hostname_persist" = suse; then
 	AC_DEFINE(HOSTNAME_PERSIST_SUSE, 1, [Enable SuSE hostname persist method])
 elif test "$hostname_persist" = gentoo; then
 	AC_DEFINE(HOSTNAME_PERSIST_GENTOO, 1, [Enable Gentoo hostname persist method])
+elif test "$hostname_persist" = slackware; then
+	AC_DEFINE(HOSTNAME_PERSIST_SLACKWARE, 1, [Enable Slackware hostname persist method])
 fi
 
 AC_ARG_WITH(systemd-journal, AS_HELP_STRING([--with-systemd-journal=yes|no], [Use systemd journal for logging]))
