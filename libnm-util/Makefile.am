@@ -63,6 +63,7 @@ nodist_libnm_util_include_HEADERS = \
 	nm-utils-enum-types.h
 
 libnm_util_la_private_headers = \
+	$(top_builddir)/shared/nm-shared-utils.h \
 	crypto.h			\
 	nm-dbus-glib-types.h		\
 	nm-gvaluearray-compat.h		\
@@ -71,6 +72,7 @@ libnm_util_la_private_headers = \
 	nm-utils-private.h
 
 libnm_util_la_csources = \
+	$(top_builddir)/shared/nm-shared-utils.c \
 	crypto.c			\
 	nm-connection.c			\
 	nm-param-spec-specialized.c	\
