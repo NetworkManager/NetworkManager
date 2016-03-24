@@ -109,7 +109,7 @@ kill_existing (const char *progname, const char *pidfile, const char *kill_match
 	gs_free char *cmdline_contents = NULL;
 	guint64 start_time;
 	char proc_path[256];
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	if (!pidfile)
 		return;
