@@ -443,6 +443,7 @@ void nm_device_spawn_iface_helper (NMDevice *self);
 
 void nm_device_update_hw_address (NMDevice *self);
 void nm_device_update_initial_hw_address (NMDevice *self);
+void nm_device_update_dynamic_ip_setup (NMDevice *self);
 
 G_END_DECLS
 
