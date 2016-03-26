@@ -4,16 +4,16 @@
   <interface name="org.freedesktop.NetworkManager.Device.Veth">
 
     <property name="Peer" type="o" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The object path of the device's peer.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary mapping property names to variant boxed values
-            </tp:docstring>
+            " />
         </arg>
     </signal>
 

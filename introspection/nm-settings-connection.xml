@@ -3,27 +3,27 @@
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
 
     <interface name="org.freedesktop.NetworkManager.Settings.Connection">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
             Represents a single network connection configuration.
-        </tp:docstring>
+        " />
 
         <method name="Update">
-          <tp:docstring>
+          <annotation name="org.gtk.GDBus.DocString" value="
             Update the connection with new settings and properties (replacing
             all previous settings and properties) and save the connection to
             disk.  Secrets may be part of the update request, and will be either
             stored in persistent storage or sent to a Secret Agent for storage,
             depending on the flags associated with each secret.
-          </tp:docstring>
+          " />
           <arg name="properties" type="a{sa{sv}}" direction="in">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
               New connection settings, properties, and (optionally) secrets.
-            </tp:docstring>
+            " />
           </arg>
         </method>
 
         <method name="UpdateUnsaved">
-          <tp:docstring>
+          <annotation name="org.gtk.GDBus.DocString" value="
             Update the connection with new settings and properties (replacing
             all previous settings and properties) but do not immediately save
             the connection to disk.  Secrets may be part of the update request
@@ -34,102 +34,102 @@
             that unsaved changes will be lost if the connection is
             reloaded from disk (either automatically on file change or
             due to an explicit ReloadConnections call).
-          </tp:docstring>
+          " />
           <arg name="properties" type="a{sa{sv}}" direction="in">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
               New connection settings, properties, and (optionally) secrets.
-            </tp:docstring>
+            " />
           </arg>
         </method>
 
         <method name="Delete">
-          <tp:docstring>
+          <annotation name="org.gtk.GDBus.DocString" value="
             Delete the connection.
-          </tp:docstring>
+          " />
         </method>
 
         <method name="GetSettings">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 Get the settings maps describing this network configuration.
                 This will never include any secrets required for connection
                 to the network, as those are often protected.  Secrets must
                 be requested separately using the GetSecrets() call.
-            </tp:docstring>
+            " />
             <arg name="settings" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
-                <tp:docstring>
+                <annotation name="org.gtk.GDBus.DocString" value="
                     The nested settings maps describing this object.
-                </tp:docstring>
+                " />
             </arg>
         </method>
 
         <method name="GetSecrets">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 Get the secrets belonging to this network configuration.  Only
                 secrets from persistent storage or a Secret Agent running in
                 the requestor's session will be returned.  The user will never
                 be prompted for secrets as a result of this request.
-            </tp:docstring>
+            " />
             <arg name="setting_name" type="s" direction="in">
-                <tp:docstring>
+                <annotation name="org.gtk.GDBus.DocString" value="
                     Name of the setting to return secrets for.  If empty, all
                     all secrets will be returned.
-                </tp:docstring>
+                " />
             </arg>
 
             <arg name="secrets" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
-                <tp:docstring>
+                <annotation name="org.gtk.GDBus.DocString" value="
                     Nested settings maps containing secrets.
-                </tp:docstring>
+                " />
             </arg>
         </method>
 
         <method name="ClearSecrets">
-          <tp:docstring>
+          <annotation name="org.gtk.GDBus.DocString" value="
             Clear the secrets belonging to this network connection profile.
-          </tp:docstring>
+          " />
         </method>
 
         <method name="Save">
-            <tp:docstring>
-                Saves a "dirty" connection (that had previously been
+            <annotation name="org.gtk.GDBus.DocString" value="
+                Saves a &quot;dirty&quot; connection (that had previously been
                 updated with UpdateUnsaved) to persistent storage.
-            </tp:docstring>
+            " />
         </method>
 
         <signal name="Updated">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 Emitted when any settings or permissions change.  When handling
                 this signal, clients should re-read the connection using the
                 GetSettings method to get the changes and to ensure the client
                 still has permission to access the connection.
-            </tp:docstring>
+            " />
         </signal>
 
         <signal name="Removed">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 Emitted when this connection is no longer available.  This
                 happens when the connection is deleted or if it is no longer
                 accessible by any of the system's logged-in users.  After
                 receipt of this signal, the object no longer exists.  Also
                 see the Settings.ConnectionRemoved signal.
-            </tp:docstring>
+            " />
         </signal>
 
         <property name="Unsaved" type="b" access="read">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 If set, indicates that the in-memory state of the
                 connection does not match the on-disk state. This flag
                 will be set when UpdateUnsaved() is called or when any
                 connection details change, and cleared when the connection
                 is saved to disk via Save() or from internal operations.
-            </tp:docstring>
+            " />
         </property>
 
         <signal name="PropertiesChanged">
             <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-                <tp:docstring>
+                <annotation name="org.gtk.GDBus.DocString" value="
                     A dictionary mapping property names to variant boxed values.
-                </tp:docstring>
+                " />
             </arg>
         </signal>
 

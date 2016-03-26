@@ -3,26 +3,26 @@
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP4Config">
     <property name="Addresses" type="aau" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
 	Array of arrays of IPv4 address/prefix/gateway.  All 3
 	elements of each array are in network byte order.  Essentially:
 	[(addr, prefix, gateway), (addr, prefix, gateway), ...]
 
 	Deprecated: use AddressData and Gateway
-      </tp:docstring>
+      " />
     </property>
     <property name="AddressData" type="aa{sv}" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
 	Array of IP address data objects. All addresses will include
-	"address" (an IP address string), and "prefix" (a uint). Some
+	&quot;address&quot; (an IP address string), and &quot;prefix&quot; (a uint). Some
 	addresses may include additional attributes.
-      </tp:docstring>
+      " />
     </property>
     <property name="Gateway" type="s" access="read">
-      <tp:docstring>The gateway in use.</tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="The gateway in use." />
     </property>
     <property name="Routes" type="aau" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
 	Arrays of IPv4 route/prefix/next-hop/metric. All 4 elements of
 	each tuple are in network byte order. 'route' and 'next hop'
 	are IPv4 addresses, while prefix and metric are simple
@@ -30,41 +30,41 @@
 	metric), (route, prefix, next-hop, metric), ...]
 
 	Deprecated: use RouteData
-      </tp:docstring>
+      " />
     </property>
     <property name="RouteData" type="aa{sv}" access="read">
-      <tp:docstring>
-	Array of IP route data objects. All routes will include "dest"
-	(an IP address string) and "prefix" (a uint). Some routes may
-	include "next-hop" (an IP address string), "metric" (a uint),
+      <annotation name="org.gtk.GDBus.DocString" value="
+	Array of IP route data objects. All routes will include &quot;dest&quot;
+	(an IP address string) and &quot;prefix&quot; (a uint). Some routes may
+	include &quot;next-hop&quot; (an IP address string), &quot;metric&quot; (a uint),
 	and additional attributes.
-      </tp:docstring>
+      " />
     </property>
     <property name="Nameservers" type="au" access="read">
-      <tp:docstring>The nameservers in use.</tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="The nameservers in use." />
     </property>
     <property name="Domains" type="as" access="read">
-      <tp:docstring>A list of domains this address belongs to.</tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="A list of domains this address belongs to." />
     </property>
     <property name="Searches" type="as" access="read">
-      <tp:docstring>A list of dns searches.</tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="A list of dns searches." />
     </property>
     <property name="DnsOptions" type="as" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
 	A list of DNS options that modify the behavior of the DNS
 	resolver. See resolv.conf(5) manual page for the list of
 	supported options.
-      </tp:docstring>
+      " />
     </property>
     <property name="WinsServers" type="au" access="read">
-      <tp:docstring>The Windows Internet Name Service servers associated with the connection.  Each address is in network byte order.</tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="The Windows Internet Name Service servers associated with the connection.  Each address is in network byte order." />
     </property>
 
     <signal name="PropertiesChanged">
       <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-        <tp:docstring>
+        <annotation name="org.gtk.GDBus.DocString" value="
           A dictionary mapping property names to variant boxed values
-        </tp:docstring>
+        " />
       </arg>
     </signal>
   </interface>

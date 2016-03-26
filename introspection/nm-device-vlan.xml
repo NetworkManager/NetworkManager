@@ -4,34 +4,34 @@
   <interface name="org.freedesktop.NetworkManager.Device.Vlan">
 
     <property name="HwAddress" type="s" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Hardware address of the device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Carrier" type="b" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Indicates whether the physical carrier is found (e.g. whether a cable is plugged in or not).
-      </tp:docstring>
+      " />
     </property>
 
     <property name="Parent" type="o" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         Object path of the parent device of this VLAN device.
-      </tp:docstring>
+      " />
     </property>
 
     <property name="VlanId" type="u" access="read">
-      <tp:docstring>
+      <annotation name="org.gtk.GDBus.DocString" value="
         The VLAN ID of this VLAN interface.
-      </tp:docstring>
+      " />
     </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
+            <annotation name="org.gtk.GDBus.DocString" value="
                 A dictionary mapping property names to variant boxed values
-            </tp:docstring>
+            " />
         </arg>
     </signal>
 

@@ -143,9 +143,9 @@ org.freedesktop.NetworkManager.settings.modify.hostname   auth
       by a system administrator and are not meant to be changed by users. The usual
       place for the polkit configuration is /usr/share/polkit-1/actions/org.freedesktop.NetworkManager.policy.
       <emphasis>pkaction</emphasis> command can display description for polkit actions.
-      <programlisting><command>
-      pkaction --action-id org.freedesktop.NetworkManager.network-control --verbose
-      </command></programlisting>
+      <synopsis><command>
+pkaction --action-id org.freedesktop.NetworkManager.network-control --verbose
+      </command></synopsis>
       More information about polkit can be found at http://www.freedesktop.org/wiki/Software/polkit.
     </para>
 
@@ -176,11 +176,11 @@ $ nmcli g log level INFO domains DEFAULT
     </para>
 
     <example><title>Adding a bonding master and two slave connection profiles</title>
-      <programlisting><emphasis role="bold">
+      <synopsis><emphasis role="bold">
 $ nmcli con add type bond ifname mybond0 mode active-backup
 $ nmcli con add type ethernet ifname eth1 master mybond0
 $ nmcli con add type ethernet ifname eth2 master mybond0
-      </emphasis></programlisting>
+      </emphasis></synopsis>
     </example>
     <para>
       This example demonstrates adding a bond master connection and two slaves. The
@@ -192,11 +192,11 @@ $ nmcli con add type ethernet ifname eth2 master mybond0
     </para>
 
     <example><title>Adding a team master and two slave connection profiles</title>
-      <programlisting><emphasis role="bold">
+      <synopsis><emphasis role="bold">
 $ nmcli con add type team con-name Team1 ifname Team1 config team1-master-json.conf
 $ nmcli con add type ethernet con-name Team1-slave1 ifname em1 master Team1
 $ nmcli con add type ethernet con-name Team1-slave2 ifname em2 master Team1
-      </emphasis></programlisting>
+      </emphasis></synopsis>
     </example>
     <para>
       This example demonstrates adding a team master connection profile and two slaves. It is
@@ -210,22 +210,22 @@ $ nmcli con add type ethernet con-name Team1-slave2 ifname em2 master Team1
       <emphasis>em2</emphasis>. The slaves don't specify <emphasis>config</emphasis> and thus
       <emphasis>teamd</emphasis> will use its default configuration. You will activate the whole setup
       by activating both slaves:
-      <programlisting><emphasis role="bold">
+      <synopsis><emphasis role="bold">
 $ nmcli con up Team1-slave1
 $ nmcli con up Team1-slave2
-      </emphasis></programlisting>
+      </emphasis></synopsis>
       By default, the created profiles are marked for auto-activation. But if another
       connection has been activated on the device, the new profile won't activate
       automatically and you need to activate it manually.
     </para>
 
     <example><title>Adding a bridge and two slave profiles</title>
-      <programlisting><emphasis role="bold">
+      <synopsis><emphasis role="bold">
 $ nmcli con add type bridge con-name TowerBridge ifname TowerBridge
 $ nmcli con add type ethernet con-name br-slave-1 ifname ens3 master TowerBridge
 $ nmcli con add type ethernet con-name br-slave-2 ifname ens4 master TowerBridge
 $ nmcli con modify TowerBridge bridge.stp no
-      </emphasis></programlisting>
+      </emphasis></synopsis>
     </example>
     <para>
       This example demonstrates adding a bridge master connection and two slaves. The
@@ -239,7 +239,7 @@ $ nmcli con modify TowerBridge bridge.stp no
     </para>
 
     <example><title>Adding an ethernet connection profile with manual IP configuration</title>
-      <programlisting>
+      <synopsis>
         <emphasis role="bold">
 $ nmcli con add con-name my-con-em1 ifname em1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe
 $ nmcli con mod my-con-em1 ipv4.dns "8.8.8.8 8.8.4.4"
@@ -247,7 +247,7 @@ $ nmcli con mod my-con-em1 +ipv4.dns 1.2.3.4
 $ nmcli con mod my-con-em1 ipv6.dns "2001:4860:4860::8888 2001:4860:4860::8844"
 $ nmcli -p con show my-con-em1
         </emphasis>
-      </programlisting>
+      </synopsis>
     </example>
     <para>
       The first command adds an Ethernet connection profile named <emphasis>my-con-em1</emphasis>
@@ -263,11 +263,11 @@ $ nmcli -p con show my-con-em1
     </para>
 
     <example><title>Escaping colon characters in tabular mode</title>
-      <programlisting>
+      <synopsis>
         <emphasis role="bold">
 $ nmcli -t -f general -e yes -m tab dev show eth0
         </emphasis>
-      </programlisting>
+      </synopsis>
       <screen>
 GENERAL:eth0:ethernet:Intel Corporation:82567LM Gigabit Network Connection:e1000e:2.1.4-k:1.8-3:00\:22\:68\:15\:29\:21:1500:100 (connected):0 (No reason given):/sys/devices/pci0000\:00/0000\:00\:19.0/net/eth0:eth0:yes:yes:no:ethernet-13:89cbcbc6-dc85-456c-9c8b-bd828fee3917:/org/freedesktop/NetworkManager/ActiveConnection/9
       </screen>
@@ -316,11 +316,11 @@ fi
     <para><emphasis role="bold">Example sessions of interactive connection editor</emphasis></para>
 
     <example><title>Adding an ethernet connection profile in interactive editor (a)</title>
-      <programlisting>
+      <synopsis>
         <emphasis role="bold">
 $ nmcli connection edit type ethernet
         </emphasis>
-      </programlisting>
+      </synopsis>
       <screen>
 
 ===| nmcli interactive connection editor |===
