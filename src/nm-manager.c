@@ -3897,8 +3897,13 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 			NMDevice *device = NM_DEVICE (iter->data);
 			guint i;
 
-			if (nm_device_is_software (device))
+			if (nm_device_is_software (device)) {
+				/* We do not manage/unmanage software devices but
+				 * their dhcp leases could have gone stale so we need
+				 * to renew them */
+				nm_device_update_dynamic_ip_setup (device);
 				continue;
+			}
 
 			/* enable/disable wireless devices since that we don't respond
 			 * to killswitch changes during sleep.

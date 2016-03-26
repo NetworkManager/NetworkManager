@@ -1238,13 +1238,17 @@ set_unmanaged_external_down (NMDevice *self)
 	                                  NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 }
 
-static void
-update_dynamic_ip_setup (NMDevice *self)
+void
+nm_device_update_dynamic_ip_setup (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	GError *error;
 	gconstpointer addr;
 	size_t addr_length;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
@@ -1335,7 +1339,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 			 * tagged for carrier ignore) ensure that when the carrier appears we
 			 * renew DHCP leases and such.
 			 */
-			update_dynamic_ip_setup (self);
+			nm_device_update_dynamic_ip_setup (self);
 		}
 	} else {
 		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
@@ -1532,7 +1536,7 @@ device_link_changed (NMDevice *self)
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
-		update_dynamic_ip_setup (self);
+		nm_device_update_dynamic_ip_setup (self);
 
 	priv->up = NM_FLAGS_HAS (info.n_ifi_flags, IFF_UP);
 
@@ -1587,7 +1591,7 @@ device_ip_link_changed (NMDevice *self)
 		priv->ip_iface = g_strdup (pllink->name);
 
 		_notify (self, PROP_IP_IFACE);
-		update_dynamic_ip_setup (self);
+		nm_device_update_dynamic_ip_setup (self);
 	}
 	return G_SOURCE_REMOVE;
 }
