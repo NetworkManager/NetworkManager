@@ -1,5 +1,7 @@
 {
 global:
+	_nm_connection_new_from_hash;
+	_nm_connection_replace_settings;
 	nm_connection_add_setting;
 	nm_connection_clear_secrets;
 	nm_connection_clear_secrets_with_flags;

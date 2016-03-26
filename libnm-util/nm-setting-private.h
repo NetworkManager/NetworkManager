@@ -23,6 +23,8 @@
 
 #include "nm-default.h"
 
+#include "nm-connection.h"
+
 #define NM_SETTING_SECRET_FLAGS_ALL \
 	(NM_SETTING_SECRET_FLAG_NONE | \
 	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
@@ -61,6 +63,10 @@ GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
+
+NMConnection *_nm_connection_new_from_hash (GHashTable *hash);
+void          _nm_connection_replace_settings (NMConnection *connection,
+                                               GHashTable *new_settings);
 
 typedef enum NMSettingUpdateSecretResult {
 	NM_SETTING_UPDATE_SECRET_ERROR              = FALSE,
