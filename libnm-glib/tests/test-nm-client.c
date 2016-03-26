@@ -955,11 +955,7 @@ test_connection_invalid (void)
 
 	settings = nmtstc_nm_remote_settings_new ();
 
-	g_test_expect_message ("libnm-glib", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection*");
-
 	nmtst_main_loop_run (loop, 100);
-
-	g_test_assert_expected_messages ();
 
 	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
 
@@ -991,11 +987,7 @@ test_connection_invalid (void)
 	                               FALSE,
 	                               &path2);
 
-	g_test_expect_message ("libnm-glib", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection*");
-
 	nmtst_main_loop_run (loop, 100);
-
-	g_test_assert_expected_messages ();
 
 	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
 
@@ -1027,15 +1019,11 @@ test_connection_invalid (void)
 	                                  connection,
 	                                  FALSE);
 
-	g_test_expect_message ("libnm-glib", G_LOG_LEVEL_WARNING, "*replace_settings: error updating connection*");
-
 	nmtst_main_loop_run (loop, 100);
-
-	g_test_assert_expected_messages ();
 
 	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
 
-	g_assert_cmpint (connections->len, ==, 2);
+	g_assert_cmpint (connections->len, ==, 3);
 	n_found = nmtst_find_all_indexes (connections->pdata,
 	                                  connections->len,
 	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
@@ -1043,12 +1031,13 @@ test_connection_invalid (void)
 	                                  _test_connection_invalid_find_connections,
 	                                  NULL,
 	                                  idx);
-	g_assert_cmpint (n_found, ==, 2);
+	g_assert_cmpint (n_found, ==, 3);
 	ASSERT_IDX (0);
 	ASSERT_IDX (1);
-	g_assert_cmpint (idx[2], ==, -1);
+	ASSERT_IDX (2);
 	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
 	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
+	nmtst_assert_connection_unnormalizable (connections->pdata[idx[2]], 0, 0);
 
 	/**************************************************************************
 	 * Modify the invalid connection again. Note that the connection stays
@@ -1073,7 +1062,7 @@ test_connection_invalid (void)
 
 	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
 
-	g_assert_cmpint (connections->len, ==, 2);
+	g_assert_cmpint (connections->len, ==, 3);
 	n_found = nmtst_find_all_indexes (connections->pdata,
 	                                  connections->len,
 	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
@@ -1081,12 +1070,13 @@ test_connection_invalid (void)
 	                                  _test_connection_invalid_find_connections,
 	                                  NULL,
 	                                  idx);
-	g_assert_cmpint (n_found, ==, 2);
+	g_assert_cmpint (n_found, ==, 3);
 	ASSERT_IDX (0);
 	ASSERT_IDX (1);
-	g_assert_cmpint (idx[2], ==, -1);
+	ASSERT_IDX (2);
 	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
 	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[2]]);
 
 
 	/**************************************************************************
@@ -1111,7 +1101,7 @@ test_connection_invalid (void)
 
 	_slist_to_array (&connections, nm_remote_settings_list_connections (settings));
 
-	g_assert_cmpint (connections->len, ==, 2);
+	g_assert_cmpint (connections->len, ==, 3);
 	n_found = nmtst_find_all_indexes (connections->pdata,
 	                                  connections->len,
 	                                  (gpointer *) ((const char *[]) { path0, path1, path2 }),
@@ -1119,12 +1109,13 @@ test_connection_invalid (void)
 	                                  _test_connection_invalid_find_connections,
 	                                  NULL,
 	                                  idx);
-	g_assert_cmpint (n_found, ==, 2);
+	g_assert_cmpint (n_found, ==, 3);
 	ASSERT_IDX (0);
 	ASSERT_IDX (1);
-	g_assert_cmpint (idx[2], ==, -1);
+	ASSERT_IDX (2);
 	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[0]]);
 	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[1]]);
+	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[2]]);
 	g_assert_cmpstr ("test-connection-invalid-1x", ==, nm_connection_get_id (connections->pdata[idx[1]]));
 
 #undef ASSERT_IDX
