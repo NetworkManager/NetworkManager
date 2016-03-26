@@ -142,6 +142,7 @@ test-*.trs
 /introspection/all.xml
 /introspection/nmdbus-*.c
 /introspection/nmdbus-*.h
+/introspection/nmdbus-*.xml
 
 /libgsystem/
 
