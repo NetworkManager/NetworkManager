@@ -27,6 +27,7 @@
 #include "nm-secret-agent.h"
 #include "nm-glib-enum-types.h"
 #include "nm-dbus-helpers-private.h"
+#include "nm-setting-private.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,
                                            GHashTable *connection_hash,
@@ -302,7 +303,8 @@ verify_request (NMSecretAgent *self,
                 GError **error)
 {
 	NMConnection *connection = NULL;
-	GError *local = NULL;
+
+	g_return_val_if_fail (out_connection, FALSE);
 
 	if (!verify_sender (self, context, error))
 		return FALSE;
@@ -321,21 +323,11 @@ verify_request (NMSecretAgent *self,
 	}
 
 	/* Make sure the given connection is valid */
-	g_assert (out_connection);
-	connection = nm_connection_new_from_hash (connection_hash, &local);
-	if (connection) {
-		nm_connection_set_path (connection, connection_path);
-		*out_connection = connection;
-	} else {
-		g_set_error (error,
-		             NM_SECRET_AGENT_ERROR,
-		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
-		             "Invalid connection: %s",
-		             local->message);
-		g_clear_error (&local);
-	}
+	connection = _nm_connection_new_from_hash (connection_hash);
+	nm_connection_set_path (connection, connection_path);
+	*out_connection = connection;
 
-	return !!connection;
+	return TRUE;
 }
 
 static void
