@@ -58,6 +58,7 @@
 /* Internal signals*/
 #define NM_ACTIVE_CONNECTION_DEVICE_CHANGED          "device-changed"
 #define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED  "device-metered-changed"
+#define NM_ACTIVE_CONNECTION_PARENT_ACTIVE           "parent-active"
 
 struct _NMActiveConnection {
 	NMExportedObject parent;
@@ -81,6 +82,8 @@ typedef struct {
 
 	void (*device_metered_changed) (NMActiveConnection *connection,
 	                                NMMetered new_value);
+
+	void (*parent_active) (NMActiveConnection *connection);
 } NMActiveConnectionClass;
 
 guint64 nm_active_connection_version_id_get (NMActiveConnection *self);
@@ -147,6 +150,9 @@ gboolean      nm_active_connection_get_master_ready (NMActiveConnection *self);
 
 void          nm_active_connection_set_master (NMActiveConnection *self,
                                                NMActiveConnection *master);
+
+void          nm_active_connection_set_parent (NMActiveConnection *self,
+                                               NMActiveConnection *parent);
 
 void          nm_active_connection_set_assumed (NMActiveConnection *self,
                                                 gboolean assumed);

@@ -529,8 +529,9 @@ gboolean nm_device_add_pending_action    (NMDevice *device, const char *action, 
 gboolean nm_device_remove_pending_action (NMDevice *device, const char *action, gboolean assert_is_pending);
 gboolean nm_device_has_pending_action    (NMDevice *device);
 
-GPtrArray *nm_device_get_available_connections (NMDevice *device,
-                                                const char *specific_object);
+NMSettingsConnection *nm_device_get_best_connection (NMDevice *device,
+                                                     const char *specific_object,
+                                                     GError **error);
 
 gboolean   nm_device_check_connection_available (NMDevice *device,
                                                  NMConnection *connection,

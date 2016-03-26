@@ -226,6 +226,9 @@ static void active_connection_state_changed (NMActiveConnection *active,
 static void active_connection_default_changed (NMActiveConnection *active,
                                                GParamSpec *pspec,
                                                NMManager *self);
+static void active_connection_parent_active (NMActiveConnection *active,
+                                             NMActiveConnection *parent_ac,
+                                             NMManager *self);
 
 /* Returns: whether to notify D-Bus of the removal or not */
 static gboolean
@@ -244,6 +247,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
 		g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
 		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
+		g_signal_handlers_disconnect_by_func (active, active_connection_parent_active, self);
 
 		if (   nm_active_connection_get_assumed (active)
 		    && (connection = nm_active_connection_get_settings_connection (active))
@@ -2723,6 +2727,71 @@ _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **er
 	return success;
 }
 
+/* Traverse the device to disconnected state. This means that the device is ready
+ * for connection and will proceed activating if there's an activation request
+ * enqueued.
+ */
+static void
+unmanaged_to_disconnected (NMDevice *device)
+{
+	/* when creating the software device, it can happen that the device is
+	 * still unmanaged by NM_UNMANAGED_PLATFORM_INIT because we didn't yet
+	 * get the udev event. At this point, we can no longer delay the activation
+	 * and force the device to be managed. */
+	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+
+	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_USER_EXPLICIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+
+	g_return_if_fail (nm_device_get_managed (device, FALSE));
+
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
+		nm_device_state_changed (device,
+					 NM_DEVICE_STATE_UNAVAILABLE,
+					 NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	}
+
+	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
+	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
+		nm_device_state_changed (device,
+					 NM_DEVICE_STATE_DISCONNECTED,
+					 NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	}
+}
+
+/* The parent connection is ready; we can proceed realizing the device and
+ * progressing the device to disconencted state.
+ */
+static void
+active_connection_parent_active (NMActiveConnection *active,
+                                 NMActiveConnection *parent_ac,
+                                 NMManager *self)
+{
+	NMDevice *device = nm_active_connection_get_device (active);
+	GError *error = NULL;
+
+	g_signal_handlers_disconnect_by_func (active,
+	                                      (GCallback) active_connection_parent_active,
+	                                      self);
+
+	if (parent_ac) {
+		NMSettingsConnection *connection = nm_active_connection_get_settings_connection (active);
+		NMDevice *parent = nm_active_connection_get_device (parent_ac);
+
+		if (nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
+			/* We can now proceed to disconnected state so that activation proceeds. */
+			unmanaged_to_disconnected (device);
+		} else {
+			nm_log_warn (LOGD_CORE, "Could not realize device '%s': %s",
+			             nm_device_get_iface (device), error->message);
+			nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+		}
+	} else {
+		nm_log_warn (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
+		             nm_device_get_iface (device));
+		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+	}
+}
+
 static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
@@ -2782,9 +2851,35 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		NMDevice *parent;
 
 		parent = find_parent_device_for_connection (self, (NMConnection *) connection, NULL);
-		if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, error)) {
-			g_prefix_error (error, "%s failed to create resources: ", nm_device_get_iface (device));
-			return FALSE;
+
+		if (parent && !nm_device_is_real (parent)) {
+			NMSettingsConnection *parent_con;
+			NMActiveConnection *parent_ac;
+
+			parent_con = nm_device_get_best_connection (parent, NULL, error);
+			if (!parent_con) {
+				g_prefix_error (error, "%s failed to create parent: ", nm_device_get_iface (device));
+				return FALSE;
+			}
+
+			parent_ac = nm_manager_activate_connection (self, parent_con, NULL, parent, subject, error);
+			if (!parent_ac) {
+				g_prefix_error (error, "%s failed to activate parent: ", nm_device_get_iface (device));
+				return FALSE;
+			}
+
+			/* We can't realize now; defer until the parent device is ready. */
+			g_signal_connect (active,
+			                  NM_ACTIVE_CONNECTION_PARENT_ACTIVE,
+			                  (GCallback) active_connection_parent_active,
+			                  self);
+			nm_active_connection_set_parent (active, parent_ac);
+		} else {
+			/* We can realize now; no need to wait for a parent device. */
+			if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, error)) {
+				g_prefix_error (error, "%s failed to create resources: ", nm_device_get_iface (device));
+				return FALSE;
+			}
 		}
 	}
 
@@ -2846,28 +2941,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	if (existing)
 		nm_device_steal_connection (existing, connection);
 
-	/* when creating the software device, it can happen that the device is
-	 * still unmanaged by NM_UNMANAGED_PLATFORM_INIT because we didn't yet
-	 * get the udev event. At this point, we can no longer delay the activation
-	 * and force the device to be managed. */
-	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
-
-	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_USER_EXPLICIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
-
-	g_return_val_if_fail (nm_device_get_managed (device, FALSE), FALSE);
-
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_UNAVAILABLE,
-		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-	}
-
-	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
-	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-	}
+	/* If the device is there, we can ready it for the activation. */
+	if (nm_device_is_real (device))
+		unmanaged_to_disconnected (device);
 
 	/* Export the new ActiveConnection to clients and start it on the device */
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
@@ -3325,11 +3401,15 @@ impl_manager_activate_connection (NMManager *self,
 	 * regardless of whether that connection is autoconnect-enabled or not
 	 * (since this is an explicit request, not an auto-activation request).
 	 */
-	if (!connection_path) {
-		GPtrArray *available;
-		guint64 best_timestamp = 0;
-		guint i;
-
+	if (connection_path) {
+		connection = nm_settings_get_connection_by_path (priv->settings, connection_path);
+		if (!connection) {
+			error = g_error_new_literal (NM_MANAGER_ERROR,
+						     NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+						     "Connection could not be found.");
+			goto error;
+		}
+	} else {
 		/* If no connection is given, find a suitable connection for the given device path */
 		if (!device_path) {
 			error = g_error_new_literal (NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -3343,36 +3423,9 @@ impl_manager_activate_connection (NMManager *self,
 			goto error;
 		}
 
-		available = nm_device_get_available_connections (device, specific_object_path);
-		for (i = 0; available && i < available->len; i++) {
-			NMSettingsConnection *candidate = g_ptr_array_index (available, i);
-			guint64 candidate_timestamp = 0;
-
-			nm_settings_connection_get_timestamp (candidate, &candidate_timestamp);
-			if (!connection_path || (candidate_timestamp > best_timestamp)) {
-				connection_path = nm_connection_get_path (NM_CONNECTION (candidate));
-				best_timestamp = candidate_timestamp;
-			}
-		}
-
-		if (available)
-			g_ptr_array_free (available, TRUE);
-
-		if (!connection_path) {
-			error = g_error_new_literal (NM_MANAGER_ERROR,
-			                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-			                             "The device has no connections available.");
+		connection = nm_device_get_best_connection (device, specific_object_path, &error);
+		if (!connection)
 			goto error;
-		}
-	}
-
-	g_assert (connection_path);
-	connection = nm_settings_get_connection_by_path (priv->settings, connection_path);
-	if (!connection) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		                             "Connection could not be found.");
-		goto error;
 	}
 
 	subject = validate_activation_request (self,
