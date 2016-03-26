@@ -327,13 +327,13 @@ validate_permissions_type (GHashTable *hash, GError **error)
 	return TRUE;
 }
 
-static gboolean
-hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
+static void
+hash_to_connection (NMConnection *connection, GHashTable *new)
 {
 	GHashTableIter iter;
 	const char *setting_name;
 	GHashTable *setting_hash;
-	gboolean changed, valid;
+	gboolean changed;
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	if ((changed = g_hash_table_size (priv->settings) > 0))
@@ -353,10 +353,8 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 		}
 	}
 
-	valid = nm_connection_verify (connection, error);
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
-	return valid;
 }
 
 /**
@@ -373,16 +371,16 @@ nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings,
                                 GError **error)
 {
-	gboolean valid = FALSE;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	if (validate_permissions_type (new_settings, error))
-		valid = hash_to_connection (connection, new_settings, error);
-	return valid;
+	if (!validate_permissions_type (new_settings, error))
+		return FALSE;
+
+	hash_to_connection (connection, new_settings);
+	return nm_connection_verify (connection, error);
 }
 
 /**
@@ -1466,10 +1464,9 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 		return NULL;
 
 	connection = nm_connection_new ();
-	if (!hash_to_connection (connection, hash, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
+	hash_to_connection (connection, hash);
+	if (!nm_connection_verify (connection, error))
+		g_clear_object (&connection);
 	return connection;
 }
 
