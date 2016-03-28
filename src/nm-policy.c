@@ -1746,6 +1746,60 @@ secret_agent_registered (NMSettings *settings,
 	schedule_activate_all (policy);
 }
 
+NMDevice *
+nm_policy_get_default_ip4_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->default_device4;
+}
+
+NMDevice *
+nm_policy_get_default_ip6_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->default_device6;
+}
+
+NMDevice *
+nm_policy_get_activating_ip4_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->activating_device4;
+}
+
+NMDevice *
+nm_policy_get_activating_ip6_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->activating_device6;
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMPolicy *policy = NM_POLICY (object);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+
+	switch (prop_id) {
+	case PROP_DEFAULT_IP4_DEVICE:
+		g_value_set_object (value, priv->default_device4);
+		break;
+	case PROP_DEFAULT_IP6_DEVICE:
+		g_value_set_object (value, priv->default_device6);
+		break;
+	case PROP_ACTIVATING_IP4_DEVICE:
+		g_value_set_object (value, priv->activating_device4);
+		break;
+	case PROP_ACTIVATING_IP6_DEVICE:
+		g_value_set_object (value, priv->activating_device6);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
 static void
 _connect_manager_signal (NMPolicy *policy, const char *name, gpointer callback)
 {
@@ -1764,6 +1818,11 @@ _connect_settings_signal (NMPolicy *policy, const char *name, gpointer callback)
 
 	id = g_signal_connect (priv->settings, name, callback, policy);
 	priv->settings_ids = g_slist_prepend (priv->settings_ids, (gpointer) id);
+}
+
+static void
+nm_policy_init (NMPolicy *policy)
+{
 }
 
 NMPolicy *
@@ -1822,61 +1881,6 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 
 	initialized = TRUE;
 	return policy;
-}
-
-NMDevice *
-nm_policy_get_default_ip4_device (NMPolicy *policy)
-{
-	return NM_POLICY_GET_PRIVATE (policy)->default_device4;
-}
-
-NMDevice *
-nm_policy_get_default_ip6_device (NMPolicy *policy)
-{
-	return NM_POLICY_GET_PRIVATE (policy)->default_device6;
-}
-
-NMDevice *
-nm_policy_get_activating_ip4_device (NMPolicy *policy)
-{
-	return NM_POLICY_GET_PRIVATE (policy)->activating_device4;
-}
-
-NMDevice *
-nm_policy_get_activating_ip6_device (NMPolicy *policy)
-{
-	return NM_POLICY_GET_PRIVATE (policy)->activating_device6;
-}
-
-static void
-nm_policy_init (NMPolicy *policy)
-{
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMPolicy *policy = NM_POLICY (object);
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-
-	switch (prop_id) {
-	case PROP_DEFAULT_IP4_DEVICE:
-		g_value_set_object (value, priv->default_device4);
-		break;
-	case PROP_DEFAULT_IP6_DEVICE:
-		g_value_set_object (value, priv->default_device6);
-		break;
-	case PROP_ACTIVATING_IP4_DEVICE:
-		g_value_set_object (value, priv->activating_device4);
-		break;
-	case PROP_ACTIVATING_IP6_DEVICE:
-		g_value_set_object (value, priv->activating_device6);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static void
