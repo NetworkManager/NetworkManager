@@ -80,6 +80,7 @@ content_files = \
 	$(top_builddir)/introspection/nmdbus-settings-org.freedesktop.NetworkManager.Settings.xml \
 	$(top_builddir)/introspection/nmdbus-device-ethernet-org.freedesktop.NetworkManager.Device.Wired.xml \
 	$(top_builddir)/introspection/nmdbus-ip4-config-org.freedesktop.NetworkManager.IP4Config.xml \
+	$(top_builddir)/man/nmcli.xml \
 	$(top_builddir)/man/NetworkManager.xml \
 	$(top_builddir)/man/NetworkManager.conf.xml \
 	$(top_builddir)/man/nmcli-examples.xml \

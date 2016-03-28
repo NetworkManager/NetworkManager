@@ -144,6 +144,7 @@
 
   <chapter id="manpages">
     <title>UNIX Manual Pages</title>
+    <xi:include href="../../man/nmcli.xml"/>
     <xi:include href="../../man/NetworkManager.xml"/>
     <xi:include href="../../man/NetworkManager.conf.xml"/>
     <xi:include href="../../man/nmcli-examples.xml"/>

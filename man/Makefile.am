@@ -17,10 +17,13 @@ XSLTPROC_MAN_FLAGS = \
 
 if ENABLE_GTK_DOC
 
-%.8: %.xml
+%.1: %.xml
 	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
 
 %.5: %.xml
+	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
+
+%.8: %.xml
 	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
 
 endif
@@ -66,12 +69,12 @@ CLEANFILES +=				\
 endif
 
 configure_generated_man_pages =		\
-	nmcli.1				\
 	nmtui.1				\
 	nm-online.1			\
 	nm-system-settings.conf.5
 
 docbook_generated_man_pages =		\
+	nmcli.1				\
 	NetworkManager.8		\
 	NetworkManager.conf.5		\
 	nmcli-examples.5

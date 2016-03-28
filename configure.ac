@@ -961,6 +961,7 @@ GTK_DOC_CHECK(1.0)
 # check for pregenerated manpages to be installed
 install_pregen_manpages=no
 if test "$enable_gtk_doc" != "yes" \
+	-a -f man/nmcli.1 \
 	-a -f man/NetworkManager.conf.5 \
 	-a -f man/nm-settings.5 \
 	-a -f man/nm-settings-keyfile.5 \
@@ -1076,7 +1077,6 @@ introspection/all.xml
 man/Makefile
 man/nm-system-settings.conf.5
 man/nm-online.1
-man/nmcli.1
 man/nmtui.1
 po/Makefile.in
 policy/Makefile
