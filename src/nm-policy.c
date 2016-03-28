@@ -91,14 +91,12 @@ typedef struct {
 
 G_DEFINE_TYPE (NMPolicy, nm_policy, G_TYPE_OBJECT)
 
-enum {
-	PROP_0,
-
+NM_GOBJECT_PROPERTIES_DEFINE (NMPolicy,
 	PROP_DEFAULT_IP4_DEVICE,
 	PROP_DEFAULT_IP6_DEVICE,
 	PROP_ACTIVATING_IP4_DEVICE,
-	PROP_ACTIVATING_IP6_DEVICE
-};
+	PROP_ACTIVATING_IP6_DEVICE,
+);
 
 static void schedule_activate_all (NMPolicy *policy);
 
@@ -460,7 +458,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		changed = (priv->default_device4 != NULL);
 		priv->default_device4 = NULL;
 		if (changed)
-			g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP4_DEVICE);
+			_notify (policy, PROP_DEFAULT_IP4_DEVICE);
 
 		return;
 	}
@@ -497,7 +495,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	connection = nm_active_connection_get_applied_connection (best_ac);
 	_LOGI (LOGD_CORE, "set '%s' (%s) as default for IPv4 routing and DNS",
 	       nm_connection_get_id (connection), ip_iface);
-	g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP4_DEVICE);
+	_notify (policy, PROP_DEFAULT_IP4_DEVICE);
 }
 
 static NMIP6Config *
@@ -555,7 +553,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		changed = (priv->default_device6 != NULL);
 		priv->default_device6 = NULL;
 		if (changed)
-			g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP6_DEVICE);
+			_notify (policy, PROP_DEFAULT_IP6_DEVICE);
 
 		return;
 	}
@@ -592,7 +590,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	connection = nm_active_connection_get_applied_connection (best_ac);
 	_LOGI (LOGD_CORE, "set '%s' (%s) as default for IPv6 routing and DNS",
 	       nm_connection_get_id (connection), ip_iface);
-	g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP6_DEVICE);
+	_notify (policy, PROP_DEFAULT_IP6_DEVICE);
 }
 
 static void
@@ -628,11 +626,11 @@ check_activating_devices (NMPolicy *policy)
 
 	if (best4 != priv->activating_device4) {
 		priv->activating_device4 = best4;
-		g_object_notify (object, NM_POLICY_ACTIVATING_IP4_DEVICE);
+		_notify (policy, PROP_ACTIVATING_IP4_DEVICE);
 	}
 	if (best6 != priv->activating_device6) {
 		priv->activating_device6 = best6;
-		g_object_notify (object, NM_POLICY_ACTIVATING_IP6_DEVICE);
+		_notify (policy, PROP_ACTIVATING_IP6_DEVICE);
 	}
 
 	g_object_thaw_notify (object);
@@ -1959,28 +1957,25 @@ nm_policy_class_init (NMPolicyClass *policy_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	g_object_class_install_property
-		(object_class, PROP_DEFAULT_IP4_DEVICE,
-		 g_param_spec_object (NM_POLICY_DEFAULT_IP4_DEVICE, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_DEFAULT_IP6_DEVICE,
-		 g_param_spec_object (NM_POLICY_DEFAULT_IP6_DEVICE, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_ACTIVATING_IP4_DEVICE,
-		 g_param_spec_object (NM_POLICY_ACTIVATING_IP4_DEVICE, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_ACTIVATING_IP6_DEVICE,
-		 g_param_spec_object (NM_POLICY_ACTIVATING_IP6_DEVICE, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DEFAULT_IP4_DEVICE] =
+	    g_param_spec_object (NM_POLICY_DEFAULT_IP4_DEVICE, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DEFAULT_IP6_DEVICE] =
+	    g_param_spec_object (NM_POLICY_DEFAULT_IP6_DEVICE, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ACTIVATING_IP4_DEVICE] =
+	    g_param_spec_object (NM_POLICY_ACTIVATING_IP4_DEVICE, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ACTIVATING_IP6_DEVICE] =
+	    g_param_spec_object (NM_POLICY_ACTIVATING_IP6_DEVICE, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
