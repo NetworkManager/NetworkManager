@@ -189,12 +189,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("non promiscuous operation is allowed only in passthru mode'"));
+		                     _("non promiscuous operation is allowed only in passthru mode"));
 		g_prefix_error (error, "%s.%s: ",
 		                NM_SETTING_MACVLAN_SETTING_NAME,
 		                NM_SETTING_MACVLAN_PROMISCUOUS);
 		return FALSE;
-
 	}
 
 	return TRUE;
