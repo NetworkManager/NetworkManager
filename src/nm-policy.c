@@ -655,7 +655,8 @@ activate_data_free (ActivateData *data)
 	if (data->autoactivate_id)
 		g_source_remove (data->autoactivate_id);
 	g_object_unref (data->device);
-	g_free (data);
+
+	g_slice_free (ActivateData, data);
 }
 
 static gboolean
@@ -950,7 +951,7 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 
 	nm_device_add_pending_action (device, "autoactivate", TRUE);
 
-	data = g_malloc0 (sizeof (ActivateData));
+	data = g_slice_new0 (ActivateData);
 	data->policy = self;
 	data->device = g_object_ref (device);
 	data->autoactivate_id = g_idle_add (auto_activate_device, data);
