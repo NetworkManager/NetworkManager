@@ -44,7 +44,7 @@ typedef struct {
 	NMBusManager *bus_mgr;
 	char *path;
 
-	GVariantBuilder pending_notifies;
+	GHashTable *pending_notifies;
 	guint notify_idle_id;
 
 #ifdef _ASSERT_NO_EARLY_EXPORT
@@ -659,8 +659,7 @@ nm_exported_object_unexport (NMExportedObject *self)
 	if (nm_clear_g_source (&priv->notify_idle_id)) {
 		/* We had a notification queued. Since we removed all interfaces,
 		 * the notification is obsolete and must be cleaned up. */
-		g_variant_builder_clear (&priv->pending_notifies);
-		g_variant_builder_init (&priv->pending_notifies, G_VARIANT_TYPE_VARDICT);
+		g_hash_table_remove_all (priv->pending_notifies);
 	}
 }
 
@@ -719,22 +718,33 @@ nm_exported_object_init (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
-	g_variant_builder_init (&priv->pending_notifies, G_VARIANT_TYPE_VARDICT);
+	priv->pending_notifies = g_hash_table_new_full (g_direct_hash,
+	                                                g_direct_equal,
+	                                                NULL,
+	                                                (GDestroyNotify) g_variant_unref);
 }
 
 static gboolean
 idle_emit_properties_changed (gpointer self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-	GVariant *notifies;
+	GVariant *variant;
 	GSList *iter;
 	GDBusInterfaceSkeleton *interface = NULL;
 	guint signal_id = 0;
+	GHashTableIter hash_iter;
+	const char *dbus_property_name;
+	GVariantBuilder notifies;
 
 	priv->notify_idle_id = 0;
-	notifies = g_variant_builder_end (&priv->pending_notifies);
-	g_variant_ref_sink (notifies);
-	g_variant_builder_init (&priv->pending_notifies, G_VARIANT_TYPE_VARDICT);
+
+	g_variant_builder_init (&notifies, G_VARIANT_TYPE_VARDICT);
+	g_hash_table_iter_init (&hash_iter, priv->pending_notifies);
+	while (g_hash_table_iter_next (&hash_iter, (gpointer) &dbus_property_name, (gpointer) &variant))
+		g_variant_builder_add (&notifies, "{sv}", dbus_property_name, variant);
+	g_hash_table_remove_all (priv->pending_notifies);
+	variant = g_variant_builder_end (&notifies);
+	g_variant_ref_sink (variant);
 
 	for (iter = priv->interfaces; iter; iter = iter->next) {
 		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (iter->data));
@@ -746,16 +756,14 @@ idle_emit_properties_changed (gpointer self)
 	g_return_val_if_fail (signal_id != 0, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DBUS_PROPS)) {
-		char *notification;
+		gs_free char *notification = g_variant_print (variant, TRUE);
 
-		notification = g_variant_print (notifies, TRUE);
 		nm_log_dbg (LOGD_DBUS_PROPS, "PropertiesChanged %s %p: %s",
 		            G_OBJECT_TYPE_NAME (self), self, notification);
-		g_free (notification);
 	}
 
-	g_signal_emit (interface, signal_id, 0, notifies);
-	g_variant_unref (notifies);
+	g_signal_emit (interface, signal_id, 0, variant);
+	g_variant_unref (variant);
 
 	return FALSE;
 }
@@ -815,11 +823,10 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	g_return_if_fail (vtype != NULL);
 
 	variant = g_dbus_gvalue_to_gvariant (&value, vtype);
-	g_variant_builder_add (&priv->pending_notifies, "{sv}",
-	                       dbus_property_name,
-	                       variant);
+	/* @dbus_property_name is inside classinfo and never freed, thus we don't clone it.
+	 * Also, we do a pointer, not string comparison. */
+	g_hash_table_insert (priv->pending_notifies, (gpointer) dbus_property_name, variant);
 	g_value_unset (&value);
-	g_variant_unref (variant);
 
 	if (!priv->notify_idle_id)
 		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, object);
@@ -858,7 +865,7 @@ nm_exported_object_dispose (GObject *object)
 	} else
 		g_clear_pointer (&priv->path, g_free);
 
-	g_variant_builder_clear (&priv->pending_notifies);
+	g_clear_pointer (&priv->pending_notifies, g_hash_table_destroy);
 	nm_clear_g_source (&priv->notify_idle_id);
 
 	G_OBJECT_CLASS (nm_exported_object_parent_class)->dispose (object);
