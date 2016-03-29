@@ -4799,6 +4799,7 @@ complete_slave (NMSettingConnection *s_con,
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_MASTER, checked_master,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		              NULL);
 
 		g_free (master_ask);
@@ -4839,7 +4840,6 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingIPTunnel *s_ip_tunnel;
 	NMSettingMacvlan *s_macvlan;
 	NMSettingVxlan *s_vxlan;
-	const char *slave_type;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -5555,14 +5555,11 @@ cleanup_bond:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+		if (!complete_slave (s_con, all_connections, NM_SETTING_BOND_SETTING_NAME, master, type, ask, error))
 			return FALSE;
 
 		/* Change properties in 'connection' setting */
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
-		              NULL);
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
 		/* Add ethernet setting */
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
@@ -5636,7 +5633,7 @@ cleanup_team:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+		if (!complete_slave (s_con, all_connections, NM_SETTING_TEAM_SETTING_NAME, master, type, ask, error))
 			return FALSE;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
@@ -5665,10 +5662,7 @@ cleanup_team_slave:
 			return FALSE;
 
 		/* Change properties in 'connection' setting */
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
-		              NULL);
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
 		/* Add ethernet setting */
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
@@ -5839,7 +5833,7 @@ cleanup_bridge:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+		if (!complete_slave (s_con, all_connections, NM_SETTING_BRIDGE_SETTING_NAME, master, type, ask, error))
 			return FALSE;
 
 		/* Add 'bridge-port' setting */
@@ -5889,10 +5883,7 @@ cleanup_bridge_slave:
 			return FALSE;
 
 		/* Change properties in 'connection' setting */
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
-		              NULL);
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
 		/* Add ethernet setting */
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
@@ -6548,8 +6539,7 @@ cleanup_vxlan:
 		return FALSE;
 	}
 
-	slave_type = nm_setting_connection_get_slave_type (s_con);
-	if (!slave_type) {
+	if (!nm_setting_connection_get_slave_type (s_con)) {
 		/* Read and add IP configuration */
 		NMIPAddress *ip4addr = NULL, *ip6addr = NULL;
 		const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
