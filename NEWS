@@ -50,9 +50,11 @@ This is a new stable release of NetworkManager.  Notable changes include:
     addressing configuration based on systemd network library is now used
     instead.
 * Hostname is now managed via systemd-hostnamed on systemd-based systems.
-* Management of resolv.conf management can be changed at runtime, private
-    resolv.conf is always written in /run.
+* Management of resolv.conf can be changed at runtime, private resolv.conf
+    is always written in /run.
 * NetworkManager can now write DNS options to resolv.conf.
+* Added an option to enable the old-fashioned /etc/resolv.conf handling
+   (using a symlink)
 * Updated version of systemd network library used for internal DHCP and
     IPv4 link-local support.
 * Support for event logging via audit subsystem has been added.
@@ -80,6 +82,13 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The reorder-header VLAN flag setting is now honored; to keep backwards
     compatibility in behavior, an existing REORDER_HDR=0 ifcfg-rh key is
     ignored; the flag must be disabled with VLAN_FLAGS=NO_REORDER_HDR.
+* NetworkManager now checks the connection data from client for validity
+    and gracefully handles unknown properties in client. This improves
+    interoperability between the server and clients of different versions.
+* The activation of a VLAN device with a virtual parent that is inactive
+    now results in a parent being activated first.
+* The server name used with 802.1x authentication can now be constrained
+    to a particular domain suffix (CVE-2006-7246).
 * Fair amount of bugs was fixed and robustness was generally improved.
 
 The following features were backported to 1.0.x releases from 1.0.0 to 1.0.10
