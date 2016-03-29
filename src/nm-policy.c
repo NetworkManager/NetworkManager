@@ -59,7 +59,6 @@
 typedef struct {
 	NMManager *manager;
 	NMFirewallManager *firewall_manager;
-	guint update_state_id;
 	GSList *pending_activation_checks;
 	GSList *manager_ids;
 	GSList *settings_ids;
@@ -92,6 +91,8 @@ typedef struct {
 G_DEFINE_TYPE (NMPolicy, nm_policy, G_TYPE_OBJECT)
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMPolicy,
+	PROP_MANAGER,
+	PROP_SETTINGS,
 	PROP_DEFAULT_IP4_DEVICE,
 	PROP_DEFAULT_IP6_DEVICE,
 	PROP_ACTIVATING_IP4_DEVICE,
@@ -1796,6 +1797,30 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMPolicy *policy = NM_POLICY (object);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+
+	switch (prop_id) {
+	case PROP_MANAGER:
+		/* construct-only */
+		priv->manager = g_value_get_object (value);
+		g_return_if_fail (NM_IS_MANAGER (priv->manager));
+		break;
+	case PROP_SETTINGS:
+		/* construct-only */
+		priv->settings = g_value_dup_object (value);
+		g_return_if_fail (NM_IS_SETTINGS (priv->settings));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 /*****************************************************************************/
 
 static void
@@ -1823,22 +1848,12 @@ nm_policy_init (NMPolicy *policy)
 {
 }
 
-NMPolicy *
-nm_policy_new (NMManager *manager, NMSettings *settings)
+static void
+constructed (GObject *object)
 {
-	NMPolicy *policy;
-	NMPolicyPrivate *priv;
-	static gboolean initialized = FALSE;
+	NMPolicy *policy = NM_POLICY (object);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	char hostname[HOST_NAME_MAX + 2];
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (initialized == FALSE, NULL);
-
-	policy = g_object_new (NM_TYPE_POLICY, NULL);
-	priv = NM_POLICY_GET_PRIVATE (policy);
-	priv->manager = manager;
-	priv->settings = g_object_ref (settings);
-	priv->update_state_id = 0;
 
 	/* Grab hostname on startup and use that if nothing provides one */
 	memset (hostname, 0, sizeof (hostname));
@@ -1877,6 +1892,23 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	                          connection_visibility_changed);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_AGENT_REGISTERED, secret_agent_registered);
 
+	G_OBJECT_CLASS (nm_policy_parent_class)->constructed (object);
+}
+
+NMPolicy *
+nm_policy_new (NMManager *manager, NMSettings *settings)
+{
+	NMPolicy *policy;
+	static gboolean initialized = FALSE;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (NM_IS_SETTINGS (settings), NULL);
+	g_return_val_if_fail (initialized == FALSE, NULL);
+
+	policy = g_object_new (NM_TYPE_POLICY,
+	                       NM_POLICY_MANAGER, manager,
+	                       NM_POLICY_SETTINGS, settings,
+	                       NULL);
 	initialized = TRUE;
 	return policy;
 }
@@ -1888,11 +1920,8 @@ dispose (GObject *object)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
 
-	/* Tell any existing hostname lookup thread to die. */
-	if (priv->lookup_cancellable) {
-		g_cancellable_cancel (priv->lookup_cancellable);
-		g_clear_object (&priv->lookup_cancellable);
-	}
+	nm_clear_g_cancellable (&priv->lookup_cancellable);
+
 	g_clear_object (&priv->lookup_addr);
 	g_clear_object (&priv->resolver);
 
@@ -1904,13 +1933,12 @@ dispose (GObject *object)
 
 	if (priv->firewall_manager) {
 		g_assert (priv->fw_started_id);
-		g_signal_handler_disconnect (priv->firewall_manager, priv->fw_started_id);
-		priv->fw_started_id = 0;
+		nm_clear_g_signal_handler (priv->firewall_manager, &priv->fw_started_id);
 		g_clear_object (&priv->firewall_manager);
 	}
 
 	if (priv->dns_manager) {
-		g_signal_handler_disconnect (priv->dns_manager, priv->config_changed_id);
+		nm_clear_g_signal_handler (priv->dns_manager, &priv->config_changed_id);
 		g_clear_object (&priv->dns_manager);
 	}
 
@@ -1944,6 +1972,8 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->settings);
 
+	nm_assert (NM_IS_MANAGER (priv->manager));
+
 	G_OBJECT_CLASS (nm_policy_parent_class)->dispose (object);
 }
 
@@ -1955,8 +1985,22 @@ nm_policy_class_init (NMPolicyClass *policy_class)
 	g_type_class_add_private (policy_class, sizeof (NMPolicyPrivate));
 
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
+	obj_properties[PROP_MANAGER] =
+	    g_param_spec_object (NM_POLICY_MANAGER, "", "",
+	                         NM_TYPE_MANAGER,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_SETTINGS] =
+	    g_param_spec_object (NM_POLICY_SETTINGS, "", "",
+	                         NM_TYPE_SETTINGS,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DEFAULT_IP4_DEVICE] =
 	    g_param_spec_object (NM_POLICY_DEFAULT_IP4_DEVICE, "", "",
 	                         NM_TYPE_DEVICE,
