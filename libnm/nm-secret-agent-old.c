@@ -746,9 +746,6 @@ nm_secret_agent_old_register_finish (NMSecretAgentOld *self,
  * indicating to NetworkManager that the agent will no longer provide or
  * store secrets on behalf of this user.
  *
- * It is a programmer error to attempt to unregister an agent that is not
- * registered.
- *
  * Returns: %TRUE if unregistration was successful, %FALSE on error
  **/
 gboolean
@@ -763,7 +760,6 @@ nm_secret_agent_old_unregister (NMSecretAgentOld *self,
 
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->registered == TRUE, FALSE);
 	g_return_val_if_fail (priv->bus != NULL, FALSE);
 	g_return_val_if_fail (priv->manager_proxy != NULL, FALSE);
 
@@ -811,9 +807,6 @@ unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
  * Asynchronously unregisters the #NMSecretAgentOld with the NetworkManager secret
  * manager, indicating to NetworkManager that the agent will no longer provide
  * or store secrets on behalf of this user.
- *
- * It is a programmer error to attempt to unregister an agent that is not
- * registered.
  **/
 void
 nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
@@ -829,7 +822,6 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->registered == TRUE);
 	g_return_if_fail (priv->bus != NULL);
 	g_return_if_fail (priv->manager_proxy != NULL);
 
