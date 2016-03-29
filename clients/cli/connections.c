@@ -5546,8 +5546,8 @@ cleanup_bond:
 		const char *master = NULL;
 		const char *type = NULL;
 		nmc_arg_t exp_args[] = { {"master", TRUE, &master, FALSE},
-					 {"type",   TRUE, &type,   FALSE},
-					 {NULL} };
+		                         {"type",   TRUE, &type,   FALSE},
+		                         {NULL} };
 
 		/* Set global variables for use in TAB completion */
 		nmc_tab_completion.con_type = NM_SETTING_BOND_SETTING_NAME;
@@ -5623,9 +5623,9 @@ cleanup_team:
 		char *config = NULL;
 		char *json = NULL;
 		nmc_arg_t exp_args[] = { {"master", TRUE, &master,   FALSE},
-					 {"type",   TRUE, &type,     FALSE},
-					 {"config", TRUE, &config_c, FALSE},
-					 {NULL} };
+		                         {"type",   TRUE, &type,     FALSE},
+		                         {"config", TRUE, &config_c, FALSE},
+		                         {NULL} };
 
 		/* Set global variables for use in TAB completion */
 		nmc_tab_completion.con_type = NM_SETTING_TEAM_SETTING_NAME;
@@ -5821,11 +5821,11 @@ cleanup_bridge:
 		unsigned long prio_int, path_cost_int;
 		gboolean hairpin_bool;
 		nmc_arg_t exp_args[] = { {"master",    TRUE, &master,      FALSE},
-					 {"type",      TRUE, &type,        FALSE},
-					 {"priority",  TRUE, &priority_c,  FALSE},
-					 {"path-cost", TRUE, &path_cost_c, FALSE},
-					 {"hairpin",   TRUE, &hairpin_c,   FALSE},
-					 {NULL} };
+		                         {"type",      TRUE, &type,        FALSE},
+		                         {"priority",  TRUE, &priority_c,  FALSE},
+		                         {"path-cost", TRUE, &path_cost_c, FALSE},
+		                         {"hairpin",   TRUE, &hairpin_c,   FALSE},
+		                         {NULL} };
 
 		/* Set global variables for use in TAB completion */
 		nmc_tab_completion.con_type = NM_SETTING_BRIDGE_SETTING_NAME;
@@ -6187,7 +6187,7 @@ cleanup_macvlan:
 		                         {"pi",          TRUE,  &pi_c,          FALSE},
 		                         {"vnet-hdr",    TRUE,  &vnet_hdr_c,    FALSE},
 		                         {"multi-queue", TRUE,  &multi_queue_c, FALSE},
-                                         {NULL} };
+		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
@@ -6634,7 +6634,7 @@ cleanup_vxlan:
 	if (argc) {
 		/* Set extra connection properties. */
 		nmc_arg_t exp_args[] = { {"--", FALSE, NULL, TRUE},
-					 {NULL} };
+		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
