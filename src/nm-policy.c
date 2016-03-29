@@ -759,7 +759,7 @@ pending_secondary_data_new (NMDevice *device, GSList *secondaries)
 {
 	PendingSecondaryData *data;
 
-	data = g_malloc0 (sizeof (PendingSecondaryData));
+	data = g_slice_new (PendingSecondaryData);
 	data->device = g_object_ref (device);
 	data->secondaries = secondaries;
 	return data;
@@ -770,8 +770,7 @@ pending_secondary_data_free (PendingSecondaryData *data)
 {
 	g_object_unref (data->device);
 	g_slist_free_full (data->secondaries, g_object_unref);
-	memset (data, 0, sizeof (*data));
-	g_free (data);
+	g_slice_free (PendingSecondaryData, data);
 }
 
 static void
