@@ -7140,6 +7140,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 
 	if (priv->ip4_state != IP_NONE) {
 		g_clear_object (&priv->con_ip4_config);
+		g_clear_object (&priv->ext_ip4_config);
 		priv->con_ip4_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 		nm_ip4_config_merge_setting (priv->con_ip4_config,
 		                             s_ip4_new,
@@ -7170,6 +7171,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 
 	if (priv->ip6_state != IP_NONE) {
 		g_clear_object (&priv->con_ip6_config);
+		g_clear_object (&priv->ext_ip6_config);
 		priv->con_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 		nm_ip6_config_merge_setting (priv->con_ip6_config,
 		                             s_ip6_new,
