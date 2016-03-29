@@ -344,12 +344,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 
 %build
 
-%if %{with regen_docs}
-# back up pristine docs and use them instead of generated ones, which make
-# multilib unhappy due to different timestamps in the generated content
-cp -R docs ORIG-docs
-%endif
-
 autoreconf --install --force
 intltoolize --automake --copy --force
 %configure \
@@ -450,11 +444,8 @@ rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
 rm -f %{buildroot}%{_libdir}/NetworkManager/*.la
 
-%if %{with regen_docs}
-# install the pristine docs
-cp ORIG-docs/libnm-glib/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-glib/
-cp ORIG-docs/libnm-util/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-util/
-%endif
+# Ensure the documentation timestamps are constant to avoid multilib conflicts
+find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference configure.ac '{}' \+
 
 %if 0%{?__debug_package}
 mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
