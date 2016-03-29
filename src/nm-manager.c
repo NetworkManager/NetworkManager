@@ -1046,7 +1046,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	iface = nm_manager_get_connection_iface (self, connection, &parent, &error);
 	if (!iface) {
-		_LOGW (LOGD_DEVICE, "(%s) can't get a name of a virtual device: %s",
+		_LOGD (LOGD_DEVICE, "(%s) can't get a name of a virtual device: %s",
 		       nm_connection_get_id (connection), error->message);
 		g_error_free (error);
 		return NULL;
@@ -1086,6 +1086,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			g_error_free (error);
 			return NULL;
 		}
+
+		_LOGD (LOGD_DEVICE, "(%s) create virtual device %s",
+		       nm_connection_get_id (connection),
+		       nm_device_get_iface (device));
 
 		if (!add_device (self, device, &error)) {
 			_LOGW (LOGD_DEVICE, "(%s) can't register the device with manager: %s",
