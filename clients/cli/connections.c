@@ -5542,6 +5542,21 @@ cleanup_bond:
 			return FALSE;
 
 	} else if (!strcmp (con_type, "bond-slave")) {
+		/* Slave types without any specific settings ('bond-slave') */
+		const char *master = NULL;
+		const char *type = NULL;
+		nmc_arg_t exp_args[] = { {"master", TRUE, &master, FALSE},
+					 {"type",   TRUE, &type,   FALSE},
+					 {NULL} };
+
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = NM_SETTING_BOND_SETTING_NAME;
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+			return FALSE;
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
@@ -5602,6 +5617,52 @@ cleanup_team:
 			return FALSE;
 
 	} else if (!strcmp (con_type, "team-slave")) {
+		/* Build up the settings required for 'team-slave' */
+		gboolean success = FALSE;
+		const char *master = NULL;
+		char *master_ask = NULL;
+		const char *type = NULL;
+		const char *config_c = NULL;
+		char *config = NULL;
+		char *json = NULL;
+		nmc_arg_t exp_args[] = { {"master", TRUE, &master,   FALSE},
+					 {"type",   TRUE, &type,     FALSE},
+					 {"config", TRUE, &config_c, FALSE},
+					 {NULL} };
+
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = NM_SETTING_TEAM_SETTING_NAME;
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+			return FALSE;
+
+		/* Also ask for all optional arguments if '--ask' is specified. */
+		config = g_strdup (config_c);
+		if (ask)
+			do_questionnaire_team_slave (&config);
+
+		/* Add 'team-port' setting */
+		s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_team_port));
+
+		if (!nmc_team_check_config (config, &json, error)) {
+			g_prefix_error (error, _("Error: "));
+			goto cleanup_team_slave;
+		}
+
+		/* Set team-port options */
+		g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, json, NULL);
+
+		success = TRUE;
+cleanup_team_slave:
+		g_free (master_ask);
+		g_free (config);
+		g_free (json);
+		if (!success)
+			return FALSE;
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
@@ -5752,6 +5813,80 @@ cleanup_bridge:
 			return FALSE;
 
 	} else if (!strcmp (con_type, "bridge-slave")) {
+		/* Build up the settings required for 'bridge-slave' */
+		gboolean success = FALSE;
+		const char *master = NULL;
+		char *master_ask = NULL;
+		const char *type = NULL;
+		const char *priority_c = NULL;
+		char *priority = NULL;
+		const char *path_cost_c = NULL;
+		char *path_cost = NULL;
+		const char *hairpin_c = NULL;
+		char *hairpin = NULL;
+		unsigned long prio_int, path_cost_int;
+		gboolean hairpin_bool;
+		nmc_arg_t exp_args[] = { {"master",    TRUE, &master,      FALSE},
+					 {"type",      TRUE, &type,        FALSE},
+					 {"priority",  TRUE, &priority_c,  FALSE},
+					 {"path-cost", TRUE, &path_cost_c, FALSE},
+					 {"hairpin",   TRUE, &hairpin_c,   FALSE},
+					 {NULL} };
+
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = NM_SETTING_BRIDGE_SETTING_NAME;
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+			return FALSE;
+
+		/* Add 'bridge-port' setting */
+		/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
+		s_bridge_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_bridge_port));
+
+		/* Also ask for all optional arguments if '--ask' is specified. */
+		priority = g_strdup (priority_c);
+		path_cost = g_strdup (path_cost_c);
+		hairpin = g_strdup (hairpin_c);
+		if (ask)
+			do_questionnaire_bridge_slave (&priority, &path_cost, &hairpin);
+
+		if (priority)
+			if (!bridge_prop_string_to_uint (priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
+							 NM_SETTING_BRIDGE_PORT_PRIORITY, &prio_int, error))
+				goto cleanup_bridge_slave;
+		if (path_cost)
+			if (!bridge_prop_string_to_uint (path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
+							 NM_SETTING_BRIDGE_PORT_PATH_COST, &path_cost_int, error))
+				goto cleanup_bridge_slave;
+		if (hairpin) {
+			GError *tmp_err = NULL;
+			if (!nmc_string_to_bool (hairpin, &hairpin_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					     _("Error: 'hairpin': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_bridge_slave;
+			}
+		}
+
+		if (priority)
+			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PRIORITY, prio_int, NULL);
+		if (path_cost)
+			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PATH_COST, path_cost_int, NULL);
+		if (hairpin)
+			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, hairpin_bool, NULL);
+
+		success = TRUE;
+cleanup_bridge_slave:
+		g_free (master_ask);
+		g_free (priority);
+		g_free (path_cost);
+		g_free (hairpin);
+		if (!success)
+			return FALSE;
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
@@ -6414,144 +6549,7 @@ cleanup_vxlan:
 	}
 
 	slave_type = nm_setting_connection_get_slave_type (s_con);
-	if (slave_type) {
-
-		/* Set global variables for use in TAB completion */
-		nmc_tab_completion.con_type = (char *)slave_type;
-
-		if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
-			/* Build up the settings required for 'team-slave' */
-			gboolean success = FALSE;
-			const char *master = NULL;
-			char *master_ask = NULL;
-			const char *type = NULL;
-			const char *config_c = NULL;
-			char *config = NULL;
-			char *json = NULL;
-			nmc_arg_t exp_args[] = { {"master", TRUE, &master,   FALSE},
-						 {"type",   TRUE, &type,     FALSE},
-						 {"config", TRUE, &config_c, FALSE},
-						 {NULL} };
-
-			if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
-				return FALSE;
-
-			if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
-				return FALSE;
-
-			/* Also ask for all optional arguments if '--ask' is specified. */
-			config = g_strdup (config_c);
-			if (ask)
-				do_questionnaire_team_slave (&config);
-
-			/* Add 'team-port' setting */
-			s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
-			nm_connection_add_setting (connection, NM_SETTING (s_team_port));
-
-			if (!nmc_team_check_config (config, &json, error)) {
-				g_prefix_error (error, _("Error: "));
-				goto cleanup_team_slave;
-			}
-
-			/* Set team-port options */
-			g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, json, NULL);
-
-			success = TRUE;
-cleanup_team_slave:
-			g_free (master_ask);
-			g_free (config);
-			g_free (json);
-			if (!success)
-				return FALSE;
-
-		} else if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
-			/* Build up the settings required for 'bridge-slave' */
-			gboolean success = FALSE;
-			const char *master = NULL;
-			char *master_ask = NULL;
-			const char *type = NULL;
-			const char *priority_c = NULL;
-			char *priority = NULL;
-			const char *path_cost_c = NULL;
-			char *path_cost = NULL;
-			const char *hairpin_c = NULL;
-			char *hairpin = NULL;
-			unsigned long prio_int, path_cost_int;
-			gboolean hairpin_bool;
-			nmc_arg_t exp_args[] = { {"master",    TRUE, &master,      FALSE},
-						 {"type",      TRUE, &type,        FALSE},
-						 {"priority",  TRUE, &priority_c,  FALSE},
-						 {"path-cost", TRUE, &path_cost_c, FALSE},
-						 {"hairpin",   TRUE, &hairpin_c,   FALSE},
-						 {NULL} };
-
-			if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
-				return FALSE;
-
-			if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
-				return FALSE;
-
-			/* Add 'bridge-port' setting */
-			/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
-			s_bridge_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
-			nm_connection_add_setting (connection, NM_SETTING (s_bridge_port));
-
-			/* Also ask for all optional arguments if '--ask' is specified. */
-			priority = g_strdup (priority_c);
-			path_cost = g_strdup (path_cost_c);
-			hairpin = g_strdup (hairpin_c);
-			if (ask)
-				do_questionnaire_bridge_slave (&priority, &path_cost, &hairpin);
-
-			if (priority)
-				if (!bridge_prop_string_to_uint (priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
-								 NM_SETTING_BRIDGE_PORT_PRIORITY, &prio_int, error))
-					goto cleanup_bridge_slave;
-			if (path_cost)
-				if (!bridge_prop_string_to_uint (path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
-								 NM_SETTING_BRIDGE_PORT_PATH_COST, &path_cost_int, error))
-					goto cleanup_bridge_slave;
-			if (hairpin) {
-				GError *tmp_err = NULL;
-				if (!nmc_string_to_bool (hairpin, &hairpin_bool, &tmp_err)) {
-					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-						     _("Error: 'hairpin': %s."), tmp_err->message);
-					g_clear_error (&tmp_err);
-					goto cleanup_bridge_slave;
-				}
-			}
-
-			if (priority)
-				g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PRIORITY, prio_int, NULL);
-			if (path_cost)
-				g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PATH_COST, path_cost_int, NULL);
-			if (hairpin)
-				g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, hairpin_bool, NULL);
-
-			success = TRUE;
-cleanup_bridge_slave:
-			g_free (master_ask);
-			g_free (priority);
-			g_free (path_cost);
-			g_free (hairpin);
-			if (!success)
-				return FALSE;
-		} else {
-			/* Slave types without any specific settings ('bond-slave') */
-			const char *master = NULL;
-			const char *type = NULL;
-			nmc_arg_t exp_args[] = { {"master", TRUE, &master, FALSE},
-						 {"type",   TRUE, &type,   FALSE},
-						 {NULL} };
-
-			if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
-				return FALSE;
-
-			if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
-				return FALSE;
-		}
-
-	} else {
+	if (!slave_type) {
 		/* Read and add IP configuration */
 		NMIPAddress *ip4addr = NULL, *ip6addr = NULL;
 		const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
