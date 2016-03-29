@@ -29,6 +29,7 @@
 #include "nm-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVPNPlugin *plugin,
                                             GHashTable *connection,
@@ -452,13 +453,7 @@ _connect_generic (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	connection = nm_connection_new_from_hash (properties, &local);
-	if (!connection) {
-		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-		             "Invalid connection: %s", local->message);
-		g_clear_error (&local);
-		return FALSE;
-	}
+	connection = _nm_connection_new_from_hash (properties);
 
 	priv->interactive = FALSE;
 	if (details && !vpn_class->connect_interactive) {
@@ -526,22 +521,11 @@ impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
 	char *sn = NULL;
 	GError *ns_err = NULL;
 	gboolean needed = FALSE;
-	GError *cnfh_err = NULL;
 
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (properties != NULL, FALSE);
 
-	connection = nm_connection_new_from_hash (properties, &cnfh_err);
-	if (!connection) {
-		g_set_error (err,
-		             NM_VPN_PLUGIN_ERROR,
-		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		             "The connection was invalid: '%s' / '%s' invalid.",
-		             g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_err->domain)),
-		             cnfh_err->message);
-		g_error_free (cnfh_err);
-		return FALSE;
-	}
+	connection = _nm_connection_new_from_hash (properties);
 
 	if (!NM_VPN_PLUGIN_GET_CLASS (plugin)->need_secrets) {
 		*setting_name = "";
@@ -581,7 +565,6 @@ impl_vpn_plugin_new_secrets (NMVPNPlugin *plugin,
 {
 	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 	NMConnection *connection;
-	GError *local = NULL;
 	gboolean success;
 
 	if (priv->state != NM_VPN_SERVICE_STATE_STARTING) {
@@ -591,14 +574,7 @@ impl_vpn_plugin_new_secrets (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	connection = nm_connection_new_from_hash (properties, &local);
-	if (!connection) {
-		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-		             "Invalid connection: %s",
-		             local->message);
-		g_clear_error (&local);
-		return FALSE;
-	}
+	connection = _nm_connection_new_from_hash (properties);
 
 	if (!NM_VPN_PLUGIN_GET_CLASS (plugin)->new_secrets) {
 		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED,

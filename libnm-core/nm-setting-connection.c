@@ -1055,11 +1055,13 @@ find_virtual_interface_name (GVariant *connection_dict)
 	return interface_name;
 }
 
-static void
+static gboolean
 nm_setting_connection_set_interface_name (NMSetting *setting,
                                           GVariant *connection_dict,
                                           const char *property,
-                                          GVariant *value)
+                                          GVariant *value,
+                                          NMSettingParseFlags parse_flags,
+                                          GError **error)
 {
 	const char *interface_name;
 
@@ -1074,12 +1076,16 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name,
 	              NULL);
+
+	return TRUE;
 }
 
-static void
+static gboolean
 nm_setting_connection_no_interface_name (NMSetting *setting,
                                          GVariant *connection_dict,
-                                         const char *property)
+                                         const char *property,
+                                         NMSettingParseFlags parse_flags,
+                                         GError **error)
 {
 	const char *virtual_interface_name;
 
@@ -1087,6 +1093,7 @@ nm_setting_connection_no_interface_name (NMSetting *setting,
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, virtual_interface_name,
 	              NULL);
+	return TRUE;
 }
 
 static gboolean

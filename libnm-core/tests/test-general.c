@@ -74,6 +74,12 @@ G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
 
 /*****************************************************************************/
 
+static NMConnection *
+_connection_new_from_dbus (GVariant *dict, GError **error)
+{
+	return _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_NORMALIZE, error);
+}
+
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)
 {
@@ -450,7 +456,7 @@ test_setting_ip4_config_labels (void)
 	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                                                   "address-data");
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_no_error (error);
 	g_variant_unref (dict);
 
@@ -473,7 +479,7 @@ test_setting_ip4_config_labels (void)
 	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                                                   "address-labels");
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict2, &error);
+	conn = _connection_new_from_dbus (dict2, &error);
 	g_assert_no_error (error);
 	g_variant_unref (dict2);
 
@@ -603,7 +609,7 @@ test_setting_ip4_config_address_data (void)
 	g_object_unref (conn);
 
 	/* When we reserialize that dictionary as a client, 'address-data' will be preferred. */
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_no_error (error);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
@@ -619,7 +625,7 @@ test_setting_ip4_config_address_data (void)
 
 	/* But on the server side, 'addresses' will have precedence. */
 	_nm_utils_is_manager_process = TRUE;
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	_nm_utils_is_manager_process = FALSE;
 	g_assert_no_error (error);
 	g_variant_unref (dict);
@@ -1025,7 +1031,7 @@ test_setting_new_from_dbus (void)
 	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (s_wsec);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NULL);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, NULL);
 	g_variant_unref (dict);
 
 	g_assert (s_wsec);
@@ -1054,7 +1060,7 @@ test_setting_new_from_dbus_transform (void)
 	                                                  dbus_mac_address, ETH_ALEN, 1));
 	dict = g_variant_builder_end (&builder);
 
-	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, dict, NULL, &error);
+	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
@@ -1080,7 +1086,7 @@ test_setting_new_from_dbus_enum (void)
 	                       g_variant_new_int32 (NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
 	dict = g_variant_builder_end (&builder);
 
-	s_ip6 = (NMSettingIP6Config *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_IP6_CONFIG, dict, NULL, &error);
+	s_ip6 = (NMSettingIP6Config *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_IP6_CONFIG, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (s_ip6), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
@@ -1099,7 +1105,7 @@ test_setting_new_from_dbus_enum (void)
 	                                             NM_SETTING_SECRET_FLAG_NOT_SAVED));
 	dict = g_variant_builder_end (&builder);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, &error);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_type (s_wsec), ==, NM_WEP_KEY_TYPE_KEY);
@@ -1116,7 +1122,7 @@ test_setting_new_from_dbus_enum (void)
 	                       g_variant_new_byte ('E'));
 	dict = g_variant_builder_end (&builder);
 
-	s_serial = (NMSettingSerial *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_SERIAL, dict, NULL, &error);
+	s_serial = (NMSettingSerial *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_SERIAL, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpint (nm_setting_serial_get_parity (s_serial), ==, NM_SETTING_SERIAL_PARITY_EVEN);
@@ -1188,7 +1194,7 @@ test_setting_new_from_dbus_bad (void)
 	g_object_unref (conn);
 
 	/* sanity-check */
-	conn = nm_simple_connection_new_from_dbus (orig_dict, &error);
+	conn = _connection_new_from_dbus (orig_dict, &error);
 	g_assert_no_error (error);
 	g_assert (conn);
 	g_object_unref (conn);
@@ -1201,7 +1207,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_WIRELESS_RATE,
 	                                                     "i", 10);
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert (conn);
 	g_assert_no_error (error);
 	setting = nm_connection_get_setting (conn, NM_TYPE_SETTING_WIRELESS);
@@ -1216,7 +1222,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
 	                                                     "i", NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert (conn);
 	g_assert_no_error (error);
 	setting = nm_connection_get_setting (conn, NM_TYPE_SETTING_IP6_CONFIG);
@@ -1233,7 +1239,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_WIRELESS_RATE,
 	                                                     "s", "ten");
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "802-11-wireless.rate:"));
 	g_clear_error (&error);
@@ -1245,7 +1251,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_WIRELESS_MODE,
 	                                                     "b", FALSE);
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "802-11-wireless.mode:"));
 	g_clear_error (&error);
@@ -1257,7 +1263,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_WIRELESS_SSID,
 	                                                     "s", "fred");
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "802-11-wireless.ssid:"));
 	g_clear_error (&error);
@@ -1269,7 +1275,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_WIRELESS_BSSID,
 	                                                     "i", 42);
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "802-11-wireless.bssid:"));
 	g_clear_error (&error);
@@ -1281,7 +1287,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
 	                                                     "s", "private");
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv6.ip6-privacy:"));
 	g_clear_error (&error);
@@ -1293,7 +1299,7 @@ test_setting_new_from_dbus_bad (void)
 	                                                     NM_SETTING_IP_CONFIG_ADDRESSES,
 	                                                     "s", "1234::5678");
 	                      );
-	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	conn = _connection_new_from_dbus (dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv6.addresses:"));
 	g_clear_error (&error);
@@ -1561,7 +1567,7 @@ test_connection_new_from_dbus (void)
 	g_assert (new_settings);
 
 	/* Replace settings and test */
-	connection = nm_simple_connection_new_from_dbus (new_settings, &error);
+	connection = _connection_new_from_dbus (new_settings, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -3241,7 +3247,7 @@ test_connection_normalize_virtual_iface_name (void)
 	                                                     ":::this-is-not-a-valid-interface-name:::");
 	                      );
 
-	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
+	con = _connection_new_from_dbus (connection_dict, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_clear_error (&error);
 
@@ -3253,7 +3259,7 @@ test_connection_normalize_virtual_iface_name (void)
 	                                                     IFACE_VIRT);
 	                      );
 
-	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
+	con = _connection_new_from_dbus (connection_dict, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
@@ -3269,7 +3275,7 @@ test_connection_normalize_virtual_iface_name (void)
 	                                                   NM_SETTING_CONNECTION_INTERFACE_NAME);
 	                      );
 
-	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
+	con = _connection_new_from_dbus (connection_dict, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_VIRT);
@@ -3783,7 +3789,7 @@ test_setting_ip4_gateway (void)
 	                                                   "address-data");
 	                      );
 
-	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	conn = _connection_new_from_dbus (conn_dict, &error);
 	g_assert_no_error (error);
 
 	s_ip4 = (NMSettingIPConfig *) nm_connection_get_setting_ip4_config (conn);
@@ -3805,7 +3811,7 @@ test_setting_ip4_gateway (void)
 	                                                     "addresses", "aau", &addrs_builder);
 	                      );
 
-	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	conn = _connection_new_from_dbus (conn_dict, &error);
 	g_assert_no_error (error);
 	g_variant_unref (conn_dict);
 
@@ -3890,7 +3896,7 @@ test_setting_ip6_gateway (void)
 	                                                   "address-data");
 	                      );
 
-	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	conn = _connection_new_from_dbus (conn_dict, &error);
 	g_assert_no_error (error);
 
 	s_ip6 = (NMSettingIPConfig *) nm_connection_get_setting_ip6_config (conn);
@@ -3918,7 +3924,7 @@ test_setting_ip6_gateway (void)
 	                                                     "addresses", "a(ayuay)", &addrs_builder);
 	                      );
 
-	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	conn = _connection_new_from_dbus (conn_dict, &error);
 	g_assert_no_error (error);
 	g_variant_unref (conn_dict);
 

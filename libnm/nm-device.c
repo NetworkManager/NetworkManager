@@ -2329,6 +2329,9 @@ nm_device_reapply_finish (NMDevice *device,
  * Returns: (transfer full): a %NMConnection with the currently applied settings
  *   or %NULL on error.
  *
+ * The connection is as received from D-Bus and might not validate according
+ * to nm_connection_verify().
+ *
  * Since: 1.2
  **/
 NMConnection *
@@ -2355,7 +2358,7 @@ nm_device_get_applied_connection (NMDevice *device,
 		return NULL;
 	}
 
-	connection = nm_simple_connection_new_from_dbus (dict, error);
+	connection = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, error);
 	if (!connection)
 		return NULL;
 
@@ -2397,7 +2400,7 @@ device_get_applied_connection_cb (GObject *proxy,
 		goto out;
 	}
 
-	connection = nm_simple_connection_new_from_dbus (dict, &error);
+	connection = _nm_simple_connection_new_from_dbus (dict, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &error);
 	if (!connection) {
 		g_simple_async_result_take_error (simple, error);
 		goto out;
@@ -2456,6 +2459,9 @@ nm_device_get_applied_connection_async  (NMDevice *device,
  *
  * Returns: (transfer full): a currently applied %NMConnection or %NULL in case
  *   of error.
+ *
+ * The connection is as received from D-Bus and might not validate according
+ * to nm_connection_verify().
  *
  * Since: 1.2
  **/

@@ -233,6 +233,133 @@ validate_permissions_type (GVariant *variant, GError **error)
 }
 
 /**
+ * _nm_connection_replace_settings:
+ * @connection: a #NMConnection
+ * @new_settings: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION, with the new settings
+ * @parse_flags: flags.
+ * @error: location to store error, or %NULL
+ *
+ * Replaces @connection's settings with @new_settings (which must be
+ * syntactically valid, and describe a known type of connection, but does not
+ * need to result in a connection that passes nm_connection_verify()).
+ *
+ * Returns: %TRUE if connection was updated, %FALSE if @new_settings could not
+ *   be deserialized (in which case @connection will be unchanged).
+ *   Only exception is the NM_SETTING_PARSE_FLAGS_NORMALIZE flag: if normalization
+ *   fails, the input @connection is already modified and the original settings
+ *   are lost.
+ **/
+gboolean
+_nm_connection_replace_settings (NMConnection *connection,
+                                 GVariant *new_settings,
+                                 NMSettingParseFlags parse_flags,
+                                 GError **error)
+{
+	NMConnectionPrivate *priv;
+	GVariantIter iter;
+	const char *setting_name;
+	GVariant *setting_dict;
+	GSList *settings = NULL, *s;
+	gboolean changed, success;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	nm_assert (!NM_FLAGS_ANY (parse_flags, ~NM_SETTING_PARSE_FLAGS_ALL));
+	nm_assert (!NM_FLAGS_ALL (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_BEST_EFFORT));
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	if (   !NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT)
+	    && !validate_permissions_type (new_settings, error))
+		return FALSE;
+
+	g_variant_iter_init (&iter, new_settings);
+	while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, &setting_dict)) {
+		gs_unref_variant GVariant *setting_dict_free = NULL;
+		GError *local = NULL;
+		NMSetting *setting;
+		GType type;
+
+		setting_dict_free = setting_dict;
+
+		type = nm_setting_lookup_type (setting_name);
+		if (type == G_TYPE_INVALID) {
+			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
+				continue;
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_SETTING,
+			                     _("unknown setting name"));
+			g_prefix_error (error, "%s: ", setting_name);
+			g_slist_free_full (settings, g_object_unref);
+			return FALSE;
+		}
+
+		for (s = settings; s; s = s->next) {
+			if (G_OBJECT_TYPE (s->data) == type) {
+				if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+					g_set_error_literal (error,
+					                     NM_CONNECTION_ERROR,
+					                     NM_CONNECTION_ERROR_INVALID_SETTING,
+					                     _("duplicate setting name"));
+					g_prefix_error (error, "%s: ", setting_name);
+					g_slist_free_full (settings, g_object_unref);
+					return FALSE;
+				}
+				/* last wins. */
+				g_object_unref (s->data);
+				settings = g_slist_delete_link (settings, s);
+				break;
+			}
+		}
+
+		setting = _nm_setting_new_from_dbus (type, setting_dict, new_settings, parse_flags, &local);
+
+		if (!setting) {
+			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
+				continue;
+			g_propagate_error (error, local);
+			g_slist_free_full (settings, g_object_unref);
+			return FALSE;
+		}
+
+		settings = g_slist_prepend (settings, setting);
+	}
+
+	if (g_hash_table_size (priv->settings) > 0) {
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
+		changed = TRUE;
+	} else
+		changed = (settings != NULL);
+
+	/* Note: @settings might be empty in which case the connection
+	 * has no NMSetting instances... which is fine, just something
+	 * to be aware of. */
+	for (s = settings; s; s = s->next)
+		_nm_connection_add_setting (connection, s->data);
+
+	g_slist_free (settings);
+
+	/* If verification/normalization fails, the original connection
+	 * is already lost. From an API point of view, it would be nicer
+	 * not to touch the input argument if we fail at the end.
+	 * However, that would require creating a temporary connection
+	 * to validate it first. As none of the caller cares about the
+	 * state of the @connection when normalization fails, just do it
+	 * this way. */
+	if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_NORMALIZE))
+		success = nm_connection_normalize (connection, NULL, NULL, error);
+	else
+		success = TRUE;
+
+	if (changed)
+		g_signal_emit (connection, signals[CHANGED], 0);
+	return success;
+}
+
+/**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
  * @new_settings: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION, with the new settings
@@ -250,64 +377,7 @@ nm_connection_replace_settings (NMConnection *connection,
                                 GVariant *new_settings,
                                 GError **error)
 {
-	NMConnectionPrivate *priv;
-	GVariantIter iter;
-	const char *setting_name;
-	GVariant *setting_dict;
-	GSList *settings = NULL, *s;
-	gboolean changed;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	if (!validate_permissions_type (new_settings, error))
-		return FALSE;
-
-	g_variant_iter_init (&iter, new_settings);
-	while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, &setting_dict)) {
-		NMSetting *setting;
-		GType type;
-
-		type = nm_setting_lookup_type (setting_name);
-		if (type == G_TYPE_INVALID) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_SETTING,
-			                     _("unknown setting name"));
-			g_prefix_error (error, "%s: ", setting_name);
-			g_variant_unref (setting_dict);
-			g_slist_free_full (settings, g_object_unref);
-			return FALSE;
-		}
-
-		setting = _nm_setting_new_from_dbus (type, setting_dict, new_settings, error);
-		g_variant_unref (setting_dict);
-
-		if (!setting) {
-			g_slist_free_full (settings, g_object_unref);
-			return FALSE;
-		}
-
-		settings = g_slist_prepend (settings, setting);
-	}
-
-	if (g_hash_table_size (priv->settings) > 0) {
-		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
-		changed = TRUE;
-	} else
-		changed = (settings != NULL);
-
-	for (s = settings; s; s = s->next)
-		_nm_connection_add_setting (connection, s->data);
-
-	g_slist_free (settings);
-
-	if (changed)
-		g_signal_emit (connection, signals[CHANGED], 0);
-	return TRUE;
+	return _nm_connection_replace_settings (connection, new_settings, NM_SETTING_PARSE_FLAGS_NONE, error);
 }
 
 /**

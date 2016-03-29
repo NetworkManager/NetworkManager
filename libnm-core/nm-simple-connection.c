@@ -51,7 +51,7 @@ nm_simple_connection_new (void)
 }
 
 /**
- * nm_simple_connection_new_from_dbus:
+ * _nm_simple_connection_new_from_dbus:
  * @dict: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION describing the connection
  * @error: on unsuccessful return, an error
  *
@@ -60,22 +60,44 @@ nm_simple_connection_new (void)
  * hash table.
  *
  * Returns: (transfer full): the new #NMSimpleConnection object, populated with
- * settings created from the values in the hash table, or %NULL if the
- * connection failed to validate
+ * settings created from the values in the hash table, or %NULL if there was
+ * an error.
  **/
 NMConnection *
-nm_simple_connection_new_from_dbus (GVariant *dict, GError **error)
+_nm_simple_connection_new_from_dbus (GVariant *dict, NMSettingParseFlags parse_flags, GError **error)
 {
 	NMConnection *connection;
 
 	g_return_val_if_fail (dict != NULL, NULL);
 	g_return_val_if_fail (g_variant_is_of_type (dict, NM_VARIANT_TYPE_CONNECTION), NULL);
+	g_return_val_if_fail (!NM_FLAGS_ANY (parse_flags, ~NM_SETTING_PARSE_FLAGS_ALL), NULL);
+	g_return_val_if_fail (!NM_FLAGS_ALL (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_BEST_EFFORT), NULL);
 
 	connection = nm_simple_connection_new ();
-	if (   !nm_connection_replace_settings (connection, dict, error)
-	    || !nm_connection_normalize (connection, NULL, NULL, error))
+	if (!_nm_connection_replace_settings (connection, dict, parse_flags, error))
 		g_clear_object (&connection);
 	return connection;
+}
+
+/**
+ * nm_simple_connection_new_from_dbus:
+ * @dict: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION describing the connection
+ * @error: on unsuccessful return, an error
+ *
+ * Creates a new #NMSimpleConnection from a hash table describing the
+ * connection and normalize the connection.  See nm_connection_to_dbus() for a
+ * description of the expected hash table.
+ *
+ * Returns: (transfer full): the new #NMSimpleConnection object, populated with
+ * settings created from the values in the hash table, or %NULL if the
+ * connection failed to normalize.
+ **/
+NMConnection *
+nm_simple_connection_new_from_dbus (GVariant *dict, GError **error)
+{
+	return _nm_simple_connection_new_from_dbus (dict,
+	                                            NM_SETTING_PARSE_FLAGS_NORMALIZE,
+	                                            error);
 }
 
 /**

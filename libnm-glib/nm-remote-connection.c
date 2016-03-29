@@ -31,6 +31,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-helpers-private.h"
+#include "nm-setting-private.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"
 #define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
@@ -447,24 +448,6 @@ nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
 /****************************************************************/
 
 static void
-replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
-{
-	GError *error = NULL;
-
-	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error))
-		g_signal_emit (self, signals[UPDATED], 0, new_settings);
-	else {
-		g_warning ("%s: error updating connection %s settings: %s",
-		           __func__,
-		           nm_connection_get_path (NM_CONNECTION (self)),
-		           error->message);
-		g_clear_error (&error);
-
-		g_signal_emit (self, signals[REMOVED], 0);
-	}
-}
-
-static void
 updated_get_settings_cb (DBusGProxy *proxy,
                          DBusGProxyCall *call,
                          gpointer user_data)
@@ -488,7 +471,7 @@ updated_get_settings_cb (DBusGProxy *proxy,
 		 * object.
 		 */
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
-		nm_connection_replace_settings (NM_CONNECTION (self), hash, NULL);
+		_nm_connection_replace_settings (NM_CONNECTION (self), hash);
 		g_hash_table_destroy (hash);
 
 		priv->visible = FALSE;
@@ -497,7 +480,8 @@ updated_get_settings_cb (DBusGProxy *proxy,
 		gs_unref_object NMConnection *self_alive = NULL;
 
 		self_alive = g_object_ref (self);
-		replace_settings (self, new_settings);
+		_nm_connection_replace_settings (NM_CONNECTION (self), new_settings);
+		g_signal_emit (self, signals[UPDATED], 0, new_settings);
 		g_hash_table_destroy (new_settings);
 
 		/* Settings service will handle announcing the connection to clients */
@@ -628,7 +612,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 	priv->visible = TRUE;
 	self_alive = g_object_ref (initable);
-	replace_settings (NM_REMOTE_CONNECTION (initable), hash);
+	_nm_connection_replace_settings (NM_CONNECTION (initable), hash);
+	g_signal_emit (initable, signals[UPDATED], 0, hash);
 	g_hash_table_destroy (hash);
 
 	/* Get properties */
@@ -703,7 +688,8 @@ init_get_settings_cb (DBusGProxy *proxy,
 
 	priv->visible = TRUE;
 	self_alive = g_object_ref (init_data->connection);
-	replace_settings (init_data->connection, settings);
+	_nm_connection_replace_settings (NM_CONNECTION (init_data->connection), settings);
+	g_signal_emit (init_data->connection, signals[UPDATED], 0, settings);
 	g_hash_table_destroy (settings);
 
 	/* Grab properties */

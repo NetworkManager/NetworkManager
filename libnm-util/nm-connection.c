@@ -327,19 +327,30 @@ validate_permissions_type (GHashTable *hash, GError **error)
 	return TRUE;
 }
 
-static gboolean
-hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
+/**
+ * _nm_connection_replace_settings:
+ * @connection: a #NMConnection
+ * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
+ **/
+void
+_nm_connection_replace_settings (NMConnection *connection,
+                                 GHashTable *new_settings)
 {
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 	GHashTableIter iter;
 	const char *setting_name;
 	GHashTable *setting_hash;
-	gboolean changed, valid;
-	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+	gboolean changed;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (new_settings != NULL);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	if ((changed = g_hash_table_size (priv->settings) > 0))
 		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
 
-	g_hash_table_iter_init (&iter, new);
+	g_hash_table_iter_init (&iter, new_settings);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
 		GType type = nm_connection_lookup_setting_type (setting_name);
 
@@ -353,10 +364,8 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 		}
 	}
 
-	valid = nm_connection_verify (connection, error);
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
-	return valid;
 }
 
 /**
@@ -373,16 +382,15 @@ nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings,
                                 GError **error)
 {
-	gboolean valid = FALSE;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
-	if (validate_permissions_type (new_settings, error))
-		valid = hash_to_connection (connection, new_settings, error);
-	return valid;
+	if (!validate_permissions_type (new_settings, error))
+		return FALSE;
+
+	_nm_connection_replace_settings (connection, new_settings);
+	return nm_connection_verify (connection, error);
 }
 
 /**
@@ -409,7 +417,8 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	NMConnectionPrivate *priv;
 	GHashTableIter iter;
 	NMSetting *setting;
-	gboolean changed, valid;
+	gboolean changed = FALSE;
+	gboolean valid;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
@@ -418,7 +427,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	/* When 'connection' and 'new_connection' are the same object simply return
 	 * in order not to destroy 'connection' */
 	if (connection == new_connection)
-		return TRUE;
+		goto out;
 
 	/* No need to validate permissions like nm_connection_replace_settings()
 	 * since we're dealing with an NMConnection which has already done that.
@@ -435,6 +444,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 		changed = TRUE;
 	}
 
+out:
 	valid =  nm_connection_verify (connection, error);
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
@@ -1441,6 +1451,29 @@ nm_connection_new (void)
 }
 
 /**
+ * _nm_connection_new_from_hash:
+ * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
+ * the connection
+ *
+ * Creates a new #NMConnection from a hash table describing the connection.  See
+ * nm_connection_to_hash() for a description of the expected hash table.
+ *
+ * Returns: the new #NMConnection object, populated with settings created
+ * from the values in the hash table.
+ **/
+NMConnection *
+_nm_connection_new_from_hash (GHashTable *hash)
+{
+	NMConnection *connection;
+
+	g_return_val_if_fail (hash != NULL, NULL);
+
+	connection = nm_connection_new ();
+	_nm_connection_replace_settings (connection, hash);
+	return connection;
+}
+
+/**
  * nm_connection_new_from_hash:
  * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
  * the connection
@@ -1463,11 +1496,9 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 	if (!validate_permissions_type (hash, error))
 		return NULL;
 
-	connection = nm_connection_new ();
-	if (!hash_to_connection (connection, hash, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
+	connection = _nm_connection_new_from_hash (hash);
+	if (!nm_connection_verify (connection, error))
+		g_clear_object (&connection);
 	return connection;
 }
 

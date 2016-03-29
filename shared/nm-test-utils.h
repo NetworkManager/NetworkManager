@@ -1793,6 +1793,27 @@ nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *keyfi
 
 #ifdef __NM_CONNECTION_H__
 
+inline static GVariant *
+_nmtst_variant_new_vardict (int dummy, ...)
+{
+	GVariantBuilder builder;
+	va_list ap;
+	const char *name;
+	GVariant *variant;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+	va_start (ap, dummy);
+	while ((name = va_arg (ap, const char *))) {
+		variant = va_arg (ap, GVariant *);
+		g_variant_builder_add (&builder, "{sv}", name, variant);
+	}
+	va_end (ap);
+
+	return g_variant_builder_end (&builder);
+}
+#define nmtst_variant_new_vardict(...) _nmtst_variant_new_vardict (0, __VA_ARGS__, NULL)
+
 #define nmtst_assert_variant_is_of_type(variant, type) \
 	G_STMT_START { \
 		GVariant *_variantx = (variant); \
@@ -1863,6 +1884,8 @@ typedef enum {
 			 \
 			if (__cur_setting_name) \
 				g_variant_builder_add (&__connection_builder, "{sa{sv}}", __cur_setting_name, &__setting_builder); \
+			else \
+				g_variant_builder_clear (&__setting_builder); \
 			g_variant_iter_free (__setting_iter); \
 		} \
 		 \

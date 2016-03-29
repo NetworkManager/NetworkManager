@@ -52,6 +52,7 @@ libnm_core_headers =				\
 	$(core)/nm-vpn-plugin-info.h
 
 libnm_core_private_headers =			\
+	$(top_builddir)/shared/nm-shared-utils.h \
 	$(core)/crypto.h			\
 	$(core)/nm-connection-private.h		\
 	$(core)/nm-core-internal.h		\
@@ -63,6 +64,7 @@ libnm_core_private_headers =			\
 	$(core)/nm-utils-private.h
 
 libnm_core_sources =				\
+	$(top_builddir)/shared/nm-shared-utils.c \
 	$(core_build)/nm-core-enum-types.c	\
 	$(core)/crypto.c			\
 	$(core)/nm-connection.c			\

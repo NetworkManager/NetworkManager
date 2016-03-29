@@ -100,6 +100,25 @@
 	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
+typedef enum { /*< skip >*/
+	NM_SETTING_PARSE_FLAGS_NONE                     = 0,
+	NM_SETTING_PARSE_FLAGS_STRICT                   = 1LL << 0,
+	NM_SETTING_PARSE_FLAGS_BEST_EFFORT              = 1LL << 1,
+	NM_SETTING_PARSE_FLAGS_NORMALIZE                = 1LL << 2,
+
+	_NM_SETTING_PARSE_FLAGS_LAST,
+	NM_SETTING_PARSE_FLAGS_ALL                      = ((_NM_SETTING_PARSE_FLAGS_LAST - 1) << 1) - 1,
+} NMSettingParseFlags;
+
+gboolean _nm_connection_replace_settings (NMConnection *connection,
+                                          GVariant *new_settings,
+                                          NMSettingParseFlags parse_flags,
+                                          GError **error);
+
+NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
+                                                   NMSettingParseFlags parse_flags,
+                                                   GError       **error);
+
 guint32 _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
@@ -178,8 +197,6 @@ GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
-
-gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
                                      const char *signal_name,

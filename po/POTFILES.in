@@ -140,6 +140,7 @@ libnm/nm-remote-settings.c
 libnm/nm-vpn-plugin-old.c
 libnm/nm-vpn-service-plugin.c
 policy/org.freedesktop.NetworkManager.policy.in.in
+shared/nm-shared-utils.c
 src/NetworkManagerUtils.c
 src/main.c
 src/main-utils.c

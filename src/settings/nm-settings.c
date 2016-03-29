@@ -1407,7 +1407,10 @@ impl_settings_add_connection_helper (NMSettings *self,
 	NMConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_simple_connection_new_from_dbus (settings, &error);
+	connection = _nm_simple_connection_new_from_dbus (settings,
+	                                                    NM_SETTING_PARSE_FLAGS_STRICT
+	                                                  | NM_SETTING_PARSE_FLAGS_NORMALIZE,
+	                                                  &error);
 
 	if (connection) {
 		if (!nm_connection_verify_secrets (connection, &error))

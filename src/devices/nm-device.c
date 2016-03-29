@@ -7369,7 +7369,10 @@ impl_device_reapply (NMDevice *self,
 
 	if (settings && g_variant_n_children (settings)) {
 		/* New settings specified inline. */
-		connection = nm_simple_connection_new_from_dbus (settings, &error);
+		connection = _nm_simple_connection_new_from_dbus (settings,
+		                                                    NM_SETTING_PARSE_FLAGS_STRICT
+		                                                  | NM_SETTING_PARSE_FLAGS_NORMALIZE,
+		                                                  &error);
 		if (!connection) {
 			g_prefix_error (&error, "The settings specified are invalid: ");
 			nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
