@@ -1150,8 +1150,19 @@ nmc_property_bond_get_options (NMSetting *setting, NmcPropertyGetType get_type)
 	bond_options_s = g_string_new (NULL);
 	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
 		const char *key, *value;
+		gs_free char *tmp_value = NULL;
+		char *p;
 
 		nm_setting_bond_get_option (s_bond, i, &key, &value);
+
+		if (nm_streq0 (key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+			value = tmp_value = g_strdup (value);
+			for (p = tmp_value; p && *p; p++) {
+				if (*p == ',')
+					*p = ' ';
+			}
+		}
+
 		g_string_append_printf (bond_options_s, "%s=%s,", key, value);
 	}
 	g_string_truncate (bond_options_s, bond_options_s->len-1);  /* chop off trailing ',' */
@@ -3651,10 +3662,28 @@ _validate_bond_option_value (const char *option, const char *value, GError **err
 	return value;
 }
 
+static gboolean
+_bond_add_option (NMSettingBond *setting,
+                  const char *name,
+                  const char *value)
+{
+	gs_free char *tmp_value = NULL;
+	char *p;
+
+	if (nm_streq0 (name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+		value = tmp_value = g_strdup (value);
+		for (p = tmp_value; p && *p; p++)
+			if (*p == ' ')
+				*p = ',';
+	}
+
+	return nm_setting_bond_add_option (setting, name, value);
+}
+
 DEFINE_SETTER_OPTIONS (nmc_property_bond_set_options,
                        NM_SETTING_BOND,
                        NMSettingBond,
-                       nm_setting_bond_add_option,
+                       _bond_add_option,
                        nm_setting_bond_get_valid_options,
                        _validate_bond_option_value)
 DEFINE_REMOVER_OPTION (nmc_property_bond_remove_option_options,

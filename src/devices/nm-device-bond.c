@@ -160,16 +160,23 @@ update_connection (NMDevice *device, NMConnection *connection)
 	while (options && *options) {
 		gs_free char *value = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, *options);
 		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
+		char *p;
 
-		if (value && !ignore_if_zero (*options, value) && (g_strcmp0 (value, defvalue) != 0)) {
+		if (_nm_setting_bond_get_option_type (s_bond, *options) == NM_BOND_OPTION_TYPE_BOTH) {
+			p = strchr (value, ' ');
+			if (p)
+				*p = '\0';
+		}
+
+		if (   value
+		    && value[0]
+		    && !ignore_if_zero (*options, value)
+		    && !nm_streq0 (value, defvalue)) {
 			/* Replace " " with "," for arp_ip_targets from the kernel */
 			if (strcmp (*options, "arp_ip_target") == 0) {
-				char *p = value;
-
-				while (p && *p) {
+				for (p = value; *p; p++) {
 					if (*p == ' ')
 						*p = ',';
-					p++;
 				}
 			}
 
@@ -285,7 +292,7 @@ apply_bonding_config (NMDevice *device)
 	set_bond_attr (device, "mode", mode);
 
 	/* arp_interval not compatible with ALB, TLB */
-	if (g_strcmp0 (mode, "balance-alb") == 0 || g_strcmp0 (mode, "balance-tlb") == 0)
+	if (NM_IN_STRSET (mode, "balance-alb", "balance-tlb"))
 		set_arp_interval = FALSE;
 
 	if (set_arp_interval) {
@@ -299,18 +306,17 @@ apply_bonding_config (NMDevice *device)
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_VALIDATE);
 	/* arp_validate > 0 only valid in active-backup mode */
 	if (   value
-	    && g_strcmp0 (value, "0") != 0
-	    && g_strcmp0 (value, "none") != 0
-	    && g_strcmp0 (mode, "active-backup") == 0)
+	    && !nm_streq (value, "0")
+	    && !nm_streq (value, "none")
+	    && nm_streq (mode, "active-backup"))
 		set_bond_attr (device, "arp_validate", value);
 	else
 		set_bond_attr (device, "arp_validate", "0");
 
-	if (   g_strcmp0 (mode, "active-backup") == 0
-	    || g_strcmp0 (mode, "balance-alb") == 0
-	    || g_strcmp0 (mode, "balance-tlb") == 0) {
+	if (NM_IN_STRSET (mode, "active-backup", "balance-alb", "balance-tlb")) {
 		value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
 		set_bond_attr (device, "primary", value ? value : "");
+		set_simple_option (device, "lp_internal", s_bond, NM_SETTING_BOND_OPTION_LP_INTERVAL);
 	}
 
 	/* Clear ARP targets */
@@ -328,14 +334,30 @@ apply_bonding_config (NMDevice *device)
 	set_simple_option (device, "ad_select", s_bond, NM_SETTING_BOND_OPTION_AD_SELECT);
 	set_simple_option (device, "xmit_hash_policy", s_bond, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY);
 	set_simple_option (device, "resend_igmp", s_bond, NM_SETTING_BOND_OPTION_RESEND_IGMP);
+	set_simple_option (device, "active_slave", s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+	set_simple_option (device, "all_slaves_active", s_bond, NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE);
+	set_simple_option (device, "num_grat_arp", s_bond, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
+	set_simple_option (device, "num_unsol_na", s_bond, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
 
-	if (   g_strcmp0 (mode, "4") == 0
-	    || g_strcmp0 (mode, "802.3ad") == 0)
+	if (nm_streq (mode, "802.3ad")) {
 		set_simple_option (device, "lacp_rate", s_bond, NM_SETTING_BOND_OPTION_LACP_RATE);
+		set_simple_option (device, "ad_actor_sys_prio", s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO);
+		set_simple_option (device, "ad_actor_system", s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM);
+		set_simple_option (device, "ad_user_port_key", s_bond, NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY);
+		set_simple_option (device, "min_links", s_bond, NM_SETTING_BOND_OPTION_MIN_LINKS);
+	}
+
+	if (nm_streq (mode, "active-backup"))
+		set_simple_option (device, "arp_all_targets", s_bond, NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS);
+
+	if (nm_streq (mode, "balance-rr"))
+		set_simple_option (device, "packets_per_slave", s_bond, NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE);
+
+	if (nm_streq (mode, "balance-tlb"))
+		set_simple_option (device, "tlb_dynamic_lb", s_bond, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
-
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)

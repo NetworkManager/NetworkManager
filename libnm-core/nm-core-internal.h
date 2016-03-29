@@ -283,4 +283,16 @@ void     _nm_setting_vlan_get_priorities (NMSettingVlan *setting,
 
 /***********************************************************/
 
+typedef enum {
+	NM_BOND_OPTION_TYPE_INT,
+	NM_BOND_OPTION_TYPE_STRING,
+	NM_BOND_OPTION_TYPE_BOTH,
+	NM_BOND_OPTION_TYPE_IP,
+	NM_BOND_OPTION_TYPE_MAC,
+	NM_BOND_OPTION_TYPE_IFNAME,
+} NMBondOptionType;
+
+NMBondOptionType
+_nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
+
 #endif

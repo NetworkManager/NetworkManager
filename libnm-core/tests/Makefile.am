@@ -28,6 +28,7 @@ noinst_PROGRAMS =		\
 	test-keyfile		\
 	test-secrets		\
 	test-setting-8021x	\
+	test-setting-bond	\
 	test-setting-dcb	\
 	test-settings-defaults
 
