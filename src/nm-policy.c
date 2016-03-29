@@ -1898,19 +1898,13 @@ constructed (GObject *object)
 NMPolicy *
 nm_policy_new (NMManager *manager, NMSettings *settings)
 {
-	NMPolicy *policy;
-	static gboolean initialized = FALSE;
-
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_SETTINGS (settings), NULL);
-	g_return_val_if_fail (initialized == FALSE, NULL);
 
-	policy = g_object_new (NM_TYPE_POLICY,
-	                       NM_POLICY_MANAGER, manager,
-	                       NM_POLICY_SETTINGS, settings,
-	                       NULL);
-	initialized = TRUE;
-	return policy;
+	return g_object_new (NM_TYPE_POLICY,
+	                     NM_POLICY_MANAGER, manager,
+	                     NM_POLICY_SETTINGS, settings,
+	                     NULL);
 }
 
 static void
