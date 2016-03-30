@@ -39,12 +39,17 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_D
                                   )
 
 typedef struct {
+	GDBusInterfaceSkeleton *interface;
+} InterfaceData;
+
+typedef struct {
 	NMBusManager *bus_mgr;
 	char *path;
 
 	GHashTable *pending_notifies;
 
-	GSList *interfaces;
+	InterfaceData *interfaces;
+	guint num_interfaces;
 
 	guint notify_idle_id;
 
@@ -148,17 +153,18 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 	NMExportedObjectPrivate *priv;
 	GSignalQuery *signal_info = data;
 	GDBusInterfaceSkeleton *interface = NULL;
-	GSList *iter;
 	GValue *dbus_param_values;
-	int i;
+	guint i;
 
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 	if (!priv->path)
 		return TRUE;
 
-	for (iter = priv->interfaces; iter; iter = iter->next) {
-		if (g_type_is_a (G_OBJECT_TYPE (iter->data), signal_info->itype)) {
-			interface = G_DBUS_INTERFACE_SKELETON (iter->data);
+	for (i = 0; i < priv->num_interfaces; i++) {
+		InterfaceData *ifdata = &priv->interfaces[i];
+
+		if (g_type_is_a (G_OBJECT_TYPE (ifdata->interface), signal_info->itype)) {
+			interface = ifdata->interface;
 			break;
 		}
 	}
@@ -453,9 +459,10 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	GObjectClass *object_class;
 	NMExportedObjectClassInfo *classinfo;
 	GSList *iter;
-	GDBusInterfaceSkeleton *interface;
 	const NMExportedObjectDBusMethodImpl *methods;
-	guint methods_len;
+	guint i, methods_len;
+	guint num_interfaces;
+	InterfaceData *interfaces;
 
 	classinfo = g_type_get_qdata (object_type, nm_exported_object_class_info_quark ());
 	if (!classinfo)
@@ -467,17 +474,30 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	methods = classinfo->methods->len ? &g_array_index (classinfo->methods, NMExportedObjectDBusMethodImpl, 0) : NULL;
 	methods_len = classinfo->methods->len;
 
-	for (iter = classinfo->skeleton_types; iter; iter = iter->next) {
-		interface = nm_exported_object_skeleton_create (GPOINTER_TO_SIZE (iter->data),
-		                                                object_class,
-		                                                methods,
-		                                                methods_len,
-		                                                (GObject *) self);
+	num_interfaces = g_slist_length (classinfo->skeleton_types);
+	g_return_if_fail (num_interfaces > 0);
 
-		g_dbus_object_skeleton_add_interface ((GDBusObjectSkeleton *) self, interface);
+	interfaces = g_slice_alloc (sizeof (InterfaceData) * (num_interfaces + priv->num_interfaces));
 
-		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
+	for (i = num_interfaces, iter = classinfo->skeleton_types; iter; iter = iter->next) {
+		InterfaceData *ifdata = &interfaces[--i];
+
+		ifdata->interface = nm_exported_object_skeleton_create (GPOINTER_TO_SIZE (iter->data),
+		                                                        object_class,
+		                                                        methods,
+		                                                        methods_len,
+		                                                        (GObject *) self);
+		g_dbus_object_skeleton_add_interface ((GDBusObjectSkeleton *) self, ifdata->interface);
 	}
+	nm_assert (i == 0);
+
+	if (priv->num_interfaces > 0) {
+		memcpy (&interfaces[num_interfaces], priv->interfaces, sizeof (InterfaceData) * priv->num_interfaces);
+		g_slice_free1 (sizeof (InterfaceData) * priv->num_interfaces, priv->interfaces);
+	}
+
+	priv->num_interfaces = num_interfaces + priv->num_interfaces;
+	priv->interfaces = interfaces;
 }
 
 void
@@ -506,16 +526,22 @@ static void
 nm_exported_object_destroy_skeletons (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+	guint n;
 
-	g_return_if_fail (priv->interfaces);
+	g_return_if_fail (priv->num_interfaces > 0);
+	nm_assert (priv->interfaces);
 
-	while (priv->interfaces) {
-		GDBusInterfaceSkeleton *interface = priv->interfaces->data;
+	n = priv->num_interfaces;
 
-		priv->interfaces = g_slist_delete_link (priv->interfaces, priv->interfaces);
-		g_dbus_object_skeleton_remove_interface ((GDBusObjectSkeleton *) self, interface);
-		nm_exported_object_skeleton_release (interface);
+	while (priv->num_interfaces > 0) {
+		InterfaceData *ifdata = &priv->interfaces[--priv->num_interfaces];
+
+		g_dbus_object_skeleton_remove_interface ((GDBusObjectSkeleton *) self, ifdata->interface);
+		nm_exported_object_skeleton_release (ifdata->interface);
 	}
+
+	g_slice_free1 (sizeof (InterfaceData) * n, priv->interfaces);
+	priv->interfaces = NULL;
 }
 
 /**
@@ -664,30 +690,26 @@ nm_exported_object_unexport (NMExportedObject *self)
 	}
 }
 
-GSList *
-nm_exported_object_get_interfaces (NMExportedObject *self)
+GDBusInterfaceSkeleton *
+nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type)
 {
 	NMExportedObjectPrivate *priv;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
 
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
 	g_return_val_if_fail (priv->path, NULL);
-	g_return_val_if_fail (priv->interfaces, NULL);
+	g_return_val_if_fail (priv->num_interfaces > 0, NULL);
 
-	return priv->interfaces;
-}
+	nm_assert (priv->interfaces);
 
-GDBusInterfaceSkeleton *
-nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type)
-{
-	GSList *interfaces;
+	for (i = 0; i < priv->num_interfaces; i++) {
+		InterfaceData *ifdata = &priv->interfaces[i];
 
-	interfaces = nm_exported_object_get_interfaces (self);
-	for (; interfaces; interfaces = interfaces->next) {
-		if (G_TYPE_CHECK_INSTANCE_TYPE (interfaces->data, interface_type))
-			return interfaces->data;
+		if (G_TYPE_CHECK_INSTANCE_TYPE (ifdata->interface, interface_type))
+			return ifdata->interface;
 	}
 	return NULL;
 }
@@ -742,7 +764,6 @@ idle_emit_properties_changed (gpointer self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 	gs_unref_variant GVariant *variant = NULL;
-	GSList *iter;
 	GDBusInterfaceSkeleton *interface = NULL;
 	guint signal_id = 0;
 	GHashTableIter hash_iter;
@@ -773,10 +794,12 @@ idle_emit_properties_changed (gpointer self)
 
 	g_hash_table_remove_all (priv->pending_notifies);
 
-	for (iter = priv->interfaces; iter; iter = iter->next) {
-		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (iter->data));
+	for (i = 0; i < priv->num_interfaces; i++) {
+		InterfaceData *ifdata = &priv->interfaces[i];
+
+		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (ifdata->interface));
 		if (signal_id != 0) {
-			interface = G_DBUS_INTERFACE_SKELETON (iter->data);
+			interface = ifdata->interface;
 			break;
 		}
 	}
@@ -819,9 +842,9 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	GValue value = G_VALUE_INIT;
 	const GVariantType *vtype;
 	GVariant *variant;
-	GSList *iter;
+	guint i;
 
-	if (!priv->interfaces)
+	if (priv->num_interfaces == 0)
 		return;
 
 	for (type = G_OBJECT_TYPE (object); type; type = g_type_parent (type)) {
@@ -843,8 +866,8 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	g_object_get_property (G_OBJECT (object), pspec->name, &value);
 
 	vtype = NULL;
-	for (iter = priv->interfaces; iter && !vtype; iter = iter->next)
-		vtype = find_dbus_property_type (iter->data, dbus_property_name);
+	for (i = 0; !vtype && i < priv->num_interfaces; i++)
+		vtype = find_dbus_property_type (priv->interfaces[i].interface, dbus_property_name);
 	g_return_if_fail (vtype != NULL);
 
 	variant = g_dbus_gvalue_to_gvariant (&value, vtype);

@@ -74,7 +74,6 @@ const char *nm_exported_object_export      (NMExportedObject *self);
 const char *nm_exported_object_get_path    (NMExportedObject *self);
 gboolean    nm_exported_object_is_exported (NMExportedObject *self);
 void        nm_exported_object_unexport    (NMExportedObject *self);
-GSList *    nm_exported_object_get_interfaces (NMExportedObject *self);
 GDBusInterfaceSkeleton *nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type);
 
 void        _nm_exported_object_clear_and_unexport (NMExportedObject **location);
