@@ -15,23 +15,23 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014-2015 Red Hat, Inc.
+ * Copyright 2014-2016 Red Hat, Inc.
  */
 
 #include "nm-default.h"
 
+#include "nm-exported-object.h"
+
 #include <stdarg.h>
 #include <string.h>
 
-#include "nm-exported-object.h"
 #include "nm-bus-manager.h"
-
-static gboolean quitting = FALSE;
-
 
 #if NM_MORE_ASSERTS >= 2
 #define _ASSERT_NO_EARLY_EXPORT
 #endif
+
+static gboolean quitting = FALSE;
 
 G_DEFINE_ABSTRACT_TYPE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON);
 
