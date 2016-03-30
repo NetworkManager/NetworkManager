@@ -60,7 +60,7 @@
           specification. The majority of properties of the specification is written
           in the same format into the <emphasis>keyfile</emphasis> too. However
           some values are inconvenient for people to use. These are stored in the
-          files in more readable ways. These properties are described bellow.
+          files in more readable ways. These properties are described below.
           An example could be IP addresses that are not written as integer arrays,
           but more reasonably as "1.2.3.4/12 1.2.3.254".
           More information of the generic key file format can be found at
@@ -195,7 +195,7 @@ id=4
           in the keyfile as a variable of the same name and in the same format.
           There are several exceptions to this rule, mainly for making keyfile syntax easier
           for humans. The exceptions handled specially by <emphasis>keyfile</emphasis>
-          plugin are listed bellow. Refer to
+          plugin are listed below. Refer to
           <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>
           for all available settings and properties and their description.
         </para>

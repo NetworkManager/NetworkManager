@@ -1213,7 +1213,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	/* ---keyfile---
 	 * property: mac-address
-	 * format: ususal hex-digits-and-colons notation
+	 * format: usual hex-digits-and-colons notation
 	 * description: MAC address in traditional hex-digits-and-colons notation
 	 *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
 	 *   (e.g. 0;34;104;18;121;162).
@@ -1244,7 +1244,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	/* ---keyfile---
 	 * property: cloned-mac-address
-	 * format: ususal hex-digits-and-colons notation
+	 * format: usual hex-digits-and-colons notation
 	 * description: Cloned MAC address in traditional hex-digits-and-colons notation
 	 *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
 	 *   (e.g. 0;34;104;18;121;178).

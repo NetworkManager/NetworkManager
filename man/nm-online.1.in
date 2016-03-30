@@ -34,7 +34,7 @@ nm-online \- ask NetworkManager whether the network is connected
 is a utility to find out whether we are online. It is done by asking
 NetworkManager about its status. When run, \fInm\-online\fP waits until
 NetworkManager reports an active connection, or specified timeout expires. On
-exit, the returned status code should be checked (see the return codes bellow).
+exit, the returned status code should be checked (see the return codes below).
 .P
 By default NetworkManager waits for IPv4 dynamic addressing to complete but does
 not wait for the "auto" IPv6 dynamic addressing.  To wait for IPv6 addressing to

@@ -397,7 +397,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 **/
 	/* ---keyfile---
 	 * property: mac-address
-	 * format: ususal hex-digits-and-colons notation
+	 * format: usual hex-digits-and-colons notation
 	 * description: MAC address in traditional hex-digits-and-colons notation, or
 	 *   or semicolon separated list of 20 decimal bytes (obsolete)
 	 * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01

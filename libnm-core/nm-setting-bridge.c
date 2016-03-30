@@ -397,7 +397,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 **/
 	/* ---keyfile---
 	 * property: mac-address
-	 * format: ususal hex-digits-and-colons notation
+	 * format: usual hex-digits-and-colons notation
 	 * description: MAC address in traditional hex-digits-and-colons notation,
 	 *   or semicolon separated list of 6 decimal bytes (obsolete)
 	 * example: mac-address=00:22:68:12:79:A2

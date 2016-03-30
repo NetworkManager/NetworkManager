@@ -266,7 +266,7 @@ DEVICETYPE=TeamPort
         <para>
           See the next section for detailed mapping of NetworkManager properties and
           <emphasis>ifcfg-rh</emphasis> variables. Variable names, format and usage
-          differences in NetworkManager and initscripts are documented in the tables bellow.
+          differences in NetworkManager and initscripts are documented in the tables below.
         </para>
       </refsect1>
 
