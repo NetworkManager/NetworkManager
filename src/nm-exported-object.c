@@ -171,7 +171,8 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 	}
 	g_return_val_if_fail (interface != NULL, TRUE);
 
-	dbus_param_values = g_new0 (GValue, n_param_values);
+	dbus_param_values = g_newa (GValue, n_param_values);
+	memset (dbus_param_values, 0, sizeof (GValue) * n_param_values);
 	g_value_init (&dbus_param_values[0], G_OBJECT_TYPE (interface));
 	g_value_set_object (&dbus_param_values[0], interface);
 	for (i = 1; i < n_param_values; i++) {
@@ -193,7 +194,6 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 
 	for (i = 0; i < n_param_values; i++)
 		g_value_unset (&dbus_param_values[i]);
-	g_free (dbus_param_values);
 
 	return TRUE;
 }
