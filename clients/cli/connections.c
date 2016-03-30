@@ -4783,6 +4783,9 @@ complete_slave (NMSettingConnection *s_con,
 			                     _("Error: redundant 'master' option."));
 			return FALSE;
 		}
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
+		              NULL);
 		return TRUE;
 	}
 
