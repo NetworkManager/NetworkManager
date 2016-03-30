@@ -39,16 +39,17 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_D
                                   )
 
 typedef struct {
-	GSList *interfaces;
-
 	NMBusManager *bus_mgr;
 	char *path;
 
 	GHashTable *pending_notifies;
+
+	GSList *interfaces;
+
 	guint notify_idle_id;
 
 #ifdef _ASSERT_NO_EARLY_EXPORT
-	gboolean _constructed;
+	bool _constructed:1;
 #endif
 } NMExportedObjectPrivate;
 
