@@ -4768,43 +4768,43 @@ complete_slave (NMSettingConnection *s_con,
                 gboolean ask,
                 GError **error)
 {
-		char *master_ask = NULL;
-		const char *checked_master = NULL;
+	char *master_ask = NULL;
+	const char *checked_master = NULL;
 
-		if (type)
-			g_print (_("Warning: 'type' is ignored. "
-			           "Use 'nmcli connection add \"%s\" ...' instead."),
-			           type);
+	if (type)
+		g_print (_("Warning: 'type' is ignored. "
+		           "Use 'nmcli connection add \"%s\" ...' instead."),
+		           type);
 
-		if (nm_setting_connection_get_master (s_con)) {
-			/* Master already set. */
-			if (master) {
-				g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				                     _("Error: redundant 'master' option."));
-				return FALSE;
-			}
-			return TRUE;
-		}
-
-		if (!master && ask)
-			master = master_ask = nmc_readline (PROMPT_MASTER);
-		if (!master) {
+	if (nm_setting_connection_get_master (s_con)) {
+		/* Master already set. */
+		if (master) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("Error: 'master' is required."));
+			                     _("Error: redundant 'master' option."));
 			return FALSE;
 		}
-		/* Verify master argument */
-		checked_master = normalized_master_for_slave (all_connections, master, slave_type, NULL);
-
-		/* Change properties in 'connection' setting */
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_MASTER, checked_master,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
-		              NULL);
-
-		g_free (master_ask);
-
 		return TRUE;
+	}
+
+	if (!master && ask)
+		master = master_ask = nmc_readline (PROMPT_MASTER);
+	if (!master) {
+		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		                     _("Error: 'master' is required."));
+		return FALSE;
+	}
+	/* Verify master argument */
+	checked_master = normalized_master_for_slave (all_connections, master, slave_type, NULL);
+
+	/* Change properties in 'connection' setting */
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, checked_master,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
+	              NULL);
+
+	g_free (master_ask);
+
+	return TRUE;
 }
 
 static gboolean
@@ -7041,7 +7041,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	              NM_SETTING_CONNECTION_TYPE, setting_name,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, auto_bool,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
-		      NM_SETTING_CONNECTION_MASTER, checked_master,
+	              NM_SETTING_CONNECTION_MASTER, checked_master,
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 	              NULL);
 	g_free (uuid);
