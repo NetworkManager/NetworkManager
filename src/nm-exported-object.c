@@ -815,22 +815,6 @@ idle_emit_properties_changed (gpointer self)
 	return FALSE;
 }
 
-static const GVariantType *
-find_dbus_property_type (GDBusInterfaceSkeleton *skel,
-                         const char *dbus_property_name)
-{
-	GDBusInterfaceInfo *iinfo;
-	int i;
-
-	iinfo = g_dbus_interface_skeleton_get_info (skel);
-	for (i = 0; iinfo->properties[i]; i++) {
-		if (!strcmp (iinfo->properties[i]->name, dbus_property_name))
-			return G_VARIANT_TYPE (iinfo->properties[i]->signature);
-	}
-
-	return NULL;
-}
-
 static void
 nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 {
@@ -840,8 +824,7 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	const char *dbus_property_name = NULL;
 	GValue value = G_VALUE_INIT;
 	const GVariantType *vtype;
-	GVariant *variant;
-	guint i;
+	guint i, j;
 
 	if (priv->num_interfaces == 0)
 		return;
@@ -861,18 +844,29 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 		return;
 	}
 
+	for (i = 0; i < priv->num_interfaces; i++) {
+		GDBusInterfaceSkeleton *skel = priv->interfaces[i].interface;
+		GDBusInterfaceInfo *iinfo;
+
+		iinfo = g_dbus_interface_skeleton_get_info (skel);
+		for (j = 0; iinfo->properties[j]; j++) {
+			if (nm_streq (iinfo->properties[j]->name, dbus_property_name)) {
+				vtype = G_VARIANT_TYPE (iinfo->properties[j]->signature);
+				goto vtype_found;
+			}
+		}
+	}
+	g_return_if_reached ();
+
+vtype_found:
 	g_value_init (&value, pspec->value_type);
 	g_object_get_property (G_OBJECT (object), pspec->name, &value);
 
-	vtype = NULL;
-	for (i = 0; !vtype && i < priv->num_interfaces; i++)
-		vtype = find_dbus_property_type (priv->interfaces[i].interface, dbus_property_name);
-	g_return_if_fail (vtype != NULL);
-
-	variant = g_dbus_gvalue_to_gvariant (&value, vtype);
 	/* @dbus_property_name is inside classinfo and never freed, thus we don't clone it.
 	 * Also, we do a pointer, not string comparison. */
-	g_hash_table_insert (priv->pending_notifies, (gpointer) dbus_property_name, variant);
+	g_hash_table_insert (priv->pending_notifies,
+	                     (gpointer) dbus_property_name,
+	                     g_dbus_gvalue_to_gvariant (&value, vtype));
 	g_value_unset (&value);
 
 	if (!priv->notify_idle_id)
