@@ -12,15 +12,31 @@ LOG() {
     echo "$*"
 }
 
+coerce_bool() {
+    case "$1" in
+        no|n|NO|N|0)
+            echo 0
+            ;;
+        yes|y|YES|Y|1)
+            echo 1
+            ;;
+        "")
+            printf '%s' "$2"
+            ;;
+    esac
+}
+
 abs_path() {
     local F="$1"
-    local ALT="$2"
 
     if [[ "$F" != "" ]]; then
-        (cd "$ORIGDIR" && readlink -f "$F") || die "Could not change into $ORIGDIR"
+        F="$(cd "$ORIGDIR" && readlink -f "$F")" || exit 55
+        [[ -f "$F" ]] || exit 55
     else
-        echo "$2"
+        F="$2"
     fi
+    printf '%s' "$F"
+    exit 0
 }
 
 get_version() {
@@ -67,20 +83,37 @@ VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
 COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
-SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")"
-if [ "$SOURCE" ]; then
-	[[ -f "$SOURCE" ]] || die "could not find source $SOURCE"
-else
-	SOURCE="$(abs_path "$GITDIR/NetworkManager-$VERSION".tar.xz)"
-	[[ -f "$SOURCE" ]] || (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ HEAD) |xz >"$SOURCE"
+SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")" || die "invalid \$SPECFILE argument"
+SOURCE_FROM_GIT="$(coerce_bool "$SOURCE_FROM_GIT" "")"
+SOURCE="$(abs_path "$SOURCE")" || die "invalid \$SOURCE argument"
+if [ -n "$SOURCE" ]; then
+    [[ "$SOURCE_FROM_GIT" == 1 ]] && die "Cannot set both \$SOURCE and \$SOURCE_FROM_GIT=1"
+    SOURCE_FROM_GIT=0
+elif [[ "$SOURCE_FROM_GIT" != "0" ]]; then
+    SOURCE="$GITDIR/NetworkManager-${VERSION}.tar."*
+    if [ -f "$SOURCE" ]; then
+        SOURCE_FROM_GIT=0
+    else
+        SOURCE_FROM_GIT=1
+        SOURCE=
+    fi
 fi
 
-SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")"
-SOURCE_CONFIG_SERVER="$(abs_path "$SOURCE_CONFIG_SERVER" "$SCRIPTDIR/00-server.conf")"
-SOURCE_CONFIG_CONNECTIVITY_FEDORA="$(abs_path "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$SCRIPTDIR/20-connectivity-fedora.conf")"
+if [[ -z "$SOURCE" && "$SOURCE_FROM_GIT" == "0" ]]; then
+    die "Either set \$SOURCE or set \$SOURCE_FROM_GIT=1"
+fi
+
+SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")" || die "invalid \$SOURCE_NETWORKMANAGER_CONF argument"
+SOURCE_CONFIG_SERVER="$(abs_path "$SOURCE_CONFIG_SERVER" "$SCRIPTDIR/00-server.conf")" || die "invalid \$SOURCE_CONFIG_SERVER argument"
+SOURCE_CONFIG_CONNECTIVITY_FEDORA="$(abs_path "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$SCRIPTDIR/20-connectivity-fedora.conf")" || die "invalid \$SOURCE_CONFIG_CONNECTIVITY_FEDORA argument"
 
 TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
 TEMPBASE="$(basename "$TEMP")"
+
+if [[ "$SOURCE_FROM_GIT" == "1" ]]; then
+    SOURCE="$TEMP/NetworkManager-${VERSION}.tar.xz"
+    (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ "$COMMIT_FULL") | xz > "$SOURCE"
+fi
 
 LOG "UUID=$UUID"
 LOG "VERSION=$VERSION"
@@ -89,6 +122,7 @@ LOG "COMMIT=$COMMIT"
 LOG "USERNAME=$USERNAME"
 LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
+LOG "SOURCE_FROM_GIT=$SOURCE_FROM_GIT"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_CONFIG_SERVER=$SOURCE_CONFIG_SERVER"
 LOG "SOURCE_CONFIG_CONNECTIVITY_FEDORA=$SOURCE_CONFIG_CONNECTIVITY_FEDORA"
@@ -121,12 +155,12 @@ sed -e "/^__CHANGELOG__$/ \
         }" > "$TEMPSPEC" || die "Error reading spec file"
 
 case "$BUILDTYPE" in
-	"SRPM")
-		RPM_BUILD_OPTION=-bs
-		;;
-	*)
-		RPM_BUILD_OPTION=-ba
-		;;
+    "SRPM")
+        RPM_BUILD_OPTION=-bs
+        ;;
+    *)
+        RPM_BUILD_OPTION=-ba
+        ;;
 esac
 
 rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARGS || die "ERROR: rpmbuild FAILED"
