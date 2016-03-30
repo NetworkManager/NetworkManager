@@ -68,9 +68,13 @@ COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading 
 COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")"
-_SOURCE="$SOURCE"
-SOURCE="$(abs_path "$SOURCE" "$(ls -1 "$GITDIR/NetworkManager-$VERSION"*.tar* 2>/dev/null | head -n1)")"
-[[ -f "$SOURCE" ]] || die "could not find source ${_SOURCE:-$GITDIR/NetworkManager-$VERSION*.tar*} . Did you execute \`make dist\`? Otherwise set \$SOURCE variable"
+if [ "$SOURCE" ]; then
+	[[ -f "$SOURCE" ]] || die "could not find source $SOURCE"
+else
+	SOURCE="$(abs_path "$GITDIR/NetworkManager-$VERSION".tar.xz)"
+	[[ -f "$SOURCE" ]] || (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ HEAD) |xz >"$SOURCE"
+fi
+
 SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")"
 SOURCE_CONFIG_SERVER="$(abs_path "$SOURCE_CONFIG_SERVER" "$SCRIPTDIR/00-server.conf")"
 SOURCE_CONFIG_CONNECTIVITY_FEDORA="$(abs_path "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$SCRIPTDIR/20-connectivity-fedora.conf")"

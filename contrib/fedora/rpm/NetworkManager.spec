@@ -343,7 +343,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 #%patch1 -p1
 
 %build
-
+gtkdocize
 autoreconf --install --force
 intltoolize --automake --copy --force
 %configure \
