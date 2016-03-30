@@ -55,6 +55,8 @@
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
 
+#define offset_plus_sizeof(t,m) (offsetof (t,m) + sizeof (((t *) NULL)->m))
+
 #define VLAN_FLAG_MVRP 0x8
 
 /* nm-internal error codes for libnl. Make sure they don't overlap. */
@@ -831,7 +833,7 @@ _parse_af_inet6 (NMPlatform *platform,
 {
 	static struct nla_policy policy[IFLA_INET6_MAX+1] = {
 		[IFLA_INET6_FLAGS]              = { .type = NLA_U32 },
-		[IFLA_INET6_CACHEINFO]          = { .minlen = sizeof(struct ifla_cacheinfo) },
+		[IFLA_INET6_CACHEINFO]          = { .minlen = offset_plus_sizeof(struct ifla_cacheinfo, retrans_time) },
 		[IFLA_INET6_CONF]               = { .minlen = 4 },
 		[IFLA_INET6_STATS]              = { .minlen = 8 },
 		[IFLA_INET6_ICMP6STATS]         = { .minlen = 8 },
@@ -1242,7 +1244,7 @@ _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 {
 	static struct nla_policy policy[IFLA_VLAN_MAX+1] = {
 		[IFLA_VLAN_ID]          = { .type = NLA_U16 },
-		[IFLA_VLAN_FLAGS]       = { .minlen = sizeof(struct ifla_vlan_flags) },
+		[IFLA_VLAN_FLAGS]       = { .minlen = offset_plus_sizeof(struct ifla_vlan_flags, flags) },
 		[IFLA_VLAN_INGRESS_QOS] = { .type = NLA_NESTED },
 		[IFLA_VLAN_EGRESS_QOS]  = { .type = NLA_NESTED },
 		[IFLA_VLAN_PROTOCOL]    = { .type = NLA_U16 },
@@ -1429,9 +1431,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		[IFLA_LINKINFO]         = { .type = NLA_NESTED },
 		[IFLA_QDISC]            = { .type = NLA_STRING,
 		                            .maxlen = IFQDISCSIZ },
-		[IFLA_STATS]            = { .minlen = sizeof(struct rtnl_link_stats) },
-		[IFLA_STATS64]          = { .minlen = sizeof(struct rtnl_link_stats64)},
-		[IFLA_MAP]              = { .minlen = sizeof(struct rtnl_link_ifmap) },
+		[IFLA_STATS]            = { .minlen = offset_plus_sizeof(struct rtnl_link_stats, tx_compressed) },
+		[IFLA_STATS64]          = { .minlen = offset_plus_sizeof(struct rtnl_link_stats64, tx_compressed)},
+		[IFLA_MAP]              = { .minlen = offset_plus_sizeof(struct rtnl_link_ifmap, port) },
 		[IFLA_IFALIAS]          = { .type = NLA_STRING, .maxlen = IFALIASZ },
 		[IFLA_NUM_VF]           = { .type = NLA_U32 },
 		[IFLA_AF_SPEC]          = { .type = NLA_NESTED },
@@ -1612,7 +1614,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 	static struct nla_policy policy[IFA_MAX+1] = {
 		[IFA_LABEL]     = { .type = NLA_STRING,
 		                     .maxlen = IFNAMSIZ },
-		[IFA_CACHEINFO] = { .minlen = sizeof(struct ifa_cacheinfo) },
+		[IFA_CACHEINFO] = { .minlen = offset_plus_sizeof(struct ifa_cacheinfo, tstamp) },
 	};
 	const struct ifaddrmsg *ifa;
 	struct nlattr *tb[IFA_MAX+1];
@@ -1726,7 +1728,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		[RTA_OIF]       = { .type = NLA_U32 },
 		[RTA_PRIORITY]  = { .type = NLA_U32 },
 		[RTA_FLOW]      = { .type = NLA_U32 },
-		[RTA_CACHEINFO] = { .minlen = sizeof(struct rta_cacheinfo) },
+		[RTA_CACHEINFO] = { .minlen = offset_plus_sizeof(struct rta_cacheinfo, rta_tsage) },
 		[RTA_METRICS]   = { .type = NLA_NESTED },
 		[RTA_MULTIPATH] = { .type = NLA_NESTED },
 	};
