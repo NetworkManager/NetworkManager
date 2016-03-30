@@ -725,27 +725,53 @@ nm_exported_object_init (NMExportedObject *self)
 	                                                (GDestroyNotify) g_variant_unref);
 }
 
+typedef struct {
+	const char *property_name;
+	GVariant *variant;
+} PendingNotifiesItem;
+
+static int
+_sort_pending_notifies (gconstpointer a, gconstpointer b, gpointer       user_data)
+{
+	return strcmp (((const PendingNotifiesItem *) a)->property_name,
+	               ((const PendingNotifiesItem *) b)->property_name);
+}
+
 static gboolean
 idle_emit_properties_changed (gpointer self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-	GVariant *variant;
+	gs_unref_variant GVariant *variant = NULL;
 	GSList *iter;
 	GDBusInterfaceSkeleton *interface = NULL;
 	guint signal_id = 0;
 	GHashTableIter hash_iter;
-	const char *dbus_property_name;
 	GVariantBuilder notifies;
+	guint i, n;
+	PendingNotifiesItem *values;
 
 	priv->notify_idle_id = 0;
 
-	g_variant_builder_init (&notifies, G_VARIANT_TYPE_VARDICT);
+
+	n = g_hash_table_size (priv->pending_notifies);
+	g_return_val_if_fail (n > 0, FALSE);
+
+	values = g_alloca (sizeof (values[0]) * n);
+
+	i = 0;
 	g_hash_table_iter_init (&hash_iter, priv->pending_notifies);
-	while (g_hash_table_iter_next (&hash_iter, (gpointer) &dbus_property_name, (gpointer) &variant))
-		g_variant_builder_add (&notifies, "{sv}", dbus_property_name, variant);
+	while (g_hash_table_iter_next (&hash_iter, (gpointer) &values[i].property_name, (gpointer) &values[i].variant))
+		i++;
+	nm_assert (i == n);
+
+	g_qsort_with_data (values, n, sizeof (values[0]), _sort_pending_notifies, NULL);
+
+	g_variant_builder_init (&notifies, G_VARIANT_TYPE_VARDICT);
+	for (i = 0; i < n; i++)
+		g_variant_builder_add (&notifies, "{sv}", values[i].property_name, values[i].variant);
+	variant = g_variant_ref_sink (g_variant_builder_end (&notifies));
+
 	g_hash_table_remove_all (priv->pending_notifies);
-	variant = g_variant_builder_end (&notifies);
-	g_variant_ref_sink (variant);
 
 	for (iter = priv->interfaces; iter; iter = iter->next) {
 		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (iter->data));
@@ -764,8 +790,6 @@ idle_emit_properties_changed (gpointer self)
 	}
 
 	g_signal_emit (interface, signal_id, 0, variant);
-	g_variant_unref (variant);
-
 	return FALSE;
 }
 
