@@ -2,6 +2,23 @@
 
 #set -vx
 
+# Set arguments via environment variables.
+# Argument can be omited and defaults will be detected.
+#
+#   BUILDTYPE=|SRPM
+#   NM_RPMBUILD_ARGS=<additional argus for rpmbuild>
+#   RELEASE_VERSION=
+#   VERSION=
+#   COMMIT_FULL=
+#   COMMIT=
+#   USERNAME=
+#   SPECFILE=
+#   SOURCE=<path>
+#   SOURCE_FROM_GIT=|1|0
+#   SOURCE_NETWORKMANAGER_CONF=
+#   SOURCE_CONFIG_SERVER=
+#   SOURCE_CONFIG_CONNECTIVITY_FEDORA=
+
 die() {
     echo "$*" >&2
     exit 1
@@ -81,7 +98,7 @@ UUID=`uuidgen`
 RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list HEAD | wc -l)}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
-COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
+COMMIT="${COMMIT:-$(printf '%s' "$COMMIT_FULL" | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")" || die "invalid \$SPECFILE argument"
 SOURCE_FROM_GIT="$(coerce_bool "$SOURCE_FROM_GIT" "")"
@@ -115,9 +132,9 @@ if [[ "$SOURCE_FROM_GIT" == "1" ]]; then
     (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ "$COMMIT_FULL") | xz > "$SOURCE"
 fi
 
-LOG "UUID=$UUID"
 LOG "VERSION=$VERSION"
 LOG "RELEASE_VERSION=$RELEASE_VERSION"
+LOG "COMMIT_FULL=$COMMIT_FULL"
 LOG "COMMIT=$COMMIT"
 LOG "USERNAME=$USERNAME"
 LOG "SPECFILE=$SPECFILE"
@@ -126,6 +143,10 @@ LOG "SOURCE_FROM_GIT=$SOURCE_FROM_GIT"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_CONFIG_SERVER=$SOURCE_CONFIG_SERVER"
 LOG "SOURCE_CONFIG_CONNECTIVITY_FEDORA=$SOURCE_CONFIG_CONNECTIVITY_FEDORA"
+LOG "BUILDTYPE=$BUILDTYPE"
+LOG "NM_RPMBUILD_ARGS=$NM_RPMBUILD_ARGS"
+LOG ""
+LOG "UUID=$UUID"
 LOG "BASEDIR=$TEMP"
 
 ln -snf "$TEMPBASE" ./latest0
