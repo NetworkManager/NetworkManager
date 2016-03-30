@@ -40,6 +40,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_D
 
 typedef struct {
 	GDBusInterfaceSkeleton *interface;
+	guint property_changed_signal_id;
 } InterfaceData;
 
 typedef struct {
@@ -488,6 +489,8 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 		                                                        methods_len,
 		                                                        (GObject *) self);
 		g_dbus_object_skeleton_add_interface ((GDBusObjectSkeleton *) self, ifdata->interface);
+
+		ifdata->property_changed_signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (ifdata->interface));
 	}
 	nm_assert (i == 0);
 
@@ -764,8 +767,7 @@ idle_emit_properties_changed (gpointer self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 	gs_unref_variant GVariant *variant = NULL;
-	GDBusInterfaceSkeleton *interface = NULL;
-	guint signal_id = 0;
+	InterfaceData *ifdata = NULL;
 	GHashTableIter hash_iter;
 	GVariantBuilder notifies;
 	guint i, n;
@@ -795,15 +797,12 @@ idle_emit_properties_changed (gpointer self)
 	g_hash_table_remove_all (priv->pending_notifies);
 
 	for (i = 0; i < priv->num_interfaces; i++) {
-		InterfaceData *ifdata = &priv->interfaces[i];
-
-		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (ifdata->interface));
-		if (signal_id != 0) {
-			interface = ifdata->interface;
+		if (priv->interfaces[i].property_changed_signal_id != 0) {
+			ifdata = &priv->interfaces[i];
 			break;
 		}
 	}
-	g_return_val_if_fail (signal_id != 0, FALSE);
+	g_return_val_if_fail (ifdata, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DBUS_PROPS)) {
 		gs_free char *notification = g_variant_print (variant, TRUE);
@@ -812,7 +811,7 @@ idle_emit_properties_changed (gpointer self)
 		            G_OBJECT_TYPE_NAME (self), self, notification);
 	}
 
-	g_signal_emit (interface, signal_id, 0, variant);
+	g_signal_emit (ifdata->interface, ifdata->property_changed_signal_id, 0, variant);
 	return FALSE;
 }
 
