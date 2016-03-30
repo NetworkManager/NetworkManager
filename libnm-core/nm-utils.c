@@ -45,9 +45,6 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 
-/* Embed the commit id in the build binary */
-static const char *const __nm_git_sha = NM_STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
-
 /**
  * SECTION:nm-utils
  * @short_description: Utility functions
@@ -222,8 +219,6 @@ _nm_utils_init (void)
 {
 	GModule *self;
 	gpointer func;
-
-	(void) __nm_git_sha;
 
 	if (initialized)
 		return;

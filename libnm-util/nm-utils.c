@@ -37,9 +37,6 @@
 #include "nm-setting-private.h"
 #include "crypto.h"
 
-/* Embed the commit id in the build binary */
-static const char *const __nm_git_sha = NM_STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
-
 /**
  * SECTION:nm-utils
  * @short_description: Utility functions
@@ -234,8 +231,6 @@ static gboolean initialized = FALSE;
 gboolean
 nm_utils_init (GError **error)
 {
-	(void) __nm_git_sha;
-
 	if (!initialized) {
 		initialized = TRUE;
 
