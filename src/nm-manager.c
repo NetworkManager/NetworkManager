@@ -2389,9 +2389,8 @@ find_master (NMManager *self,
 		master_connection = nm_device_get_settings_connection (master_device);
 		if (master_connection && !is_compatible_with_slave (NM_CONNECTION (master_connection), connection)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
-			             "The active connection on %s is not a valid master for '%s'",
-			             nm_device_get_iface (master_device),
-			             nm_connection_get_id (connection));
+			             "The active connection on %s is not compatible",
+			             nm_device_get_iface (master_device));
 			return FALSE;
 		}
 	} else {
@@ -2486,8 +2485,7 @@ ensure_master_active_connection (NMManager *self,
 		g_assert (!master_connection || master_connection == device_connection);
 		if (device_connection && !is_compatible_with_slave (NM_CONNECTION (device_connection), connection)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
-			             "The active connection on %s is not a valid master for '%s'",
-			             nm_device_get_iface (master_device),
+			             "The active connection %s is not compatible",
 			             nm_connection_get_id (connection));
 			return NULL;
 		}
@@ -2526,8 +2524,6 @@ ensure_master_active_connection (NMManager *self,
 					                                            master_device,
 					                                            subject,
 					                                            error);
-					if (!master_ac)
-						g_prefix_error (error, "%s", "Master device activation failed: ");
 					g_slist_free (connections);
 					return master_ac;
 				}
@@ -2537,8 +2533,7 @@ ensure_master_active_connection (NMManager *self,
 			g_set_error (error,
 			             NM_MANAGER_ERROR,
 			             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-			             "No compatible connection found for master device %s.",
-			             nm_device_get_iface (master_device));
+			             "No compatible connection found.");
 			return NULL;
 		}
 
@@ -2546,8 +2541,7 @@ ensure_master_active_connection (NMManager *self,
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_DEPENDENCY_FAILED,
-		             "Master device %s unmanaged or not available for activation",
-		             nm_device_get_iface (master_device));
+		             "Device unmanaged or not available for activation");
 	} else if (master_connection) {
 		gboolean found_device = FALSE;
 
@@ -2576,16 +2570,13 @@ ensure_master_active_connection (NMManager *self,
 			                                            candidate,
 			                                            subject,
 			                                            error);
-			if (!master_ac)
-				g_prefix_error (error, "%s", "Master device activation failed: ");
 			return master_ac;
 		}
 
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		             "No compatible disconnected device found for master connection %s.",
-		             nm_settings_connection_get_uuid (master_connection));
+		             "No device available");
 	} else
 		g_assert_not_reached ();
 
@@ -2883,8 +2874,11 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	/* Try to find the master connection/device if the connection has a dependency */
 	if (!find_master (self, applied, device,
 	                  &master_connection, &master_device, &master_ac,
-	                  error))
+	                  error)) {
+		g_prefix_error (error, "Can not find a master for %s: ",
+		                nm_settings_connection_get_id (connection));
 		return FALSE;
+	}
 
 	/* Ensure there's a master active connection the new connection we're
 	 * activating can depend on.
@@ -2903,8 +2897,10 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 		/* Ensure eg bond slave and the candidate master is a bond master */
 		if (master_connection && !is_compatible_with_slave (NM_CONNECTION (master_connection), applied)) {
-			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
-			                     "The master connection was not compatible");
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			             "The master connection '%s' is not compatible with '%s'",
+			             nm_settings_connection_get_id (master_connection),
+			             nm_settings_connection_get_id (connection));
 			return FALSE;
 		}
 
@@ -2917,8 +2913,13 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			                                             master_device,
 			                                             error);
 			if (!master_ac) {
-				if (error)
-					g_assert (*error);
+				if (master_device) {
+					g_prefix_error (error, "Master device '%s' can't be activated: ",
+					                nm_device_get_ip_iface (device));
+				} else {
+					g_prefix_error (error, "Master connection '%s' can't be activated: ",
+					                nm_settings_connection_get_id (connection));
+				}
 				return FALSE;
 			}
 		}
@@ -3415,7 +3416,7 @@ impl_manager_activate_connection (NMManager *self,
 		device = nm_manager_get_device_by_path (self, device_path);
 		if (!device) {
 			error = g_error_new (NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                     "Cannot activate unknown device %s", device_path);
+			                     "Can not activate an unknown device '%s'", device_path);
 			goto error;
 		}
 
