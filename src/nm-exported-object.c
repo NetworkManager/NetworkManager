@@ -26,7 +26,6 @@
 #include "nm-exported-object.h"
 #include "nm-bus-manager.h"
 
-static GHashTable *prefix_counters;
 static gboolean quitting = FALSE;
 
 
@@ -34,9 +33,7 @@ static gboolean quitting = FALSE;
 #define _ASSERT_NO_EARLY_EXPORT
 #endif
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON,
-                                  prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
-                                  )
+G_DEFINE_ABSTRACT_TYPE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON);
 
 typedef struct {
 	GDBusInterfaceSkeleton *interface;
@@ -547,6 +544,37 @@ nm_exported_object_destroy_skeletons (NMExportedObject *self)
 	priv->interfaces = NULL;
 }
 
+static char *
+_create_export_path (NMExportedObjectClass *klass)
+{
+	const char *class_export_path, *p;
+	static GHashTable *prefix_counters;
+	guint *counter;
+
+	class_export_path = klass->export_path;
+
+	nm_assert (class_export_path);
+
+	p = strchr (class_export_path, '%');
+	if (p) {
+		if (G_UNLIKELY (!prefix_counters))
+			prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
+
+		g_assert (p[1] == 'u');
+		g_assert (strchr (p + 1, '%') == NULL);
+
+		counter = g_hash_table_lookup (prefix_counters, class_export_path);
+		if (!counter) {
+			counter = g_slice_new0 (guint);
+			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
+		}
+
+		return g_strdup_printf (class_export_path, (*counter)++);
+	}
+
+	return g_strdup (class_export_path);
+}
+
 /**
  * nm_exported_object_export:
  * @self: an #NMExportedObject
@@ -565,9 +593,7 @@ const char *
 nm_exported_object_export (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv;
-	const char *class_export_path, *p;
 	GType type;
-	char *path;
 
 	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
@@ -584,31 +610,14 @@ nm_exported_object_export (NMExportedObject *self)
 		g_return_val_if_reached (NULL);
 	g_object_add_weak_pointer ((GObject *) priv->bus_mgr, (gpointer *) &priv->bus_mgr);
 
-	class_export_path = NM_EXPORTED_OBJECT_GET_CLASS (self)->export_path;
-	p = strchr (class_export_path, '%');
-	if (p) {
-		guint *counter;
-
-		g_return_val_if_fail (p[1] == 'u', NULL);
-		g_return_val_if_fail (strchr (p + 1, '%') == NULL, NULL);
-
-		counter = g_hash_table_lookup (prefix_counters, class_export_path);
-		if (!counter) {
-			counter = g_new0 (guint, 1);
-			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
-		}
-
-		path = g_strdup_printf (class_export_path, (*counter)++);
-	} else
-		path = g_strdup (class_export_path);
-
 	type = G_OBJECT_TYPE (self);
 	while (type != NM_TYPE_EXPORTED_OBJECT) {
 		nm_exported_object_create_skeletons (self, type);
 		type = g_type_parent (type);
 	}
 
-	priv->path = path;
+	priv->path = _create_export_path (NM_EXPORTED_OBJECT_GET_CLASS (self));
+
 	_LOGT ("export: \"%s\"", priv->path);
 	g_dbus_object_skeleton_set_object_path (G_DBUS_OBJECT_SKELETON (self), priv->path);
 
