@@ -369,6 +369,7 @@ replace_and_commit (NMSettingsConnection *connection,
 			callback (connection, error, user_data);
 			g_clear_error (&error);
 		}
+		return;
 	}
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->replace_and_commit (connection, new_connection, callback, user_data);
