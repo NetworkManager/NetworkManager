@@ -347,6 +347,8 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 	g_type_class_unref (dbus_object_class);
 }
 
+/*****************************************************************************/
+
 /* "meta-marshaller" that receives the skeleton "handle-foo" signal, replaces
  * the skeleton object with an #NMExportedObject in the parameters, drops the
  * user_data parameter, and adds a "TRUE" return value (indicating to gdbus that
@@ -576,6 +578,38 @@ _create_export_path (NMExportedObjectClass *klass)
 }
 
 /**
+ * nm_exported_object_get_path:
+ * @self: an #NMExportedObject
+ *
+ * Gets @self's D-Bus path.
+ *
+ * Returns: @self's D-Bus path, or %NULL if @self is not exported.
+ */
+const char *
+nm_exported_object_get_path (NMExportedObject *self)
+{
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
+
+	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path;
+}
+
+/**
+ * nm_exported_object_is_exported:
+ * @self: an #NMExportedObject
+ *
+ * Checks if @self is exported
+ *
+ * Returns: %TRUE if @self is exported
+ */
+gboolean
+nm_exported_object_is_exported (NMExportedObject *self)
+{
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), FALSE);
+
+	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path != NULL;
+}
+
+/**
  * nm_exported_object_export:
  * @self: an #NMExportedObject
  *
@@ -630,38 +664,6 @@ nm_exported_object_export (NMExportedObject *self)
 }
 
 /**
- * nm_exported_object_get_path:
- * @self: an #NMExportedObject
- *
- * Gets @self's D-Bus path.
- *
- * Returns: @self's D-Bus path, or %NULL if @self is not exported.
- */
-const char *
-nm_exported_object_get_path (NMExportedObject *self)
-{
-	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
-
-	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path;
-}
-
-/**
- * nm_exported_object_is_exported:
- * @self: an #NMExportedObject
- *
- * Checks if @self is exported
- *
- * Returns: %TRUE if @self is exported
- */
-gboolean
-nm_exported_object_is_exported (NMExportedObject *self)
-{
-	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), FALSE);
-
-	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path != NULL;
-}
-
-/**
  * nm_exported_object_unexport:
  * @self: an #NMExportedObject
  *
@@ -702,6 +704,32 @@ nm_exported_object_unexport (NMExportedObject *self)
 	}
 }
 
+/*****************************************************************************/
+
+void
+_nm_exported_object_clear_and_unexport (NMExportedObject **location)
+{
+	NMExportedObject *self;
+	NMExportedObjectPrivate *priv;
+
+	if (!location || !*location)
+		return;
+
+	self = *location;
+	*location = NULL;
+
+	g_return_if_fail (NM_IS_EXPORTED_OBJECT (self));
+
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	if (priv->path)
+		nm_exported_object_unexport (self);
+
+	g_object_unref (self);
+}
+
+/*****************************************************************************/
+
 GDBusInterfaceSkeleton *
 nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type)
 {
@@ -726,38 +754,15 @@ nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interfac
 	return NULL;
 }
 
+/*****************************************************************************/
+
 void
-_nm_exported_object_clear_and_unexport (NMExportedObject **location)
+nm_exported_object_class_set_quitting (void)
 {
-	NMExportedObject *self;
-	NMExportedObjectPrivate *priv;
-
-	if (!location || !*location)
-		return;
-
-	self = *location;
-	*location = NULL;
-
-	g_return_if_fail (NM_IS_EXPORTED_OBJECT (self));
-
-	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-
-	if (priv->path)
-		nm_exported_object_unexport (self);
-
-	g_object_unref (self);
+	quitting = TRUE;
 }
 
-static void
-nm_exported_object_init (NMExportedObject *self)
-{
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-
-	priv->pending_notifies = g_hash_table_new_full (g_direct_hash,
-	                                                g_direct_equal,
-	                                                NULL,
-	                                                (GDestroyNotify) g_variant_unref);
-}
+/*****************************************************************************/
 
 typedef struct {
 	const char *property_name;
@@ -882,6 +887,19 @@ vtype_found:
 		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, object);
 }
 
+/*****************************************************************************/
+
+static void
+nm_exported_object_init (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	priv->pending_notifies = g_hash_table_new_full (g_direct_hash,
+	                                                g_direct_equal,
+	                                                NULL,
+	                                                (GDestroyNotify) g_variant_unref);
+}
+
 static void
 constructed (GObject *object)
 {
@@ -933,9 +951,4 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 	object_class->dispose = nm_exported_object_dispose;
 }
 
-void
-nm_exported_object_class_set_quitting (void)
-{
-	quitting = TRUE;
-}
 
