@@ -139,7 +139,7 @@ plugins-=remove-me
         via the ReloadConnections D-Bus call. If this key is set to
         '<literal>true</literal>', then NetworkManager will reload
         connection files any time they changed.
-        Automatic reloading is not adviced because there are race conditions
+        Automatic reloading is not advised because there are race conditions
         involved and it depends on the way how the editor updates the file.
         In some situations, NetworkManager might first delete and add the
         connection anew, instead of updating the existing one. Also, NetworkManager
