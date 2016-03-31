@@ -1195,7 +1195,47 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 static gboolean
 can_unmanaged_external_down (NMDevice *self)
 {
-	return nm_device_is_software (self) && !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
+	return    !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned
+	       && nm_device_is_software (self);
+}
+
+static NMUnmanFlagOp
+is_unmanaged_external_down (NMDevice *self, gboolean consider_can)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (   consider_can
+	    && !NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self))
+		return NM_UNMAN_FLAG_OP_FORGET;
+
+	/* Manage externally-created software interfaces only when they are IFF_UP */
+	if (   priv->ifindex <= 0
+	    || !priv->up)
+		return NM_UNMAN_FLAG_OP_SET_UNMANAGED;
+
+	return NM_UNMAN_FLAG_OP_SET_MANAGED;
+}
+
+static void
+set_unmanaged_external_down (NMDevice *self)
+{
+	NMUnmanFlagOp ext_flags;
+
+	if (!nm_device_get_unmanaged_mask (self, NM_UNMANAGED_EXTERNAL_DOWN))
+		return;
+
+	ext_flags = is_unmanaged_external_down (self, FALSE);
+	if (ext_flags != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
+		/* Ensure the assume check is queued before any queued state changes
+		 * from the transition to UNAVAILABLE.
+		 */
+		nm_device_queue_recheck_assume (self);
+	}
+
+	nm_device_set_unmanaged_by_flags (self,
+	                                  NM_UNMANAGED_EXTERNAL_DOWN,
+	                                  ext_flags,
+	                                  NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 }
 
 static void
@@ -1422,7 +1462,6 @@ device_link_changed (NMDevice *self)
 	NMPlatformLink info;
 	const NMPlatformLink *pllink;
 	int ifindex;
-	gboolean was_up;
 
 	priv->device_link_changed_id = 0;
 
@@ -1495,23 +1534,19 @@ device_link_changed (NMDevice *self)
 	if (ip_ifname_changed)
 		update_dynamic_ip_setup (self);
 
-	was_up = priv->up;
 	priv->up = NM_FLAGS_HAS (info.n_ifi_flags, IFF_UP);
 
-	if (   priv->ifindex > 0
-	    && info.initialized
+	if (   info.initialized
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 		NMDeviceStateReason reason;
 
 		nm_device_set_unmanaged_by_user_udev (self);
 
-		/* If the devices that need an external IFF_UP go managed below,
-		 * it means they're already up. In that case we should use an "assumed"
-		 * reason to prevent the cleanup sequence from being run on transition
-		 * from "unmanaged" to "unavailable". */
-		if (   priv->up
-		    && !nm_device_get_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN)
-		    && NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
+		/* If the device is a external-down candidated but no longer has external
+		 * down set, we must clear the platform-unmanaged flag with reason
+		 * "assumed". */
+		if (    nm_device_get_unmanaged_mask (self, NM_UNMANAGED_EXTERNAL_DOWN)
+		    && !nm_device_get_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN)) {
 			/* Ensure the assume check is queued before any queued state changes
 			 * from the transition to UNAVAILABLE.
 			 */
@@ -1523,35 +1558,7 @@ device_link_changed (NMDevice *self)
 		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
 	}
 
-	if (   priv->ifindex > 0
-	    && priv->up != was_up
-	    && NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
-		/* Manage externally-created software interfaces only when they are IFF_UP */
-		if (   priv->up
-		    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN)) {
-			/* Ensure the assume check is queued before any queued state changes
-			 * from the transition to UNAVAILABLE.
-			 */
-			nm_device_queue_recheck_assume (self);
-		}
-
-		/* In case of @priv->up, resetting the EXTERNAL_DOWN flag may change the device's
-		 * state to UNAVAILABLE. To ensure that the state change doesn't touch
-		 * the device before assumption occurs, pass NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED
-		 * as the reason.
-		 *
-		 * In case of !@priv->up, and the device is already unmanaged for other reasons, the
-		 * state-change-reason has no effect.
-		 * If the device is managed for an explict user-request, the state-change-reason
-		 * also has no effect, because the device stays managed.
-		 *
-		 * The state-change-reason only has effect if the device was assumed
-		 * and is now to be unmanaged. */
-		nm_device_set_unmanaged_by_flags (self,
-		                                  NM_UNMANAGED_EXTERNAL_DOWN,
-		                                  !priv->up,
-		                                  NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-	}
+	set_unmanaged_external_down (self);
 
 	device_recheck_slave_status (self, &info);
 	return G_SOURCE_REMOVE;
@@ -1921,12 +1928,11 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	klass->realize_start_notify (self, plink);
 
-	/* Do not manage externally created software devices until they are IFF_UP */
-	if (   priv->ifindex > 0
-	    && plink
-	    && !priv->up
-	    && NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self))
-		nm_device_set_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
+	/* Do not manage externally created software devices until they are IFF_UP
+	 * or have IP addressing */
+	nm_device_set_unmanaged_flags (self,
+	                               NM_UNMANAGED_EXTERNAL_DOWN,
+	                               is_unmanaged_external_down (self, TRUE));
 
 	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_LOOPBACK flag.
 	 * Later we might want to manage 'lo' too. Currently that doesn't work because
@@ -9124,6 +9130,24 @@ nm_device_get_managed (NMDevice *self, gboolean for_user_request)
 }
 
 /**
+ * nm_device_get_unmanaged_mask:
+ * @self: the #NMDevice
+ * @flag: the unmanaged flags to check.
+ *
+ * Return the unmanaged flags mask set on this device.
+ *
+ * Returns: the flags of the device ( & @flag)
+ */
+NMUnmanagedFlags
+nm_device_get_unmanaged_mask (NMDevice *self, NMUnmanagedFlags flag)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_UNMANAGED_NONE);
+	g_return_val_if_fail (flag != NM_UNMANAGED_NONE, NM_UNMANAGED_NONE);
+
+	return NM_DEVICE_GET_PRIVATE (self)->unmanaged_mask & flag;
+}
+
+/**
  * nm_device_get_unmanaged_flags:
  * @self: the #NMDevice
  * @flag: the unmanaged flags to check.
@@ -9135,8 +9159,8 @@ nm_device_get_managed (NMDevice *self, gboolean for_user_request)
 NMUnmanagedFlags
 nm_device_get_unmanaged_flags (NMDevice *self, NMUnmanagedFlags flag)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (flag != NM_UNMANAGED_NONE, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_UNMANAGED_NONE);
+	g_return_val_if_fail (flag != NM_UNMANAGED_NONE, NM_UNMANAGED_NONE);
 
 	return NM_DEVICE_GET_PRIVATE (self)->unmanaged_flags & flag;
 }
