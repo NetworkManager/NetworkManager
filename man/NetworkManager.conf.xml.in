@@ -138,7 +138,13 @@ plugins-=remove-me
         the connection files at startup, and when explicitly requested
         via the ReloadConnections D-Bus call. If this key is set to
         '<literal>true</literal>', then NetworkManager will reload
-        connection files any time they changed.</para></listitem>
+        connection files any time they changed.
+        Automatic reloading is not adviced because there are race conditions
+        involved and it depends on the way how the editor updates the file.
+        In some situations, NetworkManager might first delete and add the
+        connection anew, instead of updating the existing one. Also, NetworkManager
+        might pick up incomplete settings while the user is still editing the files.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><varname>auth-polkit</varname></term>
