@@ -731,6 +731,9 @@ manager_device_state_changed (NMDevice *device,
 		break;
 	}
 
+	if (old_state >= NM_DEVICE_STATE_ACTIVATED)
+		return;
+
 	if (   new_state == NM_DEVICE_STATE_UNAVAILABLE
 	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
 		nm_settings_device_added (priv->settings, device);
