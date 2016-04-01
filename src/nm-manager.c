@@ -839,19 +839,29 @@ remove_device (NMManager *self,
 	       nm_device_get_iface (device), allow_unmanage, nm_device_get_managed (device, FALSE));
 
 	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
-		NMActRequest *req = nm_device_get_act_request (device);
+		unmanage = TRUE;
 
-		/* Leave activated interfaces up when quitting so their configuration
-		 * can be taken over when NM restarts.  This ensures connectivity while
-		 * NM is stopped. Devices which do not support connection assumption
-		 * cannot be left up.
-		 */
-		if (!quitting)  /* Forced removal; device already gone */
-			unmanage = TRUE;
-		else if (!nm_device_can_assume_active_connection (device))
-			unmanage = TRUE;
-		else if (!req)
-			unmanage = TRUE;
+		if (!quitting) {
+			/* the device is already gone. Unmanage it. */
+		} else {
+			/* Leave certain devices alone when quitting so their configuration
+			 * can be taken over when NM restarts.  This ensures connectivity while
+			 * NM is stopped.
+			 */
+			if (nm_device_uses_assumed_connection (device)) {
+				/* An assume connection must be left alone */
+				unmanage = FALSE;
+			} else if (!nm_device_get_act_request (device)) {
+				/* a device without any active connection is either UNAVAILABLE or DISCONNECTED
+				 * state. Since we don't know whether the device was upped by NetworkManager,
+				 * we must leave it up on exit. */
+				unmanage = FALSE;
+			} else if (!nm_platform_link_can_assume (NM_PLATFORM_GET, nm_device_get_ifindex (device))) {
+				/* The device has no layer 3 configuration. Leave it up. */
+				unmanage = FALSE;
+			} else if (nm_device_can_assume_active_connection (device))
+				unmanage = FALSE;
+		}
 
 		if (unmanage) {
 			if (quitting)
