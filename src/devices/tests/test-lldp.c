@@ -29,8 +29,7 @@
 #include "nm-lldp-listener.h"
 #include "nm-sd.h"
 
-#include "nm-sd-adapt.h"
-#include "lldp.h"
+#include "sd-lldp.h"
 
 #include "test-common.h"
 
@@ -147,8 +146,8 @@ _test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpint (g_variant_n_children (neighbors), ==, 1);
 
 	neighbor = get_lldp_neighbor (neighbors,
-	                              LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:02:03:04:05",
-	                              LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/3");
+	                              SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:02:03:04:05",
+	                              SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/3");
 	g_assert (neighbor);
 	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 4);
 
@@ -244,8 +243,8 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpint (g_variant_n_children (neighbors), ==, 1);
 
 	neighbor = get_lldp_neighbor (neighbors,
-	                              LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:30:F9:AD:A0",
-	                              LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/1");
+	                              SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:30:F9:AD:A0",
+	                              SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/1");
 	g_assert (neighbor);
 	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 10);
 

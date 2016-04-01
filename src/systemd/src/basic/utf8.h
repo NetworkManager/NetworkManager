@@ -32,6 +32,7 @@
 #endif /* NM_IGNORED */
 
 #define UTF8_REPLACEMENT_CHARACTER "\xef\xbf\xbd"
+#define UTF8_BYTE_ORDER_MARK "\xef\xbb\xbf"
 
 bool unichar_is_valid(char32_t c);
 

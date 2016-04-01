@@ -30,9 +30,6 @@
 
 #include "sd-lldp.h"
 
-#include "nm-sd-adapt.h"
-#include "lldp.h"
-
 #define MAX_NEIGHBORS         4096
 #define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NS_PER_SECOND)
 
@@ -402,13 +399,13 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	}
 
 	switch (chassis_id_type) {
-	case LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
-	case LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
-	case LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
-	case LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
+	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
+	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
+	case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
+	case SD_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
 		neigh->chassis_id = g_strndup ((const char *) chassis_id, chassis_id_len);
 		break;
-	case LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
+	case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 		neigh->chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
 		break;
 	default:
@@ -418,13 +415,13 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	}
 
 	switch (port_id_type) {
-	case LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
-	case LLDP_PORT_SUBTYPE_INTERFACE_NAME:
-	case LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
-	case LLDP_PORT_SUBTYPE_PORT_COMPONENT:
+	case SD_LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
+	case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
+	case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
+	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
 		neigh->port_id = strndup ((char *) port_id, port_id_len);
 		break;
-	case LLDP_PORT_SUBTYPE_MAC_ADDRESS:
+	case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
 		neigh->port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
 		break;
 	default:
@@ -464,11 +461,11 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 			goto out;
 		}
 
-		if (!(   memcmp (oui, LLDP_OUI_802_1, sizeof (oui)) == 0
+		if (!(   memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) == 0
 		      && NM_IN_SET (subtype,
-		                    LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID,
-		                    LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID,
-		                    LLDP_OUI_802_1_SUBTYPE_VLAN_NAME)))
+		                    SD_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID,
+		                    SD_LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID,
+		                    SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME)))
 			continue;
 
 		if (sd_lldp_neighbor_tlv_get_raw (neighbor_sd, (void *) &data8, &len) < 0)
@@ -492,16 +489,16 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		data8 += 6;
 		len -= 6;
 
-		/*if (memcmp (oui, LLDP_OUI_802_1, sizeof (oui)) == 0)*/
+		/*if (memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) == 0)*/
 		{
 			switch (subtype) {
-			case LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
+			case SD_LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
 				if (len != 2)
 					continue;
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PVID,
 				                       _access_uint16 (data8));
 				break;
-			case LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
+			case SD_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
 				if (len != 3)
 					continue;
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID_FLAGS,
@@ -509,7 +506,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_PPVID,
 				                       _access_uint16 (&data8[1]));
 				break;
-			case LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
+			case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
 				int l;
 
 				if (len <= 3)

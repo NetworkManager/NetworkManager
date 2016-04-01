@@ -148,7 +148,6 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd-network/lldp-neighbor.h \
 	systemd/src/libsystemd-network/lldp-network.c \
 	systemd/src/libsystemd-network/lldp-network.h \
-	systemd/src/libsystemd-network/lldp.h \
 	systemd/src/libsystemd-network/network-internal.c \
 	systemd/src/libsystemd-network/network-internal.h \
 	systemd/src/libsystemd-network/sd-dhcp-client.c \
