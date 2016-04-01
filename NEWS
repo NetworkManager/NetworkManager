@@ -1,4 +1,49 @@
 ===============================================
+NetworkManager-1.0.12
+Overview of changes since NetworkManager-1.0.10
+===============================================
+
+* DHCP leases on software devices are now renewed when the computer is
+  awoken from suspend.
+
+* Improved ifupdown plugin robustness and interoperability on Yocto and
+  OpenEmbedded.
+
+* Fixed failed VPN activations when plugin supports interactive mode, but
+  the VPN daemon does not.
+
+* Wi-Fi monitor interfaces are now ignored, not turned into managed mode.
+
+* AP and AdHoc mode connections with manual IP configuration are now able
+  to autoconnect.
+
+* Broken device drivers (AWS ENI) that initially have invalid MAC addresses
+  are now properly managed as soon as correct MAC address is set.
+
+* WWAN devices are unlocked a bit earlier so that supported IP versions can
+  be queried.
+
+* The NetworkManager.service was ordered after network-pre.target and
+  dbus.service. This ensures NetworkManager doesn't set up connectivity
+  before firewall rules are in place and wouldn't exit before remote
+  filesystems can be umounted ensuring orderly operation of systemd
+  managed installations.
+
+* The netfilter rules used with shared IPv4 method are now removed on exit.
+
+* Ability to manage USB gadget drivers (UDC side) has beed added.
+
+* Infiniband transport mode change now takes place with the link set down
+  because some drivers need that.
+
+* Race conditions that could disclose connection secrets to authenticated
+  local users when changing ifcfg and keyfile connections have been fixed.
+  This has security impact of low severity. (CVE-2016-0764)
+
+* A handful of memory leak and crasher bugs of minor importance have been
+  fixed.
+
+===============================================
 NetworkManager-1.0.10
 Overview of changes since NetworkManager-1.0.8
 ===============================================
