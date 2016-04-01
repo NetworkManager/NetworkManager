@@ -15,40 +15,44 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014-2015 Red Hat, Inc.
+ * Copyright 2014-2016 Red Hat, Inc.
  */
 
 #include "nm-default.h"
 
+#include "nm-exported-object.h"
+
 #include <stdarg.h>
 #include <string.h>
 
-#include "nm-exported-object.h"
 #include "nm-bus-manager.h"
-
-static GHashTable *prefix_counters;
-static gboolean quitting = FALSE;
-
 
 #if NM_MORE_ASSERTS >= 2
 #define _ASSERT_NO_EARLY_EXPORT
 #endif
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON,
-                                  prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
-                                  )
+static gboolean quitting = FALSE;
+
+G_DEFINE_ABSTRACT_TYPE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON);
 
 typedef struct {
-	GSList *interfaces;
+	GDBusInterfaceSkeleton *interface;
+	guint property_changed_signal_id;
+} InterfaceData;
 
+typedef struct {
 	NMBusManager *bus_mgr;
 	char *path;
 
 	GHashTable *pending_notifies;
+
+	InterfaceData *interfaces;
+	guint num_interfaces;
+
 	guint notify_idle_id;
 
 #ifdef _ASSERT_NO_EARLY_EXPORT
-	gboolean _constructed;
+	bool _constructed:1;
 #endif
 } NMExportedObjectPrivate;
 
@@ -147,23 +151,25 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 	NMExportedObjectPrivate *priv;
 	GSignalQuery *signal_info = data;
 	GDBusInterfaceSkeleton *interface = NULL;
-	GSList *iter;
 	GValue *dbus_param_values;
-	int i;
+	guint i;
 
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 	if (!priv->path)
 		return TRUE;
 
-	for (iter = priv->interfaces; iter; iter = iter->next) {
-		if (g_type_is_a (G_OBJECT_TYPE (iter->data), signal_info->itype)) {
-			interface = G_DBUS_INTERFACE_SKELETON (iter->data);
+	for (i = 0; i < priv->num_interfaces; i++) {
+		InterfaceData *ifdata = &priv->interfaces[i];
+
+		if (g_type_is_a (G_OBJECT_TYPE (ifdata->interface), signal_info->itype)) {
+			interface = ifdata->interface;
 			break;
 		}
 	}
 	g_return_val_if_fail (interface != NULL, TRUE);
 
-	dbus_param_values = g_new0 (GValue, n_param_values);
+	dbus_param_values = g_newa (GValue, n_param_values);
+	memset (dbus_param_values, 0, sizeof (GValue) * n_param_values);
 	g_value_init (&dbus_param_values[0], G_OBJECT_TYPE (interface));
 	g_value_set_object (&dbus_param_values[0], interface);
 	for (i = 1; i < n_param_values; i++) {
@@ -185,7 +191,6 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 
 	for (i = 0; i < n_param_values; i++)
 		g_value_unset (&dbus_param_values[i]);
-	g_free (dbus_param_values);
 
 	return TRUE;
 }
@@ -342,6 +347,8 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 	g_type_class_unref (dbus_object_class);
 }
 
+/*****************************************************************************/
+
 /* "meta-marshaller" that receives the skeleton "handle-foo" signal, replaces
  * the skeleton object with an #NMExportedObject in the parameters, drops the
  * user_data parameter, and adds a "TRUE" return value (indicating to gdbus that
@@ -452,9 +459,10 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	GObjectClass *object_class;
 	NMExportedObjectClassInfo *classinfo;
 	GSList *iter;
-	GDBusInterfaceSkeleton *interface;
 	const NMExportedObjectDBusMethodImpl *methods;
-	guint methods_len;
+	guint i, methods_len;
+	guint num_interfaces;
+	InterfaceData *interfaces;
 
 	classinfo = g_type_get_qdata (object_type, nm_exported_object_class_info_quark ());
 	if (!classinfo)
@@ -466,17 +474,32 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	methods = classinfo->methods->len ? &g_array_index (classinfo->methods, NMExportedObjectDBusMethodImpl, 0) : NULL;
 	methods_len = classinfo->methods->len;
 
-	for (iter = classinfo->skeleton_types; iter; iter = iter->next) {
-		interface = nm_exported_object_skeleton_create (GPOINTER_TO_SIZE (iter->data),
-		                                                object_class,
-		                                                methods,
-		                                                methods_len,
-		                                                (GObject *) self);
+	num_interfaces = g_slist_length (classinfo->skeleton_types);
+	g_return_if_fail (num_interfaces > 0);
 
-		g_dbus_object_skeleton_add_interface ((GDBusObjectSkeleton *) self, interface);
+	interfaces = g_slice_alloc (sizeof (InterfaceData) * (num_interfaces + priv->num_interfaces));
 
-		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
+	for (i = num_interfaces, iter = classinfo->skeleton_types; iter; iter = iter->next) {
+		InterfaceData *ifdata = &interfaces[--i];
+
+		ifdata->interface = nm_exported_object_skeleton_create (GPOINTER_TO_SIZE (iter->data),
+		                                                        object_class,
+		                                                        methods,
+		                                                        methods_len,
+		                                                        (GObject *) self);
+		g_dbus_object_skeleton_add_interface ((GDBusObjectSkeleton *) self, ifdata->interface);
+
+		ifdata->property_changed_signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (ifdata->interface));
 	}
+	nm_assert (i == 0);
+
+	if (priv->num_interfaces > 0) {
+		memcpy (&interfaces[num_interfaces], priv->interfaces, sizeof (InterfaceData) * priv->num_interfaces);
+		g_slice_free1 (sizeof (InterfaceData) * priv->num_interfaces, priv->interfaces);
+	}
+
+	priv->num_interfaces = num_interfaces + priv->num_interfaces;
+	priv->interfaces = interfaces;
 }
 
 void
@@ -505,89 +528,53 @@ static void
 nm_exported_object_destroy_skeletons (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+	guint n;
 
-	g_return_if_fail (priv->interfaces);
+	g_return_if_fail (priv->num_interfaces > 0);
+	nm_assert (priv->interfaces);
 
-	while (priv->interfaces) {
-		GDBusInterfaceSkeleton *interface = priv->interfaces->data;
+	n = priv->num_interfaces;
 
-		priv->interfaces = g_slist_delete_link (priv->interfaces, priv->interfaces);
-		g_dbus_object_skeleton_remove_interface ((GDBusObjectSkeleton *) self, interface);
-		nm_exported_object_skeleton_release (interface);
+	while (priv->num_interfaces > 0) {
+		InterfaceData *ifdata = &priv->interfaces[--priv->num_interfaces];
+
+		g_dbus_object_skeleton_remove_interface ((GDBusObjectSkeleton *) self, ifdata->interface);
+		nm_exported_object_skeleton_release (ifdata->interface);
 	}
+
+	g_slice_free1 (sizeof (InterfaceData) * n, priv->interfaces);
+	priv->interfaces = NULL;
 }
 
-/**
- * nm_exported_object_export:
- * @self: an #NMExportedObject
- *
- * Exports @self on all active and future D-Bus connections.
- *
- * The path to export @self on is taken from its #NMObjectClass's %export_path
- * member. If the %export_path contains "%u", then it will be replaced with a
- * monotonically increasing integer ID (with each distinct %export_path having
- * its own counter). Otherwise, %export_path will be used literally (implying
- * that @self must be a singleton).
- *
- * Returns: the path @self was exported under
- */
-const char *
-nm_exported_object_export (NMExportedObject *self)
+static char *
+_create_export_path (NMExportedObjectClass *klass)
 {
-	NMExportedObjectPrivate *priv;
 	const char *class_export_path, *p;
-	GType type;
-	char *path;
+	static GHashTable *prefix_counters;
+	guint *counter;
 
-	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
-	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+	class_export_path = klass->export_path;
 
-	g_return_val_if_fail (!priv->path, priv->path);
-	g_return_val_if_fail (!priv->bus_mgr, priv->path);
+	nm_assert (class_export_path);
 
-#ifdef _ASSERT_NO_EARLY_EXPORT
-	nm_assert (priv->_constructed);
-#endif
-
-	priv->bus_mgr = nm_bus_manager_get ();
-	if (!priv->bus_mgr)
-		g_return_val_if_reached (NULL);
-	g_object_add_weak_pointer ((GObject *) priv->bus_mgr, (gpointer *) &priv->bus_mgr);
-
-	class_export_path = NM_EXPORTED_OBJECT_GET_CLASS (self)->export_path;
 	p = strchr (class_export_path, '%');
 	if (p) {
-		guint *counter;
+		if (G_UNLIKELY (!prefix_counters))
+			prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
 
-		g_return_val_if_fail (p[1] == 'u', NULL);
-		g_return_val_if_fail (strchr (p + 1, '%') == NULL, NULL);
+		g_assert (p[1] == 'u');
+		g_assert (strchr (p + 1, '%') == NULL);
 
 		counter = g_hash_table_lookup (prefix_counters, class_export_path);
 		if (!counter) {
-			counter = g_new0 (guint, 1);
+			counter = g_slice_new0 (guint);
 			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
 		}
 
-		path = g_strdup_printf (class_export_path, (*counter)++);
-	} else
-		path = g_strdup (class_export_path);
-
-	type = G_OBJECT_TYPE (self);
-	while (type != NM_TYPE_EXPORTED_OBJECT) {
-		nm_exported_object_create_skeletons (self, type);
-		type = g_type_parent (type);
+		return g_strdup_printf (class_export_path, (*counter)++);
 	}
 
-	priv->path = path;
-	_LOGT ("export: \"%s\"", priv->path);
-	g_dbus_object_skeleton_set_object_path (G_DBUS_OBJECT_SKELETON (self), priv->path);
-
-	/* Important: priv->path and priv->interfaces must not change while
-	 * the object is registered. */
-
-	nm_bus_manager_register_object (priv->bus_mgr, (GDBusObjectSkeleton *) self);
-
-	return priv->path;
+	return g_strdup (class_export_path);
 }
 
 /**
@@ -620,6 +607,60 @@ nm_exported_object_is_exported (NMExportedObject *self)
 	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), FALSE);
 
 	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path != NULL;
+}
+
+/**
+ * nm_exported_object_export:
+ * @self: an #NMExportedObject
+ *
+ * Exports @self on all active and future D-Bus connections.
+ *
+ * The path to export @self on is taken from its #NMObjectClass's %export_path
+ * member. If the %export_path contains "%u", then it will be replaced with a
+ * monotonically increasing integer ID (with each distinct %export_path having
+ * its own counter). Otherwise, %export_path will be used literally (implying
+ * that @self must be a singleton).
+ *
+ * Returns: the path @self was exported under
+ */
+const char *
+nm_exported_object_export (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv;
+	GType type;
+
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	g_return_val_if_fail (!priv->path, priv->path);
+	g_return_val_if_fail (!priv->bus_mgr, priv->path);
+
+#ifdef _ASSERT_NO_EARLY_EXPORT
+	nm_assert (priv->_constructed);
+#endif
+
+	priv->bus_mgr = nm_bus_manager_get ();
+	if (!priv->bus_mgr)
+		g_return_val_if_reached (NULL);
+	g_object_add_weak_pointer ((GObject *) priv->bus_mgr, (gpointer *) &priv->bus_mgr);
+
+	type = G_OBJECT_TYPE (self);
+	while (type != NM_TYPE_EXPORTED_OBJECT) {
+		nm_exported_object_create_skeletons (self, type);
+		type = g_type_parent (type);
+	}
+
+	priv->path = _create_export_path (NM_EXPORTED_OBJECT_GET_CLASS (self));
+
+	_LOGT ("export: \"%s\"", priv->path);
+	g_dbus_object_skeleton_set_object_path (G_DBUS_OBJECT_SKELETON (self), priv->path);
+
+	/* Important: priv->path and priv->interfaces must not change while
+	 * the object is registered. */
+
+	nm_bus_manager_register_object (priv->bus_mgr, (GDBusObjectSkeleton *) self);
+
+	return priv->path;
 }
 
 /**
@@ -663,33 +704,7 @@ nm_exported_object_unexport (NMExportedObject *self)
 	}
 }
 
-GSList *
-nm_exported_object_get_interfaces (NMExportedObject *self)
-{
-	NMExportedObjectPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
-
-	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-
-	g_return_val_if_fail (priv->path, NULL);
-	g_return_val_if_fail (priv->interfaces, NULL);
-
-	return priv->interfaces;
-}
-
-GDBusInterfaceSkeleton *
-nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type)
-{
-	GSList *interfaces;
-
-	interfaces = nm_exported_object_get_interfaces (self);
-	for (; interfaces; interfaces = interfaces->next) {
-		if (G_TYPE_CHECK_INSTANCE_TYPE (interfaces->data, interface_type))
-			return interfaces->data;
-	}
-	return NULL;
-}
+/*****************************************************************************/
 
 void
 _nm_exported_object_clear_and_unexport (NMExportedObject **location)
@@ -713,47 +728,95 @@ _nm_exported_object_clear_and_unexport (NMExportedObject **location)
 	g_object_unref (self);
 }
 
-static void
-nm_exported_object_init (NMExportedObject *self)
-{
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+/*****************************************************************************/
 
-	priv->pending_notifies = g_hash_table_new_full (g_direct_hash,
-	                                                g_direct_equal,
-	                                                NULL,
-	                                                (GDestroyNotify) g_variant_unref);
+GDBusInterfaceSkeleton *
+nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type)
+{
+	NMExportedObjectPrivate *priv;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
+
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->path, NULL);
+	g_return_val_if_fail (priv->num_interfaces > 0, NULL);
+
+	nm_assert (priv->interfaces);
+
+	for (i = 0; i < priv->num_interfaces; i++) {
+		InterfaceData *ifdata = &priv->interfaces[i];
+
+		if (G_TYPE_CHECK_INSTANCE_TYPE (ifdata->interface, interface_type))
+			return ifdata->interface;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
+void
+nm_exported_object_class_set_quitting (void)
+{
+	quitting = TRUE;
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	const char *property_name;
+	GVariant *variant;
+} PendingNotifiesItem;
+
+static int
+_sort_pending_notifies (gconstpointer a, gconstpointer b, gpointer       user_data)
+{
+	return strcmp (((const PendingNotifiesItem *) a)->property_name,
+	               ((const PendingNotifiesItem *) b)->property_name);
 }
 
 static gboolean
 idle_emit_properties_changed (gpointer self)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
-	GVariant *variant;
-	GSList *iter;
-	GDBusInterfaceSkeleton *interface = NULL;
-	guint signal_id = 0;
+	gs_unref_variant GVariant *variant = NULL;
+	InterfaceData *ifdata = NULL;
 	GHashTableIter hash_iter;
-	const char *dbus_property_name;
 	GVariantBuilder notifies;
+	guint i, n;
+	PendingNotifiesItem *values;
 
 	priv->notify_idle_id = 0;
 
-	g_variant_builder_init (&notifies, G_VARIANT_TYPE_VARDICT);
-	g_hash_table_iter_init (&hash_iter, priv->pending_notifies);
-	while (g_hash_table_iter_next (&hash_iter, (gpointer) &dbus_property_name, (gpointer) &variant))
-		g_variant_builder_add (&notifies, "{sv}", dbus_property_name, variant);
-	g_hash_table_remove_all (priv->pending_notifies);
-	variant = g_variant_builder_end (&notifies);
-	g_variant_ref_sink (variant);
 
-	for (iter = priv->interfaces; iter; iter = iter->next) {
-		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (iter->data));
-		if (signal_id != 0) {
-			interface = G_DBUS_INTERFACE_SKELETON (iter->data);
+	n = g_hash_table_size (priv->pending_notifies);
+	g_return_val_if_fail (n > 0, FALSE);
+
+	values = g_alloca (sizeof (values[0]) * n);
+
+	i = 0;
+	g_hash_table_iter_init (&hash_iter, priv->pending_notifies);
+	while (g_hash_table_iter_next (&hash_iter, (gpointer) &values[i].property_name, (gpointer) &values[i].variant))
+		i++;
+	nm_assert (i == n);
+
+	g_qsort_with_data (values, n, sizeof (values[0]), _sort_pending_notifies, NULL);
+
+	g_variant_builder_init (&notifies, G_VARIANT_TYPE_VARDICT);
+	for (i = 0; i < n; i++)
+		g_variant_builder_add (&notifies, "{sv}", values[i].property_name, values[i].variant);
+	variant = g_variant_ref_sink (g_variant_builder_end (&notifies));
+
+	g_hash_table_remove_all (priv->pending_notifies);
+
+	for (i = 0; i < priv->num_interfaces; i++) {
+		if (priv->interfaces[i].property_changed_signal_id != 0) {
+			ifdata = &priv->interfaces[i];
 			break;
 		}
 	}
-	g_return_val_if_fail (signal_id != 0, FALSE);
+	g_return_val_if_fail (ifdata, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DBUS_PROPS)) {
 		gs_free char *notification = g_variant_print (variant, TRUE);
@@ -762,26 +825,8 @@ idle_emit_properties_changed (gpointer self)
 		            G_OBJECT_TYPE_NAME (self), self, notification);
 	}
 
-	g_signal_emit (interface, signal_id, 0, variant);
-	g_variant_unref (variant);
-
+	g_signal_emit (ifdata->interface, ifdata->property_changed_signal_id, 0, variant);
 	return FALSE;
-}
-
-static const GVariantType *
-find_dbus_property_type (GDBusInterfaceSkeleton *skel,
-                         const char *dbus_property_name)
-{
-	GDBusInterfaceInfo *iinfo;
-	int i;
-
-	iinfo = g_dbus_interface_skeleton_get_info (skel);
-	for (i = 0; iinfo->properties[i]; i++) {
-		if (!strcmp (iinfo->properties[i]->name, dbus_property_name))
-			return G_VARIANT_TYPE (iinfo->properties[i]->signature);
-	}
-
-	return NULL;
 }
 
 static void
@@ -793,10 +838,9 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	const char *dbus_property_name = NULL;
 	GValue value = G_VALUE_INIT;
 	const GVariantType *vtype;
-	GVariant *variant;
-	GSList *iter;
+	guint i, j;
 
-	if (!priv->interfaces)
+	if (priv->num_interfaces == 0)
 		return;
 
 	for (type = G_OBJECT_TYPE (object); type; type = g_type_parent (type)) {
@@ -814,22 +858,46 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 		return;
 	}
 
+	for (i = 0; i < priv->num_interfaces; i++) {
+		GDBusInterfaceSkeleton *skel = priv->interfaces[i].interface;
+		GDBusInterfaceInfo *iinfo;
+
+		iinfo = g_dbus_interface_skeleton_get_info (skel);
+		for (j = 0; iinfo->properties[j]; j++) {
+			if (nm_streq (iinfo->properties[j]->name, dbus_property_name)) {
+				vtype = G_VARIANT_TYPE (iinfo->properties[j]->signature);
+				goto vtype_found;
+			}
+		}
+	}
+	g_return_if_reached ();
+
+vtype_found:
 	g_value_init (&value, pspec->value_type);
 	g_object_get_property (G_OBJECT (object), pspec->name, &value);
 
-	vtype = NULL;
-	for (iter = priv->interfaces; iter && !vtype; iter = iter->next)
-		vtype = find_dbus_property_type (iter->data, dbus_property_name);
-	g_return_if_fail (vtype != NULL);
-
-	variant = g_dbus_gvalue_to_gvariant (&value, vtype);
 	/* @dbus_property_name is inside classinfo and never freed, thus we don't clone it.
 	 * Also, we do a pointer, not string comparison. */
-	g_hash_table_insert (priv->pending_notifies, (gpointer) dbus_property_name, variant);
+	g_hash_table_insert (priv->pending_notifies,
+	                     (gpointer) dbus_property_name,
+	                     g_dbus_gvalue_to_gvariant (&value, vtype));
 	g_value_unset (&value);
 
 	if (!priv->notify_idle_id)
 		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, object);
+}
+
+/*****************************************************************************/
+
+static void
+nm_exported_object_init (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	priv->pending_notifies = g_hash_table_new_full (g_direct_hash,
+	                                                g_direct_equal,
+	                                                NULL,
+	                                                (GDestroyNotify) g_variant_unref);
 }
 
 static void
@@ -883,9 +951,4 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 	object_class->dispose = nm_exported_object_dispose;
 }
 
-void
-nm_exported_object_class_set_quitting (void)
-{
-	quitting = TRUE;
-}
 
