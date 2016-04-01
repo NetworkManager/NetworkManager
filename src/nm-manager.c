@@ -4061,18 +4061,19 @@ static void
 _internal_enable (NMManager *self, gboolean enable)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *err = NULL;
+	GError *error = NULL;
 
 	/* Update "NetworkingEnabled" key in state file */
 	if (priv->state_file) {
 		if (!write_value_to_state_file (priv->state_file,
 		                                "main", "NetworkingEnabled",
 		                                G_TYPE_BOOLEAN, (gpointer) &enable,
-		                                &err)) {
+		                                &error)) {
 			/* Not a hard error */
 			_LOGW (LOGD_SUSPEND, "writing to state file %s failed: %s",
 			       priv->state_file,
-			       err->message);
+			       error->message);
+			g_clear_error (&error);
 		}
 	}
 
