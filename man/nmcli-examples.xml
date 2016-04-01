@@ -76,38 +76,39 @@ Copyright 2013 - 2014 Red Hat, Inc.
     <example><title>Showing general information and properties for a Wi-Fi interface</title>
       <screen>
 <userinput>$ nmcli -p -f general,wifi-properties device show wlan0</userinput>
-===============================================================================
-                            Device details (wlan0)
-===============================================================================
-GENERAL.DEVICE:                         wlan0
-GENERAL.TYPE:                           wifi
-GENERAL.VENDOR:                         Intel Corporation
-GENERAL.PRODUCT:                        PRO/Wireless 5100 AGN [Shiloh] Network Connection
-GENERAL.DRIVER:                         iwlwifi
-GENERAL.DRIVER-VERSION:                 3.8.13-100.fc17.x86_64
-GENERAL.FIRMWARE-VERSION:               8.83.5.1 build 33692
-GENERAL.HWADDR:                         00:1E:65:37:A1:D3
-GENERAL.MTU:                            1500
-GENERAL.STATE:                          100 (connected)
-GENERAL.REASON:                         0 (No reason given)
-GENERAL.UDI:                            /sys/devices/pci0000:00/0000:00:1c.1/0000:03:00.0/net/wlan0
-GENERAL.IP-IFACE:                       wlan0
-GENERAL.IS-SOFTWARE:                    no
-GENERAL.NM-MANAGED:                     yes
-GENERAL.AUTOCONNECT:                    yes
-GENERAL.FIRMWARE-MISSING:               no
-GENERAL.CONNECTION:                     My Alfa WiFi
-GENERAL.CON-UUID:                       85194f4c-d496-4eec-bae0-d880b4cbcf26
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/10
--------------------------------------------------------------------------------
-WIFI-PROPERTIES.WEP:                    yes
-WIFI-PROPERTIES.WPA:                    yes
-WIFI-PROPERTIES.WPA2:                   yes
-WIFI-PROPERTIES.TKIP:                   yes
-WIFI-PROPERTIES.CCMP:                   yes
-WIFI-PROPERTIES.AP:                     no
-WIFI-PROPERTIES.ADHOC:                  yes
--------------------------------------------------------------------------------
+===========================================================================
+                        Device details (wlan0)
+===========================================================================
+GENERAL.DEVICE:           wlan0
+GENERAL.TYPE:             wifi
+GENERAL.VENDOR:           Intel Corporation
+GENERAL.PRODUCT:          PRO/Wireless 5100 AGN [Shiloh] Network Connection
+GENERAL.DRIVER:           iwlwifi
+GENERAL.DRIVER-VERSION:   3.8.13-100.fc17.x86_64
+GENERAL.FIRMWARE-VERSION: 8.83.5.1 build 33692
+GENERAL.HWADDR:           00:1E:65:37:A1:D3
+GENERAL.MTU:              1500
+GENERAL.STATE:            100 (connected)
+GENERAL.REASON:           0 (No reason given)
+GENERAL.UDI:              /sys/devices/pci0000:00/0000:00:1c.1/net/wlan0
+GENERAL.IP-IFACE:         wlan0
+GENERAL.IS-SOFTWARE:      no
+GENERAL.NM-MANAGED:       yes
+GENERAL.AUTOCONNECT:      yes
+GENERAL.FIRMWARE-MISSING: no
+GENERAL.CONNECTION:       My Alfa WiFi
+GENERAL.CON-UUID:         85194f4c-d496-4eec-bae0-d880b4cbcf26
+GENERAL.CON-PATH:         /org/freedesktop/NetworkManager/ActiveConnection/
+10
+---------------------------------------------------------------------------
+WIFI-PROPERTIES.WEP:      yes
+WIFI-PROPERTIES.WPA:      yes
+WIFI-PROPERTIES.WPA2:     yes
+WIFI-PROPERTIES.TKIP:     yes
+WIFI-PROPERTIES.CCMP:     yes
+WIFI-PROPERTIES.AP:       no
+WIFI-PROPERTIES.ADHOC:    yes
+---------------------------------------------------------------------------
       </screen>
     </example>
     <para>
@@ -147,7 +148,10 @@ pkaction --action-id org.freedesktop.NetworkManager.network-control --verbose
       <screen>
 <userinput>$ nmcli general logging</userinput>
 LEVEL  DOMAINS
-INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,INFINIBAND,FIREWALL,ADSL,BOND,VLAN,BRIDGE,DBUS_PROPS,TEAM,CONCHECK,DCB,DISPATCH
+INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,A
+UTOIP4,DNS,VPN,SHARING,SUPPLICANT,AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,
+WIMAX,INFINIBAND,FIREWALL,ADSL,BOND,VLAN,BRIDGE,DBUS_PROPS,TEAM,CONCHECK,DC
+B,DISPATCH
       </screen>
     </example>
     <para>
@@ -180,7 +184,7 @@ INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP
       <emphasis>mybond0</emphasis> and using <emphasis>active-backup</emphasis> mode.
       The next two commands add slaves connections, both enslaved to <emphasis>mybond0</emphasis>.
       The first slave will be bound to <emphasis>eth1</emphasis> interface, the second to
-      <emphasis>eth2</emphasis>. 
+      <emphasis>eth2</emphasis>.
     </para>
 
     <example><title>Adding a team master and two slave connection profiles</title>
@@ -226,13 +230,14 @@ INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP
       The next two commands add slaves profiles, both will be enslaved to
       <emphasis>TowerBridge</emphasis>.
       The first slave will be tied to <emphasis>ens3</emphasis> interface, the second to
-      <emphasis>ens4</emphasis>. 
+      <emphasis>ens4</emphasis>.
       The last command will disable 802.1D STP for the TowerBridge profile.
     </para>
 
     <example><title>Adding an ethernet connection profile with manual IP configuration</title>
        <screen>
-<userinput>$ nmcli con add con-name my-con-em1 ifname em1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe</userinput>
+<userinput>$ nmcli con add con-name my-con-em1 ifname em1 type ethernet \
+  ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe</userinput>
 <userinput>$ nmcli con mod my-con-em1 ipv4.dns "8.8.8.8 8.8.4.4"</userinput>
 <userinput>$ nmcli con mod my-con-em1 +ipv4.dns 1.2.3.4</userinput>
 <userinput>$ nmcli con mod my-con-em1 ipv6.dns "2001:4860:4860::8888 2001:4860:4860::8844"</userinput>
@@ -255,7 +260,11 @@ INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP
     <example><title>Escaping colon characters in tabular mode</title>
       <screen>
 <userinput>$ nmcli -t -f general -e yes -m tab dev show eth0</userinput>
-GENERAL:eth0:ethernet:Intel Corporation:82567LM Gigabit Network Connection:e1000e:2.1.4-k:1.8-3:00\:22\:68\:15\:29\:21:1500:100 (connected):0 (No reason given):/sys/devices/pci0000\:00/0000\:00\:19.0/net/eth0:eth0:yes:yes:no:ethernet-13:89cbcbc6-dc85-456c-9c8b-bd828fee3917:/org/freedesktop/NetworkManager/ActiveConnection/9
+GENERAL:eth0:ethernet:Intel Corporation:82567LM Gigabit Network Connection:
+e1000e:2.1.4-k:1.8-3:00\:22\:68\:15\:29\:21:1500:100 (connected):0 (No reas
+on given):/sys/devices/pci0000\:00/0000\:00\:19.0/net/eth0:eth0:yes:yes:no:
+ethernet-13:89cbcbc6-dc85-456c-9c8b-bd828fee3917:/org/freedesktop/NetworkMa
+nager/ActiveConnection/9
       </screen>
     </example>
     <para>
@@ -312,69 +321,72 @@ Adding a new '802-3-ethernet' connection
 Type 'help' or '?' for available commands.
 Type 'describe [&lt;setting&gt;.&lt;prop&gt;]' for detailed property description.
 
-You may edit the following settings: connection, 802-3-ethernet (ethernet), 802-1x, ipv4, ipv6, dcb
+You may edit the following settings: connection, 802-3-ethernet (ethernet),
+802-1x, ipv4, ipv6, dcb
 nmcli> print
-===============================================================================
-                              Connection details
-===============================================================================
-connection.id:                          ethernet-4
-connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
-connection.interface-name:              --
-connection.type:                        802-3-ethernet
-connection.autoconnect:                 yes
-connection.autoconnect-priority:        0
-connection.timestamp:                   0
-connection.read-only:                   no
-connection.permissions:                 
-connection.zone:                        --
-connection.master:                      --
-connection.slave-type:                  --
-connection.secondaries:                 
-connection.gateway-ping-timeout:        0
--------------------------------------------------------------------------------
-802-3-ethernet.port:                    --
-802-3-ethernet.speed:                   0
-802-3-ethernet.duplex:                  --
-802-3-ethernet.auto-negotiate:          yes
-802-3-ethernet.mac-address:             --
-802-3-ethernet.cloned-mac-address:      --
-802-3-ethernet.mac-address-blacklist:   
-802-3-ethernet.mtu:                     auto
-802-3-ethernet.s390-subchannels:        
-802-3-ethernet.s390-nettype:            --
-802-3-ethernet.s390-options:            
--------------------------------------------------------------------------------
-ipv4.method:                            auto
-ipv4.dns:                               
-ipv4.dns-search:                        
-ipv4.addresses:                         
-ipv4.gateway:                           --
-ipv4.routes:                            
-ipv4.route-metric:                      -1
-ipv4.ignore-auto-routes:                no
-ipv4.ignore-auto-dns:                   no
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-hostname:                     --
-ipv4.never-default:                     no
-ipv4.may-fail:                          yes
--------------------------------------------------------------------------------
-ipv6.method:                            auto
-ipv6.dns:                               
-ipv6.dns-search:                        
-ipv6.addresses:                         
-ipv6.gateway:                           --
-ipv6.routes:                            
-ipv6.route-metric:                      -1
-ipv6.ignore-auto-routes:                no
-ipv6.ignore-auto-dns:                   no
-ipv6.never-default:                     no
-ipv6.may-fail:                          yes
-ipv6.ip6-privacy:                       -1 (unknown)
-ipv6.dhcp-hostname:                     --
--------------------------------------------------------------------------------
+===========================================================================
+                          Connection details
+===========================================================================
+connection.id:                      ethernet-4
+connection.uuid:                    de89cdeb-a3e1-4d53-8fa0-c22546c775f4
+connection.interface-name:          --
+connection.type:                    802-3-ethernet
+connection.autoconnect:             yes
+connection.autoconnect-priority:    0
+connection.timestamp:               0
+connection.read-only:               no
+connection.permissions:
+connection.zone:                    --
+connection.master:                  --
+connection.slave-type:              --
+connection.secondaries:
+connection.gateway-ping-timeout:    0
+---------------------------------------------------------------------------
+802-3-ethernet.port:                --
+802-3-ethernet.speed:               0
+802-3-ethernet.duplex:              --
+802-3-ethernet.auto-negotiate:      yes
+802-3-ethernet.mac-address:         --
+802-3-ethernet.cloned-mac-address:  --
+802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mtu:                 auto
+802-3-ethernet.s390-subchannels:
+802-3-ethernet.s390-nettype:        --
+802-3-ethernet.s390-options:
+---------------------------------------------------------------------------
+ipv4.method:                        auto
+ipv4.dns:
+ipv4.dns-search:
+ipv4.addresses:
+ipv4.gateway:                       --
+ipv4.routes:
+ipv4.route-metric:                  -1
+ipv4.ignore-auto-routes:            no
+ipv4.ignore-auto-dns:               no
+ipv4.dhcp-client-id:                --
+ipv4.dhcp-send-hostname:            yes
+ipv4.dhcp-hostname:                 --
+ipv4.never-default:                 no
+ipv4.may-fail:                      yes
+---------------------------------------------------------------------------
+ipv6.method:                        auto
+ipv6.dns:
+ipv6.dns-search:
+ipv6.addresses:
+ipv6.gateway:                       --
+ipv6.routes:
+ipv6.route-metric:                  -1
+ipv6.ignore-auto-routes:            no
+ipv6.ignore-auto-dns:               no
+ipv6.never-default:                 no
+ipv6.may-fail:                      yes
+ipv6.ip6-privacy:                   -1 (unknown)
+ipv6.dhcp-hostname:                 --
+---------------------------------------------------------------------------
 nmcli> goto ethernet
-You may edit the following properties: port, speed, duplex, auto-negotiate, mac-address, cloned-mac-address, mac-address-blacklist, mtu, s390-subchannels, s390-nettype, s390-options
+You may edit the following properties: port, speed, duplex, auto-negotiate,
+ mac-address, cloned-mac-address, mac-address-blacklist, mtu, s390-subchann
+els, s390-nettype, s390-options
 nmcli 802-3-ethernet> set mtu 1492
 nmcli 802-3-ethernet> b
 nmcli> goto ipv4.addresses
@@ -402,129 +414,130 @@ nmcli> set ipv4.gateway 192.168.1.1
 nmcli> verify
 Verify connection: OK
 nmcli> print
-===============================================================================
-                              Connection details
-===============================================================================
-connection.id:                          ethernet-4
-connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
-connection.interface-name:              --
-connection.type:                        802-3-ethernet
-connection.autoconnect:                 yes
-connection.autoconnect-priority:        0
-connection.timestamp:                   0
-connection.read-only:                   no
-connection.permissions:                 
-connection.zone:                        --
-connection.master:                      --
-connection.slave-type:                  --
-connection.secondaries:                 
-connection.gateway-ping-timeout:        0
--------------------------------------------------------------------------------
-802-3-ethernet.port:                    --
-802-3-ethernet.speed:                   0
-802-3-ethernet.duplex:                  --
-802-3-ethernet.auto-negotiate:          yes
-802-3-ethernet.mac-address:             --
-802-3-ethernet.cloned-mac-address:      --
-802-3-ethernet.mac-address-blacklist:   
-802-3-ethernet.mtu:                     1492
-802-3-ethernet.s390-subchannels:        
-802-3-ethernet.s390-nettype:            --
-802-3-ethernet.s390-options:            
--------------------------------------------------------------------------------
-ipv4.method:                            manual
-ipv4.dns:                               
-ipv4.dns-search:                        
-ipv4.addresses:                         192.168.1.100/24
-ipv4.gateway:                           192.168.1.1
-ipv4.routes:                            
-ipv4.route-metric:                      -1
-ipv4.ignore-auto-routes:                no
-ipv4.ignore-auto-dns:                   no
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-hostname:                     --
-ipv4.never-default:                     no
-ipv4.may-fail:                          yes
--------------------------------------------------------------------------------
-ipv6.method:                            auto
-ipv6.dns:                               
-ipv6.dns-search:                        
-ipv6.addresses:                         
-ipv6.routes:                            
-ipv6.route-metric:                      -1
-ipv6.ignore-auto-routes:                no
-ipv6.ignore-auto-dns:                   no
-ipv6.never-default:                     no
-ipv6.may-fail:                          yes
-ipv6.ip6-privacy:                       -1 (unknown)
-ipv6.dhcp-hostname:                     --
--------------------------------------------------------------------------------
+===========================================================================
+                          Connection details
+===========================================================================
+connection.id:                      ethernet-4
+connection.uuid:                    de89cdeb-a3e1-4d53-8fa0-c22546c775f4
+connection.interface-name:          --
+connection.type:                    802-3-ethernet
+connection.autoconnect:             yes
+connection.autoconnect-priority:    0
+connection.timestamp:               0
+connection.read-only:               no
+connection.permissions:
+connection.zone:                    --
+connection.master:                  --
+connection.slave-type:              --
+connection.secondaries:
+connection.gateway-ping-timeout:    0
+---------------------------------------------------------------------------
+802-3-ethernet.port:                --
+802-3-ethernet.speed:               0
+802-3-ethernet.duplex:              --
+802-3-ethernet.auto-negotiate:      yes
+802-3-ethernet.mac-address:         --
+802-3-ethernet.cloned-mac-address:  --
+802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mtu:                 1492
+802-3-ethernet.s390-subchannels:
+802-3-ethernet.s390-nettype:        --
+802-3-ethernet.s390-options:
+---------------------------------------------------------------------------
+ipv4.method:                        manual
+ipv4.dns:
+ipv4.dns-search:
+ipv4.addresses:                     192.168.1.100/24
+ipv4.gateway:                       192.168.1.1
+ipv4.routes:
+ipv4.route-metric:                  -1
+ipv4.ignore-auto-routes:            no
+ipv4.ignore-auto-dns:               no
+ipv4.dhcp-client-id:                --
+ipv4.dhcp-send-hostname:            yes
+ipv4.dhcp-hostname:                 --
+ipv4.never-default:                 no
+ipv4.may-fail:                      yes
+---------------------------------------------------------------------------
+ipv6.method:                        auto
+ipv6.dns:
+ipv6.dns-search:
+ipv6.addresses:
+ipv6.routes:
+ipv6.route-metric:                  -1
+ipv6.ignore-auto-routes:            no
+ipv6.ignore-auto-dns:               no
+ipv6.never-default:                 no
+ipv6.may-fail:                      yes
+ipv6.ip6-privacy:                   -1 (unknown)
+ipv6.dhcp-hostname:                 --
+---------------------------------------------------------------------------
 nmcli> set ipv4.dns 8.8.8.8 8.8.4.4
 nmcli> print
-===============================================================================
-                              Connection details
-===============================================================================
-connection.id:                          ethernet-4
-connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
-connection.interface-name:              --
-connection.type:                        802-3-ethernet
-connection.autoconnect:                 yes
-connection.autoconnect-priority:        0
-connection.timestamp:                   0
-connection.read-only:                   no
-connection.permissions:                 
-connection.zone:                        --
-connection.master:                      --
-connection.slave-type:                  --
-connection.secondaries:                 
-connection.gateway-ping-timeout:        0
--------------------------------------------------------------------------------
-802-3-ethernet.port:                    --
-802-3-ethernet.speed:                   0
-802-3-ethernet.duplex:                  --
-802-3-ethernet.auto-negotiate:          yes
-802-3-ethernet.mac-address:             --
-802-3-ethernet.cloned-mac-address:      --
-802-3-ethernet.mac-address-blacklist:   
-802-3-ethernet.mtu:                     1492
-802-3-ethernet.s390-subchannels:        
-802-3-ethernet.s390-nettype:            --
-802-3-ethernet.s390-options:            
--------------------------------------------------------------------------------
-ipv4.method:                            manual
-ipv4.dns:                               8.8.8.8,8.8.4.4
-ipv4.dns-search:                        
-ipv4.addresses:                         192.168.1.100/24
-ipv4.gateway:                           192.168.1.1
-ipv4.routes:                            
-ipv4.route-metric:                      -1
-ipv4.ignore-auto-routes:                no
-ipv4.ignore-auto-dns:                   no
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-hostname:                     --
-ipv4.never-default:                     no
-ipv4.may-fail:                          yes
--------------------------------------------------------------------------------
-ipv6.method:                            auto
-ipv6.dns:                               
-ipv6.dns-search:                        
-ipv6.addresses:                         
-ipv6.gateway:                           --
-ipv6.routes:                            
-ipv6.route-metric:                      -1
-ipv6.ignore-auto-routes:                no
-ipv6.ignore-auto-dns:                   no
-ipv6.never-default:                     no
-ipv6.may-fail:                          yes
-ipv6.ip6-privacy:                       -1 (unknown)
-ipv6.dhcp-hostname:                     --
--------------------------------------------------------------------------------
+===========================================================================
+                          Connection details
+===========================================================================
+connection.id:                      ethernet-4
+connection.uuid:                    de89cdeb-a3e1-4d53-8fa0-c22546c775f4
+connection.interface-name:          --
+connection.type:                    802-3-ethernet
+connection.autoconnect:             yes
+connection.autoconnect-priority:    0
+connection.timestamp:               0
+connection.read-only:               no
+connection.permissions:
+connection.zone:                    --
+connection.master:                  --
+connection.slave-type:              --
+connection.secondaries:
+connection.gateway-ping-timeout:    0
+---------------------------------------------------------------------------
+802-3-ethernet.port:                --
+802-3-ethernet.speed:               0
+802-3-ethernet.duplex:              --
+802-3-ethernet.auto-negotiate:      yes
+802-3-ethernet.mac-address:         --
+802-3-ethernet.cloned-mac-address:  --
+802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mtu:                 1492
+802-3-ethernet.s390-subchannels:
+802-3-ethernet.s390-nettype:        --
+802-3-ethernet.s390-options:
+---------------------------------------------------------------------------
+ipv4.method:                        manual
+ipv4.dns:                           8.8.8.8,8.8.4.4
+ipv4.dns-search:
+ipv4.addresses:                     192.168.1.100/24
+ipv4.gateway:                       192.168.1.1
+ipv4.routes:
+ipv4.route-metric:                  -1
+ipv4.ignore-auto-routes:            no
+ipv4.ignore-auto-dns:               no
+ipv4.dhcp-client-id:                --
+ipv4.dhcp-send-hostname:            yes
+ipv4.dhcp-hostname:                 --
+ipv4.never-default:                 no
+ipv4.may-fail:                      yes
+---------------------------------------------------------------------------
+ipv6.method:                        auto
+ipv6.dns:
+ipv6.dns-search:
+ipv6.addresses:
+ipv6.gateway:                       --
+ipv6.routes:
+ipv6.route-metric:                  -1
+ipv6.ignore-auto-routes:            no
+ipv6.ignore-auto-dns:               no
+ipv6.never-default:                 no
+ipv6.may-fail:                      yes
+ipv6.ip6-privacy:                   -1 (unknown)
+ipv6.dhcp-hostname:                 --
+---------------------------------------------------------------------------
 nmcli> verify
 Verify connection: OK
 nmcli> save
-Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully saved.
+Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully
+ saved.
 nmcli> quit
       </screen>
     </example>
