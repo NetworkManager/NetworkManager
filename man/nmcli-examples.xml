@@ -323,7 +323,7 @@ Type 'describe [&lt;setting&gt;.&lt;prop&gt;]' for detailed property description
 
 You may edit the following settings: connection, 802-3-ethernet (ethernet),
 802-1x, ipv4, ipv6, dcb
-nmcli> print
+nmcli> <userinput>print</userinput>
 ===========================================================================
                           Connection details
 ===========================================================================
@@ -383,13 +383,13 @@ ipv6.may-fail:                      yes
 ipv6.ip6-privacy:                   -1 (unknown)
 ipv6.dhcp-hostname:                 --
 ---------------------------------------------------------------------------
-nmcli> goto ethernet
+nmcli> <userinput>goto ethernet</userinput>
 You may edit the following properties: port, speed, duplex, auto-negotiate,
  mac-address, cloned-mac-address, mac-address-blacklist, mtu, s390-subchann
 els, s390-nettype, s390-options
 nmcli 802-3-ethernet> set mtu 1492
 nmcli 802-3-ethernet> b
-nmcli> goto ipv4.addresses
+nmcli> <userinput>goto ipv4.addresses</userinput>
 nmcli ipv4.addresses> desc
 
 === [addresses] ===
@@ -410,10 +410,10 @@ nmcli ipv4.addresses> print
 addresses: 192.168.1.100/24
 nmcli ipv4.addresses> back
 nmcli ipv4> b
-nmcli> set ipv4.gateway 192.168.1.1
-nmcli> verify
+nmcli> <userinput>set ipv4.gateway 192.168.1.1</userinput>
+nmcli> <userinput>verify</userinput>
 Verify connection: OK
-nmcli> print
+nmcli> <userinput>print</userinput>
 ===========================================================================
                           Connection details
 ===========================================================================
@@ -472,8 +472,8 @@ ipv6.may-fail:                      yes
 ipv6.ip6-privacy:                   -1 (unknown)
 ipv6.dhcp-hostname:                 --
 ---------------------------------------------------------------------------
-nmcli> set ipv4.dns 8.8.8.8 8.8.4.4
-nmcli> print
+nmcli> <userinput>set ipv4.dns 8.8.8.8 8.8.4.4</userinput>
+nmcli> <userinput>print</userinput>
 ===========================================================================
                           Connection details
 ===========================================================================
@@ -533,12 +533,12 @@ ipv6.may-fail:                      yes
 ipv6.ip6-privacy:                   -1 (unknown)
 ipv6.dhcp-hostname:                 --
 ---------------------------------------------------------------------------
-nmcli> verify
+nmcli> <userinput>verify</userinput>
 Verify connection: OK
-nmcli> save
+nmcli> <userinput>save</userinput>
 Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully
  saved.
-nmcli> quit
+nmcli> <userinput>quit</userinput>
       </screen>
     </example>
     <para>
