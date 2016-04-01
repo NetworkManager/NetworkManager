@@ -1970,11 +1970,18 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		         nm_object_get_path (NM_OBJECT (active)));
 		quit ();
 	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
-	           && state >= NM_DEVICE_STATE_IP_CONFIG) {
+	           && state >= NM_DEVICE_STATE_IP_CONFIG
+	           && state <= NM_DEVICE_STATE_ACTIVATED) {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
+		quit ();
+	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
+	           && state == NM_DEVICE_STATE_FAILED) {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			nmc_terminal_erase_line ();
+		g_print (_("Error: Connection activation failed."));
 		quit ();
 	} else if (active && ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
