@@ -251,7 +251,7 @@ nager/ActiveConnection/9</screen>
     </example>
 
     <example><title>nmcli usage in a NetworkManager dispatcher script to make Ethernet and Wi-Fi mutually exclusive</title>
-      <programlisting>
+      <programlisting language="bourne">
 #!/bin/bash
 export LC_ALL=C
 
