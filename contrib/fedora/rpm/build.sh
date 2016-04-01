@@ -106,18 +106,14 @@ SOURCE="$(abs_path "$SOURCE")" || die "invalid \$SOURCE argument"
 if [ -n "$SOURCE" ]; then
     [[ "$SOURCE_FROM_GIT" == 1 ]] && die "Cannot set both \$SOURCE and \$SOURCE_FROM_GIT=1"
     SOURCE_FROM_GIT=0
-elif [[ "$SOURCE_FROM_GIT" != "0" ]]; then
-    SOURCE="$GITDIR/NetworkManager-${VERSION}.tar."*
-    if [ -f "$SOURCE" ]; then
-        SOURCE_FROM_GIT=0
-    else
+elif [[ "$SOURCE_FROM_GIT" != "1" ]]; then
+    SOURCE="$(ls -1 "$GITDIR/NetworkManager-${VERSION}.tar."* 2>/dev/null | head -n1)"
+    if [[ -z "$SOURCE" ]]; then
+        [[ "$SOURCE_FROM_GIT" == "0" ]] && die "Either set \$SOURCE or set \$SOURCE_FROM_GIT=1"
         SOURCE_FROM_GIT=1
-        SOURCE=
+    else
+        SOURCE_FROM_GIT=0
     fi
-fi
-
-if [[ -z "$SOURCE" && "$SOURCE_FROM_GIT" == "0" ]]; then
-    die "Either set \$SOURCE or set \$SOURCE_FROM_GIT=1"
 fi
 
 SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")" || die "invalid \$SOURCE_NETWORKMANAGER_CONF argument"
