@@ -7,18 +7,22 @@ die() {
 }
 
 usage() {
-    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-Q|--quick] [-S|--srpm] [-N|--no-dist] [[-w|--with OPTION] ...] [[-W|--without OPTION] ...]"
+    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-S|--srpm] [-g|--git] [-Q|--quick] [-N|--no-dist] [[-w|--with OPTION] ...] [[-W|--without OPTION] ...]"
     echo
     echo "Does all the steps from a clean git working directory to an RPM of NetworkManager"
     echo
+    echo "This is also the preferred way to create a distribution tarball for release:"
+    echo "  $ $0 -c -S"
+    echo
     echo "Options:"
-    echo "  --force: force build, even if working directory is not clean and has local modifications"
-    echo "  --clean: run \`git-clean -fdx :/\` before build"
-    echo "  --quick: only run \`make dist\` instead of \`make distcheck\`"
-    echo "  --srpm: only build the SRPM"
-    echo "  --no-dist: skip creating the source tarball if you already did \`make dist\`"
-    echo "  --with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
-    echo "  --without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
+    echo "  -f|--force: force build, even if working directory is not clean and has local modifications"
+    echo "  -c|--clean: run \`git-clean -fdx :/\` before build"
+    echo "  -S|--srpm: only build the SRPM"
+    echo "  -g|--git: create tarball from current git HEAD (skips make dist)"
+    echo "  -Q|--quick: only run \`make dist\` instead of \`make distcheck\`"
+    echo "  -N|--no-dist: skip creating the source tarball if you already did \`make dist\`"
+    echo "  -w|--with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
+    echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
 }
 
 
@@ -36,6 +40,7 @@ GIT_CLEAN=0
 QUICK=0
 NO_DIST=0
 WITH_LIST=()
+SOURCE_FROM_GIT=0
 
 _next_with=
 for A; do
@@ -55,15 +60,23 @@ for A; do
         -c|--clean)
             GIT_CLEAN=1
             ;;
-        -Q|--quick)
-            QUICK=1
-            ;;
         -S|--srpm)
             BUILDTYPE=SRPM
+            ;;
+        -g|--git)
+            NO_DIST=1
+            IGNORE_DIRTY=1
+            SOURCE_FROM_GIT=1
+            ;;
+        -Q|--quick)
+            NO_DIST=0
+            QUICK=1
+            SOURCE_FROM_GIT=0
             ;;
         -N|--no-dist)
             NO_DIST=1
             IGNORE_DIRTY=1
+            SOURCE_FROM_GIT=0
             ;;
         -w|--with)
             _next_with=--with
@@ -113,6 +126,7 @@ if [[ $NO_DIST != 1 ]]; then
     fi
 fi
 
+export SOURCE_FROM_GIT
 export BUILDTYPE
 export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 
