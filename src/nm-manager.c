@@ -872,8 +872,8 @@ remove_device (NMManager *self,
 	if (nm_device_is_real (device)) {
 		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 		_notify (self, PROP_DEVICES);
-		nm_device_removed (device);
 	}
+	nm_device_removed (device);
 	g_signal_emit (self, signals[INTERNAL_DEVICE_REMOVED], 0, device);
 	_notify (self, PROP_ALL_DEVICES);
 
