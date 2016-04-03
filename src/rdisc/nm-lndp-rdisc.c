@@ -78,20 +78,12 @@ send_rs (NMRDisc *rdisc, GError **error)
 	return TRUE;
 }
 
-static NMRDiscPreference
-translate_preference (enum ndp_route_preference preference)
-{
-	switch (preference) {
-	case NDP_ROUTE_PREF_LOW:
-		return NM_RDISC_PREFERENCE_LOW;
-	case NDP_ROUTE_PREF_MEDIUM:
-		return NM_RDISC_PREFERENCE_MEDIUM;
-	case NDP_ROUTE_PREF_HIGH:
-		return NM_RDISC_PREFERENCE_HIGH;
-	default:
-		return NM_RDISC_PREFERENCE_INVALID;
-	}
-}
+_NM_UTILS_LOOKUP_DEFINE (static, translate_preference, enum ndp_route_preference, NMRDiscPreference,
+	NM_UTILS_LOOKUP_DEFAULT (NM_RDISC_PREFERENCE_INVALID),
+	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_LOW,    NM_RDISC_PREFERENCE_LOW),
+	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_MEDIUM, NM_RDISC_PREFERENCE_MEDIUM),
+	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_HIGH,   NM_RDISC_PREFERENCE_HIGH),
+);
 
 static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
@@ -99,7 +91,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	NMRDisc *rdisc = (NMRDisc *) user_data;
 	NMRDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
-	NMRDiscGateway gateway;
+	struct in6_addr gateway_addr;
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int offset;
 	int hop_limit;
@@ -145,57 +137,68 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * on the network. We should present all of them in router preference
 	 * order.
 	 */
-	memset (&gateway, 0, sizeof (gateway));
-	gateway.address = *ndp_msg_addrto (msg);
-	gateway.timestamp = now;
-	gateway.lifetime = ndp_msgra_router_lifetime (msgra);
-	gateway.preference = translate_preference (ndp_msgra_route_preference (msgra));
-	if (nm_rdisc_add_gateway (rdisc, &gateway))
-		changed |= NM_RDISC_CONFIG_GATEWAYS;
+	gateway_addr = *ndp_msg_addrto (msg);
+	{
+		NMRDiscGateway gateway = {
+		    .address = gateway_addr,
+		    .timestamp = now,
+		    .lifetime = ndp_msgra_router_lifetime (msgra),
+		    .preference = translate_preference (ndp_msgra_route_preference (msgra)),
+		};
+
+		if (nm_rdisc_add_gateway (rdisc, &gateway))
+			changed |= NM_RDISC_CONFIG_GATEWAYS;
+	}
 
 	/* Addresses & Routes */
 	ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_PREFIX) {
-		NMRDiscRoute route;
-		NMRDiscAddress address;
+		guint8 r_plen;
+		struct in6_addr r_network;
 
 		/* Device route */
-		memset (&route, 0, sizeof (route));
-		route.plen = ndp_msg_opt_prefix_len (msg, offset);
-		nm_utils_ip6_address_clear_host_address (&route.network, ndp_msg_opt_prefix (msg, offset), route.plen);
-		route.timestamp = now;
+
+		r_plen = ndp_msg_opt_prefix_len (msg, offset);
+		nm_utils_ip6_address_clear_host_address (&r_network, ndp_msg_opt_prefix (msg, offset), r_plen);
+
 		if (ndp_msg_opt_prefix_flag_on_link (msg, offset)) {
-			route.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset);
+			NMRDiscRoute route = {
+			    .network = r_network,
+			    .plen = r_plen,
+			    .timestamp = now,
+			    .lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
+			};
+
 			if (nm_rdisc_add_route (rdisc, &route))
 				changed |= NM_RDISC_CONFIG_ROUTES;
 		}
 
 		/* Address */
-		if (ndp_msg_opt_prefix_flag_auto_addr_conf (msg, offset)) {
-			if (route.plen == 64) {
-				memset (&address, 0, sizeof (address));
-				address.address = route.network;
-				address.timestamp = now;
-				address.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset);
-				address.preferred = ndp_msg_opt_prefix_preferred_time (msg, offset);
-				if (address.preferred > address.lifetime)
-					address.preferred = address.lifetime;
+		if (   r_plen == 64
+		    && ndp_msg_opt_prefix_flag_auto_addr_conf (msg, offset)) {
+			NMRDiscAddress address = {
+			    .address = r_network,
+			    .timestamp = now,
+			    .lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
+			    .preferred = ndp_msg_opt_prefix_preferred_time (msg, offset),
+			};
 
-				if (nm_rdisc_complete_and_add_address (rdisc, &address))
-					changed |= NM_RDISC_CONFIG_ADDRESSES;
-			}
+			if (address.preferred > address.lifetime)
+				address.preferred = address.lifetime;
+			if (nm_rdisc_complete_and_add_address (rdisc, &address))
+				changed |= NM_RDISC_CONFIG_ADDRESSES;
 		}
 	}
 	ndp_msg_opt_for_each_offset(offset, msg, NDP_MSG_OPT_ROUTE) {
-		NMRDiscRoute route;
+		NMRDiscRoute route = {
+		    .gateway = gateway_addr,
+		    .plen = ndp_msg_opt_route_prefix_len (msg, offset),
+		    .timestamp = now,
+		    .lifetime = ndp_msg_opt_route_lifetime (msg, offset),
+		    .preference = translate_preference (ndp_msg_opt_route_preference (msg, offset)),
+		};
 
 		/* Routers through this particular gateway */
-		memset (&route, 0, sizeof (route));
-		route.gateway = gateway.address;
-		route.plen = ndp_msg_opt_route_prefix_len (msg, offset);
 		nm_utils_ip6_address_clear_host_address (&route.network, ndp_msg_opt_route_prefix (msg, offset), route.plen);
-		route.timestamp = now;
-		route.lifetime = ndp_msg_opt_route_lifetime (msg, offset);
-		route.preference = translate_preference (ndp_msg_opt_route_preference (msg, offset));
 		if (nm_rdisc_add_route (rdisc, &route))
 			changed |= NM_RDISC_CONFIG_ROUTES;
 	}
@@ -206,12 +209,12 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		int addr_index;
 
 		ndp_msg_opt_rdnss_for_each_addr (addr, addr_index, msg, offset) {
-			NMRDiscDNSServer dns_server;
+			NMRDiscDNSServer dns_server = {
+			    .address = *addr,
+			    .timestamp = now,
+			    .lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
+			};
 
-			memset (&dns_server, 0, sizeof (dns_server));
-			dns_server.address = *addr;
-			dns_server.timestamp = now;
-			dns_server.lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset);
 			/* Pad the lifetime somewhat to give a bit of slack in cases
 			 * where one RA gets lost or something (which can happen on unreliable
 			 * links like WiFi where certain types of frames are not retransmitted).
@@ -228,12 +231,12 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		int domain_index;
 
 		ndp_msg_opt_dnssl_for_each_domain (domain, domain_index, msg, offset) {
-			NMRDiscDNSDomain dns_domain;
+			NMRDiscDNSDomain dns_domain = {
+			    .domain = domain,
+			    .timestamp = now,
+			    .lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
+			};
 
-			memset (&dns_domain, 0, sizeof (dns_domain));
-			dns_domain.domain = domain;
-			dns_domain.timestamp = now;
-			dns_domain.lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset);
 			/* Pad the lifetime somewhat to give a bit of slack in cases
 			 * where one RA gets lost or something (which can happen on unreliable
 			 * links like WiFi where certain types of frames are not retransmitted).
