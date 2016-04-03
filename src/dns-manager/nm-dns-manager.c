@@ -748,10 +748,10 @@ compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer
 
 	/* add any other configs we know about */
 	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
-		if (   (iter->data == priv->ip4_vpn_config)
-		    && (iter->data == priv->ip4_device_config)
-		    && (iter->data == priv->ip6_vpn_config)
-		    && (iter->data == priv->ip6_device_config))
+		if (NM_IN_SET (iter->data, priv->ip4_vpn_config,
+		                           priv->ip4_device_config,
+		                           priv->ip6_vpn_config,
+		                           priv->ip6_device_config))
 			continue;
 
 		if (NM_IS_IP4_CONFIG (iter->data))
