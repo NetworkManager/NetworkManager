@@ -146,6 +146,7 @@
     <title>UNIX Manual Pages</title>
     <xi:include href="../../man/nmcli.xml"/>
     <xi:include href="../../man/nmtui.xml"/>
+    <xi:include href="../../man/nm-online.xml"/>
     <xi:include href="../../man/NetworkManager.xml"/>
     <xi:include href="../../man/NetworkManager.conf.xml"/>
     <xi:include href="../../man/nmcli-examples.xml"/>
