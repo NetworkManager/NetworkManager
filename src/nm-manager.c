@@ -2049,7 +2049,7 @@ platform_link_added (NMManager *self,
 		if (!device) {
 			if (!ignore) {
 				_LOGW (LOGD_HW, "%s: factory failed to create device: %s",
-				       plink->name, error->message);
+				       plink->name, error ? error->message : "unknown");
 				g_clear_error (&error);
 			}
 			return;
