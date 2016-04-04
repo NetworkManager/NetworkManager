@@ -1,313 +1,203 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
 
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <!--
+      org.freedesktop.NetworkManager.VPN.Plugin:
+
+      This interface is provided by plugins providing VPN services to the
+      NetworkManager daemon.
+  -->
   <interface name="org.freedesktop.NetworkManager.VPN.Plugin">
     <annotation name="org.gtk.GDBus.C.Name" value="VpnPlugin"/>
 
-    <annotation name="org.gtk.GDBus.DocString" value="
-      This interface is provided by plugins providing VPN services to the NetworkManager daemon.
-    " />
+    <!--
+        Connect:
+        @connection: Describes the connection to be established.
 
-    <method name="Connect">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Tells the plugin to connect.  Interactive secrets requests (eg, emitting
+        Tells the plugin to connect. Interactive secrets requests (eg, emitting
         the SecretsRequired signal) are not allowed.
-      " />
+    -->
+    <method name="Connect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect"/>
-      <arg name="connection" type="a{sa{sv}}" direction="in" tp:type="String_String_Variant_Map_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Describes the connection to be established.
-        " />
-      </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StartingInProgress"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.AlreadyStarted"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StoppingInProgress"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.BadArguments"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.LaunchFailed"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.WrongState"/>
-      </tp:possible-errors>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
     </method>
 
+    <!--
+        ConnectInteractive:
+        @connection: Describes the connection to be established.
+        @details: Additional details about the Connect process.
+
+        Tells the plugin to connect, allowing interactive secrets requests (eg the
+        plugin is allowed to emit the SecretsRequired signal if the VPN service
+        indicates that it needs additional secrets during the connect process).
+    -->
     <method name="ConnectInteractive">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Tells the plugin to connect, allowing interactive secrets requests (eg
-        the plugin is allowed to emit the SecretsRequired signal if the VPN
-        service indicates that it needs additional secrets during the connect
-        process).
-      " />
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect_interactive"/>
-      <arg name="connection" type="a{sa{sv}}" direction="in" tp:type="String_String_Variant_Map_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Describes the connection to be established.
-        " />
-      </arg>
-      <arg name="details" type="a{sv}" direction="in" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Additional details about the Connect process.
-        " />
-      </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StartingInProgress"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.AlreadyStarted"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StoppingInProgress"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.BadArguments"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.LaunchFailed"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.WrongState"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.InteractiveNotSupported"/>
-      </tp:possible-errors>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="details" type="a{sv}" direction="in"/>
     </method>
 
+    <!--
+        NeedSecrets:
+        @settings: Describes the connection that may need secrets.
+        @setting_name: The setting name within the provided connection that requires secrets, if any.
+
+        Asks the plugin whether the provided connection will require secrets to
+        connect successfully.
+    -->
     <method name="NeedSecrets">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Asks the plugin whether the provided connection will require secrets to connect successfully.
-      " />
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_need_secrets"/>
-      <arg name="settings" type="a{sa{sv}}" direction="in" tp:type="String_String_Variant_Map_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Describes the connection that may need secrets.
-        " />
-      </arg>
-      <arg name="setting_name" type="s" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The setting name within the provided connection that requires secrets, if any.
-        " />
-      </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.ConnectionInvalid"/>
-      </tp:possible-errors>
+      <arg name="settings" type="a{sa{sv}}" direction="in"/>
+      <arg name="setting_name" type="s" direction="out"/>
     </method>
 
-    <method name="Disconnect">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Disconnect:
+
         Disconnect the plugin.
-      " />
+    -->
+    <method name="Disconnect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_disconnect"/>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StoppingInProgress"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.AlreadyStopped"/>
-      </tp:possible-errors>
     </method>
 
-    <method name="SetConfig">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SetConfig:
+        @config: Generic configuration details for the connection.
+
         Set generic connection details on the connection.
-      " />
+    -->
+    <method name="SetConfig">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_config"/>
-      <arg name="config" type="a{sv}" direction="in" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Generic configuration details for the connection.
-        " />
-      </arg>
+      <arg name="config" type="a{sv}" direction="in"/>
     </method>
 
-    <method name="SetIp4Config">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SetIp4Config:
+        @config: Ip4Config details for the connection. You must call SetConfig() before calling this.
+
         Set IPv4 details on the connection.
-      " />
+    -->
+    <method name="SetIp4Config">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_ip4_config"/>
-      <arg name="config" type="a{sv}" direction="in" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Ip4Config details for the connection. You must call
-	  SetConfig() before calling this.
-        " />
-      </arg>
+      <arg name="config" type="a{sv}" direction="in"/>
     </method>
 
-    <method name="SetIp6Config">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SetIp6Config:
+        @config: Ip6Config details for the connection. You must call SetConfig() before calling this.
+
         Set IPv6 details on the connection.
-      " />
+    -->
+    <method name="SetIp6Config">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_ip6_config"/>
-      <arg name="config" type="a{sv}" direction="in" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Ip6Config details for the connection. You must call
-	  SetConfig() before calling this.
-        " />
-      </arg>
+      <arg name="config" type="a{sv}" direction="in"/>
     </method>
 
-    <method name="SetFailure">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SetFailure:
+        @reason: The reason for the failure.
+
         Indicate a failure to the plugin.
-      " />
+    -->
+    <method name="SetFailure">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_failure"/>
-      <arg name="reason" type="s" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The reason for the failure.
-        " />
-      </arg>
+      <arg name="reason" type="s" direction="in"/>
     </method>
 
-    <property name="State" type="u" access="read" tp:type="NM_VPN_SERVICE_STATE">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        State:
+
         The state of the plugin.
-      " />
-    </property>
 
-    <signal name="StateChanged">
-      <annotation name="org.gtk.GDBus.DocString" value="
+        Returns: #NMVpnServiceState
+    -->
+    <property name="State" type="u" access="read"/>
+
+    <!--
+        StateChanged:
+        @state: (#NMVpnServiceState) The new state of the plugin.
+
         Emitted when the plugin state changes.
-      " />
-      <arg name="state" type="u" tp:type="NM_VPN_SERVICE_STATE">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The new state of the plugin.
-        " />
-      </arg>
+    -->
+    <signal name="StateChanged">
+      <arg name="state" type="u"/>
     </signal>
 
+    <!--
+        SecretsRequired:
+        @message: Informational message, if any, about the request. For example, if a second PIN is required, could indicate to the user to wait for the token code to change until entering the next PIN.
+        @secrets: Array of strings of VPN secret names which the plugin thinks secrets may be required for, or other VPN-specific data to be processed by the VPN's front-end.
+
+        Emitted during an ongoing ConnectInteractive() request when the plugin has
+        determined that new secrets are required. NetworkManager will then call
+        the NewSecrets() method with a connection hash including the new secrets.
+    -->
     <signal name="SecretsRequired">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Emitted during an ongoing ConnectInteractive() request when the plugin
-        has determined that new secrets are required.  NetworkManager will then
-        call the NewSecrets() method with a connection hash including the new
-        secrets.
-      " />
-      <arg name="message" type="s" direction="out">
-          <annotation name="org.gtk.GDBus.DocString" value="
-              Informational message, if any, about the request.  For example, if
-              a second PIN is required, could indicate to the user to wait for
-              the token code to change until entering the next PIN.
-          " />
-      </arg>
-      <arg name="secrets" type="as" direction="out">
-          <annotation name="org.gtk.GDBus.DocString" value="
-              Array of strings of VPN secret names which the plugin thinks
-              secrets may be required for, or other VPN-specific data to be
-              processed by the VPN's front-end.
-          " />
-      </arg>
+      <arg name="message" type="s" direction="out"/>
+      <arg name="secrets" type="as" direction="out"/>
     </signal>
 
-    <method name="NewSecrets">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        NewSecrets:
+        @connection: Describes the connection including the new secrets.
+
         Called in response to a SecretsRequired signal to deliver updated secrets
         or other information to the plugin.
-      " />
+    -->
+    <method name="NewSecrets">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_new_secrets"/>
-      <arg name="connection" type="a{sa{sv}}" direction="in" tp:type="String_String_Variant_Map_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Describes the connection including the new secrets.
-        " />
-      </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.WrongState"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.BadArguments"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.LaunchFailed"/>
-        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.InteractiveNotSupported"/>
-      </tp:possible-errors>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
     </method>
 
-    <signal name="Config">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Config:
+        @config: The configuration information.
+
         The plugin obtained generic configuration information.
-      " />
-      <arg name="config" type="a{sv}" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The configuration information.
-        " />
-      </arg>
+    -->
+    <signal name="Config">
+      <arg name="config" type="a{sv}"/>
     </signal>
 
-    <signal name="Ip4Config">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Ip4Config:
+        @ip4config: The IPv4 configuration.
+
         The plugin obtained an IPv4 configuration.
-      " />
-      <arg name="ip4config" type="a{sv}" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The IPv4 configuration.
-        " />
-      </arg>
+    -->
+    <signal name="Ip4Config">
+      <arg name="ip4config" type="a{sv}"/>
     </signal>
 
-    <signal name="Ip6Config">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Ip6Config:
+        @ip6config: The IPv6 configuration.
+
         The plugin obtained an IPv6 configuration.
-      " />
-      <arg name="ip6config" type="a{sv}" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The IPv6 configuration.
-        " />
-      </arg>
+    -->
+    <signal name="Ip6Config">
+      <arg name="ip6config" type="a{sv}"/>
     </signal>
 
-    <signal name="LoginBanner">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        LoginBanner:
+        @banner: The login banner string.
+
         Emitted when the plugin receives a login banner from the VPN service.
-      " />
-      <arg name="banner" type="s">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The login banner string.
-        " />
-      </arg>
+    -->
+    <signal name="LoginBanner">
+      <arg name="banner" type="s"/>
     </signal>
 
-    <signal name="Failure">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Failure:
+        @reason: (#NMVpnPluginFailure) Reason code for the failure.
+
         Emitted when a failure in the VPN plugin occurs.
-      " />
-      <arg name="reason" type="u" tp:type="NM_VPN_PLUGIN_FAILURE">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Reason code for the failure.
-        " />
-      </arg>
+    -->
+    <signal name="Failure">
+      <arg name="reason" type="u"/>
     </signal>
-
-    <tp:enum name="NM_VPN_SERVICE_STATE" type="u">
-      <tp:enumvalue suffix="UNKNOWN" value="0">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The state of the VPN plugin is unknown.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="INIT" value="1">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The VPN plugin is initialized.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SHUTDOWN" value="2">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          (Not used.)
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="STARTING" value="3">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The plugin is attempting to connect to a VPN server.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="STARTED" value="4">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The plugin has connected to a VPN server.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="STOPPING" value="5">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The plugin is disconnecting from the VPN server.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="STOPPED" value="6">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The plugin has disconnected from the VPN server.
-        " />
-      </tp:enumvalue>
-    </tp:enum>
-
-    <tp:enum name="NM_VPN_PLUGIN_FAILURE" type="u">
-      <tp:enumvalue suffix="LOGIN_FAILED" value="0">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Login failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONNECT_FAILED" value="1">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Connect failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="BAD_IP_CONFIG" value="2">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Invalid IP configuration returned from the VPN plugin.
-        " />
-      </tp:enumvalue>
-    </tp:enum>
 
   </interface>
 </node>

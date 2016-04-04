@@ -1,38 +1,41 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Macvlan">
 
-    <property name="Parent" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Parent:
+
         The object path of the parent device.
-      " />
-    </property>
+    -->
+    <property name="Parent" type="o" access="read"/>
 
-    <property name="Mode" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The macvlan mode, one of &quot;private&quot;, &quot;vepa&quot;, &quot;bridge&quot;, or &quot;passthru&quot;.
-      " />
-    </property>
+    <!--
+        Mode:
 
-    <property name="NoPromisc" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+        The macvlan mode, one of "private", "vepa", "bridge", or "passthru".
+    -->
+    <property name="Mode" type="s" access="read"/>
+
+    <!--
+        NoPromisc:
+
         Whether the device is blocked from going into promiscuous mode.
-      " />
-    </property>
+    -->
+    <property name="NoPromisc" type="b" access="read"/>
 
-    <property name="Tap" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Tap:
+
         Whether the device is a macvtap.
-      " />
-    </property>
+    -->
+    <property name="Tap" type="b" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+        <arg name="properties" type="a{sv}"/>
     </signal>
 
   </interface>

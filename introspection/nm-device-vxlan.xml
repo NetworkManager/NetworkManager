@@ -1,127 +1,139 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Vxlan">
 
-    <property name="Parent" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The object path of the parent device (if the VXLAN is not
-	purely internal to this host).
-      " />
-    </property>
+    <!--
+        Parent:
 
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+        The object path of the parent device (if the VXLAN is not purely internal
+        to this host).
+    -->
+    <property name="Parent" type="o" access="read"/>
+
+    <!--
+        HwAddress:
+
         Hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="HwAddress" type="s" access="read"/>
 
-    <property name="Id" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Id:
+
         The VXLAN Network Identifier (VNI).
-      " />
-    </property>
+    -->
+    <property name="Id" type="u" access="read"/>
 
-    <property name="Group" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Group:
+
         The IP (v4 or v6) multicast group used to communicate with other physical
-	hosts on this VXLAN.
-      " />
-    </property>
+        hosts on this VXLAN.
+    -->
+    <property name="Group" type="s" access="read"/>
 
-    <property name="Local" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Local:
+
         The local IPv4 or IPv6 address to use when sending VXLAN packets to other
-	physical hosts.
-      " />
-    </property>
+        physical hosts.
+    -->
+    <property name="Local" type="s" access="read"/>
 
-    <property name="Tos" type="y" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The value to use in the IP ToS field for VXLAN packets sent to
-	other physical hosts.
-      " />
-    </property>
+    <!--
+        Tos:
 
-    <property name="Ttl" type="y" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The value to use in the IP TTL field for VXLAN packets sent to
-	other physical hosts.
-      " />
-    </property>
+        The value to use in the IP ToS field for VXLAN packets sent to other
+        physical hosts.
+    -->
+    <property name="Tos" type="y" access="read"/>
 
-    <property name="Learning" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Ttl:
+
+        The value to use in the IP TTL field for VXLAN packets sent to other
+        physical hosts.
+    -->
+    <property name="Ttl" type="y" access="read"/>
+
+    <!--
+        Learning:
+
         True if the VXLAN dynamically learns remote IP addresses.
-      " />
-    </property>
+    -->
+    <property name="Learning" type="b" access="read"/>
 
-    <property name="Ageing" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The interval in seconds at which the kernel purges stale
-        cached addresses.
-      " />
-    </property>
+    <!--
+        Ageing:
 
-    <property name="Limit" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The maximum number of entries that can be added to the VXLAN's
-	forwarding table.
-      " />
-    </property>
+        The interval in seconds at which the kernel purges stale cached addresses.
+    -->
+    <property name="Ageing" type="u" access="read"/>
 
-    <property name="DstPort" type="q" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Limit:
+
+        The maximum number of entries that can be added to the VXLAN's forwarding
+        table.
+    -->
+    <property name="Limit" type="u" access="read"/>
+
+    <!--
+        DstPort:
+
         Destination port for outgoing VXLAN packets.
-      " />
-    </property>
+    -->
+    <property name="DstPort" type="q" access="read"/>
 
-    <property name="SrcPortMin" type="q" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SrcPortMin:
+
         The lowest source port number to use for outgoing VXLAN packets.
-      " />
-    </property>
+    -->
+    <property name="SrcPortMin" type="q" access="read"/>
 
-    <property name="SrcPortMax" type="q" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SrcPortMax:
+
         The highest source port number to use for outgoing VXLAN packets.
-      " />
-    </property>
+    -->
+    <property name="SrcPortMax" type="q" access="read"/>
 
-    <property name="Proxy" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        True if the VXLAN is implementing DOVE ARP proxying for remote
-        clients.
-      " />
-    </property>
+    <!--
+        Proxy:
 
-    <property name="Rsc" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        True if the VXLAN is implementing DOVE route short-circuiting
-	of known remote IP addresses.
-      " />
-    </property>
+        True if the VXLAN is implementing DOVE ARP proxying for remote clients.
+    -->
+    <property name="Proxy" type="b" access="read"/>
 
-    <property name="L2miss" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        True if the VXLAN will emit netlink notifications of L2 switch
-        misses.
-      " />
-    </property>
+    <!--
+        Rsc:
 
-    <property name="L3miss" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        True if the VXLAN will emit netlink notifications of L3 switch
-        misses.
-      " />
-    </property>
+        True if the VXLAN is implementing DOVE route short-circuiting of known
+        remote IP addresses.
+    -->
+    <property name="Rsc" type="b" access="read"/>
 
+    <!--
+        L2miss:
+
+        True if the VXLAN will emit netlink notifications of L2 switch misses.
+    -->
+    <property name="L2miss" type="b" access="read"/>
+
+    <!--
+        L3miss:
+
+        True if the VXLAN will emit netlink notifications of L3 switch misses.
+    -->
+    <property name="L3miss" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+        <arg name="properties" type="a{sv}"/>
     </signal>
 
   </interface>

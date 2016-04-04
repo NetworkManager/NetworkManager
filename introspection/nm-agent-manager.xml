@@ -1,50 +1,38 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/org/freedesktop/NetworkManager/AgentManager" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/org/freedesktop/NetworkManager/AgentManager">
   <interface name="org.freedesktop.NetworkManager.AgentManager">
 
-    <method name="Register">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Register:
+        @identifier: Identifies this agent; only one agent in each user session may use the same identifier. Identifier formatting follows the same rules as D-Bus bus names with the exception that the ':' character is not allowed. The valid set of characters is "[A-Z][a-z][0-9]_-." and the identifier is limited in length to 255 characters with a minimum of 3 characters. An example valid identifier is 'org.gnome.nm-applet' (without quotes).
+
         Called by secret Agents to register their ability to provide and save
         network secrets.
-      " />
-      <arg name="identifier" type="s" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Identifies this agent; only one agent in each user session may use the
-          same identifier.  Identifier formatting follows the same rules as
-          D-Bus bus names with the exception that the ':' character is not
-          allowed.  The valid set of characters is &quot;[A-Z][a-z][0-9]_-.&quot; and the
-          identifier is limited in length to 255 characters with a minimum
-          of 3 characters.  An example valid identifier is 'org.gnome.nm-applet'
-          (without quotes).
-        " />
-      </arg>
+    -->
+    <method name="Register">
+      <arg name="identifier" type="s" direction="in"/>
     </method>
 
-    <method name="RegisterWithCapabilities">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        RegisterWithCapabilities:
+        @identifier: See the Register() method's identifier argument.
+        @capabilities: (#NMSecretAgentCapabilities) Indicates various agent capabilities to NetworkManager.
+
         Like Register() but indicates agent capabilities to NetworkManager.
-      " />
-      <arg name="identifier" type="s" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-            See the Register() method's identifier argument.
-        " />
-      </arg>
-      <arg name="capabilities" type="u" direction="in" tp:type="NM_SECRET_AGENT_CAPABILITIES">
-        <annotation name="org.gtk.GDBus.DocString" value="
-            Indicates various agent capabilities to NetworkManager.
-        " />
-      </arg>
+    -->
+    <method name="RegisterWithCapabilities">
+      <arg name="identifier" type="s" direction="in"/>
+      <arg name="capabilities" type="u" direction="in"/>
     </method>
 
-    <method name="Unregister">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Called by secret Agents to notify NetworkManager that they will no
-        longer handle requests for network secrets.  Agents are automatically
-        unregistered when they disconnect from D-Bus.
-      " />
-    </method>
+    <!--
+        Unregister:
+
+        Called by secret Agents to notify NetworkManager that they will no longer
+        handle requests for network secrets. Agents are automatically unregistered
+        when they disconnect from D-Bus.
+    -->
+    <method name="Unregister"/>
 
   </interface>
 </node>
-

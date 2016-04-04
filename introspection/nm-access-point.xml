@@ -1,103 +1,101 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.AccessPoint">
-    <property name="Flags" type="u" access="read" tp:type="NM_802_11_AP_FLAGS">
-      <annotation name="org.gtk.GDBus.DocString" value="Flags describing the capabilities of the access point." />
-    </property>
-    <property name="WpaFlags" type="u" access="read" tp:type="NM_802_11_AP_SEC">
-      <annotation name="org.gtk.GDBus.DocString" value="Flags describing the access point's capabilities according to WPA (Wifi Protected Access)." />
-    </property>
-    <property name="RsnFlags" type="u" access="read" tp:type="NM_802_11_AP_SEC">
-      <annotation name="org.gtk.GDBus.DocString" value="Flags describing the access point's capabilities according to the RSN (Robust Secure Network) protocol." />
-    </property>
+
+    <!--
+        Flags:
+
+        Flags describing the capabilities of the access point.
+
+        Returns: #NM80211ApFlags
+    -->
+    <property name="Flags" type="u" access="read"/>
+
+    <!--
+        WpaFlags:
+
+        Flags describing the access point's capabilities according to WPA (Wifi
+        Protected Access).
+
+        Returns: #NM80211ApSecurityFlags
+    -->
+    <property name="WpaFlags" type="u" access="read"/>
+
+    <!--
+        RsnFlags:
+
+        Flags describing the access point's capabilities according to the RSN
+        (Robust Secure Network) protocol.
+
+        Returns: #NM80211ApSecurityFlags
+    -->
+    <property name="RsnFlags" type="u" access="read"/>
+
+    <!--
+        Ssid:
+
+        The Service Set Identifier identifying the access point.
+    -->
     <property name="Ssid" type="ay" access="read">
       <!-- gdbus-codegen assumes that "ay" means "non-UTF-8 string" and
            won't deal with '\0' bytes correctly.
       -->
       <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
-      <annotation name="org.gtk.GDBus.DocString" value="The Service Set Identifier identifying the access point." />
-    </property>
-    <property name="Frequency" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The radio channel frequency in use by the access point, in MHz." />
-    </property>
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The hardware address (BSSID) of the access point." />
-    </property>
+      </property>
 
-    <property name="Mode" type="u" access="read" tp:type="NM_802_11_MODE">
-      <annotation name="org.gtk.GDBus.DocString" value="Describes the operating mode of the access point." />
-    </property>
-    <property name="MaxBitrate" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The maximum bitrate this access point is capable of, in kilobits/second (Kb/s)." />
-    </property>
-    <property name="Strength" type="y" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The current signal quality of the access point, in percent." />
-    </property>
-    <property name="LastSeen" type="i" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Frequency:
+
+        The radio channel frequency in use by the access point, in MHz.
+    -->
+    <property name="Frequency" type="u" access="read"/>
+
+    <!--
+        HwAddress:
+
+        The hardware address (BSSID) of the access point.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Mode:
+
+        Describes the operating mode of the access point.
+
+        Returns: #NM80211Mode
+    -->
+    <property name="Mode" type="u" access="read"/>
+
+    <!--
+        MaxBitrate:
+
+        The maximum bitrate this access point is capable of, in kilobits/second
+        (Kb/s).
+    -->
+    <property name="MaxBitrate" type="u" access="read"/>
+
+    <!--
+        Strength:
+
+        The current signal quality of the access point, in percent.
+    -->
+    <property name="Strength" type="y" access="read"/>
+
+    <!--
+        LastSeen:
+
         The timestamp (in CLOCK_BOOTTIME seconds) for the last time the access
-        point was found in scan results.  A value of -1 means the access point
-        has never been found in scan results.
-      " />
-    </property>
+        point was found in scan results. A value of -1 means the access point has
+        never been found in scan results.
+    -->
+    <property name="LastSeen" type="i" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+        <arg name="properties" type="a{sv}"/>
     </signal>
-    <tp:flags name="NM_802_11_AP_FLAGS" value-prefix="NM_802_11_AP_FLAGS" type="u">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Flags describing the general capabilities of the access point.
-      " />
-      <tp:flag suffix="NONE" value="0x0">
-        <annotation name="org.gtk.GDBus.DocString" value="Null capability - says nothing about the access point." />
-      </tp:flag>
-      <tp:flag suffix="PRIVACY" value="0x1">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports privacy measures." />
-      </tp:flag>
-    </tp:flags>
-    <tp:flags name="NM_802_11_AP_SEC" value-prefix="NM_802_11_AP_SEC" type="u">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Flags describing the security capabilities of the access point.
-      " />
-      <tp:flag suffix="NONE" value="0x0">
-        <annotation name="org.gtk.GDBus.DocString" value="Null flag." />
-      </tp:flag>
-      <tp:flag suffix="PAIR_WEP40" value="0x1">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports pairwise 40-bit WEP encryption." />
-      </tp:flag>
-      <tp:flag suffix="PAIR_WEP104" value="0x2">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports pairwise 104-bit WEP encryption." />
-      </tp:flag>
-      <tp:flag suffix="PAIR_TKIP" value="0x4">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports pairwise TKIP encryption." />
-      </tp:flag>
-      <tp:flag suffix="PAIR_CCMP" value="0x8">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports pairwise CCMP encryption." />
-      </tp:flag>
-      <tp:flag suffix="GROUP_WEP40" value="0x10">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports a group 40-bit WEP cipher." />
-      </tp:flag>
-      <tp:flag suffix="GROUP_WEP104" value="0x20">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports a group 104-bit WEP cipher." />
-      </tp:flag>
-      <tp:flag suffix="GROUP_TKIP" value="0x40">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports a group TKIP cipher." />
-      </tp:flag>
-      <tp:flag suffix="GROUP_CCMP" value="0x80">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports a group CCMP cipher." />
-      </tp:flag>
-      <tp:flag suffix="KEY_MGMT_PSK" value="0x100">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports PSK key management." />
-      </tp:flag>
-      <tp:flag suffix="KEY_MGMT_802_1X" value="0x200">
-        <annotation name="org.gtk.GDBus.DocString" value="Access point supports 802.1x key management." />
-      </tp:flag>
-    </tp:flags>
   </interface>
 </node>
-

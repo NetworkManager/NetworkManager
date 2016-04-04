@@ -1,198 +1,171 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/org/freedesktop/NetworkManager/Settings">
 
-<node name="/org/freedesktop/NetworkManager/Settings" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <!--
+      org.freedesktop.NetworkManager.Settings:
+
+      The Settings interface allows clients to view and administrate the
+      connections stored and used by NetworkManager.
+  -->
   <interface name="org.freedesktop.NetworkManager.Settings">
-    <annotation name="org.gtk.GDBus.DocString" value="
-      The Settings interface allows clients to view and administrate the connections stored and used by NetworkManager.
-    " />
 
-    <method name="ListConnections">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        ListConnections:
+        @connections: List of connections.
+
         List the saved network connections known to NetworkManager.
-      " />
-      <arg name="connections" type="ao" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          List of connections.
-        " />
-      </arg>
+    -->
+    <method name="ListConnections">
+      <arg name="connections" type="ao" direction="out"/>
     </method>
 
-    <method name="GetConnectionByUuid">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        GetConnectionByUuid:
+        @uuid: The UUID to find the connection object path for.
+        @connection: The connection's object path.
+
         Retrieve the object path of a connection, given that connection's UUID.
-      " />
-      <arg name="uuid" type="s" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The UUID to find the connection object path for.
-        " />
-      </arg>
-      <arg name="connection" type="o" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The connection's object path.
-        " />
-      </arg>
+    -->
+    <method name="GetConnectionByUuid">
+      <arg name="uuid" type="s" direction="in"/>
+      <arg name="connection" type="o" direction="out"/>
     </method>
 
+    <!--
+        AddConnection:
+        @connection: Connection settings and properties.
+        @path: Object path of the new connection that was just added.
+
+        Add new connection and save it to disk. This operation does not start the
+        network connection unless (1) device is idle and able to connect to the
+        network described by the new connection, and (2) the connection is allowed
+        to be started automatically.
+    -->
     <method name="AddConnection">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Add new connection and save it to disk.  This operation does not start
-        the network connection unless (1) device is idle and able to connect to
-        the network described by the new connection, and (2) the connection
-        is allowed to be started automatically.
-      " />
-      <arg name="connection" type="a{sa{sv}}" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Connection settings and properties.
-        " />
-      </arg>
-      <arg name="path" type="o" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Object path of the new connection that was just added.
-        " />
-      </arg>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="path" type="o" direction="out"/>
     </method>
 
+    <!--
+        AddConnectionUnsaved:
+        @connection: Connection settings and properties.
+        @path: Object path of the new connection that was just added.
+
+        Add new connection but do not save it to disk immediately. This operation
+        does not start the network connection unless (1) device is idle and able
+        to connect to the network described by the new connection, and (2) the
+        connection is allowed to be started automatically. Use the 'Save' method
+        on the connection to save these changes to disk. Note that unsaved changes
+        will be lost if the connection is reloaded from disk (either automatically
+        on file change or due to an explicit ReloadConnections call).
+    -->
     <method name="AddConnectionUnsaved">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Add new connection but do not save it to disk immediately.  This
-        operation does not start the network connection unless (1) device is
-        idle and able to connect to the network described by the new connection,
-        and (2) the connection is allowed to be started automatically.
-
-        Use the 'Save' method on the connection to save these changes
-        to disk. Note that unsaved changes will be lost if the
-        connection is reloaded from disk (either automatically on file
-        change or due to an explicit ReloadConnections call).
-      " />
-      <arg name="connection" type="a{sa{sv}}" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Connection settings and properties.
-        " />
-      </arg>
-      <arg name="path" type="o" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Object path of the new connection that was just added.
-        " />
-      </arg>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="path" type="o" direction="out"/>
     </method>
 
+    <!--
+        LoadConnections:
+        @filenames: Array of paths to on-disk connection profiles in directories monitored by NetworkManager.
+        @status: Success or failure of the operation as a whole. True if NetworkManager at least tried to load the indicated connections, even if it did not succeed. False if an error occurred before trying to load the connections (eg, permission denied).
+        @failures: Paths of connection files that could not be loaded.
+
+        Loads or reloads the indicated connections from disk. You should call this
+        after making changes directly to an on-disk connection file to make sure
+        that NetworkManager sees the changes. (If "monitor-connection-files" in
+        NetworkManager.conf is "true", then this will have no real effect, but is
+        harmless.) As with AddConnection(), this operation does not necessarily
+        start the network connection.
+    -->
     <method name="LoadConnections">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Loads or reloads the indicated connections from disk. You
-        should call this after making changes directly to an on-disk
-        connection file to make sure that NetworkManager sees the
-        changes. (If &quot;monitor-connection-files&quot; in NetworkManager.conf
-        is &quot;true&quot;, then this will have no real effect, but is
-        harmless.) As with AddConnection(), this operation does not
-        necessarily start the network connection.
-      " />
-      <arg name="filenames" type="as" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Array of paths to on-disk connection profiles in directories
-          monitored by NetworkManager.
-        " />
-      </arg>
-      <arg name="status" type="b" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Success or failure of the operation as a whole. True if
-          NetworkManager at least tried to load the indicated
-          connections, even if it did not succeed. False if an error
-          occurred before trying to load the connections (eg,
-          permission denied).
-        " />
-      </arg>
-      <arg name="failures" type="as" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Paths of connection files that could not be loaded.
-        " />
-      </arg>
+      <arg name="filenames" type="as" direction="in"/>
+      <arg name="status" type="b" direction="out"/>
+      <arg name="failures" type="as" direction="out"/>
     </method>
 
+    <!--
+        ReloadConnections:
+        @status: Success or failure.
+
+        Tells NetworkManager to reload all connection files from disk, including
+        noticing any added or deleted connection files. By default, connections
+        are re-read automatically any time they change, so you only need to use
+        this command if you have set "monitor-connection-files=false" in
+        NetworkManager.conf.
+    -->
     <method name="ReloadConnections">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Tells NetworkManager to reload all connection files from disk,
-        including noticing any added or deleted connection files. By
-        default, connections are re-read automatically any time they
-        change, so you only need to use this command if you have set
-        &quot;monitor-connection-files=false&quot; in NetworkManager.conf.
-      " />
-      <arg name="status" type="b" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Success or failure.
-        " />
-      </arg>
+      <arg name="status" type="b" direction="out"/>
     </method>
 
-    <method name="SaveHostname">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        SaveHostname:
+        @hostname: The hostname to save to persistent configuration. If blank, the persistent hostname is cleared.
+
         Save the hostname to persistent configuration.
-      " />
-      <arg name="hostname" type="s" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The hostname to save to persistent configuration.  If blank, the persistent hostname is cleared.
-        " />
-      </arg>
+    -->
+    <method name="SaveHostname">
+      <arg name="hostname" type="s" direction="in"/>
     </method>
 
-    <property name="Connections" type="ao" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Connections:
+
         List of object paths of available network connection profiles.
-      " />
-    </property>
+    -->
+    <property name="Connections" type="ao" access="read"/>
 
-    <property name="Hostname" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Hostname:
+
         The machine hostname stored in persistent configuration.
-      " />
-    </property>
+    -->
+    <property name="Hostname" type="s" access="read"/>
 
-    <property name="CanModify" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        CanModify:
+
         If true, adding and modifying connections is supported.
-      " />
-    </property>
+    -->
+    <property name="CanModify" type="b" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+        <arg name="properties" type="a{sv}"/>
     </signal>
 
-    <signal name="NewConnection">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        NewConnection:
+        @connection: Object path of the new connection.
+
         Emitted when a new connection has been added after NetworkManager has
-        started up and initialized.  This signal is not emitted for connections
+        started up and initialized. This signal is not emitted for connections
         read while starting up, because NetworkManager's D-Bus service is only
         available after all connections have been read, and to prevent spamming
-        listeners with too many signals at one time.  To retrieve the initial
+        listeners with too many signals at one time. To retrieve the initial
         connection list, call the ListConnections() method once, and then listen
         for individual Settings.NewConnection and Settings.Connection.Deleted
         signals for further updates.
-      " />
-      <arg name="connection" type="o">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Object path of the new connection.
-        " />
-      </arg>
+    -->
+    <signal name="NewConnection">
+      <arg name="connection" type="o"/>
     </signal>
 
+    <!--
+        ConnectionRemoved:
+        @connection: Object path of the removed connection.
+
+        Emitted when a connection is no longer available. This happens when the
+        connection is deleted or if it is no longer accessible by any of the
+        system's logged-in users. After receipt of this signal, the connection no
+        longer exists and cannot be used. Also see the Settings.Connection.Removed
+        signal.
+    -->
     <signal name="ConnectionRemoved">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Emitted when a connection is no longer available.  This happens when
-        the connection is deleted or if it is no longer accessible by any of
-        the system's logged-in users.  After receipt of this signal, the
-        connection no longer exists and cannot be used.  Also see the
-        Settings.Connection.Removed signal.
-      " />
-      <arg name="connection" type="o">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Object path of the removed connection.
-        " />
-      </arg>
+      <arg name="connection" type="o"/>
     </signal>
 
   </interface>
 </node>
-

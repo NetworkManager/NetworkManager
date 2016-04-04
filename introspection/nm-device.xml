@@ -1,798 +1,321 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device">
-    <property name="Udi" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Operating-system specific transient device hardware identifier.  This
-        is an opaque string representing the underlying hardware for the device,
-        and shouldn't be used to keep track of individual devices.  For some
-        device types (Bluetooth, Modems) it is an identifier used by the
-        hardware service (ie bluez or ModemManager) to refer to that device,
-        and client programs use it get additional information from those
-        services which NM does not provide.  The Udi is not guaranteed to be
-        consistent across reboots or hotplugs of the hardware. If you're looking
-        for a way to uniquely track each device in your application, use the
-        object path.  If you're looking for a way to track a specific piece of
-        hardware across reboot or hotplug, use a MAC address or USB serial
-        number.
-      " />
-    </property>
-    <property name="Interface" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+
+    <!--
+        Udi:
+
+        Operating-system specific transient device hardware identifier. This is an
+        opaque string representing the underlying hardware for the device, and
+        shouldn't be used to keep track of individual devices. For some device
+        types (Bluetooth, Modems) it is an identifier used by the hardware service
+        (ie bluez or ModemManager) to refer to that device, and client programs
+        use it get additional information from those services which NM does not
+        provide. The Udi is not guaranteed to be consistent across reboots or
+        hotplugs of the hardware. If you're looking for a way to uniquely track
+        each device in your application, use the object path. If you're looking
+        for a way to track a specific piece of hardware across reboot or hotplug,
+        use a MAC address or USB serial number.
+    -->
+    <property name="Udi" type="s" access="read"/>
+
+    <!--
+        Interface:
+
         The name of the device's control (and often data) interface.
-      " />
-    </property>
-    <property name="IpInterface" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The name of the device's data interface when available.  This property
-        may not refer to the actual data interface until the device has
-        successfully established a data connection, indicated by the device's
-        State becoming ACTIVATED.
-      " />
-    </property>
-    <property name="Driver" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    -->
+    <property name="Interface" type="s" access="read"/>
+
+    <!--
+        IpInterface:
+
+        The name of the device's data interface when available. This property may
+        not refer to the actual data interface until the device has successfully
+        established a data connection, indicated by the device's State becoming
+        ACTIVATED.
+    -->
+    <property name="IpInterface" type="s" access="read"/>
+
+    <!--
+        Driver:
+
         The driver handling the device.
-      " />
-    </property>
-    <property name="DriverVersion" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    -->
+    <property name="Driver" type="s" access="read"/>
+
+    <!--
+        DriverVersion:
+
         The version of the driver handling the device.
-      " />
-    </property>
-    <property name="FirmwareVersion" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    -->
+    <property name="DriverVersion" type="s" access="read"/>
+
+    <!--
+        FirmwareVersion:
+
         The firmware version for the device.
-      " />
-    </property>
-    <property name="Capabilities" type="u" access="read" tp:type="NM_DEVICE_CAP">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    -->
+    <property name="FirmwareVersion" type="s" access="read"/>
+
+    <!--
+        Capabilities:
+
         Flags describing the capabilities of the device.
-      " />
-    </property>
-    <property name="Ip4Address" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object instead.
-      " />
-    </property>
-    <property name="State" type="u" access="read" tp:type="NM_DEVICE_STATE">
-      <annotation name="org.gtk.GDBus.DocString" value="
+
+        Returns: #NMDeviceCapabilities
+    -->
+    <property name="Capabilities" type="u" access="read"/>
+
+    <!--
+        Ip4Address:
+
+        DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object
+        instead.
+    -->
+    <property name="Ip4Address" type="u" access="read"/>
+
+    <!--
+        State:
+
         The current state of the device.
-      " />
-    </property>
-    <property name="StateReason" type="(uu)" access="read" tp:type="NM_DEVICE_STATE_REASON_STRUCT">
-      <annotation name="org.gtk.GDBus.DocString" value="
+
+        Returns: #NMDeviceState
+    -->
+    <property name="State" type="u" access="read"/>
+
+    <!--
+        StateReason:
+
         The current state and reason for changing to that state.
-      " />
-    </property>
-    <property name="ActiveConnection" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Object path of an ActiveConnection object that &quot;owns&quot; this device during
-        activation.  The ActiveConnection object tracks the life-cycle of a
+
+        Returns: #NMDeviceStateReasonStruct
+    -->
+    <property name="StateReason" type="(uu)" access="read"/>
+
+    <!--
+        ActiveConnection:
+
+        Object path of an ActiveConnection object that "owns" this device during
+        activation. The ActiveConnection object tracks the life-cycle of a
         connection to a specific network and implements the
         org.freedesktop.NetworkManager.Connection.Active D-Bus interface.
-      " />
-    </property>
-    <property name="Ip4Config" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Object path of the Ip4Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
-      " />
-    </property>
-    <property name="Dhcp4Config" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Object path of the Dhcp4Config object describing the DHCP options returned by the DHCP server.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
-      " />
-    </property>
-    <property name="Ip6Config" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Object path of the Ip6Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
-      " />
-    </property>
-    <property name="Dhcp6Config" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Object path of the Dhcp6Config object describing the DHCP options
-        returned by the DHCP server.  Only valid when the device is in the
+    -->
+    <property name="ActiveConnection" type="o" access="read"/>
+
+    <!--
+        Ip4Config:
+
+        Object path of the Ip4Config object describing the configuration of the
+        device. Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED
+        state.
+    -->
+    <property name="Ip4Config" type="o" access="read"/>
+
+    <!--
+        Dhcp4Config:
+
+        Object path of the Dhcp4Config object describing the DHCP options returned
+        by the DHCP server. Only valid when the device is in the
         NM_DEVICE_STATE_ACTIVATED state.
-      " />
-    </property>
-    <property name="Managed" type="b" access="readwrite">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    -->
+    <property name="Dhcp4Config" type="o" access="read"/>
+
+    <!--
+        Ip6Config:
+
+        Object path of the Ip6Config object describing the configuration of the
+        device. Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED
+        state.
+    -->
+    <property name="Ip6Config" type="o" access="read"/>
+
+    <!--
+        Dhcp6Config:
+
+        Object path of the Dhcp6Config object describing the DHCP options returned
+        by the DHCP server. Only valid when the device is in the
+        NM_DEVICE_STATE_ACTIVATED state.
+    -->
+    <property name="Dhcp6Config" type="o" access="read"/>
+
+    <!--
+        Managed:
+
         Whether or not this device is managed by NetworkManager. Setting this
-        property has a similar effect to configuring the device as unmanaged
-        via the keyfile.unmanaged-devices setting in NetworkManager.conf.
-        Changes to this value are not persistent and lost after NetworkManager
-        restart.
-      " />
-    </property>
-    <property name="Autoconnect" type="b" access="readwrite">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        If TRUE, indicates the device is allowed to autoconnect.  If FALSE,
-        manual intervention is required before the device will automatically
-        connect to a known network, such as activating a connection using the
-        device, or setting this property to TRUE.  This property cannot be
-        set to TRUE for default-unmanaged devices, since they never autoconnect.
-      " />
-    </property>
-    <property name="FirmwareMissing" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        If TRUE, indicates the device is likely missing firmware necessary for
-        its operation.
-      " />
-    </property>
-    <property name="NmPluginMissing" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+        property has a similar effect to configuring the device as unmanaged via
+        the keyfile.unmanaged-devices setting in NetworkManager.conf. Changes to
+        this value are not persistent and lost after NetworkManager restart.
+    -->
+    <property name="Managed" type="b" access="readwrite"/>
+
+    <!--
+        Autoconnect:
+
+        If TRUE, indicates the device is allowed to autoconnect. If FALSE, manual
+        intervention is required before the device will automatically connect to a
+        known network, such as activating a connection using the device, or
+        setting this property to TRUE. This property cannot be set to TRUE for
+        default-unmanaged devices, since they never autoconnect.
+    -->
+    <property name="Autoconnect" type="b" access="readwrite"/>
+
+    <!--
+        FirmwareMissing:
+
+        If TRUE, indicates the device is likely missing firmware necessary for its
+        operation.
+    -->
+    <property name="FirmwareMissing" type="b" access="read"/>
+
+    <!--
+        NmPluginMissing:
+
         If TRUE, indicates the NetworkManager plugin for the device is likely
         missing or misconfigured.
-      " />
-    </property>
-    <property name="DeviceType" type="u" access="read" tp:type="NM_DEVICE_TYPE">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    -->
+    <property name="NmPluginMissing" type="b" access="read"/>
+
+    <!--
+        DeviceType:
+
         The general type of the network device; ie Ethernet, WiFi, etc.
-      " />
-    </property>
-    <property name="AvailableConnections" type="ao" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        An array of object paths of every configured connection that is currently 'available' through this device.
-      " />
-    </property>
-    <property name="PhysicalPortId" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        If non-empty, an (opaque) indicator of the physical network
-        port associated with the device. This can be used to recognize
-	when two seemingly-separate hardware devices are actually just
-	different virtual interfaces to the same physical port.
-      " />
-    </property>
-    <property name="Mtu" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+
+        Returns: #NMDeviceType
+    -->
+    <property name="DeviceType" type="u" access="read"/>
+
+    <!--
+        AvailableConnections:
+
+        An array of object paths of every configured connection that is currently
+        'available' through this device.
+    -->
+    <property name="AvailableConnections" type="ao" access="read"/>
+
+    <!--
+        PhysicalPortId:
+
+        If non-empty, an (opaque) indicator of the physical network port
+        associated with the device. This can be used to recognize when two
+        seemingly-separate hardware devices are actually just different virtual
+        interfaces to the same physical port.
+    -->
+    <property name="PhysicalPortId" type="s" access="read"/>
+
+    <!--
+        Mtu:
+
         The device MTU (maximum transmission unit).
-      " />
-    </property>
-    <property name="Metered" type="u" access="read" tp:type="NM_METERED">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Whether the amount of traffic flowing through the device is
-        subject to limitations, for example set by service providers.
-      " />
-    </property>
-    <property name="LldpNeighbors" type="aa{sv}" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Array of LLDP neighbors; each element is a dictionary mapping
-        LLDP TLV names to variant boxed values.
-      " />
-    </property>
-    <property name="Real" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        True if the device exists, or False for placeholder devices that
-        do not yet exist but could be automatically created by NetworkManager
-        if one of their AvailableConnections was activated.
-      " />
-    </property>
+    -->
+    <property name="Mtu" type="u" access="read"/>
 
+    <!--
+        Metered:
+
+        Whether the amount of traffic flowing through the device is subject to
+        limitations, for example set by service providers.
+
+        Returns: #NMMetered
+    -->
+    <property name="Metered" type="u" access="read"/>
+
+    <!--
+        LldpNeighbors:
+
+        Array of LLDP neighbors; each element is a dictionary mapping LLDP TLV
+        names to variant boxed values.
+    -->
+    <property name="LldpNeighbors" type="aa{sv}" access="read"/>
+
+    <!--
+        Real:
+
+        True if the device exists, or False for placeholder devices that do not
+        yet exist but could be automatically created by NetworkManager if one of
+        their AvailableConnections was activated.
+    -->
+    <property name="Real" type="b" access="read"/>
+
+    <!--
+        Reapply:
+        @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarly differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
+        @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows to catch concurrent modifications between the GetAppliedConnection call and Reapply.
+        @flags: Flags which would modify the behavior of the Reapply call. There are no flags defined currently and the users should use the value of 0.
+
+        Attempts to update the configuration of a device without deactivating it.
+        NetworkManager has the concept of connections, which are profiles that
+        contain the configuration for a networking device. Those connections are
+        exposed via D-Bus as individual objects that can be created, modified and
+        deleted. When activating such a settings-connection on a device, the
+        settings-connection is cloned to become an applied-connection and used to
+        configure the device (see GetAppliedConnection). Subsequent modification
+        of the settings-connection don't propagate automatically to the device's
+        applied-connection (with exception of the firewall-zone and the metered
+        property). For the changes to take effect, you can either re-activate the
+        settings-connection, or call Reapply. The Reapply call allows you to
+        directly update the applied-connection and reconfigure the device. Reapply
+        can also be useful if the currently applied-connection is equal to the
+        connection that is about to be reapplied. This allows to reconfigure the
+        device and revert external changes like removing or adding an IP address
+        (which NetworkManager doesn't revert automatically because it is assumed
+        that the user made these changes intentionally outside of NetworkManager).
+        Reapply can make the applied-connection different from the
+        settings-connection, just like updating the settings-connection can make
+        them different.
+    -->
     <method name="Reapply">
-      <arg name="connection" type="a{sa{sv}}" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The optional connection settings that will be reapplied on the device. If empty, the
-          currently active settings-connection will be used. The connection cannot arbitrarly
-          differ from the current applied-connection otherwise the call will fail.
-          Only certain changes are supported, like adding or removing IP addresses.
-        " />
-      </arg>
-      <arg name="version_id" type="t" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          If non-zero, the current version id of the applied-connection must match.
-          The current version id can be retrieved via GetAppliedConnection.
-          This optional argument allows to catch concurrent modifications between
-          the GetAppliedConnection call and Reapply.
-        " />
-      </arg>
-      <arg name="flags" type="u" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Flags which would modify the behavior of the Reapply call.
-          There are no flags defined currently and the users should use the value of 0.
-        " />
-      </arg>
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Attempts to update the configuration of a device without deactivating it. NetworkManager
-        has the concept of connections, which are profiles that contain the configuration for
-        a networking device. Those connections are exposed via D-Bus as individual objects
-        that can be created, modified and deleted. When activating such a settings-connection
-        on a device, the settings-connection is cloned to become an applied-connection and used to
-        configure the device (see GetAppliedConnection). Subsequent modification of the
-        settings-connection don't propagate automatically to the device's applied-connection
-        (with exception of the firewall-zone and the metered property). For the changes to take
-        effect, you can either re-activate the settings-connection, or call Reapply.
-        The Reapply call allows you to directly update the applied-connection and reconfigure
-        the device.
-        Reapply can also be useful if the currently applied-connection is equal to the connection
-        that is about to be reapplied. This allows to reconfigure the device and revert external
-        changes like removing or adding an IP address (which NetworkManager doesn't revert
-        automatically because it is assumed that the user made these changes intentionally outside
-        of NetworkManager).
-        Reapply can make the applied-connection different from the settings-connection,
-        just like updating the settings-connection can make them different.
-      " />
-    </method>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="version_id" type="t" direction="in"/>
+      <arg name="flags" type="u" direction="in"/>
+      </method>
 
+    <!--
+        GetAppliedConnection:
+        @flags: Flags which would modify the behavior of the GetAppliedConnection call. There are no flags defined currently and the users should use the value of 0.
+        @connection: The effective connection settings that the connection has currently applied.
+        @version_id: The version-id of the currently applied connection. This can be specified during Reapply to avoid races where you first fetch the applied connection, modify it and try to reapply it. If the applied connection is modified in the meantime, the version_id gets incremented and Reapply will fail.
+
+        Get the currently applied connection on the device. This is a snapshot of
+        the last activated connection on the device, that is the configuration
+        that is currently applied on the device. Usually this is the same as
+        GetSettings of the referenced settings connection. However, it can differ
+        if the settings connection was subsequently modified or the applied
+        connection was modified by Reapply. The applied connection is set when
+        activating a device or when calling Reapply.
+    -->
     <method name="GetAppliedConnection">
-      <arg name="flags" type="u" direction="in">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Flags which would modify the behavior of the GetAppliedConnection call.
-          There are no flags defined currently and the users should use the value of 0.
-        " />
-      </arg>
-      <arg name="connection" type="a{sa{sv}}" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-            The effective connection settings that the connection has currently applied.
-        " />
-      </arg>
-      <arg name="version_id" type="t" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-            The version-id of the currently applied connection. This can be specified during
-            Reapply to avoid races where you first fetch the applied connection, modify it
-            and try to reapply it. If the applied connection is modified in the meantime, the
-            version_id gets incremented and Reapply will fail.
-        " />
-      </arg>
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Get the currently applied connection on the device. This is a snapshot of the last activated
-        connection on the device, that is the configuration that is currently applied on the device.
-        Usually this is the same as GetSettings of the referenced settings connection. However, it
-        can differ if the settings connection was subsequently modified or the applied connection was
-        modified by Reapply. The applied connection is set when activating a device or when calling
-        Reapply.
-      " />
-    </method>
+      <arg name="flags" type="u" direction="in"/>
+      <arg name="connection" type="a{sa{sv}}" direction="out"/>
+      <arg name="version_id" type="t" direction="out"/>
+      </method>
 
-    <method name="Disconnect">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Disconnects a device and prevents the device from automatically activating further connections without user intervention.
-      " />
-    </method>
+    <!--
+        Disconnect:
 
-    <method name="Delete">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Deletes a software device from NetworkManager and removes the interface from the system.
-        The method returns an error when called for a hardware device.
-      " />
-    </method>
+        Disconnects a device and prevents the device from automatically activating
+        further connections without user intervention.
+    -->
+    <method name="Disconnect"/>
 
+    <!--
+        Delete:
+
+        Deletes a software device from NetworkManager and removes the interface
+        from the system. The method returns an error when called for a hardware
+        device.
+    -->
+    <method name="Delete"/>
+
+    <!--
+        StateChanged:
+        @new_state: (#NMDeviceState) The new state of the device.
+        @old_state: (#NMDeviceState) The previous state of the device.
+        @reason: (#NMDeviceStateReason) A reason for the state transition.
+    -->
     <signal name="StateChanged">
-      <arg name="new_state" type="u" tp:type="NM_DEVICE_STATE">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The new state of the device.
-        " />
-      </arg>
-      <arg name="old_state" type="u" tp:type="NM_DEVICE_STATE">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The previous state of the device.
-        " />
-      </arg>
-      <arg name="reason" type="u" tp:type="NM_DEVICE_STATE_REASON">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          A reason for the state transition.
-        " />
-      </arg>
+      <arg name="new_state" type="u"/>
+      <arg name="old_state" type="u"/>
+      <arg name="reason" type="u"/>
     </signal>
-
-    <tp:enum name="NM_DEVICE_STATE" type="u">
-      <tp:enumvalue suffix="UNKNOWN" value="0">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is in an unknown state.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="UNMANAGED" value="10">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is recognized but not managed by NetworkManager.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="UNAVAILABLE" value="20">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device cannot be used (carrier off, rfkill, etc).
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DISCONNECTED" value="30">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is not connected.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="PREPARE" value="40">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is preparing to connect.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONFIG" value="50">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is being configured.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NEED_AUTH" value="60">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is awaiting secrets necessary to continue connection.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="IP_CONFIG" value="70">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The IP settings of the device are being requested and configured.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="IP_CHECK" value="80">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device's IP connectivity ability is being determined.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SECONDARIES" value="90">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is waiting for secondary connections to be activated.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="ACTIVATED" value="100">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is active.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DEACTIVATING" value="110">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device's network connection is being torn down.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="FAILED" value="120">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is in a failure state following an attempt to activate it.
-        " />
-      </tp:enumvalue>
-    </tp:enum>
-
-    <tp:enum name="NM_DEVICE_TYPE" type="u">
-      <tp:enumvalue suffix="UNKNOWN" value="0">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device type is unknown.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="ETHERNET" value="1">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is wired Ethernet device.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="WIFI" value="2">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is an 802.11 WiFi device.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="UNUSED1" value="3">
-        <annotation name="org.gtk.GDBus.DocString" value="Unused" />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="UNUSED2" value="4">
-        <annotation name="org.gtk.GDBus.DocString" value="Unused" />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="BT" value="5">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is Bluetooth device that provides PAN or DUN capabilities.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="OLPC_MESH" value="6">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is an OLPC mesh networking device.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="WIMAX" value="7">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is an 802.16e Mobile WiMAX device.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM" value="8">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is a modem supporting one or more of analog telephone,
-          CDMA/EVDO, GSM/UMTS/HSPA, or LTE standards to access a cellular or
-          wireline data network.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="INFINIBAND" value="9">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is an IP-capable InfiniBand interface.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="BOND" value="10">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is a bond master interface.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="VLAN" value="11">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is a VLAN interface.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="ADSL" value="12">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is an ADSL device supporting PPPoE and PPPoATM protocols.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="BRIDGE" value="13">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is a bridge interface.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GENERIC" value="14">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is a generic interface type unrecognized by NetworkManager.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="TEAM" value="15">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is a team master interface.
-        " />
-      </tp:enumvalue>
-    </tp:enum>
-
-    <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">
-      <tp:flag suffix="NONE" value="0x0">
-        <annotation name="org.gtk.GDBus.DocString" value="Null capability." />
-      </tp:flag>
-      <tp:flag suffix="NM_SUPPORTED" value="0x1">
-        <annotation name="org.gtk.GDBus.DocString" value="The device is supported by NetworkManager." />
-      </tp:flag>
-      <tp:flag suffix="CARRIER_DETECT" value="0x2">
-        <annotation name="org.gtk.GDBus.DocString" value="The device supports carrier detection." />
-      </tp:flag>
-    </tp:flags>
-
-    <tp:enum name="NM_DEVICE_STATE_REASON" type="u">
-      <tp:enumvalue suffix="UNKNOWN" value="0">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The reason for the device state change is unknown.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NONE" value="1">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The state change is normal.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NOW_MANAGED" value="2">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is now managed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NOW_UNMANAGED" value="3">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is no longer managed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONFIG_FAILED" value="4">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device could not be readied for configuration.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONFIG_UNAVAILABLE" value="5">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          IP configuration could not be reserved (no available address, timeout, etc).
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONFIG_EXPIRED" value="6">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The IP configuration is no longer valid.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NO_SECRETS" value="7">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Secrets were required, but not provided.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SUPPLICANT_DISCONNECT" value="8">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The 802.1X supplicant disconnected from the access point or authentication server.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SUPPLICANT_CONFIG_FAILED" value="9">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Configuration of the 802.1X supplicant failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SUPPLICANT_FAILED" value="10">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The 802.1X supplicant quit or failed unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SUPPLICANT_TIMEOUT" value="11">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The 802.1X supplicant took too long to authenticate.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="PPP_START_FAILED" value="12">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The PPP service failed to start within the allowed time.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="PPP_DISCONNECT" value="13">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The PPP service disconnected unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="PPP_FAILED" value="14">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The PPP service quit or failed unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DHCP_START_FAILED" value="15">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The DHCP service failed to start within the allowed time.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DHCP_ERROR" value="16">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The DHCP service reported an unexpected error.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DHCP_FAILED" value="17">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The DHCP service quit or failed unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SHARED_START_FAILED" value="18">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The shared connection service failed to start.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SHARED_FAILED" value="19">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The shared connection service quit or failed unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="AUTOIP_START_FAILED" value="20">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The AutoIP service failed to start.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="AUTOIP_ERROR" value="21">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The AutoIP service reported an unexpected error.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="AUTOIP_FAILED" value="22">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The AutoIP service quit or failed unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_BUSY" value="23">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Dialing failed because the line was busy.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_NO_DIAL_TONE" value="24">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Dialing failed because there was no dial tone.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_NO_CARRIER" value="25">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Dialing failed because there was carrier.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_DIAL_TIMEOUT" value="26">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Dialing timed out.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_DIAL_FAILED" value="27">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Dialing failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_INIT_FAILED" value="28">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Modem initialization failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_APN_FAILED" value="29">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Failed to select the specified GSM APN.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_REGISTRATION_NOT_SEARCHING" value="30">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Not searching for networks.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_REGISTRATION_DENIED" value="31">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Network registration was denied.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_REGISTRATION_TIMEOUT" value="32">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Network registration timed out.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_REGISTRATION_FAILED" value="33">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Failed to register with the requested GSM network.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_PIN_CHECK_FAILED" value="34">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          PIN check failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="FIRMWARE_MISSING" value="35">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Necessary firmware for the device may be missing.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="REMOVED" value="36">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device was removed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SLEEPING" value="37">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          NetworkManager went to sleep.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONNECTION_REMOVED" value="38">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device's active connection was removed or disappeared.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="USER_REQUESTED" value="39">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          A user or client requested the disconnection.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CARRIER" value="40">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device's carrier/link changed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CONNECTION_ASSUMED" value="41">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device's existing connection was assumed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SUPPLICANT_AVAILABLE" value="42">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The 802.1x supplicant is now available.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_NOT_FOUND" value="43">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The modem could not be found.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="BT_FAILED" value="44">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The Bluetooth connection timed out or failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_SIM_NOT_INSERTED" value="45">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          GSM Modem's SIM Card not inserted.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_SIM_PIN_REQUIRED" value="46">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          GSM Modem's SIM Pin required.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_SIM_PUK_REQUIRED" value="47">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          GSM Modem's SIM Puk required.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_SIM_WRONG" value="48">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          GSM Modem's SIM wrong
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="INFINIBAND_MODE" value="49">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          InfiniBand device does not support connected mode.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DEPENDENCY_FAILED" value="50">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          A dependency of the connection failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="BR2684_FAILED" value="51">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Problem with the RFC 2684 Ethernet over ADSL bridge.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_MANAGER_UNAVAILABLE" value="52">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          ModemManager was not running or quit unexpectedly.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SSID_NOT_FOUND" value="53">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The 802.11 Wi-Fi network could not be found.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SECONDARY_CONNECTION_FAILED" value="54">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          A secondary connection of the base connection failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="DCB_FCOE_FAILED" value="55">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          DCB or FCoE setup failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="TEAMD_CONTROL_FAILED" value="56">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          teamd control failed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_FAILED" value="57">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Modem failed or no longer available.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="MODEM_AVAILABLE" value="58">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          Modem now ready and available.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="SIM_PIN_INCORRECT" value="59">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The SIM PIN was incorrect.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NEW_ACTIVATION" value="60">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          A new connection activation was enqueued.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="PARENT_CHANGED" value="61">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device's parent changed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="PARENT_MANAGED_CHANGED" value="62">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device parent's management changed.
-        " />
-      </tp:enumvalue>
-    </tp:enum>
-
-    <tp:enum name="NM_METERED" type="u">
-      <tp:enumvalue suffix="UNKNOWN" value="0">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device metered status is unknown.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="YES" value="1">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is metered and the value was statically set.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="NO" value="2">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is not metered and the value was statically set.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GUESS_YES" value="3">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is metered and the value was guessed.
-        " />
-      </tp:enumvalue>
-      <tp:enumvalue suffix="GUESS_NO" value="4">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device is not metered and the value was guessed.
-        " />
-      </tp:enumvalue>
-    </tp:enum>
-
-    <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">
-      <tp:member type="u" name="state" tp:type="NM_DEVICE_STATE">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The device state.
-        " />
-      </tp:member>
-      <tp:member type="u" name="reason" tp:type="NM_DEVICE_STATE_REASON">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          The reason for originally changing to the device state.
-        " />
-      </tp:member>
-    </tp:struct>
   </interface>
 </node>

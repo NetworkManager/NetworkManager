@@ -1,109 +1,113 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.WiMax">
-    <method name="GetNspList">
-      <arg name="nsps" type="ao" direction="out">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          List of NSP object paths
-        " />
-      </arg>
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Get the list of NSPs visible to this device.
-      " />
-    </method>
 
-    <property name="Nsps" type="ao" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        GetNspList:
+        @nsps: List of NSP object paths
+
+        Get the list of NSPs visible to this device.
+    -->
+    <method name="GetNspList">
+      <arg name="nsps" type="ao" direction="out"/>
+      </method>
+
+    <!--
+        Nsps:
+
         List of object paths of Network Service Providers (NSPs) visible to this
         WiMAX device.
-      " />
-    </property>
+    -->
+    <property name="Nsps" type="ao" access="read"/>
 
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        HwAddress:
+
         Hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="HwAddress" type="s" access="read"/>
 
-    <property name="CenterFrequency" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        CenterFrequency:
+
         Center frequency (in KHz) of the radio channel the device is using to
-        communicate with the network when connected.  Has no meaning when the
+        communicate with the network when connected. Has no meaning when the
         device is not connected.
-      " />
-    </property>
+    -->
+    <property name="CenterFrequency" type="u" access="read"/>
 
-    <property name="Rssi" type="i" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        RSSI of the current radio link in dBm.  This value indicates how strong
-        the raw received RF signal from the base station is, but does not
-        indicate the overall quality of the radio link.  Has no meaning when the
-        device is not connected.
-      " />
-    </property>
+    <!--
+        Rssi:
 
-    <property name="Cinr" type="i" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        CINR (Carrier to Interference + Noise Ratio) of the current radio link
-        in dB.  CINR is a more accurate measure of radio link quality.  Has no
+        RSSI of the current radio link in dBm. This value indicates how strong the
+        raw received RF signal from the base station is, but does not indicate the
+        overall quality of the radio link. Has no meaning when the device is not
+        connected.
+    -->
+    <property name="Rssi" type="i" access="read"/>
+
+    <!--
+        Cinr:
+
+        CINR (Carrier to Interference + Noise Ratio) of the current radio link in
+        dB. CINR is a more accurate measure of radio link quality. Has no meaning
+        when the device is not connected.
+    -->
+    <property name="Cinr" type="i" access="read"/>
+
+    <!--
+        TxPower:
+
+        Average power of the last burst transmitted by the device, in units of 0.5
+        dBm. i.e. a TxPower of -11 represents an actual device TX power of -5.5
+        dBm. Has no meaning when the device is not connected.
+    -->
+    <property name="TxPower" type="i" access="read"/>
+
+    <!--
+        Bsid:
+
+        The ID of the serving base station as received from the network. Has no
         meaning when the device is not connected.
-      " />
-    </property>
+    -->
+    <property name="Bsid" type="s" access="read"/>
 
-    <property name="TxPower" type="i" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Average power of the last burst transmitted by the device, in units of
-        0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
-        -5.5 dBm.  Has no meaning when the device is not connected.
-      " />
-    </property>
+    <!--
+        ActiveNsp:
 
-    <property name="Bsid" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The ID of the serving base station as received from the network.  Has
-        no meaning when the device is not connected.
-      " />
-    </property>
-
-    <property name="ActiveNsp" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
         Object path of the NSP currently used by the WiMax device.
-      " />
-    </property>
+    -->
+    <property name="ActiveNsp" type="o" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values.
+
+        Emitted when the WiMax device's properties changed.
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values.
-            " />
-        </arg>
-        <annotation name="org.gtk.GDBus.DocString" value="
-            Emitted when the WiMax device's properties changed.
-        " />
-    </signal>
+        <arg name="properties" type="a{sv}"/>
+        </signal>
 
+    <!--
+        NspAdded:
+        @nsp: The object path of the newly found NSP.
+
+        Emitted when a new NSP is found by the device.
+    -->
     <signal name="NspAdded">
-        <arg name="nsp" type="o">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                The object path of the newly found NSP.
-            " />
-        </arg>
-        <annotation name="org.gtk.GDBus.DocString" value="
-            Emitted when a new NSP is found by the device.
-        " />
-    </signal>
+        <arg name="nsp" type="o"/>
+        </signal>
 
+    <!--
+        NspRemoved:
+        @nsp: The object path of the NSP that has disappeared.
+
+        Emitted when an NSP disappears from view of the device.
+    -->
     <signal name="NspRemoved">
-      <arg name="nsp" type="o">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                The object path of the NSP that has disappeared.
-            " />
-        </arg>
-        <annotation name="org.gtk.GDBus.DocString" value="
-            Emitted when an NSP disappears from view of the device.
-        " />
-    </signal>
+      <arg name="nsp" type="o"/>
+        </signal>
 
   </interface>
 </node>

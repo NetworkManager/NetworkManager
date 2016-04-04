@@ -1,67 +1,87 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.IP6Config">
-    <property name="Addresses" type="a(ayuay)" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-	Array of tuples of IPv6 address/prefix/gateway.
 
-	Deprecated: use AddressData and Gateway.
-      " />
-    </property>
-    <property name="AddressData" type="aa{sv}" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-	Array of IP address data objects. All addresses will include
-	&quot;address&quot; (an IP address string), and &quot;prefix&quot; (a uint). Some
-	addresses may include additional attributes.
-      " />
-    </property>
-    <property name="Gateway" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The gateway in use." />
-    </property>
-    <property name="Routes" type="a(ayuayu)" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-	Tuples of IPv6 route/prefix/next-hop/metric.
+    <!--
+        Addresses:
 
-	Deprecated: use RouteData
-      " />
-    </property>
-    <property name="RouteData" type="aa{sv}" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-	Array of IP route data objects. All routes will include &quot;dest&quot;
-	(an IP address string) and &quot;prefix&quot; (a uint). Some routes may
-	include &quot;next-hop&quot; (an IP address string), &quot;metric&quot; (a uint),
-	and additional attributes.
-      " />
-    </property>
+        Array of tuples of IPv6 address/prefix/gateway. Deprecated: use
+        AddressData and Gateway.
+    -->
+    <property name="Addresses" type="a(ayuay)" access="read"/>
+
+    <!--
+        AddressData:
+
+        Array of IP address data objects. All addresses will include "address" (an
+        IP address string), and "prefix" (a uint). Some addresses may include
+        additional attributes.
+    -->
+    <property name="AddressData" type="aa{sv}" access="read"/>
+
+    <!--
+        Gateway:
+
+        The gateway in use.
+    -->
+    <property name="Gateway" type="s" access="read"/>
+
+    <!--
+        Routes:
+
+        Tuples of IPv6 route/prefix/next-hop/metric. Deprecated: use RouteData
+    -->
+    <property name="Routes" type="a(ayuayu)" access="read"/>
+
+    <!--
+        RouteData:
+
+        Array of IP route data objects. All routes will include "dest" (an IP
+        address string) and "prefix" (a uint). Some routes may include "next-hop"
+        (an IP address string), "metric" (a uint), and additional attributes.
+    -->
+    <property name="RouteData" type="aa{sv}" access="read"/>
+
+    <!--
+        Nameservers:
+
+        The nameservers in use.
+    -->
     <property name="Nameservers" type="aay" access="read">
       <!-- gdbus-codegen assumes that "aay" means "array of non-UTF-8
 	   string&quot; and so would make this a char **.
       -->
       <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
-      <annotation name="org.gtk.GDBus.DocString" value="The nameservers in use." />
-    </property>
-    <property name="Domains" type="as" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="A list of domains this address belongs to." />
-    </property>
-    <property name="Searches" type="as" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="A list of dns searches." />
-    </property>
-    <property name="DnsOptions" type="as" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-	A list of DNS options that modify the behavior of the DNS
-	resolver. See resolv.conf(5) manual page for the list of
-	supported options.
-      " />
-    </property>
+      </property>
 
+    <!--
+        Domains:
+
+        A list of domains this address belongs to.
+    -->
+    <property name="Domains" type="as" access="read"/>
+
+    <!--
+        Searches:
+
+        A list of dns searches.
+    -->
+    <property name="Searches" type="as" access="read"/>
+
+    <!--
+        DnsOptions:
+
+        A list of DNS options that modify the behavior of the DNS resolver. See
+        resolv.conf(5) manual page for the list of supported options.
+    -->
+    <property name="DnsOptions" type="as" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-      <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-        <annotation name="org.gtk.GDBus.DocString" value="
-          A dictionary mapping property names to variant boxed values
-        " />
-      </arg>
+      <arg name="properties" type="a{sv}"/>
     </signal>
   </interface>
 </node>
-

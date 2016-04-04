@@ -1,38 +1,42 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Vlan">
 
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        HwAddress:
+
         Hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="HwAddress" type="s" access="read"/>
 
-    <property name="Carrier" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Indicates whether the physical carrier is found (e.g. whether a cable is plugged in or not).
-      " />
-    </property>
+    <!--
+        Carrier:
 
-    <property name="Parent" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+        Indicates whether the physical carrier is found (e.g. whether a cable is
+        plugged in or not).
+    -->
+    <property name="Carrier" type="b" access="read"/>
+
+    <!--
+        Parent:
+
         Object path of the parent device of this VLAN device.
-      " />
-    </property>
+    -->
+    <property name="Parent" type="o" access="read"/>
 
-    <property name="VlanId" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        VlanId:
+
         The VLAN ID of this VLAN interface.
-      " />
-    </property>
+    -->
+    <property name="VlanId" type="u" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+        <arg name="properties" type="a{sv}"/>
     </signal>
 
   </interface>
