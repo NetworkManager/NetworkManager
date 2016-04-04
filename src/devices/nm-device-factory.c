@@ -91,6 +91,8 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
 	const NMLinkType *link_types = NULL;
 	const char **setting_types = NULL;
 	int i;
+	NMDevice *device;
+	gboolean ignore = FALSE;
 
 	g_return_val_if_fail (factory, NULL);
 	g_return_val_if_fail (iface && *iface, NULL);
@@ -98,6 +100,8 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
 	g_return_val_if_fail (!plink || !connection, NULL);
 
 	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
+
+	NM_SET_OUT (out_ignore, FALSE);
 
 	if (plink) {
 		g_return_val_if_fail (strcmp (iface, plink->name) == 0, NULL);
@@ -137,7 +141,20 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
 		return NULL;
 	}
 
-	return interface->create_device (factory, iface, plink, connection, out_ignore);
+	device = interface->create_device (factory, iface, plink, connection, &ignore);
+	NM_SET_OUT (out_ignore, ignore);
+	if (!device) {
+		if (ignore) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+			             "Device factory %s ignores device %s",
+			             G_OBJECT_TYPE_NAME (factory), iface);
+		} else {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+			             "Device factory %s failed to create device %s",
+			             G_OBJECT_TYPE_NAME (factory), iface);
+		}
+	}
+	return device;
 }
 
 const char *
