@@ -776,16 +776,16 @@ class CmdSubmit(CmdBase):
         v = self._get_var('DISTROREQUIRES')
         if v is not None:
             return v
-        vt = self._get_var('DISTRO_TAG', False)
+        vf = self._get_var('DISTRO_FAMILY', False)
         vn = self._get_var('DISTRO_NAME', False)
-        if vt:
+        if vf:
             vn = None
         elif vn:
-            vt = None
+            vf = None
         if vn is not None:
             return '<distro_name op="=" value="%s"/>' % (vn)
         ret = '<distro_family op="=" value="%s"/>' % self._get_var('DISTRO_FAMILY')
-        if vt is not None:
+        if vf is None:
             ret = ret + '<distro_tag op="=" value="%s"/>' % self._get_var('DISTRO_TAG', True)
         return ret
 
