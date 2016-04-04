@@ -59,6 +59,7 @@
 typedef struct _NMPolicyPrivate NMPolicyPrivate;
 
 struct _NMPolicyPrivate {
+	NMPolicy *self;
 	NMManager *manager;
 	NMFirewallManager *firewall_manager;
 	GSList *pending_activation_checks;
@@ -1141,8 +1142,8 @@ device_state_changed (NMDevice *device,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
-	NMPolicy *self = (NMPolicy *) user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
 
@@ -1287,8 +1288,8 @@ device_ip4_config_changed (NMDevice *device,
                            NMIP4Config *old_config,
                            gpointer user_data)
 {
-	NMPolicy *self = user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 	const char *ip_iface = nm_device_get_ip_iface (device);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
@@ -1321,8 +1322,8 @@ device_ip6_config_changed (NMDevice *device,
                            NMIP6Config *old_config,
                            gpointer user_data)
 {
-	NMPolicy *self = user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 	const char *ip_iface = nm_device_get_ip_iface (device);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
@@ -1354,31 +1355,41 @@ device_autoconnect_changed (NMDevice *device,
                             GParamSpec *pspec,
                             gpointer user_data)
 {
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
+
 	if (nm_device_autoconnect_allowed (device))
-		schedule_activate_check ((NMPolicy *) user_data, device);
+		schedule_activate_check (self, device);
 }
 
 static void
 device_recheck_auto_activate (NMDevice *device, gpointer user_data)
 {
-	schedule_activate_check (NM_POLICY (user_data), device);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
+
+	schedule_activate_check (self, device);
 }
 
 static void
 devices_list_unregister (NMPolicy *self, NMDevice *device)
 {
-	g_signal_handlers_disconnect_by_data ((GObject *) device, self);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+
+	g_signal_handlers_disconnect_by_data ((GObject *) device, priv);
 }
 
 static void
 devices_list_register (NMPolicy *self, NMDevice *device)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+
 	/* Connect state-changed with _after, so that the handler is invoked after other handlers. */
-	g_signal_connect_after (device, NM_DEVICE_STATE_CHANGED,          (GCallback) device_state_changed, self);
-	g_signal_connect       (device, NM_DEVICE_IP4_CONFIG_CHANGED,     (GCallback) device_ip4_config_changed, self);
-	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip6_config_changed, self);
-	g_signal_connect       (device, "notify::" NM_DEVICE_AUTOCONNECT, (GCallback) device_autoconnect_changed, self);
-	g_signal_connect       (device, NM_DEVICE_RECHECK_AUTO_ACTIVATE,  (GCallback) device_recheck_auto_activate, self);
+	g_signal_connect_after (device, NM_DEVICE_STATE_CHANGED,          (GCallback) device_state_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_IP4_CONFIG_CHANGED,     (GCallback) device_ip4_config_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip6_config_changed, priv);
+	g_signal_connect       (device, "notify::" NM_DEVICE_AUTOCONNECT, (GCallback) device_autoconnect_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_RECHECK_AUTO_ACTIVATE,  (GCallback) device_recheck_auto_activate, priv);
 }
 
 static void
@@ -1814,6 +1825,7 @@ nm_policy_init (NMPolicy *self)
 	NMPolicyPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_POLICY, NMPolicyPrivate);
 
 	self->priv = priv;
+	priv->self = self;
 
 	priv->devices = g_hash_table_new (NULL, NULL);
 }
@@ -1950,6 +1962,8 @@ finalize (GObject *object)
 	g_hash_table_unref (priv->devices);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->finalize (object);
+
+	priv->self = NULL;
 }
 
 static void
