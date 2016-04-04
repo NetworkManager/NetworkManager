@@ -839,11 +839,6 @@ process_secondaries (NMPolicy *self,
 }
 
 static void
-global_state_changed (NMManager *manager, NMState state, gpointer user_data)
-{
-}
-
-static void
 hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	update_system_hostname ((NMPolicy *) user_data, NULL, NULL);
@@ -1850,7 +1845,6 @@ constructed (GObject *object)
 
 	priv->resolver = g_resolver_get_default ();
 
-	g_signal_connect (priv->manager, NM_MANAGER_STATE_CHANGED,                 (GCallback) global_state_changed, self);
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_HOSTNAME,           (GCallback) hostname_changed, self);
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_SLEEPING,           (GCallback) sleeping_changed, self);
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_NETWORKING_ENABLED, (GCallback) sleeping_changed, self);
