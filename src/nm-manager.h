@@ -57,11 +57,19 @@
 #define NM_MANAGER_SLEEPING "sleeping"
 #define NM_MANAGER_STATE_FILE "state-file"
 
+/* signals */
+#define NM_MANAGER_CHECK_PERMISSIONS         "check-permissions"
+#define NM_MANAGER_DEVICE_ADDED              "device-added"
+#define NM_MANAGER_DEVICE_REMOVED            "device-removed"
+#define NM_MANAGER_STATE_CHANGED             "state-changed"
+#define NM_MANAGER_USER_PERMISSIONS_CHANGED  "user-permissions-changed"
+
 /* Internal signals */
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
 #define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
 #define NM_MANAGER_CONFIGURE_QUIT            "configure-quit"
-#define NM_MANAGER_STATE_CHANGED             "state-changed"
+#define NM_MANAGER_INTERNAL_DEVICE_ADDED     "internal-device-added"
+#define NM_MANAGER_INTERNAL_DEVICE_REMOVED   "internal-device-removed"
 
 
 struct _NMManager {

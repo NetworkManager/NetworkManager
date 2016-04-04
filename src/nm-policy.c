@@ -1865,8 +1865,8 @@ constructed (GObject *object)
 	_connect_manager_signal (self, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
 	_connect_manager_signal (self, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
 	_connect_manager_signal (self, "notify::" NM_MANAGER_NETWORKING_ENABLED, sleeping_changed);
-	_connect_manager_signal (self, "internal-device-added", device_added);
-	_connect_manager_signal (self, "internal-device-removed", device_removed);
+	_connect_manager_signal (self, NM_MANAGER_INTERNAL_DEVICE_ADDED, device_added);
+	_connect_manager_signal (self, NM_MANAGER_INTERNAL_DEVICE_REMOVED, device_removed);
 	_connect_manager_signal (self, NM_MANAGER_ACTIVE_CONNECTION_ADDED, active_connection_added);
 	_connect_manager_signal (self, NM_MANAGER_ACTIVE_CONNECTION_REMOVED, active_connection_removed);
 
