@@ -88,7 +88,7 @@
 
         The current state and reason for changing to that state.
 
-        Returns: <link linkend="NMDeviceStateReasonStruct">NMDeviceStateReasonStruct</link>
+        Returns: A tuple of  <link linkend="NMDeviceState">NMDeviceState</link> and  <link linkend="NMDeviceStateReason">NMDeviceStateReason</link>.
     -->
     <property name="StateReason" type="(uu)" access="read"/>
 
