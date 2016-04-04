@@ -36,7 +36,7 @@ yum install \
     wireless-tools-devel \
     polkit-devel \
     libpsl-devel \
-    libsoup-devel \
+    libcurl-devel \
     readline-devel \
     teamd-devel \
     rpm-build \

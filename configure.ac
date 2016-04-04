@@ -978,28 +978,13 @@ else
 fi
 AM_CONDITIONAL(WITH_LIBPSL, test "$with_libpsl" != "no")
 
-PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.40], [have_libsoup=yes],[have_libsoup=no])
-AC_ARG_WITH(libsoup, AS_HELP_STRING([--with-libsoup=yes|no], [Link against libsoup]), [], [with_libsoup=${have_libsoup}])
-if test "$with_libsoup" != "no"; then
-	if test "$have_libsoup" != "yes"; then
-		AC_MSG_ERROR(libsoup library not found)
-	fi
-	with_libsoup='yes'
-	AC_DEFINE(WITH_LIBSOUP, 1, [Define if you have libsoup])
-else
-	AC_DEFINE(WITH_LIBSOUP, 0, [Define if you have libsoup])
-fi
-AM_CONDITIONAL(WITH_LIBSOUP, test "$with_libsoup" != "no")
-LIBSOUP_CFLAGS="$LIBSOUP_CFLAGS -DSOUP_VERSION_MIN_REQUIRED=SOUP_VERSION_2_40 -DSOUP_VERSION_MAX_ALLOWED=SOUP_VERSION_2_40"
-
 AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
-                     [enable_concheck=${enableval}], [enable_concheck=${with_libsoup}])
+                     [enable_concheck=${enableval}], [enable_concheck=${with_libcurl}])
 if (test "${enable_concheck}" = "yes"); then
-	if test x"$with_libsoup" = x"no"; then
-		AC_MSG_ERROR(Connectivity checking requires libsoup)
-	fi
+	PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0])
 	AC_DEFINE(WITH_CONCHECK, 1, [Define if you want connectivity checking support])
 else
+	enable_concheck=no
 	AC_DEFINE(WITH_CONCHECK, 0, [Define if you want connectivity checking support])
 fi
 AM_CONDITIONAL(WITH_CONCHECK, test "${enable_concheck}" = "yes")
