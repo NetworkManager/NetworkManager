@@ -63,7 +63,6 @@ struct _NMPolicyPrivate {
 	NMFirewallManager *firewall_manager;
 	GSList *pending_activation_checks;
 	GSList *manager_ids;
-	GSList *settings_ids;
 
 	GHashTable *devices;
 
@@ -1826,16 +1825,6 @@ _connect_manager_signal (NMPolicy *self, const char *name, gpointer callback)
 }
 
 static void
-_connect_settings_signal (NMPolicy *self, const char *name, gpointer callback)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gulong id;
-
-	id = g_signal_connect (priv->settings, name, callback, self);
-	priv->settings_ids = g_slist_prepend (priv->settings_ids, (gpointer) id);
-}
-
-static void
 nm_policy_init (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_POLICY, NMPolicyPrivate);
@@ -1881,13 +1870,12 @@ constructed (GObject *object)
 	_connect_manager_signal (self, NM_MANAGER_ACTIVE_CONNECTION_ADDED, active_connection_added);
 	_connect_manager_signal (self, NM_MANAGER_ACTIVE_CONNECTION_REMOVED, active_connection_removed);
 
-	_connect_settings_signal (self, NM_SETTINGS_SIGNAL_CONNECTION_ADDED, connection_added);
-	_connect_settings_signal (self, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, connection_updated);
-	_connect_settings_signal (self, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER, connection_updated_by_user);
-	_connect_settings_signal (self, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, connection_removed);
-	_connect_settings_signal (self, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
-	                          connection_visibility_changed);
-	_connect_settings_signal (self, NM_SETTINGS_SIGNAL_AGENT_REGISTERED, secret_agent_registered);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,    (GCallback) connection_updated_by_user, self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,            (GCallback) connection_removed, self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED, (GCallback) connection_visibility_changed, self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, self);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->constructed (object);
 }
@@ -1939,10 +1927,6 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (priv->manager, (gulong) iter->data);
 	g_clear_pointer (&priv->manager_ids, g_slist_free);
 
-	for (iter = priv->settings_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (priv->settings, (gulong) iter->data);
-	g_clear_pointer (&priv->settings_ids, g_slist_free);
-
 	g_hash_table_iter_init (&h_iter, priv->devices);
 	if (g_hash_table_iter_next (&h_iter, (gpointer *) &device, NULL)) {
 		g_hash_table_iter_remove (&h_iter);
@@ -1961,7 +1945,10 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->orig_hostname, g_free);
 	g_clear_pointer (&priv->cur_hostname, g_free);
 
-	g_clear_object (&priv->settings);
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_data (priv->settings, self);
+		g_clear_object (&priv->settings);
+	}
 
 	nm_assert (NM_IS_MANAGER (priv->manager));
 
