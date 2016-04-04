@@ -1594,7 +1594,8 @@ connection_added (NMSettings *settings,
                   NMSettingsConnection *connection,
                   gpointer user_data)
 {
-	NMPolicy *self = NM_POLICY (user_data);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	schedule_activate_all (self);
 }
@@ -1650,7 +1651,10 @@ connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
-	schedule_activate_all ((NMPolicy *) user_data);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
+
+	schedule_activate_all (self);
 }
 
 static void
@@ -1658,8 +1662,7 @@ connection_updated_by_user (NMSettings *settings,
                             NMSettingsConnection *connection,
                             gpointer user_data)
 {
-	NMPolicy *self = (NMPolicy *) user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
 	const GSList *iter;
 	NMDevice *device = NULL;
 
@@ -1712,8 +1715,7 @@ connection_removed (NMSettings *settings,
                     NMSettingsConnection *connection,
                     gpointer user_data)
 {
-	NMPolicy *self = user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
 
 	_deactivate_if_active (priv->manager, connection);
 }
@@ -1723,8 +1725,8 @@ connection_visibility_changed (NMSettings *settings,
                                NMSettingsConnection *connection,
                                gpointer user_data)
 {
-	NMPolicy *self = user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	if (nm_settings_connection_is_visible (connection))
 		schedule_activate_all (self);
@@ -1737,7 +1739,8 @@ secret_agent_registered (NMSettings *settings,
                          NMSecretAgent *agent,
                          gpointer user_data)
 {
-	NMPolicy *self = NM_POLICY (user_data);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	/* The registered secret agent may provide some missing secrets. Thus we
 	 * reset retries count here and schedule activation, so that the
@@ -1871,12 +1874,12 @@ constructed (GObject *object)
 	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_ADDED,       (GCallback) active_connection_added, priv);
 	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_REMOVED,     (GCallback) active_connection_removed, priv);
 
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,    (GCallback) connection_updated_by_user, self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,            (GCallback) connection_removed, self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED, (GCallback) connection_visibility_changed, self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,    (GCallback) connection_updated_by_user, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,            (GCallback) connection_removed, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED, (GCallback) connection_visibility_changed, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, priv);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->constructed (object);
 }
@@ -1943,7 +1946,7 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->cur_hostname, g_free);
 
 	if (priv->settings) {
-		g_signal_handlers_disconnect_by_data (priv->settings, self);
+		g_signal_handlers_disconnect_by_data (priv->settings, priv);
 		g_clear_object (&priv->settings);
 
 		/* we don't clear priv->manager as we don't own a reference to it,
