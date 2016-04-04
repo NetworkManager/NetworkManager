@@ -1378,6 +1378,18 @@ nm_platform_link_get_master (NMPlatform *self, int slave)
 
 /*****************************************************************************/
 
+gboolean
+nm_platform_link_can_assume (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	if (klass->link_can_assume)
+		return klass->link_can_assume (self, ifindex);
+	g_return_val_if_reached (FALSE);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_link_get_lnk:
  * @self: the platform instance

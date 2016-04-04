@@ -5128,6 +5128,49 @@ wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean ru
 
 /******************************************************************/
 
+static gboolean
+link_can_assume (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMPCacheId cache_id;
+	const NMPlatformObject *const *objs;
+	guint i, len;
+	const NMPObject *link;
+
+	if (ifindex <= 0)
+		return FALSE;
+
+	link = cache_lookup_link (platform, ifindex);
+	if (!link)
+		return FALSE;
+
+	if (!NM_FLAGS_HAS (link->link.n_ifi_flags, IFF_UP))
+		return FALSE;
+
+	if (link->link.master > 0)
+		return TRUE;
+
+	if (nmp_cache_lookup_multi (priv->cache,
+	                            nmp_cache_id_init_addrroute_visible_by_ifindex (&cache_id, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex),
+	                            NULL))
+		return TRUE;
+
+	objs = nmp_cache_lookup_multi (priv->cache,
+	                               nmp_cache_id_init_addrroute_visible_by_ifindex (&cache_id, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex),
+	                               &len);
+	if (objs) {
+		for (i = 0; i < len; i++) {
+			const NMPlatformIP6Address *a = (NMPlatformIP6Address *) objs[i];
+
+			if (!IN6_IS_ADDR_LINKLOCAL (&a->address))
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/******************************************************************/
+
 static guint32
 mesh_get_channel (NMPlatform *platform, int ifindex)
 {
@@ -6217,6 +6260,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
+
+	platform_class->link_can_assume = link_can_assume;
 
 	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
