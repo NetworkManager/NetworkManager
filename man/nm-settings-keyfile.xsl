@@ -14,6 +14,10 @@
 
   <xsl:template match="nm-keyfile-docs">
     <refentry id="nm-settings-keyfile">
+      <refentryinfo>
+        <title>nm-settings-keyfile</title>
+        <author>NetworkManager developers</author>
+      </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings-keyfile</refentrytitle>
         <manvolnum>5</manvolnum>
@@ -25,8 +29,7 @@
         <refname>nm-settings-keyfile</refname>
         <refpurpose>Description of <emphasis>keyfile</emphasis> settings plugin</refpurpose>
       </refnamediv>
-      <refsect1>
-        <title>DESCRIPTION</title>
+      <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on the concept of connection profiles that contain
           network configuration (see <citerefentry><refentrytitle>nm-settings</refentrytitle>
@@ -46,8 +49,7 @@
           in plaintext inside the file.
         </para>
       </refsect1>
-      <refsect1>
-        <title>File Format</title>
+      <refsect1 id='file_format'><title>File Format</title>
         <para>
           The <emphasis>keyfile</emphasis> config format is a simple .ini-style
           format. It consists of sections (groups) of key-value pairs. Each section
@@ -185,8 +187,7 @@ id=4
         </formalpara>
       </refsect1>
 
-      <refsect1>
-        <title>DETAILS</title>
+      <refsect1 id='details'><title>Details</title>
         <para>
           <emphasis>keyfile</emphasis> plugin variables for the majority of NetworkManager
           properties have one-to-one mapping. It means a NetworkManager property is stored
@@ -240,22 +241,17 @@ id=4
         </refsect2>
       </refsect1>
 
-      <refsect1>
-        <title>AUTHOR</title>
-        <para>
-          <author>
-            <firstname>NetworkManager developers</firstname>
-          </author>
-        </para>
-      </refsect1>
-      <refsect1>
-        <title>FILES</title>
+      <refsect1 id='files'><title>Files</title>
         <para><filename>/etc/NetworkManager/system-connections/*</filename></para>
       </refsect1>
-      <refsect1>
-        <title>SEE ALSO</title>
-        <para>https://developer.gnome.org/NetworkManager/unstable/ref-settings.html</para>
-        <para>nm-settings(5), nm-settings-ifcfg-rh(5), NetworkManager(8), NetworkManager.conf(5), nmcli(1), nmcli-examples(5)</para>
+
+      <refsect1 id='see_also'><title>See Also</title>
+        <para><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nm-settings-ifcfg-rh</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>5</manvolnum></citerefentry></para>
       </refsect1>
     </refentry>
   </xsl:template>

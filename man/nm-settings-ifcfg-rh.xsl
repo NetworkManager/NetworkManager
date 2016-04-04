@@ -19,6 +19,10 @@
   <xsl:template match="nm-ifcfg-rh-docs">
     <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
     <refentry id="nm-settings-ifcfg-rh">
+      <refentryinfo>
+        <title>nm-settings-ifcfg-rh</title>
+        <author>NetworkManager developers</author>
+      </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings-ifcfg-rh</refentrytitle>
         <manvolnum>5</manvolnum>
@@ -30,8 +34,7 @@
         <refname>nm-settings-ifcfg-rh</refname>
         <refpurpose>Description of <emphasis>ifcfg-rh</emphasis> settings plugin</refpurpose>
       </refnamediv>
-      <refsect1>
-        <title>DESCRIPTION</title>
+      <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on the concept of connection profiles that contain
           network configuration (see <citerefentry><refentrytitle>nm-settings</refentrytitle>
@@ -56,8 +59,7 @@
           (initscripts).
         </para>
       </refsect1>
-      <refsect1>
-        <title>File Format</title>
+      <refsect1 id='file_format'><title>File Format</title>
         <para>
           The <emphasis>ifcfg-rh</emphasis> config format is a simple text file containing
           VARIABLE="value" lines. The format is described in <filename>sysconfig.txt</filename>
@@ -203,8 +205,7 @@ DEVICETYPE=TeamPort
         </formalpara>
       </refsect1>
 
-      <refsect1>
-        <title>Differences against initscripts</title>
+      <refsect1 id='differences_against_initscripts'><title>Differences against initscripts</title>
         <para>
           The main differences of NetworkManager ifcfg-rh plugin and traditional
           initscripts are:
@@ -268,8 +269,7 @@ DEVICETYPE=TeamPort
         </para>
       </refsect1>
 
-      <refsect1>
-      <title>DETAILS</title>
+      <refsect1 id='details'><title>Details</title>
         <para>
           <emphasis>ifcfg-rh</emphasis> plugin variables marked with <emphasis>(+)</emphasis>
           are NetworkManager specific extensions not understood by traditional initscripts.
@@ -303,26 +303,20 @@ DEVICETYPE=TeamPort
         </refsect2>
       </refsect1>
 
-      <refsect1>
-        <title>AUTHOR</title>
-        <para>
-          <author>
-            <firstname>NetworkManager developers</firstname>
-          </author>
-        </para>
-      </refsect1>
-      <refsect1>
-        <title>FILES</title>
+      <refsect1 id='files'><title>Files</title>
         <para><filename>/etc/sysconfig/network-scripts/ifcfg-*</filename></para>
         <para><filename>/etc/sysconfig/network-scripts/keys-*</filename></para>
         <para><filename>/etc/sysconfig/network-scripts/route-*</filename></para>
         <para><filename>/etc/sysconfig/network-scripts/route6-*</filename></para>
         <para><filename>/usr/share/doc/initscripts/sysconfig.txt</filename></para>
       </refsect1>
-      <refsect1>
-        <title>SEE ALSO</title>
-        <para>https://developer.gnome.org/NetworkManager/unstable/ref-settings.html</para>
-        <para>nm-settings(5), nm-settings-keyfile(5), NetworkManager(8), NetworkManager.conf(5), nmcli(1), nmcli-examples(5)</para>
+      <refsect1 id='see_also'><title>See Also</title>
+        <para><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>5</manvolnum></citerefentry></para>
       </refsect1>
     </refentry>
   </xsl:template>
