@@ -158,6 +158,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		/* Device route */
 
 		r_plen = ndp_msg_opt_prefix_len (msg, offset);
+		if (r_plen == 0 || r_plen > 128)
+			continue;
 		nm_utils_ip6_address_clear_host_address (&r_network, ndp_msg_opt_prefix (msg, offset), r_plen);
 
 		if (ndp_msg_opt_prefix_flag_on_link (msg, offset)) {
@@ -196,6 +198,9 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		    .lifetime = ndp_msg_opt_route_lifetime (msg, offset),
 		    .preference = translate_preference (ndp_msg_opt_route_preference (msg, offset)),
 		};
+
+		if (route.plen == 0 || route.plen > 128)
+			continue;
 
 		/* Routers through this particular gateway */
 		nm_utils_ip6_address_clear_host_address (&route.network, ndp_msg_opt_route_prefix (msg, offset), route.plen);

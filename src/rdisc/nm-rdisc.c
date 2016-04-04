@@ -212,6 +212,9 @@ nm_rdisc_add_route (NMRDisc *rdisc, const NMRDiscRoute *new)
 {
 	int i, insert_idx = -1;
 
+	if (new->plen == 0 || new->plen > 128)
+		return FALSE;
+
 	for (i = 0; i < rdisc->routes->len; i++) {
 		NMRDiscRoute *item = &g_array_index (rdisc->routes, NMRDiscRoute, i);
 
