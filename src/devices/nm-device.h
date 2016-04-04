@@ -86,12 +86,12 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_DEVICE			(nm_device_get_type ())
-#define NM_DEVICE(obj)			(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
-#define NM_DEVICE_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE, NMDeviceClass))
-#define NM_IS_DEVICE(obj)		(G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE))
-#define NM_IS_DEVICE_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE))
-#define NM_DEVICE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE, NMDeviceClass))
+#define NM_TYPE_DEVICE            (nm_device_get_type ())
+#define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
+#define NM_DEVICE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE, NMDeviceClass))
+#define NM_IS_DEVICE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE))
+#define NM_IS_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE))
+#define NM_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE, NMDeviceClass))
 
 typedef enum NMActStageReturn NMActStageReturn;
 
@@ -201,7 +201,7 @@ typedef struct {
 
 	NMDeviceCapabilities (* get_generic_capabilities) (NMDevice *self);
 
-	gboolean	(* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
+	gboolean    (* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
 
 	gboolean    (* get_enabled) (NMDevice *self);
 
@@ -239,19 +239,19 @@ typedef struct {
 	                                             const GSList *existing_connections,
 	                                             GError **error);
 
-	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self,
+	NMActStageReturn    (* act_stage1_prepare)  (NMDevice *self,
 	                                             NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage2_config)	(NMDevice *self,
+	NMActStageReturn    (* act_stage2_config)   (NMDevice *self,
 	                                             NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage3_ip4_config_start) (NMDevice *self,
+	NMActStageReturn    (* act_stage3_ip4_config_start) (NMDevice *self,
 	                                                     NMIP4Config **out_config,
 	                                                     NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage3_ip6_config_start) (NMDevice *self,
+	NMActStageReturn    (* act_stage3_ip6_config_start) (NMDevice *self,
 	                                                     NMIP6Config **out_config,
 	                                                     NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage4_ip4_config_timeout)	(NMDevice *self,
+	NMActStageReturn    (* act_stage4_ip4_config_timeout)   (NMDevice *self,
 	                                                         NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage4_ip6_config_timeout)	(NMDevice *self,
+	NMActStageReturn    (* act_stage4_ip6_config_timeout)   (NMDevice *self,
 	                                                         NMDeviceStateReason *reason);
 
 	/* Called right before IP config is set; use for setting MTU etc */
@@ -268,7 +268,7 @@ typedef struct {
 	                                             GError **error);
 
 	/* Sync deactivating (in the DISCONNECTED phase) */
-	void			(* deactivate)			(NMDevice *self);
+	void            (* deactivate) (NMDevice *self);
 
 	const char *(*get_type_description) (NMDevice *self);
 
@@ -326,38 +326,38 @@ typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
 
 GType nm_device_get_type (void);
 
-const char *	nm_device_get_udi		(NMDevice *dev);
-const char *	nm_device_get_iface		(NMDevice *dev);
-int             nm_device_get_ifindex	(NMDevice *dev);
-gboolean        nm_device_is_software   (NMDevice *dev);
-gboolean        nm_device_is_real       (NMDevice *dev);
-const char *	nm_device_get_ip_iface	(NMDevice *dev);
-int             nm_device_get_ip_ifindex(NMDevice *dev);
-const char *	nm_device_get_driver	(NMDevice *dev);
-const char *	nm_device_get_driver_version	(NMDevice *dev);
-const char *	nm_device_get_type_desc (NMDevice *dev);
-const char *	nm_device_get_type_description (NMDevice *dev);
-NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
-NMLinkType	nm_device_get_link_type	(NMDevice *dev);
-NMMetered       nm_device_get_metered	(NMDevice *dev);
+const char *    nm_device_get_udi               (NMDevice *dev);
+const char *    nm_device_get_iface             (NMDevice *dev);
+int             nm_device_get_ifindex           (NMDevice *dev);
+gboolean        nm_device_is_software           (NMDevice *dev);
+gboolean        nm_device_is_real               (NMDevice *dev);
+const char *    nm_device_get_ip_iface          (NMDevice *dev);
+int             nm_device_get_ip_ifindex        (NMDevice *dev);
+const char *    nm_device_get_driver            (NMDevice *dev);
+const char *    nm_device_get_driver_version    (NMDevice *dev);
+const char *    nm_device_get_type_desc         (NMDevice *dev);
+const char *    nm_device_get_type_description  (NMDevice *dev);
+NMDeviceType    nm_device_get_device_type       (NMDevice *dev);
+NMLinkType      nm_device_get_link_type         (NMDevice *dev);
+NMMetered       nm_device_get_metered           (NMDevice *dev);
 
-int			nm_device_get_priority (NMDevice *dev);
-guint32     nm_device_get_ip4_route_metric (NMDevice *dev);
-guint32     nm_device_get_ip6_route_metric (NMDevice *dev);
+int             nm_device_get_priority          (NMDevice *dev);
+guint32         nm_device_get_ip4_route_metric  (NMDevice *dev);
+guint32         nm_device_get_ip6_route_metric  (NMDevice *dev);
 
-const char *    nm_device_get_hw_address           (NMDevice *dev);
+const char *    nm_device_get_hw_address        (NMDevice *dev);
 const char *    nm_device_get_permanent_hw_address (NMDevice *dev);
-const char *    nm_device_get_initial_hw_address   (NMDevice *dev);
+const char *    nm_device_get_initial_hw_address (NMDevice *dev);
 
-NMDhcp4Config * nm_device_get_dhcp4_config (NMDevice *dev);
-NMDhcp6Config * nm_device_get_dhcp6_config (NMDevice *dev);
+NMDhcp4Config * nm_device_get_dhcp4_config      (NMDevice *dev);
+NMDhcp6Config * nm_device_get_dhcp6_config      (NMDevice *dev);
 
-NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
+NMIP4Config *   nm_device_get_ip4_config        (NMDevice *dev);
 void            nm_device_replace_vpn4_config   (NMDevice *dev,
                                                  NMIP4Config *old,
                                                  NMIP4Config *config);
 
-NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
+NMIP6Config *   nm_device_get_ip6_config        (NMDevice *dev);
 void            nm_device_replace_vpn6_config   (NMDevice *dev,
                                                  NMIP6Config *old,
                                                  NMIP6Config *config);
@@ -365,22 +365,22 @@ void            nm_device_replace_vpn6_config   (NMDevice *dev,
 void            nm_device_capture_initial_config (NMDevice *dev);
 
 /* Master */
-gboolean        nm_device_is_master         (NMDevice *dev);
+gboolean        nm_device_is_master             (NMDevice *dev);
 
 /* Slave */
-NMDevice *      nm_device_get_master        (NMDevice *dev);
+NMDevice *      nm_device_get_master            (NMDevice *dev);
 
-NMActRequest *          nm_device_get_act_request               (NMDevice *dev);
-NMSettingsConnection *  nm_device_get_settings_connection       (NMDevice *dev);
-NMConnection *          nm_device_get_applied_connection        (NMDevice *dev);
-gboolean                nm_device_has_unmodified_applied_connection (NMDevice *self,
-                                                                     NMSettingCompareFlags compare_flags);
-NMSetting *             nm_device_get_applied_setting           (NMDevice *dev, GType setting_type);
+NMActRequest *  nm_device_get_act_request       (NMDevice *dev);
+NMSettingsConnection *nm_device_get_settings_connection (NMDevice *dev);
+NMConnection *  nm_device_get_applied_connection (NMDevice *dev);
+gboolean        nm_device_has_unmodified_applied_connection (NMDevice *self,
+                                                             NMSettingCompareFlags compare_flags);
+NMSetting *     nm_device_get_applied_setting   (NMDevice *dev, GType setting_type);
 
-void            nm_device_removed        (NMDevice *dev);
+void            nm_device_removed               (NMDevice *dev);
 
-gboolean        nm_device_is_available   (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
-gboolean        nm_device_has_carrier    (NMDevice *dev);
+gboolean        nm_device_is_available          (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
+gboolean        nm_device_has_carrier           (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *self, NMDevice *master);
 
@@ -408,8 +408,8 @@ gboolean nm_device_can_assume_active_connection (NMDevice *device);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 
-gboolean		nm_device_is_activating		(NMDevice *dev);
-gboolean		nm_device_autoconnect_allowed	(NMDevice *self);
+gboolean nm_device_is_activating (NMDevice *dev);
+gboolean nm_device_autoconnect_allowed (NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);
 
@@ -568,4 +568,4 @@ void nm_device_update_dynamic_ip_setup (NMDevice *self);
 
 G_END_DECLS
 
-#endif	/* NM_DEVICE_H */
+#endif /* NM_DEVICE_H */
