@@ -109,13 +109,13 @@
 
         The state of the plugin.
 
-        Returns: #NMVpnServiceState
+        Returns: <link linkend="NMVpnServiceState">NMVpnServiceState</link>
     -->
     <property name="State" type="u" access="read"/>
 
     <!--
         StateChanged:
-        @state: (#NMVpnServiceState) The new state of the plugin.
+        @state: (<link linkend="NMVpnServiceState">NMVpnServiceState</link>) The new state of the plugin.
 
         Emitted when the plugin state changes.
     -->
@@ -191,7 +191,7 @@
 
     <!--
         Failure:
-        @reason: (#NMVpnPluginFailure) Reason code for the failure.
+        @reason: (<link linkend="NMVpnPluginFailure">NMVpnPluginFailure</link>) Reason code for the failure.
 
         Emitted when a failure in the VPN plugin occurs.
     -->

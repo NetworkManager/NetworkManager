@@ -7,7 +7,7 @@
 
         Flags describing the capabilities of the access point.
 
-        Returns: #NM80211ApFlags
+        Returns: <link linkend="NM80211ApFlags">NM80211ApFlags</link>
     -->
     <property name="Flags" type="u" access="read"/>
 
@@ -17,7 +17,7 @@
         Flags describing the access point's capabilities according to WPA (Wifi
         Protected Access).
 
-        Returns: #NM80211ApSecurityFlags
+        Returns: <link linkend="NM80211ApSecurityFlags">NM80211ApSecurityFlags</link>
     -->
     <property name="WpaFlags" type="u" access="read"/>
 
@@ -27,7 +27,7 @@
         Flags describing the access point's capabilities according to the RSN
         (Robust Secure Network) protocol.
 
-        Returns: #NM80211ApSecurityFlags
+        Returns: <link linkend="NM80211ApSecurityFlags">NM80211ApSecurityFlags</link>
     -->
     <property name="RsnFlags" type="u" access="read"/>
 
@@ -62,7 +62,7 @@
 
         Describes the operating mode of the access point.
 
-        Returns: #NM80211Mode
+        Returns: <link linkend="NM80211Mode">NM80211Mode</link>
     -->
     <property name="Mode" type="u" access="read"/>
 

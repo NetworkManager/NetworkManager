@@ -18,7 +18,7 @@
         firmware reload or other reinitialization to switch between eg CDMA/EVDO
         and GSM/UMTS.
 
-        Returns: #NMDeviceModemCapabilities
+        Returns: <link linkend="NMDeviceModemCapabilities">NMDeviceModemCapabilities</link>
     -->
     <property name="ModemCapabilities" type="u" access="read"/>
 
@@ -28,7 +28,7 @@
         The generic family of access technologies the modem currently supports
         without a firmware reload or reinitialization.
 
-        Returns: #NMDeviceModemCapabilities
+        Returns: <link linkend="NMDeviceModemCapabilities">NMDeviceModemCapabilities</link>
     -->
     <property name="CurrentCapabilities" type="u" access="read"/>
 

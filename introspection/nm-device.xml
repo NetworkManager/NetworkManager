@@ -62,7 +62,7 @@
 
         Flags describing the capabilities of the device.
 
-        Returns: #NMDeviceCapabilities
+        Returns: <link linkend="NMDeviceCapabilities">NMDeviceCapabilities</link>
     -->
     <property name="Capabilities" type="u" access="read"/>
 
@@ -79,7 +79,7 @@
 
         The current state of the device.
 
-        Returns: #NMDeviceState
+        Returns: <link linkend="NMDeviceState">NMDeviceState</link>
     -->
     <property name="State" type="u" access="read"/>
 
@@ -88,7 +88,7 @@
 
         The current state and reason for changing to that state.
 
-        Returns: #NMDeviceStateReasonStruct
+        Returns: <link linkend="NMDeviceStateReasonStruct">NMDeviceStateReasonStruct</link>
     -->
     <property name="StateReason" type="(uu)" access="read"/>
 
@@ -180,7 +180,7 @@
 
         The general type of the network device; ie Ethernet, WiFi, etc.
 
-        Returns: #NMDeviceType
+        Returns: <link linkend="NMDeviceType">NMDeviceType</link>
     -->
     <property name="DeviceType" type="u" access="read"/>
 
@@ -215,7 +215,7 @@
         Whether the amount of traffic flowing through the device is subject to
         limitations, for example set by service providers.
 
-        Returns: #NMMetered
+        Returns: <link linkend="NMMetered">NMMetered</link>
     -->
     <property name="Metered" type="u" access="read"/>
 
@@ -308,9 +308,9 @@
 
     <!--
         StateChanged:
-        @new_state: (#NMDeviceState) The new state of the device.
-        @old_state: (#NMDeviceState) The previous state of the device.
-        @reason: (#NMDeviceStateReason) A reason for the state transition.
+        @new_state: (<link linkend="NMDeviceState">NMDeviceState</link>) The new state of the device.
+        @old_state: (<link linkend="NMDeviceState">NMDeviceState</link>) The previous state of the device.
+        @reason: (<link linkend="NMDeviceStateReason">NMDeviceStateReason</link>) A reason for the state transition.
     -->
     <signal name="StateChanged">
       <arg name="new_state" type="u"/>

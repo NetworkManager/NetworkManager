@@ -158,7 +158,7 @@
 
     <!--
         CheckConnectivity:
-        @connectivity: (#NMConnectivityState) The current connectivity state.
+        @connectivity: (<link linkend="NMConnectivityState">NMConnectivityState</link>) The current connectivity state.
 
         Re-check the network connectivity state.
     -->
@@ -168,7 +168,7 @@
 
     <!--
         state:
-        @state: #NMState
+        @state: <link linkend="NMState">NMState</link>
 
         The overall networking state as determined by the NetworkManager daemon,
         based on the state of network devices under it's management.
@@ -281,7 +281,7 @@
         Indicates whether the connectivity is metered. This is equivalent to the
         metered property of the device associated with the primary connection.
 
-        Returns: #NMMetered
+        Returns: <link linkend="NMMetered">NMMetered</link>
     -->
     <property name="Metered" type="u" access="read"/>
 
@@ -315,13 +315,13 @@
 
         The overall state of the NetworkManager daemon.
 
-        Returns: #NMState
+        Returns: <link linkend="NMState">NMState</link>
     -->
     <property name="State" type="u" access="read"/>
 
     <!--
         StateChanged:
-        @state: (#NMState) The new state of NetworkManager.
+        @state: (<link linkend="NMState">NMState</link>) The new state of NetworkManager.
 
         NetworkManager's state changed.
     -->
@@ -334,7 +334,7 @@
 
         The network connectivity state.
 
-        Returns: #NMConnectivityState
+        Returns: <link linkend="NMConnectivityState">NMConnectivityState</link>
     -->
     <property name="Connectivity" type="u" access="read"/>
 

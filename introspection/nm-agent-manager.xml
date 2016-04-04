@@ -16,7 +16,7 @@
     <!--
         RegisterWithCapabilities:
         @identifier: See the Register() method's identifier argument.
-        @capabilities: (#NMSecretAgentCapabilities) Indicates various agent capabilities to NetworkManager.
+        @capabilities: (<link linkend="NMSecretAgentCapabilities">NMSecretAgentCapabilities</link>) Indicates various agent capabilities to NetworkManager.
 
         Like Register() but indicates agent capabilities to NetworkManager.
     -->

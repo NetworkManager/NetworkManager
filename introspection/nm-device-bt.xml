@@ -21,7 +21,7 @@
 
         Bluetooth capabilities of the device (either DUN or NAP).
 
-        Returns: #NMBluetoothCapabilities
+        Returns: <link linkend="NMBluetoothCapabilities">NMBluetoothCapabilities</link>
     -->
     <property name="BtCapabilities" type="u" access="read"/>
 

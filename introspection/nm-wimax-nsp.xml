@@ -21,7 +21,7 @@
 
         The network type of the NSP.
 
-        Returns: #NMWimaxNspNetworkType
+        Returns: <link linkend="NMWimaxNspNetworkType">NMWimaxNspNetworkType</link>
     -->
     <property name="NetworkType" type="u" access="read"/>
 

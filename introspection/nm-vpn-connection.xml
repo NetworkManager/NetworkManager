@@ -22,7 +22,7 @@
 
         The VPN-specific state of the connection.
 
-        Returns: #NMVpnConnectionState
+        Returns: <link linkend="NMVpnConnectionState">NMVpnConnectionState</link>
     -->
     <property name="VpnState" type="u" access="read"/>
 
@@ -35,8 +35,8 @@
 
     <!--
         VpnStateChanged:
-        @state: (#NMVpnConnectionState) The new state of the VPN connection.
-        @reason: (#NMVpnConnectionStateReason) Reason code describing the change to the new state.
+        @state: (<link linkend="NMVpnConnectionState">NMVpnConnectionState</link>) The new state of the VPN connection.
+        @reason: (<link linkend="NMVpnConnectionStateReason">NMVpnConnectionStateReason</link>) Reason code describing the change to the new state.
 
         Emitted when the state of the VPN connection has changed.
     -->

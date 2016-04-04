@@ -75,7 +75,7 @@
 
         The state of this active connection.
 
-        Returns: #NMActiveConnectionState
+        Returns: <link linkend="NMActiveConnectionState">NMActiveConnectionState</link>
     -->
     <property name="State" type="u" access="read"/>
 

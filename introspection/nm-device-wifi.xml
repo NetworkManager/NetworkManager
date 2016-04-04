@@ -56,7 +56,7 @@
 
         The operating mode of the wireless device.
 
-        Returns: #NM80211Mode
+        Returns: <link linkend="NM80211Mode">NM80211Mode</link>
     -->
     <property name="Mode" type="u" access="read"/>
 
@@ -87,7 +87,7 @@
 
         The capabilities of the wireless device.
 
-        Returns: #NMDeviceWifiCapabilities
+        Returns: <link linkend="NMDeviceWifiCapabilities">NMDeviceWifiCapabilities</link>
     -->
     <property name="WirelessCapabilities" type="u" access="read"/>
 
