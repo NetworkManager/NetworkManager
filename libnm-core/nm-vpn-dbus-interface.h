@@ -78,8 +78,6 @@
  * @NM_VPN_SERVICE_STATE_STOPPED: The plugin has disconnected from the VPN server.
  *
  * VPN daemon states
- *
- * (Corresponds to the NM_VPN_SERVICE_STATE type in nm-vpn-connection.xml.)
  */
 typedef enum {
 	NM_VPN_SERVICE_STATE_UNKNOWN = 0,
@@ -108,8 +106,6 @@ typedef enum {
  * @NM_VPN_CONNECTION_STATE_DISCONNECTED: The VPN connection is disconnected.
  *
  * VPN connection states
- *
- * (Corresponds to the NM_VPN_CONNECTION_STATE type in nm-vpn-connection.xml.)
  */
 typedef enum {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
@@ -150,8 +146,6 @@ typedef enum {
  *   deleted from settings.
  *
  * VPN connection state reasons
- *
- * (Corresponds to the NM_VPN_CONNECTION_STATE_REASON type in nm-vpn-connection.xml.)
  */
 typedef enum {
 	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN = 0,
@@ -176,8 +170,6 @@ typedef enum {
  *   the VPN plugin.
  *
  * VPN plugin failure reasons
- *
- * (Corresponds to the NM_VPN_PLUGIN_FAILURE type in nm-vpn-plugin.xml.)
  */
 typedef enum {
 	NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED,

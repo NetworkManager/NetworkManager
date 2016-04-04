@@ -3,13 +3,6 @@ AUTOMAKE_OPTIONS = 1.7
 XSLTPROC = xsltproc --xinclude --nonet
 XMLS = $(wildcard $(top_srcdir)/introspection/nm-*.xml)
 
-OTHER_FILES= \
-	$(top_builddir)/introspection/all.xml \
-	$(top_srcdir)/introspection/generic-types.xml \
-	$(top_srcdir)/introspection/errors.xml \
-	$(top_srcdir)/introspection/vpn-errors.xml \
-	$(top_srcdir)/introspection/generic-types.xml
-
 GENERATED_FILES =
 
 if SETTING_DOCS_AVAILABLE

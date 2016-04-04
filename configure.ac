@@ -1075,7 +1075,6 @@ clients/cli/Makefile
 clients/tui/Makefile
 clients/tui/newt/Makefile
 introspection/Makefile
-introspection/all.xml
 man/Makefile
 man/common.ent
 po/Makefile.in

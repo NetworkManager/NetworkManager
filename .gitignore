@@ -138,7 +138,6 @@ test-*.trs
 
 /shared/nm-version-macros.h
 
-/introspection/all.xml
 /introspection/nmdbus-*.c
 /introspection/nmdbus-*.h
 /introspection/nmdbus-*.xml

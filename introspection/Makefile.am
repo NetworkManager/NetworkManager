@@ -136,10 +136,6 @@ BUILT_SOURCES = $(nodist_libnmdbus_la_SOURCES) $(DBUS_INTERFACE_DOCS)
 CLEANFILES = $(BUILT_SOURCES)
 
 EXTRA_DIST = \
-	all.xml.in \
-	generic-types.xml \
-	errors.xml \
-	vpn-errors.xml \
 	nm-access-point.xml \
 	nm-active-connection.xml \
 	nm-agent-manager.xml \
