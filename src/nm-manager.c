@@ -2005,7 +2005,6 @@ platform_link_added (NMManager *self,
 {
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
-	GError *error = NULL;
 	gboolean nm_plugin_missing = FALSE;
 	GSList *iter;
 
@@ -2018,6 +2017,7 @@ platform_link_added (NMManager *self,
 	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
 		NMDevice *candidate = iter->data;
 		gboolean compatible = TRUE;
+		gs_free_error GError *error = NULL;
 
 		if (strcmp (nm_device_get_iface (candidate), plink->name))
 			continue;
@@ -2035,7 +2035,6 @@ platform_link_added (NMManager *self,
 
 		_LOGD (LOGD_DEVICE, "(%s): failed to realize from plink: '%s'",
 		       plink->name, error->message);
-		g_clear_error (&error);
 
 		/* Try next unrealized device */
 	}
@@ -2044,13 +2043,13 @@ platform_link_added (NMManager *self,
 	factory = nm_device_factory_manager_find_factory_for_link_type (plink->type);
 	if (factory) {
 		gboolean ignore = FALSE;
+		gs_free_error GError *error = NULL;
 
 		device = nm_device_factory_create_device (factory, plink->name, plink, NULL, &ignore, &error);
 		if (!device) {
 			if (!ignore) {
 				_LOGW (LOGD_HW, "%s: factory failed to create device: %s",
 				       plink->name, error->message);
-				g_clear_error (&error);
 			}
 			return;
 		}
@@ -2074,6 +2073,8 @@ platform_link_added (NMManager *self,
 	}
 
 	if (device) {
+		gs_free_error GError *error = NULL;
+
 		if (nm_plugin_missing)
 			nm_device_set_nm_plugin_missing (device, TRUE);
 		if (nm_device_realize_start (device, plink, NULL, &error)) {
@@ -2082,7 +2083,6 @@ platform_link_added (NMManager *self,
 		} else {
 			_LOGW (LOGD_DEVICE, "%s: failed to realize device: %s",
 			       plink->name, error->message);
-			g_clear_error (&error);
 		}
 		g_object_unref (device);
 	}
