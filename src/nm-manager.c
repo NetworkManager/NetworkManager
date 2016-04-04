@@ -154,7 +154,6 @@ enum {
 	INTERNAL_DEVICE_REMOVED,
 	STATE_CHANGED,
 	CHECK_PERMISSIONS,
-	USER_PERMISSIONS_CHANGED,
 	ACTIVE_CONNECTION_ADDED,
 	ACTIVE_CONNECTION_REMOVED,
 	CONFIGURE_QUIT,
@@ -5706,7 +5705,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	/* D-Bus exported; emitted only for realized devices */
 	signals[DEVICE_ADDED] =
-	    g_signal_new ("device-added",
+	    g_signal_new (NM_MANAGER_DEVICE_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  G_STRUCT_OFFSET (NMManagerClass, device_added),
@@ -5715,7 +5714,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	/* Emitted for both realized devices and placeholder devices */
 	signals[INTERNAL_DEVICE_ADDED] =
-	    g_signal_new ("internal-device-added",
+	    g_signal_new (NM_MANAGER_INTERNAL_DEVICE_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST, 0,
 	                  NULL, NULL, NULL,
@@ -5723,7 +5722,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	/* D-Bus exported; emitted only for realized devices */
 	signals[DEVICE_REMOVED] =
-	    g_signal_new ("device-removed",
+	    g_signal_new (NM_MANAGER_DEVICE_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  G_STRUCT_OFFSET (NMManagerClass, device_removed),
@@ -5732,7 +5731,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	/* Emitted for both realized devices and placeholder devices */
 	signals[INTERNAL_DEVICE_REMOVED] =
-	    g_signal_new ("internal-device-removed",
+	    g_signal_new (NM_MANAGER_INTERNAL_DEVICE_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST, 0,
 	                  NULL, NULL, NULL,
@@ -5747,14 +5746,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                  G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[CHECK_PERMISSIONS] =
-	    g_signal_new ("check-permissions",
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
-
-	signals[USER_PERMISSIONS_CHANGED] =
-	    g_signal_new ("user-permissions-changed",
+	    g_signal_new (NM_MANAGER_CHECK_PERMISSIONS,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,

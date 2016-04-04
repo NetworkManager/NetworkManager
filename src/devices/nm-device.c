@@ -9980,7 +9980,6 @@ static void
 _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v6_has = FALSE;
@@ -10005,8 +10004,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface; the caller must flush routes and addresses explicitly.
 	 */
-	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE, &ignored);
-	nm_device_set_ip6_config (self, NULL, TRUE, TRUE, &ignored);
+	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE, NULL);
+	nm_device_set_ip6_config (self, NULL, TRUE, TRUE, NULL);
 	g_clear_object (&priv->con_ip4_config);
 	g_clear_object (&priv->dev_ip4_config);
 	g_clear_object (&priv->ext_ip4_config);

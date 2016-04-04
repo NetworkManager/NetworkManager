@@ -40,6 +40,8 @@ G_BEGIN_DECLS
 
 #define NM_FIREWALL_MANAGER_AVAILABLE "available"
 
+#define NM_FIREWALL_MANAGER_STARTED "started"
+
 struct _NMFirewallManagerCallId;
 typedef struct _NMFirewallManagerCallId *NMFirewallManagerCallId;
 

@@ -520,7 +520,7 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 	                           G_PARAM_STATIC_STRINGS));
 
 	signals[STARTED] =
-	    g_signal_new ("started",
+	    g_signal_new (NM_FIREWALL_MANAGER_STARTED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  G_STRUCT_OFFSET (NMFirewallManagerClass, started),
