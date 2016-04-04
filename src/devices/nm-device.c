@@ -2585,6 +2585,18 @@ nm_device_removed (NMDevice *self)
 		 * Release the slave from master, but don't touch the device. */
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
+
+	/* Clean up IP configs; this does not actually deconfigure the
+	 * interface, it just clears the configuration to which policy
+	 * is reacting via NM_DEVICE_IP4_CONFIG_CHANGED/NM_DEVICE_IP6_CONFIG_CHANGED
+	 * signal. As NMPolicy registered the NMIPxConfig instances in NMDnsManager,
+	 * these would be leaked otherwise. */
+	priv->default_route.v4_has = FALSE;
+	priv->default_route.v4_is_assumed = TRUE;
+	nm_device_set_ip4_config (self, NULL, 0, FALSE, FALSE, NULL);
+	priv->default_route.v6_has = FALSE;
+	priv->default_route.v6_is_assumed = TRUE;
+	nm_device_set_ip6_config (self, NULL, FALSE, FALSE, NULL);
 }
 
 static gboolean
