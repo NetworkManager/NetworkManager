@@ -703,12 +703,8 @@ class CmdSubmit(CmdBase):
                     if re.match(r'^.*/NetworkManager-1.0.4-[0-9]+\.el7\.[^.]+\.rpm$', u) or \
                        re.match(r'^.*/NetworkManager-1.0.6-[0-9]+\.el7\.[^.]+\.rpm$', u):
                         return 'rhel-7' # rhel-7.2
-                    if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7\.[^.]+\.rpm$', u):
-                        return 'master' # upstream 1.1
-        if self.options.build_id:
-            return 'master'
-        raise Exception("could not detect %s. Try setting as target branch GIT_TEST_BRANCH%s" % (key_name,
-                    ((" or "+key_name) if key_name != 'GIT_TEST_BRANCH' else '')))
+        # Master now tests everything
+        return 'master'
 
     def _detect_hosttype(self):
         return 'default'
