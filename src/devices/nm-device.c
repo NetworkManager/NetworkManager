@@ -2570,7 +2570,6 @@ void
 nm_device_removed (NMDevice *self)
 {
 	NMDevicePrivate *priv;
-	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2580,13 +2579,6 @@ nm_device_removed (NMDevice *self)
 		 * Release the slave from master, but don't touch the device. */
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
-
-        /* Clean up IP configs; this does not actually deconfigure the
-	 * interface, it just disowns the configuration so that policy
-	 * unregisters it from the dns manager before the device itself
-	 * is gone from manager. */
-	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE, &ignored);
-	nm_device_set_ip6_config (self, NULL, TRUE, TRUE, &ignored);
 }
 
 static gboolean
@@ -9979,6 +9971,7 @@ static void
 _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v6_has = FALSE;
@@ -10000,6 +9993,11 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	priv->linklocal6_dad_counter = 0;
 
+	/* Clean up IP configs; this does not actually deconfigure the
+	 * interface; the caller must flush routes and addresses explicitly.
+	 */
+	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE, &ignored);
+	nm_device_set_ip6_config (self, NULL, TRUE, TRUE, &ignored);
 	g_clear_object (&priv->con_ip4_config);
 	g_clear_object (&priv->dev_ip4_config);
 	g_clear_object (&priv->ext_ip4_config);

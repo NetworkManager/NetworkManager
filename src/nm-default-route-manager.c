@@ -1175,9 +1175,7 @@ _ipx_get_best_config (const VTableIP *vtable,
 				config_result = nm_device_get_ip4_config (device);
 			else
 				config_result = nm_device_get_ip6_config (device);
-			if (!config_result)
-				continue;
-
+			g_assert (config_result);
 			req = nm_device_get_act_request (device);
 			g_assert (req);
 
