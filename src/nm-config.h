@@ -185,5 +185,11 @@ gboolean nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns
 extern guint _nm_config_match_nm_version;
 extern char *_nm_config_match_env;
 
+/*****************************************************************************/
+
+#define NM_CONFIG_DEVICE_STATE_DIR ""NMRUNDIR"/devices"
+
+/*****************************************************************************/
+
 #endif /* __NETWORKMANAGER_CONFIG_H__ */
 
