@@ -972,6 +972,39 @@ if (test "${enable_ld_gc}" != "no"); then
 	fi
 fi
 
+AC_ARG_ENABLE(address-sanitizer, AS_HELP_STRING([--enable-address-sanitizer],
+	[Compile with address sanitizer (default: no)]))
+if (test "${enable_address_sanitizer}" = "yes"); then
+	CC_CHECK_FLAGS_APPEND([asan_cflags], [CFLAGS], [-fsanitize=address])
+	AS_IF([test -z "$asan_cflags"],
+		[AC_MSG_ERROR([*** -fsanitize=address is not supported])])
+
+	sanitizer_cflags="$sanitizer_cflags -fsanitize=address"
+	sanitizer_ldflags="$sanitizer_ldflags -Wc,-fsanitize=address"
+	sanitizers="${sanitizers}asan "
+fi
+
+AC_ARG_ENABLE(undefined-sanitizer, AS_HELP_STRING([--enable-undefined-sanitizer],
+	[Compile with undefined behavior sanitizer (default: no)]))
+if (test "${enable_undefined_sanitizer}" = "yes"); then
+	CC_CHECK_FLAGS_APPEND([ubsan_cflags], [CFLAGS], [-fsanitize=undefined])
+	AS_IF([test -z "$ubsan_cflags"],
+		[AC_MSG_ERROR([*** -fsanitize=undefined is not supported])])
+
+	sanitizer_cflags="$sanitizer_cflags -fsanitize=undefined"
+	sanitizer_ldflags="$sanitizer_ldflags -Wc,-fsanitize=undefined"
+	sanitizers="${sanitizers}ubsan "
+fi
+
+if test -n "$sanitizers"; then
+	CFLAGS="$CFLAGS $sanitizer_cflags -DVALGRIND=1 -fno-omit-frame-pointer"
+	LDFLAGS="$LDFLAGS $sanitizer_ldflags"
+	sanitizers="${sanitizers% }"
+	AC_SUBST(SANITIZER_ENV, [ASAN_OPTIONS=detect_leaks=0])
+fi
+
+AC_SUBST(SANITIZERS, [$sanitizers])
+
 dnl -------------------------
 dnl Vala bindings
 dnl -------------------------
@@ -1067,7 +1100,6 @@ fi
 
 AM_CONDITIONAL(BUILD_SETTING_DOCS, test "$build_setting_docs" = "yes")
 AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$have_setting_docs" = "yes")
-
 
 AC_CONFIG_FILES([
 Makefile
@@ -1233,4 +1265,5 @@ echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
 echo "  JSON validation: $enable_json_validation"
+echo "  sanitizers: $sanitizers"
 echo

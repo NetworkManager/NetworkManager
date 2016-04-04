@@ -375,6 +375,8 @@ intltoolize --automake --copy --force
 %if %{with debug}
 	--with-more-logging \
 	--with-more-asserts=10000 \
+	--enable-address-sanitizer \
+	--enable-undefined-sanitizer \
 %endif
 	--enable-ppp=yes \
 	--with-libaudit=yes-disabled-by-default \

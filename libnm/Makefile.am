@@ -141,12 +141,10 @@ libnm_la_LIBADD = \
 	$(UUID_LIBS) \
 	$(GUDEV_LIBS)
 
-libnm_la_LDFLAGS = \
-	$(CODE_COVERAGE_LDFLAGS)
-
 SYMBOL_VIS_FILE=$(srcdir)/libnm.ver
 
 libnm_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
+	$(CODE_COVERAGE_LDFLAGS) \
 	-version-info "1:0:1"
 
 ###
@@ -169,6 +167,10 @@ INTROSPECTION_COMPILER_ARGS =			\
 	--includedir=$(top_builddir)/libnm-core	\
 	--includedir=$(top_srcdir)/libnm	\
 	--includedir=$(top_builddir)/libnm
+
+# Pass SANITIZER_ENV where a command that uses built libraries is
+# executed, to suppress possible errors
+INTROSPECTION_SCANNER_ENV = $(SANITIZER_ENV)
 
 if HAVE_INTROSPECTION
 introspection_sources =				\
@@ -213,9 +215,16 @@ docs_sources = $(filter-out %/nm-core-enum-types.c,$(libnm_core_sources))
 nm-setting-docs-overrides.xml: generate-plugin-docs.pl $(docs_sources)
 	$(srcdir)/generate-plugin-docs.pl dbus $(top_srcdir)/libnm-core $@
 
+# When the python scripts loads libnm and the address sanitizers is
+# enabled, we must LD_PRELOAD libasan otherwise it will complain that
+# it was not loaded as initial library.
 nm-property-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1.0.typelib libnm.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	if echo $(CFLAGS) | grep -e -fsanitize=address; then \
+		export LD_PRELOAD="$${LD_PRELOAD} $$(ldd $(abs_builddir)/.libs/libnm.so | grep libasan\.so\.. -o | head -n 1)"; \
+	fi; \
+	[ -n "$(SANITIZER_ENV)" ] && export $(SANITIZER_ENV) ; \
 	$(srcdir)/generate-setting-docs.py \
 		--gir $(builddir)/NM-1.0.gir \
 		--output $@
@@ -223,6 +232,10 @@ nm-property-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1
 nm-setting-docs.xml: generate-setting-docs.py $(docs_sources) nm-setting-docs-overrides.xml | NM-1.0.gir NM-1.0.typelib libnm.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	if echo $(CFLAGS) | grep -e -fsanitize=address; then \
+		export LD_PRELOAD="$${LD_PRELOAD} $$(ldd $(abs_builddir)/.libs/libnm.so | grep libasan\.so\.. -o | head -n 1)"; \
+	fi; \
+	[ -n "$(SANITIZER_ENV)" ] && export $(SANITIZER_ENV) ; \
 	$(srcdir)/generate-setting-docs.py \
 		--gir $(builddir)/NM-1.0.gir \
 		--overrides $(builddir)/nm-setting-docs-overrides.xml \

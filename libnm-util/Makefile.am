@@ -169,6 +169,10 @@ INTROSPECTION_GIRS =
 INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir)
 INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
 
+# Pass SANITIZER_ENV where a command that uses built libraries is
+# executed, to suppress possible errors
+INTROSPECTION_SCANNER_ENV = $(SANITIZER_ENV)
+
 if HAVE_INTROSPECTION
 introspection_sources = $(libnm_util_include_HEADERS) $(nodist_libnm_util_include_HEADERS) $(libnm_util_la_csources)
 

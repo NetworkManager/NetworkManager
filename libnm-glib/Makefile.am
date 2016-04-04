@@ -196,6 +196,10 @@ CLEANFILES = $(BUILT_SOURCES)
 INTROSPECTION_GIRS =
 INTROSPECTION_COMPILER_ARGS = --includedir=$(top_builddir)/libnm-util
 
+# Pass SANITIZER_ENV where a command that uses built libraries is
+# executed, to suppress possible errors
+INTROSPECTION_SCANNER_ENV = $(SANITIZER_ENV)
+
 if HAVE_INTROSPECTION
 introspection_sources = $(libnminclude_HEADERS) $(libnm_glib_la_csources)
 
