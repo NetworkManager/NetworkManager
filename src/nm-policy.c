@@ -842,7 +842,10 @@ process_secondaries (NMPolicy *self,
 static void
 hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
-	update_system_hostname ((NMPolicy *) user_data, NULL, NULL);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
+
+	update_system_hostname (self, NULL, NULL);
 }
 
 static void
@@ -915,7 +918,8 @@ block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
 static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
-	NMPolicy *self = user_data;
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 	gboolean sleeping = FALSE, enabled = FALSE;
 
 	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
@@ -1395,8 +1399,8 @@ devices_list_register (NMPolicy *self, NMDevice *device)
 static void
 device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
-	NMPolicy *self = (NMPolicy *) user_data;
-	NMPolicyPrivate *priv;
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	g_return_if_fail (NM_IS_POLICY (self));
 
@@ -1411,8 +1415,8 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
-	NMPolicy *self = (NMPolicy *) user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	/* Clear any idle callbacks for this device */
 	clear_pending_activate_check (self, device);
@@ -1537,7 +1541,8 @@ active_connection_added (NMManager *manager,
                          NMActiveConnection *active,
                          gpointer user_data)
 {
-	NMPolicy *self = NM_POLICY (user_data);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	if (NM_IS_VPN_CONNECTION (active)) {
 		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
@@ -1558,7 +1563,8 @@ active_connection_removed (NMManager *manager,
                            NMActiveConnection *active,
                            gpointer user_data)
 {
-	NMPolicy *self = NM_POLICY (user_data);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
 
 	g_signal_handlers_disconnect_by_func (active,
 	                                      vpn_connection_state_changed,
@@ -1857,13 +1863,13 @@ constructed (GObject *object)
 
 	priv->resolver = g_resolver_get_default ();
 
-	g_signal_connect (priv->manager, "notify::" NM_MANAGER_HOSTNAME,           (GCallback) hostname_changed, self);
-	g_signal_connect (priv->manager, "notify::" NM_MANAGER_SLEEPING,           (GCallback) sleeping_changed, self);
-	g_signal_connect (priv->manager, "notify::" NM_MANAGER_NETWORKING_ENABLED, (GCallback) sleeping_changed, self);
-	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_ADDED,         (GCallback) device_added, self);
-	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_REMOVED,       (GCallback) device_removed, self);
-	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_ADDED,       (GCallback) active_connection_added, self);
-	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_REMOVED,     (GCallback) active_connection_removed, self);
+	g_signal_connect (priv->manager, "notify::" NM_MANAGER_HOSTNAME,           (GCallback) hostname_changed, priv);
+	g_signal_connect (priv->manager, "notify::" NM_MANAGER_SLEEPING,           (GCallback) sleeping_changed, priv);
+	g_signal_connect (priv->manager, "notify::" NM_MANAGER_NETWORKING_ENABLED, (GCallback) sleeping_changed, priv);
+	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_ADDED,         (GCallback) device_added, priv);
+	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_REMOVED,       (GCallback) device_removed, priv);
+	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_ADDED,       (GCallback) active_connection_added, priv);
+	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_REMOVED,     (GCallback) active_connection_removed, priv);
 
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, self);
@@ -1945,7 +1951,7 @@ dispose (GObject *object)
 		 *
 		 * Hence, we unsubscribe the signals here together with the signals
 		 * for settings. */
-		g_signal_handlers_disconnect_by_data (priv->manager, self);
+		g_signal_handlers_disconnect_by_data (priv->manager, priv);
 	}
 
 	nm_assert (NM_IS_MANAGER (priv->manager));
