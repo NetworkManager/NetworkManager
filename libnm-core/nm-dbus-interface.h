@@ -340,6 +340,21 @@ typedef enum { /*< flags >*/
 	NM_DEVICE_MODEM_CAPABILITY_LTE       = 0x00000008,
 } NMDeviceModemCapabilities;
 
+/**
+ * NMWimaxNspNetworkType:
+ * @NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN: unknown network type
+ * @NM_WIMAX_NSP_NETWORK_TYPE_HOME: home network
+ * @NM_WIMAX_NSP_NETWORK_TYPE_PARTNER: partner network
+ * @NM_WIMAX_NSP_NETWORK_TYPE_ROAMING_PARTNER: roaming partner network
+ *
+ * WiMAX network type.
+ */
+typedef enum {
+	NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN         = 0,
+	NM_WIMAX_NSP_NETWORK_TYPE_HOME            = 1,
+	NM_WIMAX_NSP_NETWORK_TYPE_PARTNER         = 2,
+	NM_WIMAX_NSP_NETWORK_TYPE_ROAMING_PARTNER = 3
+} NMWimaxNspNetworkType;
 
 /**
  * NMDeviceState:
