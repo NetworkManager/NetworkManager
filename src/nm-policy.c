@@ -1856,12 +1856,12 @@ constructed (GObject *object)
 
 	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());
 
-	priv->fw_started_id = g_signal_connect (priv->firewall_manager, "started",
+	priv->fw_started_id = g_signal_connect (priv->firewall_manager, NM_FIREWALL_MANAGER_STARTED,
 	                                        G_CALLBACK (firewall_started), self);
 
 	priv->dns_manager = g_object_ref (nm_dns_manager_get ());
 	nm_dns_manager_set_initial_hostname (priv->dns_manager, priv->orig_hostname);
-	priv->config_changed_id = g_signal_connect (priv->dns_manager, "config-changed",
+	priv->config_changed_id = g_signal_connect (priv->dns_manager, NM_DNS_MANAGER_CONFIG_CHANGED,
 	                                            G_CALLBACK (dns_config_changed), self);
 
 	priv->resolver = g_resolver_get_default ();
