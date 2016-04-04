@@ -1,6 +1,10 @@
-<?xml version='1.0'?> <!--*-nxml-*-->
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 
 <!--
 Copyright 2013 - 2014 Red Hat, Inc.
@@ -17,7 +21,7 @@ Copyright 2013 - 2014 Red Hat, Inc.
     <manvolnum>5</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Examples</refmiscinfo>
-    <refmiscinfo class="version">1.2</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
   </refmeta>
 
   <refnamediv>

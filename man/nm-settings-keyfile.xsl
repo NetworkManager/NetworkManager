@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE stylesheet [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -8,8 +12,6 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="version"/>
-
   <xsl:template match="nm-keyfile-docs">
     <refentry id="nm-settings-keyfile">
       <refmeta>
@@ -17,7 +19,7 @@
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
-        <refmiscinfo class="version"><xsl:value-of select="$version"/></refmiscinfo>
+        <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
         <refname>nm-settings-keyfile</refname>

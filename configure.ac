@@ -1077,6 +1077,7 @@ clients/tui/newt/Makefile
 introspection/Makefile
 introspection/all.xml
 man/Makefile
+man/common.ent
 po/Makefile.in
 policy/Makefile
 policy/org.freedesktop.NetworkManager.policy.in

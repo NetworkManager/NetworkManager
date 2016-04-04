@@ -220,6 +220,7 @@ test-*.trs
 /man/nm-settings.xml
 /man/nm-settings-ifcfg-rh.xml
 /man/nm-settings-keyfile.xml
+/man/common.ent
 
 /po/*.gmo
 /po/.intltool-merge-cache

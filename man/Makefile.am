@@ -17,13 +17,13 @@ XSLTPROC_MAN_FLAGS = \
 
 if ENABLE_GTK_DOC
 
-%.1: %.xml
+%.1: %.xml common.ent
 	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
 
-%.5: %.xml
+%.5: %.xml common.ent
 	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
 
-%.8: %.xml
+%.8: %.xml common.ent
 	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
 
 endif
@@ -41,22 +41,13 @@ NetworkManager.conf.xml: $(srcdir)/NetworkManager.conf.xml.in
 if BUILD_SETTING_DOCS
 
 nm-settings.xml: nm-settings.xsl $(top_builddir)/libnm/nm-setting-docs.xml
-	$(AM_V_GEN) xsltproc \
-		--output $@ \
-		--stringparam version $(NM_VERSION) \
-		$^
+	$(AM_V_GEN) xsltproc --output $@ $^
 
 nm-settings-keyfile.xml: nm-settings-keyfile.xsl $(top_builddir)/libnm/nm-keyfile-docs.xml
-	$(AM_V_GEN) xsltproc \
-		--output $@ \
-		--stringparam version $(NM_VERSION) \
-		$^
+	$(AM_V_GEN) xsltproc --output $@ $^
 
 nm-settings-ifcfg-rh.xml: nm-settings-ifcfg-rh.xsl $(top_builddir)/libnm/nm-ifcfg-rh-docs.xml
-	$(AM_V_GEN) xsltproc \
-		--output $@ \
-		--stringparam version $(NM_VERSION) \
-		$^
+	$(AM_V_GEN) xsltproc --output $@ $^
 
 CLEANFILES +=				\
 	nm-settings.xml			\
