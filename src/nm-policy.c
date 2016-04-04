@@ -62,7 +62,6 @@ struct _NMPolicyPrivate {
 	NMManager *manager;
 	NMFirewallManager *firewall_manager;
 	GSList *pending_activation_checks;
-	GSList *manager_ids;
 
 	GHashTable *devices;
 
@@ -1815,16 +1814,6 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-_connect_manager_signal (NMPolicy *self, const char *name, gpointer callback)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gulong id;
-
-	id = g_signal_connect (priv->manager, name, callback, self);
-	priv->manager_ids = g_slist_prepend (priv->manager_ids, (gpointer) id);
-}
-
-static void
 nm_policy_init (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_POLICY, NMPolicyPrivate);
@@ -1861,14 +1850,14 @@ constructed (GObject *object)
 
 	priv->resolver = g_resolver_get_default ();
 
-	_connect_manager_signal (self, NM_MANAGER_STATE_CHANGED, global_state_changed);
-	_connect_manager_signal (self, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
-	_connect_manager_signal (self, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
-	_connect_manager_signal (self, "notify::" NM_MANAGER_NETWORKING_ENABLED, sleeping_changed);
-	_connect_manager_signal (self, NM_MANAGER_INTERNAL_DEVICE_ADDED, device_added);
-	_connect_manager_signal (self, NM_MANAGER_INTERNAL_DEVICE_REMOVED, device_removed);
-	_connect_manager_signal (self, NM_MANAGER_ACTIVE_CONNECTION_ADDED, active_connection_added);
-	_connect_manager_signal (self, NM_MANAGER_ACTIVE_CONNECTION_REMOVED, active_connection_removed);
+	g_signal_connect (priv->manager, NM_MANAGER_STATE_CHANGED,                 (GCallback) global_state_changed, self);
+	g_signal_connect (priv->manager, "notify::" NM_MANAGER_HOSTNAME,           (GCallback) hostname_changed, self);
+	g_signal_connect (priv->manager, "notify::" NM_MANAGER_SLEEPING,           (GCallback) sleeping_changed, self);
+	g_signal_connect (priv->manager, "notify::" NM_MANAGER_NETWORKING_ENABLED, (GCallback) sleeping_changed, self);
+	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_ADDED,         (GCallback) device_added, self);
+	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_REMOVED,       (GCallback) device_removed, self);
+	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_ADDED,       (GCallback) active_connection_added, self);
+	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_REMOVED,     (GCallback) active_connection_removed, self);
 
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, self);
@@ -1897,7 +1886,7 @@ dispose (GObject *object)
 {
 	NMPolicy *self = NM_POLICY (object);
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *connections, *iter;
+	const GSList *connections;
 	GHashTableIter h_iter;
 	NMDevice *device;
 
@@ -1923,10 +1912,6 @@ dispose (GObject *object)
 		g_clear_object (&priv->dns_manager);
 	}
 
-	for (iter = priv->manager_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (priv->manager, (gulong) iter->data);
-	g_clear_pointer (&priv->manager_ids, g_slist_free);
-
 	g_hash_table_iter_init (&h_iter, priv->devices);
 	if (g_hash_table_iter_next (&h_iter, (gpointer *) &device, NULL)) {
 		g_hash_table_iter_remove (&h_iter);
@@ -1948,6 +1933,13 @@ dispose (GObject *object)
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_data (priv->settings, self);
 		g_clear_object (&priv->settings);
+
+		/* we don't clear priv->manager as we don't own a reference to it,
+		 * that is, NMManager must outlive NMPolicy anyway.
+		 *
+		 * Hence, we unsubscribe the signals here together with the signals
+		 * for settings. */
+		g_signal_handlers_disconnect_by_data (priv->manager, self);
 	}
 
 	nm_assert (NM_IS_MANAGER (priv->manager));
