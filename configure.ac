@@ -968,7 +968,7 @@ if test "$enable_gtk_doc" != "yes" \
 	-a -f man/nm-settings.5 \
 	-a -f man/nm-settings-keyfile.5 \
 	-a -f man/nm-settings-ifcfg-rh.5 \
-	-a -f man/nmcli-examples.5 \
+	-a -f man/nmcli-examples.7 \
 	-a -f man/NetworkManager.8; then
 	install_pregen_manpages=yes
 fi

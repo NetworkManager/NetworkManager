@@ -18,7 +18,7 @@ Copyright 2013 - 2014 Red Hat, Inc.
 
   <refmeta>
     <refentrytitle>nmcli-examples</refentrytitle>
-    <manvolnum>5</manvolnum>
+    <manvolnum>7</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Examples</refmiscinfo>
     <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>

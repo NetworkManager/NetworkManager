@@ -2045,7 +2045,7 @@
           <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> for all NetworkManager settings and property names, and their
           descriptions; and
-          <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>
           for sample editor sessions.</para>
         </listitem>
       </varlistentry>
@@ -2835,7 +2835,7 @@
 
     <para>This section presents various examples of <command>nmcli</command> usage. If you want even
     more, please refer to
-    <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+    <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>
     manual page.</para>
 
     <variablelist>
@@ -3104,7 +3104,7 @@
   </refsect1>
 
   <refsect1 id='see_also'><title>See Also</title>
-    <para><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+    <para><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
     <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
     <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
     <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
