@@ -56,7 +56,9 @@
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
 
-typedef struct {
+typedef struct _NMPolicyPrivate NMPolicyPrivate;
+
+struct _NMPolicyPrivate {
 	NMManager *manager;
 	NMFirewallManager *firewall_manager;
 	GSList *pending_activation_checks;
@@ -85,9 +87,14 @@ typedef struct {
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
 	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
-} NMPolicyPrivate;
+};
 
-#define NM_POLICY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_POLICY, NMPolicyPrivate))
+static NMPolicyPrivate *
+NM_POLICY_GET_PRIVATE(NMPolicy *self)
+{
+	nm_assert (NM_IS_POLICY (self));
+	return self->priv;
+}
 
 G_DEFINE_TYPE (NMPolicy, nm_policy, G_TYPE_OBJECT)
 
@@ -1831,7 +1838,9 @@ _connect_settings_signal (NMPolicy *self, const char *name, gpointer callback)
 static void
 nm_policy_init (NMPolicy *self)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMPolicyPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_POLICY, NMPolicyPrivate);
+
+	self->priv = priv;
 
 	priv->devices = g_hash_table_new (NULL, NULL);
 }
