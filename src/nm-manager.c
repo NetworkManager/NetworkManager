@@ -154,7 +154,6 @@ enum {
 	INTERNAL_DEVICE_REMOVED,
 	STATE_CHANGED,
 	CHECK_PERMISSIONS,
-	USER_PERMISSIONS_CHANGED,
 	ACTIVE_CONNECTION_ADDED,
 	ACTIVE_CONNECTION_REMOVED,
 	CONFIGURE_QUIT,
@@ -5748,13 +5747,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	signals[CHECK_PERMISSIONS] =
 	    g_signal_new (NM_MANAGER_CHECK_PERMISSIONS,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
-
-	signals[USER_PERMISSIONS_CHANGED] =
-	    g_signal_new (NM_MANAGER_USER_PERMISSIONS_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
