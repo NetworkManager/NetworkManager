@@ -12,15 +12,11 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="date"/>
   <xsl:param name="version"/>
 
   <xsl:template match="nm-ifcfg-rh-docs">
     <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
     <refentry id="nm-settings-ifcfg-rh">
-      <refentryinfo>
-        <date><xsl:value-of select="$date"/></date>
-      </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings-ifcfg-rh</refentrytitle>
         <manvolnum>5</manvolnum>

@@ -9,7 +9,6 @@ Copyright 2013 - 2014 Red Hat, Inc.
 <refentry id="nmcli-examples">
   <refentryinfo>
     <title>nmcli-examples</title>
-    <date>19 November 2014</date>
     <author>NetworkManager developers</author>
   </refentryinfo>
 

@@ -8,14 +8,10 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="date"/>
   <xsl:param name="version"/>
 
   <xsl:template match="nm-keyfile-docs">
     <refentry id="nm-settings-keyfile">
-      <refentryinfo>
-        <date><xsl:value-of select="$date"/></date>
-      </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings-keyfile</refentrytitle>
         <manvolnum>5</manvolnum>

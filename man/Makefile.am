@@ -44,21 +44,18 @@ nm-settings.xml: nm-settings.xsl $(top_builddir)/libnm/nm-setting-docs.xml
 	$(AM_V_GEN) xsltproc \
 		--output $@ \
 		--stringparam version $(NM_VERSION) \
-		--stringparam date "`date +'%d %B %Y'`" \
 		$^
 
 nm-settings-keyfile.xml: nm-settings-keyfile.xsl $(top_builddir)/libnm/nm-keyfile-docs.xml
 	$(AM_V_GEN) xsltproc \
 		--output $@ \
 		--stringparam version $(NM_VERSION) \
-		--stringparam date "`date +'%d %B %Y'`" \
 		$^
 
 nm-settings-ifcfg-rh.xml: nm-settings-ifcfg-rh.xsl $(top_builddir)/libnm/nm-ifcfg-rh-docs.xml
 	$(AM_V_GEN) xsltproc \
 		--output $@ \
 		--stringparam version $(NM_VERSION) \
-		--stringparam date "`date +'%d %B %Y'`" \
 		$^
 
 CLEANFILES +=				\
