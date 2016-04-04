@@ -68,9 +68,6 @@ CLEANFILES +=				\
 
 endif
 
-configure_generated_man_pages =		\
-	nm-system-settings.conf.5
-
 docbook_generated_man_pages =		\
 	nmcli.1				\
 	nmtui.1				\
@@ -102,16 +99,23 @@ EXTRA_DIST +=								\
 
 man_MANS += $(configure_generated_man_pages)
 
-links = nmtui-edit nmtui-connect nmtui-hostname
+nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
+NetworkManager_conf_links = nm-system-settings.conf
 
 install-data-hook:
-	for link in $(links); do \
+	for link in $(nmtui_links); do \
 		ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
+	done
+	for link in $(NetworkManager_conf_links); do \
+		ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/$$link.5; \
 	done
 
 uninstall-hook:
-	for link in $(links); do \
+	for link in $(nmtui_links); do \
 		rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
+	done
+	for link in $(NetworkManager_conf_links); do \
+		rm -f $(DESTDIR)$(mandir)/man5/$$link.5; \
 	done
 
 if ENABLE_GTK_DOC
