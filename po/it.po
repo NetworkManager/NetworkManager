@@ -8227,7 +8227,7 @@ msgstr "«%s» non è un valore valido per la proprietà"
 #: ../libnm-core/nm-setting-bluetooth.c:168
 #, c-format
 msgid "'%s' connection requires '%s' or '%s' setting"
-msgstr "la connessione \"%s\" richiede \"%s\" o l'impostazione \"%s\""
+msgstr "la connessione \"%s\" richiede \"%s\" o l'impostazione \"%s\""
 
 #: ../libnm-core/nm-setting-bond.c:454 ../libnm-util/nm-setting-bond.c:502
 #, c-format
