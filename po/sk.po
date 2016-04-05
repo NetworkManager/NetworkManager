@@ -4,20 +4,21 @@
 # Marcel Telka <marcel@telka.sk>, 2004, 2005, 2006.
 #
 # $Id: sk.po,v 1.47 2006/10/15 22:29:21 marcel Exp $
-#
+# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-05 13:50+0200\n"
-"PO-Revision-Date: 2006-10-16 00:29+0200\n"
-"Last-Translator: Marcel Telka <marcel@telka.sk>\n"
+"POT-Creation-Date: 2016-04-05 15:00+0200\n"
+"PO-Revision-Date: 2016-04-05 09:21-0400\n"
+"Last-Translator: Lubomir Rintel <lkundrak@v3.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "Language: sk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural= (n==1) ? 1 : (n>=2 && n<=4) ? 2 : 0;\n"
+"X-Generator: Zanata 3.8.2\n"
 
 #: ../clients/cli/agent.c:39
 #, c-format
@@ -514,9 +515,8 @@ msgid "The Wi-Fi network could not be found"
 msgstr "Nebolo možné nájsť Wi-Fi sieť"
 
 #: ../clients/cli/common.c:706
-#, fuzzy
 msgid "A secondary connection of the base connection failed"
-msgstr "Pripájanie k drôtovej sieti zlyhalo."
+msgstr "Zlyhalo nadviazanie druhotného spojenia"
 
 #: ../clients/cli/common.c:709
 msgid "DCB or FCoE setup failed"
@@ -605,15 +605,13 @@ msgid "Property name? "
 msgstr "Vlastnosť?"
 
 #: ../clients/cli/connections.c:43
-#, fuzzy
 msgid "Enter connection type: "
-msgstr "Bez sieťového spojenia"
+msgstr "Druh spojenia:"
 
 #. define some other prompts
 #: ../clients/cli/connections.c:46
-#, fuzzy
 msgid "Connection type: "
-msgstr "Spojenie nadviazané"
+msgstr "Druh spojenia:"
 
 #: ../clients/cli/connections.c:47
 msgid "VPN type: "
@@ -1270,37 +1268,32 @@ msgid "deactivated"
 msgstr "neaktívne"
 
 #: ../clients/cli/connections.c:662
-#, fuzzy
 msgid "VPN connecting (prepare)"
-msgstr "VPN pripájanie k '%s'"
+msgstr "VPN sa pripája (pripravuje sa)"
 
 #: ../clients/cli/connections.c:664
 msgid "VPN connecting (need authentication)"
 msgstr "VPN sa pripája (potrebuje autorizáciu)"
 
 #: ../clients/cli/connections.c:666
-#, fuzzy
 msgid "VPN connecting"
-msgstr "VPN spojenia"
+msgstr "VPN sa pripája"
 
 #: ../clients/cli/connections.c:668
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN sa pripája (potrebuje autorizáciu)"
 
 #: ../clients/cli/connections.c:670
-#, fuzzy
 msgid "VPN connected"
-msgstr "Odpojené"
+msgstr "VPN pripojená"
 
 #: ../clients/cli/connections.c:672
-#, fuzzy
 msgid "VPN connection failed"
-msgstr "Zlyhanie VPN spojenia"
+msgstr "VPN spojenie zlyhalo"
 
 #: ../clients/cli/connections.c:674
-#, fuzzy
 msgid "VPN disconnected"
-msgstr "Odpojené"
+msgstr "VPN odpojená"
 
 #: ../clients/cli/connections.c:744
 #, c-format
@@ -1308,9 +1301,8 @@ msgid "Error updating secrets for %s: %s\n"
 msgstr "Nepodarilo sa zmeniť heslo pre %s: %s\n"
 
 #: ../clients/cli/connections.c:764
-#, fuzzy
 msgid "Connection profile details"
-msgstr "Spojenie nadviazané"
+msgstr "Detaily spojenia"
 
 #: ../clients/cli/connections.c:776 ../clients/cli/connections.c:1169
 #, fuzzy, c-format
@@ -9258,481 +9250,3 @@ msgstr "NetworkManager nebeží"
 #, fuzzy
 msgid "System"
 msgstr "Otvorený systém"
-
-#~ msgid "Passphrase for wireless network %s"
-#~ msgstr "Heslo pre bezdrôtovú sieť %s"
-
-#~ msgid "Connection to the wireless network '%s' failed."
-#~ msgstr "Pripájanie k bezdrôtovej sieti '%s' zlyhalo."
-
-#~ msgid "Could not find some required resources (the glade file)!"
-#~ msgstr "Nepodarilo sa nájsť niektoré vyžadované zdroje (súbor glade)!"
-
-#~ msgid "Wired Ethernet (%s)"
-#~ msgstr "Drôtový ethernet (%s)"
-
-#~ msgid "Wireless Ethernet (%s)"
-#~ msgstr "Bezdrôtový ethernet (%s)"
-
-#~ msgid ""
-#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
-#~ "Copyright © 2005-2006 Novell, Inc."
-#~ msgstr ""
-#~ "Autorské práva © 2004-2006 Red Hat, Inc.\n"
-#~ "Autorské práva © 2005-2006 Novell, Inc."
-
-#~ msgid ""
-#~ "Notification area applet for managing your network devices and "
-#~ "connections."
-#~ msgstr ""
-#~ "Aplet oblasti upozornení pre správu vašich sieťových zariadení a "
-#~ "pripojení."
-
-#~ msgid "translator-credits"
-#~ msgstr "Marcel Telka <marcel@telka.sk>"
-
-#~ msgid ""
-#~ "Copyright © 2004-2005 Red Hat, Inc.\n"
-#~ "Copyright © 2005-2006 Novell, Inc."
-#~ msgstr ""
-#~ "Autorské práva © 2004-2005 Red Hat, Inc.\n"
-#~ "Autorské práva © 2005-2006 Novell, Inc."
-
-#~ msgid "VPN Login Failure"
-#~ msgstr "Zlyhanie VPN prihlásenia"
-
-#~ msgid "Could not start the VPN connection '%s' due to a login failure."
-#~ msgstr "Nepodarilo sa spustiť VPN spojenie '%s' kvôli zlyhania prihlásenia."
-
-#~ msgid "VPN Start Failure"
-#~ msgstr "Zlyhanie spustenia VPN"
-
-#~ msgid ""
-#~ "Could not start the VPN connection '%s' due to a failure launching the "
-#~ "VPN program."
-#~ msgstr ""
-#~ "Nepodarilo sa spustiť VPN spojenie '%s' kvôli zlyhaniu spustenia VPN "
-#~ "programu."
-
-#~ msgid ""
-#~ "Could not start the VPN connection '%s' because the VPN server did not "
-#~ "return an adequate network configuration."
-#~ msgstr ""
-#~ "Nepodarilo sa spustiť VPN spojenie '%s', pretože VPN server nevrátil "
-#~ "príslušnú konfiguráciu siete."
-
-#~ msgid "VPN Login Message"
-#~ msgstr "Správa VPN prihlásenia"
-
-#~ msgid ""
-#~ "The NetworkManager Applet could not find some required resources (the "
-#~ "glade file was not found)."
-#~ msgstr ""
-#~ "Applet NetworkManager nemohol nájsť niektoré vyžadované zdroje (súbor "
-#~ "glade nebol nájdený)."
-
-#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
-#~ msgstr "Sieťové zariadenie \"%s (%s)\" nepodporuje bezdrôtové vyhľadávanie."
-
-#~ msgid "The network device \"%s (%s)\" does not support link detection."
-#~ msgstr "Sieťové zariadenie \"%s (%s)\" nepodporuje detekciu linky."
-
-#~ msgid "Preparing device %s for the wired network..."
-#~ msgstr "Pripravujem zariadenie %s pre drôtovú sieť..."
-
-#~ msgid "Preparing device %s for the wireless network '%s'..."
-#~ msgstr "Pripravujem zariadenie %s pre bezdrôtovú sieť '%s'..."
-
-#~ msgid "Configuring device %s for the wired network..."
-#~ msgstr "Konfigurácia zariadenia %s pre drôtovú sieť..."
-
-#~ msgid "Attempting to join the wireless network '%s'..."
-#~ msgstr "Pokus o pripojenie k bezdrôtovej sieti '%s'..."
-
-#~ msgid "Waiting for Network Key for the wireless network '%s'..."
-#~ msgstr "Čakanie na sieťový kľúč pre bezdrôtovú sieť '%s'..."
-
-#~ msgid "Requesting a network address from the wired network..."
-#~ msgstr "Vyžiadanie sieťovej adresy z drôtovej siete..."
-
-#~ msgid "Requesting a network address from the wireless network '%s'..."
-#~ msgstr "Vyžiadanie sieťovej adresy z bezdrôtovej siete '%s'..."
-
-#~ msgid "Finishing connection to the wired network..."
-#~ msgstr "Ukončovanie spojenia k drôtovej sieti..."
-
-#~ msgid "Finishing connection to the wireless network '%s'..."
-#~ msgstr "Ukončovanie spojenia k bezdrôtovej sieti '%s'..."
-
-#~ msgid "Connected to an Ad-Hoc wireless network"
-#~ msgstr "Pripájané k bezdrôtovej sieti Ad-Hoc"
-
-#~ msgid "Wireless network connection to '%s' (%d%%)"
-#~ msgstr "Bezdrôtové sieťové pripojenie k '%s' (%d%%)"
-
-#~ msgid "_Connect to Other Wireless Network..."
-#~ msgstr "_Pripojiť sa k inej bezdrôtovej sieti..."
-
-#~ msgid "Create _New Wireless Network..."
-#~ msgstr "Vytvoriť _novú bezdrôtovú sieť..."
-
-#~ msgid "_VPN Connections"
-#~ msgstr "_VPN spojenia"
-
-#~ msgid "_Configure VPN..."
-#~ msgstr "_Konfigurovať VPN..."
-
-#~ msgid "_Disconnect VPN..."
-#~ msgstr "_Odpojiť VPN..."
-
-#~ msgid "_Dial Up Connections"
-#~ msgstr "_Vytáčané spojenia"
-
-#~ msgid "Disconnect from %s..."
-#~ msgstr "Odpojiť od %s..."
-
-#~ msgid "No network devices have been found"
-#~ msgstr "Neboli nájdené iné sieťové zariadenia"
-
-#~ msgid "NetworkManager is not running..."
-#~ msgstr "NetworkManager nebeží..."
-
-#~ msgid "Enable _Wireless"
-#~ msgstr "Povoliť _bezdrôtové pripojenie"
-
-#~ msgid "Connection _Information"
-#~ msgstr "_Informácie o spojení"
-
-#~ msgid "_Help"
-#~ msgstr "_Pomocník"
-
-#~ msgid "_About"
-#~ msgstr "_O programe"
-
-#~ msgid ""
-#~ "The NetworkManager applet could not find some required resources.  It "
-#~ "cannot continue.\n"
-#~ msgstr ""
-#~ "Applet NetworkManager nemohol nájsť niektoré vyžadované zdroje. Nemôže "
-#~ "pokračovať.\n"
-
-#~ msgid "WEP 64/128-bit Hex"
-#~ msgstr "WEP 64/128 bitov v šestnástkovej sústave"
-
-#~ msgid "TLS"
-#~ msgstr "TLS"
-
-#~ msgid "TTLS"
-#~ msgstr "TTLS"
-
-#~ msgid "WPA Enterprise"
-#~ msgstr "Podnikové WPA"
-
-#~ msgid "WPA Personal"
-#~ msgstr "Osobné WPA"
-
-#~ msgid "Orientation"
-#~ msgstr "Orientácia"
-
-#~ msgid "The orientation of the tray."
-#~ msgstr "Orientácia zásobníka."
-
-#~ msgid "Wired Network (%s)"
-#~ msgstr "Drôtová sieť (%s)"
-
-#~ msgid "Wireless Network (%s)"
-#~ msgid_plural "Wireless Networks (%s)"
-#~ msgstr[0] "Bezdrôtových sietí (%s)"
-#~ msgstr[1] "Bezdrôtová sieť (%s)"
-#~ msgstr[2] "Bezdrôtové siete (%s)"
-
-#~ msgid ""
-#~ "By default, the wireless network's name is set to your computer's name, "
-#~ "%s, with no encryption enabled"
-#~ msgstr ""
-#~ "Štandardne je názov bezdrôtovej siete nastavený na názov vášho počítača, "
-#~ "%s, bez povoleného šifrovania"
-
-#~ msgid ""
-#~ "Enter the name and security settings of the wireless network you wish to "
-#~ "create."
-#~ msgstr ""
-#~ "Zadajte názov a bezpečnostné nastavenia bezdrôtovej siete, ktorú chcete "
-#~ "vytvoriť."
-
-#~ msgid "Create New Wireless Network"
-#~ msgstr "Vytvoriť _novú bezdrôtovú sieť"
-
-#~ msgid "Existing wireless network"
-#~ msgstr "Existujúca bezdrôtová sieť"
-
-#~ msgid "Enter the name of the wireless network to which you wish to connect."
-#~ msgstr "Zadajte názov bezdrôtovej siete, ku ktorej sa chcete pripojiť."
-
-#~ msgid "Connect to Other Wireless Network"
-#~ msgstr "_Pripojiť sa k inej bezdrôtovej sieti"
-
-#~ msgid ""
-#~ "The requested wireless network requires security capabilities unsupported "
-#~ "by your hardware."
-#~ msgstr ""
-#~ "Požadované bezdrôtová sieť vyžaduje bezpečnostné vlastnosti nepodporované "
-#~ "vašim hardvérom."
-
-#~ msgid ""
-#~ "Could not find the authentication dialog for VPN connection type '%s'. "
-#~ "Contact your system administrator."
-#~ msgstr ""
-#~ "Nepodarilo sa nájsť dialógové okno overenia totožnosti pre VPN spojenie "
-#~ "typu '%s'. Spojte sa s vašim správcom systému."
-
-#~ msgid ""
-#~ "There was a problem launching the authentication dialog for VPN "
-#~ "connection type '%s'. Contact your system administrator."
-#~ msgstr ""
-#~ "Vyskytol sa problém pri spúšťaní dialógového okna overenia totožnosti pre "
-#~ "VPN spojenie typu '%s'. Spojte sa s vašim sprácom systému."
-
-#~ msgid " "
-#~ msgstr " "
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Informácie o aktívnom spojení</span>"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-#~ "Network</span>\n"
-#~ "\n"
-#~ "A passphrase or encryption key is required to access the wireless network "
-#~ "'%s'."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Heslo vyžadované bezdrôtovou "
-#~ "sieťou</span>\n"
-#~ "\n"
-#~ "Heslo alebo šifrovací kľúč je potrebný pre prístup k bezdrôtovej sieti "
-#~ "'%s'."
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
-#~ "span>\n"
-#~ "\n"
-#~ "%s  It will not be completely functional."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Obmedzená sieťová funkčnosť</span>\n"
-#~ "\n"
-#~ "%s  Nebude to úplne funkčné."
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
-#~ "that this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will not require confirmation on subsequent log ins."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Potvrdenie prihlásenia do "
-#~ "bezdrôtovej siete</span>\n"
-#~ "\n"
-#~ "Vybrali ste si prihlásenie do bezdrôtovej siete '%s'. Ak ste si istý, že "
-#~ "táto bezdrôtová sieť je bezpečná, označte zaškrtávacie pole nižšie a "
-#~ "NetworkManager nebude viac vyžadovať potvrdenie pri ďalších prihláseniach."
-
-#~ msgid "Anonymous Identity:"
-#~ msgstr "Anonymná identita:"
-
-#~ msgid "Client Certificate File:"
-#~ msgstr "Súbor s certifikátom klienta:"
-
-#~ msgid "Default Route:"
-#~ msgstr "Predvolené smerovanie:"
-
-#~ msgid "Driver:"
-#~ msgstr "Ovládač:"
-
-#~ msgid "EAP Method:"
-#~ msgstr "Metóda EAP:"
-
-#~ msgid "Hardware Address:"
-#~ msgstr "Hardvérová adresa:"
-
-#~ msgid "Key Type:"
-#~ msgstr "Typ kľúča:"
-
-#~ msgid "Key management:"
-#~ msgstr "Správa kľúčov:"
-
-#~ msgid ""
-#~ "None\n"
-#~ "WEP 128-bit Passphrase\n"
-#~ "WEP 64/128-bit Hex\n"
-#~ "WEP 64/128-bit ASCII\n"
-#~ msgstr ""
-#~ "Žiaden\n"
-#~ "WEP 128 bitové heslo\n"
-#~ "WEP 64/128 bitov v šestnástkovej sústave\n"
-#~ "WEP 64/128 bitov ASCII\n"
-
-#~ msgid ""
-#~ "Open System\n"
-#~ "Shared Key"
-#~ msgstr ""
-#~ "Otvorený systém\n"
-#~ "Zdieľaný kľúč"
-
-#~ msgid "Other Wireless Network..."
-#~ msgstr "Ostatné bezdrôtové siete..."
-
-#~ msgid "Passphrase:"
-#~ msgstr "Heslo:"
-
-#~ msgid "Private Key File:"
-#~ msgstr "Súbor súkromného kľúča:"
-
-#~ msgid "Secondary DNS:"
-#~ msgstr "Sekundárne DNS:"
-
-#~ msgid "Select the CA Certificate File"
-#~ msgstr "Vybrať súbor s CA certifikátom"
-
-#~ msgid "Select the Client Certificate File"
-#~ msgstr "Vybrať súbor s certifikátom klienta"
-
-#~ msgid "Select the Private Key File"
-#~ msgstr "Vybrať súbor súbor súkromného kľúča"
-
-#~ msgid "Speed:"
-#~ msgstr "Rýchlosť:"
-
-#~ msgid "Subnet Mask:"
-#~ msgstr "Maska podsiete:"
-
-#~ msgid "Type:"
-#~ msgstr "Typ:"
-
-#~ msgid "Wireless Network Key Required"
-#~ msgstr "Je potrebný kľúč bezdrôtovej siete"
-
-#~ msgid "Wireless _adapter:"
-#~ msgstr "Bezdrôtový _adaptér:"
-
-#~ msgid "_Always Trust this Wireless Network"
-#~ msgstr "_Vždy dôverovať tejto bezdrôtovej sieti"
-
-#~ msgid "_Fallback on this Network"
-#~ msgstr "_Núdzovo použiť túto sieť"
-
-#~ msgid "_Login to Network"
-#~ msgstr "_Prihlásenie k sieti"
-
-#~ msgid "_Wireless Security:"
-#~ msgstr "Bezdrôtová bezpečnosť:"
-
-#~ msgid ""
-#~ "No suitable VPN software was found on your system. Contact your system "
-#~ "administrator."
-#~ msgstr ""
-#~ "Vo vašom systéme nebol nájdený použiteľný softvér pre VPN. Spojte sa so "
-#~ "správcom vášho systému."
-
-#~ msgid "Cannot import VPN connection"
-#~ msgstr "Nemôžte importovať VPN spojenie"
-
-#~ msgid ""
-#~ "Cannot find suitable software for VPN connection type '%s' to import the "
-#~ "file '%s'. Contact your system administrator."
-#~ msgstr ""
-#~ "Nepodarilo sa nájsť použiteľný softvér pre pre VPN spojenie typu '%s' na "
-#~ "import súboru '%s'. Spojte sa so správcom vášho systému."
-
-#~ msgid ""
-#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
-#~ "system administrator."
-#~ msgstr ""
-#~ "Nepodarilo sa nájsť súbory používateľského rozhrania pre VPN spojenie "
-#~ "typu '%s'. Spojte sa so správcom vášho systému."
-
-#~ msgid ""
-#~ "All information about the VPN connection \"%s\" will be lost and you may "
-#~ "need your system administrator to provide information to create a new "
-#~ "connection."
-#~ msgstr ""
-#~ "Všetky informácie o VPN spojení \"%s\" budú stratené a možno budete "
-#~ "potrebovať správcu vášho systému, aby vám poskytol informácie na "
-#~ "vytvorenie nového spojenia."
-
-#~ msgid "Cannot find some needed resources (the glade file)!"
-#~ msgstr "Nepodarilo sa nájsť niektoré vyžadované zdroje (súbor glade)!"
-
-#~ msgid "Create VPN Connection"
-#~ msgstr "Vytvoriť VPN spojenie"
-
-#~ msgid "Delete the selected VPN connection"
-#~ msgstr "Odstrániť vybrané VPN spojenie"
-
-#~ msgid "Edit the selected VPN connection"
-#~ msgstr "Upraviť vybrané VPN spojenie"
-
-#~ msgid "Export the VPN settings to a file"
-#~ msgstr "Exportovať VPN nastavenia do súboru"
-
-#~ msgid "Export the selected VPN connection to a file"
-#~ msgstr "Exportovať vybrané VPN spojenie do súboru"
-
-#~ msgid "Manage Virtual Private Network Connections"
-#~ msgstr "Spravovať spojenia Virtuálnych Privátnych Sietí (VPN)"
-
-#~ msgid "40-bit WEP"
-#~ msgstr "40 bitový WEP"
-
-#~ msgid "104-bit WEP"
-#~ msgstr "104 bitový WEP"
-
-#~ msgid "WPA TKIP"
-#~ msgstr "WPA TKIP"
-
-#~ msgid "WPA CCMP"
-#~ msgstr "WPA CCMP"
-
-#~ msgid "WPA2 CCMP"
-#~ msgstr "WPA2 CCMP"
-
-#~ msgid "WPA2 Automatic"
-#~ msgstr "Automatické WPA2"
-
-#~ msgid ""
-#~ "unable to create netlink socket for monitoring wired ethernet devices - %s"
-#~ msgstr ""
-#~ "nepodarilo sa vytvoriť sieťovú zásuvku pre sledovanie drôtových ethernet "
-#~ "zariadení - %s"
-
-#~ msgid ""
-#~ "unable to bind to netlink socket for monitoring wired ethernet devices - "
-#~ "%s"
-#~ msgstr ""
-#~ "nepodarilo sa pripojiť k sieťovej zásuvke pre sledovanie drôtových "
-#~ "ethernet zariadení - %s"
-
-#~ msgid "operation took too long"
-#~ msgstr "operácia trvala veľmi dlho"
-
-#~ msgid "received data from wrong type of sender"
-#~ msgstr "prijaté dáta od zlého typu odosielateľa"
-
-#~ msgid "received data from unexpected sender"
-#~ msgstr "prijaté dáta od neočakávaného odosielateľa"
-
-#~ msgid "too much data was sent over socket and some of it was lost"
-#~ msgstr ""
-#~ "príliš veľa dát bolo odoslaných cez zásuvku a niektoré z nich boli "
-#~ "stratené"
-
-#~ msgid "error occurred while waiting for data on socket"
-#~ msgstr "vyskytla sa chyba pri čakaní na dáta zo zásuvky"
-
-#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-#~ msgstr "Teraz ste pripojený k bezdrôtovej sieti '%s' Ad-Hoc."
-
-#~ msgid "You are now connected to the wired network."
-#~ msgstr "Teraz ste pripojený k drôtovej sieti."

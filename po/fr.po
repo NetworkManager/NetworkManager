@@ -14,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: fr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-05 13:50+0200\n"
+"POT-Creation-Date: 2016-04-05 15:00+0200\n"
 "PO-Revision-Date: 2014-02-04 01:19-0500\n"
 "Last-Translator: Sam Friedmann <sfriedma@redhat.com>\n"
 "Language-Team: French <trans-fr@lists.fedoraproject.org>\n"
@@ -1784,8 +1784,8 @@ msgid "Error: No connection specified."
 msgstr "Erreur : aucune connexion spécifiée."
 
 #: ../clients/cli/connections.c:2602
-#, c-format
-msgid "Error: '%s' is not an active connection."
+#, fuzzy, c-format
+msgid "Error: '%s' is not an active connection.\n"
 msgstr "Erreur : « %s » n'est pas une connexion active."
 
 #: ../clients/cli/connections.c:2603 ../clients/cli/connections.c:10420
@@ -2262,9 +2262,11 @@ msgid "Parent device [none]: "
 msgstr "Périphérique parent [none] : "
 
 #: ../clients/cli/connections.c:4282 ../clients/cli/connections.c:4606
-#, c-format
-msgid "Error: 'dev': '%s' is neither UUID nor interface name."
-msgstr "Erreur : « dev » : « %s » n'est pas un UUID ou un nom d'interface."
+#, fuzzy, c-format
+msgid "Error: 'dev': '%s' is neither UUID nor interface name.\n"
+msgstr ""
+"Erreur : « dev » : « %s » n'est pas un UUID, un nom d'interface, ni une "
+"adresse MAC."
 
 #: ../clients/cli/connections.c:4291
 #, fuzzy
@@ -2664,11 +2666,9 @@ msgid "Error: 'local': '%s' is not valid; must be an IP address"
 msgstr "Erreur : « %s » : « %s » n'est pas une adresse MAC %s valide."
 
 #: ../clients/cli/connections.c:6360 ../clients/cli/connections.c:6455
-#, fuzzy, c-format
-msgid "Error: 'dev': '%s' is neither UUID nor interface name.\n"
-msgstr ""
-"Erreur : « dev » : « %s » n'est pas un UUID, un nom d'interface, ni une "
-"adresse MAC."
+#, c-format
+msgid "Error: 'dev': '%s' is neither UUID nor interface name."
+msgstr "Erreur : « dev » : « %s » n'est pas un UUID ou un nom d'interface."
 
 #: ../clients/cli/connections.c:6421
 #, fuzzy
@@ -10076,8 +10076,8 @@ msgid ""
 msgstr ""
 
 #: ../src/nm-iface-helper.c:373
-#, c-format
-msgid "An interface name and UUID are required"
+#, fuzzy, c-format
+msgid "An interface name and UUID are required\n"
 msgstr "Un nom d'interface et un UUID sont requis"
 
 #: ../src/nm-iface-helper.c:379
