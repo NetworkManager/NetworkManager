@@ -16,7 +16,6 @@ AM_CPPFLAGS= \
 	$(NEWT_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DLOCALEDIR=\""$(localedir)"\" \
 	$(NULL)
 

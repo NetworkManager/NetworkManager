@@ -46,6 +46,12 @@
 #include <config.h>
 #endif
 
+/* for internal compilation we don't want the deprecation macros
+ * to be in effect. Define the widest range of versions to effectively
+ * disable deprecation checks */
+#define NM_VERSION_MAX_ALLOWED   NM_VERSION_NEXT_STABLE
+#define NM_VERSION_MIN_REQUIRED  NM_VERSION_0_9_8
+
 #include <stdlib.h>
 
 #include "nm-glib.h"

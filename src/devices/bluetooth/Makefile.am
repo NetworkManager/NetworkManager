@@ -16,7 +16,6 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-bluetooth"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS)
 
 GLIB_GENERATED = nm-bt-enum-types.h nm-bt-enum-types.c

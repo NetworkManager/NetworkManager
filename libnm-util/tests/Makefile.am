@@ -5,7 +5,6 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DBUILD_DIR=\"$(abs_builddir)\" \

@@ -7,7 +7,6 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)

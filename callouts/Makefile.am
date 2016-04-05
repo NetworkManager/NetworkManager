@@ -7,7 +7,6 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	$(GLIB_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"

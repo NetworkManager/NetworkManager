@@ -9,7 +9,6 @@ nm_dhcp_helper_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
 nm_dhcp_helper_LDADD = $(GLIB_LIBS)

@@ -77,6 +77,7 @@ GTKDOC_CFLAGS =				\
 	-I$(top_srcdir)/libnm		\
 	-I$(top_builddir)/libnm		\
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	-DNM_VERSION_MIN_REQUIRED=NM_VERSION_0_9_8 \
 	$(GLIB_CFLAGS)
 
 GTKDOC_LIBS =  \

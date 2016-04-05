@@ -8,7 +8,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/callouts \
 	-I$(top_builddir)/callouts \
 	-DNETWORKMANAGER_COMPILATION \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DSRCDIR=\"$(abs_srcdir)\" \
 	$(GLIB_CFLAGS)
 
