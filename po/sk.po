@@ -64,7 +64,7 @@ msgstr ""
 "\n"
 "Spustí polkit agenta pre toto sedenie. Keď bude služba polkit potrebovať "
 "autorizáciu,\n"
-"nmcli si ju vyžiada od používateľa a pošle odpovieť polkitu,"
+"nmcli si ju vyžiada od používateľa a pošle odpovieť polkitu.\n"
 
 #: ../clients/cli/agent.c:67
 #, c-format
@@ -84,7 +84,7 @@ msgstr ""
 #: ../clients/cli/agent.c:149
 #, c-format
 msgid "nmcli successfully registered as a NetworkManager's secret agent.\n"
-msgstr "nmcli sa úspešne zaregistroval ako secret agent pre NetworkManager."
+msgstr "nmcli sa úspešne zaregistroval ako secret agent pre NetworkManager.\n"
 
 #: ../clients/cli/agent.c:151
 #, c-format
@@ -99,7 +99,7 @@ msgstr "Chyba: nebolo možné spustiť polkit agenta: %s"
 #: ../clients/cli/agent.c:174
 #, c-format
 msgid "nmcli successfully registered as a polkit agent.\n"
-msgstr "nmcli sa úspešne zaregistroval ako secret agent pre polkit."
+msgstr "nmcli sa úspešne zaregistroval ako secret agent pre polkit.\n"
 
 #: ../clients/cli/agent.c:206 ../clients/cli/connections.c:11050
 #: ../clients/cli/devices.c:3669 ../clients/cli/general.c:343
@@ -574,17 +574,17 @@ msgstr "'%s' je nepovolené meno súboru alebo konfigurácie teamd"
 #: ../clients/cli/common.c:958
 #, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr "Chyba: openconnect zlyhal: '%s'"
+msgstr "Chyba: openconnect zlyhal: %s\n"
 
 #: ../clients/cli/common.c:965
 #, c-format
 msgid "Error: openconnect failed with status %d\n"
-msgstr "Chyba: openconnect vrátil chybový stav %d"
+msgstr "Chyba: openconnect vrátil chybový stav %d\n"
 
 #: ../clients/cli/common.c:967
 #, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr "Chyba: openconnect prijal signál %d"
+msgstr "Chyba: openconnect prijal signál %d\n"
 
 #: ../clients/cli/common.c:1045
 #, c-format
@@ -1305,7 +1305,7 @@ msgstr "Odpojené"
 #: ../clients/cli/connections.c:744
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
-msgstr "Nepodarilo sa zmeniť heslo pre %s: %s"
+msgstr "Nepodarilo sa zmeniť heslo pre %s: %s\n"
 
 #: ../clients/cli/connections.c:764
 #, fuzzy

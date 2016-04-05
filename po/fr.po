@@ -650,7 +650,7 @@ msgstr "Erreur : échec de openconnect avec l'état %d\n"
 #: ../clients/cli/common.c:967
 #, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr "Erreur : échec de openconnect avec le signal %d"
+msgstr "Erreur : échec de openconnect avec le signal %d\n"
 
 #: ../clients/cli/common.c:1045
 #, c-format
@@ -1725,7 +1725,7 @@ msgstr "Erreur : l'activation de la connexion a échoué : %s"
 #: ../clients/cli/connections.c:2225
 #, c-format
 msgid "failed to read passwd-file '%s': %s"
-msgstr "Erreur : échec de lecture du fichier de mot de passe « %s » : %s\n"
+msgstr "Erreur : échec de lecture du fichier de mot de passe « %s » : %s"
 
 #: ../clients/cli/connections.c:2237
 #, c-format
@@ -1785,7 +1785,7 @@ msgstr "Erreur : aucune connexion spécifiée."
 
 #: ../clients/cli/connections.c:2602
 #, c-format
-msgid "Error: '%s' is not an active connection.\n"
+msgid "Error: '%s' is not an active connection."
 msgstr "Erreur : « %s » n'est pas une connexion active."
 
 #: ../clients/cli/connections.c:2603 ../clients/cli/connections.c:10420
@@ -1796,7 +1796,7 @@ msgstr "Erreur : toutes les connexions n'ont pas été trouvées."
 #: ../clients/cli/connections.c:2612
 #, c-format
 msgid "Error: no active connection provided."
-msgstr "Erreur : aucune connexion fournie.\n"
+msgstr "Erreur : aucune connexion fournie."
 
 #: ../clients/cli/connections.c:2955 ../clients/cli/utils.c:702
 #, c-format
@@ -2249,7 +2249,7 @@ msgstr "Tap %s"
 #: ../clients/cli/connections.c:4256
 #, c-format
 msgid "Error: 'tap': %s.\n"
-msgstr "Erreur : « tap » : %s."
+msgstr "Erreur : « tap » : %s.\n"
 
 #. Ask for optional 'vxlan' arguments.
 #: ../clients/cli/connections.c:4272 ../libnm-glib/nm-device.c:1875
@@ -2263,7 +2263,7 @@ msgstr "Périphérique parent [none] : "
 
 #: ../clients/cli/connections.c:4282 ../clients/cli/connections.c:4606
 #, c-format
-msgid "Error: 'dev': '%s' is neither UUID nor interface name.\n"
+msgid "Error: 'dev': '%s' is neither UUID nor interface name."
 msgstr "Erreur : « dev » : « %s » n'est pas un UUID ou un nom d'interface."
 
 #: ../clients/cli/connections.c:4291
@@ -2665,7 +2665,7 @@ msgstr "Erreur : « %s » : « %s » n'est pas une adresse MAC %s valide."
 
 #: ../clients/cli/connections.c:6360 ../clients/cli/connections.c:6455
 #, fuzzy, c-format
-msgid "Error: 'dev': '%s' is neither UUID nor interface name."
+msgid "Error: 'dev': '%s' is neither UUID nor interface name.\n"
 msgstr ""
 "Erreur : « dev » : « %s » n'est pas un UUID, un nom d'interface, ni une "
 "adresse MAC."
@@ -10077,8 +10077,8 @@ msgstr ""
 
 #: ../src/nm-iface-helper.c:373
 #, c-format
-msgid "An interface name and UUID are required\n"
-msgstr "Un nom d'interface et un UUID sont requis."
+msgid "An interface name and UUID are required"
+msgstr "Un nom d'interface et un UUID sont requis"
 
 #: ../src/nm-iface-helper.c:379
 #, c-format

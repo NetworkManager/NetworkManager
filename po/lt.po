@@ -1596,7 +1596,7 @@ msgstr "ruošiama"
 #: ../clients/cli/connections.c:2483
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Ryšys \"%s\" (%s) sėkmingai ištrintas."
+msgstr "Ryšys \"%s\" (%s) sėkmingai ištrintas.\n"
 
 #: ../clients/cli/connections.c:2499
 #, fuzzy, c-format
@@ -4187,7 +4187,7 @@ msgstr ""
 #: ../clients/cli/devices.c:549 ../clients/cli/devices.c:1901
 #, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "Klaida: Įrenginys \"%s\" nerastas."
+msgstr "Klaida: Įrenginys \"%s\" nerastas.\n"
 
 #: ../clients/cli/devices.c:550 ../clients/cli/devices.c:1902
 #, fuzzy, c-format

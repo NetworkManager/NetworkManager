@@ -1691,7 +1691,7 @@ msgid "Error: No connection specified."
 msgstr "エラー: 接続が指定されていません。"
 
 #: ../clients/cli/connections.c:2602
-#, c-format
+#, fuzzy, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "エラー: '%s' はアクティブな接続ではありません。"
 
@@ -1879,6 +1879,7 @@ msgstr "サービス [none]: "
 
 #. Ask for optional 'gsm' or 'cdma' arguments.
 #: ../clients/cli/connections.c:3730
+#, fuzzy
 msgid "mobile broadband"
 msgstr "モバイルブロードバンド"
 
