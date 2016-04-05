@@ -264,7 +264,7 @@ nm_auth_manager_polkit_authority_check_authorization (NMAuthManager *self,
 	    : POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
 
 	subject_value = nm_auth_subject_unix_process_to_polkit_gvariant (subject);
-	g_assert (g_variant_is_floating (subject_value));
+	nm_assert (g_variant_is_floating (subject_value));
 
 	/* ((PolkitDetails *)NULL) */
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
