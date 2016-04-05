@@ -2788,7 +2788,7 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 		key_mask = umask (0077);
 		if (read (urandom, secret_key, key_len) == key_len) {
 			if (!g_file_set_contents (NMSTATEDIR "/secret_key", secret_key, key_len, error)) {
-				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key");
+				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
 				key_len = 0;
 			}
 		} else {
