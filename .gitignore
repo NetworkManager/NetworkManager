@@ -214,7 +214,7 @@ test-*.trs
 /m4/wint_t.m4
 /m4/xsize.m4
 
-/man/*.[185]
+/man/*.[1785]
 /man/NetworkManager.conf.xml
 /man/nm-settings.xml
 /man/nm-settings-ifcfg-rh.xml
