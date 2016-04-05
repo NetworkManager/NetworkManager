@@ -4720,9 +4720,9 @@ msgid "Error: No property specified."
 msgstr "பிழை: இணைப்பு எதுவும் குறிப்பிடப்படவில்லை."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "பிழை: %s விவாதம் விடுபட்டுள்ளது."
+msgstr "பிழை: '%s' விவாதம் விடுபட்டது."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

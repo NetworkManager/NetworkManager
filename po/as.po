@@ -4663,9 +4663,9 @@ msgid "Error: No property specified."
 msgstr "ত্ৰুটি: কোনো সংযোগ ধাৰ্য্য কৰা হোৱা নাই।"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "ত্ৰুটি: %s তৰ্ক সন্ধানহীন।"
+msgstr "ত্ৰুটি: '%s' তৰ্ক অনুপস্থিত ।"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

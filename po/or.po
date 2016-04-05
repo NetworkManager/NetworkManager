@@ -4608,9 +4608,9 @@ msgid "Error: No property specified."
 msgstr "ତ୍ରୁଟି: କୌଣସି ସଂଯୋଗ ଉଲ୍ଲେଖ ହୋଇନାହିଁ।"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "ତ୍ରୁଟି: %s ସ୍ୱତନ୍ତ୍ରଚର ଅନୁପସ୍ଥିତ ଅଛି।"
+msgstr "ତ୍ରୁଟି: '%s' ସ୍ୱତନ୍ତ୍ରଚର ଅନୁପସ୍ଥିତ।"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

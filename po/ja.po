@@ -4617,9 +4617,9 @@ msgid "Error: No property specified."
 msgstr "エラー: 接続が指定されていません。"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "エラー: %s 引数がありません。"
+msgstr "エラー: '%s' 引数がありません。"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

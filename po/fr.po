@@ -4741,9 +4741,9 @@ msgid "Error: No property specified."
 msgstr "Erreur : aucune connexion spécifiée."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "Erreur : le paramètre %s est manquant."
+msgstr "Erreur&nbsp;: L'argument '%s' est manquant."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

@@ -4657,9 +4657,9 @@ msgid "Error: No property specified."
 msgstr "त्रुटी: जोडणी निर्देशीत केली नाही."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "त्रुटी: %s बाब आढळले नाही."
+msgstr "त्रुटी: '%s' घटक आढळले नाही."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

@@ -4393,9 +4393,9 @@ msgid "Error: No property specified."
 msgstr "Klaida: nenurodytas ryšys."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "Klaida: trūksta argumento %s."
+msgstr "Klaida: trūksta argumento „%s“."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format
@@ -6228,7 +6228,7 @@ msgstr ""
 #: ../clients/common/nm-secret-agent-simple.c:335
 #: ../clients/tui/nmt-page-dsl.c:78
 msgid "Service"
-msgstr ""
+msgstr "Tarnyba"
 
 #: ../clients/common/nm-secret-agent-simple.c:448
 msgid "Authentication required by wireless network"
@@ -6519,9 +6519,8 @@ msgid "Ethernet device"
 msgstr ""
 
 #: ../clients/tui/nmt-editor.c:333
-#, fuzzy
 msgid "Device"
-msgstr "Įrenginio informacija"
+msgstr "Įrenginys"
 
 #. And finally the bottom widgets
 #: ../clients/tui/nmt-editor.c:391
@@ -6986,7 +6985,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-route-table.c:191
 msgid "Prefix"
-msgstr ""
+msgstr "Priešdėlis"
 
 #: ../clients/tui/nmt-route-table.c:200
 msgid "Next Hop"

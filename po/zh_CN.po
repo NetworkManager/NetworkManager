@@ -4602,9 +4602,9 @@ msgid "Error: No property specified."
 msgstr "错误：未指定连接。"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "错误：缺少 %s 参数。"
+msgstr "错误：缺少 '%s' 参数。"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

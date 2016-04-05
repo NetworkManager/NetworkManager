@@ -4652,9 +4652,9 @@ msgid "Error: No property specified."
 msgstr "ਗਲਤੀ: ਕੋਈ ਸੰਪਰਕ ਦਰਸਾਇਆ ਨਹੀਂ ਗਿਆ।"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "ਗਲਤੀ: %s ਆਰਗੂਮੈਂਟ ਮੌਜੂਦ ਨਹੀਂ ਹੈ।"
+msgstr "ਗਲਤੀ: '%s' ਆਰਗੂਮੈਂਟ ਗੁੰਮ ਹੈ।"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

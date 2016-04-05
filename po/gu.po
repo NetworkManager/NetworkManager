@@ -4619,9 +4619,9 @@ msgid "Error: No property specified."
 msgstr "ભૂલ: જોડાણ સ્પષ્ટ થયેલ નથી."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "ભૂલ: %s દલીલ ગેરહાજર છે."
+msgstr "ભૂલ: '%s' દલીલ ગેરહાજર છે."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

@@ -6599,9 +6599,8 @@ msgid "WEP 40/128-bit Key (Hex or ASCII)"
 msgstr "WEP 64/128-bit ASCII"
 
 #: ../clients/tui/nmt-page-wifi.c:84
-#, fuzzy
 msgid "WEP 128-bit Passphrase"
-msgstr "%d (104/128-bit passphrase)"
+msgstr "WEP 128-bit Passphrase"
 
 #: ../clients/tui/nmt-page-wifi.c:85
 #, fuzzy

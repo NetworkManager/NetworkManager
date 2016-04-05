@@ -4595,9 +4595,9 @@ msgid "Error: No property specified."
 msgstr "錯誤：尚未指定連線。"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "錯誤：沒有 %s 參數。"
+msgstr "錯誤：找不到「%s」參數。"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

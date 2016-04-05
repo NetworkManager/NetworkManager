@@ -4614,9 +4614,9 @@ msgid "Error: No property specified."
 msgstr "오류: 연결이 지정되어 있지 않습니다. "
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "오류: %s 인자가 없습니다."
+msgstr "오류: '%s' 인자가 없습니다."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

@@ -6598,9 +6598,8 @@ msgid "WEP 40/128-bit Key (Hex or ASCII)"
 msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:84
-#, fuzzy
 msgid "WEP 128-bit Passphrase"
-msgstr "%d (104/128 битова парола)"
+msgstr "128 битова парола WEP"
 
 #: ../clients/tui/nmt-page-wifi.c:85
 msgid "Dynamic WEP (802.1x)"
@@ -6608,7 +6607,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:86
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: ../clients/tui/nmt-page-wifi.c:91
 msgctxt "WEP key index"
@@ -6631,13 +6630,12 @@ msgid "4"
 msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:99
-#, fuzzy
 msgid "Open System"
-msgstr "Системна"
+msgstr "Открита система"
 
 #: ../clients/tui/nmt-page-wifi.c:100
 msgid "Shared Key"
-msgstr ""
+msgstr "Споделен ключ"
 
 #: ../clients/tui/nmt-page-wifi.c:214
 msgid "WI-FI"
@@ -6678,7 +6676,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-password-fields.c:129
 msgid "Show password"
-msgstr ""
+msgstr "Показване на паролата"
 
 #: ../clients/tui/nmt-route-table.c:191
 msgid "Destination"

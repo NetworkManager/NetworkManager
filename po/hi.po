@@ -4660,9 +4660,9 @@ msgid "Error: No property specified."
 msgstr "त्रुटि: कोई कनेक्शन निर्दिष्ट नहीं."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "त्रुटि: %s तर्क अनुपस्थित है."
+msgstr "त्रुटि: '%s' तर्क अनुपस्थित है."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

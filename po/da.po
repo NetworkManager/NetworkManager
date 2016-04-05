@@ -6595,7 +6595,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:86
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: ../clients/tui/nmt-page-wifi.c:91
 msgctxt "WEP key index"
@@ -6618,13 +6618,12 @@ msgid "4"
 msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:99
-#, fuzzy
 msgid "Open System"
-msgstr "System"
+msgstr "Åbent system"
 
 #: ../clients/tui/nmt-page-wifi.c:100
 msgid "Shared Key"
-msgstr ""
+msgstr "Delt nøgle"
 
 #: ../clients/tui/nmt-page-wifi.c:214
 msgid "WI-FI"

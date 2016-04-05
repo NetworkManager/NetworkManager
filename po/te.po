@@ -4649,9 +4649,9 @@ msgid "Error: No property specified."
 msgstr "దోషము: ఏ అనుసంధానం తెలుపలేదు."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "దోషము: %s ఆర్గుమెంట్ తప్పిపోయినది."
+msgstr "దోషము: '%s' ఆర్గుమెంట్ తప్పిపోయినది."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

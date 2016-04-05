@@ -4699,9 +4699,9 @@ msgid "Error: No property specified."
 msgstr "ದೋಷ: ಯಾವುದೆ ಸಂಪರ್ಕವನ್ನು ಸೂಚಿಸಲಾಗಿಲ್ಲ."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "ದೋಷ: %s ಆರ್ಗ್ಯುಮೆಂಟ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ"
+msgstr "ದೋಷ: '%s' ಆರ್ಗ್ಯುಮೆಂಟ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

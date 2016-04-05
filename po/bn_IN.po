@@ -4664,9 +4664,9 @@ msgid "Error: No property specified."
 msgstr "ত্রুটি: কোনো সংযোগ নির্দিষ্ট করা নেই।"
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "ত্রুটি: %s আর্গুমেন্ট অনুপস্থিত।"
+msgstr "ত্রুটি: '%s' আর্গুমেন্ট অনুপস্থিত।"
 
 #: ../clients/cli/devices.c:2149
 #, fuzzy, c-format

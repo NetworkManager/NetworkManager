@@ -5910,7 +5910,7 @@ msgstr ""
 #: ../clients/common/nm-secret-agent-simple.c:335
 #: ../clients/tui/nmt-page-dsl.c:78
 msgid "Service"
-msgstr ""
+msgstr "Služba"
 
 #: ../clients/common/nm-secret-agent-simple.c:448
 msgid "Authentication required by wireless network"
@@ -5982,7 +5982,7 @@ msgstr ""
 #: ../clients/common/nm-vpn-helpers.c:108 ../clients/tui/nmt-page-ip4.c:143
 #: ../clients/tui/nmt-page-ip6.c:143
 msgid "Gateway"
-msgstr ""
+msgstr "Brána"
 
 #: ../clients/common/nm-vpn-helpers.c:109
 msgid "Cookie"
@@ -6199,9 +6199,8 @@ msgid "Ethernet device"
 msgstr ""
 
 #: ../clients/tui/nmt-editor.c:333
-#, fuzzy
 msgid "Device"
-msgstr "Detaily zařízení"
+msgstr "Zařízení"
 
 #. And finally the bottom widgets
 #: ../clients/tui/nmt-editor.c:391
@@ -6661,7 +6660,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-route-table.c:191
 msgid "Prefix"
-msgstr ""
+msgstr "Předčíslí"
 
 #: ../clients/tui/nmt-route-table.c:200
 msgid "Next Hop"
