@@ -35,6 +35,10 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
+"Modo de uso: nmcli agent { COMMAND | help }\n"
+"\n"
+"COMMAND := { secret | polkit | all }\n"
+"\n"
 
 #: ../clients/cli/agent.c:47
 #, c-format
@@ -170,9 +174,9 @@ msgid "invalid metric '%s'"
 msgstr "Métrica inválida '%s'"
 
 #: ../clients/cli/common.c:465
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "Ruta IPv4 inválida '%s'"
+msgstr "Ruta inválida: %s"
 
 #: ../clients/cli/common.c:477
 msgid "default route cannot be added (NetworkManager handles it by itself)"

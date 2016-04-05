@@ -27,6 +27,9 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
+"Použitie: nmcli agent  { PRÍKAZ | help }\n"
+"\n"
+"PRÍKAZ := { secret | polkit | all }\n"
 
 #: ../clients/cli/agent.c:47
 #, c-format
@@ -39,6 +42,12 @@ msgid ""
 "and if a password is required asks the user for it.\n"
 "\n"
 msgstr ""
+"Použitie: nmcli agent  secret { help }\n"
+"\n"
+"Spustí nmcli v režime prostredníka prístupových oprávnení. V prípade, že\n"
+"NetworkManager potrebuje heslo, vyžiada si ho od prostredníka. Tento\n"
+"príkaz spôsobí, že nmcli ostane bežať a vyžiada si od užívateľa heslo keď\n"
+"ho NetworkManager potrebuje.\n"
 
 #: ../clients/cli/agent.c:57
 #, c-format
@@ -51,6 +60,11 @@ msgid ""
 "the response back to polkit.\n"
 "\n"
 msgstr ""
+"Použitie: nmcli agent polkit { help }\n"
+"\n"
+"Spustí polkit agenta pre toto sedenie. Keď bude služba polkit potrebovať "
+"autorizáciu,\n"
+"nmcli si ju vyžiada od používateľa a pošle odpovieť polkitu,"
 
 #: ../clients/cli/agent.c:67
 #, c-format
@@ -60,91 +74,97 @@ msgid ""
 "Runs nmcli as both NetworkManager secret and a polkit agent.\n"
 "\n"
 msgstr ""
+"Použitie: nmcli agent all { help }\n"
+"\n"
+"Spustí agenta, ktorý bude obsluhovať požiadavky od polkitu aj "
+"NetworkManagera.\n"
+"Keď bude vyžadovaná autorizácia užívateľa alebo siete, nmcli ju obslúži.\n"
+"\n"
 
 #: ../clients/cli/agent.c:149
 #, c-format
 msgid "nmcli successfully registered as a NetworkManager's secret agent.\n"
-msgstr ""
+msgstr "nmcli sa úspešne zaregistroval ako secret agent pre NetworkManager."
 
 #: ../clients/cli/agent.c:151
 #, c-format
 msgid "Error: secret agent initialization failed"
-msgstr ""
+msgstr "Chyba: nebolo možné spustiť agenta."
 
 #: ../clients/cli/agent.c:166
 #, c-format
 msgid "Error: polkit agent initialization failed: %s"
-msgstr ""
+msgstr "Chyba: nebolo možné spustiť polkit agenta: %s"
 
 #: ../clients/cli/agent.c:174
 #, c-format
 msgid "nmcli successfully registered as a polkit agent.\n"
-msgstr ""
+msgstr "nmcli sa úspešne zaregistroval ako secret agent pre polkit."
 
 #: ../clients/cli/agent.c:206 ../clients/cli/connections.c:11050
 #: ../clients/cli/devices.c:3669 ../clients/cli/general.c:343
 #: ../clients/cli/general.c:484
-#, fuzzy, c-format
+#, c-format
 msgid "Error: NetworkManager is not running."
-msgstr "NetworkManager nebeží"
+msgstr "Chyba: NetworkManager nebeží"
 
 #: ../clients/cli/agent.c:242
 #, c-format
 msgid "Error: 'agent' command '%s' is not valid."
-msgstr ""
+msgstr "Chyba: agent nepozná príkaz '%s'."
 
 #: ../clients/cli/common.c:38 ../clients/cli/common.c:51
 #: ../clients/cli/common.c:59 ../clients/cli/common.c:71
 #: ../clients/cli/connections.c:192 ../clients/cli/connections.c:214
 msgid "GROUP"
-msgstr ""
+msgstr "SKUPINA"
 
 #. 0
 #: ../clients/cli/common.c:39 ../clients/cli/common.c:60
 msgid "ADDRESS"
-msgstr ""
+msgstr "ADRESA"
 
 #. 1
 #. 2
 #: ../clients/cli/common.c:40 ../clients/cli/common.c:61
 #: ../clients/cli/connections.c:217
 msgid "GATEWAY"
-msgstr ""
+msgstr "BRÁNA"
 
 #. 2
 #: ../clients/cli/common.c:41 ../clients/cli/common.c:62
 msgid "ROUTE"
-msgstr ""
+msgstr "SMER"
 
 #. 3
 #: ../clients/cli/common.c:42 ../clients/cli/common.c:63
 msgid "DNS"
-msgstr ""
+msgstr "DNS"
 
 #. 4
 #: ../clients/cli/common.c:43 ../clients/cli/common.c:64
 msgid "DOMAIN"
-msgstr ""
+msgstr "DOMÉNA"
 
 #. 5
 #: ../clients/cli/common.c:44
 msgid "WINS"
-msgstr ""
+msgstr "WINS"
 
 #. 0
 #: ../clients/cli/common.c:52 ../clients/cli/common.c:72
 msgid "OPTION"
-msgstr ""
+msgstr "VOĽBA"
 
 #: ../clients/cli/common.c:376 ../clients/cli/common.c:436
 #, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
-msgstr ""
+msgstr "nesprávny prefix: '%s'; povolený interval je <1-%d>"
 
 #: ../clients/cli/common.c:384
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "IP adresa:"
+msgstr "nesprávna adresa IP: %s"
 
 #: ../clients/cli/common.c:448
 #, c-format
@@ -152,73 +172,69 @@ msgid ""
 "the second component of route ('%s') is neither a next hop address nor a "
 "metric"
 msgstr ""
+"smerová adresa ('%s') nie je nasledovaná adresou ďalšieho uzla alebo metrikou"
 
 #: ../clients/cli/common.c:457
 #, c-format
 msgid "invalid metric '%s'"
-msgstr ""
+msgstr "nesprávna metrika '%s'"
 
 #: ../clients/cli/common.c:465
 #, c-format
 msgid "invalid route: %s"
-msgstr ""
+msgstr "nesprávna smerová adresa '%s'"
 
 #: ../clients/cli/common.c:477
 msgid "default route cannot be added (NetworkManager handles it by itself)"
-msgstr ""
+msgstr "nemôžte pridať implicitný smer (spravuje ho NetworkManager)"
 
 #: ../clients/cli/common.c:494
 msgid "unmanaged"
-msgstr ""
+msgstr "nemanažované"
 
 #: ../clients/cli/common.c:496
 msgid "unavailable"
-msgstr ""
+msgstr "nedostupné"
 
 #: ../clients/cli/common.c:498 ../clients/cli/general.c:245
-#, fuzzy
 msgid "disconnected"
-msgstr "Odpojené"
+msgstr "odpojené"
 
 #: ../clients/cli/common.c:500
 msgid "connecting (prepare)"
-msgstr ""
+msgstr "pripája sa (príprava)"
 
 #: ../clients/cli/common.c:502
-#, fuzzy
 msgid "connecting (configuring)"
-msgstr "Informácie o spojení"
+msgstr "pripája sa (nastavenia)"
 
 #: ../clients/cli/common.c:504
 msgid "connecting (need authentication)"
-msgstr ""
+msgstr "pripája sa (autorizácia nutná)"
 
 #: ../clients/cli/common.c:506
-#, fuzzy
 msgid "connecting (getting IP configuration)"
-msgstr "Informácie o spojení"
+msgstr "pripája sa (získavam IP adresu)"
 
 #: ../clients/cli/common.c:508
 msgid "connecting (checking IP connectivity)"
-msgstr ""
+msgstr "pripája sa (kontrolujem IP konektivitu)"
 
 #: ../clients/cli/common.c:510
 msgid "connecting (starting secondary connections)"
-msgstr ""
+msgstr "pripája sa (aktivujú sa sekundárne pripojenia)"
 
 #: ../clients/cli/common.c:512 ../clients/cli/general.c:241
-#, fuzzy
 msgid "connected"
-msgstr "Odpojené"
+msgstr "pripojené"
 
 #: ../clients/cli/common.c:514 ../clients/cli/connections.c:648
 msgid "deactivating"
-msgstr ""
+msgstr "odpája sa"
 
 #: ../clients/cli/common.c:516
-#, fuzzy
 msgid "connection failed"
-msgstr "Spojenie nadviazané"
+msgstr "nepodarilo sa pripojiť"
 
 #: ../clients/cli/common.c:518 ../clients/cli/common.c:535
 #: ../clients/cli/connections.c:653 ../clients/cli/connections.c:676
@@ -229,9 +245,9 @@ msgstr "Spojenie nadviazané"
 #: ../clients/cli/settings.c:839 ../clients/cli/settings.c:925
 #: ../clients/cli/settings.c:1265 ../clients/cli/settings.c:1901
 #: ../clients/cli/settings.c:3205 ../clients/cli/utils.c:1400
-#, fuzzy, c-format
+#, c-format
 msgid "unknown"
-msgstr "(neznáme)"
+msgstr "neznáme"
 
 #. "CAPABILITIES"
 #: ../clients/cli/common.c:527 ../clients/cli/connections.c:933
@@ -250,7 +266,7 @@ msgstr "(neznáme)"
 #: ../clients/cli/devices.c:1066 ../clients/cli/devices.c:1068
 #: ../clients/cli/general.c:442 ../clients/cli/settings.c:3200
 msgid "yes"
-msgstr ""
+msgstr "áno"
 
 #: ../clients/cli/common.c:529 ../clients/cli/connections.c:933
 #: ../clients/cli/connections.c:935 ../clients/cli/connections.c:937
@@ -267,239 +283,235 @@ msgstr ""
 #: ../clients/cli/devices.c:1064 ../clients/cli/devices.c:1066
 #: ../clients/cli/devices.c:1068 ../clients/cli/general.c:444
 #: ../clients/cli/settings.c:3202
-#, fuzzy
 msgid "no"
-msgstr "nič"
+msgstr "nie"
 
 #: ../clients/cli/common.c:531
 msgid "yes (guessed)"
-msgstr ""
+msgstr "áno (odhadom)"
 
 #: ../clients/cli/common.c:533
 msgid "no (guessed)"
-msgstr ""
+msgstr "nie (odhadom)"
 
 #: ../clients/cli/common.c:544
 msgid "No reason given"
-msgstr ""
+msgstr "Z neznámeho dôvodu"
 
 #. We should not really come here
 #: ../clients/cli/common.c:547 ../clients/cli/connections.c:2976
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown error"
-msgstr "Neznáme"
+msgstr "Neznáma chyba"
 
 #: ../clients/cli/common.c:550
 msgid "Device is now managed"
-msgstr ""
+msgstr "Odteraz je zariadenie manažované"
 
 #: ../clients/cli/common.c:553
 msgid "Device is now unmanaged"
-msgstr ""
+msgstr "Odteraz je zariadenie nemanažované"
 
 #: ../clients/cli/common.c:556
 msgid "The device could not be readied for configuration"
-msgstr ""
+msgstr "Nebolo možné zariadenie pripraviť na konfiguráciu"
 
 #: ../clients/cli/common.c:559
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
-msgstr ""
+msgstr "Nebolo možné nastaviť IP (nedostupná adresa, server neodpovedá, atď.)"
 
 #: ../clients/cli/common.c:562
 msgid "The IP configuration is no longer valid"
-msgstr ""
+msgstr "Nastavenia IP už nie su platné."
 
 #: ../clients/cli/common.c:565
 msgid "Secrets were required, but not provided"
-msgstr ""
+msgstr "Nepodarilo sa získať potrebnú autorizáciu."
 
 #: ../clients/cli/common.c:568
 msgid "802.1X supplicant disconnected"
-msgstr ""
+msgstr "802.1X supplicant sa odpojil."
 
 #: ../clients/cli/common.c:571
 msgid "802.1X supplicant configuration failed"
-msgstr ""
+msgstr "Nepodarilo sa nastaviť 802.1X supplicant."
 
 #: ../clients/cli/common.c:574
 msgid "802.1X supplicant failed"
-msgstr ""
+msgstr "802.1X supplicant zlyhal."
 
 #: ../clients/cli/common.c:577
 msgid "802.1X supplicant took too long to authenticate"
-msgstr ""
+msgstr "802.1X supplicant sa autentikoval príliš dlho."
 
 #: ../clients/cli/common.c:580
 msgid "PPP service failed to start"
-msgstr ""
+msgstr "Nepodarilo sa spustiť službu PPP."
 
 #: ../clients/cli/common.c:583
-#, fuzzy
 msgid "PPP service disconnected"
-msgstr "Odpojené"
+msgstr "Služba PPP sa odpojila."
 
 #: ../clients/cli/common.c:586
 msgid "PPP failed"
-msgstr ""
+msgstr "Služba PPP zlyhala."
 
 #: ../clients/cli/common.c:589
 msgid "DHCP client failed to start"
-msgstr ""
+msgstr "Nepodarilo sa spustiť DHCP klienta."
 
 #: ../clients/cli/common.c:592
 msgid "DHCP client error"
-msgstr ""
+msgstr "Chyba v DHCP klientovi."
 
 #: ../clients/cli/common.c:595
 msgid "DHCP client failed"
-msgstr ""
+msgstr "DHCP klient zlyhal."
 
 #: ../clients/cli/common.c:598
 msgid "Shared connection service failed to start"
-msgstr ""
+msgstr "Nepodarilo sa spustiť zdieľanie pripojenia."
 
 #: ../clients/cli/common.c:601
 msgid "Shared connection service failed"
-msgstr ""
+msgstr "Pokus o zdieľanie pripojenie zlyhal."
 
 #: ../clients/cli/common.c:604
 msgid "AutoIP service failed to start"
-msgstr ""
+msgstr "Zlyhal pokus o spustenie služby AutoIP."
 
 #: ../clients/cli/common.c:607
 msgid "AutoIP service error"
-msgstr ""
+msgstr "Chyba v službe AutoIP."
 
 #: ../clients/cli/common.c:610
 msgid "AutoIP service failed"
-msgstr ""
+msgstr "Služba AutoIP zlyhala."
 
 #: ../clients/cli/common.c:613
 msgid "The line is busy"
-msgstr ""
+msgstr "Linka je obsadená."
 
 #: ../clients/cli/common.c:616
 msgid "No dial tone"
-msgstr ""
+msgstr "Chýba vytáčací tón."
 
 #: ../clients/cli/common.c:619
 msgid "No carrier could be established"
-msgstr ""
+msgstr "Nebolo možné nadviazať hovor."
 
 #: ../clients/cli/common.c:622
 msgid "The dialing request timed out"
-msgstr ""
+msgstr "Vytáčanie trvalo príliš dlho."
 
 #: ../clients/cli/common.c:625
 msgid "The dialing attempt failed"
-msgstr ""
+msgstr "Zlyhal pokus o vytáčanie."
 
 #: ../clients/cli/common.c:628
 msgid "Modem initialization failed"
-msgstr ""
+msgstr "Nebolo možne inicializovať modem."
 
 #: ../clients/cli/common.c:631
 msgid "Failed to select the specified APN"
-msgstr ""
+msgstr "Nebolo možné nastaviť zvolené APN."
 
 #: ../clients/cli/common.c:634
 msgid "Not searching for networks"
-msgstr ""
+msgstr "Nevyhľadávam siete."
 
 #: ../clients/cli/common.c:637
-#, fuzzy
 msgid "Network registration denied"
-msgstr "Sieť deaktivovaná"
+msgstr "Žiadosť o registráciu bola zamietnutá."
 
 #: ../clients/cli/common.c:640
 msgid "Network registration timed out"
-msgstr ""
+msgstr "Žiadosť o registráciu trvala príliš dlho."
 
 #: ../clients/cli/common.c:643
 msgid "Failed to register with the requested network"
-msgstr ""
+msgstr "Zlyhal pokus o registráciu k vybranej sieti."
 
 #: ../clients/cli/common.c:646
 msgid "PIN check failed"
-msgstr ""
+msgstr "Kontrola PIN zlyhala."
 
 #: ../clients/cli/common.c:649
 msgid "Necessary firmware for the device may be missing"
-msgstr ""
+msgstr "Zariadeniu pravdepodobne chýba potrebný firmvér."
 
 #: ../clients/cli/common.c:652
 msgid "The device was removed"
-msgstr ""
+msgstr "Zariadenie bolo odobraté."
 
 #: ../clients/cli/common.c:655
-#, fuzzy
 msgid "NetworkManager went to sleep"
-msgstr "Applet NetworkManager"
+msgstr "NetworkManager je uspaný."
 
 #: ../clients/cli/common.c:658
 msgid "The device's active connection disappeared"
-msgstr ""
+msgstr "Pripojenie už nie je aktívne na zariadení"
 
 #: ../clients/cli/common.c:661
 msgid "Device disconnected by user or client"
-msgstr ""
+msgstr "Zariadenie bolo odpojené užívaťeľom"
 
 #: ../clients/cli/common.c:664
 msgid "Carrier/link changed"
-msgstr ""
+msgstr "Stav spojenia sa zmenil"
 
 #: ../clients/cli/common.c:667
 msgid "The device's existing connection was assumed"
-msgstr ""
+msgstr "Podarilo sa prevziať existujúce pripojenie"
 
 #: ../clients/cli/common.c:670
 msgid "The supplicant is now available"
-msgstr ""
+msgstr "Supplicant je dostupný"
 
 #: ../clients/cli/common.c:673
 msgid "The modem could not be found"
-msgstr ""
+msgstr "Modem sa nepodarilo nájsť"
 
 #: ../clients/cli/common.c:676
 msgid "The Bluetooth connection failed or timed out"
-msgstr ""
+msgstr "Pripojenie cez Bluetooth zlyhalo alebo trvalo príliš dlho"
 
 #: ../clients/cli/common.c:679
 msgid "GSM Modem's SIM card not inserted"
-msgstr ""
+msgstr "SIM karta nie je vložená v GSM modeme"
 
 #: ../clients/cli/common.c:682
 msgid "GSM Modem's SIM PIN required"
-msgstr ""
+msgstr "SIM kartu v GSM modeme je potreba odomknúť PIN kódom"
 
 #: ../clients/cli/common.c:685
 msgid "GSM Modem's SIM PUK required"
-msgstr ""
+msgstr "SIM kartu v GSM modeme je potreba odomknúť PUK kódom"
 
 #: ../clients/cli/common.c:688
 msgid "GSM Modem's SIM wrong"
-msgstr ""
+msgstr "SIM karta nefunguje s týmto GSM modemom"
 
 #: ../clients/cli/common.c:691
 msgid "InfiniBand device does not support connected mode"
-msgstr ""
+msgstr "Zariadenie InfiniBand nepodporuje pripojený mód"
 
 #: ../clients/cli/common.c:694
 msgid "A dependency of the connection failed"
-msgstr ""
+msgstr "Nebolo možné uspokojiť závislosti pripojenia"
 
 #: ../clients/cli/common.c:697
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
-msgstr ""
+msgstr "Vyskytol sa problém s RFC 2684 premostením Ethernetu cez ADSL"
 
 #: ../clients/cli/common.c:700
 msgid "ModemManager is unavailable"
-msgstr ""
+msgstr "ModemManager nie je dostupný"
 
 #: ../clients/cli/common.c:703
 msgid "The Wi-Fi network could not be found"
-msgstr ""
+msgstr "Nebolo možné nájsť Wi-Fi sieť"
 
 #: ../clients/cli/common.c:706
 #, fuzzy
@@ -508,35 +520,35 @@ msgstr "Pripájanie k drôtovej sieti zlyhalo."
 
 #: ../clients/cli/common.c:709
 msgid "DCB or FCoE setup failed"
-msgstr ""
+msgstr "Nastavenie DCB alebo FCoE zlyhalo"
 
 #: ../clients/cli/common.c:712
 msgid "teamd control failed"
-msgstr ""
+msgstr "zlyhala komunikácia s teamd"
 
 #: ../clients/cli/common.c:715
 msgid "Modem failed or no longer available"
-msgstr ""
+msgstr "Modem zlyhal alebo je nedostupný"
 
 #: ../clients/cli/common.c:718
 msgid "Modem now ready and available"
-msgstr ""
+msgstr "Modem je pripravený k použitiu"
 
 #: ../clients/cli/common.c:721
 msgid "SIM PIN was incorrect"
-msgstr ""
+msgstr "Nesprávny SIM PIN kód"
 
 #: ../clients/cli/common.c:724
 msgid "New connection activation was enqueued"
-msgstr ""
+msgstr "Požiadavok na aktiváciu pripojenia bol prijatý"
 
 #: ../clients/cli/common.c:727
 msgid "The device's parent changed"
-msgstr ""
+msgstr "Zariadeniu sa zmenilo rodičovské pripojenie"
 
 #: ../clients/cli/common.c:730
 msgid "The device parent's management changed"
-msgstr ""
+msgstr "Zmenil sa spôsob, akým je spravované rodičovské pripojenie zariadenia"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #: ../clients/cli/common.c:734 ../libnm-glib/nm-device.c:1888
@@ -547,32 +559,32 @@ msgstr "Neznáme"
 #: ../clients/cli/common.c:776
 #, c-format
 msgid "invalid priority map '%s'"
-msgstr ""
+msgstr "nesprávna mapa priorít '%s'"
 
 #: ../clients/cli/common.c:783 ../clients/cli/common.c:789
 #, c-format
 msgid "priority '%s' is not valid (<0-%ld>)"
-msgstr ""
+msgstr "priorita '%s' je mimo povoleného intervalu (<0-%ld>)"
 
 #: ../clients/cli/common.c:856
 #, c-format
 msgid "'%s' is not a valid team configuration or file name."
-msgstr ""
+msgstr "'%s' je nepovolené meno súboru alebo konfigurácie teamd"
 
 #: ../clients/cli/common.c:958
 #, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr ""
+msgstr "Chyba: openconnect zlyhal: '%s'"
 
 #: ../clients/cli/common.c:965
 #, c-format
 msgid "Error: openconnect failed with status %d\n"
-msgstr ""
+msgstr "Chyba: openconnect vrátil chybový stav %d"
 
 #: ../clients/cli/common.c:967
 #, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr ""
+msgstr "Chyba: openconnect prijal signál %d"
 
 #: ../clients/cli/common.c:1045
 #, c-format
@@ -580,15 +592,17 @@ msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
 "without '--ask' option.\n"
 msgstr ""
+"Varovanie: heslo pre '%s' nie je nastavené v 'passwd-file' a nmcli o neho "
+"bez voľby '--ask' nemôže požiadať.\n"
 
 #. define some prompts for connection editor
 #: ../clients/cli/connections.c:41
 msgid "Setting name? "
-msgstr ""
+msgstr "Nastavenie?"
 
 #: ../clients/cli/connections.c:42
 msgid "Property name? "
-msgstr ""
+msgstr "Vlastnosť?"
 
 #: ../clients/cli/connections.c:43
 #, fuzzy
@@ -603,35 +617,35 @@ msgstr "Spojenie nadviazané"
 
 #: ../clients/cli/connections.c:47
 msgid "VPN type: "
-msgstr ""
+msgstr "Druh VPN:"
 
 #: ../clients/cli/connections.c:48
 msgid "Master: "
-msgstr ""
+msgstr "Rodič:"
 
 #: ../clients/cli/connections.c:49
 msgid "Connection (name, UUID, or path): "
-msgstr ""
+msgstr "Pripojenie (meno, UUID alebo cesta):"
 
 #: ../clients/cli/connections.c:50
 msgid "VPN connection (name, UUID, or path): "
-msgstr ""
+msgstr "VPN pripojenie (meno, UUID alebo cesta):"
 
 #: ../clients/cli/connections.c:51
 msgid "Connection(s) (name, UUID, or path): "
-msgstr ""
+msgstr "Pripojenia: (mená, UUID alebo cesty):"
 
 #: ../clients/cli/connections.c:52
 msgid "Connection(s) (name, UUID, path or apath): "
-msgstr ""
+msgstr "Pripojenia: (mená, UUID alebo aktívne cesty):"
 
 #: ../clients/cli/connections.c:53
 msgid "Tunnel mode: "
-msgstr ""
+msgstr "Režim tunelu:"
 
 #: ../clients/cli/connections.c:54
 msgid "MACVLAN mode: "
-msgstr ""
+msgstr "Režim MACVLAN:"
 
 #. 0
 #: ../clients/cli/connections.c:73 ../clients/cli/connections.c:193
@@ -642,13 +656,13 @@ msgstr ""
 #: ../clients/cli/devices.c:191 ../clients/cli/devices.c:200
 #: ../clients/cli/devices.c:210 ../clients/cli/devices.c:251
 msgid "NAME"
-msgstr ""
+msgstr "MENO"
 
 #. 0
 #. 1
 #: ../clients/cli/connections.c:74 ../clients/cli/connections.c:194
 msgid "UUID"
-msgstr ""
+msgstr "UUID"
 
 #. 1
 #. 0
@@ -658,33 +672,33 @@ msgstr ""
 #: ../clients/cli/devices.c:41 ../clients/cli/devices.c:57
 #: ../clients/cli/devices.c:179
 msgid "TYPE"
-msgstr ""
+msgstr "TYP"
 
 #. 2
 #: ../clients/cli/connections.c:76
 msgid "TIMESTAMP"
-msgstr ""
+msgstr "ČAS"
 
 #. 3
 #: ../clients/cli/connections.c:77
 msgid "TIMESTAMP-REAL"
-msgstr ""
+msgstr "SKUTOČNÝ-ČAS"
 
 #. 4
 #. 16
 #: ../clients/cli/connections.c:78 ../clients/cli/devices.c:72
 msgid "AUTOCONNECT"
-msgstr ""
+msgstr "AUTO"
 
 #. 5
 #: ../clients/cli/connections.c:79
 msgid "AUTOCONNECT-PRIORITY"
-msgstr ""
+msgstr "AUTO-PRIORITA"
 
 #. 6
 #: ../clients/cli/connections.c:80
 msgid "READONLY"
-msgstr ""
+msgstr "BEZ-ZÁPISU"
 
 #. 7
 #. 8
@@ -695,7 +709,7 @@ msgstr ""
 #: ../clients/cli/devices.c:43 ../clients/cli/devices.c:166
 #: ../clients/cli/devices.c:182
 msgid "DBUS-PATH"
-msgstr ""
+msgstr "DBUS-CESTA"
 
 #. 8
 #. 13
@@ -703,7 +717,7 @@ msgstr ""
 #: ../clients/cli/connections.c:82 ../clients/cli/devices.c:164
 #: ../clients/cli/devices.c:181
 msgid "ACTIVE"
-msgstr ""
+msgstr "AKTÍVNE"
 
 #. 9
 #. 0
@@ -714,7 +728,7 @@ msgstr ""
 #: ../clients/cli/devices.c:56 ../clients/cli/devices.c:163
 #: ../clients/cli/devices.c:180 ../clients/cli/devices.c:252
 msgid "DEVICE"
-msgstr ""
+msgstr "ZARIADENIE"
 
 #. 10
 #. 3
@@ -725,32 +739,32 @@ msgstr ""
 #: ../clients/cli/devices.c:42 ../clients/cli/devices.c:66
 #: ../clients/cli/general.c:36
 msgid "STATE"
-msgstr ""
+msgstr "STAV"
 
 #. 11
 #: ../clients/cli/connections.c:85
 msgid "ACTIVE-PATH"
-msgstr ""
+msgstr "AKTÍVNA-CESTA"
 
 #. 2
 #: ../clients/cli/connections.c:195
 msgid "DEVICES"
-msgstr ""
+msgstr "ZARIADENIA"
 
 #. 4
 #: ../clients/cli/connections.c:197
 msgid "DEFAULT"
-msgstr ""
+msgstr "PREDVOLENÉ"
 
 #. 5
 #: ../clients/cli/connections.c:198
 msgid "DEFAULT6"
-msgstr ""
+msgstr "PREDVOLENÉ6"
 
 #. 6
 #: ../clients/cli/connections.c:199
 msgid "SPEC-OBJECT"
-msgstr ""
+msgstr "ŠPEC-OBJEKT"
 
 #. 7
 #. 4
@@ -759,7 +773,7 @@ msgstr ""
 #: ../clients/cli/connections.c:4169 ../clients/tui/nm-editor-utils.c:233
 #: ../clients/tui/nmt-connect-connection-list.c:405
 msgid "VPN"
-msgstr ""
+msgstr "VPN"
 
 #. 9
 #. 5
@@ -767,65 +781,65 @@ msgstr ""
 #: ../clients/cli/connections.c:202 ../clients/cli/devices.c:46
 #: ../clients/cli/devices.c:78
 msgid "CON-PATH"
-msgstr ""
+msgstr "CESTA"
 
 #. 10
 #: ../clients/cli/connections.c:203
 msgid "ZONE"
-msgstr ""
+msgstr "ZÓNA"
 
 #. 11
 #: ../clients/cli/connections.c:204
 msgid "MASTER-PATH"
-msgstr ""
+msgstr "RODIČ-CESTA"
 
 #. 1
 #: ../clients/cli/connections.c:216
 msgid "USERNAME"
-msgstr ""
+msgstr "POUŽÍVATEĽ"
 
 #. 3
 #: ../clients/cli/connections.c:218
 msgid "BANNER"
-msgstr ""
+msgstr "SPRÁVA"
 
 #. 4
 #: ../clients/cli/connections.c:219
 msgid "VPN-STATE"
-msgstr ""
+msgstr "STAV-VPN"
 
 #. 5
 #: ../clients/cli/connections.c:220
 msgid "CFG"
-msgstr ""
+msgstr "KONFIGURÁCIA"
 
 #: ../clients/cli/connections.c:233 ../clients/cli/devices.c:225
 msgid "GENERAL"
-msgstr ""
+msgstr "VŠEOBECNÉ"
 
 #. 0
 #. 6
 #: ../clients/cli/connections.c:234 ../clients/cli/devices.c:232
 msgid "IP4"
-msgstr ""
+msgstr "IP4"
 
 #. 1
 #. 7
 #: ../clients/cli/connections.c:235 ../clients/cli/devices.c:233
 msgid "DHCP4"
-msgstr ""
+msgstr "DHCP4"
 
 #. 2
 #. 8
 #: ../clients/cli/connections.c:236 ../clients/cli/devices.c:234
 msgid "IP6"
-msgstr ""
+msgstr "IP6"
 
 #. 3
 #. 9
 #: ../clients/cli/connections.c:237 ../clients/cli/devices.c:235
 msgid "DHCP6"
-msgstr ""
+msgstr "DHCP6"
 
 #: ../clients/cli/connections.c:272
 #, c-format
@@ -867,6 +881,42 @@ msgid ""
 "  export [id | uuid | path] <ID> [<output file>]\n"
 "\n"
 msgstr ""
+"Použitie: nmcli connection { PRÍKAZ | help }\n"
+"\n"
+"PRÍKAZ := { show | up | down | add | modify | edit | delete | monitor | "
+"reload | load }\n"
+"\n"
+"  show [--active] [--order <order spec>]\n"
+"  show [--active] [id | uuid | path | apath] <ID> ...\n"
+"\n"
+"  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file "
+"<file with passwords>]\n"
+"\n"
+"  down [id | uuid | path | apath] <ID> ...\n"
+"\n"
+"  add SPOLOČNÉ_VOĽBY VOĽBY_PRE_TYP TYP_POTOMKA VOĽBY_IP [-- "
+"([+|-]<nastavenie>.<vlastnosť> <hodnota>)+]\n"
+"\n"
+"  modify [--temporary] [id | uuid | path] <ID> ([+|-]<nastavenie>."
+"<vlastnosť> <hodnota>)+\n"
+"\n"
+"  clone [--temporary] [id | uuid | path ] <ID> <nové meno>\n"
+"\n"
+"  edit [id | uuid | path] <ID>\n"
+"  edit [type <new_con_type>] [name <nové meno>]\n"
+"\n"
+"  delete [id | uuid | path] <ID>\n"
+"\n"
+"  monitor [id | uuid | path] <ID> ...\n"
+"\n"
+"  reload\n"
+"\n"
+"  load <súbor> [ <súbor>... ]\n"
+"\n"
+"  import [--temporary] type <typ> file <súbor>\n"
+"\n"
+"  export [id | uuid | path] <ID> [<súbor>]\n"
+"\n"
 
 #: ../clients/cli/connections.c:294
 #, c-format
@@ -1209,15 +1259,15 @@ msgstr ""
 
 #: ../clients/cli/connections.c:644
 msgid "activating"
-msgstr ""
+msgstr "aktivuje sa"
 
 #: ../clients/cli/connections.c:646
 msgid "activated"
-msgstr ""
+msgstr "aktívne"
 
 #: ../clients/cli/connections.c:650
 msgid "deactivated"
-msgstr ""
+msgstr "neaktívne"
 
 #: ../clients/cli/connections.c:662
 #, fuzzy
@@ -1226,7 +1276,7 @@ msgstr "VPN pripájanie k '%s'"
 
 #: ../clients/cli/connections.c:664
 msgid "VPN connecting (need authentication)"
-msgstr ""
+msgstr "VPN sa pripája (potrebuje autorizáciu)"
 
 #: ../clients/cli/connections.c:666
 #, fuzzy
@@ -1235,7 +1285,7 @@ msgstr "VPN spojenia"
 
 #: ../clients/cli/connections.c:668
 msgid "VPN connecting (getting IP configuration)"
-msgstr ""
+msgstr "VPN sa pripája (potrebuje autorizáciu)"
 
 #: ../clients/cli/connections.c:670
 #, fuzzy
@@ -1255,7 +1305,7 @@ msgstr "Odpojené"
 #: ../clients/cli/connections.c:744
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
-msgstr ""
+msgstr "Nepodarilo sa zmeniť heslo pre %s: %s"
 
 #: ../clients/cli/connections.c:764
 #, fuzzy
@@ -1269,7 +1319,7 @@ msgstr "VPN spojenie s '%s'"
 
 #: ../clients/cli/connections.c:932 ../clients/cli/settings.c:1897
 msgid "never"
-msgstr ""
+msgstr "nikdy"
 
 #: ../clients/cli/connections.c:1157
 #, fuzzy

@@ -38,6 +38,10 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
+"Использование: nmcli agent { КОМАНДА | help }\n"
+"\n"
+"КОМАНДА := { secret | polkit | all }\n"
+"\n"
 
 #: ../clients/cli/agent.c:47
 #, c-format
@@ -100,9 +104,9 @@ msgid "Error: NetworkManager is not running."
 msgstr "Ошибка: NetworkManager не запущен."
 
 #: ../clients/cli/agent.c:242
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'agent' command '%s' is not valid."
-msgstr "Ошибка. Недопустимая команда «general»: «%s»."
+msgstr "Ошибка. Неверная команда «agent %s»."
 
 #: ../clients/cli/common.c:38 ../clients/cli/common.c:51
 #: ../clients/cli/common.c:59 ../clients/cli/common.c:71
@@ -148,14 +152,14 @@ msgid "OPTION"
 msgstr "ПАРАМЕТР"
 
 #: ../clients/cli/common.c:376 ../clients/cli/common.c:436
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
-msgstr "недопустимый префикс  «%s» (допускается <1-32>)"
+msgstr "недопустимый префикс «%s» (значение должно лежать в диапазоне <1-%d>)"
 
 #: ../clients/cli/common.c:384
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "недопустимый адрес IPv4: «%s»"
+msgstr "неверный IP: %s"
 
 #: ../clients/cli/common.c:448
 #, c-format
@@ -170,13 +174,15 @@ msgid "invalid metric '%s'"
 msgstr "недопустимая метрика «%s»"
 
 #: ../clients/cli/common.c:465
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "недопустимый маршрут IPv4: «%s»"
+msgstr "неверный маршру: %s"
 
 #: ../clients/cli/common.c:477
 msgid "default route cannot be added (NetworkManager handles it by itself)"
 msgstr ""
+"невозможно добавить маршрут для выбора по умолчанию (NetworkManager "
+"определяет его самостоятельно)"
 
 #: ../clients/cli/common.c:494
 msgid "unmanaged"
@@ -2018,7 +2024,7 @@ msgstr "Bonding arp-ip-target [нет]: "
 
 #: ../clients/cli/connections.c:3943
 msgid "LACP rate ('slow' or 'fast') [slow]: "
-msgstr ""
+msgstr "Скорость LACP (slow/fast) [slow]:"
 
 #: ../clients/cli/connections.c:3949
 #, fuzzy, c-format
@@ -2104,9 +2110,9 @@ msgid "Enable IGMP snooping %s"
 msgstr "Включить IGMP snooping %s"
 
 #: ../clients/cli/connections.c:4093
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multicast-snooping': %s.\n"
-msgstr "Ошибка «stp»: %s"
+msgstr "Ошибка «multicast-snooping»: %s\n"
 
 #. Ask for optional 'bridge-slave' arguments.
 #: ../clients/cli/connections.c:4120
@@ -2497,9 +2503,9 @@ msgid "Error: 'stp': %s."
 msgstr "Ошибка «stp»: %s"
 
 #: ../clients/cli/connections.c:5747
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multicast-snooping': %s."
-msgstr "Ошибка «stp»: %s"
+msgstr "Ошибка «multicast-snooping»: %s"
 
 #: ../clients/cli/connections.c:5866
 #, c-format
@@ -2735,7 +2741,7 @@ msgstr "[«%s» устанавливает значения]\n"
 #. *              However, you should translate terms enclosed in <>.
 #.
 #: ../clients/cli/connections.c:8117
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "---[ Main menu ]---\n"
 "goto     [<setting> | <prop>]        :: go to a setting or property\n"
@@ -2752,21 +2758,26 @@ msgid ""
 "nmcli    <conf-option> <value>       :: nmcli configuration\n"
 "quit                                 :: exit nmcli\n"
 msgstr ""
-"---[ главное меню]---\n"
-"goto     [<параметр> | <свойство>]        :: перейти к параметру или "
+"---[ Главное меню]---\n"
+"goto     [<параметр> | <свойство>]             :: перейти к параметру или "
 "свойству\n"
-"remove   <параметр>[.<свойство>] | <свойство> :: удалить параметр или "
+"remove   <параметр>[.<свойство>] | <свойство>  :: удалить параметр или "
 "сбросить значение свойства\n"
-"set      [<параметр>.<свойство> <значение>]  :: изменить значение свойства\n"
-"describe [<параметр>.<свойство>]          :: добавить описание свойства\n"
-"print    [all]                       :: показать информацию о соединении\n"
-"verify   [all]                       :: проверить соединение\n"
-"save                                 :: сохранить соединение\n"
-"activate [<интерфейс>] [/<ap>|<nsp>]    :: включить соединение\n"
-"back                                 :: вернуться к предыдущему шагу\n"
-"help/?   [<команда>]                 :: показать это справочное сообщение\n"
-"nmcli    <параметр> <значение>       :: конфигурация nmcli\n"
-"quit                                 :: выход\n"
+"set      [<параметр>.<свойство> <значение>]    :: установить новое значение "
+"свойства\n"
+"describe [<параметр>.<свойство>]               :: показать описание "
+"отдельного свойства\n"
+"print    [all | <параметр>[.<свойство>]]       :: показать список параметров "
+"и свойств\n"
+"verify   [all | fix]                           :: проверить свойства\n"
+"save     [persistent|temporary]                :: сохранить соединение\n"
+"activate [<интерфейс>] [/<ap>|<nsp>]           :: включить соединение\n"
+"back                                           :: вернуться к предыдущему "
+"меню\n"
+"help/?   [<команда>]                           :: показать это справочное "
+"сообщение\n"
+"nmcli    <параметр> <значение>                 :: конфигурация nmcli\n"
+"quit                                           :: выход\n"
 
 #: ../clients/cli/connections.c:8144
 #, c-format
@@ -3012,7 +3023,7 @@ msgstr ""
 "Эта команда определяет новое значение свойства.\n"
 
 #: ../clients/cli/connections.c:8328
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
 "\n"
@@ -3020,11 +3031,11 @@ msgid ""
 "container type. For single-valued properties the property value is replaced "
 "(same as 'set').\n"
 msgstr ""
-"add [<значение>]  :: присвоение значения свойству\n"
+"add [<значение>]  :: добавление нового значения свойства\n"
 "\n"
-"Эта команда присваивает значение свойству (если свойство имеет тип "
-"контейнера).  Для свойств с единственным значением, оно будет перезаписано "
-"(аналогично команде «set»).\n"
+"Эта команда добавляет новое значение свойства к списку существующих "
+"значений. Если же свойство имеет единственное значение, оно будет "
+"переопределено (что равносильно команде «set»).\n"
 
 #: ../clients/cli/connections.c:8334
 #, c-format
@@ -3184,15 +3195,15 @@ msgid "Error: property %s\n"
 msgstr "Ошибка свойства %s\n"
 
 #: ../clients/cli/connections.c:8945
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
 "immediate activation of the connection.\n"
 "Do you still want to save? %s"
 msgstr ""
-"Соединение будет сохранено с параметром «autoconnect=yes», что немедленно "
-"активирует соединение. \n"
-"Сохранить? [Да]"
+"Вы собираетесь сохранить соединение с установленным параметром "
+"«autoconnect=yes», что может привести к его немедленной активации.\n"
+"Сохранить? %s"
 
 #: ../clients/cli/connections.c:9035
 #, c-format
@@ -3290,9 +3301,9 @@ msgid ", neither a valid setting name"
 msgstr "Недопустимое свойство %s или неверное имя параметра.\n"
 
 #: ../clients/cli/connections.c:9469
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid verify option: %s\n"
-msgstr "Недопустимый параметр  «%s»"
+msgstr "Недопустимый параметр verify: «%s»\n"
 
 #: ../clients/cli/connections.c:9477
 #, c-format
@@ -3307,7 +3318,7 @@ msgstr "Проверьте соединение: %s\n"
 #: ../clients/cli/connections.c:9495
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
-msgstr ""
+msgstr "Эта ошибка не может быть исправлена автоматически.\n"
 
 #: ../clients/cli/connections.c:9512
 #, fuzzy, c-format
@@ -5548,9 +5559,8 @@ msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
 #: ../clients/cli/settings.c:836
-#, fuzzy
 msgid "MVRP, "
-msgstr "GVRP, "
+msgstr "MVRP, "
 
 #: ../clients/cli/settings.c:875
 #, c-format
@@ -5655,7 +5665,7 @@ msgstr "неверное поле «%s»; допустимые поля: %s"
 #: ../clients/cli/settings.c:1899
 #, c-format
 msgid "always"
-msgstr ""
+msgstr "всегда"
 
 #: ../clients/cli/settings.c:1999 ../clients/cli/settings.c:3286
 #: ../clients/cli/settings.c:4478 ../clients/cli/settings.c:4981
@@ -7565,9 +7575,9 @@ msgid "Failed to initialize the decryption cipher context: %s (%s)"
 msgstr "Не удалось инициализировать контекст шифра декодирования: %s / %s."
 
 #: ../libnm-core/crypto_gnutls.c:124 ../libnm-util/crypto_gnutls.c:184
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to decrypt the private key: %s (%s)"
-msgstr "Не удалось создать ВИ для расшифровки: %s / %s."
+msgstr "Не удалось расшифровать закрытый ключ: %s (%s)"
 
 #: ../libnm-core/crypto_gnutls.c:134 ../libnm-core/crypto_nss.c:202
 #: ../libnm-util/crypto_gnutls.c:194 ../libnm-util/crypto_nss.c:252
@@ -9048,14 +9058,12 @@ msgid "The connection was not a tun connection."
 msgstr "соединение удалено"
 
 #: ../libnm/nm-device-tun.c:218
-#, fuzzy
 msgid "The mode of the device and the connection didn't match"
-msgstr "Устройство потеряло используемое соединение"
+msgstr "Режим работы устройства не соответствует режиму соединения"
 
 #: ../libnm/nm-device-infiniband.c:94
-#, fuzzy
 msgid "The connection was not an InfiniBand connection."
-msgstr "Для соединений «InfiniBand» доступно пять дополнительных аргументов.\n"
+msgstr "Это не соединение не относится к InfiniBand."
 
 #: ../libnm/nm-device-infiniband.c:110 ../libnm/nm-device-wifi.c:611
 #: ../libnm/nm-device-wimax.c:333

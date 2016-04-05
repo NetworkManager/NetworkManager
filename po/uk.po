@@ -2591,19 +2591,18 @@ msgid "Error: 'dev' is required."
 msgstr "Помилка: слід вказати значення параметра «dev»."
 
 #: ../clients/cli/connections.c:5355
-#, fuzzy
 msgid "VLAN ID <0-4094>: "
-msgstr "Ід. VLAN <0-4095>: "
+msgstr "Ід. VLAN, <0-4094>: "
 
 #: ../clients/cli/connections.c:5358 ../clients/cli/connections.c:6424
 msgid "Error: 'id' is required."
 msgstr "Помилка: слід вказати значення параметра «id»."
 
 #: ../clients/cli/connections.c:5364
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'id': '%s' is not valid; use <0-4094>."
 msgstr ""
-"Помилка: «id»: «%s» є некоректним; мало бути число у діапазоні <0-4095>."
+"Помилка: «id»: «%s» є некоректним; мало бути число у діапазоні <0-4094>."
 
 #: ../clients/cli/connections.c:5374 ../clients/cli/connections.c:6116
 #, c-format
@@ -4237,7 +4236,7 @@ msgid "PORT-ID-TYPE"
 msgstr "ТИП-ІД-ПОРТУ"
 
 #: ../clients/cli/devices.c:283
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -4277,8 +4276,8 @@ msgid ""
 msgstr ""
 "Користування: nmcli пристрій { КОМАНДА | help }\n"
 "\n"
-"КОМАНДА := { status | show | connect | disconnect | delete | monitor | wifi "
-"| lldp }\n"
+"КОМАНДА := { status | show | connect | reapply | disconnect | delete | "
+"monitor | wifi | lldp }\n"
 "\n"
 "  status\n"
 "\n"
@@ -4287,6 +4286,8 @@ msgstr ""
 "  set [ifname] <назва_інтерфейсу> [autoconnect yes|no] [managed yes|no]\n"
 "\n"
 "  connect <інтерфейс>\n"
+"\n"
+"  reapply <інтерфейс> ...\n"
 "\n"
 "  disconnect <інтерфейс>...\n"
 "\n"
@@ -4384,7 +4385,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:343
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -4394,13 +4395,12 @@ msgid ""
 "made since it was last applied.\n"
 "\n"
 msgstr ""
-"Користування: nmcli device disconnect { ПАРАМЕТРИ | help }\n"
+"Користування: nmcli device reapply { АРГУМЕНТИ | help }\n"
 "\n"
-"ПАРАМЕТРИ := <назва інтерфейсу>...\n"
+"АРГУМЕНТИ := <інтерфейс> ...\n"
 "\n"
-"Від’єднати пристрої.\n"
-"За допомогою цієї команди можна від’єднати пристрій і заборонити його\n"
-"повторну активацію для подальших з’єднань без ручного втручання.\n"
+"Виконує спробу оновити з’єднання пристрою відповідно до змін, які було\n"
+"внесено до поточного активного з’єднання з часу його застосування.\n"
 "\n"
 
 #: ../clients/cli/devices.c:354
@@ -4796,19 +4796,21 @@ msgid "Device '%s' successfully removed.\n"
 msgstr "Пристрій «%s» успішно вилучено.\n"
 
 #: ../clients/cli/devices.c:1838
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections reapplied."
-msgstr "Помилка: вилучено не усі з’єднання."
+msgstr "Помилка: повторно застосовано не усі з’єднання."
 
 #: ../clients/cli/devices.c:1839
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s\n"
-msgstr "Помилка: помилка під час спроби вилучення пристрою «%s» (%s): %s\n"
+msgstr ""
+"Помилка: не вдалося повторно застосувати з’єднання із пристроєм «%s» (%s): "
+"%s\n"
 
 #: ../clients/cli/devices.c:1849
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
-msgstr "З’єднання успішно задіяно (активний шлях D-Bus: %s)\n"
+msgstr "З’єднання успішно повторно застосовано до пристрою «%s».\n"
 
 #: ../clients/cli/devices.c:1912
 #, c-format
@@ -5871,9 +5873,9 @@ msgid "default"
 msgstr "типовий"
 
 #: ../clients/cli/settings.c:1556
-#, fuzzy, c-format
+#, c-format
 msgid "%d (off)"
-msgstr "%d (ні)"
+msgstr "%d (вимкнено)"
 
 #: ../clients/cli/settings.c:1770
 #, c-format
@@ -8884,6 +8886,7 @@ msgstr "значення «%s» не відповідає «%s=%s»"
 #, c-format
 msgid "the vlan id must be in range 0-4094 but is %u"
 msgstr ""
+"ідентифікатором vlan має бути число у діапазоні від 0 до 4094, втім, маємо %u"
 
 #: ../libnm-core/nm-setting-vlan.c:681 ../libnm-util/nm-setting-vlan.c:591
 msgid "flags are invalid"
@@ -9906,7 +9909,7 @@ msgstr ""
 "керування ключами WPA"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:164
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify WPA protocols"
 msgstr ""
 "з’єднання, де використовується розпізнавання «%s», не може використовувати "
@@ -9914,14 +9917,14 @@ msgstr ""
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:180
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:197
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify WPA ciphers"
 msgstr ""
 "з’єднання, де використовується розпізнавання «%s», не може використовувати "
 "специфічні шифри WPA"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify a WPA password"
 msgstr ""
 "з’єднання, де використовується розпізнавання «%s», не може використовувати "

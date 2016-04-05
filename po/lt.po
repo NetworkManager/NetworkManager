@@ -23,16 +23,16 @@ msgstr ""
 "X-Generator: Gtranslator 2.91.6\n"
 
 #: ../clients/cli/agent.c:39
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli agent { COMMAND | help }\n"
 "\n"
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
-"Naudojimas: nmcli networking { KOMANDA | help }\n"
+"Naudojimas: nmcli agent { COMMAND | help }\n"
 "\n"
-"  KOMANDA := { [ on | off ] }\n"
+"COMMAND := { secret | polkit | all }\n"
 "\n"
 
 #: ../clients/cli/agent.c:47
@@ -144,9 +144,9 @@ msgid "OPTION"
 msgstr "PARINKTIS"
 
 #: ../clients/cli/common.c:376 ../clients/cli/common.c:436
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
-msgstr "netinkamas priešdėlis „%s“; leidžiama <1-32>"
+msgstr "netinkamas priešdėlis '%s'; leidžiama <1-%d>"
 
 #: ../clients/cli/common.c:384
 #, fuzzy, c-format
@@ -520,9 +520,8 @@ msgid "Modem failed or no longer available"
 msgstr "Nėra ModemManager"
 
 #: ../clients/cli/common.c:718
-#, fuzzy
 msgid "Modem now ready and available"
-msgstr "Nėra ModemManager"
+msgstr "Modemas dabar yra pasiruošęs ir prieinamas"
 
 #: ../clients/cli/common.c:721
 msgid "SIM PIN was incorrect"
@@ -565,19 +564,19 @@ msgid "'%s' is not a valid team configuration or file name."
 msgstr "„%s=%s“ yra netinkama „%s“ konfigūracija"
 
 #: ../clients/cli/common.c:958
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr "Klaida: ryšio patikrinimas nesėkmingas: %s\n"
+msgstr "Klaida: openconnect nepavyko: %s\n"
 
 #: ../clients/cli/common.c:965
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with status %d\n"
-msgstr "Klaida: ryšio patikrinimas nesėkmingas: %s\n"
+msgstr "Klaida: openconnect nepavyko su būsena %d\n"
 
 #: ../clients/cli/common.c:967
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr "Klaida: ryšio patikrinimas nesėkmingas: %s\n"
+msgstr "Klaida: openconnect nepavyko su signalu %d\n"
 
 #: ../clients/cli/common.c:1045
 #, c-format
@@ -618,14 +617,12 @@ msgid "Connection (name, UUID, or path): "
 msgstr "Ryšys (pavadinimas, UUID arba kelias): "
 
 #: ../clients/cli/connections.c:50
-#, fuzzy
 msgid "VPN connection (name, UUID, or path): "
-msgstr "Ryšys (pavadinimas, UUID arba kelias): "
+msgstr "VPN ryšys (pavadinimas, UUID arba kelias): "
 
 #: ../clients/cli/connections.c:51
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
-msgstr "Ryšys (pavadinimas, UUID arba kelias): "
+msgstr "Ryšys(-iai) (pavadinimas, UUID arba kelias): "
 
 #: ../clients/cli/connections.c:52
 #, fuzzy
@@ -638,7 +635,7 @@ msgstr ""
 
 #: ../clients/cli/connections.c:54
 msgid "MACVLAN mode: "
-msgstr ""
+msgstr "MACVLAN veiksena: "
 
 #. 0
 #: ../clients/cli/connections.c:73 ../clients/cli/connections.c:193
@@ -1373,14 +1370,13 @@ msgid "Error updating secrets for %s: %s\n"
 msgstr ""
 
 #: ../clients/cli/connections.c:764
-#, fuzzy
 msgid "Connection profile details"
-msgstr "Ryšio informacija"
+msgstr "Išsamesnė ryšio profilio informacija"
 
 #: ../clients/cli/connections.c:776 ../clients/cli/connections.c:1169
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'connection show': %s"
-msgstr "Klaida: „device show“: %s"
+msgstr "Klaida: „connection show“: %s"
 
 #: ../clients/cli/connections.c:932 ../clients/cli/settings.c:1897
 msgid "never"
@@ -1403,14 +1399,12 @@ msgstr "laukas „%s“ turi būti vienintelis"
 
 #. Add headers
 #: ../clients/cli/connections.c:1634
-#, fuzzy
 msgid "NetworkManager active profiles"
-msgstr "NetworkManager būsena"
+msgstr "NetworkManager aktyvūs profiliai"
 
 #: ../clients/cli/connections.c:1635
-#, fuzzy
 msgid "NetworkManager connection profiles"
-msgstr "NetworkManager užmigo"
+msgstr "NetworkManager ryšio profiliai"
 
 #: ../clients/cli/connections.c:1681 ../clients/cli/connections.c:2389
 #: ../clients/cli/connections.c:2411 ../clients/cli/connections.c:2420
@@ -1433,9 +1427,9 @@ msgid "Error: %s argument is missing."
 msgstr "Klaida: trūksta argumento %s."
 
 #: ../clients/cli/connections.c:1696
-#, fuzzy, c-format
+#, c-format
 msgid "Error: %s - no such connection profile."
-msgstr "Klaida: ryšio %s nėra."
+msgstr "Klaida: %s - tokio ryšio profilio nėra."
 
 #: ../clients/cli/connections.c:1755 ../clients/cli/connections.c:2452
 #: ../clients/cli/connections.c:11162 ../clients/cli/devices.c:3292
@@ -1574,9 +1568,9 @@ msgid "invalid setting name in 'password' entry '%s'"
 msgstr ""
 
 #: ../clients/cli/connections.c:2314
-#, fuzzy, c-format
+#, c-format
 msgid "unknown device '%s'."
-msgstr "Nežinomas žurnalo vedimo lygis „%s“"
+msgstr "nežinomas įrenginys \"%s\"."
 
 #: ../clients/cli/connections.c:2319
 #, fuzzy
@@ -1584,9 +1578,9 @@ msgid "neither a valid connection nor device given"
 msgstr "nėra aktyvaus ryšio įrenginyje"
 
 #: ../clients/cli/connections.c:2402
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection '%s' does not exist."
-msgstr "Klaida: trūksta ryšio ID."
+msgstr "Klaida: Ryšio \"%s\" nėra."
 
 #: ../clients/cli/connections.c:2437 ../clients/cli/devices.c:1325
 #: ../clients/cli/devices.c:2358 ../clients/cli/devices.c:2752
@@ -1600,9 +1594,9 @@ msgid "preparing"
 msgstr "ruošiama"
 
 #: ../clients/cli/connections.c:2483
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Ryšys „%s“ (%s) sėkmingai pridėtas.\n"
+msgstr "Ryšys \"%s\" (%s) sėkmingai ištrintas."
 
 #: ../clients/cli/connections.c:2499
 #, fuzzy, c-format
@@ -1616,14 +1610,14 @@ msgid "Error: No connection specified."
 msgstr "Klaida: nenurodytas ryšys."
 
 #: ../clients/cli/connections.c:2602
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "Klaida: „%s“ nėra aktyvus ryšys."
+msgstr "Klaida: \"%s\" nėra aktyvus ryšys.\n"
 
 #: ../clients/cli/connections.c:2603 ../clients/cli/connections.c:10420
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all active connections found."
-msgstr "Klaida: „%s“ nėra aktyvus ryšys."
+msgstr "Klaida: rasti ne visi aktyvūs ryšiai."
 
 #: ../clients/cli/connections.c:2612
 #, fuzzy, c-format
@@ -1653,9 +1647,9 @@ msgid "Ethernet"
 msgstr ""
 
 #: ../clients/cli/connections.c:3053
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'mtu': '%s' is not a valid MTU."
-msgstr "Klaida: „mtu“: „%s“ nėra tinkamas."
+msgstr "Klaida: \"mtu\": \"%s\" nėra teisingas MTU."
 
 #: ../clients/cli/connections.c:3069
 #, c-format
@@ -1663,19 +1657,19 @@ msgid "Error: 'parent': '%s' is not a valid interface name."
 msgstr "Klaida: „parent“: „%s“ nėra tinkamas sąsajos pavadinimas."
 
 #: ../clients/cli/connections.c:3090
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'p-key': '%s' is not a valid InfiniBand P_KEY."
-msgstr "Klaida: „p-key“: „%s“ nėra tinkamas."
+msgstr "Klaida: \"p-key\": \"%s\" nėra teisingas InfiniBand P_KEY."
 
 #: ../clients/cli/connections.c:3105
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not a valid UID/GID."
-msgstr "Klaida: „mtu“: „%s“ nėra tinkamas."
+msgstr "Klaida: \"%s\" nėra teisingas UID/GID."
 
 #: ../clients/cli/connections.c:3149
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not a valid %s %s."
-msgstr "Klaida: „egress“: „%s“ yra netinkamas; %s."
+msgstr "Klaida: \"%s\": \"%s\" nėra teisingas %s %s."
 
 #: ../clients/cli/connections.c:3162
 msgid "Wi-Fi mode"
@@ -1688,7 +1682,7 @@ msgstr "InfiniBand ryšys %d"
 
 #: ../clients/cli/connections.c:3183
 msgid "ADSL protocol"
-msgstr ""
+msgstr "ADSL protokolas"
 
 #: ../clients/cli/connections.c:3194
 #, fuzzy
@@ -1696,9 +1690,8 @@ msgid "ADSL encapsulation"
 msgstr "ADSL ryšys %d"
 
 #: ../clients/cli/connections.c:3203
-#, fuzzy
 msgid "TUN device mode"
-msgstr "Įrenginys buvo pašalintas"
+msgstr "TUN įrenginio veiksena"
 
 #: ../clients/cli/connections.c:3216
 #, c-format
@@ -1706,9 +1699,9 @@ msgid "Error: 'flags': '%s' is not valid; use <0-7>."
 msgstr "Klaida: „flags“: „%s“ yra netinkamas; naudokite <0-7>."
 
 #: ../clients/cli/connections.c:3238
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not valid; %s "
-msgstr "Klaida: „egress“: „%s“ yra netinkamas; %s."
+msgstr "Klaida: \"%s\": \"%s\" nėra teisingas; %s "
 
 #: ../clients/cli/connections.c:3416
 #, c-format
@@ -1716,9 +1709,9 @@ msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 
 #: ../clients/cli/connections.c:3441
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s': '%s' is not valid; use <%u-%u>."
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas; naudokite <%d-%d>."
+msgstr "Klaida: \"%s\": \"%s\" nėra teisingas; naudokite <%u-%u>."
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:3497
@@ -1745,13 +1738,13 @@ msgstr ""
 #: ../clients/cli/connections.c:3522 ../clients/cli/connections.c:3570
 #: ../clients/cli/connections.c:3704 ../clients/cli/connections.c:3783
 msgid "MTU [auto]: "
-msgstr ""
+msgstr "MTU [auto]: "
 
 #: ../clients/cli/connections.c:3533 ../clients/cli/connections.c:3581
 #: ../clients/cli/connections.c:3676 ../clients/cli/connections.c:3715
 #: ../clients/cli/connections.c:4101
 msgid "MAC [none]: "
-msgstr ""
+msgstr "MAC [nėra]: "
 
 #: ../clients/cli/connections.c:3544
 msgid "Cloned MAC [none]: "
@@ -1796,13 +1789,12 @@ msgstr ""
 #. Ask for optional 'pppoe' arguments.
 #: ../clients/cli/connections.c:3694
 msgid "PPPoE"
-msgstr ""
+msgstr "PPPoE"
 
 #: ../clients/cli/connections.c:3698 ../clients/cli/connections.c:3736
 #: ../clients/cli/connections.c:4223
-#, fuzzy
 msgid "Password [none]: "
-msgstr "Slaptažodis: "
+msgstr "Slaptažodis [nėra]: "
 
 #: ../clients/cli/connections.c:3700
 #, fuzzy
@@ -1816,22 +1808,22 @@ msgstr ""
 
 #: ../clients/cli/connections.c:3734 ../clients/cli/connections.c:4173
 msgid "Username [none]: "
-msgstr ""
+msgstr "Naudotojo vardas [nėra]: "
 
 #. Ask for optional 'bluetooth' arguments.
 #: ../clients/cli/connections.c:3749
 msgid "bluetooth"
-msgstr ""
+msgstr "bluetooth"
 
 #: ../clients/cli/connections.c:3756
-#, fuzzy, c-format
+#, c-format
 msgid "Bluetooth type %s"
-msgstr "Bluetooth įrenginio adresas:"
+msgstr "Bluetooth tipas %s"
 
 #: ../clients/cli/connections.c:3762
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'bt-type': '%s' is not a valid bluetooth type.\n"
-msgstr "Klaida: „p-key“: „%s“ nėra tinkamas."
+msgstr "Klaida: \"bt-type\": \"%s\" nėra teisingas bluetooth tipas.\n"
 
 #. Ask for optional 'vlan' arguments.
 #. 13
@@ -1869,9 +1861,9 @@ msgid "Bonding primary interface [none]: "
 msgstr "Sąsajos pavadinimas: "
 
 #: ../clients/cli/connections.c:3868
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'primary': '%s' is not a valid interface name.\n"
-msgstr "Klaida: „parent“: „%s“ nėra tinkamas sąsajos pavadinimas."
+msgstr "Klaida: \"primary\": \"%s\" nėra teisingas sąsajos pavadinimas.\n"
 
 #: ../clients/cli/connections.c:3876
 #, c-format
@@ -1958,54 +1950,54 @@ msgid "Enable STP %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4018
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'stp': %s.\n"
-msgstr "Klaida: „stp“: %s."
+msgstr "Klaida: \"stp\": %s.\n"
 
 #: ../clients/cli/connections.c:4026
 msgid "STP priority [32768]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4030
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'priority': '%s' is not a valid number <0-%d>.\n"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas; naudokite <%d-%d>."
+msgstr "Klaida: \"priority\": \"%s\" nėra teisingas skaičius <0-%d>.\n"
 
 #: ../clients/cli/connections.c:4038
 msgid "Forward delay [15]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4042
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'forward-delay': '%s' is not a valid number <2-30>.\n"
-msgstr "Klaida: „flags“: „%s“ yra netinkamas; naudokite <0-7>."
+msgstr "Klaida: \"forward-delay\": \"%s\" nėra teisingas skaičius <2-30>.\n"
 
 #: ../clients/cli/connections.c:4051
 msgid "Hello time [2]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4055
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'hello-time': '%s' is not a valid number <1-10>.\n"
-msgstr "Klaida: „channel“: „%s“ yra netinkamas; naudokite <1-13>."
+msgstr "Klaida: \"hello-time\": \"%s\" nėra teisingas skaičius <1-10>.\n"
 
 #: ../clients/cli/connections.c:4063
 msgid "Max age [20]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4067
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'max-age': '%s' is not a valid number <6-40>.\n"
-msgstr "Klaida: „id“: „%s“ yra netinkamas; naudokite <0-4095>."
+msgstr "Klaida: \"max-age\": \"%s\" nėra teisingas skaičius <6-40>.\n"
 
 #: ../clients/cli/connections.c:4075
 msgid "MAC address ageing time [300]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4079
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"
-msgstr "Klaida: „id“: „%s“ yra netinkamas; naudokite <0-4095>."
+msgstr "Klaida: \"ageing-time\": \"%s\" nėra teisingas skaičius <0-1000000>.\n"
 
 #: ../clients/cli/connections.c:4088
 #, c-format
@@ -2013,9 +2005,9 @@ msgid "Enable IGMP snooping %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4093
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multicast-snooping': %s.\n"
-msgstr "Klaida: „stp“: %s."
+msgstr "Klaida: \"multicast-snooping\": %s.\n"
 
 #. Ask for optional 'bridge-slave' arguments.
 #: ../clients/cli/connections.c:4120
@@ -2036,9 +2028,9 @@ msgid "Hairpin %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4157
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'hairpin': %s.\n"
-msgstr "Klaida: „hairpin“: %s"
+msgstr "Klaida: \"hairpin\": %s.\n"
 
 #. Ask for optional 'olpc' arguments.
 #: ../clients/cli/connections.c:4184 ../libnm-glib/nm-device.c:1855
@@ -2051,9 +2043,9 @@ msgid "OLPC Mesh channel [1]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4192
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'channel': '%s' is not a valid number <1-13>.\n"
-msgstr "Klaida: „channel“: „%s“ yra netinkamas; naudokite <1-13>."
+msgstr "Klaida: \"channel\": \"%s\" nėra teisingas skaičius <1-13>.\n"
 
 #: ../clients/cli/connections.c:4200
 msgid "DHCP anycast MAC address [none]: "
@@ -2063,7 +2055,7 @@ msgstr ""
 #: ../clients/cli/connections.c:4219 ../libnm-glib/nm-device.c:1871
 #: ../libnm/nm-device.c:1822
 msgid "ADSL"
-msgstr ""
+msgstr "ADSL"
 
 #: ../clients/cli/connections.c:4227
 #, fuzzy, c-format
@@ -2081,9 +2073,9 @@ msgid "Tap %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4256
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'tap': %s.\n"
-msgstr "Klaida: „stp“: %s."
+msgstr "Klaida: \"tap\": %s.\n"
 
 #. Ask for optional 'vxlan' arguments.
 #: ../clients/cli/connections.c:4272 ../libnm-glib/nm-device.c:1875
@@ -2097,46 +2089,48 @@ msgid "Parent device [none]: "
 msgstr "Sąsajos pavadinimas: "
 
 #: ../clients/cli/connections.c:4282 ../clients/cli/connections.c:4606
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'dev': '%s' is neither UUID nor interface name.\n"
-msgstr "Klaida: „dev“: „%s“ nėra nei UUID, nei sąsajos pavadinimas, nei MAC."
+msgstr "Klaida: \"dev\": \"%s\" nėra nei UUID, nei sąsajos pavadinimas.\n"
 
 #: ../clients/cli/connections.c:4291
-#, fuzzy
 msgid "Local address [none]: "
-msgstr "Slaptažodis: "
+msgstr "Vietinis adresas [nėra]: "
 
 #: ../clients/cli/connections.c:4296
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not a valid IP address.\n"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas %s MAC adresas."
+msgstr "Klaida: \"local\": \"%s\" nėra teisingas IP adresas.\n"
 
 #: ../clients/cli/connections.c:4305
 msgid "Minimum source port [0]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4309
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'source-port-min': '%s' is not a valid number <0-65535>.\n"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas; naudokite <%d-%d>."
+msgstr ""
+"Klaida: \"source-port-min\": \"%s\" nėra teisingas skaičius <0-65535>.\n"
 
 #: ../clients/cli/connections.c:4318
 msgid "Maximum source port [0]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4322
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'source-port-max': '%s' is not a valid number <0-65535>.\n"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas; naudokite <%d-%d>."
+msgstr ""
+"Klaida: \"source-port-max\": \"%s\" nėra teisingas skaičius <0-65535>.\n"
 
 #: ../clients/cli/connections.c:4331
 msgid "Destination port [8472]: "
-msgstr ""
+msgstr "Paskirties prievadas [8472]: "
 
 #: ../clients/cli/connections.c:4335
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'destination-port': '%s' is not a valid number <0-65535>.\n"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas; naudokite <%d-%d>."
+msgstr ""
+"Klaida: \"destination-port\": \"%s\" nėra teisingas skaičius <0-65535>.\n"
 
 #: ../clients/cli/connections.c:4374
 msgid "IPv4 address (IP[/plen]) [none]: "
@@ -2147,9 +2141,9 @@ msgid "IPv6 address (IP[/plen]) [none]: "
 msgstr ""
 
 #: ../clients/cli/connections.c:4390
-#, fuzzy, c-format
+#, c-format
 msgid "  Address successfully added: %s\n"
-msgstr "Ryšys „%s“ (%s) sėkmingai pridėtas.\n"
+msgstr "  Adresas sėkmingai pridėtas: %s\n"
 
 #: ../clients/cli/connections.c:4392
 #, c-format
@@ -2186,7 +2180,7 @@ msgstr "Klaida: netinkamas papildomas argumentas „%s“."
 #: ../clients/cli/connections.c:4452
 #, c-format
 msgid "Do you want to add IP addresses? %s"
-msgstr ""
+msgstr "Ar norite pridėti IP adresus? %s"
 
 #: ../clients/cli/connections.c:4460
 #, c-format
@@ -2200,9 +2194,8 @@ msgid "Tun"
 msgstr ""
 
 #: ../clients/cli/connections.c:4509
-#, fuzzy
 msgid "User ID [none]: "
-msgstr "Slaptažodis: "
+msgstr "Naudotojo ID [nėra]: "
 
 #: ../clients/cli/connections.c:4522
 msgid "Group ID [none]: "
@@ -2214,9 +2207,9 @@ msgid "Enable PI %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4541
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'pi': %s.\n"
-msgstr "Klaida: „stp“: %s."
+msgstr "Error: \"pi\": %s.\n"
 
 #: ../clients/cli/connections.c:4549
 #, c-format
@@ -2224,9 +2217,9 @@ msgid "Enable VNET header %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4554
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'vnet-hdr': %s.\n"
-msgstr "Klaida: „vpn-type“: %s."
+msgstr "Klaida: \"vnet-hdr\": %s.\n"
 
 #: ../clients/cli/connections.c:4562
 #, c-format
@@ -2234,9 +2227,9 @@ msgid "Enable multi queue %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:4567
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multi-queue': %s.\n"
-msgstr "Klaida: „mode“: %s."
+msgstr "Klaida: \"multi-queue\": %s.\n"
 
 #. Ask for optional 'ip-tunnel' arguments.
 #: ../clients/cli/connections.c:4581
@@ -2249,9 +2242,9 @@ msgid "Local endpoint [none]: "
 msgstr "Sąsajos pavadinimas: "
 
 #: ../clients/cli/connections.c:4592
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not valid; must be an IP address\n"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas %s MAC adresas."
+msgstr "Klaida: \"local\": \"%s\" yra neteisingas; privalo būti IP adresas\n"
 
 #: ../clients/cli/connections.c:4658 ../clients/cli/connections.c:10184
 #, c-format
@@ -2331,7 +2324,7 @@ msgstr "Klaida: būtinas „nsp“."
 
 #: ../clients/cli/connections.c:5127
 msgid "PPPoE username: "
-msgstr ""
+msgstr "PPPoE naudotojo vardas: "
 
 #: ../clients/cli/connections.c:5130 ../clients/cli/connections.c:6037
 #, fuzzy
@@ -2368,9 +2361,8 @@ msgid "Error: 'dev' is required."
 msgstr "Klaida: būtinas „dev“."
 
 #: ../clients/cli/connections.c:5355
-#, fuzzy
 msgid "VLAN ID <0-4094>: "
-msgstr "VLAN ID <0-4095>: "
+msgstr "VLAN ID <0-4094>: "
 
 #: ../clients/cli/connections.c:5358 ../clients/cli/connections.c:6424
 msgid "Error: 'id' is required."
@@ -2392,9 +2384,9 @@ msgid "Error: 'mode': %s."
 msgstr "Klaida: „mode“: %s."
 
 #: ../clients/cli/connections.c:5515
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'primary': '%s' is not a valid interface name."
-msgstr "Klaida: „parent“: „%s“ nėra tinkamas sąsajos pavadinimas."
+msgstr "Klaida: \"primary\": \"%s\" yra neteisingas sąsajos pavadinimas."
 
 #: ../clients/cli/connections.c:5738
 #, c-format
@@ -2402,9 +2394,9 @@ msgid "Error: 'stp': %s."
 msgstr "Klaida: „stp“: %s."
 
 #: ../clients/cli/connections.c:5747
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multicast-snooping': %s."
-msgstr "Klaida: „stp“: %s."
+msgstr "Klaida: \"multicast-snooping\": %s."
 
 #: ../clients/cli/connections.c:5866
 #, c-format
@@ -2416,9 +2408,9 @@ msgid "Error: 'vpn-type' is required."
 msgstr "Klaida: būtinas „vpn-type“."
 
 #: ../clients/cli/connections.c:5922
-#, fuzzy, c-format
+#, c-format
 msgid "Warning: 'vpn-type': %s not known.\n"
-msgstr "Klaida: „vpn-type“: %s."
+msgstr "Įspėjimas: \"vpn-type\": %s nežinoma.\n"
 
 #: ../clients/cli/connections.c:5983
 #, c-format
@@ -2427,7 +2419,7 @@ msgstr "Klaida: „channel“: „%s“ yra netinkamas; naudokite <1-13>."
 
 #: ../clients/cli/connections.c:6034
 msgid "Username: "
-msgstr ""
+msgstr "Naudotojo vardas: "
 
 #: ../clients/cli/connections.c:6043
 #, c-format
@@ -2435,9 +2427,8 @@ msgid "Protocol %s"
 msgstr ""
 
 #: ../clients/cli/connections.c:6046
-#, fuzzy
 msgid "Error: 'protocol' is required."
-msgstr "Klaida: būtinas „nsp“."
+msgstr "Klaida: yra reikalinga \"protocol\"."
 
 #: ../clients/cli/connections.c:6105
 #, fuzzy
@@ -2446,34 +2437,32 @@ msgstr "VLAN tėvinis įrenginys arba ryšio UUID: "
 
 #: ../clients/cli/connections.c:6125 ../clients/cli/connections.c:6205
 #: ../clients/cli/connections.c:6307
-#, fuzzy
 msgid "Error: 'mode' is required."
-msgstr "Klaida: būtinas „dev“."
+msgstr "Klaida: yra reikalinga \"mode\"."
 
 #: ../clients/cli/connections.c:6131
-#, fuzzy
 msgid "Error: 'mode' is not valid."
-msgstr "Klaida: netinkama „dev“ komanda „%s“."
+msgstr "Klaida: \"mode\" yra neteisinga."
 
 #: ../clients/cli/connections.c:6144
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'tap': %s."
-msgstr "Klaida: „stp“: %s."
+msgstr "Klaida: \"tap\": %s."
 
 #: ../clients/cli/connections.c:6230
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'pi': %s."
-msgstr "Klaida: „stp“: %s."
+msgstr "Klaida: \"pi\": %s."
 
 #: ../clients/cli/connections.c:6241
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'vnet-hdr': %s."
-msgstr "Klaida: „vpn-type“: %s."
+msgstr "Klaida: \"vnet-hdr\": %s."
 
 #: ../clients/cli/connections.c:6252
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multi-queue': %s."
-msgstr "Klaida: „mode“: %s."
+msgstr "Klaida: \"multi-queue\": %s."
 
 #: ../clients/cli/connections.c:6321
 #, fuzzy, c-format
@@ -2485,14 +2474,13 @@ msgid "Remote endpoint: "
 msgstr ""
 
 #: ../clients/cli/connections.c:6330 ../clients/cli/connections.c:6432
-#, fuzzy
 msgid "Error: 'remote' is required."
-msgstr "Klaida: būtinas „master“."
+msgstr "Klaida: yra reikalinga \"remote\"."
 
 #: ../clients/cli/connections.c:6337
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'remote': '%s' is not valid; must be an IP address"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas %s MAC adresas."
+msgstr "Klaida: \"remote\": \"%s\" yra neteisinga; privalo būti IP adresas."
 
 #: ../clients/cli/connections.c:6351
 #, fuzzy, c-format
@@ -2500,33 +2488,32 @@ msgid "Error: 'local': '%s' is not valid; must be an IP address"
 msgstr "Klaida: „%s“: „%s“ nėra tinkamas %s MAC adresas."
 
 #: ../clients/cli/connections.c:6360 ../clients/cli/connections.c:6455
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'dev': '%s' is neither UUID nor interface name."
-msgstr "Klaida: „dev“: „%s“ nėra nei UUID, nei sąsajos pavadinimas, nei MAC."
+msgstr "Klaida: \"dev\": \"%s\" nėra nei UUID, nei sąsajos pavadinimas."
 
 #: ../clients/cli/connections.c:6421
-#, fuzzy
 msgid "VXLAN ID: "
-msgstr "VLAN ID <0-4095>: "
+msgstr "VXLAN ID: "
 
 #: ../clients/cli/connections.c:6429
 msgid "Remote: "
 msgstr ""
 
 #: ../clients/cli/connections.c:6438
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'id': '%s' is not valid; use <0-16777215>."
-msgstr "Klaida: „id“: „%s“ yra netinkamas; naudokite <0-4095>."
+msgstr "Klaida: \"id\": \"%s\" nėra teisinga; naudokite <0-16777215>."
 
 #: ../clients/cli/connections.c:6464
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'remote': '%s' is not a valid IP address"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas %s MAC adresas."
+msgstr "Klaida: \"remote\": \"%s\" nėra teisingas IP adresas"
 
 #: ../clients/cli/connections.c:6473
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not a valid IP address"
-msgstr "Klaida: „%s“: „%s“ nėra tinkamas %s MAC adresas."
+msgstr "Klaida: \"local\": \"%s\" nėra teisingas IP adresas"
 
 #: ../clients/cli/connections.c:6482
 #, fuzzy, c-format
@@ -3166,9 +3153,9 @@ msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Klaida: „%s“ nėra aktyvus ryšys."
 
 #: ../clients/cli/connections.c:9450
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid property: %s%s\n"
-msgstr "Klaida: netinkama savybė: %s\n"
+msgstr "Klaida: neteisinga savybė: %s%s\n"
 
 #: ../clients/cli/connections.c:9452
 #, fuzzy
@@ -3193,17 +3180,17 @@ msgstr "Patikrinti ryšį: %s\n"
 #: ../clients/cli/connections.c:9495
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
-msgstr ""
+msgstr "Klaida negali būti ištaisyta automatiškai.\n"
 
 #: ../clients/cli/connections.c:9512
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid argument '%s'\n"
-msgstr "Klaida: netinkamas papildomas argumentas „%s“."
+msgstr "Klaida: neteisingas argumentas \"%s\"\n"
 
 #: ../clients/cli/connections.c:9545
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
-msgstr "Klaida: nepavyiko įrašyti „%s“ (%s) ryšio: (%d) %s\n"
+msgstr "Klaida: Nepavyko įrašyti \"%s\" (%s) ryšio: %s\n"
 
 #: ../clients/cli/connections.c:9552
 #, c-format
@@ -3211,9 +3198,9 @@ msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Ryšys „%s“ (%s) sėkmingai įrašytas.\n"
 
 #: ../clients/cli/connections.c:9553
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
-msgstr "Ryšys „%s“ (%s) sėkmingai pridėtas.\n"
+msgstr "Ryšys \"%s\" (%s) sėkmingai atnaujintas.\n"
 
 #: ../clients/cli/connections.c:9586
 #, c-format
@@ -3371,9 +3358,8 @@ msgid "%s (%s) cloned as %s (%s).\n"
 msgstr ""
 
 #: ../clients/cli/connections.c:10260
-#, fuzzy
 msgid "New connection name: "
-msgstr "Įveskite ryšio tipą: "
+msgstr "Naujas ryšio pavadinimas: "
 
 #: ../clients/cli/connections.c:10281 ../clients/cli/connections.c:10299
 #, fuzzy, c-format
@@ -3381,9 +3367,9 @@ msgid "Error: <new name> argument is missing."
 msgstr "Klaida: trūksta argumento %s."
 
 #: ../clients/cli/connections.c:10287
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unexpected extra argument '%s'."
-msgstr "Klaida: netikėtas argumentas „%s“"
+msgstr "Klaida: netikėtas papildomas argumentas \"%s\"."
 
 #: ../clients/cli/connections.c:10356
 #, fuzzy, c-format
@@ -3396,9 +3382,9 @@ msgid "Error: Connection deletion failed: %s"
 msgstr "Klaida: nepavyko ištrinti ryšio: %s"
 
 #: ../clients/cli/connections.c:10419 ../clients/cli/connections.c:10547
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown connection '%s'\n"
-msgstr "Klaida: nežinomas ryšys: %s\n"
+msgstr "Klaida: nežinomas ryšys \"%s\"\n"
 
 #: ../clients/cli/connections.c:10433
 #, fuzzy, c-format
@@ -3477,9 +3463,9 @@ msgid "Error: failed to load VPN plugin: %s."
 msgstr "Klaida: nepavyko pakeisti %s.%s: %s."
 
 #: ../clients/cli/connections.c:10699
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to import '%s': %s."
-msgstr "Klaida: nepavyko pakeisti %s.%s: %s."
+msgstr "Klaida: nepavyko importuoti \"%s\": %s."
 
 #: ../clients/cli/connections.c:10745
 #, fuzzy
@@ -3487,29 +3473,29 @@ msgid "Output file name: "
 msgstr "failo pavadinimas"
 
 #: ../clients/cli/connections.c:10769
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown extra argument: '%s'."
-msgstr "Klaida: netinkamas papildomas argumentas „%s“."
+msgstr "Klaida: nežinomas papildomas argumentas: \"%s\"."
 
 #: ../clients/cli/connections.c:10789
-#, fuzzy, c-format
+#, c-format
 msgid "Error: the connection is not VPN."
-msgstr "Klaida: trūksta ryšio ID."
+msgstr "Klaida: ryšys nėra VPN."
 
 #: ../clients/cli/connections.c:10810
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to create temporary file %s."
-msgstr "Klaida: nepavyko nustatyti „%s“ savybės: %s\n"
+msgstr "Klaida: nepavyko sukurti laikinojo failo %s."
 
 #: ../clients/cli/connections.c:10819
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to export '%s': %s."
-msgstr "Klaida: nepavyko nustatyti „%s“ savybės: %s\n"
+msgstr "Klaida: nepavyko eksportuoti \"%s\": %s."
 
 #: ../clients/cli/connections.c:10830
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to read temporary file '%s': %s."
-msgstr "Klaida: nepavyko pakeisti %s.%s: %s."
+msgstr "Klaida: nepavyko perskaityti laikinojo failo \"%s\": %s."
 
 #: ../clients/cli/connections.c:10976
 #, c-format
@@ -3522,9 +3508,8 @@ msgid "incorrect item '%s' in '--order' option"
 msgstr ""
 
 #: ../clients/cli/connections.c:11089
-#, fuzzy
 msgid "'--order' argument is missing"
-msgstr "Klaida: trūksta argumento %s."
+msgstr "trūksta argumento \"--order\""
 
 #: ../clients/cli/connections.c:11154
 #, c-format
@@ -3537,9 +3522,8 @@ msgid "Interface: "
 msgstr "Sąsaja: "
 
 #: ../clients/cli/devices.c:36
-#, fuzzy
 msgid "Interface(s): "
-msgstr "Sąsaja: "
+msgstr "Sąsaja(-os): "
 
 #. 3
 #. 20
@@ -3595,7 +3579,7 @@ msgstr "APARATINIS-ADRESAS"
 #: ../clients/tui/nmt-page-infiniband.c:94 ../clients/tui/nmt-page-vlan.c:128
 #: ../clients/tui/nmt-page-wifi.c:370
 msgid "MTU"
-msgstr ""
+msgstr "MTU"
 
 #. 11
 #: ../clients/cli/devices.c:67
@@ -3712,12 +3696,12 @@ msgstr "ADHOC"
 #. 7
 #: ../clients/cli/devices.c:128
 msgid "2GHZ"
-msgstr ""
+msgstr "2GHZ"
 
 #. 8
 #: ../clients/cli/devices.c:129
 msgid "5GHZ"
-msgstr ""
+msgstr "5GHZ"
 
 #. 0
 #: ../clients/cli/devices.c:138
@@ -3869,7 +3853,7 @@ msgstr ""
 #. 14
 #: ../clients/cli/devices.c:240
 msgid "BLUETOOTH"
-msgstr ""
+msgstr "BLUETOOTH"
 
 #. 15
 #: ../clients/cli/devices.c:241
@@ -4201,9 +4185,9 @@ msgid "Warning: argument '%s' is duplicated.\n"
 msgstr ""
 
 #: ../clients/cli/devices.c:549 ../clients/cli/devices.c:1901
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "Klaida: nerastas įrenginys „%s“."
+msgstr "Klaida: Įrenginys \"%s\" nerastas."
 
 #: ../clients/cli/devices.c:550 ../clients/cli/devices.c:1902
 #, fuzzy, c-format
@@ -5031,14 +5015,12 @@ msgid "Error: 'radio' command '%s' is not valid."
 msgstr "Klaida: netinkama „radio“ komanda „%s“."
 
 #: ../clients/cli/general.c:914
-#, fuzzy
 msgid "NetworkManager has started"
-msgstr "NetworkManager būsena"
+msgstr "NetworkManager paleista"
 
 #: ../clients/cli/general.c:917
-#, fuzzy
 msgid "NetworkManager has stopped"
-msgstr "NetworkManager būsena"
+msgstr "NetworkManager sustabdyta"
 
 #: ../clients/cli/general.c:931
 #, c-format
@@ -5061,9 +5043,9 @@ msgid "Connectivity is now '%s'\n"
 msgstr "Jungiamasi"
 
 #: ../clients/cli/general.c:973
-#, fuzzy, c-format
+#, c-format
 msgid "Networkmanager is now in the '%s' state\n"
-msgstr "NetworkManager užmigo"
+msgstr "Networkmanager dabar yra '%s' būsenoje\n"
 
 #: ../clients/cli/general.c:984
 #, fuzzy, c-format
@@ -5292,7 +5274,7 @@ msgstr "%d (nežinoma)"
 #: ../clients/cli/settings.c:896
 #, c-format
 msgid "%d (yes)"
-msgstr ""
+msgstr "%d (taip)"
 
 #: ../clients/cli/settings.c:899 ../clients/cli/settings.c:1554
 #, fuzzy, c-format
@@ -5375,7 +5357,7 @@ msgstr "netinkamas „%s“ arba jo vertė „%s“"
 #: ../clients/cli/settings.c:1899
 #, c-format
 msgid "always"
-msgstr ""
+msgstr "visada"
 
 #: ../clients/cli/settings.c:1999 ../clients/cli/settings.c:3286
 #: ../clients/cli/settings.c:4478 ../clients/cli/settings.c:4981
@@ -6319,11 +6301,11 @@ msgstr ""
 #: ../clients/common/nm-vpn-helpers.c:108 ../clients/tui/nmt-page-ip4.c:143
 #: ../clients/tui/nmt-page-ip6.c:143
 msgid "Gateway"
-msgstr ""
+msgstr "Tinklų sietuvas"
 
 #: ../clients/common/nm-vpn-helpers.c:109
 msgid "Cookie"
-msgstr ""
+msgstr "Slapukas"
 
 #: ../clients/common/nm-vpn-helpers.c:110
 msgid "Gateway certificate hash"
@@ -6369,7 +6351,7 @@ msgstr ""
 #: ../clients/tui/nmt-route-editor.c:122 ../clients/tui/nmtui-hostname.c:69
 #: ../clients/tui/nmtui.c:114
 msgid "OK"
-msgstr ""
+msgstr "Gerai"
 
 #: ../clients/tui/newt/nmt-newt-utils.c:325
 #: ../clients/tui/newt/nmt-newt-utils.c:357
@@ -6481,7 +6463,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-edit-connection-list.c:110
 msgid "Add"
-msgstr ""
+msgstr "Pridėti"
 
 #: ../clients/tui/nmt-edit-connection-list.c:113
 #: ../clients/tui/nmt-page-ip4.c:169 ../clients/tui/nmt-page-ip6.c:167
@@ -6492,15 +6474,15 @@ msgstr ""
 #: ../clients/tui/nmt-edit-connection-list.c:116
 #: ../clients/tui/nmtui-edit.c:526
 msgid "Delete"
-msgstr ""
+msgstr "Ištrinti"
 
 #: ../clients/tui/nmt-editor-section.c:103
 msgid "Hide"
-msgstr ""
+msgstr "Slėpti"
 
 #: ../clients/tui/nmt-editor-section.c:103
 msgid "Show"
-msgstr ""
+msgstr "Rodyti"
 
 #: ../clients/tui/nmt-editor.c:97
 #, c-format
@@ -6554,7 +6536,7 @@ msgstr ""
 #: ../clients/tui/nmt-route-editor.c:115 ../clients/tui/nmtui-edit.c:217
 #: ../clients/tui/nmtui-edit.c:525 ../clients/tui/nmtui-hostname.c:67
 msgid "Cancel"
-msgstr ""
+msgstr "Atsisakyti"
 
 #: ../clients/tui/nmt-mtu-entry.c:86 ../clients/tui/nmt-mtu-entry.c:117
 msgid "bytes"
@@ -6749,11 +6731,11 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:136 ../clients/tui/nmt-page-ip6.c:136
 msgid "Addresses"
-msgstr ""
+msgstr "Adresai"
 
 #: ../clients/tui/nmt-page-ip4.c:150 ../clients/tui/nmt-page-ip6.c:150
 msgid "DNS servers"
-msgstr ""
+msgstr "DNS serveriai"
 
 #: ../clients/tui/nmt-page-ip4.c:156 ../clients/tui/nmt-page-ip6.c:156
 msgid "Search domains"
@@ -6890,17 +6872,17 @@ msgstr ""
 #. 802.11a Wi-Fi network
 #: ../clients/tui/nmt-page-wifi.c:73
 msgid "A (5 GHz)"
-msgstr ""
+msgstr "A (5 GHz)"
 
 #. 802.11b / 802.11g Wi-Fi network
 #: ../clients/tui/nmt-page-wifi.c:75
 msgid "B/G (2.4 GHz)"
-msgstr ""
+msgstr "B/G (2.4 GHz)"
 
 #: ../clients/tui/nmt-page-wifi.c:80
 msgctxt "Wi-Fi security"
 msgid "None"
-msgstr ""
+msgstr "Nėra"
 
 #: ../clients/tui/nmt-page-wifi.c:81
 msgid "WPA & WPA2 Personal"
@@ -6925,7 +6907,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-page-wifi.c:86
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: ../clients/tui/nmt-page-wifi.c:91
 #, fuzzy
@@ -6936,17 +6918,17 @@ msgstr "numatyta"
 #: ../clients/tui/nmt-page-wifi.c:92
 msgctxt "WEP key index"
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../clients/tui/nmt-page-wifi.c:93
 msgctxt "WEP key index"
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../clients/tui/nmt-page-wifi.c:94
 msgctxt "WEP key index"
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../clients/tui/nmt-page-wifi.c:99
 #, fuzzy
@@ -6991,7 +6973,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-password-fields.c:128
 msgid "Ask for this password every time"
-msgstr ""
+msgstr "Kas kartą klausti šio slaptažodžio"
 
 #: ../clients/tui/nmt-password-fields.c:129
 #, fuzzy
@@ -7028,7 +7010,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-widget-list.c:202
 msgid "Remove"
-msgstr ""
+msgstr "Šalinti"
 
 #: ../clients/tui/nmtui-connect.c:54
 msgid ""
@@ -7459,7 +7441,7 @@ msgstr "Nepavyko iškoduoti liudijimo: %d"
 #: ../libnm-core/crypto_nss.c:420
 #, c-format
 msgid "Password must be UTF-8"
-msgstr ""
+msgstr "Slaptažodis privalo būti UTF-8"
 
 #: ../libnm-core/crypto_nss.c:450 ../libnm-util/crypto_nss.c:488
 #, c-format
@@ -7496,7 +7478,7 @@ msgstr "Klaida: nežinomas nustatymas „%s“\n"
 
 #: ../libnm-core/nm-connection.c:873
 msgid "setting not found"
-msgstr ""
+msgstr "nustatymas nerastas"
 
 #: ../libnm-core/nm-connection.c:937
 #, fuzzy
@@ -8475,7 +8457,7 @@ msgstr "Nepavyko nustatyti signalo kaukės: %d"
 #: ../libnm-core/nm-utils.c:2456
 #, c-format
 msgid "not a file (%s)"
-msgstr ""
+msgstr "nėra failas (%s)"
 
 #: ../libnm-core/nm-utils.c:2467
 #, fuzzy, c-format
@@ -8601,7 +8583,7 @@ msgstr ""
 
 #: ../libnm-glib/nm-device.c:1853 ../libnm/nm-device.c:1804
 msgid "Bluetooth"
-msgstr ""
+msgstr "Bluetooth"
 
 #: ../libnm-glib/nm-device.c:1873 ../libnm/nm-device.c:1824
 #, fuzzy
@@ -8622,11 +8604,11 @@ msgstr ""
 
 #: ../libnm-glib/nm-device.c:1944 ../libnm/nm-device.c:1895
 msgid "PCI"
-msgstr ""
+msgstr "PCI"
 
 #: ../libnm-glib/nm-device.c:1946 ../libnm/nm-device.c:1897
 msgid "USB"
-msgstr ""
+msgstr "USB"
 
 #. Translators: the first %s is a bus name (eg, "USB") or
 #. * product name, the second is a device type (eg,
@@ -8639,7 +8621,7 @@ msgstr ""
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr ""
+msgstr "%s %s"
 
 #: ../libnm-glib/nm-remote-connection.c:149
 #, fuzzy
@@ -8739,11 +8721,11 @@ msgstr "jungiamasi (paleidžiami antriniai prisijungimai)"
 
 #: ../libnm/nm-device-bt.c:146
 msgid "Invalid device Bluetooth address."
-msgstr ""
+msgstr "Neteisingas Bluetooth įrenginio adresas."
 
 #: ../libnm/nm-device-bt.c:153
 msgid "The Bluetooth addresses of the device and the connection didn't match."
-msgstr ""
+msgstr "Bluetooth įrenginio ir ryšio adresai nesutapo."
 
 #: ../libnm/nm-device-bt.c:162
 msgid ""
@@ -9644,9 +9626,8 @@ msgid "VPN connection"
 msgstr "VPN jungiamasi"
 
 #: ../src/nm-sleep-monitor-systemd.c:131
-#, fuzzy
 msgid "NetworkManager needs to turn off networks"
-msgstr "NetworkManager būsena"
+msgstr "NetworkManager reikia išjungti tinklus"
 
 #: ../src/settings/plugins/ifcfg-rh/reader.c:108
 msgid "System"

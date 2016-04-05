@@ -28,6 +28,11 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
+"Usage: nmcli agent { COMMAND | help }\n"
+"\n"
+"COMMAND := { secret | polkit | all }\n"
+"\n"
+"\n"
 
 #: ../clients/cli/agent.c:47
 #, c-format
@@ -143,9 +148,9 @@ msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr "無効なプレフィックス '%s'; <1-32> 許可"
 
 #: ../clients/cli/common.c:384
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "無効な IPv4 アドレス '%s'"
+msgstr "無効な IP アドレス: %s"
 
 #: ../clients/cli/common.c:448
 #, c-format
@@ -160,9 +165,9 @@ msgid "invalid metric '%s'"
 msgstr "無効なメトリック '%s'"
 
 #: ../clients/cli/common.c:465
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "無効な IPv4 ルート '%s'"
+msgstr "無効なルート: %s"
 
 #: ../clients/cli/common.c:477
 msgid "default route cannot be added (NetworkManager handles it by itself)"
@@ -512,13 +517,12 @@ msgid "Modem failed or no longer available"
 msgstr "ModemManager は使用できません"
 
 #: ../clients/cli/common.c:718
-#, fuzzy
 msgid "Modem now ready and available"
-msgstr "ModemManager は使用できません"
+msgstr "モデムが準備されましたので利用可能です"
 
 #: ../clients/cli/common.c:721
 msgid "SIM PIN was incorrect"
-msgstr ""
+msgstr "SIM PIN が間違っています"
 
 #: ../clients/cli/common.c:724
 #, fuzzy
@@ -1445,9 +1449,8 @@ msgid "Error updating secrets for %s: %s\n"
 msgstr "接続の保存中にエラーが発生しました: %s"
 
 #: ../clients/cli/connections.c:764
-#, fuzzy
 msgid "Connection profile details"
-msgstr "接続の詳細"
+msgstr "接続プロファイルの詳細"
 
 #: ../clients/cli/connections.c:776 ../clients/cli/connections.c:1169
 #, fuzzy, c-format
@@ -1626,9 +1629,9 @@ msgid "Error: Connection activation failed: %s"
 msgstr "エラー: 接続のアクティベーションに失敗: %s"
 
 #: ../clients/cli/connections.c:2225
-#, fuzzy, c-format
+#, c-format
 msgid "failed to read passwd-file '%s': %s"
-msgstr "エラー: '%s' の値の削除に失敗しました: %s\n"
+msgstr "passwd-file '%s'の読み込みに失敗: %s"
 
 #: ../clients/cli/connections.c:2237
 #, c-format
@@ -1655,9 +1658,9 @@ msgid "neither a valid connection nor device given"
 msgstr "有効な接続、デバイスいずれも指定されていません"
 
 #: ../clients/cli/connections.c:2402
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection '%s' does not exist."
-msgstr "エラー: 接続は無効です: %s\n"
+msgstr "エラー: 接続 '%s' が存在しません。"
 
 #: ../clients/cli/connections.c:2437 ../clients/cli/devices.c:1325
 #: ../clients/cli/devices.c:2358 ../clients/cli/devices.c:2752
@@ -1671,14 +1674,15 @@ msgid "preparing"
 msgstr "準備中"
 
 #: ../clients/cli/connections.c:2483
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "接続 '%s' (%s) が正常に追加されました。\n"
+msgstr "接続 '%s' (%s) が正常に削除されました。\n"
 
 #: ../clients/cli/connections.c:2499
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "接続が正常にアクティベートされました (D-Bus アクティブパス: %s)\n"
+msgstr ""
+"接続 '%s' が正常に非アクティブ化されました (D-Bus アクティブパス: %s)\n"
 
 #: ../clients/cli/connections.c:2570 ../clients/cli/connections.c:10391
 #: ../clients/cli/connections.c:10590
@@ -1687,7 +1691,7 @@ msgid "Error: No connection specified."
 msgstr "エラー: 接続が指定されていません。"
 
 #: ../clients/cli/connections.c:2602
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "エラー: '%s' はアクティブな接続ではありません。"
 
@@ -1697,9 +1701,9 @@ msgid "Error: not all active connections found."
 msgstr "エラー: '%s' はアクティブな接続ではありません。"
 
 #: ../clients/cli/connections.c:2612
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no active connection provided."
-msgstr "エラー: 接続をアクティベートできません: %s。\n"
+msgstr "エラー: アクティブな接続がありません。"
 
 #: ../clients/cli/connections.c:2955 ../clients/cli/utils.c:702
 #, c-format
@@ -1749,9 +1753,8 @@ msgid "Error: '%s': '%s' is not a valid %s %s."
 msgstr "エラー: '%s': '%s' は無効です; %s "
 
 #: ../clients/cli/connections.c:3162
-#, fuzzy
 msgid "Wi-Fi mode"
-msgstr "Wi-Fi"
+msgstr "Wi-Fi モード"
 
 #: ../clients/cli/connections.c:3171
 #, fuzzy
@@ -1760,7 +1763,7 @@ msgstr "トランスポートモード"
 
 #: ../clients/cli/connections.c:3183
 msgid "ADSL protocol"
-msgstr ""
+msgstr "ADSL プロトコル"
 
 #: ../clients/cli/connections.c:3194
 #, fuzzy
@@ -1876,7 +1879,6 @@ msgstr "サービス [none]: "
 
 #. Ask for optional 'gsm' or 'cdma' arguments.
 #: ../clients/cli/connections.c:3730
-#, fuzzy
 msgid "mobile broadband"
 msgstr "モバイルブロードバンド"
 
@@ -1886,9 +1888,8 @@ msgstr "ユーザー名 [none]: "
 
 #. Ask for optional 'bluetooth' arguments.
 #: ../clients/cli/connections.c:3749
-#, fuzzy
 msgid "bluetooth"
-msgstr "Bluetooth"
+msgstr "bluetooth"
 
 #: ../clients/cli/connections.c:3756
 #, fuzzy, c-format
@@ -2221,14 +2222,14 @@ msgid "IPv6 address (IP[/plen]) [none]: "
 msgstr "IPv6 アドレス (IP[/plen] [gateway]) [none]: "
 
 #: ../clients/cli/connections.c:4390
-#, fuzzy, c-format
+#, c-format
 msgid "  Address successfully added: %s\n"
-msgstr "アドレスが正常に追加されました: %s %s\n"
+msgstr " アドレスが正常に追加されました: %s\n"
 
 #: ../clients/cli/connections.c:4392
-#, fuzzy, c-format
+#, c-format
 msgid "  Warning: address already present: %s\n"
-msgstr "  警告: アドレスは既にあります: %s %s\n"
+msgstr " 警告: アドレスがすでにあります: %s\n"
 
 #: ../clients/cli/connections.c:4394
 #, c-format
@@ -2502,19 +2503,17 @@ msgid "Error: 'channel': '%s' is not valid; use <1-13>."
 msgstr "エラー: 'チャンネル': '%s' は無効です; <1-13> を使用してください。"
 
 #: ../clients/cli/connections.c:6034
-#, fuzzy
 msgid "Username: "
-msgstr "ユーザー名"
+msgstr "ユーザー名: "
 
 #: ../clients/cli/connections.c:6043
 #, c-format
 msgid "Protocol %s"
-msgstr ""
+msgstr "プロトコル %s"
 
 #: ../clients/cli/connections.c:6046
-#, fuzzy
 msgid "Error: 'protocol' is required."
-msgstr "エラー: 'nsp' が必要です。"
+msgstr "エラー: 'protocol' が必要です。"
 
 #: ../clients/cli/connections.c:6105
 #, fuzzy
@@ -2633,14 +2632,14 @@ msgid "Error: IPv4 gateway specified without IPv4 addresses"
 msgstr ""
 
 #: ../clients/cli/connections.c:6585
-#, fuzzy, c-format
+#, c-format
 msgid "Error: multiple IPv4 gateways specified"
-msgstr "エラー: インターフェースが指定されていません。"
+msgstr "エラー: 複数の IPv4 ゲートウェイが指定されています"
 
 #: ../clients/cli/connections.c:6589
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid IPv4 gateway '%s'"
-msgstr "無効なゲートウェイ '%s'"
+msgstr "エラー: 無効な IPv4 ゲートウェイ '%s'"
 
 #: ../clients/cli/connections.c:6614
 #, c-format
@@ -2648,14 +2647,14 @@ msgid "Error: IPv6 gateway specified without IPv6 addresses"
 msgstr ""
 
 #: ../clients/cli/connections.c:6618
-#, fuzzy, c-format
+#, c-format
 msgid "Error: multiple IPv6 gateways specified"
-msgstr "エラー: インターフェースが指定されていません。"
+msgstr "エラー: 複数の IPv6 ゲートウェイが指定されています"
 
 #: ../clients/cli/connections.c:6622
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid IPv6 gateway '%s'"
-msgstr "無効なゲートウェイ '%s'"
+msgstr "エラー: 無効な IPv6 ゲートウェイ '%s'"
 
 #: ../clients/cli/connections.c:6670 ../clients/cli/connections.c:10223
 #, fuzzy, c-format
@@ -3264,9 +3263,9 @@ msgid "Error: '%s' setting not present in the connection\n"
 msgstr "この接続には設定 '%s' はありません。\n"
 
 #: ../clients/cli/connections.c:9450
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid property: %s%s\n"
-msgstr "エラー: 無効なプロパティ: %s\n"
+msgstr "エラー: 無効なプロパティ: %s%s\n"
 
 #: ../clients/cli/connections.c:9452
 #, fuzzy
@@ -3294,9 +3293,9 @@ msgid "The error cannot be fixed automatically.\n"
 msgstr ""
 
 #: ../clients/cli/connections.c:9512
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid argument '%s'\n"
-msgstr "エラー:  '%s' は無効な追加引数です。"
+msgstr "エラー: 無効な引数 '%s'\n"
 
 #: ../clients/cli/connections.c:9545
 #, fuzzy, c-format
@@ -3474,9 +3473,9 @@ msgid "New connection name: "
 msgstr "新規の接続"
 
 #: ../clients/cli/connections.c:10281 ../clients/cli/connections.c:10299
-#, fuzzy, c-format
+#, c-format
 msgid "Error: <new name> argument is missing."
-msgstr "エラー: %s 引数がありません。"
+msgstr "エラー: <new name> 引数がありません。"
 
 #: ../clients/cli/connections.c:10287
 #, fuzzy, c-format
@@ -3494,14 +3493,14 @@ msgid "Error: Connection deletion failed: %s"
 msgstr "エラー: 接続の削除に失敗しました: %s"
 
 #: ../clients/cli/connections.c:10419 ../clients/cli/connections.c:10547
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown connection '%s'\n"
-msgstr "エラー: 不明な接続です: %s\n"
+msgstr "エラー: 不明な接続 '%s'\n"
 
 #: ../clients/cli/connections.c:10433
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no connection provided."
-msgstr "エラー: 接続が指定されていません。"
+msgstr "エラー: 接続がありません。"
 
 #. truncate trailing ", "
 #: ../clients/cli/connections.c:10458
@@ -3620,9 +3619,8 @@ msgid "incorrect item '%s' in '--order' option"
 msgstr ""
 
 #: ../clients/cli/connections.c:11089
-#, fuzzy
 msgid "'--order' argument is missing"
-msgstr "エラー: %s 引数がありません。"
+msgstr "'--order' 引数がありません"
 
 #: ../clients/cli/connections.c:11154
 #, c-format
@@ -3966,7 +3964,7 @@ msgstr "ブリッジ"
 #. 14
 #: ../clients/cli/devices.c:240
 msgid "BLUETOOTH"
-msgstr ""
+msgstr "BLUETOOTH"
 
 #. 15
 #: ../clients/cli/devices.c:241
@@ -4409,9 +4407,9 @@ msgid "Warning: argument '%s' is duplicated.\n"
 msgstr ""
 
 #: ../clients/cli/devices.c:549 ../clients/cli/devices.c:1901
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "エラー: デバイス'%s' が見つかりません"
+msgstr "エラー: デバイス'%s' が見つかりません。\n"
 
 #: ../clients/cli/devices.c:550 ../clients/cli/devices.c:1902
 #, fuzzy, c-format
@@ -4506,14 +4504,14 @@ msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "成功: デバイス '%s' は正常にアクティベートされました。"
 
 #: ../clients/cli/devices.c:1481
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection activation failed: (%d) %s.\n"
-msgstr "エラー: 接続のアクティベートに失敗しました: (%d) %s。"
+msgstr "エラー: 接続のアクティベーションに失敗しました: (%d) %s.\n"
 
 #: ../clients/cli/devices.c:1517
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
-msgstr "エラー: ホスト名の設定に失敗しました: (%d) %s"
+msgstr "エラー: Wi-Fi hotspot の設定に失敗しました: %s"
 
 #: ../clients/cli/devices.c:1520
 #, fuzzy, c-format
@@ -4521,9 +4519,9 @@ msgid "Error: Failed to add/activate new connection: %s"
 msgstr "エラー: 新規接続の追加、アクティベートに失敗しました: (%d) %s"
 
 #: ../clients/cli/devices.c:1530
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot"
-msgstr "エラー: ホスト名の設定に失敗しました: (%d) %s"
+msgstr "エラー: Wi-Fi hotspot の設定に失敗しました"
 
 #: ../clients/cli/devices.c:1532
 #, c-format
@@ -4564,14 +4562,14 @@ msgstr "エラー: 追加の引数は許可されていません: '%s'。"
 
 #: ../clients/cli/devices.c:1776 ../clients/cli/devices.c:1791
 #: ../clients/cli/devices.c:1964
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully disconnected.\n"
-msgstr "成功: デバイス '%s' は正常に切断されました。"
+msgstr "デバイス '%s' が正常に切断されました。\n"
 
 #: ../clients/cli/devices.c:1779
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully removed.\n"
-msgstr "成功: デバイス '%s' は正常にアクティベートされました。"
+msgstr "デバイス '%s' が正常に削除されました。\n"
 
 #: ../clients/cli/devices.c:1838
 #, fuzzy, c-format
@@ -4599,9 +4597,9 @@ msgid "Error: not all devices disconnected."
 msgstr "エラー: Wi-Fi デバイスが見つかりませんでした。"
 
 #: ../clients/cli/devices.c:1950
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
-msgstr "エラー: デバイス '%s' (%s) の切断に失敗しました: %s"
+msgstr "エラー: デバイス '%s' (%s) の切断に失敗しました: %s\n"
 
 #: ../clients/cli/devices.c:2025
 #, fuzzy, c-format
@@ -4772,9 +4770,9 @@ msgstr ""
 "てください。"
 
 #: ../clients/cli/devices.c:3161
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Unknown parameter %s."
-msgstr "不明なパラメーター: %s\n"
+msgstr "エラー: 不明なパラメータ %s です。"
 
 #: ../clients/cli/devices.c:3180
 #, fuzzy, c-format
@@ -5246,9 +5244,9 @@ msgid "NetworkManager logging"
 msgstr "NetworkManager のロギング"
 
 #: ../clients/cli/general.c:567
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set hostname: %s"
-msgstr "エラー: ホスト名の設定に失敗しました: (%d) %s"
+msgstr "エラー: ホスト名の設定に失敗しました: %s"
 
 #: ../clients/cli/general.c:680
 #, fuzzy, c-format
@@ -5500,14 +5498,14 @@ msgid "Success"
 msgstr "成功"
 
 #: ../clients/cli/polkit-agent.c:66
-#, fuzzy, c-format
+#, c-format
 msgid "Authentication message: %s\n"
-msgstr "認証"
+msgstr "認証メッセージ: %s\n"
 
 #: ../clients/cli/polkit-agent.c:72
-#, fuzzy, c-format
+#, c-format
 msgid "Authentication error: %s\n"
-msgstr "認証"
+msgstr "認証エラー: %s\n"
 
 #: ../clients/cli/polkit-agent.c:118
 #, fuzzy, c-format
@@ -5520,9 +5518,9 @@ msgid "%d (key)"
 msgstr "%d (hex-ascii-key)"
 
 #: ../clients/cli/settings.c:792
-#, fuzzy, c-format
+#, c-format
 msgid "%d (passphrase)"
-msgstr "%d (104/128-bit パスフレーズ)"
+msgstr "%d (パスフレーズ)"
 
 #: ../clients/cli/settings.c:795 ../clients/cli/settings.c:881
 #, c-format
