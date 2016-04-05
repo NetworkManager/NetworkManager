@@ -7,7 +7,7 @@
       Options and configuration returned by the IPv4 DHCP server.
   -->
   <interface name="org.freedesktop.NetworkManager.DHCP4Config">
-        <annotation name="org.gtk.GDBus.C.Name" value="Dhcp4Config"/>
+    <annotation name="org.gtk.GDBus.C.Name" value="Dhcp4Config"/>
 
     <!--
         Options:
@@ -21,7 +21,7 @@
         @properties: A dictionary mapping property names to variant boxed values
     -->
     <signal name="PropertiesChanged">
-            <arg name="properties" type="a{sv}"/>
-        </signal>
-    </interface>
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
 </node>

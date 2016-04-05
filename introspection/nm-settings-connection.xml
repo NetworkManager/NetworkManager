@@ -19,8 +19,8 @@
         associated with each secret.
     -->
     <method name="Update">
-          <arg name="properties" type="a{sa{sv}}" direction="in"/>
-        </method>
+      <arg name="properties" type="a{sa{sv}}" direction="in"/>
+    </method>
 
     <!--
         UpdateUnsaved:
@@ -36,8 +36,8 @@
         ReloadConnections call).
     -->
     <method name="UpdateUnsaved">
-          <arg name="properties" type="a{sa{sv}}" direction="in"/>
-        </method>
+      <arg name="properties" type="a{sa{sv}}" direction="in"/>
+    </method>
 
     <!--
         Delete:
@@ -56,8 +56,8 @@
         GetSecrets() call.
     -->
     <method name="GetSettings">
-            <arg name="settings" type="a{sa{sv}}" direction="out"/>
-        </method>
+      <arg name="settings" type="a{sa{sv}}" direction="out"/>
+    </method>
 
     <!--
         GetSecrets:
@@ -70,10 +70,10 @@
         of this request.
     -->
     <method name="GetSecrets">
-            <arg name="setting_name" type="s" direction="in"/>
+      <arg name="setting_name" type="s" direction="in"/>
 
-            <arg name="secrets" type="a{sa{sv}}" direction="out"/>
-        </method>
+      <arg name="secrets" type="a{sa{sv}}" direction="out"/>
+    </method>
 
     <!--
         ClearSecrets:
@@ -125,9 +125,7 @@
         @properties: A dictionary mapping property names to variant boxed values.
     -->
     <signal name="PropertiesChanged">
-            <arg name="properties" type="a{sv}"/>
-        </signal>
-
-    </interface>
-
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
 </node>

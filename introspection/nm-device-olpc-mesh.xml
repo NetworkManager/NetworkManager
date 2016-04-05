@@ -30,7 +30,7 @@
         Emitted when the wireless device's properties changed.
     -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
-        </signal>
+      <arg name="properties" type="a{sv}"/>
+    </signal>
   </interface>
 </node>

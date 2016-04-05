@@ -198,6 +198,5 @@
     <signal name="Failure">
       <arg name="reason" type="u"/>
     </signal>
-
   </interface>
 </node>

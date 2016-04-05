@@ -381,6 +381,5 @@
     <signal name="DeviceRemoved">
       <arg name="device_path" type="o"/>
     </signal>
-
   </interface>
 </node>

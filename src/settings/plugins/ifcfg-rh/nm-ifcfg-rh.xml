@@ -18,9 +18,9 @@
         Given an ifcfg file, return various internal information about it.
     -->
     <method name="GetIfcfgDetails">
-        <arg name="ifcfg" type="s" direction="in"/>
-        <arg name="uuid" type="s" direction="out"/>
-        <arg name="path" type="o" direction="out"/>
-      </method>
-    </interface>
+      <arg name="ifcfg" type="s" direction="in"/>
+      <arg name="uuid" type="s" direction="out"/>
+      <arg name="path" type="o" direction="out"/>
+    </method>
+  </interface>
 </node>

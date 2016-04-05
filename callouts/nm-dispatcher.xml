@@ -23,31 +23,18 @@
     -->
     <method name="Action">
       <arg name="action" type="s" direction="in"/>
-
       <arg name="connection" type="a{sa{sv}}" direction="in"/>
-
       <arg name="connection_properties" type="a{sv}" direction="in"/>
-
       <arg name="device_properties" type="a{sv}" direction="in"/>
-
       <arg name="device_ip4_config" type="a{sv}" direction="in"/>
-
       <arg name="device_ip6_config" type="a{sv}" direction="in"/>
-
       <arg name="device_dhcp4_config" type="a{sv}" direction="in"/>
-
       <arg name="device_dhcp6_config" type="a{sv}" direction="in"/>
-
       <arg name="vpn_ip_iface" type="s" direction="in"/>
-
       <arg name="vpn_ip4_config" type="a{sv}" direction="in"/>
-
       <arg name="vpn_ip6_config" type="a{sv}" direction="in"/>
-
       <arg name="debug" type="b" direction="in"/>
-
       <arg name="results" type="a(sus)" direction="out"/>
-
     </method>
   </interface>
 </node>

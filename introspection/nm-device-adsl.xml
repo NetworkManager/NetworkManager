@@ -7,7 +7,7 @@
         @properties: A dictionary mapping property names to variant boxed values
     -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
+      <arg name="properties" type="a{sv}"/>
     </signal>
 
     <!--
@@ -16,6 +16,5 @@
         Indicates whether the physical carrier is found.
     -->
     <property name="Carrier" type="b" access="read"/>
-
   </interface>
 </node>

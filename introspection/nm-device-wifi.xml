@@ -119,6 +119,6 @@
     -->
     <signal name="AccessPointRemoved">
       <arg name="access_point" type="o"/>
-        </signal>
+    </signal>
   </interface>
 </node>

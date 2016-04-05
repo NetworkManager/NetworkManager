@@ -30,8 +30,7 @@
         @properties: A dictionary mapping property names to variant boxed values
     -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
+      <arg name="properties" type="a{sv}"/>
     </signal>
-
   </interface>
 </node>

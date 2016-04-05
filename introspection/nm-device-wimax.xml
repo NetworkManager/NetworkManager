@@ -107,7 +107,6 @@
     -->
     <signal name="NspRemoved">
       <arg name="nsp" type="o"/>
-        </signal>
-
+    </signal>
   </interface>
 </node>

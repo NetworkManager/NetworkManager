@@ -31,6 +31,5 @@
         Returns: <link linkend="NMDeviceModemCapabilities">NMDeviceModemCapabilities</link>
     -->
     <property name="CurrentCapabilities" type="u" access="read"/>
-
   </interface>
 </node>

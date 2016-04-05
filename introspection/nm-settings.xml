@@ -166,6 +166,5 @@
     <signal name="ConnectionRemoved">
       <arg name="connection" type="o"/>
     </signal>
-
   </interface>
 </node>

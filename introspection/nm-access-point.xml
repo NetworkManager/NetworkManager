@@ -41,7 +41,7 @@
            won't deal with '\0' bytes correctly.
       -->
       <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
-      </property>
+    </property>
 
     <!--
         Frequency:
@@ -95,7 +95,7 @@
         @properties: A dictionary mapping property names to variant boxed values
     -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
+      <arg name="properties" type="a{sv}"/>
     </signal>
   </interface>
 </node>
