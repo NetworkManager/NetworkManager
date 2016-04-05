@@ -422,7 +422,7 @@ class RpmSchemeJenkins(RpmScheme_ParseWebsite):
         raise Exception("Could not detect any URLs on jenkins for '%s' (see %s%s/)" % (self.uri, RpmSchemeJenkins.jenkins_base_url, self._id))
 
 class RpmSchemeBrew(RpmScheme_ParseWebsite):
-    brew_base_url = 'https://brewweb.devel.redhat.com/'
+    brew_base_url = 'https://brewweb.engineering.redhat.com/brew/'
     def __init__(self, uri, arch):
         RpmScheme_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
@@ -449,9 +449,9 @@ class RpmSchemeBrew(RpmScheme_ParseWebsite):
     def parse_urls(self, page):
         found_anything = False
         if self._type == "brew":
-            p = 'href=[\'"](http://download.devel.redhat.com/brewroot/packages/[^\'"]*\.rpm)[\'"]'
+            p = 'href=[\'"](http://download.eng.bos.redhat.com/brewroot/packages/[^\'"]*\.rpm)[\'"]'
         elif self._type == "brewtask":
-            p = 'href=[\'"](http://download.devel.redhat.com/brewroot/work/tasks/[^\'"]*\.rpm)[\'"]'
+            p = 'href=[\'"](http://download.eng.bos.redhat.com/brewroot/work/tasks/[^\'"]*\.rpm)[\'"]'
 
         for a in re.finditer(p, page):
             found_anything = True
@@ -463,7 +463,7 @@ class RpmSchemeBrew(RpmScheme_ParseWebsite):
             # when the task-id is the main-page, we have to repeat... search deeper.
             p2 = '<a href="(taskinfo\?taskID=[0-9]+)" class="taskclosed" title="closed">buildArch \(.*.rpm, %s\)</a>' % (self.arch_re)
             for a in re.finditer(p2, page):
-                page = self.read_page('https://brewweb.devel.redhat.com/%s' % (a.group(1)))
+                page = self.read_page('https://brewweb.engineering.redhat.com/brew/%s' % (a.group(1)))
                 for a in re.finditer(p, page):
                     url = a.group(1)
                     if self.is_matching_url(url):

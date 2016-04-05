@@ -91,11 +91,11 @@ Currently the following types are supported:
     found files. Otherwise, a default regex is used that relevant packages.
 
   - brew://[ID](/[URIREGEX]): fetches URLs from
-    https://brewweb.devel.redhat.com/buildinfo?buildID=ID, i.e. from
+    https://brewweb.engineering.redhat.com/brew/buildinfo?buildID=ID, i.e. from
     the officially build packages.
 
   - brewtask://[ID](/[URIREGEX]): fetches URLs from
-    https://brewweb.devel.redhat.com/kinfo?taskID=ID, i.e. the builds
+    https://brewweb.engineering.redhat.com/brew/kinfo?taskID=ID, i.e. the builds
     when doing a scratch build with rhpkg.
 
   - repo:<baseurl>[/<regex-wildcard>.rpm]: fetches from a RPMMD (Yum) repository
