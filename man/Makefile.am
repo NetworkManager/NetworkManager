@@ -91,21 +91,34 @@ EXTRA_DIST +=						\
 nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
 NetworkManager_conf_links = nm-system-settings.conf
 
+# Implement a || condition
+if INSTALL_PREGEN_MANPAGES
+install_manpages = true
+else
+if ENABLE_GTK_DOC
+install_manpages = true
+endif
+endif
+
 install-data-hook:
-	for link in $(nmtui_links); do \
-		ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
-	done
-	for link in $(NetworkManager_conf_links); do \
-		ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/$$link.5; \
-	done
+	if test -n "$(install_manpages)"; then \
+		for link in $(nmtui_links); do \
+			ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
+		done; \
+		for link in $(NetworkManager_conf_links); do \
+			ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/$$link.5; \
+		done; \
+	fi
 
 uninstall-hook:
-	for link in $(nmtui_links); do \
-		rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
-	done
-	for link in $(NetworkManager_conf_links); do \
-		rm -f $(DESTDIR)$(mandir)/man5/$$link.5; \
-	done
+	if test -n "$(install_manpages)"; then \
+		for link in $(nmtui_links); do \
+			rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
+		done; \
+		for link in $(NetworkManager_conf_links); do \
+			rm -f $(DESTDIR)$(mandir)/man5/$$link.5; \
+		done; \
+	fi
 
 if ENABLE_GTK_DOC
 man_MANS += $(man_pages)
