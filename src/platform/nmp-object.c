@@ -1100,6 +1100,13 @@ _nmp_object_init_cache_id (const NMPObject *obj, NMPCacheIdType id_type, NMPCach
 	}
 }
 
+static const guint8 _supported_cache_ids_link[] = {
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
+	NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,
+	0,
+};
+
 static gboolean
 _vt_cmd_obj_init_cache_id_link (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
 {
@@ -1116,6 +1123,13 @@ _vt_cmd_obj_init_cache_id_link (const NMPObject *obj, NMPCacheIdType id_type, NM
 	*out_id = NULL;
 	return TRUE;
 }
+
+static const guint8 _supported_cache_ids_ipx_address[] = {
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
+	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
+	0,
+};
 
 static gboolean
 _vt_cmd_obj_init_cache_id_ipx_address (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
@@ -1134,6 +1148,17 @@ _vt_cmd_obj_init_cache_id_ipx_address (const NMPObject *obj, NMPCacheIdType id_t
 	*out_id = NULL;
 	return TRUE;
 }
+
+static const guint8 _supported_cache_ids_ipx_route[] = {
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
+	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
+	0,
+};
 
 static gboolean
 _vt_cmd_obj_init_cache_id_ipx_route (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
@@ -1425,13 +1450,13 @@ nmp_cache_lookup_all_to_hash (const NMPCache *cache,
 static void
 _nmp_cache_update_cache (NMPCache *cache, NMPObject *obj, gboolean remove)
 {
-	NMPCacheIdType id_type;
+	const guint8 *id_type;
 
-	for (id_type = 0; id_type <= NMP_CACHE_ID_TYPE_MAX; id_type++) {
+	for (id_type = NMP_OBJECT_GET_CLASS (obj)->supported_cache_ids; *id_type; id_type++) {
 		NMPCacheId cache_id_storage;
 		const NMPCacheId *cache_id;
 
-		if (!_nmp_object_init_cache_id (obj, id_type, &cache_id_storage, &cache_id))
+		if (!_nmp_object_init_cache_id (obj, *id_type, &cache_id_storage, &cache_id))
 			continue;
 		if (!cache_id)
 			continue;
@@ -1480,19 +1505,19 @@ _nmp_cache_update_remove (NMPCache *cache, NMPObject *obj)
 static void
 _nmp_cache_update_update (NMPCache *cache, NMPObject *obj, const NMPObject *new)
 {
-	NMPCacheIdType id_type;
+	const guint8 *id_type;
 
 	nm_assert (NMP_OBJECT_GET_CLASS (obj) == NMP_OBJECT_GET_CLASS (new));
 	nm_assert (obj->is_cached);
 	nm_assert (!new->is_cached);
 
-	for (id_type = 0; id_type <= NMP_CACHE_ID_TYPE_MAX; id_type++) {
+	for (id_type = NMP_OBJECT_GET_CLASS (obj)->supported_cache_ids; *id_type; id_type++) {
 		NMPCacheId cache_id_storage_obj, cache_id_storage_new;
 		const NMPCacheId *cache_id_obj, *cache_id_new;
 
-		if (!_nmp_object_init_cache_id (obj, id_type, &cache_id_storage_obj, &cache_id_obj))
+		if (!_nmp_object_init_cache_id (obj, *id_type, &cache_id_storage_obj, &cache_id_obj))
 			continue;
-		if (!_nmp_object_init_cache_id (new, id_type, &cache_id_storage_new, &cache_id_new))
+		if (!_nmp_object_init_cache_id (new, *id_type, &cache_id_storage_new, &cache_id_new))
 			g_assert_not_reached ();
 		if (!nm_multi_index_move (cache->idx_multi, (NMMultiIndexId *) cache_id_obj, (NMMultiIndexId *) cache_id_new, &obj->object))
 			g_assert_not_reached ();
@@ -1891,13 +1916,13 @@ ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
 
 	g_hash_table_iter_init (&iter_hash, cache->idx_main);
 	while (g_hash_table_iter_next (&iter_hash, (gpointer *) &obj, NULL)) {
-		NMPCacheIdType id_type;
+		const guint8 *id_type;
 
 		g_assert (NMP_OBJECT_IS_VALID (obj));
 		g_assert (nmp_object_is_alive (obj));
 
-		for (id_type = 0; id_type <= NMP_CACHE_ID_TYPE_MAX; id_type++) {
-			if (!_nmp_object_init_cache_id (obj, id_type, &cache_id_storage, &cache_id))
+		for (id_type = NMP_OBJECT_GET_CLASS (obj)->supported_cache_ids; *id_type; id_type++) {
+			if (!_nmp_object_init_cache_id (obj, *id_type, &cache_id_storage, &cache_id))
 				continue;
 			if (!cache_id)
 				continue;
@@ -1943,6 +1968,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETLINK,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_LINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
+		.supported_cache_ids                = _supported_cache_ids_link,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_link,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_link,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_link,
@@ -1967,6 +1993,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
+		.supported_cache_ids                = _supported_cache_ids_ipx_address,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
@@ -1986,6 +2013,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
+		.supported_cache_ids                = _supported_cache_ids_ipx_address,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
@@ -2005,6 +2033,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+		.supported_cache_ids                = _supported_cache_ids_ipx_route,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
@@ -2024,6 +2053,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
+		.supported_cache_ids                = _supported_cache_ids_ipx_route,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,

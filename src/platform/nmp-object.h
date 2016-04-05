@@ -57,6 +57,8 @@ typedef enum { /*< skip >*/
  * matching v4/v6 and ifindex -- or maybe not at all if it isn't visible.
  * */
 typedef enum { /*< skip >*/
+	NMP_CACHE_ID_TYPE_NONE,
+
 	/* all the objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
@@ -123,6 +125,8 @@ typedef struct {
 	NMPlatformSignalIdType signal_type_id;
 	const char *obj_type_name;
 	const char *signal_type;
+
+	const guint8 *supported_cache_ids;
 
 	/* Only for NMPObjectLnk* types. */
 	NMLinkType lnk_link_type;
