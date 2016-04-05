@@ -1,44 +1,36 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.WiMax.Nsp">
 
-    <property name="Name" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The name of the NSP." />
-    </property>
-    <property name="SignalQuality" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="The current signal quality of the NSP, in percent." />
-    </property>
-    <property name="NetworkType" type="u" access="read" tp:type="NM_WIMAX_NSP_NETWORK_TYPE">
-      <annotation name="org.gtk.GDBus.DocString" value="The network type of the NSP." />
-    </property>
+    <!--
+        Name:
 
+        The name of the NSP.
+    -->
+    <property name="Name" type="s" access="read"/>
+
+    <!--
+        SignalQuality:
+
+        The current signal quality of the NSP, in percent.
+    -->
+    <property name="SignalQuality" type="u" access="read"/>
+
+    <!--
+        NetworkType:
+
+        The network type of the NSP.
+
+        Returns: <link linkend="NMWimaxNspNetworkType">NMWimaxNspNetworkType</link>
+    -->
+    <property name="NetworkType" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values.
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values.
-            " />
-        </arg>
+      <arg name="properties" type="a{sv}"/>
     </signal>
-
-    <tp:flags name="NM_WIMAX_NSP_NETWORK_TYPE" value-prefix="NM_WIMAX_NSP_NETWORK_TYPE" type="u">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Network type of the NSP.
-      " />
-      <tp:flag suffix="UNKNOWN" value="0x0">
-        <annotation name="org.gtk.GDBus.DocString" value="Unknown network." />
-      </tp:flag>
-      <tp:flag suffix="HOME" value="0x1">
-        <annotation name="org.gtk.GDBus.DocString" value="Home network." />
-      </tp:flag>
-      <tp:flag suffix="PARTNER" value="0x2">
-        <annotation name="org.gtk.GDBus.DocString" value="Partner network." />
-      </tp:flag>
-      <tp:flag suffix="ROAMING_PARTNER" value="0x3">
-        <annotation name="org.gtk.GDBus.DocString" value="Roaming partner network." />
-      </tp:flag>
-
-    </tp:flags>
-
   </interface>
 </node>

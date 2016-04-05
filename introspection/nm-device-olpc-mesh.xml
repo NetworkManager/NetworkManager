@@ -1,34 +1,36 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.OlpcMesh">
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+
+    <!--
+        HwAddress:
+
         The hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="HwAddress" type="s" access="read"/>
 
-    <property name="Companion" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Companion:
+
         The object path of the companion device.
-      " />
-    </property>
+    -->
+    <property name="Companion" type="o" access="read"/>
 
-    <property name="ActiveChannel" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        ActiveChannel:
+
         The currently active channel.
-      " />
-    </property>
+    -->
+    <property name="ActiveChannel" type="u" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary containing the FIXME: check changed parameters.
+
+        Emitted when the wireless device's properties changed.
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary containing the FIXME: check changed parameters.
-            " />
-        </arg>
-        <annotation name="org.gtk.GDBus.DocString" value="
-            Emitted when the wireless device's properties changed.
-        " />
+      <arg name="properties" type="a{sv}"/>
     </signal>
   </interface>
 </node>

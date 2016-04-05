@@ -1,27 +1,27 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Generic">
 
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        HwAddress:
+
         Hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="HwAddress" type="s" access="read"/>
 
-    <property name="TypeDescription" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        TypeDescription:
+
         A (non-localized) description of the interface type, if known.
-      " />
-    </property>
+    -->
+    <property name="TypeDescription" type="s" access="read"/>
 
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+      <arg name="properties" type="a{sv}"/>
     </signal>
-
   </interface>
 </node>

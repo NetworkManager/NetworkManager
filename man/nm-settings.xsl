@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE stylesheet [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -8,27 +12,25 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="date"/>
-  <xsl:param name="version"/>
-
   <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings">
       <refentryinfo>
-        <date><xsl:value-of select="$date"/></date>
+        <title>nm-settings</title>
+        <author>NetworkManager developers</author>
       </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings</refentrytitle>
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
-        <refmiscinfo class="version"><xsl:value-of select="$version"/></refmiscinfo>
+        <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
         <refname>nm-settings</refname>
         <refpurpose>Description of settings and properties of NetworkManager connection profiles</refpurpose>
       </refnamediv>
-      <refsect1>
-        <title>DESCRIPTION</title>
+
+      <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on a concept of connection profiles, sometimes referred to as
           connections only. These connection profiles contain a network configuration. When
@@ -109,23 +111,16 @@
           </itemizedlist>
         </refsect2>
       </refsect1>
-      <refsect1>
-        <title>AUTHOR</title>
-        <para>
-          <author>
-            <firstname>NetworkManager developers</firstname>
-          </author>
-        </para>
+
+      <refsect1 id='files'><title>Files</title>
+        <para><filename>/etc/NetworkManager/system-connections</filename> or distro plugin-specific location</para>
       </refsect1>
-      <refsect1>
-        <title>FILES</title>
-        <para>/etc/NetworkManager/system-connections</para>
-        <para>or distro plugin-specific location</para>
-      </refsect1>
-      <refsect1>
-        <title>SEE ALSO</title>
-        <para>https://wiki.gnome.org/Projects/NetworkManager/ConfigurationSpecification</para>
-        <para>NetworkManager(8), nmcli(1), nmcli-examples(5), NetworkManager.conf(5)</para>
+
+      <refsect1 id='see_also'><title>See Also</title>
+        <para><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
+        <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></para>
       </refsect1>
     </refentry>
   </xsl:template>

@@ -92,8 +92,6 @@
  * @NM_STATE_CONNECTED_GLOBAL: there is global IPv4 and/or IPv6 Internet connectivity
  *
  * #NMState values indicate the current overall networking state.
- *
- * (Corresponds to the NM_STATE type in nm-manager.xml.)
  **/
 typedef enum {
 	NM_STATE_UNKNOWN          = 0,
@@ -119,8 +117,6 @@ typedef enum {
  *   does not appear to be able to reach the full Internet.
  * @NM_CONNECTIVITY_FULL: The host is connected to a network, and
  *   appears to be able to reach the full Internet.
- *
- * (Corresponds to the NM_CONNECTIVITY type in nm-manager.xml.)
  *
  * Since: 0.9.8.6
  */
@@ -159,8 +155,6 @@ typedef enum {
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
- *
- * (Corresponds to the NM_DEVICE_TYPE type in nm-device.xml.)
  **/
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN    = 0,
@@ -194,8 +188,6 @@ typedef enum {
  * @NM_DEVICE_CAP_IS_SOFTWARE: this device is a software device
  *
  * General device capability flags.
- *
- * (Corresponds to the NM_DEVICE_CAP type in nm-device-wifi.xml.)
  **/
 typedef enum { /*< flags >*/
 	NM_DEVICE_CAP_NONE           = 0x00000000,
@@ -221,8 +213,6 @@ typedef enum { /*< flags >*/
  * @NM_WIFI_DEVICE_CAP_FREQ_5GHZ: device supports 5GHz frequencies
  *
  * 802.11 specific device encryption and authentication capabilities.
- *
- * (Corresponds to the NM_802_11_DEVICE_CAP type in nm-device-wifi.xml.)
  **/
 typedef enum { /*< flags >*/
 	NM_WIFI_DEVICE_CAP_NONE          = 0x00000000,
@@ -247,8 +237,6 @@ typedef enum { /*< flags >*/
  * encryption (usually means WEP)
  *
  * 802.11 access point flags.
- *
- * (Corresponds to the NM_802_11_AP_FLAGS type in nm-access-point.xml.)
  **/
 typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
@@ -279,8 +267,6 @@ typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
  * 802.11 access point security and authentication flags.  These flags describe
  * the current security requirements of an access point as determined from the
  * access point's beacon.
- *
- * (Corresponds to the NM_802_11_AP_SEC type in nm-access-point.xml.)
  **/
 typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
 	NM_802_11_AP_SEC_NONE            = 0x00000000,
@@ -310,8 +296,6 @@ typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
  *   access point objects; used only for hotspot mode on the local machine.
  *
  * Indicates the 802.11 mode an access point or device is currently in.
- *
- * (Corresponds to the NM_802_11_MODE type in generic-types.xml.)
  **/
 typedef enum { /*< underscore_name=nm_802_11_mode >*/
 	NM_802_11_MODE_UNKNOWN = 0,
@@ -328,8 +312,6 @@ typedef enum { /*< underscore_name=nm_802_11_mode >*/
  *
  * #NMBluetoothCapabilities values indicate the usable capabilities of a
  * Bluetooth device.
- *
- * (Corresponds to the NM_BT_CAPABILITY type in nm-device-bt.xml.)
  **/
 typedef enum { /*< flags >*/
 	NM_BT_CAPABILITY_NONE = 0x00000000,
@@ -352,8 +334,6 @@ typedef enum { /*< flags >*/
  * technology families a modem device supports.  For more information on the
  * specific access technologies the device supports use the ModemManager D-Bus
  * API.
- *
- * (Corresponds to the NM_DEVICE_MODEM_CAPABILITY type in nm-device-modem.xml.)
  **/
 typedef enum { /*< flags >*/
 	NM_DEVICE_MODEM_CAPABILITY_NONE      = 0x00000000,
@@ -401,8 +381,6 @@ typedef enum { /*< flags >*/
  *   that connection.  The network connection may still be valid.
  * @NM_DEVICE_STATE_FAILED: the device failed to connect to the requested
  *   network and is cleaning up the connection request
- *
- * (Corresponds to the NM_DEVICE_STATE type in nm-device.xml.)
  **/
 typedef enum {
 	NM_DEVICE_STATE_UNKNOWN      = 0,
@@ -488,8 +466,6 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED: the device parent's management changed
  *
  * Device state change reason codes
- *
- * (Corresponds to the NM_DEVICE_STATE_REASON type in nm-device.xml.)
  */
 typedef enum {
 	NM_DEVICE_STATE_REASON_NONE = 0,
@@ -573,8 +549,6 @@ typedef enum {
  * #NMActiveConnectionState values indicate the state of a connection to a
  * specific network while it is starting, connected, or disconnecting from that
  * network.
- *
- * (Corresponds to the NM_ACTIVE_CONNECTION_STATE type in nm-active-connection.xml.)
  **/
 typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,

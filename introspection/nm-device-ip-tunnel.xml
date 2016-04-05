@@ -1,86 +1,94 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.IPTunnel">
 
-    <property name="Mode" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Mode:
+
         The tunneling mode.
-      " />
-    </property>
+    -->
+    <property name="Mode" type="u" access="read"/>
 
-    <property name="Parent" type="o" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Parent:
+
         The object path of the parent device.
-      " />
-    </property>
+    -->
+    <property name="Parent" type="o" access="read"/>
 
-    <property name="Local" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Local:
+
         The local endpoint of the tunnel.
-      " />
-    </property>
+    -->
+    <property name="Local" type="s" access="read"/>
 
-    <property name="Remote" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Remote:
+
         The remote endpoint of the tunnel.
-      " />
-    </property>
+    -->
+    <property name="Remote" type="s" access="read"/>
 
-    <property name="Ttl" type="y" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The TTL assigned to tunneled packets. 0 is a special value
-        meaning that packets inherit the TTL value
-      " />
-    </property>
+    <!--
+        Ttl:
 
-    <property name="Tos" type="y" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The type of service (IPv4) or traffic class (IPv6) assigned to
-        tunneled packets.
-      " />
-    </property>
+        The TTL assigned to tunneled packets. 0 is a special value meaning that
+        packets inherit the TTL value
+    -->
+    <property name="Ttl" type="y" access="read"/>
 
-    <property name="PathMtuDiscovery" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Tos:
+
+        The type of service (IPv4) or traffic class (IPv6) assigned to tunneled
+        packets.
+    -->
+    <property name="Tos" type="y" access="read"/>
+
+    <!--
+        PathMtuDiscovery:
+
         Whether path MTU discovery is enabled on this tunnel.
-      " />
-    </property>
+    -->
+    <property name="PathMtuDiscovery" type="b" access="read"/>
 
-    <property name="InputKey" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        InputKey:
+
         The key used for incoming packets.
-      " />
-    </property>
+    -->
+    <property name="InputKey" type="s" access="read"/>
 
-    <property name="OutputKey" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        OutputKey:
+
         The key used for outgoing packets.
-      " />
-    </property>
+    -->
+    <property name="OutputKey" type="s" access="read"/>
 
-    <property name="EncapsulationLimit" type="y" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        How many additional levels of encapsulation are permitted to
-        be prepended to packets. This property applies only to IPv6
-        tunnels.
-      " />
-    </property>
+    <!--
+        EncapsulationLimit:
 
-    <property name="FlowLabel" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        The flow label to assign to tunnel packets. This property
-        applies only to IPv6 tunnels.
-      " />
-    </property>
+        How many additional levels of encapsulation are permitted to be prepended
+        to packets. This property applies only to IPv6 tunnels.
+    -->
+    <property name="EncapsulationLimit" type="y" access="read"/>
 
+    <!--
+        FlowLabel:
+
+        The flow label to assign to tunnel packets. This property applies only to
+        IPv6 tunnels.
+    -->
+    <property name="FlowLabel" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+      <arg name="properties" type="a{sv}"/>
     </signal>
-
   </interface>
 </node>

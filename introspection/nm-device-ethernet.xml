@@ -1,46 +1,50 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Wired">
     <annotation name="org.gtk.GDBus.C.Name" value="DeviceEthernet"/>
 
-    <property name="HwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        HwAddress:
+
         Active hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="HwAddress" type="s" access="read"/>
 
-    <property name="PermHwAddress" type="s" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        PermHwAddress:
+
         Permanent hardware address of the device.
-      " />
-    </property>
+    -->
+    <property name="PermHwAddress" type="s" access="read"/>
 
-    <property name="Speed" type="u" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        Speed:
+
         Design speed of the device, in megabits/second (Mb/s).
-      " />
-    </property>
+    -->
+    <property name="Speed" type="u" access="read"/>
 
-    <property name="S390Subchannels" type="as" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
+    <!--
+        S390Subchannels:
+
         Array of S/390 subchannels for S/390 or z/Architecture devices.
-      " />
-    </property>
+    -->
+    <property name="S390Subchannels" type="as" access="read"/>
 
-    <property name="Carrier" type="b" access="read">
-      <annotation name="org.gtk.GDBus.DocString" value="
-        Indicates whether the physical carrier is found (e.g. whether a cable is plugged in or not).
-      " />
-    </property>
+    <!--
+        Carrier:
 
+        Indicates whether the physical carrier is found (e.g. whether a cable is
+        plugged in or not).
+    -->
+    <property name="Carrier" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
     <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <annotation name="org.gtk.GDBus.DocString" value="
-                A dictionary mapping property names to variant boxed values
-            " />
-        </arg>
+      <arg name="properties" type="a{sv}"/>
     </signal>
-
   </interface>
 </node>

@@ -524,6 +524,7 @@ fi
 %dir %{nmlibdir}/VPN
 %{_mandir}/man1/*
 %{_mandir}/man5/*
+%{_mandir}/man7/*
 %{_mandir}/man8/*
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/NetworkManager/system-connections
