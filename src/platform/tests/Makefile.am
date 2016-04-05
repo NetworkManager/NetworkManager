@@ -22,7 +22,10 @@ PLATFORM_SOURCES = \
 	../nm-platform.c \
 	../nm-fake-platform.c \
 	../nm-linux-platform.c
-TEST_SOURCES = $(PLATFORM_SOURCES) test-common.c test-common.h
+TEST_SOURCES = \
+	test-common.c \
+	test-common.h \
+	$(PLATFORM_SOURCES)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_LDFLAGS = $(GLIB_LIBS) $(GUDEV_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
 PLATFORM_LDADD = \

@@ -315,16 +315,16 @@ libNetworkManager_la_SOURCES = \
 	\
 	platform/nmp-netns.c \
 	platform/nmp-netns.h \
-	platform/nm-fake-platform.c \
-	platform/nm-fake-platform.h \
-	platform/nm-linux-platform.c \
-	platform/nm-linux-platform.h \
-	platform/nm-platform.c \
-	platform/nm-platform.h \
-	platform/nm-platform-utils.c \
-	platform/nm-platform-utils.h \
 	platform/nmp-object.c \
 	platform/nmp-object.h \
+	platform/nm-platform-utils.c \
+	platform/nm-platform-utils.h \
+	platform/nm-platform.c \
+	platform/nm-platform.h \
+	platform/nm-linux-platform.c \
+	platform/nm-linux-platform.h \
+	platform/nm-fake-platform.c \
+	platform/nm-fake-platform.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
@@ -541,16 +541,16 @@ libnm_iface_helper_la_SOURCES = \
 	dhcp-manager/nm-dhcp-manager.c \
 	dhcp-manager/nm-dhcp-manager.h \
 	\
-	platform/nm-linux-platform.c \
-	platform/nm-linux-platform.h \
-	platform/nm-platform.c \
-	platform/nm-platform.h \
-	platform/nm-platform-utils.c \
-	platform/nm-platform-utils.h \
 	platform/nmp-netns.c \
 	platform/nmp-netns.h \
 	platform/nmp-object.c \
 	platform/nmp-object.h \
+	platform/nm-platform-utils.c \
+	platform/nm-platform-utils.h \
+	platform/nm-platform.c \
+	platform/nm-platform.h \
+	platform/nm-linux-platform.c \
+	platform/nm-linux-platform.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
