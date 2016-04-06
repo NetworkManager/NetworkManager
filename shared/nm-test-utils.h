@@ -782,6 +782,34 @@ nmtst_get_rand_int (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+inline static gpointer
+nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
+{
+	guint32 v;
+	guint8 *b = buffer;
+
+	if (!buffer_length)
+		return buffer;
+
+	g_assert (buffer);
+
+	if (!rand)
+		rand = nmtst_get_rand ();
+
+	for (; buffer_length >= sizeof (guint32); buffer_length -= sizeof (guint32), b += sizeof (guint32)) {
+		v = g_rand_int (rand);
+		memcpy (b, &v, sizeof (guint32));
+	}
+	if (buffer_length > 0) {
+		v = g_rand_int (rand);
+		do {
+			*(b++) = v & 0xFF;
+			v >>= 8;
+		} while (--buffer_length > 0);
+	}
+	return buffer;
+}
+
 inline static void *
 nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
 {
