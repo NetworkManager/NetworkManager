@@ -45,8 +45,12 @@ G_BEGIN_DECLS
 
 #define NM_DNS_MANAGER_CONFIG_CHANGED "config-changed"
 
+struct _NMDnsManagerPrivate;
+
 typedef struct {
 	GObject parent;
+	/* private */
+	struct _NMDnsManagerPrivate *priv;
 } NMDnsManager;
 
 typedef struct {

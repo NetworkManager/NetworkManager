@@ -63,9 +63,7 @@
 
 G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
-#define NM_DNS_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                       NM_TYPE_DNS_MANAGER, \
-                                       NMDnsManagerPrivate))
+#define NM_DNS_MANAGER_GET_PRIVATE(o) ((o)->priv)
 
 #define HASH_LEN 20
 
@@ -111,7 +109,7 @@ NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
 
 /*********************************************************************************************/
 
-typedef struct {
+typedef struct _NMDnsManagerPrivate {
 	NMIP4Config *ip4_vpn_config;
 	NMIP4Config *ip4_device_config;
 	NMIP6Config *ip6_vpn_config;
@@ -1520,7 +1518,9 @@ config_changed_cb (NMConfig *config,
 static void
 nm_dns_manager_init (NMDnsManager *self)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	NMDnsManagerPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DNS_MANAGER, NMDnsManagerPrivate);
+
+	self->priv = priv;
 
 	_LOGT ("creating...");
 
@@ -1579,7 +1579,8 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (object);
+	NMDnsManager *self = NM_DNS_MANAGER (object);
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	g_free (priv->hostname);
 
