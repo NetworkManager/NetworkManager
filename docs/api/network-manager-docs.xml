@@ -5,11 +5,14 @@
 ]>
 <book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
-    <title>NetworkManager D-Bus API Reference Manual</title>
+    <title>NetworkManager Reference Manual</title>
     <releaseinfo>Version &version;</releaseinfo>
 
     <copyright>
       <year>2012</year>
+      <year>2013</year>
+      <year>2014</year>
+      <year>2015</year>
       <year>2016</year>
       <holder>The NetworkManager Authors</holder>
     </copyright>
@@ -36,6 +39,19 @@
       </para>
     </legalnotice>
   </bookinfo>
+
+  <chapter id="manpages">
+    <title>Manual Pages</title>
+    <xi:include href="../../man/nmcli.xml"/>
+    <xi:include href="../../man/nmtui.xml"/>
+    <xi:include href="../../man/nm-online.xml"/>
+    <xi:include href="../../man/NetworkManager.conf.xml"/>
+    <xi:include href="../../man/nm-settings.xml"><xi:fallback /></xi:include>
+    <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
+    <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
+    <xi:include href="../../man/nmcli-examples.xml"/>
+    <xi:include href="../../man/NetworkManager.xml"/>
+  </chapter>
 
   <chapter id="spec">
     <title>D-Bus API Reference</title>
@@ -141,20 +157,6 @@
       </para>
     </section>
   </chapter>
-
-  <chapter id="manpages">
-    <title>UNIX Manual Pages</title>
-    <xi:include href="../../man/nmcli.xml"/>
-    <xi:include href="../../man/nmtui.xml"/>
-    <xi:include href="../../man/nm-online.xml"/>
-    <xi:include href="../../man/NetworkManager.xml"/>
-    <xi:include href="../../man/NetworkManager.conf.xml"/>
-    <xi:include href="../../man/nmcli-examples.xml"/>
-    <xi:include href="../../man/nm-settings.xml"><xi:fallback /></xi:include>
-    <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
-    <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
-  </chapter>
-
 
   <index>
     <title>Index</title>
