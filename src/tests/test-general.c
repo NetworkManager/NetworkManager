@@ -98,6 +98,122 @@ test_nm_utils_ip6_address_clear_host_address (void)
 	g_rand_free (r);
 }
 
+/*****************************************************************************/
+
+static void
+_test_same_prefix (const char *a1, const char *a2, guint8 plen)
+{
+	struct in6_addr a = *nmtst_inet6_from_string (a1);
+	struct in6_addr b = *nmtst_inet6_from_string (a2);
+
+	g_assert (nm_utils_ip6_address_same_prefix (&a, &b, plen));
+}
+
+static void
+test_nm_utils_ip6_address_same_prefix (void)
+{
+	guint n, i;
+	const guint N = 100;
+	union {
+		guint8 ptr[sizeof (struct in6_addr)];
+		struct in6_addr val;
+	} a, b, addrmask, addrmask_bit;
+	guint8 plen;
+
+	/* test#1 */
+	for (n = 0; n < N; n++) {
+		gboolean is_same = n < N / 2;
+		gboolean result;
+
+		nmtst_rand_buf (NULL, a.ptr, sizeof (a));
+		nmtst_rand_buf (NULL, b.ptr, sizeof (b));
+again_plen:
+		plen = nmtst_get_rand_int () % 129;
+		if (!is_same && NM_IN_SET (plen, 0, 128))
+			goto again_plen;
+
+		if (plen < 128) {
+			for (i = 0; (i + 1) * 8 <= plen; i++)
+				b.ptr[i] = a.ptr[i];
+			if (plen % 8) {
+				guint8 mask;
+
+				g_assert (i < sizeof (a));
+				mask = ~((1 << (8 - (plen % 8))) - 1);
+				b.ptr[i] = (a.ptr[i] & mask) | (b.ptr[i] & ~mask);
+				if (!is_same) {
+					mask = (1 << (8 - (plen % 8)));
+					b.ptr[i] = (b.ptr[i] & ~mask) | ~(b.ptr[i] & mask);
+				}
+			} else if (!is_same) {
+				g_assert (i > 0);
+
+				b.ptr[i - 1] = (b.ptr[i - 1] & ~0x1) | ~(b.ptr[i - 1] & 0x1);
+			}
+		} else
+			b = a;
+
+		result = nm_utils_ip6_address_same_prefix (&a.val, &b.val, plen);
+		g_assert (result == is_same);
+		g_assert (NM_IN_SET (result, TRUE, FALSE));
+	}
+
+	/* test#2 */
+	for (n = 0; n < N; n++) {
+		nmtst_rand_buf (NULL, a.ptr, sizeof (a));
+		nmtst_rand_buf (NULL, b.ptr, sizeof (b));
+		plen = nmtst_get_rand_int () % 129;
+
+		memset (addrmask.ptr, 0xFF, sizeof (addrmask));
+		nm_utils_ip6_address_clear_host_address (&addrmask.val, &addrmask.val, plen);
+
+		for (i = 0; i < sizeof (a); i++)
+			b.ptr[i] = (a.ptr[i] & addrmask.ptr[i]) | (b.ptr[i] & ~addrmask.ptr[i]);
+
+		g_assert (nm_utils_ip6_address_same_prefix (&a.val, &b.val, plen) == TRUE);
+	}
+
+	/* test#3 */
+	for (n = 0; n < N; n++) {
+		gboolean reached = FALSE;
+
+		nmtst_rand_buf (NULL, a.ptr, sizeof (a));
+		nmtst_rand_buf (NULL, b.ptr, sizeof (b));
+		plen = nmtst_get_rand_int () % 129;
+
+		if (!plen)
+			continue;
+
+		memset (addrmask.ptr, 0xFF, sizeof (addrmask));
+		nm_utils_ip6_address_clear_host_address (&addrmask.val, &addrmask.val, plen);
+
+		memset (addrmask_bit.ptr, 0xFF, sizeof (addrmask_bit));
+		nm_utils_ip6_address_clear_host_address (&addrmask_bit.val, &addrmask_bit.val, plen - 1);
+
+		for (i = 0; i < sizeof (a); i++)
+			b.ptr[i] = (a.ptr[i] & addrmask.ptr[i]) | (b.ptr[i] & ~addrmask.ptr[i]);
+
+		/* flip the last bit. */
+		for (i = 0; i < sizeof (a); i++) {
+			guint8 mask = addrmask.ptr[i] ^ addrmask_bit.ptr[i];
+			if (mask) {
+				g_assert (!reached);
+				g_assert (nm_utils_is_power_of_two (mask));
+				reached = TRUE;
+				b.ptr[i] = (b.ptr[i] & ~mask) | ~(b.ptr[i] & mask);
+			}
+		}
+		g_assert (reached);
+
+		g_assert (nm_utils_ip6_address_same_prefix (&a.val, &b.val, plen) == FALSE);
+	}
+
+	/* test#4 */
+	_test_same_prefix ("::", "::1", 10);
+	_test_same_prefix ("abcd::", "abcd::1", 10);
+}
+
+/*****************************************************************************/
 
 static void
 test_nm_utils_log_connection_diff (void)
@@ -1257,6 +1373,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_utils_strbuf_append", test_nm_utils_strbuf_append);
 
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
+	g_test_add_func ("/general/nm_utils_ip6_address_same_prefix", test_nm_utils_ip6_address_same_prefix);
 	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
 
 	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
