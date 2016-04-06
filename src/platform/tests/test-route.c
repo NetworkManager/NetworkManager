@@ -142,7 +142,7 @@ test_ip4_route (void)
 	GArray *routes;
 	NMPlatformIP4Route rts[3];
 	in_addr_t network;
-	int plen = 24;
+	guint8 plen = 24;
 	in_addr_t gateway;
 	/* Choose a high metric so that we hopefully don't conflict. */
 	int metric = 22986;
@@ -229,7 +229,7 @@ test_ip6_route (void)
 	GArray *routes;
 	NMPlatformIP6Route rts[3];
 	struct in6_addr network;
-	int plen = 64;
+	guint8 plen = 64;
 	struct in6_addr gateway;
 	/* Choose a high metric so that we hopefully don't conflict. */
 	int metric = 22987;

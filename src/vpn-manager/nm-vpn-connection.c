@@ -1439,6 +1439,9 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				route.metric = route_metric;
 				route.source = NM_IP_CONFIG_SOURCE_VPN;
 
+				if (route.plen > 32)
+					break;
+
 				/* Ignore host routes to the VPN gateway since NM adds one itself
 				 * below.  Since NM knows more about the routing situation than
 				 * the VPN server, we want to use the NM created route instead of
@@ -1448,7 +1451,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 					nm_ip4_config_add_route (config, &route);
 				break;
 			default:
-				_LOGW ("VPN connection: received invalid IPv4 route");
+				break;
 			}
 			g_variant_unref (v);
 		}
@@ -1565,10 +1568,11 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 			memset (&route, 0, sizeof (route));
 
-			if (!ip6_addr_from_variant (dest, &route.network)) {
-				_LOGW ("VPN connection: received invalid IPv6 dest address");
+			if (!ip6_addr_from_variant (dest, &route.network))
 				goto next;
-			}
+
+			if (prefix > 128)
+				goto next;
 
 			route.plen = prefix;
 			ip6_addr_from_variant (next_hop, &route.gateway);

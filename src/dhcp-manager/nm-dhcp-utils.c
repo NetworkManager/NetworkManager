@@ -60,7 +60,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 			*slash = '\0';
 			errno = 0;
 			rt_cidr = strtol (slash + 1, NULL, 10);
-			if ((errno == EINVAL) || (errno == ERANGE)) {
+			if (errno || rt_cidr > 32) {
 				nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route cidr: '%s'", slash + 1);
 				continue;
 			}

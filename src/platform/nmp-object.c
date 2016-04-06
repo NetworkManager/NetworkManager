@@ -377,7 +377,7 @@ _vt_cmd_obj_stackinit_id_ip6_address (NMPObject *obj, const NMPObject *src)
 }
 
 const NMPObject *
-nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, int plen, guint32 metric)
+nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, guint8 plen, guint32 metric)
 {
 	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
 	obj->ip4_route.ifindex = ifindex;
@@ -394,7 +394,7 @@ _vt_cmd_obj_stackinit_id_ip4_route (NMPObject *obj, const NMPObject *src)
 }
 
 const NMPObject *
-nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, int plen, guint32 metric)
+nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, guint8 plen, guint32 metric)
 {
 	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 	obj->ip6_route.ifindex = ifindex;

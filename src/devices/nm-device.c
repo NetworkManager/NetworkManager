@@ -5725,6 +5725,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 			if (discovered_route->plen > 0) {
 				memset (&route, 0, sizeof (route));
 				route.network = discovered_route->network;
+				nm_assert (discovered_route->plen <= 128);
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
 				route.source = NM_IP_CONFIG_SOURCE_RDISC;

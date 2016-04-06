@@ -2854,13 +2854,13 @@ nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRoute
 gboolean
 nm_platform_ip4_route_add (NMPlatform *self,
                            int ifindex, NMIPConfigSource source,
-                           in_addr_t network, int plen,
+                           in_addr_t network, guint8 plen,
                            in_addr_t gateway, in_addr_t pref_src,
                            guint32 metric, guint32 mss)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
+	g_return_val_if_fail (plen <= 32, FALSE);
 
 	if (_LOGD_ENABLED ()) {
 		NMPlatformIP4Route route = { 0 };
@@ -2882,12 +2882,12 @@ nm_platform_ip4_route_add (NMPlatform *self,
 gboolean
 nm_platform_ip6_route_add (NMPlatform *self,
                            int ifindex, NMIPConfigSource source,
-                           struct in6_addr network, int plen, struct in6_addr gateway,
+                           struct in6_addr network, guint8 plen, struct in6_addr gateway,
                            guint32 metric, guint32 mss)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
+	g_return_val_if_fail (plen <= 128, FALSE);
 
 	if (_LOGD_ENABLED ()) {
 		NMPlatformIP6Route route = { 0 };
@@ -2906,7 +2906,7 @@ nm_platform_ip6_route_add (NMPlatform *self,
 }
 
 gboolean
-nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric)
+nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -2919,7 +2919,7 @@ nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, 
 }
 
 gboolean
-nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric)
+nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -2932,7 +2932,7 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 }
 
 const NMPlatformIP4Route *
-nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric)
+nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -2940,7 +2940,7 @@ nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, int
 }
 
 const NMPlatformIP6Route *
-nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric)
+nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3631,7 +3631,8 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            "%s%s" /* scope */
 	            "%s%s" /* pref-src */
 	            "",
-	            s_network, route->plen,
+	            s_network,
+	            route->plen,
 	            s_gateway,
 	            str_dev,
 	            route->metric,
@@ -3678,7 +3679,8 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " mss %"G_GUINT32_FORMAT
 	            " src %s" /* source */
 	            "",
-	            s_network, route->plen,
+	            s_network,
+	            route->plen,
 	            s_gateway,
 	            str_dev,
 	            route->metric,
