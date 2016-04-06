@@ -355,7 +355,7 @@ test_ip4_address_peer_zero (void)
 /*****************************************************************************/
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
@@ -412,7 +412,7 @@ _g_test_add_func (const char *testpath,
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 	_g_test_add_func ("/address/ipv4/general", test_ip4_address_general);
 	_g_test_add_func ("/address/ipv6/general", test_ip6_address_general);

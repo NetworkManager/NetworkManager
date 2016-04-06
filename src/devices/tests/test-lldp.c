@@ -435,13 +435,13 @@ _test_recv_fixture_teardown (TestRecvFixture *fixture, gconstpointer user_data)
 /*****************************************************************************/
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_assert_logging (argc, argv, "WARN", "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 #define _TEST_ADD_RECV(testpath, testdata) \
 	g_test_add (testpath, TestRecvFixture, testdata, _test_recv_fixture_setup, test_recv, _test_recv_fixture_teardown)

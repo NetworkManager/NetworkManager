@@ -2293,13 +2293,13 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 /*****************************************************************************/
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, SLAVE_NAME));
