@@ -1387,11 +1387,11 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX, "u", &u32))
 		address.plen = u32;
 
-	if (address.address && address.plen) {
+	if (address.address && address.plen && address.plen <= 32) {
 		address.source = NM_IP_CONFIG_SOURCE_VPN;
 		nm_ip4_config_add_address (config, &address);
 	} else {
-		_LOGE ("invalid IP4 config received!");
+		_LOGW ("invalid IP4 config received!");
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (self, FALSE);
 		return;
@@ -1524,11 +1524,11 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_PREFIX, "u", &u32))
 		address.plen = u32;
 
-	if (!IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen) {
+	if (!IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen && address.plen <= 128) {
 		address.source = NM_IP_CONFIG_SOURCE_VPN;
 		nm_ip6_config_add_address (config, &address);
 	} else {
-		_LOGE ("invalid IP6 config received!");
+		_LOGW ("invalid IP6 config received!");
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (self, FALSE);
 		return;

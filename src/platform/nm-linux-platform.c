@@ -1640,6 +1640,9 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 	           ? sizeof (in_addr_t)
 	           : sizeof (struct in6_addr);
 
+	if (ifa->ifa_prefixlen > (is_v4 ? 32 : 128))
+		goto errout;
+
 	/*****************************************************************/
 
 	obj = nmp_object_new (is_v4 ? NMP_OBJECT_TYPE_IP4_ADDRESS : NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
@@ -2160,7 +2163,7 @@ _nl_msg_new_address (int nlmsg_type,
                      int family,
                      int ifindex,
                      gconstpointer address,
-                     int plen,
+                     guint8 plen,
                      gconstpointer peer_address,
                      guint32 flags,
                      int scope,
@@ -5268,7 +5271,7 @@ static gboolean
 ip4_address_add (NMPlatform *platform,
                  int ifindex,
                  in_addr_t addr,
-                 int plen,
+                 guint8 plen,
                  in_addr_t peer_addr,
                  guint32 lifetime,
                  guint32 preferred,
@@ -5299,7 +5302,7 @@ static gboolean
 ip6_address_add (NMPlatform *platform,
                  int ifindex,
                  struct in6_addr addr,
-                 int plen,
+                 guint8 plen,
                  struct in6_addr peer_addr,
                  guint32 lifetime,
                  guint32 preferred,
@@ -5326,7 +5329,7 @@ ip6_address_add (NMPlatform *platform,
 }
 
 static gboolean
-ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
+ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen, in_addr_t peer_address)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	NMPObject obj_id;
@@ -5351,7 +5354,7 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen,
 }
 
 static gboolean
-ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	NMPObject obj_id;
@@ -5376,7 +5379,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 }
 
 static const NMPlatformIP4Address *
-ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
+ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen, in_addr_t peer_address)
 {
 	NMPObject obj_id;
 	const NMPObject *obj;
@@ -5389,7 +5392,7 @@ ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in
 }
 
 static const NMPlatformIP6Address *
-ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen)
 {
 	NMPObject obj_id;
 	const NMPObject *obj;

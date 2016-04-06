@@ -2459,8 +2459,10 @@ nm_platform_ethtool_get_link_speed (NMPlatform *self, const char *ifname, guint3
 /******************************************************************/
 
 void
-nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, int plen)
+nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen)
 {
+	nm_assert (plen <= 32);
+
 	addr->address = address;
 	addr->peer_address = address;
 	addr->plen = plen;
@@ -2499,7 +2501,7 @@ gboolean
 nm_platform_ip4_address_add (NMPlatform *self,
                              int ifindex,
                              in_addr_t address,
-                             int plen,
+                             guint8 plen,
                              in_addr_t peer_address,
                              guint32 lifetime,
                              guint32 preferred,
@@ -2509,7 +2511,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (plen <= 32, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (preferred <= lifetime, FALSE);
 	g_return_val_if_fail (!label || strlen (label) < sizeof (((NMPlatformIP4Address *) NULL)->label), FALSE);
@@ -2537,7 +2539,7 @@ gboolean
 nm_platform_ip6_address_add (NMPlatform *self,
                              int ifindex,
                              struct in6_addr address,
-                             int plen,
+                             guint8 plen,
                              struct in6_addr peer_address,
                              guint32 lifetime,
                              guint32 preferred,
@@ -2546,7 +2548,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (plen <= 128, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (preferred <= lifetime, FALSE);
 
@@ -2568,7 +2570,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 }
 
 gboolean
-nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address)
+nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_peer2[NM_UTILS_INET_ADDRSTRLEN];
@@ -2577,7 +2579,7 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (plen <= 32, FALSE);
 
 	_LOGD ("address: deleting IPv4 address %s/%d, %sifindex %d%s",
 	       nm_utils_inet4_ntop (address, NULL), plen,
@@ -2589,14 +2591,14 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 }
 
 gboolean
-nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, int plen)
+nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (plen <= 128, FALSE);
 
 	_LOGD ("address: deleting IPv6 address %s/%d, ifindex %d%s",
 	       nm_utils_inet6_ntop (&address, NULL), plen, ifindex,
@@ -2605,21 +2607,21 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 }
 
 const NMPlatformIP4Address *
-nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen, guint32 peer_address)
+nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, guint32 peer_address)
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (plen > 0, NULL);
+	g_return_val_if_fail (plen <= 32, NULL);
 
 	return klass->ip4_address_get (self, ifindex, address, plen, peer_address);
 }
 
 const NMPlatformIP6Address *
-nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, int plen)
+nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen)
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (plen > 0, NULL);
+	g_return_val_if_fail (plen <= 128, NULL);
 
 	return klass->ip6_address_get (self, ifindex, address, plen);
 }

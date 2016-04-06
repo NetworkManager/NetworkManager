@@ -365,6 +365,8 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 				if (addr->plen == 0)
 					continue;
 
+				nm_assert (addr->plen <= 32);
+
 				route.ifindex = ifindex;
 				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 
@@ -466,6 +468,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 		nm_ip_address_get_address_binary (s_addr, &address.address);
 		address.peer_address = address.address;
 		address.plen = nm_ip_address_get_prefix (s_addr);
+		nm_assert (address.plen <= 32);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_IP_CONFIG_SOURCE_USER;
@@ -563,6 +566,10 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 			continue;
 		}
+
+		/* FIXME: NMIPAddress doesn't support zero prefixes. */
+		if (address->plen == 0)
+			continue;
 
 		/* Static address found. */
 		if (!method)

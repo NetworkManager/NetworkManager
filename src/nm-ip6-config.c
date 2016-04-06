@@ -454,6 +454,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 		memset (&address, 0, sizeof (address));
 		nm_ip_address_get_address_binary (s_addr, &address.address);
 		address.plen = nm_ip_address_get_prefix (s_addr);
+		nm_assert (address.plen <= 128);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_IP_CONFIG_SOURCE_USER;
@@ -554,6 +555,10 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 			continue;
 		}
+
+		/* FIXME: NMIPAddress does not support zero prefixes. */
+		if (address->plen == 0)
+			continue;
 
 		/* Static address found. */
 		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)

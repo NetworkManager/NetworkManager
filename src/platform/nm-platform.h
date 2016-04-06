@@ -226,7 +226,7 @@ typedef struct {
 	 * IFA_FLAGS attribute. */ \
 	guint32 n_ifa_flags; \
 	\
-	int plen; \
+	guint8 plen; \
 	;
 
 /**
@@ -593,7 +593,7 @@ typedef struct {
 	gboolean (*ip4_address_add) (NMPlatform *,
 	                             int ifindex,
 	                             in_addr_t address,
-	                             int plen,
+	                             guint8 plen,
 	                             in_addr_t peer_address,
 	                             guint32 lifetime,
 	                             guint32 preferred_lft,
@@ -602,15 +602,15 @@ typedef struct {
 	gboolean (*ip6_address_add) (NMPlatform *,
 	                             int ifindex,
 	                             struct in6_addr address,
-	                             int plen,
+	                             guint8 plen,
 	                             struct in6_addr peer_address,
 	                             guint32 lifetime,
 	                             guint32 preferred_lft,
 	                             guint32 flags);
-	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
-	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
-	const NMPlatformIP4Address *(*ip4_address_get) (NMPlatform *, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
-	const NMPlatformIP6Address *(*ip6_address_get) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
+	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
+	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
+	const NMPlatformIP4Address *(*ip4_address_get) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
+	const NMPlatformIP6Address *(*ip6_address_get) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
 
 	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
@@ -835,10 +835,10 @@ guint32     nm_platform_mesh_get_channel      (NMPlatform *self, int ifindex);
 gboolean    nm_platform_mesh_set_channel      (NMPlatform *self, int ifindex, guint32 channel);
 gboolean    nm_platform_mesh_set_ssid         (NMPlatform *self, int ifindex, const guint8 *ssid, gsize len);
 
-void                   nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, int plen);
+void                   nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen);
 const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr);
 
-const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
+const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 
 NMPlatformError nm_platform_link_gre_add (NMPlatform *self,
                                           const char *name,
@@ -862,13 +862,13 @@ NMPlatformError nm_platform_link_sit_add (NMPlatform *self,
                                           const NMPlatformLnkSit *props,
                                           const NMPlatformLink **out_link);
 
-const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, int plen);
+const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
 GArray *nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
 GArray *nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
 gboolean nm_platform_ip4_address_add (NMPlatform *self,
                                       int ifindex,
                                       in_addr_t address,
-                                      int plen,
+                                      guint8 plen,
                                       in_addr_t peer_address,
                                       guint32 lifetime,
                                       guint32 preferred_lft,
@@ -877,13 +877,13 @@ gboolean nm_platform_ip4_address_add (NMPlatform *self,
 gboolean nm_platform_ip6_address_add (NMPlatform *self,
                                       int ifindex,
                                       struct in6_addr address,
-                                      int plen,
+                                      guint8 plen,
                                       struct in6_addr peer_address,
                                       guint32 lifetime,
                                       guint32 preferred_lft,
                                       guint32 flags);
-gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
-gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
+gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
 gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, GPtrArray **out_added_addresses);
 gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, gboolean keep_link_local);
 gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
