@@ -26,14 +26,6 @@
 
 #include "nm-test-utils.h"
 
-static NMPlatformIP4Address *
-_set_addr (NMPlatformIP4Address *addr, const char *address, int plen)
-{
-	memset (addr, 0, sizeof (*addr));
-	nm_platform_ip4_address_set_addr (addr, nmtst_inet4_from_string (address), plen);
-	return addr;
-}
-
 static void
 test_address_ranges (void)
 {
@@ -42,50 +34,50 @@ test_address_ranges (void)
 	char last[INET_ADDRSTRLEN];
 	char *error_desc = NULL;
 
-	_set_addr (&addr, "192.168.0.1", 24);
+	addr = *nmtst_platform_ip4_address ("192.168.0.1", NULL, 24);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "192.168.0.10");
 	g_assert_cmpstr (last, ==, "192.168.0.254");
 
-	_set_addr (&addr, "192.168.0.99", 24);
+	addr = *nmtst_platform_ip4_address ("192.168.0.99", NULL, 24);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "192.168.0.108");
 	g_assert_cmpstr (last, ==, "192.168.0.254");
 
-	_set_addr (&addr, "192.168.0.254", 24);
+	addr = *nmtst_platform_ip4_address ("192.168.0.254", NULL, 24);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "192.168.0.1");
 	g_assert_cmpstr (last, ==, "192.168.0.245");
 
 	/* Smaller networks */
-	_set_addr (&addr, "1.2.3.1", 30);
+	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 30);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "1.2.3.2");
 	g_assert_cmpstr (last, ==, "1.2.3.2");
 
-	_set_addr (&addr, "1.2.3.1", 29);
+	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 29);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "1.2.3.2");
 	g_assert_cmpstr (last, ==, "1.2.3.6");
 
-	_set_addr (&addr, "1.2.3.1", 28);
+	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 28);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "1.2.3.3");
 	g_assert_cmpstr (last, ==, "1.2.3.14");
 
-	_set_addr (&addr, "1.2.3.1", 26);
+	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 26);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
 	g_assert (error_desc == NULL);
 	g_assert_cmpstr (first, ==, "1.2.3.8");
 	g_assert_cmpstr (last, ==, "1.2.3.62");
 
-	_set_addr (&addr, "1.2.3.1", 31);
+	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 31);
 	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc) == FALSE);
 	g_assert (error_desc);
 	g_free (error_desc);
