@@ -28,44 +28,6 @@
 
 #include "nm-test-utils.h"
 
-static void
-addr_init (NMPlatformIP4Address *a, const char *addr, const char *peer, guint plen)
-{
-	memset (a, 0, sizeof (*a));
-	g_assert (inet_pton (AF_INET, addr, (void *) &a->address) == 1);
-	if (peer)
-		g_assert (inet_pton (AF_INET, peer, (void *) &a->peer_address) == 1);
-	else
-		a->peer_address = a->address;
-	a->plen = plen;
-}
-
-static void
-route_new (NMPlatformIP4Route *route, const char *network, guint plen, const char *gw)
-{
-	guint n;
-
-	g_assert (route);
-	memset (route, 0, sizeof (*route));
-	g_assert (inet_pton (AF_INET, network, (void *) &n) == 1);
-	route->network = n;
-	route->plen = plen;
-	if (gw) {
-		n = 0;
-		g_assert (inet_pton (AF_INET, gw, (void *) &n) == 1);
-		route->gateway = n;
-	}
-}
-
-static guint32
-addr_to_num (const char *addr)
-{
-	guint n;
-
-	g_assert (inet_pton (AF_INET, addr, (void *) &n) == 1);
-	return n;
-}
-
 static NMIP4Config *
 build_test_config (void)
 {
@@ -76,29 +38,29 @@ build_test_config (void)
 	/* Build up the config to subtract */
 	config = nm_ip4_config_new (1);
 
-	addr_init (&addr, "192.168.1.10", "1.2.3.4", 24);
+	addr = *nmtst_platform_ip4_address ("192.168.1.10", "1.2.3.4", 24);
 	nm_ip4_config_add_address (config, &addr);
-	
-	route_new (&route, "10.0.0.0", 8, "192.168.1.1");
+
+	route = *nmtst_platform_ip4_route ("10.0.0.0", 8, "192.168.1.1");
 	nm_ip4_config_add_route (config, &route);
 
-	route_new (&route, "172.16.0.0", 16, "192.168.1.1");
+	route = *nmtst_platform_ip4_route ("172.16.0.0", 16, "192.168.1.1");
 	nm_ip4_config_add_route (config, &route);
 
-	nm_ip4_config_set_gateway (config, addr_to_num ("192.168.1.1"));
+	nm_ip4_config_set_gateway (config, nmtst_inet4_from_string ("192.168.1.1"));
 
-	nm_ip4_config_add_nameserver (config, addr_to_num ("4.2.2.1"));
-	nm_ip4_config_add_nameserver (config, addr_to_num ("4.2.2.2"));
+	nm_ip4_config_add_nameserver (config, nmtst_inet4_from_string ("4.2.2.1"));
+	nm_ip4_config_add_nameserver (config, nmtst_inet4_from_string ("4.2.2.2"));
 	nm_ip4_config_add_domain (config, "foobar.com");
 	nm_ip4_config_add_domain (config, "baz.com");
 	nm_ip4_config_add_search (config, "blahblah.com");
 	nm_ip4_config_add_search (config, "beatbox.com");
 
-	nm_ip4_config_add_nis_server (config, addr_to_num ("1.2.3.9"));
-	nm_ip4_config_add_nis_server (config, addr_to_num ("1.2.3.10"));
+	nm_ip4_config_add_nis_server (config, nmtst_inet4_from_string ("1.2.3.9"));
+	nm_ip4_config_add_nis_server (config, nmtst_inet4_from_string ("1.2.3.10"));
 
-	nm_ip4_config_add_wins (config, addr_to_num ("4.2.3.9"));
-	nm_ip4_config_add_wins (config, addr_to_num ("4.2.3.10"));
+	nm_ip4_config_add_wins (config, nmtst_inet4_from_string ("4.2.3.9"));
+	nm_ip4_config_add_wins (config, nmtst_inet4_from_string ("4.2.3.10"));
 
 	return config;
 }
@@ -116,12 +78,12 @@ test_subtract (void)
 	const char *expected_route_dest = "8.7.6.5";
 	guint32 expected_route_plen = 8;
 	const char *expected_route_next_hop = "192.168.1.1";
-	guint32 expected_ns1 = addr_to_num ("8.8.8.8");
-	guint32 expected_ns2 = addr_to_num ("8.8.8.9");
+	guint32 expected_ns1 = nmtst_inet4_from_string ("8.8.8.8");
+	guint32 expected_ns2 = nmtst_inet4_from_string ("8.8.8.9");
 	const char *expected_domain = "wonderfalls.com";
 	const char *expected_search = "somewhere.com";
-	guint32 expected_nis = addr_to_num ("1.2.3.13");
-	guint32 expected_wins = addr_to_num ("2.3.4.5");
+	guint32 expected_nis = nmtst_inet4_from_string ("1.2.3.13");
+	guint32 expected_wins = nmtst_inet4_from_string ("2.3.4.5");
 	guint32 expected_mss = 1400;
 	guint32 expected_mtu = 1492;
 
@@ -129,10 +91,10 @@ test_subtract (void)
 
 	/* add a couple more things to the test config */
 	dst = build_test_config ();
-	addr_init (&addr, expected_addr, NULL, expected_addr_plen);
+	addr = *nmtst_platform_ip4_address (expected_addr, NULL, expected_addr_plen);
 	nm_ip4_config_add_address (dst, &addr);
-	
-	route_new (&route, expected_route_dest, expected_route_plen, expected_route_next_hop);
+
+	route = *nmtst_platform_ip4_route (expected_route_dest, expected_route_plen, expected_route_next_hop);
 	nm_ip4_config_add_route (dst, &route);
 
 	nm_ip4_config_add_nameserver (dst, expected_ns1);
@@ -152,7 +114,7 @@ test_subtract (void)
 	g_assert_cmpuint (nm_ip4_config_get_num_addresses (dst), ==, 1);
 	test_addr = nm_ip4_config_get_address (dst, 0);
 	g_assert (test_addr != NULL);
-	g_assert_cmpuint (test_addr->address, ==, addr_to_num (expected_addr));
+	g_assert_cmpuint (test_addr->address, ==, nmtst_inet4_from_string (expected_addr));
 	g_assert_cmpuint (test_addr->peer_address, ==, test_addr->address);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
@@ -161,9 +123,9 @@ test_subtract (void)
 	g_assert_cmpuint (nm_ip4_config_get_num_routes (dst), ==, 1);
 	test_route = nm_ip4_config_get_route (dst, 0);
 	g_assert (test_route != NULL);
-	g_assert_cmpuint (test_route->network, ==, addr_to_num (expected_route_dest));
+	g_assert_cmpuint (test_route->network, ==, nmtst_inet4_from_string (expected_route_dest));
 	g_assert_cmpuint (test_route->plen, ==, expected_route_plen);
-	g_assert_cmpuint (test_route->gateway, ==, addr_to_num (expected_route_next_hop));
+	g_assert_cmpuint (test_route->gateway, ==, nmtst_inet4_from_string (expected_route_next_hop));
 
 	g_assert_cmpuint (nm_ip4_config_get_num_nameservers (dst), ==, 2);
 	g_assert_cmpuint (nm_ip4_config_get_nameserver (dst, 0), ==, expected_ns1);
@@ -198,7 +160,7 @@ test_compare_with_source (void)
 	b = nm_ip4_config_new (2);
 
 	/* Address */
-	addr_init (&addr, "1.2.3.4", NULL, 24);
+	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
 	addr.source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
@@ -206,7 +168,7 @@ test_compare_with_source (void)
 	nm_ip4_config_add_address (b, &addr);
 
 	/* Route */
-	route_new (&route, "10.0.0.0", 8, "192.168.1.1");
+	route = *nmtst_platform_ip4_route ("10.0.0.0", 8, "192.168.1.1");
 	route.source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
@@ -230,7 +192,7 @@ test_add_address_with_source (void)
 	a = nm_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
-	addr_init (&addr, "1.2.3.4", NULL, 24);
+	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
 	addr.source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
@@ -270,7 +232,7 @@ test_add_route_with_source (void)
 	a = nm_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
-	route_new (&route, "1.2.3.4", 24, "1.2.3.1");
+	route = *nmtst_platform_ip4_route ("1.2.3.4", 24, "1.2.3.1");
 	route.source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
