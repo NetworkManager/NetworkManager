@@ -382,7 +382,8 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 	in_addr_t addr;
 	NMPlatformIP4Address address;
 	char *str = NULL;
-	guint32 gwaddr = 0, plen = 0;
+	guint32 gwaddr = 0;
+	guint8 plen = 0;
 
 	g_return_val_if_fail (options != NULL, NULL);
 

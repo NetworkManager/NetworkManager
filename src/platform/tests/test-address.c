@@ -308,7 +308,7 @@ test_ip4_address_peer_zero (void)
 	in_addr_t addr, addr_peer;
 	guint32 lifetime = 2000;
 	guint32 preferred = 1000;
-	const int plen = 24;
+	const gint8 plen = 24;
 	const char *label = NULL;
 	in_addr_t peers[3], r_peers[3];
 	int i;
