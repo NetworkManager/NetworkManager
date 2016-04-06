@@ -1,5 +1,5 @@
 # Brazilian Portuguese translation of NetworkManager.
-# Copyright (C) 2004-2013 Free Software Foundation, Inc.
+# Copyright (C) 2016 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
 # Raphael Higino <In memoriam>, 2004-2007
 # Luiz Armesto <luiz.armesto@gmail.com>, 2007.
@@ -8,22 +8,23 @@
 # Fabrício Godoy <skarllot@gmail.com>, 2008.
 # Enrico Nicoletto <liverig@gmail.com>, 2013.
 # gcintra <gcintra@redhat.com>, 2013, 2014.
-# Rafael Fontenelle <rffontenelle@gmail.com>, 2013, 2015.
-#
+# Rafael Fontenelle <rafaelff@gnome.org>, 2013, 2015, 2016.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-05 15:00+0200\n"
-"PO-Revision-Date: 2015-12-21 12:50-0200\n"
-"Last-Translator: Rafael Fontenelle <rffontenelle@gmail.com>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=Network"
+"Manager&keywords=I18N+L10N&component=Translations\n"
+"POT-Creation-Date: 2016-04-04 01:29+0000\n"
+"PO-Revision-Date: 2016-04-06 13:08-0200\n"
+"Last-Translator: Rafael Fontenelle <rafaelff@gnome.org>\n"
 "Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 1.8.6\n"
+"X-Generator: Virtaal 0.7.1\n"
+"X-Project-Style: gnome\n"
 
 #: ../clients/cli/agent.c:39
 #, c-format
@@ -774,7 +775,7 @@ msgstr "PADRÃO6"
 #. 6
 #: ../clients/cli/connections.c:199
 msgid "SPEC-OBJECT"
-msgstr "OBJETO-ESPEC."
+msgstr "OBJETO-ESPEC"
 
 #. 7
 #. 4
@@ -899,16 +900,16 @@ msgstr ""
 "  show [--active] [--order <especificação da ordem>]\n"
 "  show [--active] [id | uuid | path | apath] <ID> ...\n"
 "\n"
-"  up [[id | uuid | path] <ID>] [ifname <nome-if>] [ap <BSSID>] [passwd-file "
-"<arquivo com senhas>]\n"
+"  up [[id | uuid | path] <ID>] [ifname <nome-if>] [ap <BSSID>] [passwd-file <"
+"arquivo com senhas>]\n"
 "\n"
 "  down [id | uuid | path | apath] <ID> ...\n"
 "\n"
-"  add OPÇÕES_COMUNS OPÇÕES_ESPECÍFICAS_TIPO OPÇÕES_IP [-- ([+|-]<definição>."
-"<propriedade> <valor>)+]\n"
+"  add OPÇÕES_COMUNS OPÇÕES_ESPECÍFICAS_TIPO OPÇÕES_IP [-- "
+"([+|-]<definição>.<propriedade> <valor>)+]\n"
 "\n"
-"  modify [--temporary] [id | uuid | path] <ID> ([+|-]<definição>."
-"<propriedade> <valor>)+\n"
+"  modify [--temporary] [id | uuid | path] <ID> "
+"([+|-]<definição>.<propriedade> <valor>)+\n"
 "\n"
 "  clone [--temporary] [id | uuid | path ] <ID> <novo nome>\n"
 "\n"
@@ -1007,8 +1008,8 @@ msgstr ""
 "por\n"
 "seu nome, UUID ou caminho do D-Bus.\n"
 "\n"
-"ARGUMENTOS := ifname <nome-if> [ap <BSSID>] [nsp <nome>] [passwd-file "
-"<arquivo com senhas>]\n"
+"ARGUMENTOS := ifname <nome-if> [ap <BSSID>] [nsp <nome>] [passwd-file <"
+"arquivo com senhas>]\n"
 "\n"
 "Ativa um dispositivo com uma conexão. O perfil da conexão é selecionado\n"
 "automaticamente pelo NetworkManager.\n"
@@ -1017,6 +1018,7 @@ msgstr ""
 "ap          - especifica AP para se conectar (válido somente para Wi-Fi)\n"
 "nsp         - especifica NSP para se conectar (válido somente para WiMAX)\n"
 "passwd-file - arquivo com senha(s) necessária(s) para ativar a conexão\n"
+"\n"
 
 #: ../clients/cli/connections.c:336
 #, c-format
@@ -1038,6 +1040,7 @@ msgstr ""
 "Desativa uma conexão de um dispositivo (sem prevenir o dispositivo de\n"
 "auto-ativamento no futuro). O perfil para desativar é identificado por\n"
 "seu nome, UUID ou caminho do D-Bus.\n"
+"\n"
 
 #: ../clients/cli/connections.c:348
 #, c-format
@@ -1240,8 +1243,8 @@ msgstr ""
 "\n"
 "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
 "| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]"
+"\n"
 "                  [primary <nome da interface>]\n"
 "                  [miimon <núm>]\n"
 "                  [downdelay <núm>]\n"
@@ -1250,13 +1253,13 @@ msgstr ""
 "                  [arp-ip-target <núm>]\n"
 "                  [lacp-rate slow (0) | fast (1)]\n"
 "\n"
-"    bond-slave:   master <(nome interface ou nome ou UUID da conexão) "
-"mestre>\n"
+"    bond-slave:   master <(nome interface ou nome ou UUID da conexão) mestre>"
+"\n"
 "\n"
 "    team:         [config <arquivo>|<dados JSON não-tratados>]\n"
 "\n"
-"    team-slave:   master <(nome interface ou nome ou UUID da conexão) "
-"mestre>\n"
+"    team-slave:   master <(nome interface ou nome ou UUID da conexão) mestre>"
+"\n"
 "                  [config <arquivo>|<dados JSON não-tratados>]\n"
 "\n"
 "    bridge:       [stp yes|no]\n"
@@ -1268,14 +1271,14 @@ msgstr ""
 "                  [multicast-snooping yes|no]\n"
 "                  [mac <endereço MAC>]\n"
 "\n"
-"    bridge-slave: master <(nome interface ou nome ou UUID da conexão) "
-"mestre>\n"
+"    bridge-slave: master <(nome interface ou nome ou UUID da conexão) mestre>"
+"\n"
 "                  [priority <0-63>]\n"
 "                  [path-cost <1-65535>]\n"
 "                  [hairpin yes|no]\n"
 "\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
+"    vpn:          vpn-type "
+"vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\n"
 "                  [user <nome de usuário>]\n"
 "\n"
 "    olpc-mesh:    ssid <SSID>\n"
@@ -1321,6 +1324,7 @@ msgstr ""
 "  OPÇÕES_IP:\n"
 "                  [ip4 <endereço IPv4>] [gw4 <gateway IPv4>]\n"
 "                  [ip6 <endereço IPv6>] [gw6 <gateway IPv6>]\n"
+"\n"
 
 #: ../clients/cli/connections.c:460
 #, c-format
@@ -1360,8 +1364,8 @@ msgstr ""
 "\n"
 "Exemplos:\n"
 "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
-"nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, "
-"10.10.1.5/8\"\n"
+"nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/"
+"8\"\n"
 "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
 "nmcli con mod em1-1 -ipv4.dns 1\n"
 "nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
@@ -1512,8 +1516,8 @@ msgstr ""
 "\n"
 "ARGUMENTOS := [--temporary] type <tipo> file <arquivo a ser importado>\n"
 "\n"
-"Importa uma configuração externa como o perfil de conexão do "
-"NetworkManager.\n"
+"Importa uma configuração externa como o perfil de conexão do NetworkManager."
+"\n"
 "O tipo de arquivo de entrada é especificado pela opção type.\n"
 "Apenas configurações de VPN possuem suporte no momento. A configuração\n"
 "é importada pelos plug-ins VPN do NetworkManager.\n"
@@ -1537,6 +1541,7 @@ msgstr ""
 "Exporta uma conexão. Somente conexões VPN possuem suporte no presente\n"
 "momento. Os dados são direcionados para a saída padrão ou para um arquivo\n"
 "se um nome for informado.\n"
+"\n"
 
 #: ../clients/cli/connections.c:644
 msgid "activating"
@@ -1846,7 +1851,7 @@ msgstr "\"%s\" não está entre [%s]"
 #: ../clients/cli/connections.c:3032
 #, c-format
 msgid "Error: '%s': '%s' is not a valid %s MAC address."
-msgstr "Erro: '%s': '%s' não é um endereço MAC %s válido."
+msgstr "Erro: \"%s\": \"%s\" não é um endereço MAC %s válido."
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3033 ../clients/cli/connections.c:3565
@@ -1868,7 +1873,7 @@ msgstr "Erro: \"mtu\": \"%s\" não é um MTU válido."
 #: ../clients/cli/connections.c:3069
 #, c-format
 msgid "Error: 'parent': '%s' is not a valid interface name."
-msgstr "Erro: 'parent': \"%s\" não é um nome de interface válido"
+msgstr "Erro: \"parent\": \"%s\" não é um nome de interface válido."
 
 #: ../clients/cli/connections.c:3090
 #, c-format
@@ -1976,7 +1981,7 @@ msgstr "P_KEY [nenhum]: "
 #: ../clients/cli/connections.c:3626
 #, c-format
 msgid "Error: 'p-key' is mandatory when 'parent' is specified.\n"
-msgstr "Erro: \"p-key\" é obrigatório quando 'parent' é especificado.\n"
+msgstr "Erro: \"p-key\" é obrigatório quando \"parent\" é especificado.\n"
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3643 ../clients/tui/nm-editor-utils.c:154
@@ -2056,7 +2061,7 @@ msgstr "Mapas de prioridade de egresso [nenhum]: "
 
 #: ../clients/cli/connections.c:3827
 msgid "Bonding mode [balance-rr]: "
-msgstr "Modo de vinculação [balanço-rr]: "
+msgstr "Modo de vinculação [balance-rr]: "
 
 #. Ask for optional 'bond' arguments.
 #: ../clients/cli/connections.c:3843
@@ -2135,7 +2140,7 @@ msgstr "Erro: \"lacp_rate\": \"%s\" é inválido (\"slow\" ou \"fast\").\n"
 
 #: ../clients/cli/connections.c:3972
 msgid "Team JSON configuration [none]: "
-msgstr "Configuração da União JSON [nenhum]:"
+msgstr "Configuração da União JSON [nenhum]: "
 
 #: ../clients/cli/connections.c:3989
 msgid "team"
@@ -2528,11 +2533,11 @@ msgstr "Nome de usuário do PPPoE: "
 
 #: ../clients/cli/connections.c:5130 ../clients/cli/connections.c:6037
 msgid "Error: 'username' is required."
-msgstr "Erro: \"nome de usuário\" é necessário"
+msgstr "Erro: \"nome de usuário\" é necessário."
 
 #: ../clients/cli/connections.c:5199
 msgid "APN: "
-msgstr "Nome do ponto de acesso (APN):"
+msgstr "Nome do ponto de acesso (APN): "
 
 #: ../clients/cli/connections.c:5202
 msgid "Error: 'apn' is required."
@@ -2560,18 +2565,17 @@ msgid "Error: 'dev' is required."
 msgstr "Erro: é necessário o \"dev\"."
 
 #: ../clients/cli/connections.c:5355
-#, fuzzy
 msgid "VLAN ID <0-4094>: "
-msgstr "ID da VLAN <0-4095>: "
+msgstr "ID da VLAN <0-4094>: "
 
 #: ../clients/cli/connections.c:5358 ../clients/cli/connections.c:6424
 msgid "Error: 'id' is required."
 msgstr "Erro: é necessário o \"id\"."
 
 #: ../clients/cli/connections.c:5364
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'id': '%s' is not valid; use <0-4094>."
-msgstr "Erro: \"id\": \"%s\" não é válido; use <0-4095>."
+msgstr "Erro: \"id\": \"%s\" não é válido; use <0-4094>."
 
 #: ../clients/cli/connections.c:5374 ../clients/cli/connections.c:6116
 #, c-format
@@ -3025,7 +3029,7 @@ msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
 "\n"
 msgstr ""
-"help/? [<command>]  :: ajuda para os comandos do nmcli \n"
+"help/? [<command>]  :: ajuda para os comandos do nmcli\n"
 "\n"
 
 #: ../clients/cli/connections.c:8206
@@ -3399,7 +3403,7 @@ msgstr "Erro: definição desconhecida: \"%s\"\n"
 #: ../clients/cli/connections.c:9422
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
-msgstr "Erro: a definição \"%s\" não está presente na conexão.\n"
+msgstr "Erro: a definição \"%s\" não está presente na conexão\n"
 
 #: ../clients/cli/connections.c:9450
 #, c-format
@@ -4180,7 +4184,7 @@ msgid "PORT-ID-TYPE"
 msgstr "TIPO-ID-PORTA"
 
 #: ../clients/cli/devices.c:283
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -4220,8 +4224,8 @@ msgid ""
 msgstr ""
 "Uso: nmcli device { COMANDO | help }\n"
 "\n"
-"COMANDO := { status | show | connect | disconnect | delete | monitor | wifi "
-"| lldp }\n"
+"COMANDO := { status | show | connect | reapply | disconnect | delete | "
+"monitor | wifi | lldp }\n"
 "\n"
 "  status\n"
 "\n"
@@ -4231,6 +4235,8 @@ msgstr ""
 "\n"
 "  connect <nome-if>\n"
 "\n"
+"  reapply <nome-if> ...\n"
+"\n"
 "  disconnect <nome-if> ...\n"
 "\n"
 "  delete <nome-if> ...\n"
@@ -4239,13 +4245,13 @@ msgstr ""
 "\n"
 "  wifi [list [ifname <nome-if>] [bssid <BSSID>]]\n"
 "\n"
-"  wifi connect <(B)SSID> [password <senha>] [wep-key-type key|phrase] "
-"[ifname <nome-if>]\n"
-"                         [bssid <BSSID>] [name <nome>] [private yes|no] "
-"[hidden yes|no]\n"
+"  wifi connect <(B)SSID> [password <senha>] [wep-key-type key|phrase] ["
+"ifname <nome-if>]\n"
+"                         [bssid <BSSID>] [name <nome>] [private yes|no] ["
+"hidden yes|no]\n"
 "\n"
-"  wifi hotspot [ifname <nome-if>] [con-name <nome>] [ssid <SSID>] [band a|"
-"bg] [channel <canal>] [password <senha>]\n"
+"  wifi hotspot [ifname <nome-if>] [con-name <nome>] [ssid <SSID>] [band a|bg]"
+" [channel <canal>] [password <senha>]\n"
 "\n"
 "  wifi rescan [ifname <nome-if>] [[ssid <SSID para buscar>] ...]\n"
 "\n"
@@ -4327,7 +4333,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:343
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -4337,13 +4343,13 @@ msgid ""
 "made since it was last applied.\n"
 "\n"
 msgstr ""
-"Uso: nmcli device disconnect { ARGUMENTOS | help }\n"
+"Uso: nmcli device reapply { ARGUMENTOS | help }\n"
 "\n"
 "ARGUMENTOS := <nome-if> ...\n"
 "\n"
-"Desconecta o dispositivo.\n"
-"O comando desconecta o dispositivo e previne-o de auto-ativar\n"
-"conexões futuras sem a intervenção do usuário/manual.\n"
+"Tenta atualizar o dispositivo com as alterações à conexão atualmente ativa\n"
+"feitas desde a última aplicação.\n"
+"\n"
 
 #: ../clients/cli/devices.c:354
 #, c-format
@@ -4364,6 +4370,7 @@ msgstr ""
 "Desconecta o dispositivo.\n"
 "O comando desconecta o dispositivo e previne-o de auto-ativar\n"
 "conexões futuras sem a intervenção do usuário/manual.\n"
+"\n"
 
 #: ../clients/cli/devices.c:366
 #, c-format
@@ -4491,14 +4498,15 @@ msgstr ""
 "\n"
 "ARGUMENTOS := [list [ifname <nome-if>] [bssid <BSSID>]]\n"
 "\n"
-"Lista pontos de acesso de Wi-Fi disponíveis. As opções \"ifname\" e \"bssid"
-"\"\n"
+"Lista pontos de acesso de Wi-Fi disponíveis. As opções \"ifname\" e \"bssid\""
+"\n"
 "podem ser usadas para listar APs para uma interface específica, ou com um\n"
 "BSSID específico.\n"
 "\n"
-"ARGUMENTS := connect <(B)SSID> [password <senha>] [wep-key-type key|phrase] "
-"[ifname <nome-if>]\n"
-"                     [bssid <BSSID>] [name <nome>] [private yes|no]\n"
+"ARGUMENTOS := connect <(B)SSID> [password <senha>] [wep-key-type key|phrase]"
+"\n"
+"                       [ifname <nome-if>] [bssid <BSSID>] [name <nome>]\n"
+"                       [private yes|no]\n"
 "\n"
 "Conecta à uma rede Wi-Fi especificada por SSID ou BSSID. O comando cria uma\n"
 "nova conexão e então ativa-a em um dispositivo. Isto é um parceiro de linha\n"
@@ -4510,8 +4518,8 @@ msgstr ""
 "WPA-PSK são suportadas no momento. Presume-se também que a configuração IP\n"
 "seja obtida via DHCP.\n"
 "\n"
-"ARGUMENTOS := wifi hotspot [ifname <nome-if>] [con-name <nome>] [ssid "
-"<SSID>]\n"
+"ARGUMENTOS := wifi hotspot [ifname <nome-if>] [con-name <nome>] [ssid <SSID>]"
+"\n"
 "                           [band a|bg] [channel <canal>] [password <senha>]\n"
 "\n"
 "Cria um hotspot Wi-Fi. Use 'connection down' ou 'device disconnect' para\n"
@@ -4524,8 +4532,8 @@ msgstr ""
 "channel - canal Wi-Fi para usar\n"
 "password - senha para usar para o hotspot\n"
 "\n"
-"ARGUMENTOS := wifi hotspot [ifname <nome-if>] [con-name <nome>] [ssid "
-"<SSID>]\n"
+"ARGUMENTOS := wifi hotspot [ifname <nome-if>] [con-name <nome>] [ssid <SSID>]"
+"\n"
 "                           [band a|bg] [channel <canal>] [password <senha>]\n"
 "\n"
 "Requer que o NetworkManager scaneie novamente imediatamente para pontos de\n"
@@ -4537,6 +4545,7 @@ msgstr ""
 "parâmetros de \"ssid\" podem ser fornecidos. Note que este comando não "
 "mostra\n"
 "os APs, use 'nmcli device wifi list' para isto.\n"
+"\n"
 
 #: ../clients/cli/devices.c:451
 #, c-format
@@ -4554,9 +4563,10 @@ msgstr ""
 "\n"
 "ARGUMENTOS := [list [ifname <nome-if>] [nsp <nome>]]\n"
 "\n"
-"Lista dispositivos vizinhos descobertos por meio de LLDP. A opção \"ifname"
-"\"\n"
+"Lista dispositivos vizinhos descobertos por meio de LLDP. A opção \"ifname\""
+"\n"
 "pode ser usada para listar vizinhos de uma interface específica.\n"
+"\n"
 
 #: ../clients/cli/devices.c:527 ../clients/cli/devices.c:1676
 #: ../clients/cli/devices.c:1685 ../clients/cli/devices.c:1879
@@ -4734,19 +4744,19 @@ msgid "Device '%s' successfully removed.\n"
 msgstr "Dispositivo \"%s\" removido com sucesso.\n"
 
 #: ../clients/cli/devices.c:1838
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections reapplied."
-msgstr "Erro: nem todas as conexões ativas foram excluídas."
+msgstr "Erro: nem todas as conexões foram reaplicadas."
 
 #: ../clients/cli/devices.c:1839
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s\n"
-msgstr "Erro: a exclusão do dispositivo \"%s\" (%s) falhou: %s\n"
+msgstr "Erro: a reaplicação da conexão no dispositivo \"%s\" (%s) falhou: %s\n"
 
 #: ../clients/cli/devices.c:1849
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
-msgstr "Conexão ativada com sucesso (caminho D-Bus ativo: %s)\n"
+msgstr "Conexão reaplicada com sucesso no dispositivo \"%s\".\n"
 
 #: ../clients/cli/devices.c:1912
 #, c-format
@@ -4905,7 +4915,7 @@ msgstr ""
 
 #: ../clients/cli/devices.c:2885
 msgid "Password: "
-msgstr "Senha:"
+msgstr "Senha: "
 
 #: ../clients/cli/devices.c:3034
 #, c-format
@@ -5581,6 +5591,7 @@ msgstr ""
 "  d[evice]        dispositivos gerenciados pelo NetworkManager\n"
 "  a[gent]         agente secreto do NetworkManager ou agente do polkit\n"
 "  m[onitor]       monitora alterações do NetworkManager\n"
+"\n"
 
 #: ../clients/cli/nmcli.c:143
 #, c-format
@@ -5661,7 +5672,7 @@ msgstr "Falha ao criar o segmento de manipulação de sinal: %d\n"
 #: ../clients/cli/nmcli.c:512 ../clients/nm-online.c:193
 #, c-format
 msgid "Error: Could not create NMClient object: %s."
-msgstr "Erro: não foi possível criar objeto NMClient: %s"
+msgstr "Erro: não foi possível criar objeto NMClient: %s."
 
 #: ../clients/cli/nmcli.c:529
 msgid "Success"
@@ -5773,15 +5784,15 @@ msgstr "0 (desativado)"
 
 #: ../clients/cli/settings.c:1258
 msgid "enabled, "
-msgstr "habilitado,"
+msgstr "habilitado, "
 
 #: ../clients/cli/settings.c:1260
 msgid "advertise, "
-msgstr "publicar,"
+msgstr "publicar, "
 
 #: ../clients/cli/settings.c:1262
 msgid "willing, "
-msgstr "desejando,"
+msgstr "desejando, "
 
 #: ../clients/cli/settings.c:1290
 msgid "-1 (unset)"
@@ -5797,9 +5808,9 @@ msgid "default"
 msgstr "padrão"
 
 #: ../clients/cli/settings.c:1556
-#, fuzzy, c-format
+#, c-format
 msgid "%d (off)"
-msgstr "%d (não)"
+msgstr "%d (desligado)"
 
 #: ../clients/cli/settings.c:1770
 #, c-format
@@ -5856,7 +5867,7 @@ msgstr "Aviso: definição %s.%s requer remover as definições de ipv4 e ipv6\n
 
 #: ../clients/cli/settings.c:2300
 msgid "Do you want to remove them? [yes] "
-msgstr "Você deseja removê-las [sim]"
+msgstr "Você deseja removê-las? [sim] "
 
 #: ../clients/cli/settings.c:2396 ../clients/cli/settings.c:2791
 #: ../clients/cli/settings.c:5182
@@ -5939,7 +5950,7 @@ msgstr "\"%s\" não é um nome de interface válido"
 #: ../clients/cli/settings.c:2856
 #, c-format
 msgid "'%s' is not a valid flag number; use <0-%d>"
-msgstr "Erro: \"priority\": \"%s\" não é um número válido <0-%d>."
+msgstr "Erro: \"priority\": \"%s\" não é um número válido <0-%d>"
 
 #: ../clients/cli/settings.c:2868
 #, c-format
@@ -6072,7 +6083,7 @@ msgstr ""
 "Note que nmcli não oferece suporte a especificar certificados como dados "
 "blob \n"
 "não tratados.\n"
-"Exemplo: /home/cimrman/cert-ac.crt\n"
+"Exemplo: /home/cimrman/cert-ca.crt\n"
 
 #: ../clients/cli/settings.c:3428
 #, c-format
@@ -6126,8 +6137,8 @@ msgid ""
 "Note that nmcli does not support specifying certificates as raw blob data.\n"
 "Example: /home/cimrman/jara-zweite-phase.crt\n"
 msgstr ""
-"Insira o caminho do arquivo para um certificado de cliente para "
-"autenticação \n"
+"Insira o caminho do arquivo para um certificado de cliente para autenticação "
+"\n"
 "interna (opcionalmente, prefixado com file://).\n"
 "  [file://]<caminho do arquivo>\n"
 "Note que nmcli não oferece suporte a especificar certificados como dados \n"
@@ -6399,8 +6410,8 @@ msgstr ""
 "arquivo contendo a configuração. Neste caso, o arquivo é lido e o conteúdo é "
 "colocado nesta propriedade.\n"
 "\n"
-"Exemplos: set team.config { \"device\": \"team0\", \"runner\": {\"name\": "
-"\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
+"Exemplos: set team.config { \"device\": \"team0\", \"runner\": {\"name\": \""
+"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/minha-união.conf\n"
 
 #: ../clients/cli/settings.c:4602
@@ -6501,8 +6512,8 @@ msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
 "first."
 msgstr ""
-"\"%s\" não é compatível com %s \"%s\", por favor altere a chave ou defina o "
-"%s correto primeiro"
+"\"%s\" não é compatível com %s \"%s\", por favor altere a chave ou defina o %"
+"s correto primeiro."
 
 #: ../clients/cli/settings.c:5199
 #, c-format
@@ -6769,7 +6780,7 @@ msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:457
 msgid "Wired 802.1X authentication"
-msgstr "Autenticação 802.1X com fio "
+msgstr "Autenticação 802.1X com fio"
 
 #: ../clients/common/nm-secret-agent-simple.c:460
 msgid "Network name"
@@ -7013,7 +7024,7 @@ msgstr "Não foi possível criar editor para a conexão \"%s\" do tipo \"%s\"."
 #: ../clients/tui/nmt-editor.c:101
 #, c-format
 msgid "Could not create editor for invalid connection '%s'."
-msgstr "Não foi possível criar editor para a conexão inválida \"%s\""
+msgstr "Não foi possível criar editor para a conexão inválida \"%s\"."
 
 #: ../clients/tui/nmt-editor.c:111
 msgid "Edit Connection"
@@ -7966,9 +7977,9 @@ msgid "unknown setting name"
 msgstr "nome de definição desconhecido"
 
 #: ../libnm-core/nm-connection.c:306
-#, fuzzy
+#| msgid "unknown setting name"
 msgid "duplicate setting name"
-msgstr "nome de definição desconhecido"
+msgstr "nome de definição duplicado"
 
 #: ../libnm-core/nm-connection.c:873
 msgid "setting not found"
@@ -8131,7 +8142,7 @@ msgstr "ignorando senha não tratada inválida"
 #: ../libnm-core/nm-keyfile-reader.c:892 ../libnm-core/nm-keyfile-reader.c:1058
 #, c-format
 msgid "certificate or key file '%s' does not exist"
-msgstr "certificado ou arquivo de chave \"%s\" não existe."
+msgstr "certificado ou arquivo de chave \"%s\" não existe"
 
 #: ../libnm-core/nm-keyfile-reader.c:897
 #, c-format
@@ -8406,7 +8417,7 @@ msgstr "opção \"%s\" é válida apenas para \"%s\""
 #: ../libnm-core/nm-setting-bond.c:687
 #, c-format
 msgid "'%s' and '%s' cannot have different values"
-msgstr ""
+msgstr "\"%s\" e \"%s\" não podem ter valores diferentes"
 
 #: ../libnm-core/nm-setting-bond.c:703
 #, c-format
@@ -8457,7 +8468,7 @@ msgstr "definição requerida para a conexão do tipo \"%s\""
 #: ../libnm-core/nm-setting-connection.c:897
 #, c-format
 msgid "connection type '%s' is not valid"
-msgstr "tipo de conexão \"%s\" não é válida."
+msgstr "tipo de conexão \"%s\" não é válida"
 
 #: ../libnm-core/nm-setting-connection.c:932
 #: ../libnm-util/nm-setting-connection.c:877
@@ -8539,7 +8550,7 @@ msgstr "valor da propriedade \"%s\" está vazio ou é muito longo (>64)"
 #: ../libnm-core/nm-setting-gsm.c:326 ../libnm-util/nm-setting-gsm.c:327
 #, c-format
 msgid "'%s' contains invalid char(s) (use [A-Za-z._-])"
-msgstr "\"%s\" contém cactere(s) inválido(s) (use [A-Za-z._-])"
+msgstr "\"%s\" contém caractere(s) inválido(s) (use [A-Za-z._-])"
 
 #: ../libnm-core/nm-setting-gsm.c:352 ../libnm-util/nm-setting-gsm.c:353
 #, c-format
@@ -8733,7 +8744,7 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "propriedade não está especificada nem é \"%s=%s\""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
-#, fuzzy
+#| msgid "non promiscuous operation is allowed only in passthru mode'"
 msgid "non promiscuous operation is allowed only in passthru mode"
 msgstr "operação não promíscua é permitida apenas em modo passthru"
 
@@ -8785,7 +8796,7 @@ msgstr "valor \"%s\" não corresponde \"%s=%s\""
 #: ../libnm-core/nm-setting-vlan.c:672 ../libnm-util/nm-setting-vlan.c:600
 #, c-format
 msgid "the vlan id must be in range 0-4094 but is %u"
-msgstr ""
+msgstr "o id da vlan deve estar na faixa 0-4094, mas é %u"
 
 #: ../libnm-core/nm-setting-vlan.c:681 ../libnm-util/nm-setting-vlan.c:591
 msgid "flags are invalid"
@@ -8911,7 +8922,7 @@ msgstr "\"%s\" requer a definição da propriedade \"%s\""
 #: ../libnm-core/nm-setting.c:837
 #, c-format
 msgid "duplicate property"
-msgstr ""
+msgstr "propriedade duplicada"
 
 #: ../libnm-core/nm-setting.c:865 ../libnm-core/nm-setting.c:912
 #, c-format
@@ -8920,19 +8931,22 @@ msgstr ""
 "não foi possível definir propriedade do tipo \"%s\" do valor de tipo \"%s\""
 
 #: ../libnm-core/nm-setting.c:884 ../libnm-core/nm-setting.c:898
-#, fuzzy, c-format
+#, c-format
+#| msgid "Error: failed to set '%s' property: %s\n"
 msgid "failed to set property: %s"
-msgstr "Erro: falha ao definir a propriedade \"%s\": %s\n"
+msgstr "falha ao definir a propriedade: %s"
 
 #: ../libnm-core/nm-setting.c:926
-#, fuzzy, c-format
+#, c-format
+#| msgid "not a secret property"
 msgid "can not set property: %s"
-msgstr "não é uma propriedade de segredo"
+msgstr "não foi possível definir propriedade: %s"
 
 #: ../libnm-core/nm-setting.c:942
-#, fuzzy, c-format
+#, c-format
+#| msgid "unknown error"
 msgid "unknown property"
-msgstr "erro desconhecido"
+msgstr "propriedade desconhecida"
 
 #: ../libnm-core/nm-setting.c:1682
 msgid "secret not found"
@@ -9081,18 +9095,18 @@ msgid "Bluetooth"
 msgstr "Bluetooth"
 
 #: ../libnm-glib/nm-device.c:1873 ../libnm/nm-device.c:1824
-#, fuzzy
+#| msgid "VLAN"
 msgid "MACVLAN"
-msgstr "VLAN"
+msgstr "MACVLAN"
 
 #: ../libnm-glib/nm-device.c:1877 ../libnm/nm-device.c:1828
-#, fuzzy
+#| msgid "IP Tunnel"
 msgid "IPTunnel"
-msgstr "Túnel IP"
+msgstr "IPTunnel"
 
 #: ../libnm-glib/nm-device.c:1881 ../libnm/nm-device.c:1832
 msgid "Veth"
-msgstr ""
+msgstr "Veth"
 
 #: ../libnm-glib/nm-device.c:1913 ../libnm/nm-device.c:1864
 msgid "Wired"
@@ -9182,7 +9196,7 @@ msgstr "%d. endereço IPv6 possui prefixo inválido"
 #: ../libnm-util/nm-setting-vpn.c:582
 #, c-format
 msgid "Failed to convert '%s' value '%s' to uint"
-msgstr "Falha ao converter valor de \"%s\" \"%s\" para unit"
+msgstr "Falha ao converter valor de \"%s\" \"%s\" para uint"
 
 #: ../libnm-util/nm-setting-vpn.c:589
 #, c-format
@@ -9265,7 +9279,7 @@ msgstr "A conexão não era tun."
 
 #: ../libnm/nm-device-tun.c:218
 msgid "The mode of the device and the connection didn't match"
-msgstr "O modo do dispositivo e da conexão não correspondem."
+msgstr "O modo do dispositivo e da conexão não correspondem"
 
 #: ../libnm/nm-device-infiniband.c:94
 msgid "The connection was not an InfiniBand connection."
@@ -9310,7 +9324,7 @@ msgstr "A conexão não era VLAN."
 
 #: ../libnm/nm-device-vlan.c:135
 msgid "The VLAN identifiers of the device and the connection didn't match."
-msgstr "Os identificadores da VLAN do dispositivo e a conexão não correspondem"
+msgstr "Os identificadores da VLAN do dispositivo e a conexão não correspondem."
 
 #: ../libnm/nm-device-vlan.c:148
 msgid "The hardware address of the device and the connection didn't match."
@@ -9497,29 +9511,35 @@ msgstr ""
 #: ../shared/nm-shared-utils.c:174
 #, c-format
 msgid "object class '%s' has no property named '%s'"
-msgstr ""
+msgstr "a classe de objeto \"%s\" não possui uma propriedade chamada \"%s\""
 
 #: ../shared/nm-shared-utils.c:181
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
-msgstr ""
+msgstr "a propriedade \"%s\" da classe de objeto \"%s\" não pode ser escrita"
 
 #: ../shared/nm-shared-utils.c:188
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
+"a propriedade de construtor \"%s\" para objeto \"%s\" não pode ser definido "
+"após construção"
 
 #: ../shared/nm-shared-utils.c:196
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr ""
+"\"%s::%s\" não é um nome de propriedade válido; \"%s\" não é um subtipo de "
+"GObject"
 
 #: ../shared/nm-shared-utils.c:205
-#, fuzzy, c-format
+#, c-format
+#| msgid "can't set property of type '%s' from value of type '%s'"
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
-"não foi possível definir propriedade do tipo \"%s\" do valor de tipo \"%s\""
+"não foi possível definir a propriedade \"%s\" de tipo \"%s\" a partir do "
+"valor de tipo \"%s\""
 
 #: ../shared/nm-shared-utils.c:216
 #, c-format
@@ -9527,6 +9547,8 @@ msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
 "type '%s'"
 msgstr ""
+"o valor \"%s\" de tipo \"%s\" é inválido ou fora do intervalo da propriedade "
+"\"%s\" de tipo \"%s\""
 
 #. Translators: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
@@ -9801,19 +9823,19 @@ msgstr ""
 "WPA"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:164
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify WPA protocols"
 msgstr ""
 "uma conexão usando autenticação \"%s\" não pode especificar protocolos WPA"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:180
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:197
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify WPA ciphers"
 msgstr "uma conexão usando autenticação \"%s\" não pode especificar cifras WPA"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify a WPA password"
 msgstr ""
 "uma conexão usando autenticação \"%s\" não pode especificar uma senha WPA"
@@ -10112,15 +10134,6 @@ msgstr "O NetworkManager precisa desligar as redes"
 msgid "System"
 msgstr "Sistema"
 
-#~ msgid "Error: unknown parameter: %s"
-#~ msgstr "Erro: parâmetro desconhecido: %s"
-
-#~ msgid "yes (%u)"
-#~ msgstr "sim (%u)"
-
-#~ msgid "'%s' is not a valid powersave value"
-#~ msgstr "\"%s\" não é um valor de economia de energia válido"
-
 #~ msgid "Failed to read configuration: (%d) %s\n"
 #~ msgstr "Falha ao ler configuração: (%d) %s\n"
 
@@ -10137,6 +10150,15 @@ msgstr "Sistema"
 
 #~ msgid "The nameservers listed below may not be recognized."
 #~ msgstr "Os servidores de nomes listados abaixo podem não ser reconhecidos."
+
+#~ msgid "Error: unknown parameter: %s"
+#~ msgstr "Erro: parâmetro desconhecido: %s"
+
+#~ msgid "yes (%u)"
+#~ msgstr "sim (%u)"
+
+#~ msgid "'%s' is not a valid powersave value"
+#~ msgstr "\"%s\" não é um valor de economia de energia válido"
 
 #~ msgid "Bond master: "
 #~ msgstr "Vínculo mestre: "
