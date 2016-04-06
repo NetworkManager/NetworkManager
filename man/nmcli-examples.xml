@@ -55,7 +55,7 @@ Copyright 2013 - 2014 Red Hat, Inc.
     <title>Examples</title>
 
     <example><title>Listing available Wi-Fi APs</title>
-<screen><userinput>$ nmcli device wifi list</userinput>
+<screen><prompt>$ </prompt><userinput>nmcli device wifi list</userinput>
 *  SSID               MODE    CHAN  RATE       SIGNAL  BARS  SECURITY
    netdatacomm_local  Infra   6     54 Mbit/s  37      ▂▄__  WEP
 *  F1                 Infra   11    54 Mbit/s  98      ▂▄▆█  WPA1
@@ -76,7 +76,7 @@ Copyright 2013 - 2014 Red Hat, Inc.
     </example>
 
     <example><title>Showing general information and properties for a Wi-Fi interface</title>
-<screen><userinput>$ nmcli -p -f general,wifi-properties device show wlan0</userinput>
+<screen><prompt>$ </prompt><userinput>nmcli -p -f general,wifi-properties device show wlan0</userinput>
 ===========================================================================
                         Device details (wlan0)
 ===========================================================================
@@ -116,7 +116,7 @@ WIFI-PROPERTIES.ADHOC:    yes
     </example>
 
     <example><title>Listing NetworkManager polkit permissions</title>
-<screen><userinput>$ nmcli general permissions</userinput>
+<screen><prompt>$ </prompt><userinput>nmcli general permissions</userinput>
 PERMISSION                                                VALUE
 org.freedesktop.NetworkManager.enable-disable-network     yes
 org.freedesktop.NetworkManager.enable-disable-wifi        yes
@@ -143,7 +143,7 @@ org.freedesktop.NetworkManager.settings.modify.hostname   auth</screen>
     </example>
 
     <example><title>Listing NetworkManager log level and domains</title>
-<screen><userinput>$ nmcli general logging</userinput>
+<screen><prompt>$ </prompt><userinput>nmcli general logging</userinput>
 LEVEL  DOMAINS
 INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,A
 UTOIP4,DNS,VPN,SHARING,SUPPLICANT,AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,
@@ -153,10 +153,9 @@ B,DISPATCH</screen>
         This command shows current NetworkManager logging status.
       </para>
     </example>
-
     <example><title>Changing NetworkManager logging</title>
-<screen><userinput>$ nmcli g log level DEBUG domains CORE,ETHER,IP</userinput>
-<userinput>$ nmcli g log level INFO domains DEFAULT</userinput></screen>
+<screen><prompt>$ </prompt><userinput>nmcli g log level DEBUG domains CORE,ETHER,IP</userinput>
+<prompt>$ </prompt><userinput>nmcli g log level INFO domains DEFAULT</userinput></screen>
       <para>
         The first command makes NetworkManager log in DEBUG level, and only for CORE, ETHER and
         IP domains. The second command restores the default logging state. Please refer to the
@@ -166,9 +165,9 @@ B,DISPATCH</screen>
     </example>
 
     <example><title>Adding a bonding master and two slave connection profiles</title>
-<screen><userinput>$ nmcli con add type bond ifname mybond0 mode active-backup</userinput>
-<userinput>$ nmcli con add type ethernet ifname eth1 master mybond0</userinput>
-<userinput>$ nmcli con add type ethernet ifname eth2 master mybond0</userinput></screen>
+<screen><prompt>$ </prompt><userinput>nmcli con add type bond ifname mybond0 mode active-backup</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ethernet ifname eth1 master mybond0</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ethernet ifname eth2 master mybond0</userinput></screen>
       <para>
         This example demonstrates adding a bond master connection and two slaves. The
         first command adds a master bond connection, naming the bonding interface
@@ -180,9 +179,9 @@ B,DISPATCH</screen>
     </example>
 
     <example><title>Adding a team master and two slave connection profiles</title>
-<screen><userinput>$ nmcli con add type team con-name Team1 ifname Team1 config team1-master-json.conf</userinput>
-<userinput>$ nmcli con add type ethernet con-name Team1-slave1 ifname em1 master Team1</userinput>
-<userinput>$ nmcli con add type ethernet con-name Team1-slave2 ifname em2 master Team1</userinput></screen>
+<screen><prompt>$ </prompt><userinput>nmcli con add type team con-name Team1 ifname Team1 config team1-master-json.conf</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ethernet con-name Team1-slave1 ifname em1 master Team1</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ethernet con-name Team1-slave2 ifname em2 master Team1</userinput></screen>
       <para>
         This example demonstrates adding a team master connection profile and two slaves. It is
         very similar to the bonding example. The first command adds a master team profile, naming
@@ -195,8 +194,8 @@ B,DISPATCH</screen>
         <emphasis>em2</emphasis>. The slaves don't specify <emphasis>config</emphasis> and thus
         <emphasis>teamd</emphasis> will use its default configuration. You will activate the whole setup
         by activating both slaves:
-<screen>  <userinput>$ nmcli con up Team1-slave1</userinput>
-  <userinput>$ nmcli con up Team1-slave2</userinput></screen>
+<screen>  <prompt>$ </prompt><userinput>nmcli con up Team1-slave1</userinput>
+  <prompt>$ </prompt><userinput>nmcli con up Team1-slave2</userinput></screen>
         By default, the created profiles are marked for auto-activation. But if another
         connection has been activated on the device, the new profile won't activate
         automatically and you need to activate it manually.
@@ -204,10 +203,10 @@ B,DISPATCH</screen>
     </example>
 
     <example><title>Adding a bridge and two slave profiles</title>
-<screen><userinput>$ nmcli con add type bridge con-name TowerBridge ifname TowerBridge</userinput>
-<userinput>$ nmcli con add type ethernet con-name br-slave-1 ifname ens3 master TowerBridge</userinput>
-<userinput>$ nmcli con add type ethernet con-name br-slave-2 ifname ens4 master TowerBridge</userinput>
-<userinput>$ nmcli con modify TowerBridge bridge.stp no</userinput></screen>
+<screen><prompt>$ </prompt><userinput>nmcli con add type bridge con-name TowerBridge ifname TowerBridge</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ethernet con-name br-slave-1 ifname ens3 master TowerBridge</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ethernet con-name br-slave-2 ifname ens4 master TowerBridge</userinput>
+<prompt>$ </prompt><userinput>nmcli con modify TowerBridge bridge.stp no</userinput></screen>
       <para>
         This example demonstrates adding a bridge master connection and two slaves. The
         first command adds a master bridge connection, naming the bridge interface and
@@ -221,12 +220,12 @@ B,DISPATCH</screen>
     </example>
 
     <example><title>Adding an ethernet connection profile with manual IP configuration</title>
-<screen><userinput>$ nmcli con add con-name my-con-em1 ifname em1 type ethernet \
+<screen><prompt>$ </prompt><userinput>nmcli con add con-name my-con-em1 ifname em1 type ethernet \
   ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe</userinput>
-<userinput>$ nmcli con mod my-con-em1 ipv4.dns "8.8.8.8 8.8.4.4"</userinput>
-<userinput>$ nmcli con mod my-con-em1 +ipv4.dns 1.2.3.4</userinput>
-<userinput>$ nmcli con mod my-con-em1 ipv6.dns "2001:4860:4860::8888 2001:4860:4860::8844"</userinput>
-<userinput>$ nmcli -p con show my-con-em1</userinput></screen>
+<prompt>$ </prompt><userinput>nmcli con mod my-con-em1 ipv4.dns "8.8.8.8 8.8.4.4"</userinput>
+<prompt>$ </prompt><userinput>nmcli con mod my-con-em1 +ipv4.dns 1.2.3.4</userinput>
+<prompt>$ </prompt><userinput>nmcli con mod my-con-em1 ipv6.dns "2001:4860:4860::8888 2001:4860:4860::8844"</userinput>
+<prompt>$ </prompt><userinput>nmcli -p con show my-con-em1</userinput></screen>
       <para>
         The first command adds an Ethernet connection profile named <emphasis>my-con-em1</emphasis>
         that is bound to interface name <emphasis>em1</emphasis>. The profile is configured
@@ -242,7 +241,7 @@ B,DISPATCH</screen>
     </example>
 
     <example><title>Escaping colon characters in tabular mode</title>
-<screen><userinput>$ nmcli -t -f general -e yes -m tab dev show eth0</userinput>
+<screen><prompt>$ </prompt><userinput>nmcli -t -f general -e yes -m tab dev show eth0</userinput>
 GENERAL:eth0:ethernet:Intel Corporation:82567LM Gigabit Network Connection:
 e1000e:2.1.4-k:1.8-3:00\:22\:68\:15\:29\:21:1500:100 (connected):0 (No reas
 on given):/sys/devices/pci0000\:00/0000\:00\:19.0/net/eth0:eth0:yes:yes:no:
@@ -292,7 +291,7 @@ fi
     <para><emphasis role="bold">Example sessions of interactive connection editor</emphasis></para>
 
     <example><title>Adding an ethernet connection profile in interactive editor (a)</title>
-<screen><userinput>$ nmcli connection edit type ethernet</userinput>
+<screen><prompt>$ </prompt><userinput>nmcli connection edit type ethernet</userinput>
 
 ===| nmcli interactive connection editor |===
 
@@ -303,7 +302,7 @@ Type 'describe [&lt;setting&gt;.&lt;prop&gt;]' for detailed property description
 
 You may edit the following settings: connection, 802-3-ethernet (ethernet),
 802-1x, ipv4, ipv6, dcb
-nmcli> <userinput>print</userinput>
+<prompt>nmcli&gt; </prompt><userinput>print</userinput>
 ===========================================================================
                           Connection details
 ===========================================================================
@@ -363,13 +362,13 @@ ipv6.may-fail:                      yes
 ipv6.ip6-privacy:                   -1 (unknown)
 ipv6.dhcp-hostname:                 --
 ---------------------------------------------------------------------------
-nmcli> <userinput>goto ethernet</userinput>
+<prompt>nmcli&gt; </prompt><userinput>goto ethernet</userinput>
 You may edit the following properties: port, speed, duplex, auto-negotiate,
  mac-address, cloned-mac-address, mac-address-blacklist, mtu, s390-subchann
 els, s390-nettype, s390-options
 nmcli 802-3-ethernet> set mtu 1492
 nmcli 802-3-ethernet> b
-nmcli> <userinput>goto ipv4.addresses</userinput>
+<prompt>nmcli&gt; </prompt><userinput>goto ipv4.addresses</userinput>
 nmcli ipv4.addresses> desc
 
 === [addresses] ===
@@ -390,10 +389,10 @@ nmcli ipv4.addresses> print
 addresses: 192.168.1.100/24
 nmcli ipv4.addresses> back
 nmcli ipv4> b
-nmcli> <userinput>set ipv4.gateway 192.168.1.1</userinput>
-nmcli> <userinput>verify</userinput>
+<prompt>nmcli&gt; </prompt><userinput>set ipv4.gateway 192.168.1.1</userinput>
+<prompt>nmcli&gt; </prompt><userinput>verify</userinput>
 Verify connection: OK
-nmcli> <userinput>print</userinput>
+<prompt>nmcli&gt; </prompt><userinput>print</userinput>
 ===========================================================================
                           Connection details
 ===========================================================================
@@ -452,8 +451,8 @@ ipv6.may-fail:                      yes
 ipv6.ip6-privacy:                   -1 (unknown)
 ipv6.dhcp-hostname:                 --
 ---------------------------------------------------------------------------
-nmcli> <userinput>set ipv4.dns 8.8.8.8 8.8.4.4</userinput>
-nmcli> <userinput>print</userinput>
+<prompt>nmcli&gt; </prompt><userinput>set ipv4.dns 8.8.8.8 8.8.4.4</userinput>
+<prompt>nmcli&gt; </prompt><userinput>print</userinput>
 ===========================================================================
                           Connection details
 ===========================================================================
@@ -513,12 +512,12 @@ ipv6.may-fail:                      yes
 ipv6.ip6-privacy:                   -1 (unknown)
 ipv6.dhcp-hostname:                 --
 ---------------------------------------------------------------------------
-nmcli> <userinput>verify</userinput>
+<prompt>nmcli&gt; </prompt><userinput>verify</userinput>
 Verify connection: OK
-nmcli> <userinput>save</userinput>
+<prompt>nmcli&gt; </prompt><userinput>save</userinput>
 Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully
  saved.
-nmcli> <userinput>quit</userinput></screen>
+<prompt>nmcli&gt; </prompt><userinput>quit</userinput></screen>
       <para>
         Example session in the nmcli interactive connection editor.
         The scenario creates an Ethernet connection profile with static addressing (IPs and DNS).
