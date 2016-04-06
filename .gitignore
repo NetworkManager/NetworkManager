@@ -215,7 +215,6 @@ test-*.trs
 /m4/xsize.m4
 
 /man/*.[1785]
-/man/NetworkManager.conf.xml
 /man/nm-settings.xml
 /man/nm-settings-ifcfg-rh.xml
 /man/nm-settings-keyfile.xml
