@@ -10,7 +10,7 @@
     <releaseinfo>
       for libnm &version;
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="https://developer.gnome.org/libnm/1.0/">https://developer.gnome.org/libnm/1.0/</ulink>.
+      <ulink url="https://developer.gnome.org/libnm/stable/">https://developer.gnome.org/libnm/stable/</ulink>.
     </releaseinfo>
 
     <copyright>
