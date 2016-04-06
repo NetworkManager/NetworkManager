@@ -952,26 +952,44 @@ _vt_cmd_obj_is_visible_link (const NMPObject *obj)
 
 /******************************************************************/
 
+#define _STRUCT_SIZE(struct_type, field) \
+	(G_STRUCT_OFFSET (struct_type, field) + sizeof (((struct_type *) NULL)->field))
+
+_NM_UTILS_LOOKUP_DEFINE (static, _nmp_cache_id_size_by_type, NMPCacheIdType, guint,
+	NM_UTILS_LOOKUP_DEFAULT (({ nm_assert_not_reached (); sizeof (NMPCacheId); })),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE,                            _STRUCT_SIZE (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,               _STRUCT_SIZE (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,              _STRUCT_SIZE (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,            _STRUCT_SIZE (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,           _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,   _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT, _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,                         _STRUCT_SIZE (NMPCacheId, link_by_ifname)),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_CACHE_ID_TYPE_NONE),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (__NMP_CACHE_ID_TYPE_MAX),
+);
+
 gboolean
 nmp_cache_id_equal (const NMPCacheId *a, const NMPCacheId *b)
 {
-	/* just memcmp() the entire id. This is potentially dangerous, because
-	 * the struct is not __attribute__((packed)) and not all types have the
-	 * same size. It is important, to memset() the entire struct to 0,
-	 * not only the relevant fields.
-	 *
-	 * You anyway should use the nmp_cache_id_init_*() functions on a stack-allocated
-	 * struct. */
-	return memcmp (a, b, sizeof (NMPCacheId)) == 0;
+	if (a->_id_type != b->_id_type)
+		return FALSE;
+	return memcmp (a, b, _nmp_cache_id_size_by_type (a->_id_type)) == 0;
 }
 
 guint
 nmp_cache_id_hash (const NMPCacheId *id)
 {
 	guint hash = 5381;
-	guint i;
+	guint i, n;
 
-	for (i = 0; i < sizeof (NMPCacheId); i++)
+	/* for hashing we only iterate over the actually set bytes and skip the
+	 * zero padding at the end (which depends on the type of the id).
+	 *
+	 * For the equal implementation, we don't care about that and compare the
+	 * entire NMPCacheId sized struct. */
+	n = _nmp_cache_id_size_by_type (id->_id_type);
+	for (i = 0; i < n; i++)
 		hash = ((hash << 5) + hash) + ((char *) id)[i]; /* hash * 33 + c */
 	return hash;
 }
@@ -980,27 +998,42 @@ NMPCacheId *
 nmp_cache_id_clone (const NMPCacheId *id)
 {
 	NMPCacheId *id2;
+	guint n;
 
-	id2 = g_slice_new (NMPCacheId);
-	memcpy (id2, id, sizeof (NMPCacheId));
+	n = _nmp_cache_id_size_by_type (id->_id_type);
+	id2 = g_slice_alloc (n);
+	memcpy (id2, id, n);
 	return id2;
 }
 
 void
 nmp_cache_id_destroy (NMPCacheId *id)
 {
-	g_slice_free (NMPCacheId, id);
+	guint n;
+
+	n = _nmp_cache_id_size_by_type (id->_id_type);
+	g_slice_free1 (n, id);
 }
 
 /******************************************************************/
 
 NMPCacheId _nmp_cache_id_static;
 
-static NMPCacheId *
+static void
 _nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 {
 	memset (id, 0, sizeof (NMPCacheId));
 	id->_id_type = id_type;
+}
+
+NMPCacheId *
+nmp_cache_id_copy (NMPCacheId *id, const NMPCacheId *src)
+{
+	guint n;
+
+	memset (id, 0, sizeof (NMPCacheId));
+	n = _nmp_cache_id_size_by_type (src->_id_type);
+	memcpy (id, src, n);
 	return id;
 }
 
@@ -1028,7 +1061,7 @@ nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id,
 
 	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX);
 	id->object_type_by_ifindex.obj_type = obj_type;
-	id->object_type_by_ifindex.ifindex = ifindex;
+	memcpy (&id->object_type_by_ifindex._misaligned_ifindex, &ifindex, sizeof (int));
 	return id;
 }
 
@@ -1055,7 +1088,7 @@ nmp_cache_id_init_routes_visible (NMPCacheId *id,
 		g_return_val_if_reached (NULL);
 
 	id->object_type_by_ifindex.obj_type = obj_type;
-	id->object_type_by_ifindex.ifindex = ifindex;
+	memcpy (&id->object_type_by_ifindex._misaligned_ifindex, &ifindex, sizeof (int));
 	return id;
 }
 
