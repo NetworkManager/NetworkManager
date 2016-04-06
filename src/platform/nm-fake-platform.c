@@ -1129,7 +1129,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags fl
 }
 
 static gboolean
-ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
+ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -1153,7 +1153,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 }
 
 static gboolean
-ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
+ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -1180,13 +1180,15 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 
 static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
-               in_addr_t network, int plen, in_addr_t gateway,
+               in_addr_t network, guint8 plen, in_addr_t gateway,
                in_addr_t pref_src, guint32 metric, guint32 mss)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Route route;
 	guint i;
 	guint8 scope;
+
+	g_assert (plen <= 32);
 
 	scope = gateway == 0 ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE;
 
@@ -1247,7 +1249,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 
 static gboolean
 ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
-               struct in6_addr network, int plen, struct in6_addr gateway,
+               struct in6_addr network, guint8 plen, struct in6_addr gateway,
                guint32 metric, guint32 mss)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -1313,7 +1315,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 }
 
 static const NMPlatformIP4Route *
-ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
+ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -1332,7 +1334,7 @@ ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, g
 }
 
 static const NMPlatformIP6Route *
-ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
+ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;

@@ -470,15 +470,18 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 
 		memset (&route, 0, sizeof (route));
 		nm_ip_route_get_dest_binary (s_route, &route.network);
+
 		route.plen = nm_ip_route_get_prefix (s_route);
+		nm_assert (route.plen <= 128);
+		if (route.plen == 0)
+			continue;
+
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
 		if (nm_ip_route_get_metric (s_route) == -1)
 			route.metric = default_route_metric;
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.source = NM_IP_CONFIG_SOURCE_USER;
-
-		g_assert (route.plen > 0);
 
 		nm_ip6_config_add_route (config, &route);
 	}
@@ -690,7 +693,7 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 }
 
 gboolean
-nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *network, int plen)
+nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *network, guint8 plen)
 {
 	int num = nm_ip6_config_get_num_addresses (config);
 	int i;
@@ -1401,7 +1404,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 	int i;
 
 	g_return_if_fail (new != NULL);
-	g_return_if_fail (new->plen > 0);
+	g_return_if_fail (new->plen > 0 && new->plen <= 128);
 	g_assert (priv->ifindex);
 
 	for (i = 0; i < priv->routes->len; i++ ) {

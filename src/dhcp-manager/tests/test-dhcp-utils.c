@@ -208,6 +208,8 @@ ip4_test_route (NMIP4Config *ip4_config,
 	const NMPlatformIP4Route *route;
 	guint32 tmp;
 
+	g_assert (expected_prefix <= 32);
+
 	route = nm_ip4_config_get_route (ip4_config, route_num);
 	g_assert (inet_pton (AF_INET, expected_dest, &tmp) > 0);
 	g_assert (route->network == tmp);
