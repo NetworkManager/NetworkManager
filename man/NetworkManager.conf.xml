@@ -1,6 +1,10 @@
 <?xml version='1.0'?> <!--*-nxml-*-->
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 
 <!--
 Copyright 2010 - 2014 Red Hat, Inc.
@@ -17,7 +21,7 @@ Copyright 2010 - 2014 Red Hat, Inc.
     <manvolnum>5</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Configuration</refmiscinfo>
-    <refmiscinfo class="version">1.2</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -151,7 +155,7 @@ plugins-=remove-me
         <listitem><para>Whether the system uses PolicyKit for authorization.
         If <literal>false</literal>, all requests will be allowed. If
         <literal>true</literal>, non-root requests are authorized using PolicyKit.
-        The default value is <literal>@NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT@</literal>.
+        The default value is <literal>&NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT;</literal>.
         </para></listitem>
       </varlistentry>
       <varlistentry>
@@ -349,7 +353,7 @@ no-auto-default=*
           <term><varname>path</varname></term>
           <listitem>
             <para>The location where keyfiles are read and stored.
-            This defaults to "<literal>@NM_CONFIG_KEYFILE_PATH_DEFAULT@</literal>".
+            This defaults to "<filename>&sysconfdir;/NetworkManager/conf.d</filename>".
             </para>
           </listitem>
         </varlistentry>
@@ -496,7 +500,7 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
           "<literal>debug</literal>" uses syslog and logs to standard error.
           If NetworkManager is started in debug mode (<literal>--debug</literal>)
           this option is ignored and "<literal>debug</literal>" is always used.
-          Otherwise, the default is "<literal>@NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT@</literal>".
+          Otherwise, the default is "<literal>&NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT;</literal>".
           </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -505,7 +509,7 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
           auditd, the audit daemon.  If <literal>false</literal>, audit
           records will be sent only to the NetworkManager logging
           system. If set to <literal>true</literal>, they will be also
-          sent to auditd.  The default value is <literal>@NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT@</literal>.
+          sent to auditd.  The default value is <literal>&NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT;</literal>.
           </para></listitem>
         </varlistentry>
       </variablelist>
