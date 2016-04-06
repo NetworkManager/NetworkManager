@@ -182,6 +182,8 @@ void nmtstp_link_del (gboolean external_command,
                       int ifindex,
                       const char *name);
 
-void init_tests (int *argc, char ***argv);
-void setup_tests (void);
+/*****************************************************************************/
+
+void _nmtstp_init_tests (int *argc, char ***argv);
+void _nmtstp_setup_tests (void);
 

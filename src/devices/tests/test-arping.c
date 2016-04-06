@@ -126,13 +126,13 @@ fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 }
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 	g_test_add ("/arping/1", test_fixture, NULL, fixture_setup, test_arping_1, fixture_teardown);
 	g_test_add ("/arping/2", test_fixture, NULL, fixture_setup, test_arping_2, fixture_teardown);

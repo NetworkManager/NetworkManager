@@ -1535,7 +1535,7 @@ main (int argc, char **argv)
 	int result;
 	const char *program = *argv;
 
-	init_tests (&argc, &argv);
+	_nmtstp_init_tests (&argc, &argv);
 
 	if (   nmtstp_is_root_test ()
 	    && (geteuid () != 0 || getegid () != 0)) {
@@ -1593,7 +1593,7 @@ main (int argc, char **argv)
 
 	SETUP ();
 
-	setup_tests ();
+	_nmtstp_setup_tests ();
 
 	result = g_test_run ();
 

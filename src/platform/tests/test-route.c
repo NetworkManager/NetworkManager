@@ -329,13 +329,13 @@ test_ip4_zero_gateway (void)
 /*****************************************************************************/
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 
