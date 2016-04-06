@@ -95,24 +95,6 @@ nm_ip6_config_get_ifindex (const NMIP6Config *config)
 
 /******************************************************************/
 
-static gboolean
-same_prefix (const struct in6_addr *address1, const struct in6_addr *address2, int plen)
-{
-	const guint8 *bytes1 = (const guint8 *) address1;
-	const guint8 *bytes2 = (const guint8 *) address2;
-	int nbytes = plen / 8;
-	int nbits = plen % 8;
-	int masked1 = bytes1[nbytes] >> (8 - nbits);
-	int masked2 = bytes2[nbytes] >> (8 - nbits);
-
-	if (nbytes && memcmp (bytes1, bytes2, nbytes))
-		return FALSE;
-
-	return masked1 == masked2;
-}
-
-/******************************************************************/
-
 /**
  * nm_ip6_config_capture_resolv_conf():
  * @nameservers: array of struct in6_addr
@@ -713,11 +695,15 @@ nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6
 	int num = nm_ip6_config_get_num_addresses (config);
 	int i;
 
+	nm_assert (network);
+	nm_assert (plen <= 128);
+
 	for (i = 0; i < num; i++) {
 		const NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
 
-		if (item->plen <= plen && same_prefix (&item->address, network, item->plen) &&
-		    !(item->n_ifa_flags & IFA_F_NOPREFIXROUTE))
+		if (   item->plen <= plen
+		    && !NM_FLAGS_HAS (item->n_ifa_flags, IFA_F_NOPREFIXROUTE)
+		    && nm_utils_ip6_address_same_prefix (&item->address, network, item->plen))
 			return TRUE;
 	}
 
@@ -1473,7 +1459,6 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	guint i;
-	struct in6_addr network2, host2;
 	NMPlatformIP6Route *best_route = NULL;
 
 	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
@@ -1487,10 +1472,7 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 		if (best_route && best_route->plen > item->plen)
 			continue;
 
-		nm_utils_ip6_address_clear_host_address (&host2, host, item->plen);
-		nm_utils_ip6_address_clear_host_address (&network2, &item->network, item->plen);
-
-		if (!IN6_ARE_ADDR_EQUAL (&network2, &host2))
+		if (!nm_utils_ip6_address_same_prefix (host, &item->network, item->plen))
 			continue;
 
 		if (best_route &&
