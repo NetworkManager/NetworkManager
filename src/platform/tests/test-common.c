@@ -329,7 +329,7 @@ nmtstp_run_command (const char *format, ...)
 
 typedef struct {
 	GMainLoop *loop;
-	gboolean timeout;
+	guint signal_counts;
 	guint id;
 } WaitForSignalData;
 
@@ -343,6 +343,8 @@ _wait_for_signal_cb (NMPlatform *platform,
 {
 	WaitForSignalData *data = user_data;
 
+	data->signal_counts++;
+	nm_clear_g_source (&data->id);
 	g_main_loop_quit (data->loop);
 }
 
@@ -351,13 +353,13 @@ _wait_for_signal_timeout (gpointer user_data)
 {
 	WaitForSignalData *data = user_data;
 
-	data->timeout = TRUE;
+	g_assert (data->id);
 	data->id = 0;
 	g_main_loop_quit (data->loop);
 	return G_SOURCE_REMOVE;
 }
 
-gboolean
+guint
 nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms)
 {
 	WaitForSignalData data = { 0 };
@@ -378,33 +380,34 @@ nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms)
 
 	g_main_loop_run (data.loop);
 
+	g_assert (!data.id);
 	g_assert (nm_clear_g_signal_handler (platform, &id_link));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip4_address));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_address));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip4_route));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_route));
 
-	if (nm_clear_g_source (&data.id))
-		g_assert (timeout_ms != 0 && !data.timeout);
-
 	g_clear_pointer (&data.loop, g_main_loop_unref);
 
-	return !data.timeout;
+	/* return the number of signals, or 0 if timeout was reached .*/
+	return data.signal_counts;
 }
 
-gboolean
+guint
 nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 {
 	gint64 now;
+	guint signal_counts;
 
 	while (TRUE) {
 		now = nm_utils_get_monotonic_timestamp_ms ();
 
 		if (until_ms < now)
-			return FALSE;
+			return 0;
 
-		if (nmtstp_wait_for_signal (platform, MAX (1, until_ms - now)))
-			return TRUE;
+		signal_counts = nmtstp_wait_for_signal (platform, MAX (1, until_ms - now));
+		if (signal_counts)
+			return signal_counts;
 	}
 }
 
@@ -718,7 +721,7 @@ _ip_address_add (NMPlatform *platform,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (platform, end_time));
+		nmtstp_assert_wait_for_signal_until (platform, end_time);
 	} while (TRUE);
 }
 
@@ -861,7 +864,7 @@ _ip_address_del (NMPlatform *platform,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (platform, end_time));
+		nmtstp_assert_wait_for_signal_until (platform, end_time);
 	} while (TRUE);
 }
 
@@ -1322,7 +1325,7 @@ nmtstp_link_del (NMPlatform *platform,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (platform, end_time));
+		nmtstp_assert_wait_for_signal_until (platform, end_time);
 	} while (TRUE);
 }
 
@@ -1373,7 +1376,7 @@ nmtstp_link_set_updown (NMPlatform *platform,
 		/* for internal command, we expect not to reach this line.*/
 		g_assert (external_command);
 
-		g_assert (nmtstp_wait_for_signal_until (platform, end_time));
+		nmtstp_assert_wait_for_signal_until (platform, end_time);
 	} while (TRUE);
 }
 
