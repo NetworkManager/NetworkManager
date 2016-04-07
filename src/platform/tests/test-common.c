@@ -185,7 +185,7 @@ link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlat
 /*****************************************************************************/
 
 gboolean
-ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric)
+nmtstp_ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric)
 {
 	gs_free char *arg_network = NULL;
 	const char *argv[] = {
@@ -263,7 +263,7 @@ ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric)
 }
 
 void
-_assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric)
+_nmtstp_assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric)
 {
 	int ifindex;
 	gboolean exists_checked;
@@ -271,7 +271,7 @@ _assert_ip4_route_exists (const char *file, guint line, const char *func, gboole
 	/* Check for existance of the route by spawning iproute2. Do this because platform
 	 * code might be entirely borked, but we expect ip-route to give a correct result.
 	 * If the ip command cannot be found, we accept this as success. */
-	exists_checked = ip4_route_exists (ifname, network, plen, metric);
+	exists_checked = nmtstp_ip4_route_exists (ifname, network, plen, metric);
 	if (exists_checked != -1 && !exists_checked != !exists) {
 		g_error ("[%s:%u] %s(): We expect the ip4 route %s/%d metric %u %s, but it %s",
 		         file, line, func,
