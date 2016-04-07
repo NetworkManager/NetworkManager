@@ -50,56 +50,56 @@ EXTRA_DIST = test-common.h
 monitor_SOURCES = monitor.c $(PLATFORM_SOURCES)
 monitor_LDADD = $(PLATFORM_LDADD)
 
-test_link_fake_SOURCES = test-link.c $(TEST_SOURCES)
+test_link_fake_SOURCES = $(TEST_SOURCES) test-link.c
 test_link_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_link_fake_LDADD = $(PLATFORM_LDADD)
 
-test_link_linux_SOURCES = test-link.c $(TEST_SOURCES)
+test_link_linux_SOURCES = $(TEST_SOURCES) test-link.c
 test_link_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 test_link_linux_LDADD = $(PLATFORM_LDADD)
 
-test_address_fake_SOURCES = test-address.c $(TEST_SOURCES)
+test_address_fake_SOURCES = $(TEST_SOURCES) test-address.c
 test_address_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_address_fake_LDADD = $(PLATFORM_LDADD)
 
-test_address_linux_SOURCES = test-address.c $(TEST_SOURCES)
+test_address_linux_SOURCES = $(TEST_SOURCES) test-address.c
 test_address_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 test_address_linux_LDADD = $(PLATFORM_LDADD)
 
-test_route_fake_SOURCES = test-route.c $(TEST_SOURCES)
+test_route_fake_SOURCES = $(TEST_SOURCES) test-route.c
 test_route_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_route_fake_LDADD = $(PLATFORM_LDADD)
 
-test_route_linux_SOURCES = test-route.c $(TEST_SOURCES)
+test_route_linux_SOURCES = $(TEST_SOURCES) test-route.c
 test_route_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 test_route_linux_LDADD = $(PLATFORM_LDADD)
 
-test_cleanup_fake_SOURCES = test-cleanup.c $(TEST_SOURCES)
+test_cleanup_fake_SOURCES = $(TEST_SOURCES) test-cleanup.c
 test_cleanup_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_cleanup_fake_LDADD = $(PLATFORM_LDADD)
 
-test_cleanup_linux_SOURCES = test-cleanup.c $(TEST_SOURCES)
+test_cleanup_linux_SOURCES = $(TEST_SOURCES) test-cleanup.c
 test_cleanup_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
