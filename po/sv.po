@@ -1,22 +1,25 @@
 # Swedish messages for NetworkManager.
-# Copyright © 2004-2014 Free Software Foundation, Inc.
+# Copyright © 2004-2016 Free Software Foundation, Inc.
 # Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 # Daniel Nylander <po@danielnylander.se>, 2006, 2008, 2009, 2010, 2012.
 # Josef Andersson <josef.andersson@fripost.org>, 2014, 2015.
+# Anders Jonsson <anders.jonsson@norsjovallen.se>, 2015, 2016.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-05 15:00+0200\n"
-"PO-Revision-Date: 2015-07-21 11:55+0100\n"
-"Last-Translator: Josef Andersson <josef.andersson@fripost.org>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
+"POT-Creation-Date: 2016-04-07 13:40+0000\n"
+"PO-Revision-Date: 2016-04-05 22:40+0200\n"
+"Last-Translator: Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.7.5\n"
+"X-Generator: Poedit 1.8.7.1\n"
 "X-Project-Style: gnome\n"
 
 #: ../clients/cli/agent.c:39
@@ -45,10 +48,11 @@ msgid ""
 msgstr ""
 "Användning: nmcli agent secret { help }\n"
 "\n"
-"Kör nmcli som en hemlig agent för Nätverkshanteraren. När Nätverkshanteraren "
-"kräver ett lösenord frågar den efter dess registrerade agenter. Detta "
-"kommando håller nmcli körandes,\n"
-"och om ett lösenord begärs frågas användaren om det.\n"
+"Kör nmcli som en hemlig agent för Nätverkshanteraren. När "
+"Nätverkshanteraren\n"
+"begär ett lösenord kommer den att fråga registrerade agenter om detta.\n"
+"Detta kommando håller nmcli körandes, och om ett lösenord begärs frågas\n"
+"användaren om det.\n"
 "\n"
 
 #: ../clients/cli/agent.c:57
@@ -64,7 +68,7 @@ msgid ""
 msgstr ""
 "Användning: nmcli agent polkit { help }\n"
 "\n"
-"Registrerar nmcli some en polkit-åtgärd för dess användarsession.\n"
+"Registrerar nmcli som en polkit-åtgärd för användarsessionen.\n"
 "När en polkit-demon begär behörighet frågar nmcli användaren och ger\n"
 "tillbaka svaret till polkit.\n"
 "\n"
@@ -597,7 +601,7 @@ msgid ""
 "without '--ask' option.\n"
 msgstr ""
 "Varning: Lösenord för ”%s” inte angivet i ”passwd-file” och nmcli kan inte "
-"fråga utan alternativet ”--ask”.\n"
+"fråga utan flaggan ”--ask”.\n"
 
 #. define some prompts for connection editor
 #: ../clients/cli/connections.c:41
@@ -630,9 +634,8 @@ msgid "Connection (name, UUID, or path): "
 msgstr "Anslutning (namn, UUID eller sökväg): "
 
 #: ../clients/cli/connections.c:50
-#, fuzzy
 msgid "VPN connection (name, UUID, or path): "
-msgstr "Anslutning (namn, UUID eller sökväg): "
+msgstr "VPN-anslutning (namn, UUID eller sökväg): "
 
 #: ../clients/cli/connections.c:51
 msgid "Connection(s) (name, UUID, or path): "
@@ -644,11 +647,11 @@ msgstr "Anslutning(ar) (namn, UUID eller sökväg): "
 
 #: ../clients/cli/connections.c:53
 msgid "Tunnel mode: "
-msgstr ""
+msgstr "Tunnelläge: "
 
 #: ../clients/cli/connections.c:54
 msgid "MACVLAN mode: "
-msgstr ""
+msgstr "MACVLAN-läge: "
 
 #. 0
 #: ../clients/cli/connections.c:73 ../clients/cli/connections.c:193
@@ -784,7 +787,7 @@ msgstr "VPN"
 #: ../clients/cli/connections.c:202 ../clients/cli/devices.c:46
 #: ../clients/cli/devices.c:78
 msgid "CON-PATH"
-msgstr "ANS-SÖKV"
+msgstr "ANSL-SÖKV"
 
 #. 10
 #: ../clients/cli/connections.c:203
@@ -845,7 +848,7 @@ msgid "DHCP6"
 msgstr "DHCP6"
 
 #: ../clients/cli/connections.c:272
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
 "\n"
@@ -886,35 +889,43 @@ msgid ""
 msgstr ""
 "Användning: nmcli connection { KOMMANDO | help }\n"
 "\n"
-"KOMMANDO := { show | up | down | add | modify | edit | delete | reload | "
-"load }\n"
+"KOMMANDO := { show | up | down | add | modify | edit | delete | monitor | "
+"reload | load }\n"
 "\n"
-"  show [--active] [--order <order spec>]\n"
-"  show [--active] [[--show-secrets] [id | uuid | path | apath] <ID>] ...\n"
+"  show [--active] [--order <ordningsspecifikation>]\n"
+"  show [--active] [id | uuid | path | apath] <ID> …\n"
 "\n"
-"  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file "
+"  up [[id | uuid | path] <ID>] [ifname <grnamn>] [ap <BSSID>] [passwd-file "
 "<fil med lösenord>]\n"
 "\n"
-"  down [id | uuid | path | apath] <ID> ...\n"
+"  down [id | uuid | path | apath] <ID> …\n"
 "\n"
-"  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS  [-- "
-"([+|-]<setting>.<property> <value>)+]\n"
+"  add VANLIGA_FLAGGOR TYPSPECIFIKA_FLAGGOR SLAVFLAGGOR IP-FLAGGOR [-- "
+"([+|-]<inställning>.<egenskap> <värde>)+]\n"
 "\n"
 "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<inställning>."
 "<egenskap> <värde>)+\n"
+"\n"
+"  clone [--temporary] [id | uuid | path ] <ID> <nytt namn>\n"
 "\n"
 "  edit [id | uuid | path] <ID>\n"
 "  edit [type <new_con_type>] [con-name <new_con_name>]\n"
 "\n"
 "  delete [id | uuid | path] <ID>\n"
 "\n"
+"  monitor [id | uuid | path] <ID> …\n"
+"\n"
 "  reload\n"
 "\n"
-"  load <filnamn> [ <filnamn>... ]\n"
+"  load <filnamn> [ <filnamn>… ]\n"
+"\n"
+"  import [--temporary] type <typ> file <fil att importera>\n"
+"\n"
+"  export [id | uuid | path] <ID> [<utdatafil>]\n"
 "\n"
 
 #: ../clients/cli/connections.c:294
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection show { ARGUMENTS | help }\n"
 "\n"
@@ -941,7 +952,7 @@ msgid ""
 msgstr ""
 "Användning: nmcli connection show { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := [--active]\n"
+"ARGUMENT := [--active] [--order <ordningsspecifikation>]\n"
 "\n"
 "Listar anslutningsprofiler i minnet och på disk, varav några också kan vara\n"
 "aktiva om enheten använder den anslutningsprofilen. Utan en parameter kommer "
@@ -950,14 +961,14 @@ msgstr ""
 "profilerna att visas. --order möjliggör anpassad anslutningssortering (se "
 "handboken).\n"
 "\n"
-"ARGUMENT := [--active] [--show-secrets] [id | uuid | sökväg | apath] <ID> …\n"
+"ARGUMENT := [--active] [id | uuid | path | apath] <ID> …\n"
 "\n"
 "Visar detaljer för angivna anslutningar. Som standard visas både statiska "
 "och aktiva\n"
 "konfigurationer. Det är möjligt att filtrera utdata\n"
-"med globala flaggan '--fields'. Se handboken för mer information.\n"
-"När flaggan --active anges kommer endast den aktiva profilen att\n"
-"räknas. Alternativet --show-secrets kommer också att visa associerade "
+"med globala flaggan ”--fields”. Se handboken för mer information.\n"
+"När flaggan --active anges kommer endast de aktiva profilerna att\n"
+"räknas. Flaggan --show-secrets kommer dessutom att visa associerade "
 "hemligheter.\n"
 
 #: ../clients/cli/connections.c:315
@@ -1020,7 +1031,7 @@ msgid ""
 msgstr ""
 "Användning: nmcli connection down { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := [id | uuid | path | apath] <ID> ...\n"
+"ARGUMENT := [id | uuid | path | apath] <ID> …\n"
 "\n"
 "Inaktivera en anslutning från en enhet (utan att hindra enheten från\n"
 "vidare autoaktivering). Profilen att inaktivera identifieras genom dess "
@@ -1029,7 +1040,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:348
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1172,8 +1183,8 @@ msgid ""
 msgstr ""
 "Användning: nmcli connection add { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := VANLIGA_FLAGGOR TYPSPECIFIKA_FLAGGOR SLAV_FLAGGOR IP-FLAGGOR  "
-"[-- ([+|-]<inställning>.<egenskap> <värde>)+]\n"
+"ARGUMENT := VANLIGA_FLAGGOR TYPSPECIFIKA_FLAGGOR SLAVFLAGGOR IP-FLAGGOR [-- "
+"([+|-]<inställning>.<egenskap> <värde>)+]\n"
 "\n"
 "  VANLIGA_FLAGGOR:\n"
 "                  type <typ>\n"
@@ -1220,11 +1231,11 @@ msgstr ""
 "    bluetooth:    [addr <bluetoothadress>]\n"
 "                  [bt-type panu|dun-gsm|dun-cdma]\n"
 "\n"
-"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
+"    vlan:         dev <parent device (anslutnings-UUID, grnamn eller MAC)>\n"
 "                  id <VLAN-ID>\n"
 "                  [flags <VLAN-flaggor>]\n"
-"                  [ingress <ingress priority mapping>]\n"
-"                  [egress <egress priority mapping>]\n"
+"                  [ingress <inträdesprioritetshash>]\n"
+"                  [egress <utträdesprioritetshash>]\n"
 "                  [mtu <MTU>]\n"
 "\n"
 "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
@@ -1271,6 +1282,43 @@ msgstr ""
 "                  [channel <1-13>]\n"
 "                  [dhcp-anycast <MAC-adress>]\n"
 "\n"
+"    adsl:         username <användarnamn>\n"
+"                  protocol pppoa|pppoe|ipoatm\n"
+"                  [password <lösenord>]\n"
+"                  [encapsulation vcmux|llc]\n"
+"\n"
+"    tun:          mode tun|tap\n"
+"                  [owner <UID>]\n"
+"                  [group <GID>]\n"
+"                  [pi yes|no]\n"
+"                  [vnet-hdr yes|no]\n"
+"                  [multi-queue yes|no]\n"
+"\n"
+"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
+"                  remote <IP för fjärrändpunkt>\n"
+"                  [local <IP för lokal ändpunkt>]\n"
+"                  [dev <överordnad enhet (grnamn eller anslutnings-UUID)>]\n"
+"\n"
+"    macvlan:      dev <överordnad enhet (anslutnings-UUID, grnamn eller "
+"MAC)>\n"
+"                  mode vepa|bridge|private|passthru|source\n"
+"                  [tap yes|no]\n"
+"\n"
+"    vxlan:        id <VXLAN-ID>\n"
+"                  remote <IP för multicast-grupp eller fjärradress>\n"
+"                  [local <käll-IP>]\n"
+"                  [dev <överordnad enhet (grnamn eller anslutnings-UUID)>]\n"
+"                  [source-port-min <0-65535>]\n"
+"                  [source-port-max <0-65535>]\n"
+"                  [destination-port <0-65535>]\n"
+"\n"
+"  SLAVFLAGGOR:\n"
+"    bridge:       [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    team:         [config <file>|<rå JSON-data>]\n"
+"\n"
 "  IP-FLAGGOR:\n"
 "                  [ip4 <IPv4-adress>] [gw4 <IPv4-gateway>]\n"
 "                  [ip6 <IPv6-adress>] [gw6 <IPv6-gateway>]\n"
@@ -1308,20 +1356,20 @@ msgstr ""
 "Modifiera en eller flera av anslutningsprofilens egenskaper.\n"
 "Profilen identifieras genom dess namn, UUID eller D-BUS-sökväg. För "
 "egenskaper\n"
-"med flera värden kan du valfritt ange prefix '+' eller '-' till "
+"med flera värden kan du valfritt ange prefix ”+” eller ”-” till "
 "egenskapsnamnet.\n"
-"'+'-tecknet gör det möjligt att lägga till objekt istället för att skriva "
+"”+”-tecknet gör det möjligt att lägga till objekt istället för att skriva "
 "över hela värdet.\n"
-"'-'-tecknet gör det möjligt att ta bort markerade objekt istället för hela "
+"”-”-tecknet gör det möjligt att ta bort markerade objekt istället för hela "
 "värdet.\n"
 "\n"
 "Exempel:\n"
 "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
-"nmcli con mod em1-1 ipv4.method manual ipv4.addr ”192.168.1.2/24, "
-"10.10.1.5/8”\n"
+"nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, "
+"10.10.1.5/8\"\n"
 "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
 "nmcli con mod em1-1 -ipv4.dns 1\n"
-"nmcli con mod em1-1 -ipv6.addr ”abbe::cafe/56”\n"
+"nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
 "nmcli con mod bond0 +bond.options mii=500\n"
 "nmcli con mod bond0 -bond.options downdelay\n"
 "\n"
@@ -1339,6 +1387,15 @@ msgid ""
 "id (provided as <new name> argument).\n"
 "\n"
 msgstr ""
+"Användning: nmcli connection clone { ARGUMENT | help }\n"
+"\n"
+"ARGUMENT := [--temporary] [id | uuid | path] <ID> <nytt namn>\n"
+"\n"
+"Klona en befintlig anslutningsprofil. Den nyskapade anslutningen kommer "
+"vara\n"
+"en exakt kopia av <ID>, förutom egenskapen uuid (som kommer genereras) och\n"
+"id (tillhandahålls av argumentet <nytt namn>).\n"
+"\n"
 
 #: ../clients/cli/connections.c:495
 #, c-format
@@ -1355,7 +1412,7 @@ msgid ""
 "Add a new connection profile in an interactive editor.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection edit { ARGUMENT | help }\n"
+"Användning: nmcli connection edit { ARGUMENT | help }\n"
 "\n"
 "ARGUMENT := [id | uuid | path] <ID>\n"
 "\n"
@@ -1387,7 +1444,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:521
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection monitor { ARGUMENTS | help }\n"
 "\n"
@@ -1398,16 +1455,14 @@ msgid ""
 "Monitors all connection profiles in case none is specified.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection edit { ARGUMENT | help }\n"
+"Användning: nmcli connection monitor { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := [id | uuid | path] <ID>\n"
+"ARGUMENT := [id | uuid | path] <ID> …\n"
 "\n"
-"Redigera en existerande anslutningsprofil i en interaktiv redigerare.\n"
-"Profilen identifieras genom dess namn, UUID eller D-Bus-sökväg\n"
-"\n"
-"ARGUMENT := [type <ny anslutningstyp>] [con-name <nytt anslutningsnamn>]\n"
-"\n"
-"Lägg till en ny anslutningsprofil i en interaktiv redigerare.\n"
+"Övervaka aktivitet i anslutningsprofiler.\n"
+"Detta kommando skriver ut en rad varje gång den angivna anslutningen "
+"ändras.\n"
+"Övervakar alla anslutningsprofiler om ingen har angivits.\n"
 "\n"
 
 #: ../clients/cli/connections.c:533
@@ -1461,9 +1516,19 @@ msgid ""
 "is imported by NetworkManager VPN plugins.\n"
 "\n"
 msgstr ""
+"Användning: nmcli connection import { ARGUMENT | help }\n"
+"\n"
+"ARGUMENT := [--temporary] type <typ> file <fil att importera>\n"
+"\n"
+"Importera en extern/främmande konfiguration som en anslutningsprofil för "
+"Nätverkshanteraren.\n"
+"Typen för indatafilen anges av typflaggan.\n"
+"Endast VPN-konfigurationer stöds för tillfället. Konfigurationen\n"
+"importeras av Nätverkshanterarens VPN-insticksmoduler.\n"
+"\n"
 
 #: ../clients/cli/connections.c:566
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection export { ARGUMENTS | help }\n"
 "\n"
@@ -1473,12 +1538,12 @@ msgid ""
 "The data are directed to standard output or to a file if a name is given.\n"
 "\n"
 msgstr ""
-"Användning: nmcli connection delete { ARGUMENT | help }\n"
+"Användning: nmcli connection export { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := [id | uuid | path] <ID>\n"
+"ARGUMENT := [id | uuid | path] <ID> [<utdatafil>]\n"
 "\n"
-"Ta bort en anslutningsprofil.\n"
-"Profilen identifieras genom dess namn, UUID, och D-Bus-sökväg.\n"
+"Exportera en anslutning. Endast VPN-anslutningar stöds för tillfället.\n"
+"Data dirigeras till standard ut eller till en fil om ett namn anges.\n"
 "\n"
 
 #: ../clients/cli/connections.c:644
@@ -1718,7 +1783,7 @@ msgstr "saknar kolon i ”password”-posten ”%s”"
 #: ../clients/cli/connections.c:2245
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
-msgstr "saknar . i ”password”-posten ”%s”"
+msgstr "saknar punkt i ”password”-posten ”%s”"
 
 #: ../clients/cli/connections.c:2258
 #, c-format
@@ -1789,7 +1854,7 @@ msgstr "”%s” inte bland [%s]"
 #: ../clients/cli/connections.c:3032
 #, c-format
 msgid "Error: '%s': '%s' is not a valid %s MAC address."
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”%s”: ”%s” är inte en giltig %s-MAC-adress."
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:3033 ../clients/cli/connections.c:3565
@@ -1819,9 +1884,9 @@ msgid "Error: 'p-key': '%s' is not a valid InfiniBand P_KEY."
 msgstr "Fel: ”p-key”: ”%s” är inte en giltig InfiniBand P_KEY."
 
 #: ../clients/cli/connections.c:3105
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not a valid UID/GID."
-msgstr "Fel: ”mtu”: ”%s” är inte ett giltigt MTU."
+msgstr "Fel: ”%s” är inte ett giltigt UID/GID."
 
 #: ../clients/cli/connections.c:3149
 #, c-format
@@ -1845,9 +1910,8 @@ msgid "ADSL encapsulation"
 msgstr "ADSL-inkapsling"
 
 #: ../clients/cli/connections.c:3203
-#, fuzzy
 msgid "TUN device mode"
-msgstr "Enheten togs bort"
+msgstr "TUN-enhetsläge"
 
 #: ../clients/cli/connections.c:3216
 #, c-format
@@ -1898,11 +1962,11 @@ msgstr "MTU [auto]: "
 #: ../clients/cli/connections.c:3676 ../clients/cli/connections.c:3715
 #: ../clients/cli/connections.c:4101
 msgid "MAC [none]: "
-msgstr "MAC [none]: "
+msgstr "MAC [ingen]: "
 
 #: ../clients/cli/connections.c:3544
 msgid "Cloned MAC [none]: "
-msgstr "Klonad MAC [none]: "
+msgstr "Klonad MAC [ingen]: "
 
 #: ../clients/cli/connections.c:3592
 #, c-format
@@ -1911,11 +1975,11 @@ msgstr "Transportläge %s"
 
 #: ../clients/cli/connections.c:3605
 msgid "Parent interface [none]: "
-msgstr "Överordnat gränssnitt [none]: "
+msgstr "Överordnat gränssnitt [inget]: "
 
 #: ../clients/cli/connections.c:3616
 msgid "P_KEY [none]: "
-msgstr "P_KEY [none]: "
+msgstr "P_KEY [ingen]: "
 
 #: ../clients/cli/connections.c:3626
 #, c-format
@@ -1947,11 +2011,11 @@ msgstr "PPPoE"
 #: ../clients/cli/connections.c:3698 ../clients/cli/connections.c:3736
 #: ../clients/cli/connections.c:4223
 msgid "Password [none]: "
-msgstr "Lösenord [none]: "
+msgstr "Lösenord [inget]: "
 
 #: ../clients/cli/connections.c:3700
 msgid "Service [none]: "
-msgstr "Tjänst [none]: "
+msgstr "Tjänst [ingen]: "
 
 #. Ask for optional 'gsm' or 'cdma' arguments.
 #: ../clients/cli/connections.c:3730
@@ -1960,7 +2024,7 @@ msgstr "mobilt bredband"
 
 #: ../clients/cli/connections.c:3734 ../clients/cli/connections.c:4173
 msgid "Username [none]: "
-msgstr "Användarnamn [none]: "
+msgstr "Användarnamn [inget]: "
 
 #. Ask for optional 'bluetooth' arguments.
 #: ../clients/cli/connections.c:3749
@@ -1975,7 +2039,7 @@ msgstr "Bluetooth-typen %s"
 #: ../clients/cli/connections.c:3762
 #, c-format
 msgid "Error: 'bt-type': '%s' is not a valid bluetooth type.\n"
-msgstr "Fel: ”bt-type'”: ”%s” är inte en giltig Bluetoothtyp.\n"
+msgstr "Fel: ”bt-type”: ”%s” är inte en giltig Bluetoothtyp.\n"
 
 #. Ask for optional 'vlan' arguments.
 #. 13
@@ -1988,15 +2052,15 @@ msgstr "VLAN"
 
 #: ../clients/cli/connections.c:3794
 msgid "VLAN flags (<0-7>) [none]: "
-msgstr "VLAN-flaggor (<0-7>) [none]: "
+msgstr "VLAN-flaggor (<0-7>) [inga]: "
 
 #: ../clients/cli/connections.c:3805
 msgid "Ingress priority maps [none]: "
-msgstr "Inträdesprioritetshash [none]: "
+msgstr "Inträdesprioritetshash [ingen]: "
 
 #: ../clients/cli/connections.c:3816
 msgid "Egress priority maps [none]: "
-msgstr "Utträdesprioritetshash [none]: "
+msgstr "Utträdesprioritetshash [ingen]: "
 
 #: ../clients/cli/connections.c:3827
 msgid "Bonding mode [balance-rr]: "
@@ -2009,7 +2073,7 @@ msgstr "kombinera"
 
 #: ../clients/cli/connections.c:3865
 msgid "Bonding primary interface [none]: "
-msgstr "Kombinerar primärt gränssnittet [none]: "
+msgstr "Primärt kombineringsgränssnitt [inget]: "
 
 #: ../clients/cli/connections.c:3868
 #, c-format
@@ -2019,7 +2083,7 @@ msgstr "Fel: ”primary”: ”%s” är inte ett giltigt gränssnittsnamn.\n"
 #: ../clients/cli/connections.c:3876
 #, c-format
 msgid "Bonding monitoring mode %s"
-msgstr "Kombinerar övervakningsläget %s"
+msgstr "Övervakningsläge %s för kombinering"
 
 #: ../clients/cli/connections.c:3882
 #, c-format
@@ -2029,7 +2093,7 @@ msgstr ""
 
 #: ../clients/cli/connections.c:3891
 msgid "Bonding miimon [100]: "
-msgstr "Kombinerar miimon [100]: "
+msgstr "Kombinerings-miimon [100]: "
 
 #: ../clients/cli/connections.c:3894
 #, c-format
@@ -2038,7 +2102,7 @@ msgstr "Fel: ”miimon” :  ”%s” är inte ett giltigt nummer <0-%u>.\n"
 
 #: ../clients/cli/connections.c:3902
 msgid "Bonding downdelay [0]: "
-msgstr "Kombinerar nedfördröjning [0]: "
+msgstr "Nedfördröjning för kombinering [0]: "
 
 #: ../clients/cli/connections.c:3905
 #, c-format
@@ -2047,7 +2111,7 @@ msgstr "Fel: ”downdelay”:  ”%s” är inte ett giltigt nummer <0-%u>.\n"
 
 #: ../clients/cli/connections.c:3913
 msgid "Bonding updelay [0]: "
-msgstr "Kombinerar uppfördröjning [0]: "
+msgstr "Uppfördröjning för kombinering [0]: "
 
 #: ../clients/cli/connections.c:3916
 #, c-format
@@ -2056,7 +2120,7 @@ msgstr "Fel: ”updelay”:  ”%s” är inte ett giltigt nummer <0-%u>.\n"
 
 #: ../clients/cli/connections.c:3925
 msgid "Bonding arp-interval [0]: "
-msgstr "Kombinerar arp-intervall [0]: "
+msgstr "arp-intervall för kombinering [0]: "
 
 #: ../clients/cli/connections.c:3928
 #, c-format
@@ -2066,7 +2130,7 @@ msgstr "Fel: ”arp-interval”:  ”%s” är inte ett giltigt nummer <0-%u>.\n
 #. FIXME: verify the string
 #: ../clients/cli/connections.c:3936
 msgid "Bonding arp-ip-target [none]: "
-msgstr "Kombinerar arp-ip-target [none]: "
+msgstr "arp-ip-target för kombinering [inget]: "
 
 #: ../clients/cli/connections.c:3943
 msgid "LACP rate ('slow' or 'fast') [slow]: "
@@ -2079,7 +2143,7 @@ msgstr "Fel: ”lacp-rate”: ”%s” är ogiltig (”slow” eller ”fast”)
 
 #: ../clients/cli/connections.c:3972
 msgid "Team JSON configuration [none]: "
-msgstr "JSON-konfiguration för grupp [none]: "
+msgstr "JSON-konfiguration för grupp [ingen]: "
 
 #: ../clients/cli/connections.c:3989
 msgid "team"
@@ -2199,7 +2263,7 @@ msgstr "Fel: ”channel”: ”%s” är inte ett giltigt nummer <1-13>.\n"
 
 #: ../clients/cli/connections.c:4200
 msgid "DHCP anycast MAC address [none]: "
-msgstr "DHCP-anycast MAC-adress [none]: "
+msgstr "DHCP-anycast MAC-adress [ingen]: "
 
 #. Ask for optional 'adsl' arguments.
 #: ../clients/cli/connections.c:4219 ../libnm-glib/nm-device.c:1871
@@ -2215,79 +2279,77 @@ msgstr "ADSL-inkapsling %s"
 #. Ask for optional 'macvlan' arguments.
 #: ../clients/cli/connections.c:4245
 msgid "macvlan"
-msgstr ""
+msgstr "macvlan"
 
 #: ../clients/cli/connections.c:4251
 #, c-format
 msgid "Tap %s"
-msgstr ""
+msgstr "Tap %s"
 
 #: ../clients/cli/connections.c:4256
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'tap': %s.\n"
-msgstr "Fel: ”stp”: %s.\n"
+msgstr "Fel: ”tap”: %s.\n"
 
 #. Ask for optional 'vxlan' arguments.
 #: ../clients/cli/connections.c:4272 ../libnm-glib/nm-device.c:1875
 #: ../libnm/nm-device.c:1826
 msgid "VXLAN"
-msgstr ""
+msgstr "VXLAN"
 
 #: ../clients/cli/connections.c:4277 ../clients/cli/connections.c:4601
-#, fuzzy
 msgid "Parent device [none]: "
-msgstr "Överordnat gränssnitt [none]: "
+msgstr "Överordnad enhet [ingen]: "
 
 #: ../clients/cli/connections.c:4282 ../clients/cli/connections.c:4606
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'dev': '%s' is neither UUID nor interface name.\n"
-msgstr "Fel: ”dev”: ”%s” är varken UUID, gränssnittsnamn eller MAC."
+msgstr "Fel: ”dev”: ”%s” är varken UUID eller gränssnittsnamn.\n"
 
 #: ../clients/cli/connections.c:4291
-#, fuzzy
 msgid "Local address [none]: "
-msgstr "DHCP-anycast MAC-adress [none]: "
+msgstr "Lokal adress [ingen]: "
 
 #: ../clients/cli/connections.c:4296
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not a valid IP address.\n"
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”local”: ”%s” är inte en giltig IP-adress.\n"
 
 #: ../clients/cli/connections.c:4305
 msgid "Minimum source port [0]: "
-msgstr ""
+msgstr "Lägsta källport [0]: "
 
 #: ../clients/cli/connections.c:4309
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'source-port-min': '%s' is not a valid number <0-65535>.\n"
-msgstr "Fel: ”priority”:  ”%s” är inte ett giltigt nummer <0-%d>.\n"
+msgstr "Fel: ”source-port-min”:  ”%s” är inte ett giltigt nummer <0-65535>.\n"
 
 #: ../clients/cli/connections.c:4318
 msgid "Maximum source port [0]: "
-msgstr ""
+msgstr "Högsta källport [0]: "
 
 #: ../clients/cli/connections.c:4322
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'source-port-max': '%s' is not a valid number <0-65535>.\n"
-msgstr "Fel: ”priority”:  ”%s” är inte ett giltigt nummer <0-%d>.\n"
+msgstr "Fel: ”source-port-max”:  ”%s” är inte ett giltigt nummer <0-65535>.\n"
 
 #: ../clients/cli/connections.c:4331
-#, fuzzy
 msgid "Destination port [8472]: "
-msgstr "Destination"
+msgstr "Destinationsport [8472]: "
 
 #: ../clients/cli/connections.c:4335
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'destination-port': '%s' is not a valid number <0-65535>.\n"
-msgstr "Fel: ”miimon” :  ”%s” är inte ett giltigt nummer <0-%u>.\n"
+msgstr ""
+"Fel: ”destination-port” :  ”%s” är inte ett giltigt nummer <0-65535>.\n"
 
 #: ../clients/cli/connections.c:4374
 msgid "IPv4 address (IP[/plen]) [none]: "
-msgstr "IPv4-adress (IP[/plen]) [none]: "
+msgstr "IPv4-adress (IP[/plen]) [ingen]: "
 
 #: ../clients/cli/connections.c:4376
 msgid "IPv6 address (IP[/plen]) [none]: "
-msgstr "IPv6-adress (IP[/plen]) [none]: "
+msgstr "IPv6-adress (IP[/plen]) [ingen]: "
 
 #: ../clients/cli/connections.c:4390
 #, c-format
@@ -2312,11 +2374,11 @@ msgstr "Fel: "
 
 #: ../clients/cli/connections.c:4416
 msgid "IPv4 gateway [none]: "
-msgstr "IPv4-gateway [none]: "
+msgstr "IPv4-gateway [ingen]: "
 
 #: ../clients/cli/connections.c:4419
 msgid "IPv6 gateway [none]: "
-msgstr "IPv6-gateway [none]: "
+msgstr "IPv6-gateway [ingen]: "
 
 #: ../clients/cli/connections.c:4439
 #, c-format
@@ -2338,62 +2400,59 @@ msgstr "Tryck <Retur> för att sluta lägga till adresser.\n"
 #: ../clients/cli/connections.c:4504 ../libnm-glib/nm-device.c:1879
 #: ../libnm/nm-device.c:1830
 msgid "Tun"
-msgstr ""
+msgstr "Tun"
 
 #: ../clients/cli/connections.c:4509
-#, fuzzy
 msgid "User ID [none]: "
-msgstr "Användarnamn [none]: "
+msgstr "Användar-ID [inget]: "
 
 #: ../clients/cli/connections.c:4522
-#, fuzzy
 msgid "Group ID [none]: "
-msgstr "MAC [none]: "
+msgstr "Grupp-ID [inget]: "
 
 #: ../clients/cli/connections.c:4536
-#, fuzzy, c-format
+#, c-format
 msgid "Enable PI %s"
-msgstr "Aktivera STP %s"
+msgstr "Aktivera PI %s"
 
 #: ../clients/cli/connections.c:4541
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'pi': %s.\n"
-msgstr "Fel: ”stp”: %s.\n"
+msgstr "Fel: ”pi”: %s.\n"
 
 #: ../clients/cli/connections.c:4549
-#, fuzzy, c-format
+#, c-format
 msgid "Enable VNET header %s"
-msgstr "Aktivera STP %s"
+msgstr "Aktivera VNET-huvud %s"
 
 #: ../clients/cli/connections.c:4554
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'vnet-hdr': %s.\n"
-msgstr "Fel: ”stp”: %s.\n"
+msgstr "Fel: ”vnet-hdr”: %s.\n"
 
 #: ../clients/cli/connections.c:4562
 #, c-format
 msgid "Enable multi queue %s"
-msgstr ""
+msgstr "Aktivera multikö %s"
 
 #: ../clients/cli/connections.c:4567
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multi-queue': %s.\n"
-msgstr "Fel: ”mode”: %s."
+msgstr "Fel: ”multi-queue”: %s.\n"
 
 #. Ask for optional 'ip-tunnel' arguments.
 #: ../clients/cli/connections.c:4581
 msgid "IP Tunnel"
-msgstr ""
+msgstr "IP-tunnel"
 
 #: ../clients/cli/connections.c:4586
-#, fuzzy
 msgid "Local endpoint [none]: "
-msgstr "Överordnat gränssnitt [none]: "
+msgstr "Lokal ändpunkt [ingen]: "
 
 #: ../clients/cli/connections.c:4592
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not valid; must be an IP address\n"
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”local”: ”%s” är inte giltig, måste vara en IP-adress\n"
 
 #: ../clients/cli/connections.c:4658 ../clients/cli/connections.c:10184
 #, c-format
@@ -2440,7 +2499,7 @@ msgstr "Fel: misslyckades att ta bort ett värde från %s.%s: %s."
 msgid ""
 "Warning: 'type' is ignored. Use 'nmcli connection add \"%s\" ...' instead."
 msgstr ""
-"Varning: ”type”-ignoreras. Använd 'nmcli connection add \"%s\"...' istället."
+"Varning: ”type” ignoreras. Använd ”nmcli connection add \"%s\"…” istället."
 
 #: ../clients/cli/connections.c:4783
 msgid "Error: redundant 'master' option."
@@ -2509,18 +2568,17 @@ msgid "Error: 'dev' is required."
 msgstr "Fel: ”dev” krävs."
 
 #: ../clients/cli/connections.c:5355
-#, fuzzy
 msgid "VLAN ID <0-4094>: "
-msgstr "VLAN ID <0-4095>: "
+msgstr "VLAN-ID <0-4094>: "
 
 #: ../clients/cli/connections.c:5358 ../clients/cli/connections.c:6424
 msgid "Error: 'id' is required."
 msgstr "Fel: ”id” krävs."
 
 #: ../clients/cli/connections.c:5364
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'id': '%s' is not valid; use <0-4094>."
-msgstr "Fel: ”id”: ”%s” är inte giltigt: använd <0-4095>."
+msgstr "Fel: ”id”: ”%s” är inte giltigt: använd <0-4094>."
 
 #: ../clients/cli/connections.c:5374 ../clients/cli/connections.c:6116
 #, c-format
@@ -2580,109 +2638,103 @@ msgid "Error: 'protocol' is required."
 msgstr "Fel: ”protocol” krävs."
 
 #: ../clients/cli/connections.c:6105
-#, fuzzy
 msgid "MACVLAN parent device or connection UUID: "
-msgstr "Överordnad VLAN-enhet eller anslutnings-UUID: "
+msgstr "Överordnad MACVLAN-enhet eller anslutnings-UUID: "
 
 #: ../clients/cli/connections.c:6125 ../clients/cli/connections.c:6205
 #: ../clients/cli/connections.c:6307
-#, fuzzy
 msgid "Error: 'mode' is required."
-msgstr "Fel: ”dev” krävs."
+msgstr "Fel: ”mode” krävs."
 
 #: ../clients/cli/connections.c:6131
-#, fuzzy
 msgid "Error: 'mode' is not valid."
-msgstr "Fel: ”dev”-kommandot ”%s” är inte giltigt."
+msgstr "Fel: ”mode” är inte giltigt."
 
 #: ../clients/cli/connections.c:6144
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'tap': %s."
-msgstr "Fel: ”stp”: %s."
+msgstr "Fel: ”tap”: %s."
 
 #: ../clients/cli/connections.c:6230
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'pi': %s."
-msgstr "Fel: ”stp”: %s."
+msgstr "Fel: ”pi”: %s."
 
 #: ../clients/cli/connections.c:6241
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'vnet-hdr': %s."
-msgstr "Fel: ”save”: %s."
+msgstr "Fel: ”vnet-hdr”: %s."
 
 #: ../clients/cli/connections.c:6252
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'multi-queue': %s."
-msgstr "Fel: ”mode”: %s."
+msgstr "Fel: ”multi-queue”: %s."
 
 #: ../clients/cli/connections.c:6321
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'mode': '%s' is not valid, use one of %s"
-msgstr "Fel: ”%s”: ”%s” är inte en giltig %s %s."
+msgstr "Fel: ”mode”: ”%s” är inte giltigt, använd ett av %s"
 
 #: ../clients/cli/connections.c:6327
 msgid "Remote endpoint: "
-msgstr ""
+msgstr "Fjärrändpunkt: "
 
 #: ../clients/cli/connections.c:6330 ../clients/cli/connections.c:6432
-#, fuzzy
 msgid "Error: 'remote' is required."
-msgstr "Fel: ”master” krävs."
+msgstr "Fel: ”remote” krävs."
 
 #: ../clients/cli/connections.c:6337
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'remote': '%s' is not valid; must be an IP address"
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”remote”: ”%s” är inte giltig, måste vara en IP-adress"
 
 #: ../clients/cli/connections.c:6351
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not valid; must be an IP address"
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”local”: ”%s” är inte giltig, måste vara en IP-adress"
 
 #: ../clients/cli/connections.c:6360 ../clients/cli/connections.c:6455
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'dev': '%s' is neither UUID nor interface name."
-msgstr "Fel: ”dev”: ”%s” är varken UUID, gränssnittsnamn eller MAC."
+msgstr "Fel: ”dev”: ”%s” är varken UUID eller gränssnittsnamn."
 
 #: ../clients/cli/connections.c:6421
-#, fuzzy
 msgid "VXLAN ID: "
-msgstr "VLAN ID <0-4095>: "
+msgstr "VXLAN-ID: "
 
 #: ../clients/cli/connections.c:6429
-#, fuzzy
 msgid "Remote: "
-msgstr "Ta bort"
+msgstr "Fjärr: "
 
 #: ../clients/cli/connections.c:6438
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'id': '%s' is not valid; use <0-16777215>."
-msgstr "Fel: ”id”: ”%s” är inte giltigt: använd <0-4095>."
+msgstr "Fel: ”id”: ”%s” är inte giltigt: använd <0-16777215>."
 
 #: ../clients/cli/connections.c:6464
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'remote': '%s' is not a valid IP address"
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”remote”: ”%s” är inte en giltig IP-adress"
 
 #: ../clients/cli/connections.c:6473
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'local': '%s' is not a valid IP address"
-msgstr "Fel: '%s': '%s' är inte en giltig %s-MAC-adress."
+msgstr "Fel: ”local”: ”%s” är inte en giltig IP-adress"
 
 #: ../clients/cli/connections.c:6482
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'source-port-min': %s is not valid; use <0-65535>."
-msgstr "Fel: ”id”: ”%s” är inte giltigt: använd <0-4095>."
+msgstr "Fel: ”source-port-min”: %s är inte giltig; använd <0-65535>."
 
 #: ../clients/cli/connections.c:6491
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'source-port-max': %s is not valid; use <0-65535>."
-msgstr "Fel: ”flags”: ”%s” är inte giltig; använd <0-7>."
+msgstr "Fel: ”source-port-max”: %s är inte giltig; använd <0-65535>."
 
 #: ../clients/cli/connections.c:6500
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'destination-port': %s is not valid; use <0-65535>."
-msgstr "Fel: ”id”: ”%s” är inte giltigt: använd <0-4095>."
+msgstr "Fel: ”destination-port”: %s är inte giltig: använd <0-65535>."
 
 #: ../clients/cli/connections.c:6540
 #, c-format
@@ -2916,7 +2968,7 @@ msgstr ""
 "Verifierar huruvida inställningen eller anslutningen är giltig och kan "
 "sparas senare.\n"
 "Indikerar ogiltiga värden vid fel. En del fel kan fixas automatiskt\n"
-"genom alternativet ”fix”.\n"
+"genom flaggan ”fix”.\n"
 "\n"
 "Exempel: nmcli> verify\n"
 "         nmcli> verify fix\n"
@@ -2940,7 +2992,7 @@ msgstr ""
 "save [persistent|temporary]  :: spara anslutningen\n"
 "\n"
 "Skickar anslutningsprofilen till Nätverkshanteraren som kommer att antingen\n"
-"spara den, eller behålla den i minnet.”save” utan argument\n"
+"spara den, eller behålla den i minnet. ”save” utan argument\n"
 "betyder ”save persistent”.\n"
 "Observera att när du väl har sparat profilen så sparas inställningarna\n"
 "över omstart. Efterföljande ändringar kan också vara temporära eller\n"
@@ -2964,7 +3016,7 @@ msgstr ""
 "\n"
 "Aktiverar anslutningen\n"
 "\n"
-"Tillgängliga alternativ:\n"
+"Tillgängliga flaggor:\n"
 "<grnamn>    - den enhet anslutningen kommer att aktiveras på\n"
 "/<ap>|<nsp> - AP (Wi-Fi) eller NSP (WiMAX) (lägg till / i början när "
 "<grnamn> inte anges)\n"
@@ -3002,13 +3054,13 @@ msgid ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 msgstr ""
-"nmcli [<konf-flagga> <värde>]  :: nmcli configuration\n"
+"nmcli [<konf-flagga> <värde>]  :: nmcli-konfiguration\n"
 "\n"
 "Konfigurerar nmcli. Följande flaggor är tillgängliga:\n"
-"status-line yes | no        [default: no]\n"
-"save-confirmation yes | no  [default: yes]\n"
-"show-secrets yes | no       [default: no]\n"
-"prompt-color <0-8>          [default: 0]\n"
+"status-line yes | no        [standard: no]\n"
+"save-confirmation yes | no  [standard: yes]\n"
+"show-secrets yes | no       [standard: no]\n"
+"prompt-color <färg> | <0-8>  [standard: 0]\n"
 "%s\n"
 "Exempel: nmcli> nmcli status-line yes\n"
 "         nmcli> nmcli save-confirmation no\n"
@@ -3121,7 +3173,7 @@ msgid ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 msgstr ""
-"remove [<värde>|<index>|<alternativnamn>]  :: ta bort värdet\n"
+"remove [<värde>|<index>|<flaggnamn>]  :: ta bort värdet\n"
 "\n"
 "Tar bort egenskapsvärdet. För enskilda egenskapsvärden sätter denna\n"
 "egenskapen till dess standardvärde. För värden av behållartyp tar denna "
@@ -3130,8 +3182,7 @@ msgstr ""
 "bort endast\n"
 "ett enskilt objekt eller alternativ. Argumentet är antingen ett värde eller "
 "index för objektet som ska\n"
-"tas bort, eller ett alternativt namn (för egenskaper med namngivna "
-"alternativ).\n"
+"tas bort, eller ett flaggnamn (för egenskaper med namngivna flaggor).\n"
 "\n"
 "Exempel: nmcli ipv4.dns> remove 8.8.8.8\n"
 "          nmcli ipv4.dns> remove 2\n"
@@ -3376,7 +3427,7 @@ msgstr ", inte heller ett giltigt inställningsnamn"
 #: ../clients/cli/connections.c:9469
 #, c-format
 msgid "Invalid verify option: %s\n"
-msgstr "Ogiltigt kontrollalternativ ”%s”\n"
+msgstr "Ogiltigt verify-argument ”%s”\n"
 
 #: ../clients/cli/connections.c:9477
 #, c-format
@@ -3549,7 +3600,7 @@ msgstr ""
 #: ../clients/cli/connections.c:10117
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
-msgstr "Fel: Misslyckades med att ändra konfigurationen: ”%s” %s"
+msgstr "Fel: Misslyckades med att ändra anslutningen ”%s”: %s"
 
 #: ../clients/cli/connections.c:10124
 #, c-format
@@ -3571,22 +3622,21 @@ msgstr "Fel: anslutnings-ID saknas."
 #: ../clients/cli/connections.c:10228
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
-msgstr ""
+msgstr "%s (%s) klonad som %s (%s).\n"
 
 #: ../clients/cli/connections.c:10260
-#, fuzzy
 msgid "New connection name: "
-msgstr "Ny anslutning"
+msgstr "Nytt anslutningsnamn: "
 
 #: ../clients/cli/connections.c:10281 ../clients/cli/connections.c:10299
-#, fuzzy, c-format
+#, c-format
 msgid "Error: <new name> argument is missing."
-msgstr "Fel: %s-argument saknas."
+msgstr "Fel: <nytt namn>-argument saknas."
 
 #: ../clients/cli/connections.c:10287
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unexpected extra argument '%s'."
-msgstr "Fel: Oväntat argument ”%s”"
+msgstr "Fel: oväntat extra argument ”%s”."
 
 #: ../clients/cli/connections.c:10356
 #, c-format
@@ -3615,24 +3665,24 @@ msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Fel: kan inte ta bort okänd(a) anslutning(ar): %s."
 
 #: ../clients/cli/connections.c:10470
-#, fuzzy, c-format
+#, c-format
 msgid "%s: connection profile changed\n"
-msgstr "Detaljer för anslutningsprofil"
+msgstr "%s: anslutningsprofil ändrad\n"
 
 #: ../clients/cli/connections.c:10496
-#, fuzzy, c-format
+#, c-format
 msgid "%s: connection profile created\n"
-msgstr "Detaljer för anslutningsprofil"
+msgstr "%s: anslutningsprofil skapad\n"
 
 #: ../clients/cli/connections.c:10505
-#, fuzzy, c-format
+#, c-format
 msgid "%s: connection profile removed\n"
-msgstr "anslutningen togs bort"
+msgstr "%s: anslutningsprofil borttagen\n"
 
 #: ../clients/cli/connections.c:10548
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections found."
-msgstr "Fel: hittade inte alla aktiva anslutningar."
+msgstr "Fel: hittade inte alla anslutningar."
 
 #: ../clients/cli/connections.c:10571
 #, c-format
@@ -3650,79 +3700,77 @@ msgid "Could not load file '%s'\n"
 msgstr "Kunde inte läsa in filen: ”%s”\n"
 
 #: ../clients/cli/connections.c:10620
-#, fuzzy
 msgid "File to import: "
-msgstr "Misslyckades med att kryptera: %d."
+msgstr "Fil att importera: "
 
 #: ../clients/cli/connections.c:10655
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
-msgstr ""
+msgstr "Varning: ”type” redan angiven, ignorerar extra förekomst.\n"
 
 #: ../clients/cli/connections.c:10666
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
-msgstr ""
+msgstr "Varning: ”file” redan angiven, ignorerar extra förekomst.\n"
 
 #: ../clients/cli/connections.c:10668
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown parameter: %s"
-msgstr "Okänd parameter: %s\n"
+msgstr "Okänd parameter: %s"
 
 #: ../clients/cli/connections.c:10683
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'file' argument is required."
-msgstr "Fel: ”ifname”-argument krävs."
+msgstr "Fel: ”file”-argument krävs."
 
 #: ../clients/cli/connections.c:10691 ../clients/cli/connections.c:10798
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to load VPN plugin: %s."
-msgstr "Fel: misslyckades med att läsa in anslutningen: %s."
+msgstr "Fel: misslyckades med att läsa in VPN-insticksmodul: %s."
 
 #: ../clients/cli/connections.c:10699
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to import '%s': %s."
-msgstr "Fel: misslyckades med att ändra %s.%s: %s."
+msgstr "Fel: misslyckades med att importera ”%s”: %s."
 
 #: ../clients/cli/connections.c:10745
-#, fuzzy
 msgid "Output file name: "
-msgstr "filnamn"
+msgstr "Utdatafilnamn: "
 
 #: ../clients/cli/connections.c:10769
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown extra argument: '%s'."
-msgstr "Fel: ogiltigt extra argument: ”%s”."
+msgstr "Fel: okänt extra argument: ”%s”."
 
 #: ../clients/cli/connections.c:10789
-#, fuzzy, c-format
+#, c-format
 msgid "Error: the connection is not VPN."
-msgstr "Fel: anslutningen är inte giltig: %s\n"
+msgstr "Fel: anslutningen är inte VPN."
 
 #: ../clients/cli/connections.c:10810
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to create temporary file %s."
-msgstr "Kunde inte skapa temporära filen: %s"
+msgstr "Fel: misslyckades med att skapa temporära filen %s."
 
 #: ../clients/cli/connections.c:10819
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to export '%s': %s."
-msgstr "Fel: misslyckades med att sätta ”%s”-egenskapen: %s\n"
+msgstr "Fel: misslyckades med att exportera ”%s”: %s"
 
 #: ../clients/cli/connections.c:10830
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to read temporary file '%s': %s."
-msgstr "Fel: misslyckades med att ta bort värdet ”%s”: %s\n"
+msgstr "Fel: misslyckades med att läsa temporära filen ”%s”: %s."
 
 #: ../clients/cli/connections.c:10976
 #, c-format
 msgid "incorrect string '%s' of '--order' option"
-msgstr "fel sträng ”%s“ för flaggan ”--order”"
+msgstr "fel sträng ”%s” för flaggan ”--order”"
 
 #: ../clients/cli/connections.c:11002
 #, c-format
 msgid "incorrect item '%s' in '--order' option"
-msgstr "fel objekt ”%s“ i flaggan ”--order”"
+msgstr "fel objekt ”%s” i flaggan ”--order”"
 
 #: ../clients/cli/connections.c:11089
 msgid "'--order' argument is missing"
@@ -3731,7 +3779,7 @@ msgstr "”--order”-argumentet saknas"
 #: ../clients/cli/connections.c:11154
 #, c-format
 msgid "Error: '%s' is not valid 'connection' command."
-msgstr "Fel: ”%s” är inte ett giltigt “connection“-kommando."
+msgstr "Fel: ”%s” är inte ett giltigt ”connection”-kommando."
 
 #. define some prompts
 #: ../clients/cli/devices.c:35
@@ -3870,7 +3918,7 @@ msgstr "BÄRARE"
 #. 1
 #: ../clients/cli/devices.c:112
 msgid "S390-SUBCHANNELS"
-msgstr ""
+msgstr "S390-UNDERKANALER"
 
 #. 0
 #: ../clients/cli/devices.c:121 ../clients/cli/devices.c:731
@@ -4078,78 +4126,75 @@ msgstr "ANSLUTNINGAR"
 #. 1
 #: ../clients/cli/devices.c:253
 msgid "CHASSIS-ID"
-msgstr ""
+msgstr "CHASSI-ID"
 
 #. 2
 #: ../clients/cli/devices.c:254
-#, fuzzy
 msgid "PORT-ID"
-msgstr "FYSI-PORT-ID"
+msgstr "PORT-ID"
 
 #. 3
 #: ../clients/cli/devices.c:255
 msgid "PORT-DESCRIPTION"
-msgstr ""
+msgstr "PORTBESKRIVNING"
 
 #. 4
 #: ../clients/cli/devices.c:256
-#, fuzzy
 msgid "SYSTEM-NAME"
-msgstr "ANVÄNDARNAMN"
+msgstr "SYSTEMNAMN"
 
 #. 5
 #: ../clients/cli/devices.c:257
 msgid "SYSTEM-DESCRIPTION"
-msgstr ""
+msgstr "SYSTEMBESKRIVNING"
 
 #. 6
 #: ../clients/cli/devices.c:258
-#, fuzzy
 msgid "SYSTEM-CAPABILITIES"
-msgstr "FÖRMÅGOR"
+msgstr "SYSTEMFÖRMÅGOR"
 
 #. 7
 #: ../clients/cli/devices.c:259
 msgid "IEEE-802-1-PVID"
-msgstr ""
+msgstr "IEEE-802-1-PVID"
 
 #. 8
 #: ../clients/cli/devices.c:260
 msgid "IEEE-802-1-PPVID"
-msgstr ""
+msgstr "IEEE-802-1-PPVID"
 
 #. 9
 #: ../clients/cli/devices.c:261
 msgid "IEEE-802-1-PPVID-FLAGS"
-msgstr ""
+msgstr "IEEE-802-1-PPVID-FLAGGOR"
 
 #. 10
 #: ../clients/cli/devices.c:262
 msgid "IEEE-802-1-VID"
-msgstr ""
+msgstr "IEEE-802-1-VID"
 
 #. 11
 #: ../clients/cli/devices.c:263
 msgid "IEEE-802-1-VLAN-NAME"
-msgstr ""
+msgstr "IEEE-802-1-VLAN-NAMN"
 
 #. 12
 #: ../clients/cli/devices.c:264
 msgid "DESTINATION"
-msgstr ""
+msgstr "DESTINATION"
 
 #. 13
 #: ../clients/cli/devices.c:265
 msgid "CHASSIS-ID-TYPE"
-msgstr ""
+msgstr "CHASSI-ID-TYP"
 
 #. 14
 #: ../clients/cli/devices.c:266
 msgid "PORT-ID-TYPE"
-msgstr ""
+msgstr "PORT-ID-TYP"
 
 #: ../clients/cli/devices.c:283
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -4189,25 +4234,38 @@ msgid ""
 msgstr ""
 "Användning: nmcli device { KOMMANDO | help }\n"
 "\n"
-"KOMMANDO := { status | show | connect | disconnect | delete | wifi }\n"
+"KOMMANDO := { status | show | connect | reapply | disconnect | delete | "
+"monitor | wifi | lldp }\n"
 "\n"
 "  status\n"
 "\n"
 "  show [<grnamn>]\n"
 "\n"
+"  set [ifname] <grnamn> [autoconnect yes|no] [managed yes|no]\n"
+"\n"
 "  connect <grnamn>\n"
 "\n"
-"  disconnect <grnamn>\n"
+"  reapply <grnamn> …\n"
 "\n"
-"  delete <grnamn>\n"
+"  disconnect <grnamn> …\n"
+"\n"
+"  delete <grnamn> …\n"
+"\n"
+"  monitor <grnamn> …\n"
 "\n"
 "  wifi [list [ifname <grnamn>] [bssid <BSSID>]]\n"
 "\n"
 "  wifi connect <(B)SSID> [password <lösenord>] [wep-key-type key|phrase] "
 "[ifname <grnamn>]\n"
-"                         [bssid <BSSID>] [name <namn>] [private yes|no]\n"
+"                         [bssid <BSSID>] [name <namn>] [private yes|no] "
+"[hidden yes|no]\n"
 "\n"
-"  wifi rescan [[ifname] <grnamn>]\n"
+"  wifi hotspot [ifname <grnamn>] [con-name <namn>] [ssid <SSID>] [band a|bg] "
+"[channel <kanal>] [password <lösenord>]\n"
+"\n"
+"  wifi rescan [ifname <grnamn>] [[ssid <SSID att söka av>] …]\n"
+"\n"
+"  lldp [list [ifname <grnamn>]]\n"
 "\n"
 
 #: ../clients/cli/devices.c:305
@@ -4274,7 +4332,7 @@ msgid ""
 msgstr ""
 "Användning: nmcli device connect { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := <ifnamn>\n"
+"ARGUMENT := <grnamn>\n"
 "\n"
 "Anslut enheten.\n"
 "Nätverkshanteraren försöker då att finna en passande anslutning att "
@@ -4284,7 +4342,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:343
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -4294,13 +4352,13 @@ msgid ""
 "made since it was last applied.\n"
 "\n"
 msgstr ""
-"Användning: nmcli device disconnect { ARGUMENT | help }\n"
+"Användning: nmcli device reapply { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := <ifnamn>\n"
+"ARGUMENT := <grnamn> …\n"
 "\n"
-"Koppla från enheter.\n"
-"Kommandot kopplar från enheten och hindrar den från att autoaktivera\n"
-"vidare anslutningar utan användar-/manuellinblandning.\n"
+"Försöker uppdatera enhet med ändringar till den aktuellt aktiva "
+"anslutningen\n"
+"som gjorts sedan den sist tillämpades.\n"
 "\n"
 
 #: ../clients/cli/devices.c:354
@@ -4317,7 +4375,7 @@ msgid ""
 msgstr ""
 "Användning: nmcli device disconnect { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := <ifnamn>\n"
+"ARGUMENT := <grnamn>\n"
 "\n"
 "Koppla från enheter.\n"
 "Kommandot kopplar från enheten och hindrar den från att autoaktivera\n"
@@ -4360,9 +4418,18 @@ msgid ""
 "Modify device properties.\n"
 "\n"
 msgstr ""
+"Användning: nmcli device set { ARGUMENT | help }\n"
+"\n"
+"ARGUMENT := ENHET { EGENSKAP [ EGENSKAP … ] }\n"
+"ENHET    := [ifname] <grnamn> \n"
+"EGENSKAP  := { autoconnect { yes | no } |\n"
+"             { managed { yes | no }\n"
+"\n"
+"Ändra egenskaper för enhet.\n"
+"\n"
 
 #: ../clients/cli/devices.c:392
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
@@ -4373,16 +4440,18 @@ msgid ""
 "Monitors all devices in case no interface is specified.\n"
 "\n"
 msgstr ""
-"Användning: nmcli device show { ARGUMENT | help }\n"
+"Användning: nmcli device monitor { ARGUMENT | help }\n"
 "\n"
-"ARGUMENT := [<grnamn>]\n"
+"ARGUMENT := [<grnamn>] …\n"
 "\n"
-"Visa enhetsdetaljer.\n"
-"Kommandot listar detaljer för alla enheter eller för en given enhet.\n"
+"Övervaka enhetsaktivitet.\n"
+"Detta kommando skriver ut en rad varje gång de angivna enheterna ändrar "
+"tillstånd.\n"
+"Övervakar alla enheter om inget gränssnitt är angivet.\n"
 "\n"
 
 #: ../clients/cli/devices.c:404
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
@@ -4440,14 +4509,15 @@ msgstr ""
 "\n"
 "ARGUMENT := [list [ifname <grnamn>] [bssid <BSSID>]]\n"
 "\n"
-"Lista över tillgängliga trådlösa accesspunkter. ”ifname” och ”bssid”-"
+"Lista över tillgängliga trådlösa accesspunkter. ”ifname”- och ”bssid”-"
 "flaggorna kan\n"
 "användas för att lista accesspunkter för ett specifikt gränssnitt, eller med "
 "ett specifikt BSSID.\n"
 "\n"
 "ARGUMENT := connect <(B)SSID> [password <lösenord>] [wep-key-type key|"
-"phrase] [ifname <ifnamn>]\n"
-"                    [bssid <BSSID>] [name <namn>] [private yes|no]\n"
+"phrase] [ifname <grnamn>]\n"
+"                    [bssid <BSSID>] [name <namn>] [private yes|no] [hidden "
+"yes|no]\n"
 "\n"
 "Anslut till ett trådlöst nätverk angivet genom SSID eller BSSID. Kommandot "
 "skapar\n"
@@ -4458,21 +4528,39 @@ msgstr ""
 "trådlösa\n"
 "nätverk. Om en anslutning för nätverket redan finns är det bättre att\n"
 "ta fram befintliga profiler enligt: nmcli con up id <namn>. Observera att\n"
-"endast öppna WEP och WPA-PSK-nätverk stöds för tillfället. Det antas också\n"
+"endast öppna WEP- och WPA-PSK-nätverk stöds för tillfället. Det antas också\n"
 "att IP-konfiguration erhålls via DHCP.\n"
 "\n"
-"ARGUMENT := rescan [[ifnamn] <grnamn>]\n"
+"ARGUMENT := wifi hotspot [ifname <grnamn>] [con-name <namn>] [ssid <SSID>]\n"
+"                          [band a|bg] [channel <kanal>] [password "
+"<lösenord>]\n"
 "\n"
-"Begär att Nätverkshanteraren omedelbart söker av efter tillgängliga "
+"Skapa en Wi-Fi-surfzon. Använd ”connection down” eller ”device disconnect”\n"
+"för att stoppa surfzonen.\n"
+"Parametrar för surfzonen kan påverkars av de valfria parametrarna:\n"
+"ifname - Wi-Fi-enhet att använda\n"
+"con-name - namn på den skapade anslutningsprofilen för surfzonen\n"
+"ssid - SSID för surfzonen\n"
+"band - Wi-Fi-band att använda\n"
+"channel - Wi-Fi-kanal att använda\n"
+"password - lösenord att använda för surfzonen\n"
+"\n"
+"\n"
+"ARGUMENT := rescan [[ifname] <grnamn>] [[ssid <SSID att söka>] …]\n"
+"\n"
+"Begär att Nätverkshanteraren omedelbart på nytt söker efter tillgängliga "
 "accesspunkter.\n"
 "Nätverkshanteraren söker av trådlösa nätverk periodiskt, men i några fall\n"
-"kan det vara användbart att söka av manuellt. Observera att detta kommando "
-"inte visar\n"
-"APs, använd ”nmcli device wifi list” för det.\n"
+"kan det vara användbart att söka av manuellt. ”ssid” tillåter avsökning "
+"efter ett specifikt\n"
+"SSID, vilket är praktiskt för accesspunkter med dolda SSID. Flera ”ssid”-"
+"parametrar kan\n"
+"anges.  Observera att detta kommando inte visar\n"
+"accesspunkterna, använd ”nmcli device wifi list” för det.\n"
 "\n"
 
 #: ../clients/cli/devices.c:451
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
@@ -4483,15 +4571,12 @@ msgid ""
 "used to list neighbors for a particular interface.\n"
 "\n"
 msgstr ""
-"Användning: nmcli device wimax { ARGUMENT | help }\n"
+"Användning: nmcli device lldp { ARGUMENT | help }\n"
 "\n"
-"Utför åtgärder på WiMAX-enheter.\n"
+"ARGUMENT := [list [ifname <grnamn>]]\n"
 "\n"
-"ARGUMENT := [list [ifname <grnamn>] [nsp <namn>]]\n"
-"\n"
-"Lista tillgängliga WiMAX NSP:er. Flaggorna ”ifname” och ”nsp” kan användas "
-"för att\n"
-"lista nätverk för ett specifikt gränssnitt, eller med ett specifik NSP.\n"
+"Lista grannenheter som upptäckts genom LLDP. Flaggan ”ifname” kan\n"
+"användas för att lista grannar för ett specifikt gränssnitt.\n"
 "\n"
 
 #: ../clients/cli/devices.c:527 ../clients/cli/devices.c:1676
@@ -4609,9 +4694,9 @@ msgid "Error: Connection activation failed: (%d) %s.\n"
 msgstr "Fel: Aktivering av anslutningen misslyckades: (%d) %s.\n"
 
 #: ../clients/cli/devices.c:1517
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
-msgstr "Fel: misslyckades med att sätta värdnamn: %s"
+msgstr "Fel: Misslyckades med att konfigurera en Wi-Fi-surfzon: %s"
 
 #: ../clients/cli/devices.c:1520
 #, c-format
@@ -4619,9 +4704,9 @@ msgid "Error: Failed to add/activate new connection: %s"
 msgstr "Fel: Misslyckades med att lägga till/aktivera ny anslutning: %s"
 
 #: ../clients/cli/devices.c:1530
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot"
-msgstr "Fel: misslyckades med att sätta värdnamn: %s"
+msgstr "Fel: Misslyckades med att konfigurera en Wi-Fi-surfzon"
 
 #: ../clients/cli/devices.c:1532
 #, c-format
@@ -4634,9 +4719,9 @@ msgid "Connection with UUID '%s' created and activated on device '%s'\n"
 msgstr "Anslutningen med UUID ”%s” skapad och aktiverad på enhet ”%s”\n"
 
 #: ../clients/cli/devices.c:1547
-#, fuzzy, c-format
+#, c-format
 msgid "Hotspot '%s' activated on device '%s'\n"
-msgstr "Anslutningen med UUID ”%s” skapad och aktiverad på enhet ”%s”\n"
+msgstr "Surfzon ”%s” aktiverad på enhet ”%s”\n"
 
 #: ../clients/cli/devices.c:1611
 #, c-format
@@ -4670,19 +4755,20 @@ msgid "Device '%s' successfully removed.\n"
 msgstr "Enheten ”%s” togs bort.\n"
 
 #: ../clients/cli/devices.c:1838
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections reapplied."
-msgstr "Fel: alla anslutningar är inte borttagna."
+msgstr "Fel: alla anslutningar har inte uppdaterats."
 
 #: ../clients/cli/devices.c:1839
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s\n"
-msgstr "Fel: Borttagning av enheten ”%s” (%s) misslyckades: %s\n"
+msgstr ""
+"Fel: Uppdatering av anslutning till enheten ”%s” (%s) misslyckades: %s\n"
 
 #: ../clients/cli/devices.c:1849
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
-msgstr "Anslutning aktiverades (aktiv sökväg för D-Bus: %s)\n"
+msgstr "Anslutning uppdaterades till enheten ”%s”.\n"
 
 #: ../clients/cli/devices.c:1912
 #, c-format
@@ -4710,39 +4796,39 @@ msgid "Error: Device '%s' (%s) deletion failed: %s\n"
 msgstr "Fel: Borttagning av enheten ”%s” (%s) misslyckades: %s\n"
 
 #: ../clients/cli/devices.c:2132
-#, fuzzy, c-format
+#, c-format
 msgid "Error: No property specified."
-msgstr "Fel: Ingen anslutning angiven."
+msgstr "Fel: Ingen egenskap angiven."
 
 #: ../clients/cli/devices.c:2144 ../clients/cli/devices.c:2159
 #, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "Fel: \"%s\"-argument saknas."
+msgstr "Fel: ”%s”-argument saknas."
 
 #: ../clients/cli/devices.c:2149
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'managed': %s."
-msgstr "Fel: ”mode”: %s."
+msgstr "Fel: ”managed”: %s."
 
 #: ../clients/cli/devices.c:2174
-#, fuzzy, c-format
+#, c-format
 msgid "Error: property '%s' is not known."
-msgstr "Fel: ogiltig egenskap ”%s”: %s."
+msgstr "Fel: egenskapen ”%s” är okänd."
 
 #: ../clients/cli/devices.c:2220
-#, fuzzy, c-format
+#, c-format
 msgid "%s: using connection '%s'\n"
-msgstr "Fel: Okänd anslutning: ”%s”\n"
+msgstr "%s: använder anslutningen ”%s”\n"
 
 #: ../clients/cli/devices.c:2246
 #, c-format
 msgid "%s: device created\n"
-msgstr ""
+msgstr "%s: enhet skapad\n"
 
 #: ../clients/cli/devices.c:2253
-#, fuzzy, c-format
+#, c-format
 msgid "%s: device removed\n"
-msgstr "Enheten togs bort"
+msgstr "%s: enhet borttagen\n"
 
 #: ../clients/cli/devices.c:2339
 msgid "Wi-Fi scan list"
@@ -4845,56 +4931,54 @@ msgid "Password: "
 msgstr "Lösenord: "
 
 #: ../clients/cli/devices.c:3034
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid WPA PSK"
-msgstr "”%s” inte en giltig PSK"
+msgstr "”%s” inte giltig WPA PSK"
 
 #: ../clients/cli/devices.c:3051
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
-msgstr "”%s”-längden är ogiltig (ska vara 5 eller 6 siffror)"
+msgstr "”%s” är inte en giltig WEP-nyckel (ska vara 5 eller 13 ASCII-tecken)"
 
 #: ../clients/cli/devices.c:3067
 #, c-format
 msgid "Hotspot password: %s\n"
-msgstr ""
+msgstr "Lösenord för surfzon: %s\n"
 
 #: ../clients/cli/devices.c:3125
-#, fuzzy, c-format
+#, c-format
 msgid "Error: ssid is too long."
-msgstr "Fel: ”ssid” krävs."
+msgstr "Fel: ssid är för långt."
 
 #: ../clients/cli/devices.c:3137
-#, fuzzy, c-format
+#, c-format
 msgid "Error: band argument value '%s' is invalid; use 'a' or 'bg'."
-msgstr ""
-"Fel: wep-key-type-argumentvärdet ”%s” är ogiltigt, använd ”key” eller "
-"”phrase”."
+msgstr "Fel: argumentvärdet ”%s” för band är ogiltigt, använd ”a” eller ”bg”."
 
 #: ../clients/cli/devices.c:3161
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Unknown parameter %s."
-msgstr "Okänd parameter: %s\n"
+msgstr "Fel: Okänd parameter %s."
 
 #: ../clients/cli/devices.c:3180
-#, fuzzy, c-format
+#, c-format
 msgid "Error: channel requires band too."
-msgstr "Fel: ”apn” krävs."
+msgstr "Fel: kanal kräver även band."
 
 #: ../clients/cli/devices.c:3186
-#, fuzzy, c-format
+#, c-format
 msgid "Error: channel '%s' not valid for band '%s'."
-msgstr "Fel: ”channel”: ”%s” är inte giltigt; använd <1-13>."
+msgstr "Fel: kanal ”%s” är inte giltig för bandet ”%s”."
 
 #: ../clients/cli/devices.c:3214
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
-msgstr "Fel: Enheten ”%s” är inte en trådlös enhet."
+msgstr "Fel: Enheten ”%s” stöder varken accesspunkts- eller Ad-Hoc-läge."
 
 #: ../clients/cli/devices.c:3249
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid 'password': %s."
-msgstr "Fel: ogiltig egenskap ”%s”: %s."
+msgstr "Fel: ogiltigt ”password”: %s."
 
 # flaggan "ssid" kan upprepas
 #: ../clients/cli/devices.c:3318
@@ -4905,22 +4989,22 @@ msgstr "Fel: ”%s” kan inte upprepas."
 #: ../clients/cli/devices.c:3399
 #, c-format
 msgid "Error: 'device wifi' command '%s' is not valid."
-msgstr "Fel: “device wifi“-kommandot ”%s” är inte giltigt."
+msgstr "Fel: ”device wifi”-kommandot ”%s” är inte giltigt."
 
 #. Main header name
 #: ../clients/cli/devices.c:3425
 msgid "Device LLDP neighbors"
-msgstr ""
+msgstr "LLDP-grannar för enhet"
 
 #: ../clients/cli/devices.c:3528
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device lldp list': %s"
-msgstr "Fel: ”device status”: %s"
+msgstr "Fel: ”device lldp list”: %s"
 
 #: ../clients/cli/devices.c:3575
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device lldp' command '%s' is not valid."
-msgstr "Fel: “device wifi“-kommandot ”%s” är inte giltigt."
+msgstr "Fel: ”device lldp”-kommandot ”%s” är inte giltigt."
 
 #: ../clients/cli/devices.c:3770
 #, c-format
@@ -5255,6 +5339,11 @@ msgid ""
 "Prints a line whenever a change occurs in NetworkManager\n"
 "\n"
 msgstr ""
+"Användning: nmcli monitor\n"
+"\n"
+"Övervaka ändringar för Nätverkshanteraren.\n"
+"Skriver en rad varje gång en ändring inträffar i Nätverkshanteraren\n"
+"\n"
 
 #: ../clients/cli/general.c:233
 msgid "asleep"
@@ -5407,52 +5496,49 @@ msgid "Error: 'radio' command '%s' is not valid."
 msgstr "Fel: ”radio”-kommandot ”%s” är inte giltigt."
 
 #: ../clients/cli/general.c:914
-#, fuzzy
 msgid "NetworkManager has started"
-msgstr "Status för Nätverkshanteraren"
+msgstr "Nätverkshanteraren har startats"
 
 #: ../clients/cli/general.c:917
-#, fuzzy
 msgid "NetworkManager has stopped"
-msgstr "Status för Nätverkshanteraren"
+msgstr "Nätverkshanteraren har stoppats"
 
 #: ../clients/cli/general.c:931
-#, fuzzy, c-format
+#, c-format
 msgid "Hostname set to '%s'\n"
-msgstr "Värdnamnet sattes till ”%s”"
+msgstr "Värdnamnet sattes till ”%s”\n"
 
 #: ../clients/cli/general.c:946
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is now the primary connection\n"
-msgstr "”%s” är inte en giltig VPN-anslutningsprofil"
+msgstr "”%s” är nu den primära anslutningen\n"
 
 #: ../clients/cli/general.c:948
-#, fuzzy, c-format
+#, c-format
 msgid "There's no primary connection\n"
-msgstr "Gruppanslutning"
+msgstr "Det finns ingen primär anslutning\n"
 
 #: ../clients/cli/general.c:960
-#, fuzzy, c-format
+#, c-format
 msgid "Connectivity is now '%s'\n"
-msgstr "Anslutning"
+msgstr "Anslutbarhet är nu ”%s”\n"
 
 #: ../clients/cli/general.c:973
-#, fuzzy, c-format
+#, c-format
 msgid "Networkmanager is now in the '%s' state\n"
-msgstr "Nätverkshanteraren är inte startad."
+msgstr "Nätverkshanteraren är nu i tillståndet ”%s”\n"
 
 #: ../clients/cli/general.c:984
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'monitor' command '%s' is not valid."
-msgstr "Fel: ”agent”-kommandot ”%s” är inte giltigt."
+msgstr "Fel: ”monitor”-kommandot ”%s” är inte giltigt."
 
 #: ../clients/cli/general.c:998
-#, fuzzy
 msgid "Networkmanager is not running (waiting for it)\n"
-msgstr "Nätverkshanteraren är inte startad."
+msgstr "Nätverkshanteraren är inte startad (väntar på den)\n"
 
 #: ../clients/cli/nmcli.c:83
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
@@ -5498,6 +5584,7 @@ msgstr ""
 "  -n[ocheck]                                 kontrollera inte nmcli och "
 "Nätverkshanterarens versioner\n"
 "  -a[sk]                                     fråga efter saknade parametrar\n"
+"  -s[how-secrets]                            tillåt att lösenord visas\n"
 "  -w[ait] <seconds>                          sätt en tidsgräns för åtgärder\n"
 "  -v[ersion]                                 visa programversionen\n"
 "  -h[elp]                                    skriv ut denna hjälp\n"
@@ -5508,7 +5595,8 @@ msgstr ""
 "  r[adio]         Nätverkshanterarens radioväxlar\n"
 "  c[onnection]    Nätverkshanterarens anslutningar\n"
 "  d[evice]        enheter som hanteras av Nätverkshanteraren\n"
-"  a[gent]         hemlig- eller polkitagent för Nätverkshanteraren\n"
+"  a[gent]         hemlig agent eller polkitagent för Nätverkshanteraren\n"
+"  m[onitor]       övervaka ändringar för Nätverkshanteraren\n"
 "\n"
 
 #: ../clients/cli/nmcli.c:143
@@ -5643,9 +5731,8 @@ msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
 #: ../clients/cli/settings.c:836
-#, fuzzy
 msgid "MVRP, "
-msgstr "GVRP, "
+msgstr "MVRP, "
 
 #: ../clients/cli/settings.c:875
 #, c-format
@@ -5727,9 +5814,9 @@ msgid "default"
 msgstr "standard"
 
 #: ../clients/cli/settings.c:1556
-#, fuzzy, c-format
+#, c-format
 msgid "%d (off)"
-msgstr "%d (nej)"
+msgstr "%d (av)"
 
 #: ../clients/cli/settings.c:1770
 #, c-format
@@ -5745,21 +5832,21 @@ msgid "'default' and 'ignore' are incompatible with other flags"
 msgstr "”default” och ”ignore” är inkompatibla med andra flaggor"
 
 #: ../clients/cli/settings.c:1817
-#, fuzzy, c-format
+#, c-format
 msgid "invalid mode '%s', use one of %s"
-msgstr "ogiltigt fält ”%s”; tillåtna fält: %s"
+msgstr "ogiltigt läge ”%s”, använd en av %s"
 
 #: ../clients/cli/settings.c:1899
 #, c-format
 msgid "always"
-msgstr ""
+msgstr "alltid"
 
 #: ../clients/cli/settings.c:1999 ../clients/cli/settings.c:3286
 #: ../clients/cli/settings.c:4478 ../clients/cli/settings.c:4981
 #: ../libnm-core/nm-keyfile-reader.c:573
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use one of [%s]"
-msgstr "ogiltigt alternativ ”%s” eller dess värde ”%s”"
+msgstr "ogiltig flagga ”%s”, använd en av [%s]"
 
 #: ../clients/cli/settings.c:2116
 #, c-format
@@ -5841,7 +5928,7 @@ msgstr "ogiltig flagga ”%s”"
 
 #: ../clients/cli/settings.c:2654
 msgid "missing option"
-msgstr "saknat alternativ"
+msgstr "saknad flagga"
 
 #: ../clients/cli/settings.c:2681 ../clients/cli/settings.c:2701
 #: ../clients/cli/settings.c:2721 ../clients/cli/settings.c:2741
@@ -5865,7 +5952,7 @@ msgstr "”%s” är inte en giltig Ethernet MAC"
 #: ../libnm-util/nm-setting-infiniband.c:269
 #, c-format
 msgid "'%s' is not a valid interface name"
-msgstr "'”%s” är inte ett giltigt gränssnittsnamn"
+msgstr "”%s” är inte ett giltigt gränssnittsnamn"
 
 #: ../clients/cli/settings.c:2856
 #, c-format
@@ -5912,12 +5999,12 @@ msgstr ""
 "  [user:]<användarnamn 1>, [user:]<användarnamn 2>,…\n"
 "Objekten kan separeras med komman eller blanksteg.\n"
 "\n"
-"Exempel: Anders Sebastian Göran\n"
+"Exempel: anders maria sebastian\n"
 
 #: ../clients/cli/settings.c:3063
 #, c-format
 msgid "'%s' is not valid master; use ifname or connection UUID"
-msgstr "”%s” är inte en giltig master; använd ifnamn eller anslutnings-UUID"
+msgstr "”%s” är inte en giltig master; använd grnamn eller anslutnings-UUID"
 
 #: ../clients/cli/settings.c:3107
 #, c-format
@@ -6033,7 +6120,7 @@ msgstr ""
 "file://).\n"
 "  [file://]<filsökväg>\n"
 "Observera att nmcli inte stödjer att ange certifikat som rå blob-data.\n"
-"Exempel: /home/cimrman/cacert.crt\n"
+"Exempel: /home/cimrman/ca-zweite-phase.crt\n"
 
 #: ../clients/cli/settings.c:3476
 #, c-format
@@ -6181,7 +6268,7 @@ msgid ""
 "Example: 192.168.1.5/24, 10.0.0.11/24\n"
 msgstr ""
 "Ange en lista av IPv4-adresser formaterade som:\n"
-"  ip[/prefix], ip[/prefix],...\n"
+"  ip[/prefix], ip[/prefix],…\n"
 "Saknade prefix räknas som prefix av 32.\n"
 "\n"
 "Exempel: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
@@ -6318,8 +6405,8 @@ msgstr ""
 "innehållandes konfigurationen. I det senare fallet läses filen in och "
 "innehållet läggs i denna egenskap.\n"
 "\n"
-"Exempel: set team.config { ”device”: ”team0”, ”runner”: {”name”: "
-"”roundrobin”}, ”ports”: {”eth1”: {}, ”eth2”: {}} }\n"
+"Exempel: set team.config { \"device\": \"team0\", \"runner\": {\"name\": "
+"\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/my-team.conf\n"
 
 #: ../clients/cli/settings.c:4602
@@ -6364,7 +6451,7 @@ msgstr "egenskapen innehåller inte MAC-adress ”%s”"
 #: ../clients/cli/settings.c:4799
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
-msgstr "”%s” är ogiltig; Två eller tre strängar ska ges"
+msgstr "”%s” är ogiltig; Två eller tre strängar ska anges"
 
 #: ../clients/cli/settings.c:4813
 msgid ""
@@ -6379,7 +6466,7 @@ msgstr ""
 #: ../clients/cli/settings.c:4835
 #, c-format
 msgid "'%s' string value should consist of 1 - 199 characters"
-msgstr "strängvärdet för ”%s” bör bestå av 1 - 199 tecken"
+msgstr "”%s”-strängvärde ska bestå av 1 - 199 tecken"
 
 #: ../clients/cli/settings.c:4867
 #, c-format
@@ -6403,9 +6490,9 @@ msgid "'%ld' is not a valid channel"
 msgstr "”%ld” är en ogiltig kanal"
 
 #: ../clients/cli/settings.c:5013
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use 'default', 'never' or 'always'"
-msgstr "ogiltigt alternativ ”%s” eller dess värde ”%s”"
+msgstr "ogiltig flagga ”%s”, använd ”default”, ”never” eller ”always”"
 
 #: ../clients/cli/settings.c:5074 ../clients/cli/settings.c:5113
 #: ../clients/cli/settings.c:5152
@@ -6500,12 +6587,12 @@ msgstr "summan för bandbreddsprocenten måste vara 100%%"
 
 #: ../clients/cli/settings.c:5549 ../clients/cli/settings.c:5555
 msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
-msgstr ""
+msgstr "SIM-operatörs-ID måste vara en 5- eller 6-siffrig MCCMNC-kod"
 
 #: ../clients/cli/settings.c:5598
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use '%s' or '%s'"
-msgstr "ogiltigt alternativ ”%s” eller dess värde ”%s”"
+msgstr "ogiltig flagga ”%s”, använd ”%s” eller ”%s”"
 
 #: ../clients/cli/settings.c:7644
 msgid "don't know how to get the property value"
@@ -6727,7 +6814,7 @@ msgstr "VPN-lösenord krävs"
 
 #: ../clients/common/nm-vpn-helpers.c:61
 msgid "could not get VPN plugin info"
-msgstr ""
+msgstr "kunde inte hämta VPN-insticksinfo"
 
 #: ../clients/common/nm-vpn-helpers.c:103
 #: ../clients/common/nm-vpn-helpers.c:106
@@ -7101,7 +7188,7 @@ msgstr "TRÅDBUNDET"
 #: ../clients/tui/nmt-page-ethernet.c:77 ../clients/tui/nmt-page-vlan.c:122
 #: ../clients/tui/nmt-page-wifi.c:364
 msgid "Cloned MAC address"
-msgstr "Klonade MAC-adress"
+msgstr "Klonad MAC-adress"
 
 #: ../clients/tui/nmt-page-infiniband.c:47
 msgid "Datagram"
@@ -7727,7 +7814,7 @@ msgstr "Misslyckades med att initiera chifferkontexten för kryptering: %s (%s)"
 #: ../libnm-core/crypto_gnutls.c:233 ../libnm-util/crypto_gnutls.c:292
 #, c-format
 msgid "Failed to encrypt the data: %s (%s)"
-msgstr "Misslyckades med att kryptera datat: %s (%s)"
+msgstr "Misslyckades med att kryptera data: %s (%s)"
 
 #: ../libnm-core/crypto_gnutls.c:276 ../libnm-util/crypto_gnutls.c:332
 #, c-format
@@ -7880,9 +7967,8 @@ msgid "unknown setting name"
 msgstr "okänt inställningsnamn"
 
 #: ../libnm-core/nm-connection.c:306
-#, fuzzy
 msgid "duplicate setting name"
-msgstr "okänt inställningsnamn"
+msgstr "duplicerat inställningsnamn"
 
 #: ../libnm-core/nm-connection.c:873
 msgid "setting not found"
@@ -8318,7 +8404,7 @@ msgstr "”%s”-alternativet är endast giltigt med läget ”%s”"
 #: ../libnm-core/nm-setting-bond.c:687
 #, c-format
 msgid "'%s' and '%s' cannot have different values"
-msgstr ""
+msgstr "”%s” och ”%s” kan inte ha olika värden"
 
 #: ../libnm-core/nm-setting-bond.c:703
 #, c-format
@@ -8459,14 +8545,12 @@ msgid "'%s' length is invalid (should be 5 or 6 digits)"
 msgstr "”%s”-längden är ogiltig (ska vara 5 eller 6 siffror)"
 
 #: ../libnm-core/nm-setting-gsm.c:397
-#, fuzzy
 msgid "property is empty or wrong size"
-msgstr "egenskap är tom"
+msgstr "egenskap är tom eller har fel storlek"
 
 #: ../libnm-core/nm-setting-gsm.c:407
-#, fuzzy
 msgid "property must contain only digits"
-msgstr "egenskapen innehåller inte protokollet ”%s”"
+msgstr "egenskap får endast innehålla siffror"
 
 #: ../libnm-core/nm-setting-infiniband.c:217
 #: ../libnm-util/nm-setting-infiniband.c:231
@@ -8526,7 +8610,7 @@ msgstr "Ogiltig IPv4-adressprefix ”%u”"
 #: ../libnm-core/nm-setting-ip-config.c:152
 #, c-format
 msgid "Invalid IPv6 address prefix '%u'"
-msgstr "Ogiltig IPv6-adressprefix ”%u”"
+msgstr "Ogiltigt IPv6-adressprefix ”%u”"
 
 #: ../libnm-core/nm-setting-ip-config.c:170
 #, c-format
@@ -8546,7 +8630,7 @@ msgstr "%d. IP-adressen är ogiltig"
 #: ../libnm-core/nm-setting-ip-config.c:2210
 #, c-format
 msgid "%d. IP address has 'label' property with invalid type"
-msgstr "%d. IP-adressen har ”label”-egenskap med ogiltigt typ"
+msgstr "%d. IP-adressen har ”label”-egenskap med ogiltig typ"
 
 #: ../libnm-core/nm-setting-ip-config.c:2219
 #, c-format
@@ -8596,18 +8680,18 @@ msgid "this property is not allowed for '%s=%s'"
 msgstr "denna egenskap är inte tillåten för ”%s=%s”"
 
 #: ../libnm-core/nm-setting-ip4-config.c:214
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid FQDN"
-msgstr "”%s” är inte ett giltigt UUID"
+msgstr "”%s” är inte ett giltigt FQDN"
 
 #: ../libnm-core/nm-setting-ip4-config.c:223
 msgid "property cannot be set when dhcp-hostname is also set"
-msgstr ""
+msgstr "egenskap kan inte ställas in då dhcp-hostname också är inställd"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:318
-#, fuzzy, c-format
+#, c-format
 msgid "'%d' is not a valid tunnel mode"
-msgstr "”%d” är inte en giltig kanal"
+msgstr "”%d” är inte ett giltigt tunnelläge"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:330
 #: ../libnm-core/nm-setting-macvlan.c:167 ../libnm-core/nm-setting-vlan.c:647
@@ -8618,23 +8702,24 @@ msgstr "”%s” är varken ett UUID eller ett gränssnittsnamn"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:341
 #: ../libnm-core/nm-setting-ip-tunnel.c:352
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv%c address"
-msgstr "”%s” är inte en giltig MAC-adress"
+msgstr "”%s” är inte en giltig IPv%c-adress"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:366
 msgid "tunnel keys can only be specified for GRE tunnels"
-msgstr ""
+msgstr "tunnelnycklar kan endast anges för GRE-tunnlar"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:379
 #: ../libnm-core/nm-setting-ip-tunnel.c:395
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid tunnel key"
-msgstr "”%s” är inte en giltig kanal"
+msgstr "”%s” är inte en giltig tunnelnyckel"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:407
 msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr ""
+"en fast TTL är endast tillåten då sökvägs-MTU-upptäckt (PMTUD) är aktiverad"
 
 #: ../libnm-core/nm-setting-macvlan.c:181 ../libnm-core/nm-setting-vlan.c:661
 #: ../libnm-util/nm-setting-vlan.c:580
@@ -8644,7 +8729,7 @@ msgstr "egenskapen är inte angiven och det är inte heller ”%s:%s”"
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
-msgstr ""
+msgstr "icke-promiskuös operation är tillåten endast i genomströmningsläge"
 
 #: ../libnm-core/nm-setting-olpc-mesh.c:130
 #: ../libnm-core/nm-setting-wireless.c:739
@@ -8672,19 +8757,19 @@ msgid "setting this property requires non-zero '%s' property"
 msgstr "att sätta denna egenskap kräver icke-noll för ”%s”-egenskapen"
 
 #: ../libnm-core/nm-setting-tun.c:187
-#, fuzzy, c-format
+#, c-format
 msgid "'%u': invalid mode"
-msgstr "”%s” är inte ett giltigt Wi-Fi-läge"
+msgstr "”%u”: ogiltigt läge"
 
 #: ../libnm-core/nm-setting-tun.c:197
-#, fuzzy, c-format
+#, c-format
 msgid "'%s': invalid user ID"
-msgstr "”%s” är inte ett giltigt UUID"
+msgstr "”%s”: ogiltigt användar-ID"
 
 #: ../libnm-core/nm-setting-tun.c:208
-#, fuzzy, c-format
+#, c-format
 msgid "'%s': invalid group ID"
-msgstr "”%s” är inte ett giltigt UUID"
+msgstr "”%s”: ogiltigt grupp-ID"
 
 #: ../libnm-core/nm-setting-vlan.c:636 ../libnm-util/nm-setting-vlan.c:556
 #, c-format
@@ -8694,7 +8779,7 @@ msgstr "”%s”-värde matchar inte ”%s=%s”"
 #: ../libnm-core/nm-setting-vlan.c:672 ../libnm-util/nm-setting-vlan.c:600
 #, c-format
 msgid "the vlan id must be in range 0-4094 but is %u"
-msgstr ""
+msgstr "vlan-id måste vara i intervallet 0-4094 men är %u"
 
 #: ../libnm-core/nm-setting-vlan.c:681 ../libnm-util/nm-setting-vlan.c:591
 msgid "flags are invalid"
@@ -8732,19 +8817,19 @@ msgid "secret flags property not found"
 msgstr "hemliga flaggegenskaper hittades inte"
 
 #: ../libnm-core/nm-setting-vxlan.c:375
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP address"
-msgstr "”%s” är inte en giltig MAC-adress"
+msgstr "”%s” är inte en giltig IP-adress"
 
 #: ../libnm-core/nm-setting-vxlan.c:388
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP%c address"
-msgstr "”%s” är inte en giltig MAC-adress"
+msgstr "”%s” är inte en giltig IP%c-adress"
 
 #: ../libnm-core/nm-setting-vxlan.c:415
 #, c-format
 msgid "%d is greater than local port max %d"
-msgstr ""
+msgstr "%d är större än lokalt portmaximum %d"
 
 #: ../libnm-core/nm-setting-wired.c:619 ../libnm-util/nm-setting-wired.c:613
 #, c-format
@@ -8810,7 +8895,7 @@ msgstr "”%s” är inte ett giltigt Wi-Fi-läge"
 #: ../libnm-util/nm-setting-wireless.c:797
 #, c-format
 msgid "'%s' is not a valid band"
-msgstr "”%s” är inte en giltig frekvens"
+msgstr "”%s” är inte ett giltigt band"
 
 #: ../libnm-core/nm-setting-wireless.c:768
 #, c-format
@@ -8820,7 +8905,7 @@ msgstr "”%s” kräver en ”%s”-inställning"
 #: ../libnm-core/nm-setting.c:837
 #, c-format
 msgid "duplicate property"
-msgstr ""
+msgstr "duplicerad egenskap"
 
 #: ../libnm-core/nm-setting.c:865 ../libnm-core/nm-setting.c:912
 #, c-format
@@ -8828,19 +8913,19 @@ msgid "can't set property of type '%s' from value of type '%s'"
 msgstr "kan inte sätta egenskap för typen ”%s” från värdet av typen ”%s”"
 
 #: ../libnm-core/nm-setting.c:884 ../libnm-core/nm-setting.c:898
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set property: %s"
-msgstr "Fel: misslyckades med att sätta ”%s”-egenskapen: %s\n"
+msgstr "misslyckades med att sätta egenskap: %s"
 
 #: ../libnm-core/nm-setting.c:926
-#, fuzzy, c-format
+#, c-format
 msgid "can not set property: %s"
-msgstr "inte en hemlig egenskap"
+msgstr "kan inte sätta egenskap: %s"
 
 #: ../libnm-core/nm-setting.c:942
-#, fuzzy, c-format
+#, c-format
 msgid "unknown property"
-msgstr "okänt fel"
+msgstr "okänd egenskap"
 
 #: ../libnm-core/nm-setting.c:1682
 msgid "secret not found"
@@ -8851,49 +8936,49 @@ msgid "secret is not set"
 msgstr "hemlighet inte angiven"
 
 #: ../libnm-core/nm-utils.c:2447
-#, fuzzy, c-format
+#, c-format
 msgid "failed stat file %s: %s"
-msgstr "misslyckades med att läsa lösenordsfilen ”%s”: %s"
+msgstr "stat misslyckades på filen %s: %s"
 
 #: ../libnm-core/nm-utils.c:2456
-#, fuzzy, c-format
+#, c-format
 msgid "not a file (%s)"
-msgstr "Kunde inte läsa in filen: ”%s”\n"
+msgstr "inte en fil (%s)"
 
 #: ../libnm-core/nm-utils.c:2467
-#, fuzzy, c-format
+#, c-format
 msgid "invalid file owner %d for %s"
-msgstr "ogiltigt fält ”%s”; tillåtna fält: %s"
+msgstr "ogiltig filägare %d för %s"
 
 #: ../libnm-core/nm-utils.c:2478
 #, c-format
 msgid "file permissions for %s"
-msgstr ""
+msgstr "filrättigheter för %s"
 
 #: ../libnm-core/nm-utils.c:2488
 #, c-format
 msgid "reject %s"
-msgstr ""
+msgstr "förkasta %s"
 
 #: ../libnm-core/nm-utils.c:2508
-#, fuzzy, c-format
+#, c-format
 msgid "path is not absolute (%s)"
-msgstr "ogiltigt int64-värde (%s)"
+msgstr "sökväg är inte absolut (%s)"
 
 #: ../libnm-core/nm-utils.c:2522
 #, c-format
 msgid "Plugin file does not exist (%s)"
-msgstr ""
+msgstr "Insticksmodulfil existerar inte (%s)"
 
 #: ../libnm-core/nm-utils.c:2530
-#, fuzzy, c-format
+#, c-format
 msgid "Plugin is not a valid file (%s)"
-msgstr "”%s” är inte ett giltigt värde för ”%s”"
+msgstr "Insticksmodul är inte en giltig fil (%s)"
 
 #: ../libnm-core/nm-utils.c:2540
 #, c-format
 msgid "libtool archives are not supported (%s)"
-msgstr ""
+msgstr "libtool-arkiv stöds inte (%s)"
 
 #: ../libnm-core/nm-utils.c:2622 ../libnm-util/nm-utils.c:1815
 #, c-format
@@ -8903,101 +8988,105 @@ msgstr "Kunde inte hitta binären ”%s”"
 #: ../libnm-core/nm-vpn-editor-plugin.c:132
 #, c-format
 msgid "cannot load plugin %s"
-msgstr ""
+msgstr "kan inte läsa in insticksmodulen %s"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:160
 #, c-format
 msgid "cannot load VPN plugin in '%s': missing plugin name"
 msgstr ""
+"kan inte läsa in VPN-insticksmodul i ”%s”: saknar namn på insticksmodul"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:167
 #, c-format
 msgid "cannot load VPN plugin in '%s': invalid service name"
-msgstr ""
+msgstr "kan inte läsa in VPN-insticksmodul i ”%s”: ogiltigt namn på tjänst"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:183
 #, c-format
 msgid "unknown error initializing plugin %s"
-msgstr ""
+msgstr "okänt fel vid initiering av insticksmodulen %s"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:195
 #, c-format
 msgid "failed to load nm_vpn_editor_plugin_factory() from %s (%s)"
 msgstr ""
+"misslyckades med att läsa in nm_vpn_editor_plugin_factory() från %s (%s)"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:256
 #, c-format
 msgid "the plugin does not support import capability"
-msgstr ""
+msgstr "insticksmodulen stöder inte importförmåga"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:276
 #, c-format
 msgid "the plugin does not support export capability"
-msgstr ""
+msgstr "insticksmodulen stöder inte exportförmåga"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:109
-#, fuzzy, c-format
+#, c-format
 msgid "missing filename"
-msgstr "saknat alternativ"
+msgstr "filnamn saknas"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:117
 #, c-format
 msgid "filename must be an absolute path (%s)"
-msgstr ""
+msgstr "filnamn måste vara en absolut sökväg (%s)"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:126
 #, c-format
 msgid "filename has invalid format (%s)"
-msgstr ""
+msgstr "filnamn har ogiltigt format (%s)"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:383
 #, c-format
 msgid "there exists a conflicting plugin (%s) that has the same %s.%s value"
 msgstr ""
+"det finns en insticksmodul (%s) som står i konflikt och har samma %s.%s-värde"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:421
 #, c-format
 msgid "there exists a conflicting plugin with the same name (%s)"
-msgstr ""
+msgstr "det finns en insticksmodul med samma namn (%s) som står i konflikt"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:740
-#, fuzzy, c-format
+#, c-format
 msgid "missing \"plugin\" setting"
-msgstr "saknar inställning"
+msgstr "saknar ”plugin”-inställning"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:750
 #, c-format
 msgid "%s: don't retry loading plugin which already failed previously"
 msgstr ""
+"%s: försök inte att på nytt läsa in insticksmodul som redan tidigare "
+"misslyckats"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:842
 msgid "missing filename to load VPN plugin info"
-msgstr ""
+msgstr "saknar filnamn för att läsa in VPN-insticksinfo"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:854
 msgid "missing name for VPN plugin info"
-msgstr ""
+msgstr "saknar namn för VPN-insticksinfo"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:863
 msgid "missing service for VPN plugin info"
-msgstr ""
+msgstr "saknar tjänst för VPN-insticksinfo"
 
 #: ../libnm-glib/nm-device.c:1853 ../libnm/nm-device.c:1804
 msgid "Bluetooth"
 msgstr "Bluetooth"
 
 #: ../libnm-glib/nm-device.c:1873 ../libnm/nm-device.c:1824
-#, fuzzy
 msgid "MACVLAN"
-msgstr "VLAN"
+msgstr "MACVLAN"
 
 #: ../libnm-glib/nm-device.c:1877 ../libnm/nm-device.c:1828
 msgid "IPTunnel"
-msgstr ""
+msgstr "IPTunnel"
 
 #: ../libnm-glib/nm-device.c:1881 ../libnm/nm-device.c:1832
 msgid "Veth"
-msgstr ""
+msgstr "Veth"
 
 #: ../libnm-glib/nm-device.c:1913 ../libnm/nm-device.c:1864
 msgid "Wired"
@@ -9135,7 +9224,7 @@ msgstr "Anslutningen var inte en Ethernet eller PPPoE-anslutning."
 
 #: ../libnm/nm-device-ethernet.c:222
 msgid "The connection and device differ in S390 subchannels."
-msgstr ""
+msgstr "Anslutningen och enheten skiljer sig åt i S390-underkanaler."
 
 #: ../libnm/nm-device-ethernet.c:232 ../libnm/nm-device-infiniband.c:102
 #: ../libnm/nm-device-wifi.c:604 ../libnm/nm-device-wimax.c:326
@@ -9143,19 +9232,18 @@ msgid "Invalid device MAC address."
 msgstr "Ogiltigt MAC-adress för enhet."
 
 #: ../libnm/nm-device-ethernet.c:237
-#, fuzzy
 msgid "The MACs of the device and the connection do not match."
-msgstr "MAC-adresserna för enheten och anslutningen matchade inte."
+msgstr "MAC-adresserna för enheten och anslutningen matchar inte."
 
 #: ../libnm/nm-device-ethernet.c:247
 #, c-format
 msgid "Invalid MAC in the blacklist: %s."
-msgstr ""
+msgstr "Ogiltig MAC i svartlistan: %s."
 
 #: ../libnm/nm-device-ethernet.c:253
-#, fuzzy, c-format
+#, c-format
 msgid "Device MAC (%s) is blacklisted by the connection."
-msgstr "Enheten saknar förmågorna som krävs av anslutningen."
+msgstr "Enhetens MAC-adress (%s) är svartlistad av anslutningen."
 
 #: ../libnm/nm-device-generic.c:91
 msgid "The connection was not a generic connection."
@@ -9166,14 +9254,12 @@ msgid "The connection did not specify an interface name."
 msgstr "Anslutningen angav inte ett gränssnittsnamn."
 
 #: ../libnm/nm-device-tun.c:209
-#, fuzzy
 msgid "The connection was not a tun connection."
-msgstr "Anslutningen var inte en gruppanslutning."
+msgstr "Anslutningen var inte en tun-anslutning."
 
 #: ../libnm/nm-device-tun.c:218
-#, fuzzy
 msgid "The mode of the device and the connection didn't match"
-msgstr "MAC-adresserna för enheten och anslutningen matchade inte."
+msgstr "Läget för enheten och anslutningen matchade inte"
 
 #: ../libnm/nm-device-infiniband.c:94
 msgid "The connection was not an InfiniBand connection."
@@ -9185,14 +9271,12 @@ msgid "The MACs of the device and the connection didn't match."
 msgstr "MAC-adresserna för enheten och anslutningen matchade inte."
 
 #: ../libnm/nm-device-ip-tunnel.c:254
-#, fuzzy
 msgid "The connection was not an IP tunnel connection."
-msgstr "Anslutningen var inte en gruppanslutning."
+msgstr "Anslutningen var inte en IP-tunnelanslutning."
 
 #: ../libnm/nm-device-macvlan.c:159
-#, fuzzy
 msgid "The connection was not a MAC-VLAN connection."
-msgstr "Anslutningen var inte en VLAN-anslutning."
+msgstr "Anslutningen var inte en MAC-VLAN-anslutning."
 
 #: ../libnm/nm-device-modem.c:120
 msgid "The connection was not a modem connection."
@@ -9227,14 +9311,12 @@ msgid "The hardware address of the device and the connection didn't match."
 msgstr "Hårdvaruadressen för enheten och anslutningen matchar inte."
 
 #: ../libnm/nm-device-vxlan.c:387
-#, fuzzy
 msgid "The connection was not a VXLAN connection."
-msgstr "Anslutningen var inte en VLAN-anslutning."
+msgstr "Anslutningen var inte en VXLAN-anslutning."
 
 #: ../libnm/nm-device-vxlan.c:394
-#, fuzzy
 msgid "The VXLAN identifiers of the device and the connection didn't match."
-msgstr "VLAN-identifierarna för enheten och anslutningen matchar inte."
+msgstr "VXLAN-identifierarna för enheten och anslutningen matchar inte."
 
 #: ../libnm/nm-device-wifi.c:595
 msgid "The connection was not a Wi-Fi connection."
@@ -9391,42 +9473,45 @@ msgid "System policy prevents modification of the persistent system hostname"
 msgstr "Systemets policy förhindrar ändring av bestående värdnamn för systemet"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:23
-#, fuzzy
 msgid "Modify persistent global DNS configuration"
-msgstr "Avsluta efter initial konfiguration"
+msgstr "Ändra bestående global DNS-konfiguration"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:24
-#, fuzzy
 msgid ""
 "System policy prevents modification of the persistent global DNS "
 "configuration"
-msgstr "Systemets policy förhindrar ändring av bestående värdnamn för systemet"
+msgstr ""
+"Systemets policy förhindrar ändring av bestående global DNS-konfiguration"
 
 #: ../shared/nm-shared-utils.c:174
 #, c-format
 msgid "object class '%s' has no property named '%s'"
-msgstr ""
+msgstr "objektklassen ”%s” har ingen egenskap med namnet ”%s”"
 
 #: ../shared/nm-shared-utils.c:181
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
-msgstr ""
+msgstr "egenskapen ”%s” för objektklassen ”%s” är inte skrivbar"
 
 #: ../shared/nm-shared-utils.c:188
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
+"konstruktionsegenskap ”%s” för objektet ”%s” kan inte ställas in efter att "
+"det skapats"
 
 #: ../shared/nm-shared-utils.c:196
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr ""
+"”%s::%s” är inte ett giltigt egenskapsnamn; ”%s” är inte en undertyp till "
+"GObject"
 
 #: ../shared/nm-shared-utils.c:205
-#, fuzzy, c-format
+#, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
-msgstr "kan inte sätta egenskap för typen ”%s” från värdet av typen ”%s”"
+msgstr "kan inte sätta egenskapen ”%s” av typen ”%s” från värdet av typen ”%s”"
 
 #: ../shared/nm-shared-utils.c:216
 #, c-format
@@ -9434,6 +9519,8 @@ msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
 "type '%s'"
 msgstr ""
+"värdet ”%s” av typ ”%s” är ogiltigt eller utanför intervallet för egenskapen "
+"”%s” av typ ”%s”"
 
 #. Translators: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
@@ -9642,28 +9729,24 @@ msgid "InfiniBand connection"
 msgstr "InfiniBand-anslutning"
 
 #: ../src/devices/nm-device-ip-tunnel.c:346
-#, fuzzy
 msgid "IP tunnel connection"
-msgstr "PAN-anslutning"
+msgstr "IP-tunnelanslutning"
 
 #: ../src/devices/nm-device-macvlan.c:428
-#, fuzzy
 msgid "MACVLAN connection"
-msgstr "VLAN-anslutning"
+msgstr "MACVLAN-anslutning"
 
 #: ../src/devices/nm-device-tun.c:129
-#, fuzzy
 msgid "TUN connection"
-msgstr "PAN-anslutning"
+msgstr "TUN-anslutning"
 
 #: ../src/devices/nm-device-vlan.c:447
 msgid "VLAN connection"
 msgstr "VLAN-anslutning"
 
 #: ../src/devices/nm-device-vxlan.c:373
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VLAN-anslutning"
+msgstr "VXLAN-anslutning"
 
 #: ../src/devices/team/nm-device-team.c:115
 msgid "Team connection"
@@ -9710,7 +9793,7 @@ msgstr ""
 "nyckelhantering"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:164
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify WPA protocols"
 msgstr ""
 "en anslutning som använder ”%s”-autentisering kan inte specificera WPA-"
@@ -9718,14 +9801,14 @@ msgstr ""
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:180
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:197
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify WPA ciphers"
 msgstr ""
 "en anslutning som använder ”%s”-autentisering kan inte specificera WPA-"
 "chiffer"
 
 #: ../src/devices/wifi/nm-wifi-ap-utils.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "a connection using '%s' authentication cannot specify a WPA password"
 msgstr ""
 "en anslutning som använder ”%s”-autentisering kan inte specificera ett WPA-"
@@ -9937,13 +10020,12 @@ msgid "barbar"
 msgstr "barbar"
 
 #: ../src/nm-iface-helper.c:289
-#, fuzzy
 msgid "FQDN to send to DHCP server"
-msgstr "Värdnamn att skicka till DHCP-server"
+msgstr "FQDN att skicka till DHCP-server"
 
 #: ../src/nm-iface-helper.c:289
 msgid "host.domain.org"
-msgstr ""
+msgstr "host.domain.org"
 
 #: ../src/nm-iface-helper.c:290
 msgid "Route priority for IPv4"
@@ -9967,7 +10049,7 @@ msgstr "Hexkodad gränssnittsidentifierare"
 
 #: ../src/nm-iface-helper.c:293
 msgid "IPv6 SLAAC address generation mode"
-msgstr ""
+msgstr "SLAAC-adressgenereringsläge för IPv6"
 
 #: ../src/nm-iface-helper.c:294
 msgid ""
@@ -9981,7 +10063,7 @@ msgid ""
 "nm-iface-helper is a small, standalone process that manages a single network "
 "interface."
 msgstr ""
-"nm-iface-helper är en liten fristående process som hanterar ett "
+"nm-iface-helper är en liten fristående process som hanterar ett enstaka "
 "nätverksgränssnitt."
 
 #: ../src/nm-iface-helper.c:373
@@ -10021,9 +10103,8 @@ msgstr "Nätverkshanteraren behöver stänga av nätverk"
 msgid "System"
 msgstr "System"
 
-#, fuzzy
 #~ msgid "Error: unknown parameter: %s"
-#~ msgstr "Okänd parameter: %s\n"
+#~ msgstr "Fel: okänd parameter: %s"
 
 #~ msgid "yes (%u)"
 #~ msgstr "yes (%u)"
@@ -10054,8 +10135,14 @@ msgstr "System"
 #~ msgid "Error: not all devices valid."
 #~ msgstr "Fel: alla enheter är inte giltiga."
 
-#~ msgid "'%s' not allowed for %s=%s"
-#~ msgstr "”%s” inte tillåtet för %s=%s"
+#~ msgid "Error: Argument missing."
+#~ msgstr "Fel: Argument saknas."
+
+#~ msgid "property is empty'"
+#~ msgstr "egenskap är tom'"
+
+#~ msgid "Bond master: "
+#~ msgstr "Master för kombinering: "
 
 #~ msgid "Team master: "
 #~ msgstr "Master för grupp: "
@@ -10070,21 +10157,6 @@ msgstr "System"
 #~ "Varning: ”type” ignoreras för närvarande. Vi stöder bara trådbundna "
 #~ "slavar för tillfället.\n"
 
-#~ msgid "/path/to/state.file"
-#~ msgstr "/sökväg/till/tillstånds.fil"
-
-#~ msgid "/path/to/config.file"
-#~ msgstr "/sökväg/till/konfigurations.fil"
-
-#~ msgid "/path/to/config/dir"
-#~ msgstr "/sökväg/till/konfiguration/katalog"
-
-#~ msgid "plugin1,plugin2"
-#~ msgstr "insticksmodul1,insticksmodul2"
-
-#~ msgid "Bingo!"
-#~ msgstr "Bingo!"
-
 #~ msgid "Error: bad color number: '%s'; use <0-8>\n"
 #~ msgstr "Fel: dåligt färgnummer: ”%s”; använd <0-8>\n"
 
@@ -10096,9 +10168,6 @@ msgstr "System"
 
 #~ msgid "Roaming"
 #~ msgstr "Roaming"
-
-#~ msgid "Device '%s' has been disconnected.\n"
-#~ msgstr "Enheten ”%s” kopplades från.\n"
 
 #~ msgid "WiMAX NSP list"
 #~ msgstr "WiMAX NSP-lista"
@@ -10136,9 +10205,6 @@ msgstr "System"
 #~ msgid "WiMAX radio switch"
 #~ msgstr "WiMAX radioväxel"
 
-#~ msgid "'%s' is ambiguous (on x off)"
-#~ msgstr "”%s” är dubbeltydig (på x av)"
-
 #~ msgid "Failed to set symmetric key for decryption: %s / %s."
 #~ msgstr ""
 #~ "Misslyckades med att ställa in symmetrisk nyckel för dekryptering: %s / "
@@ -10153,6 +10219,30 @@ msgstr "System"
 
 #~ msgid "Failed to set IV for encryption: %s / %s."
 #~ msgstr "Misslyckades med att ställa in IV för kryptering: %s / %s."
+
+#~ msgid "'%s' not allowed for %s=%s"
+#~ msgstr "”%s” inte tillåtet för %s=%s"
+
+#~ msgid "/path/to/state.file"
+#~ msgstr "/sökväg/till/tillstånds.fil"
+
+#~ msgid "/path/to/config.file"
+#~ msgstr "/sökväg/till/konfigurations.fil"
+
+#~ msgid "/path/to/config/dir"
+#~ msgstr "/sökväg/till/konfiguration/katalog"
+
+#~ msgid "plugin1,plugin2"
+#~ msgstr "insticksmodul1,insticksmodul2"
+
+#~ msgid "Bingo!"
+#~ msgstr "Bingo!"
+
+#~ msgid "Device '%s' has been disconnected.\n"
+#~ msgstr "Enheten ”%s” kopplades från.\n"
+
+#~ msgid "'%s' is ambiguous (on x off)"
+#~ msgstr "”%s” är dubbeltydig (på x av)"
 
 #~ msgid "Slave connections need a valid '"
 #~ msgstr "Slavanslutningar behöver en giltig ”"
