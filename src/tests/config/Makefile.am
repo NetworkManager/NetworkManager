@@ -28,6 +28,7 @@ TESTS = test-config
 
 EXTRA_DIST = \
 	NetworkManager.conf \
+	NetworkManager.state \
 	bad.conf \
 	global-dns-invalid.conf \
 	conf.d/00-overrides.conf \

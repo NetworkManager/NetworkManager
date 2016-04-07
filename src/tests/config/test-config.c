@@ -930,6 +930,67 @@ test_config_enable (void)
 
 /*****************************************************************************/
 
+static void
+test_config_state_file (void)
+{
+	NMConfig *config;
+	const NMConfigRunState *state;
+	gs_unref_object GFile *src = NULL, *dst = NULL;
+	const char *tmp_file = BUILDDIR "/tmp.state";
+	GError *error = NULL;
+	gboolean ret;
+
+	src = g_file_new_for_path (SRCDIR "/NetworkManager.state");
+	g_assert (src);
+	dst = g_file_new_for_path (tmp_file);
+	g_assert (dst);
+
+	ret = g_file_copy (src, dst, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, &error);
+	nmtst_assert_success (ret, error);
+
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "",
+	                       "--state-file", tmp_file, NULL);
+	g_assert (config);
+
+	state = nm_config_run_state_get (config);
+	g_assert (state);
+
+	g_assert_cmpint (state->net_enabled, ==, TRUE);
+	g_assert_cmpint (state->wifi_enabled, ==, TRUE);
+	g_assert_cmpint (state->wwan_enabled, ==, TRUE);
+
+	nm_config_run_state_set (config, TRUE, TRUE,
+	                         NM_CONFIG_RUN_STATE_PROPERTY_NETWORKING_ENABLED, FALSE,
+	                         NM_CONFIG_RUN_STATE_PROPERTY_WIFI_ENABLED, TRUE,
+	                         NM_CONFIG_RUN_STATE_PROPERTY_WWAN_ENABLED, FALSE);
+
+	state = nm_config_run_state_get (config);
+	g_assert (state);
+
+	g_assert_cmpint (state->net_enabled, ==, FALSE);
+	g_assert_cmpint (state->wifi_enabled, ==, TRUE);
+	g_assert_cmpint (state->wwan_enabled, ==, FALSE);
+
+	g_object_unref (config);
+
+	/* Reload configuration */
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "",
+	                       "--state-file", tmp_file, NULL);
+	g_assert (config);
+
+	state = nm_config_run_state_get (config);
+	g_assert (state);
+
+	g_assert_cmpint (state->net_enabled, ==, FALSE);
+	g_assert_cmpint (state->wifi_enabled, ==, TRUE);
+	g_assert_cmpint (state->wwan_enabled, ==, FALSE);
+
+	g_object_unref (config);
+	unlink (tmp_file);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -959,6 +1020,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/signal", test_config_signal);
 
 	g_test_add_func ("/config/enable", test_config_enable);
+
+	g_test_add_func ("/config/state-file", test_config_state_file);
 
 	/* This one has to come last, because it leaves its values in
 	 * nm-config.c's global variables, and there's no way to reset
