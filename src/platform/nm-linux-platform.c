@@ -198,6 +198,10 @@ typedef enum {
 	DELAYED_ACTION_TYPE_MAX                         = __DELAYED_ACTION_TYPE_MAX -1,
 } DelayedActionType;
 
+#define FOR_EACH_DELAYED_ACTION(iflags, flags_all) \
+	for ((iflags) = (DelayedActionType) 0x1LL; (iflags) <= DELAYED_ACTION_TYPE_MAX; (iflags) <<= 1) \
+		if (NM_FLAGS_HAS (flags_all, iflags))
+
 typedef enum {
 	/* Negative values are errors from kernel. Add dummy member to
 	 * make enum signed. */
@@ -2936,9 +2940,8 @@ delayed_action_handle_one (NMPlatform *platform)
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_ALL;
 
 		if (_LOGt_ENABLED ()) {
-			for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
-				if (NM_FLAGS_HAS (flags, iflags))
-					_LOGt_delayed_action (iflags, NULL, "handle");
+			FOR_EACH_DELAYED_ACTION (iflags, flags) {
+				_LOGt_delayed_action (iflags, NULL, "handle");
 			}
 		}
 
@@ -3023,9 +3026,8 @@ delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gp
 	priv->delayed_action.flags |= action_type;
 
 	if (_LOGt_ENABLED ()) {
-		for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
-			if (NM_FLAGS_HAS (action_type, iflags))
-				_LOGt_delayed_action (iflags, user_data, "schedule");
+		FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+			_LOGt_delayed_action (iflags, user_data, "schedule");
 		}
 	}
 }
@@ -3421,48 +3423,43 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 	nm_assert (!NM_FLAGS_ANY (action_type, ~DELAYED_ACTION_TYPE_REFRESH_ALL));
 	action_type &= DELAYED_ACTION_TYPE_REFRESH_ALL;
 
-	for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
-		if (NM_FLAGS_HAS (action_type, iflags))
-			cache_prune_candidates_record_all (platform, delayed_action_refresh_to_object_type (iflags));
+	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+		cache_prune_candidates_record_all (platform, delayed_action_refresh_to_object_type (iflags));
 	}
 
-	for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
-		if (NM_FLAGS_HAS (action_type, iflags)) {
-			NMPObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
-			const NMPClass *klass = nmp_class_from_type (obj_type);
-			nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-			struct rtgenmsg gmsg = {
-				.rtgen_family = klass->addr_family,
-			};
-			int nle;
+	FOR_EACH_DELAYED_ACTION (iflags, action_type) {
+		NMPObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
+		const NMPClass *klass = nmp_class_from_type (obj_type);
+		nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+		struct rtgenmsg gmsg = {
+			.rtgen_family = klass->addr_family,
+		};
+		int nle;
 
-			/* clear any delayed action that request a refresh of this object type. */
-			priv->delayed_action.flags &= ~iflags;
-			_LOGt_delayed_action (iflags, NULL, "handle (do-request-all)");
-			if (obj_type == NMP_OBJECT_TYPE_LINK) {
-				priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
-				g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
-				_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
-			}
-
-			event_handler_read_netlink (platform, FALSE);
-
-			/* reimplement
-			 *   nl_rtgen_request (sk, klass->rtm_gettype, klass->addr_family, NLM_F_DUMP);
-			 * because we need the sequence number.
-			 */
-			nlmsg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
-			if (!nlmsg)
-				goto next;
-
-			nle = nlmsg_append (nlmsg, &gmsg, sizeof (gmsg), NLMSG_ALIGNTO);
-			if (nle < 0)
-				goto next;
-
-			_nl_send_auto_with_seq (platform, nlmsg, NULL);
+		/* clear any delayed action that request a refresh of this object type. */
+		priv->delayed_action.flags &= ~iflags;
+		_LOGt_delayed_action (iflags, NULL, "handle (do-request-all)");
+		if (obj_type == NMP_OBJECT_TYPE_LINK) {
+			priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
+			g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
+			_LOGt_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
 		}
-next:
-		;
+
+		event_handler_read_netlink (platform, FALSE);
+
+		/* reimplement
+		 *   nl_rtgen_request (sk, klass->rtm_gettype, klass->addr_family, NLM_F_DUMP);
+		 * because we need the sequence number.
+		 */
+		nlmsg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
+		if (!nlmsg)
+			continue;
+
+		nle = nlmsg_append (nlmsg, &gmsg, sizeof (gmsg), NLMSG_ALIGNTO);
+		if (nle < 0)
+			continue;
+
+		_nl_send_auto_with_seq (platform, nlmsg, NULL);
 	}
 }
 
