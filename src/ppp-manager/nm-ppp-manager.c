@@ -1064,8 +1064,14 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	}
 	
 	pppoe_setting = nm_connection_get_setting_pppoe (connection);
-	if (pppoe_setting)
+	if (pppoe_setting) {
+		/* We can't modify the applied connection's setting, make a copy */
+		if (!s_ppp_created) {
+			s_ppp = NM_SETTING_PPP (nm_setting_duplicate ((NMSetting *) s_ppp));
+			s_ppp_created = TRUE;
+		}
 		pppoe_fill_defaults (s_ppp);
+	}
 
 	adsl_setting = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
 
