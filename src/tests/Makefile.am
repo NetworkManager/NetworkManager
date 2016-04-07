@@ -1,5 +1,7 @@
 SUBDIRS = config
 
+@GNOME_CODE_COVERAGE_RULES@
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
@@ -12,7 +14,10 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS)
+
+AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
 
 noinst_PROGRAMS = \
 	test-general \

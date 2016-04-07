@@ -483,6 +483,7 @@ AM_CPPFLAGS += \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(SYSTEMD_NM_CFLAGS_PATHS) \
+	$(CODE_COVERAGE_CFLAGS) \
 	\
 	-DBINDIR=\"$(bindir)\" \
 	-DDATADIR=\"$(datadir)\" \
@@ -505,6 +506,8 @@ AM_CPPFLAGS += \
 	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
 	\
 	$(NULL)
+
+AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
 
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
