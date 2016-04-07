@@ -356,6 +356,7 @@ typedef struct _NMDevicePrivate {
 		/* Event ID of the current IP6 config from DHCP */
 		char *           event_id;
 		guint            restart_id;
+		guint            num_tries_left;
 	} dhcp6;
 
 	/* allow autoconnect feature */
@@ -5316,8 +5317,10 @@ dhcp6_restart_cb (gpointer user_data)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	priv->dhcp6.restart_id = 0;
 
-	if (!dhcp6_start (self, FALSE, &reason))
-		priv->dhcp6.restart_id = g_timeout_add_seconds (120, dhcp6_restart_cb, self);
+	if (!dhcp6_start (self, FALSE, &reason)) {
+		priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+		                                                dhcp6_restart_cb, self);
+	}
 
 	return FALSE;
 }
@@ -5326,6 +5329,9 @@ static void
 dhcp6_fail (NMDevice *self, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	_LOGD (LOGD_DHCP6, "DHCPv6 failed: timeout %d, num tries left %u",
+           timeout, priv->dhcp6.num_tries_left);
 
 	dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 
@@ -5337,7 +5343,8 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		    && priv->con_ip6_config
 		    && nm_ip6_config_get_num_addresses (priv->con_ip6_config)) {
 			_LOGI (LOGD_DHCP6, "Scheduling DHCPv6 restart because device has IP addresses");
-			priv->dhcp6.restart_id = g_timeout_add_seconds (120, dhcp6_restart_cb, self);
+			priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+			                                                dhcp6_restart_cb, self);
 			return;
 		}
 
@@ -5347,15 +5354,27 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		 */
 		if (nm_device_uses_assumed_connection (self)) {
 			_LOGI (LOGD_DHCP6, "Scheduling DHCPv6 restart because the connection is assumed");
-			priv->dhcp6.restart_id = g_timeout_add_seconds (120, dhcp6_restart_cb, self);
+			priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+			                                                dhcp6_restart_cb, self);
 			return;
 		}
 
-		if (timeout || (priv->ip6_state == IP_CONF))
+		if (   priv->dhcp6.num_tries_left == DHCP_NUM_TRIES_MAX
+		    && (timeout || (priv->ip6_state == IP_CONF)))
 			nm_device_activate_schedule_ip6_config_timeout (self);
-		else if (priv->ip6_state == IP_DONE)
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-		else
+		else if (priv->ip6_state == IP_DONE) {
+			/* Don't fail immediately when the lease expires but try to
+			 * restart DHCP for a predefined number of times.
+			 */
+			if (priv->dhcp6.num_tries_left) {
+				_LOGI (LOGD_DHCP6, "restarting DHCPv6 in %d seconds (%u tries left)",
+				       DHCP_RESTART_TIMEOUT, priv->dhcp6.num_tries_left);
+				priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+				                                                dhcp6_restart_cb, self);
+				priv->dhcp6.num_tries_left--;
+			} else
+				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+		} else
 			g_warn_if_reached ();
 	} else {
 		/* not a hard failure; just live with the RA info */
@@ -5420,6 +5439,8 @@ dhcp6_state_changed (NMDhcpClient *client,
 				_notify (self, PROP_DHCP6_CONFIG);
 			}
 		}
+
+		priv->dhcp6.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 		if (priv->ip6_state == IP_CONF) {
 			if (priv->dhcp6.ip6_config == NULL) {
@@ -6282,6 +6303,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	priv->dhcp6.mode = NM_RDISC_DHCP_LEVEL_NONE;
+	priv->dhcp6.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
