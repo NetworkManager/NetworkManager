@@ -4011,9 +4011,8 @@ _internal_enable (NMManager *self, gboolean enable)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	/* Update "NetworkingEnabled" key in state file */
-	nm_config_run_state_set (priv->config, TRUE, FALSE,
-	                         NM_CONFIG_RUN_STATE_PROPERTY_NETWORKING_ENABLED, enable);
+	nm_config_state_set (priv->config, TRUE, FALSE,
+	                     NM_CONFIG_STATE_PROPERTY_NETWORKING_ENABLED, enable);
 
 	_LOGI (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
 	       enable ? "enable" : "disable",
@@ -4964,8 +4963,8 @@ manager_radio_user_toggled (NMManager *self,
 	}
 
 	/* Update enabled key in state file */
-	nm_config_run_state_set (priv->config, TRUE, FALSE,
-	                         rstate->key, enabled);
+	nm_config_state_set (priv->config, TRUE, FALSE,
+	                     rstate->key, enabled);
 
 	/* When the user toggles the radio, their request should override any
 	 * daemon (like ModemManager) enabled state that can be changed.  For WWAN
@@ -5064,7 +5063,7 @@ constructed (GObject *object)
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConfigData *config_data;
-	const NMConfigRunState *run_state;
+	const NMConfigState *state;
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
 
@@ -5107,12 +5106,12 @@ constructed (GObject *object)
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), self);
 
-	run_state = nm_config_run_state_get (priv->config);
+	state = nm_config_state_get (priv->config);
 
-	priv->net_enabled = run_state->net_enabled;
+	priv->net_enabled = state->net_enabled;
 
-	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = run_state->wifi_enabled;
-	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = run_state->wwan_enabled;
+	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = state->wifi_enabled;
+	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = state->wwan_enabled;
 
 	priv->rfkill_mgr = nm_rfkill_manager_new ();
 	g_signal_connect (priv->rfkill_mgr,
@@ -5140,14 +5139,14 @@ nm_manager_init (NMManager *self)
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
 
 	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = TRUE;
-	priv->radio_states[RFKILL_TYPE_WLAN].key = NM_CONFIG_RUN_STATE_PROPERTY_WIFI_ENABLED;
+	priv->radio_states[RFKILL_TYPE_WLAN].key = NM_CONFIG_STATE_PROPERTY_WIFI_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].prop = NM_MANAGER_WIRELESS_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].hw_prop = NM_MANAGER_WIRELESS_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
 	priv->radio_states[RFKILL_TYPE_WLAN].rtype = RFKILL_TYPE_WLAN;
 
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = TRUE;
-	priv->radio_states[RFKILL_TYPE_WWAN].key = NM_CONFIG_RUN_STATE_PROPERTY_WWAN_ENABLED;
+	priv->radio_states[RFKILL_TYPE_WWAN].key = NM_CONFIG_STATE_PROPERTY_WWAN_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].prop = NM_MANAGER_WWAN_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].hw_prop = NM_MANAGER_WWAN_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";

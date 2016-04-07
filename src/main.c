@@ -335,8 +335,8 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
 
-	/* the first access to RunState causes the file to be read (and possibly print a warning) */
-	nm_config_run_state_get (config);
+	/* the first access to State causes the file to be read (and possibly print a warning) */
+	nm_config_state_get (config);
 
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
@@ -400,7 +400,7 @@ done:
 
 	nm_manager_stop (nm_manager_get ());
 
-	nm_config_run_state_set (config, TRUE, TRUE);
+	nm_config_state_set (config, TRUE, TRUE);
 
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);

@@ -934,7 +934,7 @@ static void
 test_config_state_file (void)
 {
 	NMConfig *config;
-	const NMConfigRunState *state;
+	const NMConfigState *state;
 	gs_unref_object GFile *src = NULL, *dst = NULL;
 	const char *tmp_file = BUILDDIR "/tmp.state";
 	GError *error = NULL;
@@ -952,19 +952,19 @@ test_config_state_file (void)
 	                       "--state-file", tmp_file, NULL);
 	g_assert (config);
 
-	state = nm_config_run_state_get (config);
+	state = nm_config_state_get (config);
 	g_assert (state);
 
 	g_assert_cmpint (state->net_enabled, ==, TRUE);
 	g_assert_cmpint (state->wifi_enabled, ==, TRUE);
 	g_assert_cmpint (state->wwan_enabled, ==, TRUE);
 
-	nm_config_run_state_set (config, TRUE, TRUE,
-	                         NM_CONFIG_RUN_STATE_PROPERTY_NETWORKING_ENABLED, FALSE,
-	                         NM_CONFIG_RUN_STATE_PROPERTY_WIFI_ENABLED, TRUE,
-	                         NM_CONFIG_RUN_STATE_PROPERTY_WWAN_ENABLED, FALSE);
+	nm_config_state_set (config, TRUE, TRUE,
+	                     NM_CONFIG_STATE_PROPERTY_NETWORKING_ENABLED, FALSE,
+	                     NM_CONFIG_STATE_PROPERTY_WIFI_ENABLED, TRUE,
+	                     NM_CONFIG_STATE_PROPERTY_WWAN_ENABLED, FALSE);
 
-	state = nm_config_run_state_get (config);
+	state = nm_config_state_get (config);
 	g_assert (state);
 
 	g_assert_cmpint (state->net_enabled, ==, FALSE);
@@ -978,7 +978,7 @@ test_config_state_file (void)
 	                       "--state-file", tmp_file, NULL);
 	g_assert (config);
 
-	state = nm_config_run_state_get (config);
+	state = nm_config_state_get (config);
 	g_assert (state);
 
 	g_assert_cmpint (state->net_enabled, ==, FALSE);

@@ -73,8 +73,8 @@ struct NMConfigCmdLineOptions {
 };
 
 typedef struct {
-	NMConfigRunState p;
-} RunState;
+	NMConfigState p;
+} State;
 
 typedef struct {
 	NMConfigCmdLineOptions cli;
@@ -101,15 +101,18 @@ typedef struct {
 
 	char **atomic_section_prefixes;
 
-	/* The run-state. This is actually a mutable data member and it makes sense:
-	 * The regular config is immutable (NMConfigData) which allows atomic updates
-	 * which is handy during reload. Also, we invoke a config-changed signal when
-	 * the config changes.
+	/* The state. This is actually a mutable data member and it makes sense:
+	 * The regular config is immutable (NMConfigData) and can old be swapped
+	 * as a whole (via nm_config_set_values() or during reload). Thus, it can
+	 * be changed, but it is still immutable and is swapped atomically as a
+	 * whole. Also, we emit a config-changed signal on that occasion.
 	 *
-	 * For run-state, there are no events. You can query it and set it.
-	 * It only gets read once at startup, and later is cached and only written
-	 * out to disk. Hence, no need for the immutable dance here. */
-	RunState *run_state;
+	 * For state, there are no events. You can query it and set it.
+	 * It only gets read *once* at startup, and later is cached and only
+	 * written out to disk. Hence, no need for the immutable dance here
+	 * because the state changes only on explicit actions from the daemon
+	 * itself. */
+	State *state;
 } NMConfigPrivate;
 
 enum {
@@ -1678,76 +1681,75 @@ nm_config_set_values (NMConfig *self,
 }
 
 /******************************************************************************
- * RunState
+ * State
  ******************************************************************************/
 
 static const char *
-run_state_get_filename (const NMConfigCmdLineOptions *cli)
+state_get_filename (const NMConfigCmdLineOptions *cli)
 {
 	/* For an empty filename, we assume the user wants to disable
-	 * persistent run-state. NMConfig will not try to read it nor
-	 * write it out. */
+	 * state. NMConfig will not try to read it nor write it out. */
 	if (!cli->state_file)
 		return DEFAULT_STATE_FILE;
 	return cli->state_file[0] ? cli->state_file : NULL;
 }
 
-static RunState *
-run_state_new (void)
+static State *
+state_new (void)
 {
-	RunState *run_state;
+	State *state;
 
-	run_state = g_slice_new0 (RunState);
-	run_state->p.net_enabled = TRUE;
-	run_state->p.wifi_enabled = TRUE;
-	run_state->p.wwan_enabled = TRUE;
+	state = g_slice_new0 (State);
+	state->p.net_enabled = TRUE;
+	state->p.wifi_enabled = TRUE;
+	state->p.wwan_enabled = TRUE;
 
-	return run_state;
+	return state;
 }
 
 static void
-run_state_free (RunState *run_state)
+state_free (State *state)
 {
-	if (!run_state)
+	if (!state)
 		return;
-	g_slice_free (RunState, run_state);
+	g_slice_free (State, state);
 }
 
-static RunState *
-run_state_new_from_file (const char *filename)
+static State *
+state_new_from_file (const char *filename)
 {
 	GKeyFile *keyfile;
 	gs_free_error GError *error = NULL;
-	RunState *run_state;
+	State *state;
 
-	run_state = run_state_new ();
+	state = state_new ();
 
 	if (!filename)
-		return run_state;
+		return state;
 
 	keyfile = g_key_file_new ();
 	g_key_file_set_list_separator (keyfile, ',');
 	if (!g_key_file_load_from_file (keyfile, filename, G_KEY_FILE_NONE, &error)) {
 		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
-			_LOGD ("run-state: missing state file \"%s\": %s", filename, error->message);
+			_LOGD ("state: missing state file \"%s\": %s", filename, error->message);
 		else
-			_LOGW ("run-state: error reading state file \"%s\": %s", filename, error->message);
+			_LOGW ("state: error reading state file \"%s\": %s", filename, error->message);
 		goto out;
 	}
 
-	_LOGD ("run-state: successfully read state file \"%s\"", filename);
+	_LOGD ("state: successfully read state file \"%s\"", filename);
 
-	run_state->p.net_enabled  = nm_config_keyfile_get_boolean (keyfile, "main", "NetworkingEnabled", run_state->p.net_enabled);
-	run_state->p.wifi_enabled = nm_config_keyfile_get_boolean (keyfile, "main", "WirelessEnabled", run_state->p.wifi_enabled);
-	run_state->p.wwan_enabled = nm_config_keyfile_get_boolean (keyfile, "main", "WWANEnabled", run_state->p.wwan_enabled);
+	state->p.net_enabled  = nm_config_keyfile_get_boolean (keyfile, "main", "NetworkingEnabled", state->p.net_enabled);
+	state->p.wifi_enabled = nm_config_keyfile_get_boolean (keyfile, "main", "WirelessEnabled", state->p.wifi_enabled);
+	state->p.wwan_enabled = nm_config_keyfile_get_boolean (keyfile, "main", "WWANEnabled", state->p.wwan_enabled);
 
 out:
 	g_key_file_unref (keyfile);
-	return run_state;
+	return state;
 }
 
-const NMConfigRunState *
-nm_config_run_state_get (NMConfig *self)
+const NMConfigState *
+nm_config_state_get (NMConfig *self)
 {
 	NMConfigPrivate *priv;
 
@@ -1755,29 +1757,31 @@ nm_config_run_state_get (NMConfig *self)
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	if (G_UNLIKELY (!priv->run_state)) {
-		/* read the runstate from file lazy on first access. The reason is that
-		 * we want to log a failure to read the file via nm-logging. But during
-		 * construction of NMConfig, nm-logging is not yet configured.
+	if (G_UNLIKELY (!priv->state)) {
+		/* read the state from file lazy on first access. The reason is that
+		 * we want to log a failure to read the file via nm-logging.
+		 *
+		 * So we cannot read the state during construction of NMConfig,
+		 * because at that time nm-logging is not yet configured.
 		 */
-		priv->run_state = run_state_new_from_file (run_state_get_filename (&priv->cli));
+		priv->state = state_new_from_file (state_get_filename (&priv->cli));
 	}
 
-	return &priv->run_state->p;
+	return &priv->state->p;
 }
 
 static void
-run_state_write (NMConfig *self)
+state_write (NMConfig *self)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	const char *filename;
 	GString *str;
 	GError *error = NULL;
 
-	filename = run_state_get_filename (&priv->cli);
+	filename = state_get_filename (&priv->cli);
 
 	if (!filename) {
-		priv->run_state->p.dirty = FALSE;
+		priv->state->p.dirty = FALSE;
 		return;
 	}
 
@@ -1786,31 +1790,31 @@ run_state_write (NMConfig *self)
 	/* Let's construct the keyfile data by hand. */
 
 	g_string_append (str, "[main]\n");
-	g_string_append_printf (str, "NetworkingEnabled=%s\n", priv->run_state->p.net_enabled ? "true" : "false");
-	g_string_append_printf (str, "WirelessEnabled=%s\n", priv->run_state->p.wifi_enabled ? "true" : "false");
-	g_string_append_printf (str, "WWANEnabled=%s\n", priv->run_state->p.wwan_enabled ? "true" : "false");
+	g_string_append_printf (str, "NetworkingEnabled=%s\n", priv->state->p.net_enabled ? "true" : "false");
+	g_string_append_printf (str, "WirelessEnabled=%s\n", priv->state->p.wifi_enabled ? "true" : "false");
+	g_string_append_printf (str, "WWANEnabled=%s\n", priv->state->p.wwan_enabled ? "true" : "false");
 
 	if (!g_file_set_contents (filename,
 	                          str->str, str->len,
 	                          &error)) {
-		_LOGD ("run-state: error writing state file \"%s\": %s", filename, error->message);
+		_LOGD ("state: error writing state file \"%s\": %s", filename, error->message);
 		g_clear_error (&error);
 		/* we leave the state dirty. That potentally means, that we try to
 		 * write the file over and over again, although it isn't possible. */
-		priv->run_state->p.dirty = TRUE;
+		priv->state->p.dirty = TRUE;
 	} else
-		priv->run_state->p.dirty = FALSE;
+		priv->state->p.dirty = FALSE;
 
-	_LOGT ("run-state: success writing state file \"%s\"", filename);
+	_LOGT ("state: success writing state file \"%s\"", filename);
 
 	g_string_free (str, TRUE);
 }
 
 void
-_nm_config_run_state_set (NMConfig *self,
-                          gboolean allow_persist,
-                          gboolean force_persist,
-                          ...)
+_nm_config_state_set (NMConfig *self,
+                      gboolean allow_persist,
+                      gboolean force_persist,
+                      ...)
 {
 	NMConfigPrivate *priv;
 	va_list ap;
@@ -1827,18 +1831,18 @@ _nm_config_run_state_set (NMConfig *self,
 	 * Larger would be a problem, also, because we want that "0" is a valid sentinel. */
 	G_STATIC_ASSERT_EXPR (sizeof (NMConfigRunStatePropertyType) <= sizeof (int));
 
-	while ((property_type = va_arg (ap, int)) != NM_CONFIG_RUN_STATE_PROPERTY_NONE) {
+	while ((property_type = va_arg (ap, int)) != NM_CONFIG_STATE_PROPERTY_NONE) {
 		bool *p_bool, v_bool;
 
 		switch (property_type) {
-		case NM_CONFIG_RUN_STATE_PROPERTY_NETWORKING_ENABLED:
-			p_bool = &priv->run_state->p.net_enabled;
+		case NM_CONFIG_STATE_PROPERTY_NETWORKING_ENABLED:
+			p_bool = &priv->state->p.net_enabled;
 			goto handle_p_bool;
-		case NM_CONFIG_RUN_STATE_PROPERTY_WIFI_ENABLED:
-			p_bool = &priv->run_state->p.wifi_enabled;
+		case NM_CONFIG_STATE_PROPERTY_WIFI_ENABLED:
+			p_bool = &priv->state->p.wifi_enabled;
 			goto handle_p_bool;
-		case NM_CONFIG_RUN_STATE_PROPERTY_WWAN_ENABLED:
-			p_bool = &priv->run_state->p.wwan_enabled;
+		case NM_CONFIG_STATE_PROPERTY_WWAN_ENABLED:
+			p_bool = &priv->state->p.wwan_enabled;
 			goto handle_p_bool;
 		default:
 			break;
@@ -1851,14 +1855,14 @@ handle_p_bool:
 		if (*p_bool == v_bool)
 			continue;
 		*p_bool = v_bool;
-		priv->run_state->p.dirty = TRUE;
+		priv->state->p.dirty = TRUE;
 	}
 
 	va_end (ap);
 
 	if (   allow_persist
-	    && (force_persist || priv->run_state->p.dirty))
-		run_state_write (self);
+	    && (force_persist || priv->state->p.dirty))
+		state_write (self);
 }
 
 /*****************************************************************************/
@@ -2134,7 +2138,7 @@ finalize (GObject *gobject)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (gobject);
 
-	run_state_free (priv->run_state);
+	state_free (priv->state);
 
 	g_free (priv->config_dir);
 	g_free (priv->system_config_dir);
