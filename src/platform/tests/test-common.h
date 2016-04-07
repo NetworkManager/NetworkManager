@@ -89,10 +89,22 @@ int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__pr
 
 /*****************************************************************************/
 
-gboolean nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms);
-gboolean nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms);
+guint nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms);
+guint nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms);
 const NMPlatformLink *nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
 const NMPlatformLink *nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
+
+#define nmtstp_assert_wait_for_signal(platform, timeout_ms) \
+	G_STMT_START { \
+		if (nmtstp_wait_for_signal (platform, timeout_ms) == 0) \
+			g_assert_not_reached (); \
+	} G_STMT_END
+
+#define nmtstp_assert_wait_for_signal_until(platform, until_ms) \
+	G_STMT_START { \
+		if (nmtstp_wait_for_signal_until (platform, until_ms) == 0) \
+			g_assert_not_reached (); \
+	} G_STMT_END
 
 const NMPlatformLink *nmtstp_assert_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
 const NMPlatformLink *nmtstp_assert_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
