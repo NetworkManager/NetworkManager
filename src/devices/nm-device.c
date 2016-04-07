@@ -134,6 +134,9 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 #define PENDING_ACTION_DHCP6 "dhcp6"
 #define PENDING_ACTION_AUTOCONF6 "autoconf6"
 
+#define DHCP_RESTART_TIMEOUT   120
+#define DHCP_NUM_TRIES_MAX     3
+
 typedef void (*ActivationHandleFunc) (NMDevice *self);
 
 typedef struct {
@@ -297,6 +300,7 @@ typedef struct _NMDevicePrivate {
 		gulong          state_sigid;
 		NMDhcp4Config * config;
 		guint           restart_id;
+		guint           num_tries_left;
 	} dhcp4;
 
 	PingInfo        gw_ping;
@@ -4553,8 +4557,10 @@ dhcp4_restart_cb (gpointer user_data)
 	priv->dhcp4.restart_id = 0;
 	connection = nm_device_get_applied_connection (self);
 
-	if (dhcp4_start (self, connection, &reason) == NM_ACT_STAGE_RETURN_FAILURE)
-		priv->dhcp4.restart_id = g_timeout_add_seconds (120, dhcp4_restart_cb, self);
+	if (dhcp4_start (self, connection, &reason) == NM_ACT_STAGE_RETURN_FAILURE) {
+		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+		                                                dhcp4_restart_cb, self);
+	}
 
 	return FALSE;
 }
@@ -4563,6 +4569,9 @@ static void
 dhcp4_fail (NMDevice *self, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	_LOGD (LOGD_DHCP4, "DHCPv4 failed: timeout %d, num tries left %u",
+	       timeout, priv->dhcp4.num_tries_left);
 
 	dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 
@@ -4573,7 +4582,8 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 	    && priv->con_ip4_config
 	    && nm_ip4_config_get_num_addresses (priv->con_ip4_config) > 0) {
 		_LOGI (LOGD_DHCP4, "Scheduling DHCPv4 restart because device has IP addresses");
-		priv->dhcp4.restart_id = g_timeout_add_seconds (120, dhcp4_restart_cb, self);
+		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+		                                                dhcp4_restart_cb, self);
 		return;
 	}
 
@@ -4583,15 +4593,27 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 	 */
 	if (nm_device_uses_assumed_connection (self)) {
 		_LOGI (LOGD_DHCP4, "Scheduling DHCPv4 restart because the connection is assumed");
-		priv->dhcp4.restart_id = g_timeout_add_seconds (120, dhcp4_restart_cb, self);
+		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+		                                                dhcp4_restart_cb, self);
 		return;
 	}
 
-	if (timeout || (priv->ip4_state == IP_CONF))
+	if (   priv->dhcp4.num_tries_left == DHCP_NUM_TRIES_MAX
+	    && (timeout || (priv->ip4_state == IP_CONF)))
 		nm_device_activate_schedule_ip4_config_timeout (self);
-	else if (priv->ip4_state == IP_DONE)
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-	else
+	else if (priv->ip4_state == IP_DONE) {
+		/* Don't fail immediately when the lease expires but try to
+		 * restart DHCP for a predefined number of times.
+		 */
+		if (priv->dhcp4.num_tries_left) {
+			_LOGI (LOGD_DHCP4, "restarting DHCPv4 in %d seconds (%u tries left)",
+			       DHCP_RESTART_TIMEOUT, priv->dhcp4.num_tries_left);
+			priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
+			                                                dhcp4_restart_cb, self);
+			priv->dhcp4.num_tries_left--;
+		} else
+			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+	} else
 		g_warn_if_reached ();
 }
 
@@ -4634,6 +4656,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 		nm_dhcp4_config_set_options (priv->dhcp4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);
+		priv->dhcp4.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 		if (priv->ip4_state == IP_CONF) {
 			connection = nm_device_get_applied_connection (self);
@@ -4987,6 +5010,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	}
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	priv->dhcp4.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
