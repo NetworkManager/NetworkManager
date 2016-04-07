@@ -362,6 +362,7 @@ static void
 ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
 
 	switch (nm_device_get_state (device)) {
 	case NM_DEVICE_STATE_PREPARE:
@@ -375,7 +376,18 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 	case NM_DEVICE_STATE_ACTIVATED:
 		if (nm_device_activate_ip4_state_in_conf (device))
 			nm_device_activate_schedule_ip4_config_timeout (device);
-		else {
+		else if (nm_device_activate_ip6_state_in_conf (device))
+			nm_device_activate_schedule_ip6_config_timeout (device);
+		else if (nm_device_activate_ip4_state_done (device)) {
+			nm_device_ip_method_failed (device,
+			                            AF_INET,
+			                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		} else if (nm_device_activate_ip6_state_done (device)) {
+			nm_device_ip_method_failed (device,
+			                            AF_INET6,
+			                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		} else {
+			_LOGW (LOGD_MB, "PPP failure in unexpected state %u", (guint) nm_device_get_state (device));
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
@@ -502,8 +514,9 @@ modem_ip4_config_result (NMModem *modem,
 		_LOGW (LOGD_MB | LOGD_IP4 | LOGD_BT,
 		       "retrieving IP4 configuration failed: %s",
 		       error->message);
-
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		nm_device_ip_method_failed (device,
+		                            AF_INET,
+		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else
 		nm_device_activate_schedule_ip4_config_result (device, config);
 }

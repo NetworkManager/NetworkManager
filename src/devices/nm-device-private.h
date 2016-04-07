@@ -70,9 +70,11 @@ void nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
 
 gboolean nm_device_activate_ip4_state_in_conf (NMDevice *device);
 gboolean nm_device_activate_ip4_state_in_wait (NMDevice *device);
+gboolean nm_device_activate_ip4_state_done (NMDevice *device);
 
 gboolean nm_device_activate_ip6_state_in_conf (NMDevice *device);
 gboolean nm_device_activate_ip6_state_in_wait (NMDevice *device);
+gboolean nm_device_activate_ip6_state_done (NMDevice *device);
 
 void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
 void nm_device_set_dhcp_anycast_address (NMDevice *device, const char *addr);
@@ -102,6 +104,8 @@ void nm_device_queue_recheck_available (NMDevice *device,
 
 void nm_device_set_wwan_ip4_config (NMDevice *device, NMIP4Config *config);
 void nm_device_set_wwan_ip6_config (NMDevice *device, NMIP6Config *config);
+
+void nm_device_ip_method_failed (NMDevice *self, int family, NMDeviceStateReason reason);
 
 gboolean nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value);
 
