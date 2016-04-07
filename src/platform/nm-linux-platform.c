@@ -3468,14 +3468,11 @@ do_request_one_type (NMPlatform *platform, NMPObjectType obj_type)
 }
 
 static void
-event_seq_check (NMPlatform *platform, struct nl_msg *msg, WaitForNlResponseResult seq_result)
+event_seq_check (NMPlatform *platform, guint32 seq_number, WaitForNlResponseResult seq_result)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	DelayedActionWaitForNlResponseData *data;
-	guint32 seq_number;
 	guint i;
-
-	seq_number = nlmsg_hdr (msg)->nlmsg_seq;
 
 	if (seq_number == 0)
 		return;
@@ -5655,6 +5652,8 @@ continue_reading:
 	while (nlmsg_ok (hdr, n)) {
 		nm_auto_nlmsg struct nl_msg *msg = NULL;
 		gboolean abort_parsing = FALSE;
+		gboolean process_valid_msg = FALSE;
+		guint32 seq_number;
 
 		msg = nlmsg_convert (hdr);
 		if (!msg) {
@@ -5739,7 +5738,12 @@ continue_reading:
 				seq_result = -errsv;
 			} else
 				seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-		} else {
+		} else
+			process_valid_msg = TRUE;
+
+		seq_number = nlmsg_hdr (msg)->nlmsg_seq;
+
+		if (process_valid_msg) {
 			/* Valid message (not checking for MULTIPART bit to
 			 * get along with broken kernels. NL_SKIP has no
 			 * effect on this.  */
@@ -5749,7 +5753,7 @@ continue_reading:
 			seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		}
 
-		event_seq_check (platform, msg, seq_result);
+		event_seq_check (platform, seq_number, seq_result);
 
 		if (abort_parsing)
 			goto stop;
