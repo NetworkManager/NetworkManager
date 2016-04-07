@@ -104,10 +104,10 @@ gboolean nmtstp_run_command_check_external (int external_command);
 
 /*****************************************************************************/
 
-gboolean ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric);
+gboolean nmtstp_ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric);
 
-void _assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric);
-#define assert_ip4_route_exists(exists, ifname, network, plen, metric) _assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, exists, ifname, network, plen, metric)
+void _nmtstp_assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric);
+#define nmtstp_assert_ip4_route_exists(exists, ifname, network, plen, metric) _nmtstp_assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, exists, ifname, network, plen, metric)
 
 /*****************************************************************************/
 
