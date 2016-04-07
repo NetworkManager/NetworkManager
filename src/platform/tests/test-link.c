@@ -1880,7 +1880,7 @@ _test_netns_create_platform (void)
 	netns = nmp_netns_new ();
 	g_assert (NMP_IS_NETNS (netns));
 
-	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platform = nm_linux_platform_new (TRUE);
 	g_assert (NM_IS_LINUX_PLATFORM (platform));
 
 	nmp_netns_pop (netns);
@@ -1932,7 +1932,7 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	platform_1 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platform_1 = nm_linux_platform_new (TRUE);
 	platform_2 = _test_netns_create_platform ();
 
 	/* add some dummy devices. The "other-*" devices are there to bump the ifindex */
@@ -2028,7 +2028,7 @@ test_netns_set_netns (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platforms[0] = platform_0 = nm_linux_platform_new (TRUE);
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
 
@@ -2125,7 +2125,7 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	pl[0].platform = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	pl[0].platform = platform_0 = nm_linux_platform_new (TRUE);
 	pl[1].platform = platform_1 = _test_netns_create_platform ();
 	pl[2].platform = platform_2 = _test_netns_create_platform ();
 
@@ -2257,7 +2257,7 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platforms[0] = platform_0 = nm_linux_platform_new (TRUE);
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
 
