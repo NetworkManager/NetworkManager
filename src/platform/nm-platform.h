@@ -40,6 +40,8 @@
 #define NM_IS_PLATFORM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_PLATFORM))
 #define NM_PLATFORM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PLATFORM, NMPlatformClass))
 
+#define NM_PLATFORM_NETNS_SUPPORT_DEFAULT    FALSE
+
 /******************************************************************/
 
 #define NM_PLATFORM_NETNS_SUPPORT      "netns-support"

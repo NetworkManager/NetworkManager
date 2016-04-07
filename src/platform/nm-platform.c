@@ -4261,7 +4261,7 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	g_object_class_install_property
 	 (object_class, PROP_NETNS_SUPPORT,
 	     g_param_spec_boolean (NM_PLATFORM_NETNS_SUPPORT, "", "",
-	                           FALSE,
+	                           NM_PLATFORM_NETNS_SUPPORT_DEFAULT,
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS));
