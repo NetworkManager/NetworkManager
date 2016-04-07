@@ -2417,12 +2417,21 @@ NM_LINUX_PLATFORM_GET_PRIVATE (const void *self)
 
 G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
+NMPlatform *
+nm_linux_platform_new (gboolean netns_support)
+{
+	return g_object_new (NM_TYPE_LINUX_PLATFORM,
+	                     NM_PLATFORM_REGISTER_SINGLETON, FALSE,
+	                     NM_PLATFORM_NETNS_SUPPORT, netns_support,
+	                     NULL);
+}
+
 void
 nm_linux_platform_setup (void)
 {
 	g_object_new (NM_TYPE_LINUX_PLATFORM,
-	              NM_PLATFORM_NETNS_SUPPORT, FALSE,
 	              NM_PLATFORM_REGISTER_SINGLETON, TRUE,
+	              NM_PLATFORM_NETNS_SUPPORT, FALSE,
 	              NULL);
 }
 
