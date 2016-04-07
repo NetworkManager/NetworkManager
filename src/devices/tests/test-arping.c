@@ -79,7 +79,7 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 		g_assert (nm_arping_manager_add_address (manager, info->addresses[i]));
 
 	for (i = 0; info->peer_addresses[i]; i++) {
-		nmtstp_ip4_address_add (FALSE, fixture->ifindex1, info->peer_addresses[i],
+		nmtstp_ip4_address_add (NULL, FALSE, fixture->ifindex1, info->peer_addresses[i],
 		                        24, 0, 3600, 1800, 0, NULL);
 	}
 

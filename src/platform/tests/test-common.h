@@ -106,8 +106,8 @@ gboolean nmtstp_run_command_check_external (int external_command);
 
 gboolean nmtstp_ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric);
 
-void _nmtstp_assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric);
-#define nmtstp_assert_ip4_route_exists(exists, ifname, network, plen, metric) _nmtstp_assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, exists, ifname, network, plen, metric)
+void _nmtstp_assert_ip4_route_exists (const char *file, guint line, const char *func, NMPlatform *platform, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric);
+#define nmtstp_assert_ip4_route_exists(platform, exists, ifname, network, plen, metric) _nmtstp_assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, platform, exists, ifname, network, plen, metric)
 
 /*****************************************************************************/
 
@@ -120,7 +120,8 @@ void nmtstp_ip_address_assert_lifetime (const NMPlatformIPAddress *addr,
                                         guint32 expected_lifetime,
                                         guint32 expected_preferred);
 
-void nmtstp_ip4_address_add (gboolean external_command,
+void nmtstp_ip4_address_add (NMPlatform *platform,
+                             gboolean external_command,
                              int ifindex,
                              in_addr_t address,
                              int plen,
@@ -129,7 +130,8 @@ void nmtstp_ip4_address_add (gboolean external_command,
                              guint32 preferred,
                              guint32 flags,
                              const char *label);
-void nmtstp_ip6_address_add (gboolean external_command,
+void nmtstp_ip6_address_add (NMPlatform *platform,
+                             gboolean external_command,
                              int ifindex,
                              struct in6_addr address,
                              int plen,
@@ -137,12 +139,14 @@ void nmtstp_ip6_address_add (gboolean external_command,
                              guint32 lifetime,
                              guint32 preferred,
                              guint32 flags);
-void nmtstp_ip4_address_del (gboolean external_command,
+void nmtstp_ip4_address_del (NMPlatform *platform,
+                             gboolean external_command,
                              int ifindex,
                              in_addr_t address,
                              int plen,
                              in_addr_t peer_address);
-void nmtstp_ip6_address_del (gboolean external_command,
+void nmtstp_ip6_address_del (NMPlatform *platform,
+                             gboolean external_command,
                              int ifindex,
                              struct in6_addr address,
                              int plen);
@@ -152,33 +156,42 @@ void nmtstp_ip6_address_del (gboolean external_command,
 const NMPlatformLink *nmtstp_link_get_typed (NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type);
 const NMPlatformLink *nmtstp_link_get (NMPlatform *platform, int ifindex, const char *name);
 
-void nmtstp_link_set_updown (gboolean external_command,
+void nmtstp_link_set_updown (NMPlatform *platform,
+                             gboolean external_command,
                              int ifindex,
                              gboolean up);
 
-const NMPlatformLink *nmtstp_link_dummy_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_dummy_add (NMPlatform *platform,
+                                             gboolean external_command,
                                              const char *name);
-const NMPlatformLink *nmtstp_link_gre_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_gre_add (NMPlatform *platform,
+                                           gboolean external_command,
                                            const char *name,
                                            const NMPlatformLnkGre *lnk);
-const NMPlatformLink *nmtstp_link_ip6tnl_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_ip6tnl_add (NMPlatform *platform,
+                                              gboolean external_command,
                                               const char *name,
                                               const NMPlatformLnkIp6Tnl *lnk);
-const NMPlatformLink *nmtstp_link_ipip_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_ipip_add (NMPlatform *platform,
+                                            gboolean external_command,
                                             const char *name,
                                             const NMPlatformLnkIpIp *lnk);
-const NMPlatformLink *nmtstp_link_macvlan_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_macvlan_add (NMPlatform *platform,
+                                               gboolean external_command,
                                                const char *name,
                                                int parent,
                                                const NMPlatformLnkMacvlan *lnk);
-const NMPlatformLink *nmtstp_link_sit_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_sit_add (NMPlatform *platform,
+                                           gboolean external_command,
                                            const char *name,
                                            const NMPlatformLnkSit *lnk);
-const NMPlatformLink *nmtstp_link_vxlan_add (gboolean external_command,
+const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
+                                             gboolean external_command,
                                              const char *name,
                                              const NMPlatformLnkVxlan *lnk);
 
-void nmtstp_link_del (gboolean external_command,
+void nmtstp_link_del (NMPlatform *platform,
+                      gboolean external_command,
                       int ifindex,
                       const char *name);
 

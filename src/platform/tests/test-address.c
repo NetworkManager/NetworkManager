@@ -94,12 +94,12 @@ test_ip4_address_general (void)
 
 	/* Add address */
 	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
+	nmtstp_ip4_address_add (NULL, EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime + 100, preferred + 50, 0, NULL);
+	nmtstp_ip4_address_add (NULL, EX, ifindex, addr, IP4_PLEN, addr, lifetime + 100, preferred + 50, 0, NULL);
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
@@ -114,12 +114,12 @@ test_ip4_address_general (void)
 	g_array_unref (addresses);
 
 	/* Remove address */
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr);
+	nmtstp_ip4_address_del (NULL, EX, ifindex, addr, IP4_PLEN, addr);
 	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 	accept_signal (address_removed);
 
 	/* Remove address again */
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr);
+	nmtstp_ip4_address_del (NULL, EX, ifindex, addr, IP4_PLEN, addr);
 
 	free_signal (address_added);
 	free_signal (address_changed);
@@ -144,12 +144,12 @@ test_ip6_address_general (void)
 
 	/* Add address */
 	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
-	nmtstp_ip6_address_add (EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
+	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
 	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	nmtstp_ip6_address_add (EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
+	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
@@ -163,12 +163,12 @@ test_ip6_address_general (void)
 	g_array_unref (addresses);
 
 	/* Remove address */
-	nmtstp_ip6_address_del (EX, ifindex, addr, IP6_PLEN);
+	nmtstp_ip6_address_del (NULL, EX, ifindex, addr, IP6_PLEN);
 	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 	accept_signal (address_removed);
 
 	/* Remove address again */
-	nmtstp_ip6_address_del (EX, ifindex, addr, IP6_PLEN);
+	nmtstp_ip6_address_del (NULL, EX, ifindex, addr, IP6_PLEN);
 
 	/* ensure not pending signal. */
 	accept_signals (address_changed, 0, 1);
@@ -197,15 +197,15 @@ test_ip4_address_general_2 (void)
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, DEVICE_IFINDEX, NULL));
 
 	/* Add/delete notification */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
+	nmtstp_ip4_address_add (NULL, EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
 	accept_signal (address_added);
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr);
+	nmtstp_ip4_address_del (NULL, EX, ifindex, addr, IP4_PLEN, addr);
 	accept_signal (address_removed);
 	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 
 	/* Add/delete conflict */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
+	nmtstp_ip4_address_add (NULL, EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr));
 	accept_signal (address_added);
 
@@ -227,20 +227,20 @@ test_ip6_address_general_2 (void)
 	inet_pton (AF_INET6, IP6_ADDRESS, &addr);
 
 	/* Add/delete notification */
-	nmtstp_ip6_address_add (EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, 0);
+	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, 0);
 	accept_signal (address_added);
 	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 
-	nmtstp_ip6_address_del (EX, ifindex, addr, IP6_PLEN);
+	nmtstp_ip6_address_del (NULL, EX, ifindex, addr, IP6_PLEN);
 	accept_signal (address_removed);
 	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 
 	/* Add/delete conflict */
-	nmtstp_ip6_address_add (EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, 0);
+	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, 0);
 	accept_signal (address_added);
 	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 
-	nmtstp_ip6_address_add (EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
+	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
 	ensure_no_signal (address_added);
 	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
 
@@ -273,7 +273,7 @@ test_ip4_address_peer (void)
 	accept_signals (address_added, 0, G_MAXINT);
 
 	/* Add/delete notification */
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr_peer, lifetime, preferred, 0, NULL);
+	nmtstp_ip4_address_add (NULL, EX, ifindex, addr, IP4_PLEN, addr_peer, lifetime, preferred, 0, NULL);
 	accept_signal (address_added);
 	a = nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr_peer);
 	g_assert (a);
@@ -281,7 +281,7 @@ test_ip4_address_peer (void)
 
 	nmtstp_ip_address_assert_lifetime ((NMPlatformIPAddress *) a, -1, lifetime, preferred);
 
-	nmtstp_ip4_address_add (EX, ifindex, addr, IP4_PLEN, addr_peer2, lifetime, preferred, 0, NULL);
+	nmtstp_ip4_address_add (NULL, EX, ifindex, addr, IP4_PLEN, addr_peer2, lifetime, preferred, 0, NULL);
 	accept_signal (address_added);
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr_peer));
 	a = nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr_peer2);
@@ -290,7 +290,7 @@ test_ip4_address_peer (void)
 	nmtstp_ip_address_assert_lifetime ((NMPlatformIPAddress *) a, -1, lifetime, preferred);
 
 	g_assert (addr != addr_peer);
-	nmtstp_ip4_address_del (EX, ifindex, addr, IP4_PLEN, addr_peer);
+	nmtstp_ip4_address_del (NULL, EX, ifindex, addr, IP4_PLEN, addr_peer);
 	accept_signal (address_removed);
 	g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr_peer));
 	g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, IP4_PLEN, addr_peer2));
@@ -328,7 +328,7 @@ test_ip4_address_peer_zero (void)
 	for (i = 0; i < G_N_ELEMENTS (peers); i++) {
 		g_assert (!nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, plen, r_peers[i]));
 
-		nmtstp_ip4_address_add (EX, ifindex, addr, plen, r_peers[i], lifetime, preferred, 0, label);
+		nmtstp_ip4_address_add (NULL, EX, ifindex, addr, plen, r_peers[i], lifetime, preferred, 0, label);
 
 		addrs = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 		g_assert (addrs);
@@ -343,7 +343,7 @@ test_ip4_address_peer_zero (void)
 	for (i = 0; i < G_N_ELEMENTS (peers); i++) {
 		g_assert (nm_platform_ip4_address_get (NM_PLATFORM_GET, ifindex, addr, plen, r_peers[i]));
 
-		nmtstp_ip4_address_del (EX, ifindex, addr, plen, r_peers[i]);
+		nmtstp_ip4_address_del (NULL, EX, ifindex, addr, plen, r_peers[i]);
 
 		addrs = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 		g_assert (addrs);
