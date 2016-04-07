@@ -4,7 +4,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-default.h"
 #include "nm-platform.h"
 #include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
