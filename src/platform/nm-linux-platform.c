@@ -2349,7 +2349,9 @@ typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
 struct _NMLinuxPlatformPrivate {
 	struct nl_sock *nlh;
 	guint32 nlh_seq_next;
+#ifdef NM_MORE_LOGGING
 	guint32 nlh_seq_last_handled;
+#endif
 	NMPCache *cache;
 	GIOChannel *event_channel;
 	guint event_id;
@@ -3503,9 +3505,11 @@ event_seq_check (NMPlatform *platform, struct nl_msg *msg, WaitForNlResponseResu
 		}
 	}
 
+#ifdef NM_MORE_LOGGING
 	if (seq_number != priv->nlh_seq_last_handled)
 		_LOGt ("netlink: recvmsg: unwaited sequence number %u", seq_number);
 	priv->nlh_seq_last_handled = seq_number;
+#endif
 }
 
 static void
