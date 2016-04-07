@@ -220,11 +220,13 @@ fcn_name (lookup_type val, char *buf, gsize len) \
 
 /*****************************************************************************/
 
-#define NM_UTILS_LOOKUP_DEFAULT(v)      return (v)
-#define NM_UTILS_LOOKUP_DEFAULT_WARN(v) g_return_val_if_reached (v)
-#define NM_UTILS_LOOKUP_ITEM(v, n)     (void) 0; case v: return (n); (void) 0
-#define NM_UTILS_LOOKUP_STR_ITEM(v, n) NM_UTILS_LOOKUP_ITEM(v, ""n"")
-#define NM_UTILS_LOOKUP_ITEM_IGNORE(v) (void) 0; case v: break; (void) 0
+#define NM_UTILS_LOOKUP_DEFAULT(v)            return (v)
+#define NM_UTILS_LOOKUP_DEFAULT_WARN(v)       g_return_val_if_reached (v)
+#define NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(v)  { nm_assert_not_reached (); return (v); }
+#define NM_UTILS_LOOKUP_ITEM(v, n)            (void) 0; case v: return (n); (void) 0
+#define NM_UTILS_LOOKUP_STR_ITEM(v, n)        NM_UTILS_LOOKUP_ITEM(v, ""n"")
+#define NM_UTILS_LOOKUP_ITEM_IGNORE(v)        (void) 0; case v: break; (void) 0
+#define NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER()   (void) 0; default: break; (void) 0
 
 #define _NM_UTILS_LOOKUP_DEFINE(scope, fcn_name, lookup_type, result_type, unknown_val, ...) \
 scope result_type \
