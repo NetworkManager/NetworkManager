@@ -378,7 +378,7 @@ listbox_active_changed (GObject    *object,
 }
 
 static NmtNewtForm *
-nmt_connect_connection_list (void)
+nmt_connect_connection_list (gboolean is_top)
 {
 	int screen_width, screen_height;
 	NmtNewtForm *form;
@@ -410,7 +410,7 @@ nmt_connect_connection_list (void)
 	listbox_active_changed (G_OBJECT (list), NULL, activate);
 	g_signal_connect (activate, "clicked", G_CALLBACK (activate_clicked), list);
 
-	quit = nmt_newt_button_box_add_end (NMT_NEWT_BUTTON_BOX (bbox), _("Quit"));
+	quit = nmt_newt_button_box_add_end (NMT_NEWT_BUTTON_BOX (bbox), is_top ? _("Quit") : _("Back"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
 
 	nmt_newt_form_set_content (form, grid);
@@ -444,10 +444,10 @@ nmt_connect_connection (const char *identifier)
 }
 
 NmtNewtForm *
-nmtui_connect (int argc, char **argv)
+nmtui_connect (gboolean is_top, int argc, char **argv)
 {
 	if (argc == 2)
 		return nmt_connect_connection (argv[1]);
 	else
-		return nmt_connect_connection_list ();
+		return nmt_connect_connection_list (is_top);
 }

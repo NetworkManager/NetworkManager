@@ -103,7 +103,7 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 }
 
 static NmtNewtForm *
-nmt_edit_main_connection_list (void)
+nmt_edit_main_connection_list (gboolean is_top)
 {
 	int screen_width, screen_height;
 	NmtNewtForm *form;
@@ -117,7 +117,7 @@ nmt_edit_main_connection_list (void)
 	                     "escape-exits", TRUE,
 	                     NULL);
 
-	quit = nmt_newt_button_new (_("Quit"));
+	quit = nmt_newt_button_new (is_top ? _("Quit") : _("Back"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
 
 	list = g_object_new (NMT_TYPE_EDIT_CONNECTION_LIST,
@@ -555,7 +555,7 @@ nmt_remove_connection (NMRemoteConnection *connection)
 }
 
 NmtNewtForm *
-nmtui_edit (int argc, char **argv)
+nmtui_edit (gboolean is_top, int argc, char **argv)
 {
 	NMConnection *conn = NULL;
 
@@ -572,5 +572,5 @@ nmtui_edit (int argc, char **argv)
 
 		return nmt_editor_new (conn);
 	} else
-		return nmt_edit_main_connection_list ();
+		return nmt_edit_main_connection_list (is_top);
 }

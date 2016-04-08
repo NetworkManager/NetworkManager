@@ -96,7 +96,7 @@ hostname_set (GObject      *object,
 }
 
 NmtNewtForm *
-nmtui_hostname (int argc, char **argv)
+nmtui_hostname (gboolean is_top, int argc, char **argv)
 {
 	const char *hostname;
 	char *tmp = NULL;

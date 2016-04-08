@@ -26,7 +26,7 @@ G_BEGIN_DECLS
 typedef gboolean (*NmtAddConnectionTypeFilter) (GType    connection_type,
                                                 gpointer user_data);
 
-NmtNewtForm *nmtui_edit (int argc, char **argv);
+NmtNewtForm *nmtui_edit (gboolean is_top, int argc, char **argv);
 
 void nmt_add_connection      (void);
 void nmt_add_connection_full (const char                 *primary_text,
