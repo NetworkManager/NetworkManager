@@ -2339,8 +2339,8 @@ _support_kernel_extended_ifa_flags_get (void)
 
 typedef struct {
 	guint32 seq_number;
-	gint64 timeout_abs_ns;
 	WaitForNlResponseResult seq_result;
+	gint64 timeout_abs_ns;
 	WaitForNlResponseResult *out_seq_result;
 } DelayedActionWaitForNlResponseData;
 
@@ -2814,7 +2814,6 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	DelayedActionWaitForNlResponseData *data;
-	WaitForNlResponseResult *out_seq_result;
 
 	nm_assert (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
 	nm_assert (idx < priv->delayed_action.list_wait_for_nl_response->len);
@@ -2824,16 +2823,12 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 
 	_LOGt_delayed_action (DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE, data, "complete");
 
-	out_seq_result = data->out_seq_result;
+	if (priv->delayed_action.list_wait_for_nl_response->len <= 1)
+		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE;
+	if (data->out_seq_result)
+		*data->out_seq_result = seq_result;
 
 	g_array_remove_index_fast (priv->delayed_action.list_wait_for_nl_response, idx);
-	/* Note: @data is invalidated at this point */
-
-	if (priv->delayed_action.list_wait_for_nl_response->len <= 0)
-		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE;
-
-	if (out_seq_result)
-		*out_seq_result = seq_result;
 }
 
 static void
