@@ -935,21 +935,19 @@ test_config_state_file (void)
 {
 	NMConfig *config;
 	const NMConfigState *state;
-	gs_unref_object GFile *src = NULL, *dst = NULL;
-	const char *tmp_file = BUILDDIR "/tmp.state";
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean ret;
+	gs_free char *file_data = NULL;
+	gsize file_size;
+	const char *const TMP_FILE = BUILDDIR "/tmp.state";
 
-	src = g_file_new_for_path (SRCDIR "/NetworkManager.state");
-	g_assert (src);
-	dst = g_file_new_for_path (tmp_file);
-	g_assert (dst);
-
-	ret = g_file_copy (src, dst, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, &error);
+	ret = g_file_get_contents (SRCDIR "/NetworkManager.state", &file_data, &file_size, &error);
+	nmtst_assert_success (ret, error);
+	ret = g_file_set_contents (TMP_FILE, file_data, file_size, &error);
 	nmtst_assert_success (ret, error);
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "",
-	                       "--state-file", tmp_file, NULL);
+	                       "--state-file", TMP_FILE, NULL);
 	g_assert (config);
 
 	state = nm_config_state_get (config);
@@ -975,7 +973,7 @@ test_config_state_file (void)
 
 	/* Reload configuration */
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "",
-	                       "--state-file", tmp_file, NULL);
+	                       "--state-file", TMP_FILE, NULL);
 	g_assert (config);
 
 	state = nm_config_state_get (config);
@@ -986,7 +984,7 @@ test_config_state_file (void)
 	g_assert_cmpint (state->wwan_enabled, ==, FALSE);
 
 	g_object_unref (config);
-	unlink (tmp_file);
+	unlink (TMP_FILE);
 }
 
 /*****************************************************************************/
