@@ -4058,7 +4058,7 @@ link_add (NMPlatform *platform,
 	       name, nm_link_type_to_string (type), (int) type);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4450,7 +4450,7 @@ vlan_add (NMPlatform *platform,
 	       name, parent, vlan_id, (unsigned int) vlan_flags);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4494,7 +4494,7 @@ link_gre_add (NMPlatform *platform,
 	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4550,7 +4550,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	       nm_utils_inet6_ntop (&props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4610,7 +4610,7 @@ link_ipip_add (NMPlatform *platform,
 	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4660,7 +4660,7 @@ link_macvlan_add (NMPlatform *platform,
 	       props->mode);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4710,7 +4710,7 @@ link_sit_add (NMPlatform *platform,
 	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
@@ -4759,7 +4759,7 @@ link_vxlan_add (NMPlatform *platform,
 	       name, props->parent_ifindex, props->id);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE,
+	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
 	                          name,
 	                          0,
