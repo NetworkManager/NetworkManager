@@ -1024,7 +1024,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
 	NMSettingPpp *s_ppp;
-	gboolean s_ppp_created = FALSE;
+	gs_unref_object NMSettingPpp *s_ppp_free = NULL;
 	NMSettingPppoe *pppoe_setting;
 	NMSettingAdsl *adsl_setting;
 	NMCmdLine *ppp_cmd;
@@ -1052,24 +1052,21 @@ nm_ppp_manager_start (NMPPPManager *manager,
 		nm_utils_modprobe (NULL, FALSE, "ppp_generic", NULL);
 
 	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
+	g_return_val_if_fail (connection, FALSE);
 
 	s_ppp = nm_connection_get_setting_ppp (connection);
 	if (!s_ppp) {
 		/* If the PPP settings are all default we may not have a PPP setting yet,
 		 * so just make a default one here.
 		 */
-		s_ppp = NM_SETTING_PPP (nm_setting_ppp_new ());
-		s_ppp_created = TRUE;
+		s_ppp = s_ppp_free = NM_SETTING_PPP (nm_setting_ppp_new ());
 	}
-	
+
 	pppoe_setting = nm_connection_get_setting_pppoe (connection);
 	if (pppoe_setting) {
 		/* We can't modify the applied connection's setting, make a copy */
-		if (!s_ppp_created) {
-			s_ppp = NM_SETTING_PPP (nm_setting_duplicate ((NMSetting *) s_ppp));
-			s_ppp_created = TRUE;
-		}
+		if (!s_ppp_free)
+			s_ppp = s_ppp_free = NM_SETTING_PPP (nm_setting_duplicate ((NMSetting *) s_ppp));
 		pppoe_fill_defaults (s_ppp);
 	}
 
@@ -1102,9 +1099,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	priv->act_req = g_object_ref (req);
 
 out:
-	if (s_ppp_created)
-		g_object_unref (s_ppp);
-
 	if (ppp_cmd)
 		nm_cmd_line_destroy (ppp_cmd);
 
