@@ -1552,18 +1552,23 @@ device_link_changed (NMDevice *self)
 
 		nm_device_set_unmanaged_by_user_udev (self);
 
+		reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
+
 		/* If the device is a external-down candidated but no longer has external
 		 * down set, we must clear the platform-unmanaged flag with reason
 		 * "assumed". */
 		if (    nm_device_get_unmanaged_mask (self, NM_UNMANAGED_EXTERNAL_DOWN)
 		    && !nm_device_get_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN)) {
-			/* Ensure the assume check is queued before any queued state changes
-			 * from the transition to UNAVAILABLE.
-			 */
-			nm_device_queue_recheck_assume (self);
-			reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-		} else
-			reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
+			/* actually, user-udev overwrites external-down. So we only assume the device,
+			 * when it is a external-down candidate, which is not managed via udev. */
+			if (!nm_device_get_unmanaged_mask (self, NM_UNMANAGED_USER_UDEV)) {
+				/* Ensure the assume check is queued before any queued state changes
+				 * from the transition to UNAVAILABLE.
+				 */
+				nm_device_queue_recheck_assume (self);
+				reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+			}
+		}
 
 		nm_device_set_unmanaged_by_flags (self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
 	}
@@ -9108,6 +9113,9 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 		/* configuration from udev or nm-config overwrites the by-default flag
 		 * which is based on the device type. */
 		flags &= ~NM_UNMANAGED_BY_DEFAULT;
+
+		/* configuration from udev overwrites external-down */
+		flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
 	}
 
 	if (   NM_FLAGS_HAS (mask, NM_UNMANAGED_IS_SLAVE)
