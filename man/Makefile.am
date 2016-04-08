@@ -31,16 +31,6 @@ if ENABLE_GTK_DOC
 
 endif
 
-CLEANFILES += NetworkManager.conf.xml
-EXTRA_DIST += NetworkManager.conf.xml.in
-NetworkManager.conf.xml: $(srcdir)/NetworkManager.conf.xml.in
-	 $(AM_V_GEN)  sed \
-		-e 's|[@]NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT[@]|$(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT)|g' \
-		-e 's|[@]NM_CONFIG_KEYFILE_PATH_DEFAULT[@]|$(nmconfdir)/conf.d|g' \
-		-e 's|[@]NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT[@]|$(NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT)|g' \
-		-e 's|[@]NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT[@]|$(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)|g' \
-		$< >$@
-
 if BUILD_SETTING_DOCS
 
 nm-settings.xml: nm-settings.xsl $(top_builddir)/libnm/nm-setting-docs.xml

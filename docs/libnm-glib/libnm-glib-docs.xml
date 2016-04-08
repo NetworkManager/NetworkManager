@@ -10,7 +10,7 @@
     <releaseinfo>
       for libnm-glib &version;
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="https://developer.gnome.org/libnm-glib/0.9/">https://developer.gnome.org/libnm-glib/0.9/</ulink>.
+      <ulink url="https://developer.gnome.org/libnm-glib/stable/">https://developer.gnome.org/libnm-glib/stable/</ulink>.
     </releaseinfo>
 
     <copyright>
