@@ -290,45 +290,6 @@ _support_user_ipv6ll_detect (struct nlattr **tb)
  * Various utilities
  ******************************************************************/
 
-static guint
-_nm_ip_config_source_to_rtprot (NMIPConfigSource source)
-{
-	switch (source) {
-	case NM_IP_CONFIG_SOURCE_UNKNOWN:
-		return RTPROT_UNSPEC;
-	case NM_IP_CONFIG_SOURCE_KERNEL:
-	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
-		return RTPROT_KERNEL;
-	case NM_IP_CONFIG_SOURCE_DHCP:
-		return RTPROT_DHCP;
-	case NM_IP_CONFIG_SOURCE_RDISC:
-		return RTPROT_RA;
-
-	default:
-		return RTPROT_STATIC;
-	}
-}
-
-static NMIPConfigSource
-_nm_ip_config_source_from_rtprot (guint rtprot)
-{
-	switch (rtprot) {
-	case RTPROT_UNSPEC:
-		return NM_IP_CONFIG_SOURCE_UNKNOWN;
-	case RTPROT_KERNEL:
-		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
-	case RTPROT_REDIRECT:
-		return NM_IP_CONFIG_SOURCE_KERNEL;
-	case RTPROT_RA:
-		return NM_IP_CONFIG_SOURCE_RDISC;
-	case RTPROT_DHCP:
-		return NM_IP_CONFIG_SOURCE_DHCP;
-
-	default:
-		return NM_IP_CONFIG_SOURCE_USER;
-	}
-}
-
 static void
 clear_host_address (int family, const void *network, guint8 plen, void *dst)
 {
@@ -1911,7 +1872,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		 * */
 		obj->ip_route.source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	} else
-		obj->ip_route.source = _nm_ip_config_source_from_rtprot (rtm->rtm_protocol);
+		obj->ip_route.source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
 
 	obj_result = obj;
 	obj = NULL;
@@ -2271,7 +2232,7 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_family = family,
 		.rtm_tos = 0,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
-		.rtm_protocol = _nm_ip_config_source_to_rtprot (source),
+		.rtm_protocol = nmp_utils_ip_config_source_to_rtprot (source),
 		.rtm_scope = scope,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
