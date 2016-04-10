@@ -79,6 +79,17 @@ typedef enum { /*< skip >*/
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
 
+	/* Consider all the destination fields of a route, that is, the ID without the ifindex
+	 * and gateway (meaning: network/plen,metric).
+	 * The reason for this is that `ip route change` can replace an existing route
+	 * and modify it's ifindex/gateway. Effectively, that means it deletes an existing
+	 * route and adds a different one (as the ID of the route changes). However, it only
+	 * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
+	 * that by having this index to contain overlapping routes which require special
+	 * cache-resync. */
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,
+
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
 } NMPCacheIdType;
@@ -110,6 +121,20 @@ typedef struct {
 			guint8 _id_type;
 			char ifname_short[IFNAMSIZ - 1]; /* don't include the trailing NUL so the struct fits in 4 bytes. */
 		} link_by_ifname;
+		struct _nm_packed {
+			/* NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6 */
+			guint8 _id_type;
+			guint8 plen;
+			guint32 _misaligned_metric;
+			guint32 _misaligned_network;
+		} routes_by_destination_ip4;
+		struct _nm_packed {
+			/* NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4 */
+			guint8 _id_type;
+			guint8 plen;
+			guint32 _misaligned_metric;
+			struct in6_addr _misaligned_network;
+		} routes_by_destination_ip6;
 	};
 } NMPCacheId;
 
@@ -384,11 +409,15 @@ NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, NMPObjectType obj_typ
 NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, NMPObjectType obj_type, int ifindex);
 NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
 NMPCacheId *nmp_cache_id_init_link_by_ifname (NMPCacheId *id, const char *ifname);
+NMPCacheId *nmp_cache_id_init_routes_by_destination_ip4 (NMPCacheId *id, guint32 network, guint8 plen, guint32 metric);
+NMPCacheId *nmp_cache_id_init_routes_by_destination_ip6 (NMPCacheId *id, const struct in6_addr *network, guint8 plen, guint32 metric);
 
 const NMPlatformObject *const *nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len);
 GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, NMPObjectType obj_type, const NMPCacheId *cache_id);
 const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
 const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
+
+const NMPObject *nmp_cache_find_other_route_for_same_destination (const NMPCache *cache, const NMPObject *route);
 
 const NMPObject *nmp_cache_lookup_link_full (const NMPCache *cache,
                                              int ifindex,

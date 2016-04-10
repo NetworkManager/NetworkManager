@@ -965,6 +965,8 @@ _NM_UTILS_LOOKUP_DEFINE (static, _nmp_cache_id_size_by_type, NMPCacheIdType, gui
 	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,   _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
 	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT, _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
 	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,                         _STRUCT_SIZE (NMPCacheId, link_by_ifname)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,              _STRUCT_SIZE (NMPCacheId, routes_by_destination_ip4)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,              _STRUCT_SIZE (NMPCacheId, routes_by_destination_ip6)),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_CACHE_ID_TYPE_NONE),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (__NMP_CACHE_ID_TYPE_MAX),
 );
@@ -1110,6 +1112,33 @@ nmp_cache_id_init_link_by_ifname (NMPCacheId *id,
 	return id;
 }
 
+NMPCacheId *
+nmp_cache_id_init_routes_by_destination_ip4 (NMPCacheId *id,
+                                             guint32 network,
+                                             guint8 plen,
+                                             guint32 metric)
+{
+	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4);
+	id->routes_by_destination_ip4.plen = plen;
+	memcpy (&id->routes_by_destination_ip4._misaligned_metric,  &metric, sizeof (guint32));
+	memcpy (&id->routes_by_destination_ip4._misaligned_network, &network, sizeof (guint32));
+	return id;
+}
+
+NMPCacheId *
+nmp_cache_id_init_routes_by_destination_ip6 (NMPCacheId *id,
+                                             const struct in6_addr *network,
+                                             guint8 plen,
+                                             guint32 metric)
+{
+	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6);
+	id->routes_by_destination_ip4.plen = plen;
+	memcpy (&id->routes_by_destination_ip6._misaligned_metric,  &metric, sizeof (guint32));
+	if (network)
+		memcpy (&id->routes_by_destination_ip6._misaligned_network, network, sizeof (struct in6_addr));
+	return id;
+}
+
 /******************************************************************/
 
 static gboolean
@@ -1182,7 +1211,7 @@ _vt_cmd_obj_init_cache_id_ipx_address (const NMPObject *obj, NMPCacheIdType id_t
 	return TRUE;
 }
 
-static const guint8 _supported_cache_ids_ipx_route[] = {
+static const guint8 _supported_cache_ids_ip4_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
@@ -1190,6 +1219,19 @@ static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,
+	0,
+};
+
+static const guint8 _supported_cache_ids_ip6_route[] = {
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
+	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,
 	0,
 };
 
@@ -1236,6 +1278,18 @@ _vt_cmd_obj_init_cache_id_ipx_route (const NMPObject *obj, NMPCacheIdType id_typ
 			return TRUE;
 		}
 		break;
+	case NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4:
+		if (NMP_OBJECT_GET_CLASS (obj)->obj_type == NMP_OBJECT_TYPE_IP4_ROUTE) {
+			*out_id = nmp_cache_id_init_routes_by_destination_ip4 (id, obj->ip4_route.network, obj->ip_route.plen, obj->ip_route.metric);
+			return TRUE;
+		}
+		return FALSE;
+	case NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6:
+		if (NMP_OBJECT_GET_CLASS (obj)->obj_type == NMP_OBJECT_TYPE_IP6_ROUTE) {
+			*out_id = nmp_cache_id_init_routes_by_destination_ip6 (id, &obj->ip6_route.network, obj->ip_route.plen, obj->ip_route.metric);
+			return TRUE;
+		}
+		return FALSE;
 	default:
 		return FALSE;
 	}
@@ -1402,6 +1456,51 @@ nmp_cache_lookup_link (const NMPCache *cache, int ifindex)
 	NMPObject obj_needle;
 
 	return nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&obj_needle, ifindex));
+}
+
+/**
+ * nmp_cache_find_other_route_for_same_destination:
+ * @cache:
+ * @route:
+ *
+ * Look into the cache whether there is a route to the same destination,
+ * in terms of network/plen,metric.
+ *
+ * Returns: (transfer none): the first found route object from the cache
+ *   that has the same (network/plen,metric) values as @route, but has different
+ *   ID. Or %NULL, if no such route exists.
+ */
+const NMPObject *
+nmp_cache_find_other_route_for_same_destination (const NMPCache *cache, const NMPObject *route)
+{
+	NMPCacheId cache_id;
+	const NMPlatformObject *const *list;
+
+	nm_assert (cache);
+
+	switch (NMP_OBJECT_GET_TYPE (route)) {
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		nmp_cache_id_init_routes_by_destination_ip4 (&cache_id, route->ip4_route.network, route->ip_route.plen, route->ip_route.metric);
+		break;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		nmp_cache_id_init_routes_by_destination_ip6 (&cache_id, &route->ip6_route.network, route->ip_route.plen, route->ip_route.metric);
+		break;
+	default:
+		g_return_val_if_reached (NULL);
+	}
+
+	list = nmp_cache_lookup_multi (cache, &cache_id, NULL);
+	if (list) {
+		for (; *list; list++) {
+			const NMPObject *candidate = NMP_OBJECT_UP_CAST (*list);
+
+			nm_assert (NMP_OBJECT_GET_CLASS (route) == NMP_OBJECT_GET_CLASS (candidate));
+
+			if (!nmp_object_id_equal (route, candidate))
+				return candidate;
+		}
+	}
+	return NULL;
 }
 
 const NMPObject *
@@ -2066,7 +2165,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-		.supported_cache_ids                = _supported_cache_ids_ipx_route,
+		.supported_cache_ids                = _supported_cache_ids_ip4_route,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
@@ -2086,7 +2185,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-		.supported_cache_ids                = _supported_cache_ids_ipx_route,
+		.supported_cache_ids                = _supported_cache_ids_ip6_route,
 		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,

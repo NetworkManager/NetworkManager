@@ -3169,7 +3169,7 @@ cache_prune_candidates_prune (NMPlatform *platform)
 static void
 cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data)
 {
-	NMPlatform *platform = NM_PLATFORM (user_data);
+	NMPlatform *platform = user_data;
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPClass *klass;
 	char str_buf[sizeof (_nm_utils_to_string_buffer)];
@@ -3181,6 +3181,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 	nm_assert (ops_type != NMP_CACHE_OPS_REMOVED || (new == NULL && NMP_OBJECT_IS_VALID (old) && nmp_object_is_alive (old)));
 	nm_assert (ops_type != NMP_CACHE_OPS_UPDATED || (NMP_OBJECT_IS_VALID (old) && nmp_object_is_alive (old) && NMP_OBJECT_IS_VALID (new) && nmp_object_is_alive (new)));
 	nm_assert (new == NULL || old == NULL || nmp_object_id_equal (new, old));
+	nm_assert (!old || !new || NMP_OBJECT_GET_CLASS (old) == NMP_OBJECT_GET_CLASS (new));
 
 	klass = old ? NMP_OBJECT_GET_CLASS (old) : NMP_OBJECT_GET_CLASS (new);
 
@@ -3387,8 +3388,46 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				                         NULL);
 			}
 		}
+		break;
 	default:
 		break;
+	}
+}
+
+static void
+cache_post (NMPlatform *platform,
+            struct nlmsghdr *msghdr,
+            NMPCacheOpsType cache_op,
+            NMPObject *obj,
+            NMPObject *obj_cache)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	nm_assert (NMP_OBJECT_IS_VALID (obj));
+	nm_assert (!obj_cache || nmp_object_id_equal (obj, obj_cache));
+
+	if (msghdr->nlmsg_type == RTM_NEWROUTE) {
+		DelayedActionType action_type;
+
+		action_type = NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE
+		                  ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
+		                  : DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES;
+		if (   !delayed_action_refresh_all_in_progress (platform, action_type)
+		    && nmp_cache_find_other_route_for_same_destination (priv->cache, obj)) {
+			/* via `iproute route change` the user can update an existing route which effectively
+			 * means that a new object (with a different ID) comes into existance, replacing the
+			 * old on. In other words, as the ID of the object changes, we really see a new
+			 * object with the old one deleted.
+			 * However, kernel decides not to send a RTM_DELROUTE event for that.
+			 *
+			 * To hack around that, check if the update leaves us with multiple routes for the
+			 * same network/plen,metric part. In that case, we cannot do better then requesting
+			 * all routes anew, which sucks.
+			 *
+			 * One mitigation to avoid a dump is only to request a new dump, if we are not in
+			 * the middle of an ongoing dump (delayed_action_refresh_all_in_progress). */
+			delayed_action_schedule (platform, action_type, NULL);
+		}
 	}
 }
 
@@ -3528,8 +3567,6 @@ event_seq_check_refresh_all (NMPlatform *platform, guint32 seq_number)
 	DelayedActionWaitForNlResponseData *data;
 	guint i;
 
-	(void) delayed_action_refresh_all_in_progress;
-
 	if (NM_IN_SET (seq_number, 0, priv->nlh_seq_last_seen))
 		return;
 
@@ -3635,6 +3672,9 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
 		cache_op = nmp_cache_update_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
+
+		cache_post (platform, msghdr, cache_op, obj, obj_cache);
+
 		do_emit_signal (platform, obj_cache, cache_op, was_visible);
 		break;
 
