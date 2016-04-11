@@ -56,5 +56,6 @@ gboolean nmp_utils_device_exists (const char *name);
 
 guint            nmp_utils_ip_config_source_to_rtprot   (NMIPConfigSource source);
 NMIPConfigSource nmp_utils_ip_config_source_from_rtprot (guint rtprot);
+const char *     nmp_utils_ip_config_source_to_string   (NMIPConfigSource source, char *buf, gsize len);
 
 #endif /* __NM_PLATFORM_UTILS_H__ */

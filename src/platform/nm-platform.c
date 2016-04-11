@@ -3030,38 +3030,6 @@ nm_platform_vlan_qos_mapping_to_string (const char *name,
 }
 
 static const char *
-source_to_string (NMIPConfigSource source)
-{
-	switch (source) {
-	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
-		return "rtprot-kernel";
-	case _NM_IP_CONFIG_SOURCE_RTM_F_CLONED:
-		return "rtm-f-cloned";
-	case NM_IP_CONFIG_SOURCE_KERNEL:
-		return "kernel";
-	case NM_IP_CONFIG_SOURCE_SHARED:
-		return "shared";
-	case NM_IP_CONFIG_SOURCE_IP4LL:
-		return "ipv4ll";
-	case NM_IP_CONFIG_SOURCE_PPP:
-		return "ppp";
-	case NM_IP_CONFIG_SOURCE_WWAN:
-		return "wwan";
-	case NM_IP_CONFIG_SOURCE_VPN:
-		return "vpn";
-	case NM_IP_CONFIG_SOURCE_DHCP:
-		return "dhcp";
-	case NM_IP_CONFIG_SOURCE_RDISC:
-		return "rdisc";
-	case NM_IP_CONFIG_SOURCE_USER:
-		return "user";
-	default:
-		break;
-	}
-	return "unknown";
-}
-
-static const char *
 _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf, size_t buf_size)
 {
 	if (lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
@@ -3489,7 +3457,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	char s_peer[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_label[32];
-	char str_lft[30], str_pref[30], str_time[50];
+	char str_lft[30], str_pref[30], str_time[50], s_source[50];
 	char *str_peer = NULL;
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
@@ -3528,7 +3496,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
 	            str_label,
-	            source_to_string (address->addr_source));
+	            nmp_utils_ip_config_source_to_string (address->addr_source, s_source, sizeof (s_source)));
 	g_free (str_peer);
 	return buf;
 }
@@ -3600,7 +3568,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	char s_flags[TO_STRING_IFA_FLAGS_BUF_SIZE];
 	char s_address[INET6_ADDRSTRLEN];
 	char s_peer[INET6_ADDRSTRLEN];
-	char str_lft[30], str_pref[30], str_time[50];
+	char str_lft[30], str_pref[30], str_time[50], s_source[50];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char *str_peer = NULL;
 	const char *str_lft_p, *str_pref_p, *str_time_p;
@@ -3634,7 +3602,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
-	            source_to_string (address->addr_source));
+	            nmp_utils_ip_config_source_to_string (address->addr_source, s_source, sizeof (s_source)));
 	g_free (str_peer);
 	return buf;
 }
@@ -3657,7 +3625,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
 	char s_pref_src[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
-	char str_scope[30];
+	char str_scope[30], s_source[50];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
@@ -3683,7 +3651,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            str_dev,
 	            route->metric,
 	            route->mss,
-	            source_to_string (route->rt_source),
+	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
 	            route->scope_inv ? " scope " : "",
 	            route->scope_inv ? (nm_platform_route_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
@@ -3707,7 +3675,7 @@ const char *
 nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len)
 {
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
-	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
@@ -3731,7 +3699,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            str_dev,
 	            route->metric,
 	            route->mss,
-	            source_to_string (route->rt_source));
+	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)));
 	return buf;
 }
 
