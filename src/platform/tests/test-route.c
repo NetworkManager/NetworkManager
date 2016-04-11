@@ -82,50 +82,50 @@ test_ip4_route_metric0 (void)
 	int mss = 1000;
 
 	/* No routes initially */
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
 
 	/* add the first route */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, metric, mss));
 	accept_signal (route_added);
 
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Deleting route with metric 0 does nothing */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	ensure_no_signal (route_removed);
 
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* add the second route */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, 0, mss));
 	accept_signal (route_added);
 
-	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Delete route with metric 0 */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	accept_signal (route_removed);
 
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Delete route with metric 0 again (we expect nothing to happen) */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	ensure_no_signal (route_removed);
 
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Delete the other route */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
 
 	free_signal (route_added);
 	free_signal (route_changed);
@@ -142,7 +142,7 @@ test_ip4_route (void)
 	GArray *routes;
 	NMPlatformIP4Route rts[3];
 	in_addr_t network;
-	int plen = 24;
+	guint8 plen = 24;
 	in_addr_t gateway;
 	/* Choose a high metric so that we hopefully don't conflict. */
 	int metric = 22986;
@@ -156,9 +156,9 @@ test_ip4_route (void)
 	accept_signal (route_added);
 
 	/* Add route */
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
-	assert_ip4_route_exists (TRUE, DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE, DEVICE_NAME, network, plen, metric);
 	accept_signal (route_added);
 
 	/* Add route again */
@@ -166,9 +166,9 @@ test_ip4_route (void)
 	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, 0, 0, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, 0, 0, metric);
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
-	assert_ip4_route_exists (TRUE, DEVICE_NAME, 0, 0, metric);
+	nmtstp_assert_ip4_route_exists (NULL, TRUE, DEVICE_NAME, 0, 0, metric);
 	accept_signal (route_added);
 
 	/* Add default route again */
@@ -208,7 +208,7 @@ test_ip4_route (void)
 
 	/* Remove route */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
+	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
 	accept_signal (route_removed);
 
 	/* Remove route again */
@@ -229,7 +229,7 @@ test_ip6_route (void)
 	GArray *routes;
 	NMPlatformIP6Route rts[3];
 	struct in6_addr network;
-	int plen = 64;
+	guint8 plen = 64;
 	struct in6_addr gateway;
 	/* Choose a high metric so that we hopefully don't conflict. */
 	int metric = 22987;
@@ -329,13 +329,13 @@ test_ip4_zero_gateway (void)
 /*****************************************************************************/
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 

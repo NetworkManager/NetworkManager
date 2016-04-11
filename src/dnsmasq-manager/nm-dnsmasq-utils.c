@@ -34,7 +34,7 @@ nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,
                             char **out_error_desc)
 {
 	guint32 host = addr->address;
-	guint32 prefix = addr->plen;
+	guint8 prefix = addr->plen;
 	guint32 netmask = nm_utils_ip4_prefix_to_netmask (prefix);
 	guint32 first, last, reserved;
 

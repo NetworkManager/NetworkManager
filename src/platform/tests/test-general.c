@@ -35,7 +35,7 @@ test_init_linux_platform (void)
 {
 	gs_unref_object NMPlatform *platform = NULL;
 
-	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NULL);
+	platform = nm_linux_platform_new (NM_PLATFORM_NETNS_SUPPORT_DEFAULT);
 }
 
 /******************************************************************/
@@ -46,7 +46,7 @@ test_link_get_all (void)
 	gs_unref_object NMPlatform *platform = NULL;
 	gs_unref_array GArray *links = NULL;
 
-	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NULL);
+	platform = nm_linux_platform_new (NM_PLATFORM_NETNS_SUPPORT_DEFAULT);
 
 	links = nm_platform_link_get_all (platform);
 }

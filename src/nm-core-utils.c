@@ -233,7 +233,6 @@ nm_ethernet_address_is_valid (gconstpointer addr, gssize len)
 	return TRUE;
 }
 
-
 /* nm_utils_ip4_address_clear_host_address:
  * @addr: source ip6 address
  * @plen: prefix length of network
@@ -278,6 +277,32 @@ nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_
 
 	return dst;
 }
+
+gboolean
+nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen)
+{
+	int nbytes;
+	guint8 t, m;
+
+	if (plen >= 128)
+		return memcmp (addr_a, addr_b, sizeof (struct in6_addr)) == 0;
+
+	nbytes = plen / 8;
+	if (nbytes) {
+		if (memcmp (addr_a, addr_b, nbytes) != 0)
+			return FALSE;
+	}
+
+	plen = plen % 8;
+	if (plen == 0)
+		return TRUE;
+
+	m = ~((1 << (8 - plen)) - 1);
+	t = ((((const guint8 *) addr_a))[nbytes]) ^ ((((const guint8 *) addr_b))[nbytes]);
+	return (t & m) == 0;
+}
+
+/*****************************************************************************/
 
 void
 nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len)

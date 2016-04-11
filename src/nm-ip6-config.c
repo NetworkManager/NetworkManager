@@ -95,24 +95,6 @@ nm_ip6_config_get_ifindex (const NMIP6Config *config)
 
 /******************************************************************/
 
-static gboolean
-same_prefix (const struct in6_addr *address1, const struct in6_addr *address2, int plen)
-{
-	const guint8 *bytes1 = (const guint8 *) address1;
-	const guint8 *bytes2 = (const guint8 *) address2;
-	int nbytes = plen / 8;
-	int nbits = plen % 8;
-	int masked1 = bytes1[nbytes] >> (8 - nbits);
-	int masked2 = bytes2[nbytes] >> (8 - nbits);
-
-	if (nbytes && memcmp (bytes1, bytes2, nbytes))
-		return FALSE;
-
-	return masked1 == masked2;
-}
-
-/******************************************************************/
-
 /**
  * nm_ip6_config_capture_resolv_conf():
  * @nameservers: array of struct in6_addr
@@ -472,6 +454,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 		memset (&address, 0, sizeof (address));
 		nm_ip_address_get_address_binary (s_addr, &address.address);
 		address.plen = nm_ip_address_get_prefix (s_addr);
+		nm_assert (address.plen <= 128);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_IP_CONFIG_SOURCE_USER;
@@ -488,15 +471,18 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 
 		memset (&route, 0, sizeof (route));
 		nm_ip_route_get_dest_binary (s_route, &route.network);
+
 		route.plen = nm_ip_route_get_prefix (s_route);
+		nm_assert (route.plen <= 128);
+		if (route.plen == 0)
+			continue;
+
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
 		if (nm_ip_route_get_metric (s_route) == -1)
 			route.metric = default_route_metric;
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.source = NM_IP_CONFIG_SOURCE_USER;
-
-		g_assert (route.plen > 0);
 
 		nm_ip6_config_add_route (config, &route);
 	}
@@ -569,6 +555,10 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 			continue;
 		}
+
+		/* FIXME: NMIPAddress does not support zero prefixes. */
+		if (address->plen == 0)
+			continue;
 
 		/* Static address found. */
 		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
@@ -708,16 +698,20 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 }
 
 gboolean
-nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *network, int plen)
+nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *network, guint8 plen)
 {
 	int num = nm_ip6_config_get_num_addresses (config);
 	int i;
 
+	nm_assert (network);
+	nm_assert (plen <= 128);
+
 	for (i = 0; i < num; i++) {
 		const NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
 
-		if (item->plen <= plen && same_prefix (&item->address, network, item->plen) &&
-		    !(item->n_ifa_flags & IFA_F_NOPREFIXROUTE))
+		if (   item->plen <= plen
+		    && !NM_FLAGS_HAS (item->n_ifa_flags, IFA_F_NOPREFIXROUTE)
+		    && nm_utils_ip6_address_same_prefix (&item->address, network, item->plen))
 			return TRUE;
 	}
 
@@ -1415,7 +1409,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 	int i;
 
 	g_return_if_fail (new != NULL);
-	g_return_if_fail (new->plen > 0);
+	g_return_if_fail (new->plen > 0 && new->plen <= 128);
 	g_assert (priv->ifindex);
 
 	for (i = 0; i < priv->routes->len; i++ ) {
@@ -1473,7 +1467,6 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	guint i;
-	struct in6_addr network2, host2;
 	NMPlatformIP6Route *best_route = NULL;
 
 	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
@@ -1487,10 +1480,7 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 		if (best_route && best_route->plen > item->plen)
 			continue;
 
-		nm_utils_ip6_address_clear_host_address (&host2, host, item->plen);
-		nm_utils_ip6_address_clear_host_address (&network2, &item->network, item->plen);
-
-		if (!IN6_ARE_ADDR_EQUAL (&network2, &host2))
+		if (!nm_utils_ip6_address_same_prefix (host, &item->network, item->plen))
 			continue;
 
 		if (best_route &&

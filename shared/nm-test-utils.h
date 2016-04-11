@@ -782,6 +782,34 @@ nmtst_get_rand_int (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+inline static gpointer
+nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
+{
+	guint32 v;
+	guint8 *b = buffer;
+
+	if (!buffer_length)
+		return buffer;
+
+	g_assert (buffer);
+
+	if (!rand)
+		rand = nmtst_get_rand ();
+
+	for (; buffer_length >= sizeof (guint32); buffer_length -= sizeof (guint32), b += sizeof (guint32)) {
+		v = g_rand_int (rand);
+		memcpy (b, &v, sizeof (guint32));
+	}
+	if (buffer_length > 0) {
+		v = g_rand_int (rand);
+		do {
+			*(b++) = v & 0xFF;
+			v >>= 8;
+		} while (--buffer_length > 0);
+	}
+	return buffer;
+}
+
 inline static void *
 nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
 {
@@ -1151,10 +1179,53 @@ _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, cons
 
 #ifdef __NETWORKMANAGER_PLATFORM_H__
 
+inline static NMPlatformIP4Address *
+nmtst_platform_ip4_address (const char *address, const char *peer_address, guint plen)
+{
+	static NMPlatformIP4Address addr;
+
+	g_assert (plen <= 32);
+
+	memset (&addr, 0, sizeof (addr));
+	addr.address = nmtst_inet4_from_string (address);
+	if (peer_address)
+		addr.peer_address = nmtst_inet4_from_string (peer_address);
+	else
+		addr.peer_address = addr.address;
+	addr.plen = plen;
+
+	return &addr;
+}
+
+inline static NMPlatformIP4Address *
+nmtst_platform_ip4_address_full (const char *address, const char *peer_address, guint plen,
+                                 int ifindex, NMIPConfigSource source, guint32 timestamp,
+                                 guint32 lifetime, guint32 preferred, guint32 flags,
+                                 const char *label)
+{
+	NMPlatformIP4Address *addr = nmtst_platform_ip4_address (address, peer_address, plen);
+
+	G_STATIC_ASSERT (IFNAMSIZ == sizeof (addr->label));
+	g_assert (!label || strlen (label) < IFNAMSIZ);
+
+	addr->ifindex = ifindex;
+	addr->source = source;
+	addr->timestamp = timestamp;
+	addr->lifetime = lifetime;
+	addr->preferred = preferred;
+	addr->n_ifa_flags = flags;
+	if (label)
+		g_strlcpy (addr->label, label, sizeof (addr->label));
+
+	return addr;
+}
+
 inline static NMPlatformIP6Address *
 nmtst_platform_ip6_address (const char *address, const char *peer_address, guint plen)
 {
 	static NMPlatformIP6Address addr;
+
+	g_assert (plen <= 128);
 
 	memset (&addr, 0, sizeof (addr));
 	addr.address = *nmtst_inet6_from_string (address);
@@ -1185,6 +1256,8 @@ inline static NMPlatformIP4Route *
 nmtst_platform_ip4_route (const char *network, guint plen, const char *gateway)
 {
 	static NMPlatformIP4Route route;
+
+	g_assert (plen <= 32);
 
 	memset (&route, 0, sizeof (route));
 	route.network = nmtst_inet4_from_string (network);
@@ -1217,6 +1290,8 @@ inline static NMPlatformIP6Route *
 nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
 {
 	static NMPlatformIP6Route route;
+
+	nm_assert (plen <= 128);
 
 	memset (&route, 0, sizeof (route));
 	route.network = *nmtst_inet6_from_string (network);

@@ -30,6 +30,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include <linux/version.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
@@ -412,6 +413,10 @@ out:
 	return g_intern_string (driver);
 }
 
+/******************************************************************************
+ * utils
+ *****************************************************************************/
+
 gboolean
 nmp_utils_device_exists (const char *name)
 {
@@ -427,3 +432,43 @@ nmp_utils_device_exists (const char *name)
 	nm_utils_ifname_cpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], name);
 	return g_file_test (sysdir, G_FILE_TEST_EXISTS);
 }
+
+guint
+nmp_utils_ip_config_source_to_rtprot (NMIPConfigSource source)
+{
+	switch (source) {
+	case NM_IP_CONFIG_SOURCE_UNKNOWN:
+		return RTPROT_UNSPEC;
+	case NM_IP_CONFIG_SOURCE_KERNEL:
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+		return RTPROT_KERNEL;
+	case NM_IP_CONFIG_SOURCE_DHCP:
+		return RTPROT_DHCP;
+	case NM_IP_CONFIG_SOURCE_RDISC:
+		return RTPROT_RA;
+
+	default:
+		return RTPROT_STATIC;
+	}
+}
+
+NMIPConfigSource
+nmp_utils_ip_config_source_from_rtprot (guint rtprot)
+{
+	switch (rtprot) {
+	case RTPROT_UNSPEC:
+		return NM_IP_CONFIG_SOURCE_UNKNOWN;
+	case RTPROT_KERNEL:
+		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+	case RTPROT_REDIRECT:
+		return NM_IP_CONFIG_SOURCE_KERNEL;
+	case RTPROT_RA:
+		return NM_IP_CONFIG_SOURCE_RDISC;
+	case RTPROT_DHCP:
+		return NM_IP_CONFIG_SOURCE_DHCP;
+
+	default:
+		return NM_IP_CONFIG_SOURCE_USER;
+	}
+}
+

@@ -213,7 +213,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 			 * local configuration or user preferences are, so sending routes
 			 * with a prefix length of 0 is quite rude and thus ignored.
 			 */
-			if (discovered_route->plen > 0) {
+			if (   discovered_route->plen > 0
+			    && discovered_route->plen <= 128) {
 				memset (&route, 0, sizeof (route));
 				route.network = discovered_route->network;
 				route.plen = discovered_route->plen;

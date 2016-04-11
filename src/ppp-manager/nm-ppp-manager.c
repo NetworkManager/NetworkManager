@@ -481,7 +481,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_PREFIX, "u", &u32))
 		address.plen = u32;
 
-	if (address.address && address.plen) {
+	if (address.address && address.plen && address.plen <= 32) {
 		address.source = NM_IP_CONFIG_SOURCE_PPP;
 		nm_ip4_config_add_address (config, &address);
 	} else {
@@ -554,6 +554,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	NMPlatformIP6Address addr;
 	struct in6_addr a;
 	NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
+	gboolean has_peer = FALSE;
 
 	_LOGI ("(IPv6 Config Get) reply received.");
 
@@ -567,9 +568,12 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	if (iid_value_to_ll6_addr (config_dict, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
 		nm_ip6_config_set_gateway (config, &a);
 		addr.peer_address = a;
+		has_peer = TRUE;
 	}
 
 	if (iid_value_to_ll6_addr (config_dict, NM_PPP_IP6_CONFIG_OUR_IID, &addr.address, &iid)) {
+		if (!has_peer)
+			addr.peer_address = addr.address;
 		nm_ip6_config_add_address (config, &addr);
 
 		if (set_ip_config_common (manager, config_dict, NM_PPP_IP6_CONFIG_INTERFACE, NULL)) {
