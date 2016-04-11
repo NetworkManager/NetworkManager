@@ -1936,7 +1936,6 @@ platform_link_added (NMManager *self,
 {
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
-	GError *error = NULL;
 
 	g_return_if_fail (ifindex > 0);
 
@@ -1947,13 +1946,13 @@ platform_link_added (NMManager *self,
 	factory = nm_device_factory_manager_find_factory_for_link_type (plink->type);
 	if (factory) {
 		gboolean ignore = FALSE;
+		gs_free_error GError *error = NULL;
 
 		device = nm_device_factory_new_link (factory, plink, &ignore, &error);
 		if (!device) {
 			if (!ignore) {
 				nm_log_warn (LOGD_HW, "%s: factory failed to create device: %s",
 				             plink->name, error->message);
-				g_clear_error (&error);
 			}
 			return;
 		}
