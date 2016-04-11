@@ -175,6 +175,9 @@ valid_metric (gint64 metric, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************
+ * NMIPAddress
+ *****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMIPAddress, nm_ip_address, nm_ip_address_dup, nm_ip_address_unref)
 
@@ -566,6 +569,9 @@ nm_ip_address_set_attribute (NMIPAddress *address, const char *name, GVariant *v
 		g_hash_table_remove (address->attributes, name);
 }
 
+/*****************************************************************************
+ * NMIPRoute
+ *****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMIPRoute, nm_ip_route, nm_ip_route_dup, nm_ip_route_unref)
 
@@ -1105,6 +1111,7 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 		g_hash_table_remove (route->attributes, name);
 }
 
+/*****************************************************************************/
 
 G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 
