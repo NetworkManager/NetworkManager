@@ -365,6 +365,8 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 				if (addr->plen == 0)
 					continue;
 
+				nm_assert (addr->plen <= 32);
+
 				route.ifindex = ifindex;
 				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 
@@ -466,6 +468,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 		nm_ip_address_get_address_binary (s_addr, &address.address);
 		address.peer_address = address.address;
 		address.plen = nm_ip_address_get_prefix (s_addr);
+		nm_assert (address.plen <= 32);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_IP_CONFIG_SOURCE_USER;
@@ -486,15 +489,18 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 
 		memset (&route, 0, sizeof (route));
 		nm_ip_route_get_dest_binary (s_route, &route.network);
+
 		route.plen = nm_ip_route_get_prefix (s_route);
+		nm_assert (route.plen <= 32);
+		if (route.plen == 0)
+			continue;
+
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
 		if (nm_ip_route_get_metric (s_route) == -1)
 			route.metric = default_route_metric;
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.source = NM_IP_CONFIG_SOURCE_USER;
-
-		g_assert (route.plen > 0);
 
 		nm_ip4_config_add_route (config, &route);
 	}
@@ -560,6 +566,10 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 			continue;
 		}
+
+		/* FIXME: NMIPAddress doesn't support zero prefixes. */
+		if (address->plen == 0)
+			continue;
 
 		/* Static address found. */
 		if (!method)
@@ -1328,7 +1338,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 }
 
 gboolean
-nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 network, int plen)
+nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 network, guint8 plen)
 {
 	guint naddresses = nm_ip4_config_get_num_addresses (config);
 	int i;
@@ -1567,7 +1577,7 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 	int i;
 
 	g_return_if_fail (new != NULL);
-	g_return_if_fail (new->plen > 0);
+	g_return_if_fail (new->plen > 0 && new->plen <= 32);
 	g_assert (priv->ifindex);
 
 	for (i = 0; i < priv->routes->len; i++ ) {

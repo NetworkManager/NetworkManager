@@ -870,7 +870,8 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	address.peer_address = address_network;
 	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv4_config);
 	address.source = NM_IP_CONFIG_SOURCE_WWAN;
-	nm_ip4_config_add_address (config, &address);
+	if (address.plen <= 32)
+		nm_ip4_config_add_address (config, &address);
 
 	nm_log_info (LOGD_MB, "  address %s/%d", address_string, address.plen);
 
@@ -960,7 +961,8 @@ stage3_ip6_done (NMModemBroadband *self)
 	config = nm_ip6_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
 
 	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv6_config);
-	nm_ip6_config_add_address (config, &address);
+	if (address.plen <= 128)
+		nm_ip6_config_add_address (config, &address);
 
 	nm_log_info (LOGD_MB, "  address %s/%d", address_string, address.plen);
 

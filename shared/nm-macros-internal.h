@@ -26,7 +26,9 @@
 
 /********************************************************/
 
-#define nm_auto(fcn) __attribute ((cleanup(fcn)))
+#define _nm_packed __attribute__ ((packed))
+
+#define nm_auto(fcn) __attribute__ ((cleanup(fcn)))
 
 /**
  * nm_auto_free:

@@ -79,7 +79,7 @@ void nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMe
 void nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src);
 void nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);
-gboolean nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 dest, int plen);
+gboolean nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 dest, guint8 plen);
 void nm_ip4_config_dump (const NMIP4Config *config, const char *detail);
 
 /* Gateways */

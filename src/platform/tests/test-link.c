@@ -343,7 +343,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (link_added);
 	ensure_no_signal (link_changed);
 	ensure_no_signal (link_removed);
-	nmtstp_link_del (-1, ifindex, NULL);
+	nmtstp_link_del (NULL, -1, ifindex, NULL);
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
 	accept_signal (link_removed);
@@ -437,7 +437,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	free_signal (link_changed);
 
 	/* Delete */
-	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
+	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
 	accept_signal (link_removed);
 
 	/* Delete again */
@@ -448,7 +448,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	if (link_type == NM_LINK_TYPE_VLAN) {
 		SignalData *link_removed_parent = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, vlan_parent);
 
-		nmtstp_link_del (-1, vlan_parent, NULL);
+		nmtstp_link_del (NULL, -1, vlan_parent, NULL);
 		accept_signal (link_removed_parent);
 		free_signal (link_removed_parent);
 	}
@@ -531,7 +531,7 @@ test_bridge_addr (void)
 	g_assert_cmpint (plink->addr.len, ==, sizeof (addr));
 	g_assert (!memcmp (plink->addr.data, addr, sizeof (addr)));
 
-	nmtstp_link_del (-1, link.ifindex, link.name);
+	nmtstp_link_del (NULL, -1, link.ifindex, link.name);
 }
 
 /*****************************************************************************/
@@ -606,7 +606,7 @@ test_internal (void)
 	accept_signal (link_changed);
 
 	/* Delete device */
-	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
+	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
 	accept_signal (link_removed);
 
 	/* Try to delete again */
@@ -717,7 +717,7 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip_gre", NULL) != 0;
 		}
 
-		if (!nmtstp_link_gre_add (ext, DEVICE_NAME, &lnk_gre)) {
+		if (!nmtstp_link_gre_add (NULL, ext, DEVICE_NAME, &lnk_gre)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create gre tunnel because of missing ip_gre module (modprobe ip_gre)");
 				goto out_delete_parent;
@@ -741,7 +741,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_ipip.tos = 32;
 		lnk_ipip.path_mtu_discovery = FALSE;
 
-		if (!nmtstp_link_ipip_add (ext, DEVICE_NAME, &lnk_ipip)) {
+		if (!nmtstp_link_ipip_add (NULL, ext, DEVICE_NAME, &lnk_ipip)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create ipip tunnel because of missing ipip module (modprobe ipip)");
 				goto out_delete_parent;
@@ -767,7 +767,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_ip6tnl.flow_label = 1337;
 		lnk_ip6tnl.proto = IPPROTO_IPV6;
 
-		if (!nmtstp_link_ip6tnl_add (ext, DEVICE_NAME, &lnk_ip6tnl)) {
+		if (!nmtstp_link_ip6tnl_add (NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create ip6tnl tunnel because of missing ip6_tunnel module (modprobe ip6_tunnel)");
 				goto out_delete_parent;
@@ -783,7 +783,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_macvlan.no_promisc = FALSE;
 		lnk_macvlan.tap = FALSE;
 
-		if (!nmtstp_link_macvlan_add (ext, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
+		if (!nmtstp_link_macvlan_add (NULL, ext, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
 			g_error ("Failed adding MACVLAN interface");
 		break;
 	}
@@ -794,7 +794,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_macvtap.no_promisc = FALSE;
 		lnk_macvtap.tap = TRUE;
 
-		if (!nmtstp_link_macvlan_add (ext, DEVICE_NAME, ifindex_parent, &lnk_macvtap))
+		if (!nmtstp_link_macvlan_add (NULL, ext, DEVICE_NAME, ifindex_parent, &lnk_macvtap))
 			g_error ("Failed adding MACVTAP interface");
 		break;
 	}
@@ -814,7 +814,7 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "sit", NULL) != 0;
 		}
 
-		if (!nmtstp_link_sit_add (ext, DEVICE_NAME, &lnk_sit)) {
+		if (!nmtstp_link_sit_add (NULL, ext, DEVICE_NAME, &lnk_sit)) {
 			if (gracefully_skip) {
 				g_test_skip ("Cannot create sit tunnel because of missing sit module (modprobe sit)");
 				goto out_delete_parent;
@@ -853,7 +853,7 @@ test_software_detect (gconstpointer user_data)
 			break;
 		}
 
-		g_assert (nmtstp_link_vxlan_add (ext, DEVICE_NAME, &lnk_vxlan));
+		g_assert (nmtstp_link_vxlan_add (NULL, ext, DEVICE_NAME, &lnk_vxlan));
 		break;
 	}
 	default:
@@ -862,7 +862,7 @@ test_software_detect (gconstpointer user_data)
 
 	ifindex = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, DEVICE_NAME, test_data->link_type, 100)->ifindex;
 
-	nmtstp_link_set_updown (-1, ifindex_parent, TRUE);
+	nmtstp_link_set_updown (NULL, -1, ifindex_parent, TRUE);
 
 	for (i_step = 0; i_step < 5; i_step++) {
 
@@ -880,7 +880,7 @@ test_software_detect (gconstpointer user_data)
 				 * https://bugzilla.redhat.com/show_bug.cgi?id=1277131 */
 				g_usleep (1);
 			}
-			nmtstp_link_set_updown (-1, ifindex, set_up);
+			nmtstp_link_set_updown (NULL, -1, ifindex, set_up);
 		}
 
 		lnk = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, test_data->link_type, &plink);
@@ -1017,9 +1017,9 @@ test_software_detect (gconstpointer user_data)
 		}
 	}
 
-	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
+	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
 out_delete_parent:
-	nmtstp_link_del (-1, ifindex_parent, PARENT_NAME);
+	nmtstp_link_del (NULL, -1, ifindex_parent, PARENT_NAME);
 }
 
 static void
@@ -1597,8 +1597,8 @@ test_vlan_set_xgress (void)
 		_assert_vlan_flags (ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
 	}
 
-	nmtstp_link_del (-1, ifindex, DEVICE_NAME);
-	nmtstp_link_del (-1, ifindex_parent, PARENT_NAME);
+	nmtstp_link_del (NULL, -1, ifindex, DEVICE_NAME);
+	nmtstp_link_del (NULL, -1, ifindex_parent, PARENT_NAME);
 }
 
 /*****************************************************************************/
@@ -1625,7 +1625,7 @@ test_create_many_links_do (guint n_devices)
 			 * while adding all the links. */
 			nmtstp_run_command_check ("ip link add %s type dummy", name);
 		} else
-			nmtstp_link_dummy_add (EX, name);
+			nmtstp_link_dummy_add (NULL, EX, name);
 	}
 
 	_LOGI (">>> process events after creating devices...");
@@ -1654,7 +1654,7 @@ test_create_many_links_do (guint n_devices)
 		if (EX == 2)
 			nmtstp_run_command_check ("ip link delete %s", name);
 		else
-			nmtstp_link_del (EX, g_array_index (ifindexes, int, i), name);
+			nmtstp_link_del (NULL, EX, g_array_index (ifindexes, int, i), name);
 	}
 
 	_LOGI (">>> process events after deleting devices...");
@@ -1743,7 +1743,7 @@ test_nl_bugs_veth (void)
 	});
 
 out:
-	nmtstp_link_del (-1, ifindex_veth0, IFACE_VETH0);
+	nmtstp_link_del (NULL, -1, ifindex_veth0, IFACE_VETH0);
 	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_veth0, IFACE_VETH0));
 	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_veth1, IFACE_VETH1));
 	nmtstp_namespace_handle_release (ns_handle);
@@ -1768,7 +1768,7 @@ test_nl_bugs_spuroius_newlink (void)
 	nmtstp_run_command_check ("ip link add %s type bond", IFACE_BOND0);
 	ifindex_bond0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_BOND0, NM_LINK_TYPE_BOND, 100)->ifindex;
 
-	nmtstp_link_set_updown (-1, ifindex_bond0, TRUE);
+	nmtstp_link_set_updown (NULL, -1, ifindex_bond0, TRUE);
 
 	nmtstp_run_command_check ("ip link set %s master %s", IFACE_DUMMY0, IFACE_BOND0);
 	NMTST_WAIT_ASSERT (100, {
@@ -1796,7 +1796,7 @@ again:
 	}
 
 	g_assert (!nmtstp_link_get (NM_PLATFORM_GET, ifindex_bond0, IFACE_BOND0));
-	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
+	nmtstp_link_del (NULL, -1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
 /*****************************************************************************/
@@ -1818,7 +1818,7 @@ test_nl_bugs_spuroius_dellink (void)
 	nmtstp_run_command_check ("ip link add %s type bridge", IFACE_BRIDGE0);
 	ifindex_bridge0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_BRIDGE0, NM_LINK_TYPE_BRIDGE, 100)->ifindex;
 
-	nmtstp_link_set_updown (-1, ifindex_bridge0, TRUE);
+	nmtstp_link_set_updown (NULL, -1, ifindex_bridge0, TRUE);
 
 	nmtstp_run_command_check ("ip link set %s master %s", IFACE_DUMMY0, IFACE_BRIDGE0);
 	NMTST_WAIT_ASSERT (100, {
@@ -1850,8 +1850,8 @@ again:
 		goto again;
 	}
 
-	nmtstp_link_del (-1, ifindex_bridge0, IFACE_BRIDGE0);
-	nmtstp_link_del (-1, ifindex_dummy0, IFACE_DUMMY0);
+	nmtstp_link_del (NULL, -1, ifindex_bridge0, IFACE_BRIDGE0);
+	nmtstp_link_del (NULL, -1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
 /******************************************************************/
@@ -1880,7 +1880,7 @@ _test_netns_create_platform (void)
 	netns = nmp_netns_new ();
 	g_assert (NMP_IS_NETNS (netns));
 
-	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platform = nm_linux_platform_new (TRUE);
 	g_assert (NM_IS_LINUX_PLATFORM (platform));
 
 	nmp_netns_pop (netns);
@@ -1932,7 +1932,7 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	platform_1 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platform_1 = nm_linux_platform_new (TRUE);
 	platform_2 = _test_netns_create_platform ();
 
 	/* add some dummy devices. The "other-*" devices are there to bump the ifindex */
@@ -2028,7 +2028,7 @@ test_netns_set_netns (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platforms[0] = platform_0 = nm_linux_platform_new (TRUE);
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
 
@@ -2125,7 +2125,7 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	pl[0].platform = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	pl[0].platform = platform_0 = nm_linux_platform_new (TRUE);
 	pl[1].platform = platform_1 = _test_netns_create_platform ();
 	pl[2].platform = platform_2 = _test_netns_create_platform ();
 
@@ -2257,7 +2257,7 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 	if (_test_netns_check_skip ())
 		return;
 
-	platforms[0] = platform_0 = g_object_new (NM_TYPE_LINUX_PLATFORM, NM_PLATFORM_NETNS_SUPPORT, TRUE, NULL);
+	platforms[0] = platform_0 = nm_linux_platform_new (TRUE);
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
 
@@ -2293,13 +2293,13 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 /*****************************************************************************/
 
 void
-init_tests (int *argc, char ***argv)
+_nmtstp_init_tests (int *argc, char ***argv)
 {
 	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, SLAVE_NAME));

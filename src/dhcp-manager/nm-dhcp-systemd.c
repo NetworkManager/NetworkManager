@@ -312,7 +312,8 @@ lease_to_ip4_config (const char *iface,
 				continue;
 			route.network = a.s_addr;
 
-			if (sd_dhcp_route_get_destination_prefix_length (routes[i], &plen) < 0)
+			if (   sd_dhcp_route_get_destination_prefix_length (routes[i], &plen) < 0
+			    || plen > 32)
 				continue;
 			route.plen = plen;
 

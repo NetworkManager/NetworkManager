@@ -57,6 +57,8 @@ typedef enum { /*< skip >*/
  * matching v4/v6 and ifindex -- or maybe not at all if it isn't visible.
  * */
 typedef enum { /*< skip >*/
+	NMP_CACHE_ID_TYPE_NONE,
+
 	/* all the objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
@@ -77,6 +79,17 @@ typedef enum { /*< skip >*/
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
 
+	/* Consider all the destination fields of a route, that is, the ID without the ifindex
+	 * and gateway (meaning: network/plen,metric).
+	 * The reason for this is that `ip route change` can replace an existing route
+	 * and modify it's ifindex/gateway. Effectively, that means it deletes an existing
+	 * route and adds a different one (as the ID of the route changes). However, it only
+	 * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
+	 * that by having this index to contain overlapping routes which require special
+	 * cache-resync. */
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,
+
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
 } NMPCacheIdType;
@@ -87,7 +100,7 @@ typedef struct {
 	union {
 		NMMultiIndexId base;
 		guint8 _id_type; /* NMPCacheIdType as guint8 */
-		struct {
+		struct _nm_packed {
 			/* NMP_CACHE_ID_TYPE_OBJECT_TYPE */
 			/* NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY */
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT */
@@ -95,19 +108,33 @@ typedef struct {
 			guint8 _id_type;
 			guint8 obj_type; /* NMPObjectType as guint8 */
 		} object_type;
-		struct {
+		struct _nm_packed {
 			/* NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX */
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT */
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT */
 			guint8 _id_type;
 			guint8 obj_type; /* NMPObjectType as guint8 */
-			int ifindex;
+			int _misaligned_ifindex;
 		} object_type_by_ifindex;
-		struct {
+		struct _nm_packed {
 			/* NMP_CACHE_ID_TYPE_LINK_BY_IFNAME */
 			guint8 _id_type;
 			char ifname_short[IFNAMSIZ - 1]; /* don't include the trailing NUL so the struct fits in 4 bytes. */
 		} link_by_ifname;
+		struct _nm_packed {
+			/* NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6 */
+			guint8 _id_type;
+			guint8 plen;
+			guint32 _misaligned_metric;
+			guint32 _misaligned_network;
+		} routes_by_destination_ip4;
+		struct _nm_packed {
+			/* NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4 */
+			guint8 _id_type;
+			guint8 plen;
+			guint32 _misaligned_metric;
+			struct in6_addr _misaligned_network;
+		} routes_by_destination_ip6;
 	};
 } NMPCacheId;
 
@@ -123,6 +150,8 @@ typedef struct {
 	NMPlatformSignalIdType signal_type_id;
 	const char *obj_type_name;
 	const char *signal_type;
+
+	const guint8 *supported_cache_ids;
 
 	/* Only for NMPObjectLnk* types. */
 	NMLinkType lnk_link_type;
@@ -341,10 +370,10 @@ NMPObject *nmp_object_new_link (int ifindex);
 const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformObject *plobj);
 const NMPObject *nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src);
 const NMPObject *nmp_object_stackinit_id_link (NMPObject *obj, int ifindex);
-const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, int plen, guint32 peer_address);
-const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address, int plen);
-const NMPObject *nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, int plen, guint32 metric);
-const NMPObject *nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, int plen, guint32 metric);
+const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, guint8 plen, guint32 peer_address);
+const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address, guint8 plen);
+const NMPObject *nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, guint8 plen, guint32 metric);
+const NMPObject *nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, guint8 plen, guint32 metric);
 
 const char *nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size);
 int nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2);
@@ -375,15 +404,20 @@ guint nmp_cache_id_hash (const NMPCacheId *id);
 NMPCacheId *nmp_cache_id_clone (const NMPCacheId *id);
 void nmp_cache_id_destroy (NMPCacheId *id);
 
+NMPCacheId *nmp_cache_id_copy (NMPCacheId *id, const NMPCacheId *src);
 NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, NMPObjectType obj_type, gboolean visible_only);
 NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, NMPObjectType obj_type, int ifindex);
 NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
 NMPCacheId *nmp_cache_id_init_link_by_ifname (NMPCacheId *id, const char *ifname);
+NMPCacheId *nmp_cache_id_init_routes_by_destination_ip4 (NMPCacheId *id, guint32 network, guint8 plen, guint32 metric);
+NMPCacheId *nmp_cache_id_init_routes_by_destination_ip6 (NMPCacheId *id, const struct in6_addr *network, guint8 plen, guint32 metric);
 
 const NMPlatformObject *const *nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len);
 GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, NMPObjectType obj_type, const NMPCacheId *cache_id);
 const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
 const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
+
+const NMPObject *nmp_cache_find_other_route_for_same_destination (const NMPCache *cache, const NMPObject *route);
 
 const NMPObject *nmp_cache_lookup_link_full (const NMPCache *cache,
                                              int ifindex,
