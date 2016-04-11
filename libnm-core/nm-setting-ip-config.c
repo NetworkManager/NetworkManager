@@ -143,18 +143,16 @@ valid_ip (int family, const char *ip, GError **error)
 }
 
 static gboolean
-valid_prefix (int family, guint prefix, GError **error, gboolean allow_zero_prefix)
+valid_prefix (int family, guint prefix, GError **error)
 {
-	if (   (family == AF_INET && prefix > 32)
-	    || (family == AF_INET6 && prefix > 128)
-	    || (!allow_zero_prefix && prefix == 0)) {
-		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             family == AF_INET ? _("Invalid IPv4 address prefix '%u'") : _("Invalid IPv6 address prefix '%u'"),
-		             prefix);
-		return FALSE;
-	}
+	if (   (family == AF_INET  && prefix <= 32)
+	    || (family == AF_INET6 && prefix <= 128))
+		return TRUE;
 
-	return TRUE;
+	g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+	             family == AF_INET ? _("Invalid IPv4 address prefix '%u'") : _("Invalid IPv6 address prefix '%u'"),
+	             prefix);
+	return FALSE;
 }
 
 static gboolean
@@ -175,6 +173,9 @@ valid_metric (gint64 metric, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************
+ * NMIPAddress
+ *****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMIPAddress, nm_ip_address, nm_ip_address_dup, nm_ip_address_unref)
 
@@ -211,7 +212,7 @@ nm_ip_address_new (int family,
 
 	if (!valid_ip (family, addr, error))
 		return NULL;
-	if (!valid_prefix (family, prefix, error, FALSE))
+	if (!valid_prefix (family, prefix, error))
 		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
@@ -248,7 +249,7 @@ nm_ip_address_new_binary (int family,
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
 	g_return_val_if_fail (addr != NULL, NULL);
 
-	if (!valid_prefix (family, prefix, error, FALSE))
+	if (!valid_prefix (family, prefix, error))
 		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
@@ -484,7 +485,7 @@ nm_ip_address_set_prefix (NMIPAddress *address,
                           guint prefix)
 {
 	g_return_if_fail (address != NULL);
-	g_return_if_fail (valid_prefix (address->family, prefix, NULL, FALSE));
+	g_return_if_fail (valid_prefix (address->family, prefix, NULL));
 
 	address->prefix = prefix;
 }
@@ -566,6 +567,9 @@ nm_ip_address_set_attribute (NMIPAddress *address, const char *name, GVariant *v
 		g_hash_table_remove (address->attributes, name);
 }
 
+/*****************************************************************************
+ * NMIPRoute
+ *****************************************************************************/
 
 G_DEFINE_BOXED_TYPE (NMIPRoute, nm_ip_route, nm_ip_route_dup, nm_ip_route_unref)
 
@@ -610,7 +614,7 @@ nm_ip_route_new (int family,
 
 	if (!valid_ip (family, dest, error))
 		return NULL;
-	if (!valid_prefix (family, prefix, error, TRUE))
+	if (!valid_prefix (family, prefix, error))
 		return NULL;
 	if (next_hop && !valid_ip (family, next_hop, error))
 		return NULL;
@@ -657,7 +661,7 @@ nm_ip_route_new_binary (int family,
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
 	g_return_val_if_fail (dest, NULL);
 
-	if (!valid_prefix (family, prefix, error, TRUE))
+	if (!valid_prefix (family, prefix, error))
 		return NULL;
 	if (!valid_metric (metric, error))
 		return NULL;
@@ -898,7 +902,7 @@ nm_ip_route_set_prefix (NMIPRoute *route,
                         guint prefix)
 {
 	g_return_if_fail (route != NULL);
-	g_return_if_fail (valid_prefix (route->family, prefix, NULL, TRUE));
+	g_return_if_fail (valid_prefix (route->family, prefix, NULL));
 
 	route->prefix = prefix;
 }
@@ -1105,6 +1109,7 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 		g_hash_table_remove (route->attributes, name);
 }
 
+/*****************************************************************************/
 
 G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 

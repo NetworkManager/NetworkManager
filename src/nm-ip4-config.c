@@ -567,10 +567,6 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 			continue;
 		}
 
-		/* FIXME: NMIPAddress doesn't support zero prefixes. */
-		if (address->plen == 0)
-			continue;
-
 		/* Static address found. */
 		if (!method)
 			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
