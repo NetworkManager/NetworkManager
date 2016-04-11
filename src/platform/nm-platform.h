@@ -303,7 +303,13 @@ typedef union {
 
 #define __NMPlatformIPRoute_COMMON \
 	__NMPlatformObject_COMMON; \
+	\
+	/* The NMIPConfigSource. For routes that we receive from cache this corresponds
+	 * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
+	 * When adding a route, the source will be coerced to the protocol using
+	 * nmp_utils_ip_config_source_coerce_to_rtprot(). */ \
 	NMIPConfigSource rt_source; \
+	\
 	guint8 plen; \
 	\
 	/* the route has rtm_flags set to RTM_F_CLONED. Such a route

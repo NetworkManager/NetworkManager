@@ -2245,7 +2245,7 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_family = family,
 		.rtm_tos = 0,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
-		.rtm_protocol = nmp_utils_ip_config_source_to_rtprot (source),
+		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (source),
 		.rtm_scope = scope,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,

@@ -31,6 +31,7 @@
 #include "nm-utils.h"
 
 #include "nm-core-utils.h"
+#include "nm-platform-utils.h"
 #include "nmp-object.h"
 
 #include "nm-test-utils.h"
@@ -1208,7 +1209,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 
 	memset (&route, 0, sizeof (route));
 	route.ifindex = ifindex;
-	route.rt_source = source;
+	route.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (source);
 	route.network = nm_utils_ip4_address_clear_host_address (network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
@@ -1273,7 +1274,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 
 	memset (&route, 0, sizeof (route));
 	route.ifindex = ifindex;
-	route.rt_source = source;
+	route.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (source);
 	nm_utils_ip6_address_clear_host_address (&route.network, &network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
