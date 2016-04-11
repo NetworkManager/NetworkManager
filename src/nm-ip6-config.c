@@ -556,10 +556,6 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			continue;
 		}
 
-		/* FIXME: NMIPAddress does not support zero prefixes. */
-		if (address->plen == 0)
-			continue;
-
 		/* Static address found. */
 		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
