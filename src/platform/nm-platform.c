@@ -3925,10 +3925,10 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, addr_source);
 	_CMP_FIELD (a, b, address);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, peer_address);
+	_CMP_FIELD (a, b, addr_source);
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
@@ -3944,14 +3944,12 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, addr_source);
 	_CMP_FIELD_MEMCMP (a, b, address);
-
+	_CMP_FIELD (a, b, plen);
 	p_a = nm_platform_ip6_address_get_peer (a);
 	p_b = nm_platform_ip6_address_get_peer (b);
 	_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
-
-	_CMP_FIELD (a, b, plen);
+	_CMP_FIELD (a, b, addr_source);
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
@@ -3964,11 +3962,11 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD (a, b, network);
 	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, gateway);
 	_CMP_FIELD (a, b, metric);
+	_CMP_FIELD (a, b, gateway);
+	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD (a, b, mss);
 	_CMP_FIELD (a, b, scope_inv);
 	_CMP_FIELD (a, b, pref_src);
@@ -3981,11 +3979,11 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD_MEMCMP (a, b, network);
 	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD_MEMCMP (a, b, gateway);
 	_CMP_FIELD (a, b, metric);
+	_CMP_FIELD_MEMCMP (a, b, gateway);
+	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD (a, b, mss);
 	_CMP_FIELD (a, b, rt_cloned);
 	return 0;
