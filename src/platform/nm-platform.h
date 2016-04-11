@@ -305,6 +305,13 @@ typedef union {
 	__NMPlatformObject_COMMON; \
 	NMIPConfigSource rt_source; \
 	guint8 plen; \
+	\
+	/* the route has rtm_flags set to RTM_F_CLONED. Such a route
+	 * is hidden by platform and does not exist from the point-of-view
+	 * of platform users. This flag is internal to track those hidden
+	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
+	bool rt_cloned:1; \
+	\
 	guint32 metric; \
 	guint32 mss; \
 	;

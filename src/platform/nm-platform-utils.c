@@ -475,7 +475,6 @@ nmp_utils_ip_config_source_from_rtprot (guint rtprot)
 NM_UTILS_ENUM2STR_DEFINE (nmp_utils_ip_config_source_to_string, NMIPConfigSource,
 	NM_UTILS_ENUM2STR (NM_IP_CONFIG_SOURCE_UNKNOWN,       "unknown"),
 	NM_UTILS_ENUM2STR (NM_IP_CONFIG_SOURCE_RTPROT_KERNEL, "rtprot-kernel"),
-	NM_UTILS_ENUM2STR (_NM_IP_CONFIG_SOURCE_RTM_F_CLONED, "rtm-f-cloned"),
 	NM_UTILS_ENUM2STR (NM_IP_CONFIG_SOURCE_KERNEL,        "kernel"),
 	NM_UTILS_ENUM2STR (NM_IP_CONFIG_SOURCE_SHARED,        "shared"),
 	NM_UTILS_ENUM2STR (NM_IP_CONFIG_SOURCE_IP4LL,         "ipv4ll"),

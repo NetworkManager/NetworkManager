@@ -3642,6 +3642,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            " metric %"G_GUINT32_FORMAT
 	            " mss %"G_GUINT32_FORMAT
 	            " src %s" /* source */
+	            "%s" /* cloned */
 	            "%s%s" /* scope */
 	            "%s%s" /* pref-src */
 	            "",
@@ -3652,6 +3653,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            route->metric,
 	            route->mss,
 	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
+	            route->rt_cloned ? " cloned" : "",
 	            route->scope_inv ? " scope " : "",
 	            route->scope_inv ? (nm_platform_route_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
@@ -3692,6 +3694,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " metric %"G_GUINT32_FORMAT
 	            " mss %"G_GUINT32_FORMAT
 	            " src %s" /* source */
+	            "%s" /* cloned */
 	            "",
 	            s_network,
 	            route->plen,
@@ -3699,7 +3702,8 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            str_dev,
 	            route->metric,
 	            route->mss,
-	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)));
+	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
+	            route->rt_cloned ? " cloned" : "");
 	return buf;
 }
 
@@ -3968,6 +3972,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	_CMP_FIELD (a, b, mss);
 	_CMP_FIELD (a, b, scope_inv);
 	_CMP_FIELD (a, b, pref_src);
+	_CMP_FIELD (a, b, rt_cloned);
 	return 0;
 }
 
@@ -3982,6 +3987,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	_CMP_FIELD_MEMCMP (a, b, gateway);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, mss);
+	_CMP_FIELD (a, b, rt_cloned);
 	return 0;
 }
 

@@ -1882,9 +1882,10 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		 *
 		 * This happens, because this route is not nmp_object_is_alive().
 		 * */
-		obj->ip_route.rt_source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
-	} else
-		obj->ip_route.rt_source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
+		obj->ip_route.rt_cloned = TRUE;
+	}
+
+	obj->ip_route.rt_source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
 
 	obj_result = obj;
 	obj = NULL;
