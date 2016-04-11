@@ -214,7 +214,7 @@ nm_ip_address_new (int family,
 
 	if (!valid_ip (family, addr, error))
 		return NULL;
-	if (!valid_prefix (family, prefix, error, FALSE))
+	if (!valid_prefix (family, prefix, error, TRUE))
 		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
@@ -251,7 +251,7 @@ nm_ip_address_new_binary (int family,
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
 	g_return_val_if_fail (addr != NULL, NULL);
 
-	if (!valid_prefix (family, prefix, error, FALSE))
+	if (!valid_prefix (family, prefix, error, TRUE))
 		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
@@ -487,7 +487,7 @@ nm_ip_address_set_prefix (NMIPAddress *address,
                           guint prefix)
 {
 	g_return_if_fail (address != NULL);
-	g_return_if_fail (valid_prefix (address->family, prefix, NULL, FALSE));
+	g_return_if_fail (valid_prefix (address->family, prefix, NULL, TRUE));
 
 	address->prefix = prefix;
 }
