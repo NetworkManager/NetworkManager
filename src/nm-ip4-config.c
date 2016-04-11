@@ -207,8 +207,8 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b)
 		return p1 > p2 ? -1 : 1;
 
 	/* Sort the addresses based on their source. */
-	if (a1->source != a2->source)
-		return a1->source > a2->source ? -1 : 1;
+	if (a1->addr_source != a2->addr_source)
+		return a1->addr_source > a2->addr_source ? -1 : 1;
 
 	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
 		return (a1->label[0] == '\0') ? -1 : 1;
@@ -368,7 +368,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 				nm_assert (addr->plen <= 32);
 
 				route.ifindex = ifindex;
-				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
+				route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
 
 				/* The destination network depends on the peer-address. */
 				route.network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
@@ -471,7 +471,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 		nm_assert (address.plen <= 32);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-		address.source = NM_IP_CONFIG_SOURCE_USER;
+		address.addr_source = NM_IP_CONFIG_SOURCE_USER;
 
 		label = nm_ip_address_get_attribute (s_addr, "label");
 		if (label)
@@ -500,7 +500,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 			route.metric = default_route_metric;
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
-		route.source = NM_IP_CONFIG_SOURCE_USER;
+		route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip4_config_add_route (config, &route);
 	}
@@ -606,7 +606,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 			continue;
 
 		/* Ignore routes provided by external sources */
-		if (route->source != NM_IP_CONFIG_SOURCE_USER)
+		if (route->rt_source != NM_IP_CONFIG_SOURCE_USER)
 			continue;
 
 		s_route = nm_ip_route_new_binary (AF_INET,
@@ -1481,14 +1481,14 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 			*item = *new;
 
 			/* But restore highest priority source */
-			item->source = MAX (item_old.source, new->source);
+			item->addr_source = MAX (item_old.addr_source, new->addr_source);
 
 			/* for addresses that we read from the kernel, we keep the timestamps as defined
 			 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
 			 * with "what should be" and the kernel values are "what turned out after configuring it".
 			 *
 			 * For other sources, the longer lifetime wins. */
-			if (   (new->source == NM_IP_CONFIG_SOURCE_KERNEL && new->source != item_old.source)
+			if (   (new->addr_source == NM_IP_CONFIG_SOURCE_KERNEL && new->addr_source != item_old.addr_source)
 			    || nm_platform_ip_address_cmp_expiry ((const NMPlatformIPAddress *) &item_old, (const NMPlatformIPAddress *) new) > 0) {
 				item->timestamp = item_old.timestamp;
 				item->lifetime = item_old.lifetime;
@@ -1582,10 +1582,10 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 		if (routes_are_duplicate (item, new, FALSE)) {
 			if (nm_platform_ip4_route_cmp (item, new) == 0)
 				return;
-			old_source = item->source;
+			old_source = item->rt_source;
 			memcpy (item, new, sizeof (*item));
 			/* Restore highest priority source */
-			item->source = MAX (old_source, new->source);
+			item->rt_source = MAX (old_source, new->rt_source);
 			item->ifindex = priv->ifindex;
 			goto NOTIFY;
 		}

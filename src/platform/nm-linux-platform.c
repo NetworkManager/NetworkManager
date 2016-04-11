@@ -1652,7 +1652,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 		}
 	}
 
-	obj->ip_address.source = NM_IP_CONFIG_SOURCE_KERNEL;
+	obj->ip_address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
 
 	obj->ip_address.n_ifa_flags = tb[IFA_FLAGS]
 	                              ? nla_get_u32 (tb[IFA_FLAGS])
@@ -1882,9 +1882,9 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		 *
 		 * This happens, because this route is not nmp_object_is_alive().
 		 * */
-		obj->ip_route.source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
+		obj->ip_route.rt_source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	} else
-		obj->ip_route.source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
+		obj->ip_route.rt_source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
 
 	obj_result = obj;
 	obj = NULL;
@@ -5583,7 +5583,7 @@ ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NM
 		nm_assert (NMP_OBJECT_GET_CLASS (NMP_OBJECT_UP_CAST (routes[i])) == klass);
 
 		if (   with_rtprot_kernel
-		    || routes[i]->source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+		    || routes[i]->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			g_array_append_vals (array, routes[i], 1);
 	}
 	return array;

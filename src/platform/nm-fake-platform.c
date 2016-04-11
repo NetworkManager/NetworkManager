@@ -911,7 +911,7 @@ ip4_address_add (NMPlatform *platform,
 	int i;
 
 	memset (&address, 0, sizeof (address));
-	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
+	address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -962,7 +962,7 @@ ip6_address_add (NMPlatform *platform,
 	int i;
 
 	memset (&address, 0, sizeof (address));
-	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
+	address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = (IN6_IS_ADDR_UNSPECIFIED (&peer_addr) || IN6_ARE_ADDR_EQUAL (&addr, &peer_addr)) ? in6addr_any : peer_addr;
@@ -1207,9 +1207,8 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	scope = gateway == 0 ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE;
 
 	memset (&route, 0, sizeof (route));
-	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
-	route.source = source;
+	route.rt_source = source;
 	route.network = nm_utils_ip4_address_clear_host_address (network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
@@ -1273,9 +1272,8 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	metric = nm_utils_ip6_route_metric_normalize (metric);
 
 	memset (&route, 0, sizeof (route));
-	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
-	route.source = source;
+	route.rt_source = source;
 	nm_utils_ip6_address_clear_host_address (&route.network, &network, plen);
 	route.plen = plen;
 	route.gateway = gateway;

@@ -240,8 +240,8 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	}
 
 	/* Sort the addresses based on their source. */
-	if (a1->source != a2->source)
-		return a1->source > a2->source ? -1 : 1;
+	if (a1->addr_source != a2->addr_source)
+		return a1->addr_source > a2->addr_source ? -1 : 1;
 
 	/* sort permanent addresses before non-permanent. */
 	perm1 = (a1->n_ifa_flags & IFA_F_PERMANENT);
@@ -457,7 +457,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 		nm_assert (address.plen <= 128);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-		address.source = NM_IP_CONFIG_SOURCE_USER;
+		address.addr_source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip6_config_add_address (config, &address);
 	}
@@ -482,7 +482,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 			route.metric = default_route_metric;
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
-		route.source = NM_IP_CONFIG_SOURCE_USER;
+		route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip6_config_add_route (config, &route);
 	}
@@ -596,7 +596,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			continue;
 
 		/* Ignore routes provided by external sources */
-		if (route->source != NM_IP_CONFIG_SOURCE_USER)
+		if (route->rt_source != NM_IP_CONFIG_SOURCE_USER)
 			continue;
 
 		s_route = nm_ip_route_new_binary (AF_INET6,
@@ -1290,14 +1290,14 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 			*item = *new;
 
 			/* But restore highest priority source */
-			item->source = MAX (item_old.source, new->source);
+			item->addr_source = MAX (item_old.addr_source, new->addr_source);
 
 			/* for addresses that we read from the kernel, we keep the timestamps as defined
 			 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
 			 * with "what should be" and the kernel values are "what turned out after configuring it".
 			 *
 			 * For other sources, the longer lifetime wins. */
-			if (   (new->source == NM_IP_CONFIG_SOURCE_KERNEL && new->source != item_old.source)
+			if (   (new->addr_source == NM_IP_CONFIG_SOURCE_KERNEL && new->addr_source != item_old.addr_source)
 			    || nm_platform_ip_address_cmp_expiry ((const NMPlatformIPAddress *) &item_old, (const NMPlatformIPAddress *) new) > 0) {
 				item->timestamp = item_old.timestamp;
 				item->lifetime = item_old.lifetime;
@@ -1414,10 +1414,10 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 		if (routes_are_duplicate (item, new, FALSE)) {
 			if (nm_platform_ip6_route_cmp (item, new) == 0)
 				return;
-			old_source = item->source;
+			old_source = item->rt_source;
 			*item = *new;
 			/* Restore highest priority source */
-			item->source = MAX (old_source, new->source);
+			item->rt_source = MAX (old_source, new->rt_source);
 			item->ifindex = priv->ifindex;
 			goto NOTIFY;
 		}

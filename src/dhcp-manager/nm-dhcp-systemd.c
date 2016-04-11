@@ -256,7 +256,7 @@ lease_to_ip4_config (const char *iface,
 	                SD_DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
 	                end_time);
 
-	address.source = NM_IP_CONFIG_SOURCE_DHCP;
+	address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
 	nm_ip4_config_add_address (ip4_config, &address);
 
 	/* DNS Servers */
@@ -322,7 +322,7 @@ lease_to_ip4_config (const char *iface,
 			route.gateway = a.s_addr;
 
 			if (route.plen) {
-				route.source = NM_IP_CONFIG_SOURCE_DHCP;
+				route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
 				route.metric = default_priority;
 				nm_ip4_config_add_route (ip4_config, &route);
 
@@ -740,7 +740,7 @@ lease_to_ip6_config (const char *iface,
 			.timestamp = ts,
 			.lifetime = lft_valid,
 			.preferred = lft_pref,
-			.source = NM_IP_CONFIG_SOURCE_DHCP,
+			.addr_source = NM_IP_CONFIG_SOURCE_DHCP,
 		};
 
 		nm_ip6_config_add_address (ip6_config, &address);

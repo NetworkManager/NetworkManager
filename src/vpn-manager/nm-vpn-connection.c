@@ -680,7 +680,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
 		route.gateway = 0;
 
-	route.source = NM_IP_CONFIG_SOURCE_VPN;
+	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
 	nm_ip4_config_add_route (config, &route);
 
@@ -692,7 +692,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	memset (&route, 0, sizeof (route));
 	route.network = parent_gw;
 	route.plen = 32;
-	route.source = NM_IP_CONFIG_SOURCE_VPN;
+	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
 
 	nm_ip4_config_add_route (config, &route);
@@ -732,7 +732,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
 		route.gateway = in6addr_any;
 
-	route.source = NM_IP_CONFIG_SOURCE_VPN;
+	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
 	nm_ip6_config_add_route (config, &route);
 
@@ -744,7 +744,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	memset (&route, 0, sizeof (route));
 	route.network = *parent_gw;
 	route.plen = 128;
-	route.source = NM_IP_CONFIG_SOURCE_VPN;
+	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
 
 	nm_ip6_config_add_route (config, &route);
@@ -1386,7 +1386,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		address.plen = u32;
 
 	if (address.address && address.plen && address.plen <= 32) {
-		address.source = NM_IP_CONFIG_SOURCE_VPN;
+		address.addr_source = NM_IP_CONFIG_SOURCE_VPN;
 		nm_ip4_config_add_address (config, &address);
 	} else {
 		_LOGW ("invalid IP4 config received!");
@@ -1435,7 +1435,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				g_variant_get_child (v, 2, "u", &route.gateway);
 				/* 4th item is unused route metric */
 				route.metric = route_metric;
-				route.source = NM_IP_CONFIG_SOURCE_VPN;
+				route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 
 				if (route.plen > 32)
 					break;
@@ -1523,7 +1523,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 		address.plen = u32;
 
 	if (!IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen && address.plen <= 128) {
-		address.source = NM_IP_CONFIG_SOURCE_VPN;
+		address.addr_source = NM_IP_CONFIG_SOURCE_VPN;
 		nm_ip6_config_add_address (config, &address);
 	} else {
 		_LOGW ("invalid IP6 config received!");
@@ -1575,7 +1575,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			route.plen = prefix;
 			ip6_addr_from_variant (next_hop, &route.gateway);
 			route.metric = route_metric;
-			route.source = NM_IP_CONFIG_SOURCE_VPN;
+			route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself.
 			 * Since NM knows more about the routing situation than the VPN

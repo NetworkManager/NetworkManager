@@ -920,7 +920,7 @@ _vt_cmd_obj_is_alive_ipx_route (const NMPObject *obj)
 	 * Instead we create a dead object, and nmp_cache_update_netlink()
 	 * will remove the old version of the update.
 	 **/
-	return obj->object.ifindex > 0 && (obj->ip_route.source != _NM_IP_CONFIG_SOURCE_RTM_F_CLONED);
+	return obj->object.ifindex > 0 && (obj->ip_route.rt_source != _NM_IP_CONFIG_SOURCE_RTM_F_CLONED);
 }
 
 gboolean

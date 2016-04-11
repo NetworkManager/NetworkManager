@@ -45,7 +45,7 @@ setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_
 	route.ifindex = ifindex;
 	route.mss = 0;
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "6.6.6.0", &route.network);
 	route.plen = 24;
 	route.gateway = INADDR_ANY;
@@ -53,7 +53,7 @@ setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_
 	route.mss = mss_of_first_route;
 	g_array_append_val (routes, route);
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "7.0.0.0", &route.network);
 	route.plen = 8;
 	inet_pton (AF_INET, "6.6.6.1", &route.gateway);
@@ -87,21 +87,21 @@ setup_dev1_ip4 (int ifindex)
 	                                route.mss))
 		g_assert_not_reached ();
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "6.6.6.0", &route.network);
 	route.plen = 24;
 	route.gateway = INADDR_ANY;
 	route.metric = 20;
 	g_array_append_val (routes, route);
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "7.0.0.0", &route.network);
 	route.plen = 8;
 	route.gateway = INADDR_ANY;
 	route.metric = 22;
 	g_array_append_val (routes, route);
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "8.0.0.0", &route.network);
 	route.plen = 8;
 	inet_pton (AF_INET, "6.6.6.2", &route.gateway);
@@ -121,14 +121,14 @@ update_dev0_ip4 (int ifindex)
 	route.ifindex = ifindex;
 	route.mss = 0;
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "6.6.6.0", &route.network);
 	route.plen = 24;
 	route.gateway = INADDR_ANY;
 	route.metric = 20;
 	g_array_append_val (routes, route);
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "7.0.0.0", &route.network);
 	route.plen = 8;
 	route.gateway = INADDR_ANY;
@@ -163,7 +163,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 
 	NMPlatformIP4Route state1[] = {
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("6.6.6.0"),
 			.plen = 24,
 			.ifindex = fixture->ifindex0,
@@ -173,7 +173,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("7.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex0,
@@ -183,7 +183,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("7.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex1,
@@ -193,7 +193,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("6.6.6.0"),
 			.plen = 24,
 			.ifindex = fixture->ifindex1,
@@ -203,7 +203,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("8.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex1,
@@ -216,7 +216,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 
 	NMPlatformIP4Route state2[] = {
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("6.6.6.0"),
 			.plen = 24,
 			.ifindex = fixture->ifindex0,
@@ -226,7 +226,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("7.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex0,
@@ -236,7 +236,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("7.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex1,
@@ -246,7 +246,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("6.6.6.0"),
 			.plen = 24,
 			.ifindex = fixture->ifindex1,
@@ -256,7 +256,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("8.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex1,
@@ -269,7 +269,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 
 	NMPlatformIP4Route state3[] = {
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("7.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex1,
@@ -279,7 +279,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("6.6.6.0"),
 			.plen = 24,
 			.ifindex = fixture->ifindex1,
@@ -289,7 +289,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("8.0.0.0"),
 			.plen = 8,
 			.ifindex = fixture->ifindex1,
@@ -299,7 +299,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = nmtst_inet4_from_string ("6.6.6.0"),
 			.plen = 24,
 			.ifindex = fixture->ifindex1,
@@ -542,7 +542,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 
 	NMPlatformIP6Route state1[] = {
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex0,
@@ -551,7 +551,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex0,
@@ -560,7 +560,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:abad:c0de::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex0,
@@ -569,7 +569,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:abad:c0de::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex1,
@@ -578,7 +578,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -587,7 +587,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -596,7 +596,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex1,
@@ -608,7 +608,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 
 	NMPlatformIP6Route state2[] = {
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex0,
@@ -617,7 +617,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex0,
@@ -626,7 +626,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:abad:c0de::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex0,
@@ -635,7 +635,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:abad:c0de::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex1,
@@ -644,7 +644,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -653,7 +653,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -662,7 +662,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex1,
@@ -674,7 +674,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 
 	NMPlatformIP6Route state3[] = {
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:abad:c0de::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex1,
@@ -683,7 +683,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -692,7 +692,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -701,7 +701,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -710,7 +710,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
 			.plen = 48,
 			.ifindex = fixture->ifindex1,
@@ -719,7 +719,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 		},
 		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
+			.rt_source = NM_IP_CONFIG_SOURCE_USER,
 			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
 			.plen = 64,
 			.ifindex = fixture->ifindex1,

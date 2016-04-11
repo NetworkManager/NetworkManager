@@ -194,7 +194,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 			address.preferred = discovered_address->preferred;
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
-			address.source = NM_IP_CONFIG_SOURCE_RDISC;
+			address.addr_source = NM_IP_CONFIG_SOURCE_RDISC;
 			address.n_ifa_flags = ifa_flags;
 
 			nm_ip6_config_add_address (rdisc_config, &address);
@@ -219,7 +219,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 				route.network = discovered_route->network;
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
-				route.source = NM_IP_CONFIG_SOURCE_RDISC;
+				route.rt_source = NM_IP_CONFIG_SOURCE_RDISC;
 				route.metric = global_opt.priority_v6;
 
 				nm_ip6_config_add_route (rdisc_config, &route);

@@ -2912,7 +2912,7 @@ nm_platform_ip4_route_add (NMPlatform *self,
 		NMPlatformIP4Route route = { 0 };
 
 		route.ifindex = ifindex;
-		route.source = source;
+		route.rt_source = source;
 		route.network = network;
 		route.plen = plen;
 		route.gateway = gateway;
@@ -2939,7 +2939,7 @@ nm_platform_ip6_route_add (NMPlatform *self,
 		NMPlatformIP6Route route = { 0 };
 
 		route.ifindex = ifindex;
-		route.source = source;
+		route.rt_source = source;
 		route.network = network;
 		route.plen = plen;
 		route.gateway = gateway;
@@ -3528,7 +3528,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
 	            str_label,
-	            source_to_string (address->source));
+	            source_to_string (address->addr_source));
 	g_free (str_peer);
 	return buf;
 }
@@ -3634,7 +3634,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
-	            source_to_string (address->source));
+	            source_to_string (address->addr_source));
 	g_free (str_peer);
 	return buf;
 }
@@ -3683,7 +3683,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            str_dev,
 	            route->metric,
 	            route->mss,
-	            source_to_string (route->source),
+	            source_to_string (route->rt_source),
 	            route->scope_inv ? " scope " : "",
 	            route->scope_inv ? (nm_platform_route_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
@@ -3731,7 +3731,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            str_dev,
 	            route->metric,
 	            route->mss,
-	            source_to_string (route->source));
+	            source_to_string (route->rt_source));
 	return buf;
 }
 
@@ -3953,7 +3953,7 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, source);
+	_CMP_FIELD (a, b, addr_source);
 	_CMP_FIELD (a, b, address);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, peer_address);
@@ -3972,7 +3972,7 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, source);
+	_CMP_FIELD (a, b, addr_source);
 	_CMP_FIELD_MEMCMP (a, b, address);
 
 	p_a = nm_platform_ip6_address_get_peer (a);
@@ -3992,7 +3992,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, source);
+	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD (a, b, network);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, gateway);
@@ -4008,7 +4008,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, source);
+	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD_MEMCMP (a, b, network);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD_MEMCMP (a, b, gateway);
@@ -4146,7 +4146,7 @@ _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 {
 	return nm_platform_ip4_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
-	                                  route->rx.source,
+	                                  route->rx.rt_source,
 	                                  route->r4.network,
 	                                  route->rx.plen,
 	                                  route->r4.gateway,
@@ -4160,7 +4160,7 @@ _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 {
 	return nm_platform_ip6_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
-	                                  route->rx.source,
+	                                  route->rx.rt_source,
 	                                  route->r6.network,
 	                                  route->rx.plen,
 	                                  route->r6.gateway,

@@ -200,7 +200,7 @@ _vt_routes_has_entry (const VTableIP *vtable, GArray *routes, const Entry *entry
 		for (i = 0; i < routes->len; i++) {
 			NMPlatformIP4Route *r = &g_array_index (routes, NMPlatformIP4Route, i);
 
-			route.rx.source = r->source;
+			route.rx.rt_source = r->rt_source;
 			if (nm_platform_ip4_route_cmp (r, &route.r4) == 0)
 				return TRUE;
 		}
@@ -208,7 +208,7 @@ _vt_routes_has_entry (const VTableIP *vtable, GArray *routes, const Entry *entry
 		for (i = 0; i < routes->len; i++) {
 			NMPlatformIP6Route *r = &g_array_index (routes, NMPlatformIP6Route, i);
 
-			route.rx.source = r->source;
+			route.rx.rt_source = r->rt_source;
 			if (nm_platform_ip6_route_cmp (r, &route.r6) == 0)
 				return TRUE;
 		}
@@ -289,7 +289,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 	if (vtable->vt->is_ip4) {
 		success = nm_platform_ip4_route_add (priv->platform,
 		                                     entry->route.rx.ifindex,
-		                                     entry->route.rx.source,
+		                                     entry->route.rx.rt_source,
 		                                     0,
 		                                     0,
 		                                     entry->route.r4.gateway,
@@ -299,7 +299,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 	} else {
 		success = nm_platform_ip6_route_add (priv->platform,
 		                                     entry->route.rx.ifindex,
-		                                     entry->route.rx.source,
+		                                     entry->route.rx.rt_source,
 		                                     in6addr_any,
 		                                     0,
 		                                     entry->route.r6.gateway,
@@ -773,7 +773,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 				 * the device. */
 				memset (&rt, 0, sizeof (rt));
 				rt.rx.ifindex = ip_ifindex;
-				rt.rx.source = NM_IP_CONFIG_SOURCE_UNKNOWN;
+				rt.rx.rt_source = NM_IP_CONFIG_SOURCE_UNKNOWN;
 				rt.rx.metric = G_MAXUINT32;
 				default_route = &rt.rx;
 
@@ -795,7 +795,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 					if (vpn_config) {
 						never_default = nm_ip4_config_get_never_default (vpn_config);
 						rt.r4.ifindex = ip_ifindex;
-						rt.r4.source = NM_IP_CONFIG_SOURCE_VPN;
+						rt.r4.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 						rt.r4.gateway = nm_ip4_config_get_gateway (vpn_config);
 						rt.r4.metric = nm_vpn_connection_get_ip4_route_metric (vpn);
 						rt.r4.mss = nm_ip4_config_get_mss (vpn_config);
@@ -810,7 +810,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 						never_default = nm_ip6_config_get_never_default (vpn_config);
 						rt.r6.ifindex = ip_ifindex;
-						rt.r6.source = NM_IP_CONFIG_SOURCE_VPN;
+						rt.r6.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 						rt.r6.gateway = int_gw ? *int_gw : in6addr_any;
 						rt.r6.metric = nm_vpn_connection_get_ip6_route_metric (vpn);
 						rt.r6.mss = nm_ip6_config_get_mss (vpn_config);

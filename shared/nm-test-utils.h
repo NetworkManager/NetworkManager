@@ -1209,7 +1209,7 @@ nmtst_platform_ip4_address_full (const char *address, const char *peer_address, 
 	g_assert (!label || strlen (label) < IFNAMSIZ);
 
 	addr->ifindex = ifindex;
-	addr->source = source;
+	addr->addr_source = source;
 	addr->timestamp = timestamp;
 	addr->lifetime = lifetime;
 	addr->preferred = preferred;
@@ -1243,7 +1243,7 @@ nmtst_platform_ip6_address_full (const char *address, const char *peer_address, 
 	NMPlatformIP6Address *addr = nmtst_platform_ip6_address (address, peer_address, plen);
 
 	addr->ifindex = ifindex;
-	addr->source = source;
+	addr->addr_source = source;
 	addr->timestamp = timestamp;
 	addr->lifetime = lifetime;
 	addr->preferred = preferred;
@@ -1277,7 +1277,7 @@ nmtst_platform_ip4_route_full (const char *network, guint plen, const char *gate
 	NMPlatformIP4Route *route = nmtst_platform_ip4_route (network, plen, gateway);
 
 	route->ifindex = ifindex;
-	route->source = source;
+	route->rt_source = source;
 	route->metric = metric;
 	route->mss = mss;
 	route->scope_inv = nm_platform_route_scope_inv (scope);
@@ -1309,7 +1309,7 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
 	NMPlatformIP6Route *route = nmtst_platform_ip6_route (network, plen, gateway);
 
 	route->ifindex = ifindex;
-	route->source = source;
+	route->rt_source = source;
 	route->metric = metric;
 	route->mss = mss;
 

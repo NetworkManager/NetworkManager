@@ -200,7 +200,7 @@ typedef struct {
 
 #define __NMPlatformIPAddress_COMMON \
 	__NMPlatformObject_COMMON; \
-	NMIPConfigSource source; \
+	NMIPConfigSource addr_source; \
 	\
 	/* Timestamp in seconds in the reference system of nm_utils_get_monotonic_timestamp_*().
 	 *
@@ -303,7 +303,7 @@ typedef union {
 
 #define __NMPlatformIPRoute_COMMON \
 	__NMPlatformObject_COMMON; \
-	NMIPConfigSource source; \
+	NMIPConfigSource rt_source; \
 	guint8 plen; \
 	guint32 metric; \
 	guint32 mss; \
