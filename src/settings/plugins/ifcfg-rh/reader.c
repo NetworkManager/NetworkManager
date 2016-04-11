@@ -358,7 +358,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 {
 	char *ip_tag, *prefix_tag, *netmask_tag, *gw_tag;
 	char *ip = NULL;
-	long prefix = 0;
+	int prefix = 0;
 	gboolean success = FALSE;
 	char *value;
 	guint32 tmp;
@@ -395,45 +395,38 @@ read_full_ip4_address (shvarFile *ifcfg,
 	/* Prefix */
 	value = svGetValue (ifcfg, prefix_tag, FALSE);
 	if (value) {
-		errno = 0;
-		prefix = strtol (value, NULL, 10);
-		if (errno || prefix < 0) {
+		prefix = _nm_utils_ascii_str_to_int64 (value, 10, 0, 32, -1);
+		if (prefix < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 prefix '%s'", value);
 			g_free (value);
 			goto done;
 		}
 		g_free (value);
-	}
-
-	/* Fall back to NETMASK if no PREFIX was specified */
-	if (prefix == 0) {
+	} else {
+		/* Fall back to NETMASK if no PREFIX was specified */
 		if (!read_ip4_address (ifcfg, netmask_tag, &value, error))
 			goto done;
 		if (value) {
 			inet_pton (AF_INET, value, &tmp);
 			prefix = nm_utils_ip4_netmask_to_prefix (tmp);
 			g_free (value);
+		} else {
+			if (base_addr)
+				prefix = nm_ip_address_get_prefix (base_addr);
+			else {
+				/* Try to autodetermine the prefix for the address' class */
+				if (inet_pton (AF_INET, ip, &tmp) == 1) {
+					prefix = nm_utils_ip4_get_default_prefix (tmp);
+
+					PARSE_WARNING ("missing %s, assuming %s/%d", prefix_tag, ip, prefix);
+				} else {
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+					             "Missing IP4 prefix");
+					goto done;
+				}
+			}
 		}
-	}
-
-	if (prefix == 0 && base_addr)
-		prefix = nm_ip_address_get_prefix (base_addr);
-
-	/* Try to autodetermine the prefix for the address' class */
-	if (prefix == 0) {
-		if (inet_pton (AF_INET, ip, &tmp) == 1) {
-			prefix = nm_utils_ip4_get_default_prefix (tmp);
-
-			PARSE_WARNING ("missing %s, assuming %s/%ld", prefix_tag, ip, prefix);
-		}
-	}
-
-	/* Validate the prefix */
-	if (prefix == 0) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IP4 prefix");
-		goto done;
 	}
 
 	*out_address = nm_ip_address_new (AF_INET, ip, prefix, error);
@@ -717,7 +710,7 @@ parse_full_ip6_address (shvarFile *ifcfg,
 {
 	char **list;
 	char *ip_val, *prefix_val;
-	long prefix;
+	int prefix;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (addr_str != NULL, FALSE);
@@ -737,9 +730,8 @@ parse_full_ip6_address (shvarFile *ifcfg,
 
 	prefix_val = list[1];
 	if (prefix_val) {
-		errno = 0;
-		prefix = strtol (prefix_val, NULL, 10);
-		if (errno || prefix <= 0 || prefix > 128) {
+		prefix = _nm_utils_ascii_str_to_int64 (prefix_val, 10, 0, 128, -1);
+		if (prefix < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP6 prefix '%s'", prefix_val);
 			goto error;
