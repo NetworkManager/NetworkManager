@@ -2000,6 +2000,9 @@ platform_link_added (NMManager *self,
 			if (!ignore) {
 				_LOGW (LOGD_HW, "%s: factory failed to create device: %s",
 				       plink->name, error->message);
+			} else {
+				_LOGD (LOGD_HW, "%s: factory failed to create device: %s",
+				       plink->name, error->message);
 			}
 			return;
 		}
