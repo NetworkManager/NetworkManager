@@ -104,7 +104,7 @@ msgstr "Erreur : l'initialisation de l'agent de secret a échoué"
 #: ../clients/cli/agent.c:166
 #, c-format
 msgid "Error: polkit agent initialization failed: %s"
-msgstr "Erreur : l'initialisation de l'agent polkit a échoué"
+msgstr "Erreur : l'initialisation de l'agent polkit a échoué : %s"
 
 #: ../clients/cli/agent.c:174
 #, c-format
