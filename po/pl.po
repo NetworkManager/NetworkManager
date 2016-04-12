@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-04-05 15:00+0200\n"
-"PO-Revision-Date: 2016-03-29 18:11+0200\n"
+"POT-Creation-Date: 2016-04-12 15:49+0200\n"
+"PO-Revision-Date: 2016-04-12 15:50+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
 "Language: pl\n"
@@ -6958,7 +6958,7 @@ msgstr "Połączenie DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1708
 #: ../libnm-glib/nm-device.c:1863 ../libnm-util/nm-connection.c:1626
-#: ../libnm/nm-device.c:1814 ../src/settings/plugins/ifcfg-rh/reader.c:4190
+#: ../libnm/nm-device.c:1814 ../src/settings/plugins/ifcfg-rh/reader.c:4182
 msgid "Bond"
 msgstr "Wiązane"
 
@@ -6969,7 +6969,7 @@ msgstr "Połączenie wiązane %d"
 
 #: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:1712
 #: ../libnm-glib/nm-device.c:1867 ../libnm-util/nm-connection.c:1630
-#: ../libnm/nm-device.c:1818 ../src/settings/plugins/ifcfg-rh/reader.c:4487
+#: ../libnm/nm-device.c:1818 ../src/settings/plugins/ifcfg-rh/reader.c:4479
 msgid "Bridge"
 msgstr "Mostek"
 
@@ -6980,7 +6980,7 @@ msgstr "Połączenie mostkowane %d"
 
 #: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:1710
 #: ../libnm-glib/nm-device.c:1865 ../libnm-util/nm-connection.c:1628
-#: ../libnm/nm-device.c:1816 ../src/settings/plugins/ifcfg-rh/reader.c:4296
+#: ../libnm/nm-device.c:1816 ../src/settings/plugins/ifcfg-rh/reader.c:4288
 msgid "Team"
 msgstr "Zespół"
 
@@ -8026,7 +8026,7 @@ msgstr "Znormalizowanie połączenia niespodziewanie się nie powiodło"
 #: ../libnm-core/nm-setting-connection.c:837
 #: ../libnm-core/nm-setting-connection.c:876
 #: ../libnm-core/nm-setting-connection.c:989
-#: ../libnm-core/nm-setting-ip-config.c:2162
+#: ../libnm-core/nm-setting-ip-config.c:2167
 #: ../libnm-core/nm-setting-olpc-mesh.c:120
 #: ../libnm-core/nm-setting-pppoe.c:142 ../libnm-core/nm-setting-vpn.c:419
 #: ../libnm-core/nm-setting-vxlan.c:360 ../libnm-core/nm-setting-wimax.c:126
@@ -8267,7 +8267,7 @@ msgstr "nieprawidłowy klucz prywatny drugiego etapu"
 #: ../libnm-core/nm-setting-connection.c:844
 #: ../libnm-core/nm-setting-connection.c:887 ../libnm-core/nm-setting-gsm.c:281
 #: ../libnm-core/nm-setting-gsm.c:338 ../libnm-core/nm-setting-gsm.c:375
-#: ../libnm-core/nm-setting-gsm.c:384 ../libnm-core/nm-setting-ip-config.c:2169
+#: ../libnm-core/nm-setting-gsm.c:384 ../libnm-core/nm-setting-ip-config.c:2174
 #: ../libnm-core/nm-setting-ip4-config.c:198
 #: ../libnm-core/nm-setting-ip4-config.c:205
 #: ../libnm-core/nm-setting-pppoe.c:149 ../libnm-core/nm-setting-pppoe.c:158
@@ -8432,7 +8432,7 @@ msgstr "opcja „%s” jest prawidłowa tylko z trybem „%s”"
 #: ../libnm-core/nm-setting-bond.c:687
 #, c-format
 msgid "'%s' and '%s' cannot have different values"
-msgstr ""
+msgstr "„%s” i „%s” nie mogą mieć różnych wartości"
 
 #: ../libnm-core/nm-setting-bond.c:703
 #, c-format
@@ -8632,55 +8632,55 @@ msgstr "Nieprawidłowy adres IPv4 „%s”"
 msgid "Invalid IPv6 address '%s'"
 msgstr "Nieprawidłowy adres IPv6 „%s”"
 
-#: ../libnm-core/nm-setting-ip-config.c:152
+#: ../libnm-core/nm-setting-ip-config.c:153
 #, c-format
 msgid "Invalid IPv4 address prefix '%u'"
 msgstr "Nieprawidłowy przedrostek adresu IPv4 „%u”"
 
-#: ../libnm-core/nm-setting-ip-config.c:152
+#: ../libnm-core/nm-setting-ip-config.c:153
 #, c-format
 msgid "Invalid IPv6 address prefix '%u'"
 msgstr "Nieprawidłowy przedrostek adresu IPv6 „%u”"
 
-#: ../libnm-core/nm-setting-ip-config.c:170
+#: ../libnm-core/nm-setting-ip-config.c:168
 #, c-format
 msgid "Invalid routing metric '%s'"
 msgstr "Nieprawidłowe parametry trasy „%s”"
 
-#: ../libnm-core/nm-setting-ip-config.c:2182
+#: ../libnm-core/nm-setting-ip-config.c:2187
 #, c-format
 msgid "%d. DNS server address is invalid"
 msgstr "%d. adres serwera DNS jest nieprawidłowy"
 
-#: ../libnm-core/nm-setting-ip-config.c:2198
+#: ../libnm-core/nm-setting-ip-config.c:2203
 #, c-format
 msgid "%d. IP address is invalid"
 msgstr "%d. adres IP jest nieprawidłowy"
 
-#: ../libnm-core/nm-setting-ip-config.c:2210
+#: ../libnm-core/nm-setting-ip-config.c:2215
 #, c-format
 msgid "%d. IP address has 'label' property with invalid type"
 msgstr "%d. adres IP posiada właściwość „label” z nieprawidłowym typem"
 
-#: ../libnm-core/nm-setting-ip-config.c:2219
+#: ../libnm-core/nm-setting-ip-config.c:2224
 #, c-format
 msgid "%d. IP address has invalid label '%s'"
 msgstr "%d. adres IP posiada nieprawidłową etykietę „%s”"
 
-#: ../libnm-core/nm-setting-ip-config.c:2233
+#: ../libnm-core/nm-setting-ip-config.c:2238
 msgid "gateway cannot be set if there are no addresses configured"
 msgstr "brama nie może być ustawiona, jeśli nie skonfigurowano żadnych adresów"
 
-#: ../libnm-core/nm-setting-ip-config.c:2242
+#: ../libnm-core/nm-setting-ip-config.c:2247
 msgid "gateway is invalid"
 msgstr "brama jest nieprawidłowa"
 
-#: ../libnm-core/nm-setting-ip-config.c:2256
+#: ../libnm-core/nm-setting-ip-config.c:2261
 #, c-format
 msgid "%d. route is invalid"
 msgstr "%d. trasa jest nieprawidłowa"
 
-#: ../libnm-core/nm-setting-ip-config.c:2265
+#: ../libnm-core/nm-setting-ip-config.c:2270
 #, c-format
 msgid "%d. route cannot be a default route"
 msgstr "%d trasa nie może być domyślną trasą"
@@ -8760,9 +8760,8 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "właściwość nie została podana, tak jak i „%s:%s”"
 
 #: ../libnm-core/nm-setting-macvlan.c:192
-#, fuzzy
 msgid "non promiscuous operation is allowed only in passthru mode"
-msgstr "nierozwiązłe działanie jest dozwolone tylko w trybie przejścia\""
+msgstr "nierozwiązłe działanie jest dozwolone tylko w trybie przejścia"
 
 #: ../libnm-core/nm-setting-olpc-mesh.c:130
 #: ../libnm-core/nm-setting-wireless.c:739
@@ -9570,25 +9569,25 @@ msgid "Failed to read configuration: %s\n"
 msgstr "Odczytanie konfiguracji się nie powiodło: %s\n"
 
 #. Logging/debugging
-#: ../src/main.c:234 ../src/nm-iface-helper.c:297
+#: ../src/main.c:234 ../src/nm-iface-helper.c:298
 msgid "Print NetworkManager version and exit"
 msgstr "Wyświetla wersję usługi NetworkManager i kończy działanie"
 
-#: ../src/main.c:235 ../src/nm-iface-helper.c:298
+#: ../src/main.c:235 ../src/nm-iface-helper.c:299
 msgid "Don't become a daemon"
 msgstr "Bez zmiany w usługę"
 
-#: ../src/main.c:236 ../src/nm-iface-helper.c:300
+#: ../src/main.c:236 ../src/nm-iface-helper.c:301
 #, c-format
 msgid "Log level: one of [%s]"
 msgstr "Poziom dziennika: jeden z [%s]"
 
-#: ../src/main.c:238 ../src/nm-iface-helper.c:302
+#: ../src/main.c:238 ../src/nm-iface-helper.c:303
 #, c-format
 msgid "Log domains separated by ',': any combination of [%s]"
 msgstr "Domeny dziennika oddzielone przez „,”: dowolne połączenie [%s]"
 
-#: ../src/main.c:240 ../src/nm-iface-helper.c:304
+#: ../src/main.c:240 ../src/nm-iface-helper.c:305
 msgid "Make all warnings fatal"
 msgstr "Wszystkie ostrzeżenia jako krytyczne"
 
@@ -9616,12 +9615,12 @@ msgstr ""
 "wybranie bezprzewodowych punktów dostępowych, z którymi karty\n"
 "sieciowe w komputerze powinny być powiązane."
 
-#: ../src/main.c:343 ../src/main-utils.c:269 ../src/nm-iface-helper.c:392
+#: ../src/main.c:343 ../src/main-utils.c:269 ../src/nm-iface-helper.c:393
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Parametr --help wyświetli listę prawidłowych opcji.\n"
 
-#: ../src/main.c:348 ../src/nm-iface-helper.c:397
+#: ../src/main.c:348 ../src/nm-iface-helper.c:398
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr ""
@@ -9639,7 +9638,7 @@ msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
 msgstr ""
 "Ignorowanie nierozpoznanych domen dziennika „%s” z plików konfiguracji.\n"
 
-#: ../src/main.c:389 ../src/nm-iface-helper.c:407
+#: ../src/main.c:389 ../src/nm-iface-helper.c:408
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Nie można zmienić w usługę: %s [błąd %u]\n"
@@ -9989,7 +9988,7 @@ msgstr "Lista wtyczek oddzielonych „,”"
 msgid "Quit after initial configuration"
 msgstr "Kończy działanie po początkowej konfiguracji"
 
-#: ../src/nm-config.c:472 ../src/nm-iface-helper.c:299
+#: ../src/nm-config.c:472 ../src/nm-iface-helper.c:300
 msgid "Don't become a daemon, and log to stderr"
 msgstr ""
 "Bez zmiany w usługę i zapisywanie dziennika do standardowego wyjścia błędów"
@@ -10008,87 +10007,87 @@ msgid "The expected start of the response"
 msgstr "Oczekiwany początek odpowiedzi"
 
 #. Interface/IP config
-#: ../src/nm-iface-helper.c:280
+#: ../src/nm-iface-helper.c:281
 msgid "The interface to manage"
 msgstr "Interfejs do zarządzania"
 
-#: ../src/nm-iface-helper.c:280
+#: ../src/nm-iface-helper.c:281
 msgid "eth0"
 msgstr "eth0"
 
-#: ../src/nm-iface-helper.c:281
+#: ../src/nm-iface-helper.c:282
 msgid "Connection UUID"
 msgstr "UUID połączenia"
 
-#: ../src/nm-iface-helper.c:281
+#: ../src/nm-iface-helper.c:282
 msgid "661e8cd0-b618-46b8-9dc9-31a52baaa16b"
 msgstr "661e8cd0-b618-46b8-9dc9-31a52baaa16b"
 
-#: ../src/nm-iface-helper.c:282
+#: ../src/nm-iface-helper.c:283
 msgid "Whether to manage IPv6 SLAAC"
 msgstr "Czy zarządzać SLAAC IPv6"
 
-#: ../src/nm-iface-helper.c:283
+#: ../src/nm-iface-helper.c:284
 msgid "Whether SLAAC must be successful"
 msgstr "Czy SLAAC musi się powieść"
 
-#: ../src/nm-iface-helper.c:284
+#: ../src/nm-iface-helper.c:285
 msgid "Use an IPv6 temporary privacy address"
 msgstr "Użycie tymczasowego adresu prywatnego IPv6"
 
-#: ../src/nm-iface-helper.c:285
+#: ../src/nm-iface-helper.c:286
 msgid "Current DHCPv4 address"
 msgstr "Bieżący adres DHCPv4"
 
-#: ../src/nm-iface-helper.c:286
+#: ../src/nm-iface-helper.c:287
 msgid "Whether DHCPv4 must be successful"
 msgstr "Czy DHCPv4 musi się powieść"
 
-#: ../src/nm-iface-helper.c:287
+#: ../src/nm-iface-helper.c:288
 msgid "Hex-encoded DHCPv4 client ID"
 msgstr "Identyfikator klienta DHCPv4 zakodowany szesnastkowo"
 
-#: ../src/nm-iface-helper.c:288
+#: ../src/nm-iface-helper.c:289
 msgid "Hostname to send to DHCP server"
 msgstr "Nazwa komputera wysyłana do serwera DHCP"
 
-#: ../src/nm-iface-helper.c:288
+#: ../src/nm-iface-helper.c:289
 msgid "barbar"
 msgstr "barbar"
 
-#: ../src/nm-iface-helper.c:289
+#: ../src/nm-iface-helper.c:290
 msgid "FQDN to send to DHCP server"
 msgstr "FQDN wysyłane do serwera DHCP"
 
-#: ../src/nm-iface-helper.c:289
+#: ../src/nm-iface-helper.c:290
 msgid "host.domain.org"
 msgstr "komputer.domena.org"
 
-#: ../src/nm-iface-helper.c:290
+#: ../src/nm-iface-helper.c:291
 msgid "Route priority for IPv4"
 msgstr "Priorytet trasy dla IPv4"
 
-#: ../src/nm-iface-helper.c:290
+#: ../src/nm-iface-helper.c:291
 msgid "0"
 msgstr "0"
 
-#: ../src/nm-iface-helper.c:291
+#: ../src/nm-iface-helper.c:292
 msgid "Route priority for IPv6"
 msgstr "Priorytet trasy dla IPv6"
 
-#: ../src/nm-iface-helper.c:291
+#: ../src/nm-iface-helper.c:292
 msgid "1024"
 msgstr "1024"
 
-#: ../src/nm-iface-helper.c:292
+#: ../src/nm-iface-helper.c:293
 msgid "Hex-encoded Interface Identifier"
 msgstr "Identyfikator interfejsu zakodowany szesnastkowo"
 
-#: ../src/nm-iface-helper.c:293
+#: ../src/nm-iface-helper.c:294
 msgid "IPv6 SLAAC address generation mode"
 msgstr "Tryb tworzenia adresów SLAAC IPv6"
 
-#: ../src/nm-iface-helper.c:294
+#: ../src/nm-iface-helper.c:295
 msgid ""
 "The logging backend configuration value. See logging.backend in "
 "NetworkManager.conf"
@@ -10096,7 +10095,7 @@ msgstr ""
 "Właściwość konfiguracji mechanizmu dziennika. Więcej informacji zawiera "
 "„logging.backend” w pliku NetworkManager.conf"
 
-#: ../src/nm-iface-helper.c:314
+#: ../src/nm-iface-helper.c:315
 msgid ""
 "nm-iface-helper is a small, standalone process that manages a single network "
 "interface."
@@ -10104,17 +10103,17 @@ msgstr ""
 "nm-iface-helper to mały, samodzielny proces zarządzający pojedynczym "
 "interfejsem sieciowym."
 
-#: ../src/nm-iface-helper.c:373
+#: ../src/nm-iface-helper.c:374
 #, c-format
 msgid "An interface name and UUID are required\n"
 msgstr "Wymagana jest nazwa interfejsu i UUID\n"
 
-#: ../src/nm-iface-helper.c:379
+#: ../src/nm-iface-helper.c:380
 #, c-format
 msgid "Failed to find interface index for %s (%s)\n"
 msgstr "Odnalezienie indeksu interfejsu dla %s (%s) się nie powiodło\n"
 
-#: ../src/nm-iface-helper.c:441
+#: ../src/nm-iface-helper.c:442
 #, c-format
 msgid "(%s): Invalid IID %s\n"
 msgstr "(%s): nieprawidłowy IID %s\n"
