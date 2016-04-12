@@ -80,14 +80,14 @@ parent_state_changed (NMDevice *parent,
 }
 
 static void
-parent_hwaddr_changed (NMDevice *parent,
-                       GParamSpec *pspec,
-                       gpointer user_data)
+parent_hwaddr_maybe_changed (NMDevice *parent,
+                             GParamSpec *pspec,
+                             gpointer user_data)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
 	NMConnection *connection;
 	NMSettingWired *s_wired;
-	const char *cloned_mac = NULL, *new_mac;
+	const char *new_mac, *old_mac;
 	NMSettingIPConfig *s_ip6;
 
 	/* Never touch assumed devices */
@@ -100,23 +100,26 @@ parent_hwaddr_changed (NMDevice *parent,
 
 	/* Update the VLAN MAC only if configuration does not specify one */
 	s_wired = nm_connection_get_setting_wired (connection);
-	if (s_wired)
-		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+	if (s_wired) {
+		if (nm_setting_wired_get_cloned_mac_address (s_wired))
+			return;
+	}
 
-	if (!cloned_mac) {
-		new_mac = nm_device_get_hw_address (parent);
-		_LOGD (LOGD_VLAN, "parent hardware address changed to %s%s%s",
-		       NM_PRINT_FMT_QUOTE_STRING (new_mac));
-		if (new_mac) {
-			nm_device_set_hw_addr (self, nm_device_get_hw_address (parent),
-			                       "set", LOGD_VLAN);
-			/* When changing the hw address the interface is taken down,
-			 * removing the IPv6 configuration; reapply it.
-			 */
-			s_ip6 = nm_connection_get_setting_ip6_config (connection);
-			if (s_ip6)
-				nm_device_reactivate_ip6_config (NM_DEVICE (self), s_ip6, s_ip6);
-		}
+	old_mac = nm_device_get_hw_address (self);
+	new_mac = nm_device_get_hw_address (parent);
+	if (nm_streq0 (old_mac, new_mac))
+		return;
+
+	_LOGD (LOGD_VLAN, "parent hardware address changed to %s%s%s",
+	       NM_PRINT_FMT_QUOTE_STRING (new_mac));
+	if (new_mac) {
+		nm_device_set_hw_addr (self, new_mac, "set", LOGD_VLAN);
+		/* When changing the hw address the interface is taken down,
+		 * removing the IPv6 configuration; reapply it.
+		 */
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6)
+			nm_device_reactivate_ip6_config (NM_DEVICE (self), s_ip6, s_ip6);
 	}
 }
 
@@ -141,7 +144,8 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 		                                          device);
 
 		priv->parent_hwaddr_id = g_signal_connect (priv->parent, "notify::" NM_DEVICE_HW_ADDRESS,
-		                                           G_CALLBACK (parent_hwaddr_changed), device);
+		                                           G_CALLBACK (parent_hwaddr_maybe_changed), device);
+		parent_hwaddr_maybe_changed (parent, NULL, self);
 
 		/* Set parent-dependent unmanaged flag */
 		nm_device_set_unmanaged_by_flags (device,
@@ -537,6 +541,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (dev);
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
 	const char *cloned_mac;
@@ -554,6 +559,10 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 		nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_VLAN);
 	}
+
+	/* Change MAC address to parent's one if needed */
+	if (priv->parent)
+		parent_hwaddr_maybe_changed (priv->parent, NULL, dev);
 
 	s_vlan = (NMSettingVlan *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_VLAN);
 	if (s_vlan) {
