@@ -1953,6 +1953,9 @@ platform_link_added (NMManager *self,
 			if (!ignore) {
 				nm_log_warn (LOGD_HW, "%s: factory failed to create device: %s",
 				             plink->name, error->message);
+			} else {
+				nm_log_dbg (LOGD_HW, "%s: factory failed to create device: %s",
+				            plink->name, error->message);
 			}
 			return;
 		}
