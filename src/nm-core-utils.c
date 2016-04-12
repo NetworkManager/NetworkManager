@@ -199,6 +199,27 @@ nm_ethernet_address_is_valid (gconstpointer addr, gssize len)
 	return TRUE;
 }
 
+gconstpointer
+nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen)
+{
+	g_return_val_if_fail (src, NULL);
+	g_return_val_if_fail (dst, NULL);
+
+	switch (family) {
+	case AF_INET:
+		g_return_val_if_fail (plen <= 32, NULL);
+		*((guint32 *) dst) = nm_utils_ip4_address_clear_host_address (*((guint32 *) src), plen);
+		break;
+	case AF_INET6:
+		g_return_val_if_fail (plen <= 128, NULL);
+		nm_utils_ip6_address_clear_host_address (dst, src, plen);
+		break;
+	default:
+		g_return_val_if_reached (NULL);
+	}
+	return dst;
+}
+
 /* nm_utils_ip4_address_clear_host_address:
  * @addr: source ip6 address
  * @plen: prefix length of network

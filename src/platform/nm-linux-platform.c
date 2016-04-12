@@ -308,23 +308,6 @@ _support_user_ipv6ll_detect (struct nlattr **tb)
  * Various utilities
  ******************************************************************/
 
-static void
-clear_host_address (int family, const void *network, guint8 plen, void *dst)
-{
-	g_return_if_fail (network);
-
-	switch (family) {
-	case AF_INET:
-		*((in_addr_t *) dst) = nm_utils_ip4_address_clear_host_address (*((in_addr_t *) network), plen);
-		break;
-	case AF_INET6:
-		nm_utils_ip6_address_clear_host_address ((struct in6_addr *) dst, (const struct in6_addr *) network, plen);
-		break;
-	default:
-		g_assert_not_reached ();
-	}
-}
-
 static int
 _vlan_qos_mapping_cmp_from (gconstpointer a, gconstpointer b, gpointer user_data)
 {
@@ -2285,7 +2268,7 @@ _nl_msg_new_route (int nlmsg_type,
 
 	addr_len = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 
-	clear_host_address (family, network, plen, &network_clean);
+	nm_utils_ipx_address_clear_host_address (family, &network_clean, network, plen);
 	NLA_PUT (msg, RTA_DST, addr_len, &network_clean);
 
 	NLA_PUT_U32 (msg, RTA_PRIORITY, metric);
