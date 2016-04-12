@@ -440,3 +440,11 @@
    fun:start_thread
    fun:clone
 }
+{
+   _btrfs_io_clone
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:btrfs_reflink_with_progress
+   ...
+}

@@ -346,7 +346,7 @@ test_delete_connection (void)
 static void
 test_missing_config (void)
 {
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	NMConnection *connection;
 
 	connection = ifnet_update_connection_from_config_block ("eth8", NULL, &error);
