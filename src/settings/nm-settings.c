@@ -167,7 +167,6 @@ typedef struct {
 enum {
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
-	CONNECTION_UPDATED_BY_USER,
 	CONNECTION_REMOVED,
 	CONNECTION_VISIBILITY_CHANGED,
 	AGENT_REGISTERED,
@@ -844,17 +843,11 @@ next:
 static void
 connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer user_data)
 {
-	if (by_user) {
-		g_signal_emit (NM_SETTINGS (user_data),
-		               signals[CONNECTION_UPDATED_BY_USER],
-		               0,
-		               connection);
-	}
-
 	g_signal_emit (NM_SETTINGS (user_data),
 	               signals[CONNECTION_UPDATED],
 	               0,
-	               connection);
+	               connection,
+	               by_user);
 	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_UPDATED, connection);
 }
 
@@ -2447,17 +2440,8 @@ nm_settings_class_init (NMSettingsClass *class)
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__OBJECT,
-	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
-
-	signals[CONNECTION_UPDATED_BY_USER] =
-	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0,
-	                  NULL, NULL,
-	                  g_cclosure_marshal_VOID__OBJECT,
-	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	                  NULL,
+	                  G_TYPE_NONE, 2, NM_TYPE_SETTINGS_CONNECTION, G_TYPE_BOOLEAN);
 
 	signals[CONNECTION_REMOVED] =
 	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
