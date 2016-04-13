@@ -3728,6 +3728,16 @@ cache_lookup_link (NMPlatform *platform, int ifindex)
 	return obj_cache;
 }
 
+const NMPlatformObject *const*
+nm_linux_platform_lookup (NMPlatform *platform, const NMPCacheId *cache_id, guint *out_len)
+{
+	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), NULL);
+	g_return_val_if_fail (cache_id, NULL);
+
+	return nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+	                               cache_id, out_len);
+}
+
 static GArray *
 link_get_all (NMPlatform *platform)
 {
