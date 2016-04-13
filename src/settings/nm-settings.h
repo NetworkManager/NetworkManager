@@ -41,7 +41,7 @@
 #define NM_SETTINGS_HOSTNAME         "hostname"
 #define NM_SETTINGS_CAN_MODIFY       "can-modify"
 #define NM_SETTINGS_CONNECTIONS      "connections"
-#define NM_SETTINGS_STARTUP_COMPLETE "connections"
+#define NM_SETTINGS_STARTUP_COMPLETE "startup-complete"
 
 #define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
