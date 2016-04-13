@@ -842,24 +842,20 @@ next:
 }
 
 static void
-connection_updated (NMSettingsConnection *connection, gpointer user_data)
+connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer user_data)
 {
-	/* Re-emit for listeners like NMPolicy */
+	if (by_user) {
+		g_signal_emit (NM_SETTINGS (user_data),
+		               signals[CONNECTION_UPDATED_BY_USER],
+		               0,
+		               connection);
+	}
+
 	g_signal_emit (NM_SETTINGS (user_data),
 	               signals[CONNECTION_UPDATED],
 	               0,
 	               connection);
 	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_UPDATED, connection);
-}
-
-static void
-connection_updated_by_user (NMSettingsConnection *connection, gpointer user_data)
-{
-	/* Re-emit for listeners like NMPolicy */
-	g_signal_emit (NM_SETTINGS (user_data),
-	               signals[CONNECTION_UPDATED_BY_USER],
-	               0,
-	               connection);
 }
 
 static void
@@ -892,7 +888,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated_by_user), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 	g_object_unref (self);
@@ -1024,10 +1019,8 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	g_object_ref (self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed), self);
-	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED,
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (connection_updated), self);
-	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_BY_USER,
-	                  G_CALLBACK (connection_updated_by_user), self);
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
 	                  G_CALLBACK (connection_visibility_changed),
 	                  self);
@@ -1891,9 +1884,12 @@ default_wired_connection_removed_cb (NMSettingsConnection *connection, NMSetting
 }
 
 static void
-default_wired_connection_updated_by_user_cb (NMSettingsConnection *connection, NMSettings *self)
+default_wired_connection_updated_by_user_cb (NMSettingsConnection *connection, gboolean by_user, NMSettings *self)
 {
 	NMDevice *device;
+
+	if (!by_user)
+		return;
 
 	/* The connection has been changed by the user, it should no longer be
 	 * considered a default wired connection, and should no longer affect
@@ -1967,7 +1963,7 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	g_object_set_data (G_OBJECT (added), DEFAULT_WIRED_DEVICE_TAG, device);
 	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, added);
 
-	g_signal_connect (added, NM_SETTINGS_CONNECTION_UPDATED_BY_USER,
+	g_signal_connect (added, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 	g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (default_wired_connection_removed_cb), self);
