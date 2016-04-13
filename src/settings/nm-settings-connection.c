@@ -473,6 +473,15 @@ emit_updated (NMSettingsConnection *self)
 }
 
 static void
+emit_updated_schedule (NMSettingsConnection *self)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->updated_idle_id == 0)
+		priv->updated_idle_id = g_idle_add ((GSourceFunc) emit_updated, self);
+}
+
+static void
 set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 {
 	NMSettingsConnectionFlags flags = nm_settings_connection_get_flags (self);
@@ -490,20 +499,10 @@ set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 }
 
 static void
-connection_changed (NMSettingsConnection *self, gboolean update_unsaved)
-{
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	if (update_unsaved)
-		set_unsaved (self, TRUE);
-	if (priv->updated_idle_id == 0)
-		priv->updated_idle_id = g_idle_add ((GSourceFunc) emit_updated, self);
-}
-
-static void
 connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
-	connection_changed (self, TRUE);
+	set_unsaved (self, TRUE);
+	emit_updated_schedule (self);
 }
 
 /* Update the settings of this connection to match that of 'new_connection',
@@ -583,7 +582,10 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	/* Manually emit changed signal since we disconnected the handler, but
 	 * only update Unsaved if the caller wanted us to.
 	 */
-	connection_changed (self, update_unsaved);
+	if (update_unsaved)
+		set_unsaved (self, TRUE);
+
+	emit_updated_schedule (self);
 
 	g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 
