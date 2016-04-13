@@ -134,6 +134,45 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 
 /****************************************************************/
 
+static void
+_settings_connection_updated (NMSettingsConnection *connection,
+                              gboolean by_user,
+                              gpointer user_data)
+{
+	NMActiveConnection *self = user_data;
+
+	/* we don't know which properties actually changed. Just to be sure,
+	 * notify about all possible properties. After all, an update of a
+	 * connection is a rare event. */
+
+	_notify (self, PROP_ID);
+
+	/* it's a bit odd to update the TYPE of an active connection. But the alternative
+	 * is unexpected too. */
+	_notify (self, PROP_TYPE);
+
+	/* currently, the UUID and the exported CONNECTION path cannot change. Later, we might
+	 * want to support a re-link operation, which associates an active-connection with a different
+	 * settings-connection. */
+}
+
+static void
+_set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connection)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->settings_connection == connection)
+		return;
+	if (priv->settings_connection) {
+		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_updated, self);
+		g_clear_object (&priv->settings_connection);
+	}
+	if (connection) {
+		priv->settings_connection = g_object_ref (connection);
+		g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL, (GCallback) _settings_connection_updated, self);
+	}
+}
+
 NMActiveConnectionState
 nm_active_connection_get_state (NMActiveConnection *self)
 {
@@ -273,7 +312,7 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	 * For example, we'd have to cancel all pending seret requests. */
 	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
 
-	priv->settings_connection = g_object_ref (connection);
+	_set_settings_connection (self, connection);
 	priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
 	nm_connection_clear_secrets (priv->applied_connection);
 }
@@ -918,7 +957,8 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	NMActiveConnection *self = (NMActiveConnection *) object;
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	const char *tmp;
 	NMSettingsConnection *con;
 
@@ -927,20 +967,20 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		con = g_value_get_object (value);
 		if (con) {
-			priv->settings_connection = g_object_ref (con);
-			priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (con));
+			_set_settings_connection (self, con);
+			priv->applied_connection = nm_simple_connection_new_clone ((NMConnection *) priv->settings_connection);
 			nm_connection_clear_secrets (priv->applied_connection);
 		}
 		break;
 	case PROP_INT_DEVICE:
 		/* construct-only */
-		nm_active_connection_set_device (NM_ACTIVE_CONNECTION (object), g_value_get_object (value));
+		nm_active_connection_set_device (self, g_value_get_object (value));
 		break;
 	case PROP_INT_SUBJECT:
 		priv->subject = g_value_dup_object (value);
 		break;
 	case PROP_INT_MASTER:
-		nm_active_connection_set_master (NM_ACTIVE_CONNECTION (object), g_value_get_object (value));
+		nm_active_connection_set_master (self, g_value_get_object (value));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		tmp = g_value_get_string (value);
@@ -1080,7 +1120,7 @@ dispose (GObject *object)
 	g_free (priv->specific_object);
 	priv->specific_object = NULL;
 
-	g_clear_object (&priv->settings_connection);
+	_set_settings_connection (self, NULL);
 	g_clear_object (&priv->applied_connection);
 
 	_device_cleanup (self);
