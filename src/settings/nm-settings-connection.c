@@ -96,8 +96,6 @@ typedef struct {
 	NMSettingsConnectionFlags flags;
 	gboolean ready;
 
-	guint updated_idle_id;
-
 	GSList *pending_auths; /* List of pending authentication requests */
 	gboolean visible; /* Is this connection is visible by some session? */
 
@@ -464,23 +462,6 @@ secrets_cleared_cb (NMSettingsConnection *self)
 	priv->agent_secrets = NULL;
 }
 
-static gboolean
-emit_updated (NMSettingsConnection *self)
-{
-	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->updated_idle_id = 0;
-	g_signal_emit (self, signals[UPDATED], 0);
-	return FALSE;
-}
-
-static void
-emit_updated_schedule (NMSettingsConnection *self)
-{
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	if (priv->updated_idle_id == 0)
-		priv->updated_idle_id = g_idle_add ((GSourceFunc) emit_updated, self);
-}
-
 static void
 set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 {
@@ -502,7 +483,7 @@ static void
 connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
 	set_unsaved (self, TRUE);
-	emit_updated_schedule (self);
+	g_signal_emit (self, signals[UPDATED], 0);
 }
 
 /* Update the settings of this connection to match that of 'new_connection',
@@ -585,7 +566,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	if (update_unsaved)
 		set_unsaved (self, TRUE);
 
-	emit_updated_schedule (self);
+	g_signal_emit (self, signals[UPDATED], 0);
 
 	g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 
@@ -2617,8 +2598,6 @@ dispose (GObject *object)
 			g_return_if_fail (!priv->get_secret_requests || (info != priv->get_secret_requests->data));
 		}
 	}
-
-	nm_clear_g_source (&priv->updated_idle_id);
 
 	/* Disconnect handlers.
 	 * connection_changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),
