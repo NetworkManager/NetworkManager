@@ -506,6 +506,7 @@ test17_read_static_ipv4 (const char *path)
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 0), ==, "example.com");
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 1), ==, "foo.example.com");
 
+	ifparser_destroy ();
 	g_object_unref (connection);
 }
 
@@ -560,6 +561,7 @@ test18_read_static_ipv6 (const char *path)
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 0), ==, "example.com");
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 1), ==, "foo.example.com");
 
+	ifparser_destroy ();
 	g_object_unref (connection);
 }
 
@@ -594,6 +596,7 @@ test19_read_static_ipv4_plen (const char *path)
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "10.0.0.3");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 
+	ifparser_destroy ();
 	g_object_unref (connection);
 }
 
