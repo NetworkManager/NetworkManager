@@ -81,7 +81,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
 enum {
 	UPDATED,
 	REMOVED,
-	UPDATED_BY_USER,
+	UPDATED_INTERNAL,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -127,6 +127,15 @@ typedef struct {
 	char *filename;
 
 } NMSettingsConnectionPrivate;
+
+/*******************************************************************/
+
+static void
+_emit_updated (NMSettingsConnection *self, gboolean by_user)
+{
+	g_signal_emit (self, signals[UPDATED], 0);
+	g_signal_emit (self, signals[UPDATED_INTERNAL], 0, by_user);
+}
 
 /*******************************************************************/
 
@@ -483,7 +492,7 @@ static void
 connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
 	set_unsaved (self, TRUE);
-	g_signal_emit (self, signals[UPDATED], 0);
+	_emit_updated (self, FALSE);
 }
 
 /* Update the settings of this connection to match that of 'new_connection',
@@ -566,11 +575,9 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	if (update_unsaved)
 		set_unsaved (self, TRUE);
 
-	g_signal_emit (self, signals[UPDATED], 0);
-
-	g_signal_emit (self, signals[UPDATED_BY_USER], 0);
-
 	g_signal_handlers_unblock_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
+
+	_emit_updated (self, TRUE);
 
 	return success;
 }
@@ -2739,7 +2746,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 
 	/* Signals */
 
-	/* Emitted when the connection is changed for any reason */
 	signals[UPDATED] =
 	    g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,
 	                  G_TYPE_FROM_CLASS (class),
@@ -2749,14 +2755,14 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 
-	/* Emitted when connection is changed from D-Bus */
-	signals[UPDATED_BY_USER] =
-	    g_signal_new (NM_SETTINGS_CONNECTION_UPDATED_BY_USER,
+	/* internal signal, with an argument (gboolean by_user). */
+	signals[UPDATED_INTERNAL] =
+	    g_signal_new (NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_TYPE_FROM_CLASS (class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__VOID,
-	                  G_TYPE_NONE, 0);
+	                  g_cclosure_marshal_VOID__BOOLEAN,
+	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
 	signals[REMOVED] =
 	    g_signal_new (NM_SETTINGS_CONNECTION_REMOVED,
