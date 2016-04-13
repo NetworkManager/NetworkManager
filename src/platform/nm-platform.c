@@ -387,6 +387,20 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint ba
 
 /******************************************************************/
 
+static int
+_link_get_all_presort (gconstpointer  p_a,
+                       gconstpointer  p_b)
+{
+	const NMPlatformLink *a = p_a;
+	const NMPlatformLink *b = p_b;
+
+	if (a->ifindex < b->ifindex)
+		return -1;
+	if (a->ifindex > b->ifindex)
+		return 1;
+	return 0;
+}
+
 /**
  * nm_platform_link_get_all:
  * self: platform instance
@@ -409,15 +423,17 @@ nm_platform_link_get_all (NMPlatform *self)
 	if (!links || links->len == 0)
 		return links;
 
+	/* first sort the links by their ifindex. Below we will sort further by moving
+	 * children/slaves to the end. */
+	g_array_sort (links, _link_get_all_presort);
+
 	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
 	for (i = 0; i < links->len; i++) {
 		item = &g_array_index (links, NMPlatformLink, i);
 
-		_LOGt ("link-get: %3d: %s", i, nm_platform_link_to_string (item, NULL, 0));
-
-		nm_assert (item->ifindex > 0 && !g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
-
-		g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL);
+		nm_assert (item->ifindex > 0);
+		if (!nm_g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL))
+			nm_assert_not_reached ();
 	}
 
 #ifndef G_DISABLE_ASSERT
@@ -468,8 +484,6 @@ nm_platform_link_get_all (NMPlatform *self)
 			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
 				continue;
 
-			_LOGt ("link-get: add %3d -> %3d: %s", i, j, nm_platform_link_to_string (item, NULL, 0));
-
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
 			item->ifindex = 0;
@@ -480,8 +494,6 @@ nm_platform_link_get_all (NMPlatform *self)
 			/* There is a loop, pop the first (remaining) element from the list.
 			 * This can happen for veth pairs where each peer is parent of the other end. */
 			item = &g_array_index (links, NMPlatformLink, first_idx);
-
-			_LOGt ("link-get: add (loop) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item, NULL, 0));
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
