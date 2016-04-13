@@ -490,16 +490,20 @@ set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 }
 
 static void
-changed_cb (NMSettingsConnection *self, gpointer user_data)
+connection_changed (NMSettingsConnection *self, gboolean update_unsaved)
 {
-	gboolean update_unsaved = !!user_data;
-
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (update_unsaved)
 		set_unsaved (self, TRUE);
 	if (priv->updated_idle_id == 0)
 		priv->updated_idle_id = g_idle_add ((GSourceFunc) emit_updated, self);
+}
+
+static void
+connection_changed_cb (NMSettingsConnection *self, gpointer unused)
+{
+	connection_changed (self, TRUE);
 }
 
 /* Update the settings of this connection to match that of 'new_connection',
@@ -542,7 +546,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
 	 * it's not required.
 	 */
-	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_handlers_block_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	if (log_diff_name)
 		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
@@ -579,11 +583,11 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	/* Manually emit changed signal since we disconnected the handler, but
 	 * only update Unsaved if the caller wanted us to.
 	 */
-	changed_cb (self, GUINT_TO_POINTER (update_unsaved));
+	connection_changed (self, update_unsaved);
 
 	g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 
-	g_signal_handlers_unblock_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_handlers_unblock_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	return success;
 }
@@ -2581,7 +2585,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->autoconnect_blocked_reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_signal_connect (self, NM_CONNECTION_SECRETS_CLEARED, G_CALLBACK (secrets_cleared_cb), NULL);
-	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (connection_changed_cb), NULL);
 }
 
 static void
@@ -2615,11 +2619,11 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->updated_idle_id);
 
 	/* Disconnect handlers.
-	 * changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),
+	 * connection_changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),
 	 * because nm_connection_clear_secrets() emits NM_CONNECTION_CHANGED signal.
 	 */
 	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (secrets_cleared_cb), NULL);
-	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	nm_connection_clear_secrets (NM_CONNECTION (self));
 	g_clear_object (&priv->system_secrets);
