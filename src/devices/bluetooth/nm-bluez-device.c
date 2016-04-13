@@ -54,6 +54,8 @@ typedef struct {
 	gboolean usable;
 	NMBluetoothCapabilities connection_bt_type;
 
+	guint check_emit_usable_id;
+
 	char *adapter_address;
 	char *address;
 	char *name;
@@ -257,14 +259,14 @@ pan_connection_check_create (NMBluezDevice *self)
 	g_free (uuid);
 }
 
-static void
+static gboolean
 check_emit_usable (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	gboolean new_usable;
 
 	/* only expect the supported capabilities set. */
-	g_assert ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP | NM_BT_CAPABILITY_DUN)) == NM_BT_CAPABILITY_NONE );
+	nm_assert ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP | NM_BT_CAPABILITY_DUN)) == NM_BT_CAPABILITY_NONE );
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 	              ((priv->bluez_version == 4) ||
@@ -291,6 +293,17 @@ END:
 		priv->usable = new_usable;
 		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
 	}
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+check_emit_usable_schedule (NMBluezDevice *self)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	if (priv->check_emit_usable_id == 0)
+		priv->check_emit_usable_id = g_idle_add ((GSourceFunc) check_emit_usable, self);
 }
 
 /********************************************************************/
@@ -380,7 +393,7 @@ cp_connection_updated (NMConnectionProvider *provider,
 {
 	if (_internal_track_connection (self, connection,
 	                                connection_compatible (self, connection)))
-		check_emit_usable (self);
+		check_emit_usable_schedule (self);
 }
 
 static void
@@ -1084,6 +1097,8 @@ dispose (GObject *object)
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	NMConnection *to_delete = NULL;
+
+	nm_clear_g_source (&priv->check_emit_usable_id);
 
 	if (priv->pan_connection) {
 		/* Check whether we want to remove the created connection. If so, we take a reference
