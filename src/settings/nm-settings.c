@@ -180,16 +180,13 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettings,
 	PROP_UNMANAGED_SPECS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
 	PROP_CONNECTIONS,
 	PROP_STARTUP_COMPLETE,
-
-	LAST_PROP
-};
+);
 
 static void
 check_startup_complete (NMSettings *self)
@@ -208,7 +205,7 @@ check_startup_complete (NMSettings *self)
 	}
 
 	priv->startup_complete = TRUE;
-	g_object_notify (G_OBJECT (self), NM_SETTINGS_STARTUP_COMPLETE);
+	_notify (self, PROP_STARTUP_COMPLETE);
 }
 
 static void
@@ -651,7 +648,7 @@ unmanaged_specs_changed (NMSettingsPlugin *config,
 
 	update_specs (self, &priv->unmanaged_specs,
 	              nm_settings_plugin_get_unmanaged_specs);
-	g_object_notify (G_OBJECT (self), NM_SETTINGS_UNMANAGED_SPECS);
+	_notify (self, PROP_UNMANAGED_SPECS);
 }
 
 static void
@@ -945,7 +942,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
-	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
+	_notify (self, PROP_CONNECTIONS);
 	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (connection)))
 		nm_exported_object_unexport (NM_EXPORTED_OBJECT (connection));
 
@@ -1095,7 +1092,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		/* Internal added signal */
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
 		g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_ADDED, connection);
-		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
+		_notify (self, PROP_CONNECTIONS);
 
 		/* Exported D-Bus signal */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
@@ -1110,7 +1107,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
  * not save to disk
  * @error: on return, a location to store any errors that may occur
  *
- * Creates a new #NMSettingsConnection for the given source @connection.  
+ * Creates a new #NMSettingsConnection for the given source @connection.
  * The returned object is owned by @self and the caller must reference
  * the object to continue using it.
  *
@@ -1829,7 +1826,7 @@ hostname_maybe_changed (NMSettings *settings)
 		       NM_PRINT_FMT_QUOTED (new_hostname, "\"", new_hostname, "\"", "(none)"));
 		g_free (priv->hostname.value);
 		priv->hostname.value = new_hostname;
-		g_object_notify (G_OBJECT (settings), NM_SETTINGS_HOSTNAME);
+		_notify (settings, PROP_HOSTNAME);
 	} else
 		g_free (new_hostname);
 }
@@ -2173,7 +2170,8 @@ hostnamed_properties_changed (GDBusProxy *proxy,
                               char **invalidated_properties,
                               gpointer user_data)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (user_data);
+	NMSettings *self = user_data;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GVariant *v_hostname;
 	const char *hostname;
 
@@ -2190,7 +2188,7 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 		       NM_PRINT_FMT_QUOTED (hostname, "\"", hostname, "\"", "(none)"));
 		g_free (priv->hostname.value);
 		priv->hostname.value = g_strdup (hostname);
-		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
+		_notify (self, PROP_HOSTNAME);
 		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
 	}
 
@@ -2294,7 +2292,7 @@ nm_settings_start (NMSettings *self, GError **error)
 		setup_hostname_file_monitors (self);
 
 	priv->started = TRUE;
-	g_object_notify (G_OBJECT (self), NM_SETTINGS_HOSTNAME);
+	_notify (self, PROP_HOSTNAME);
 	return TRUE;
 }
 
@@ -2445,103 +2443,100 @@ nm_settings_class_init (NMSettingsClass *class)
 
 	/* properties */
 
-	g_object_class_install_property
-		(object_class, PROP_UNMANAGED_SPECS,
-		 g_param_spec_boxed (NM_SETTINGS_UNMANAGED_SPECS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UNMANAGED_SPECS] =
+	    g_param_spec_boxed (NM_SETTINGS_UNMANAGED_SPECS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_SETTINGS_HOSTNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HOSTNAME] =
+	    g_param_spec_string (NM_SETTINGS_HOSTNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CAN_MODIFY,
-		 g_param_spec_boolean (NM_SETTINGS_CAN_MODIFY, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAN_MODIFY] =
+	    g_param_spec_boolean (NM_SETTINGS_CAN_MODIFY, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIONS,
-		 g_param_spec_boxed (NM_SETTINGS_CONNECTIONS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONNECTIONS] =
+	    g_param_spec_boxed (NM_SETTINGS_CONNECTIONS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_STARTUP_COMPLETE,
-		 g_param_spec_boolean (NM_SETTINGS_STARTUP_COMPLETE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STARTUP_COMPLETE] =
+	    g_param_spec_boolean (NM_SETTINGS_STARTUP_COMPLETE, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* signals */
-	signals[CONNECTION_ADDED] = 
-	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMSettingsClass, connection_added),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	signals[CONNECTION_ADDED] =
+	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMSettingsClass, connection_added),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
-	signals[CONNECTION_UPDATED] = 
-	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMSettingsClass, connection_updated),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	signals[CONNECTION_UPDATED] =
+	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMSettingsClass, connection_updated),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
 	signals[CONNECTION_UPDATED_BY_USER] =
-	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              0,
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
-	signals[CONNECTION_REMOVED] = 
-	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMSettingsClass, connection_removed),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	signals[CONNECTION_REMOVED] =
+	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMSettingsClass, connection_removed),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
-	signals[CONNECTION_VISIBILITY_CHANGED] = 
-	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMSettingsClass, connection_visibility_changed),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	signals[CONNECTION_VISIBILITY_CHANGED] =
+	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMSettingsClass, connection_visibility_changed),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
 	signals[AGENT_REGISTERED] =
-		g_signal_new (NM_SETTINGS_SIGNAL_AGENT_REGISTERED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMSettingsClass, agent_registered),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1, NM_TYPE_SECRET_AGENT);
+	    g_signal_new (NM_SETTINGS_SIGNAL_AGENT_REGISTERED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMSettingsClass, agent_registered),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SECRET_AGENT);
 
 
-	signals[NEW_CONNECTION] = 
-	                g_signal_new ("new-connection",
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST, 0, NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
+	signals[NEW_CONNECTION] =
+	    g_signal_new ("new-connection",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST, 0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (class),
 	                                        NMDBUS_TYPE_SETTINGS_SKELETON,
