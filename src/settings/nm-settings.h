@@ -56,19 +56,6 @@ struct _NMSettings {
 
 typedef struct {
 	NMExportedObjectClass parent_class;
-
-	/* Signals */
-	void (*properties_changed) (NMSettings *self, GHashTable *properties);
-
-	void (*connection_added)   (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connection_updated) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connection_removed) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connection_visibility_changed) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*agent_registered) (NMSettings *self, NMSecretAgent *agent);
 } NMSettingsClass;
 
 typedef void (*NMSettingsSetHostnameCb) (const char *name, gboolean result, gpointer user_data);
