@@ -2435,6 +2435,13 @@ nm_settings_class_init (NMSettingsClass *class)
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
+	g_object_class_install_property
+		(object_class, PROP_STARTUP_COMPLETE,
+		 g_param_spec_boolean (NM_SETTINGS_STARTUP_COMPLETE, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
 	/* signals */
 	signals[CONNECTION_ADDED] = 
 	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
