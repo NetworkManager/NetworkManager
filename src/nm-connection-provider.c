@@ -106,24 +106,21 @@ nm_connection_provider_default_init (NMConnectionProviderInterface *g_iface)
 	g_signal_new (NM_CP_SIGNAL_CONNECTION_ADDED,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMConnectionProviderInterface, connection_added),
-	              NULL, NULL,
+	              0, NULL, NULL,
 	              g_cclosure_marshal_VOID__OBJECT,
 	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	g_signal_new (NM_CP_SIGNAL_CONNECTION_UPDATED,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMConnectionProviderInterface, connection_updated),
-	              NULL, NULL,
+	              0, NULL, NULL,
 	              g_cclosure_marshal_VOID__OBJECT,
 	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	g_signal_new (NM_CP_SIGNAL_CONNECTION_REMOVED,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMConnectionProviderInterface, connection_removed),
-	              NULL, NULL,
+	              0, NULL, NULL,
 	              g_cclosure_marshal_VOID__OBJECT,
 	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 }

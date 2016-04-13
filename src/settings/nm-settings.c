@@ -2442,8 +2442,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMSettingsClass, connection_added),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
@@ -2451,8 +2450,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMSettingsClass, connection_updated),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
@@ -2469,8 +2467,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMSettingsClass, connection_removed),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
@@ -2478,8 +2475,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMSettingsClass, connection_visibility_changed),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
 
@@ -2487,8 +2483,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	    g_signal_new (NM_SETTINGS_SIGNAL_AGENT_REGISTERED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMSettingsClass, agent_registered),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SECRET_AGENT);
 
