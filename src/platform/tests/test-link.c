@@ -1919,6 +1919,14 @@ _test_netns_check_skip (void)
 
 /******************************************************************/
 
+#define _sysctl_assert_eq(plat, path, value) \
+	G_STMT_START { \
+		gs_free char *_val = NULL; \
+		\
+		_val = nm_platform_sysctl_get (plat, path); \
+		g_assert_cmpstr (_val, ==, value); \
+	} G_STMT_END
+
 static void
 test_netns_general (gpointer fixture, gconstpointer test_data)
 {
@@ -1954,13 +1962,19 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 			_ADD_DUMMY (p, nm_sprintf_buf (sbuf, "other-c-%s-%02d", id, i));
 	}
 
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex));
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy2a/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_1, 0, "dummy2a", NM_LINK_TYPE_DUMMY)->ifindex));
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/sys/devices/virtual/net/dummy2b/ifindex"), ==, NULL);
+	_sysctl_assert_eq (platform_1,"/sys/devices/virtual/net/dummy1_/ifindex",
+	                   nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex));
+	_sysctl_assert_eq (platform_1, "/sys/devices/virtual/net/dummy2a/ifindex",
+	                   nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_1, 0, "dummy2a", NM_LINK_TYPE_DUMMY)->ifindex));
+	_sysctl_assert_eq (platform_1, "/sys/devices/virtual/net/dummy2b/ifindex",
+	                   NULL);
 
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy1_/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_2, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex));
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy2a/ifindex"), ==, NULL);
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/sys/devices/virtual/net/dummy2b/ifindex"), ==, nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_2, 0, "dummy2b", NM_LINK_TYPE_DUMMY)->ifindex));
+	_sysctl_assert_eq (platform_2, "/sys/devices/virtual/net/dummy1_/ifindex",
+	                   nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_2, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex));
+	_sysctl_assert_eq (platform_2, "/sys/devices/virtual/net/dummy2a/ifindex",
+	                   NULL);
+	_sysctl_assert_eq (platform_2, "/sys/devices/virtual/net/dummy2b/ifindex",
+	                   nm_sprintf_buf (sbuf, "%d", nmtstp_link_get_typed (platform_2, 0, "dummy2b", NM_LINK_TYPE_DUMMY)->ifindex));
 
 	for (i = 0; i < 10; i++) {
 		NMPlatform *pl;
@@ -1982,10 +1996,11 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 				path = "/proc/sys/net/ipv6/conf/dummy2b/disable_ipv6";
 		}
 		g_assert (nm_platform_sysctl_set (pl, path, nm_sprintf_buf (sbuf, "%d", j)));
-		g_assert_cmpstr (nm_platform_sysctl_get (pl, path), ==, nm_sprintf_buf (sbuf, "%d", j));
+		_sysctl_assert_eq (pl, path, nm_sprintf_buf (sbuf, "%d", j));
 	}
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_1, "/proc/sys/net/ipv6/conf/dummy2b/disable_ipv6"), ==, NULL);
-	g_assert_cmpstr (nm_platform_sysctl_get (platform_2, "/proc/sys/net/ipv6/conf/dummy2a/disable_ipv6"), ==, NULL);
+
+	_sysctl_assert_eq (platform_1, "/proc/sys/net/ipv6/conf/dummy2b/disable_ipv6", NULL);
+	_sysctl_assert_eq (platform_2, "/proc/sys/net/ipv6/conf/dummy2a/disable_ipv6", NULL);
 
 	/* older kernels (Ubuntu 12.04) don't support ethtool -i for dummy devices. Work around that and
 	 * skip asserts that are known to fail. */
