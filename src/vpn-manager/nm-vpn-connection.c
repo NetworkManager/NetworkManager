@@ -1210,7 +1210,7 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	const char *str;
 	GVariant *v;
 	guint32 u32;
-	gboolean b, success = FALSE;
+	gboolean b;
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CAN_PERSIST, "b", &b) && b) {
 		/* Defaults to FALSE, so only let service indicate TRUE */
@@ -1246,17 +1246,15 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "u", &u32)) {
 		priv->ip4_external_gw = u32;
-		success = TRUE;
 	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "@ay", &v)) {
 		priv->ip6_external_gw = ip6_addr_dup_from_variant (v);
-		success = !!priv->ip6_external_gw;
 		g_variant_unref (v);
-	}
 
-	if (!success) {
-		_LOGE ("VPN gateway is neither IPv4 nor IPv6");
-		nm_vpn_connection_config_maybe_complete (self, FALSE);
-		return FALSE;
+		if (!priv->ip6_external_gw) {
+			_LOGE ("Invalid IPv6 VPN gateway address received");
+			nm_vpn_connection_config_maybe_complete (self, FALSE);
+			return FALSE;
+		}
 	}
 
 	priv->mtu = 0;
