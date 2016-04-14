@@ -43,7 +43,6 @@ G_DEFINE_TYPE_EXTENDED (NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT, G_TYPE_FLAG_A
 
 enum {
 	FAILED,
-	APPEARED,
 	CHILD_QUIT,
 	LAST_SIGNAL
 };
@@ -279,15 +278,6 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 	/* signals */
 	signals[FAILED] =
 	    g_signal_new (NM_DNS_PLUGIN_FAILED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDnsPluginClass, failed),
-	                  NULL, NULL,
-	                  g_cclosure_marshal_VOID__VOID,
-	                  G_TYPE_NONE, 0);
-
-	signals[APPEARED] =
-	    g_signal_new (NM_DNS_PLUGIN_APPEARED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  G_STRUCT_OFFSET (NMDnsPluginClass, failed),
