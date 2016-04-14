@@ -31,7 +31,6 @@
 #define NM_DNS_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DNS_PLUGIN, NMDnsPluginClass))
 
 #define NM_DNS_PLUGIN_FAILED "failed"
-#define NM_DNS_PLUGIN_APPEARED "appeared"
 #define NM_DNS_PLUGIN_CHILD_QUIT "child-quit"
 
 #define IP_CONFIG_IFACE_TAG "dns-manager-iface"
