@@ -83,6 +83,8 @@ struct _NMPolicyPrivate {
 
 	guint reset_retries_id;  /* idle handler for resetting the retries count */
 
+	guint schedule_activate_all_id; /* idle handler for schedule_activate_all(). */
+
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
 	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
@@ -1015,8 +1017,6 @@ reset_connections_retries (gpointer user_data)
 	return FALSE;
 }
 
-static void schedule_activate_all (NMPolicy *self);
-
 static void
 activate_slave_connections (NMPolicy *self, NMDevice *device)
 {
@@ -1579,14 +1579,30 @@ active_connection_removed (NMManager *manager,
 
 /**************************************************************************/
 
+static gboolean
+schedule_activate_all_cb (gpointer user_data)
+{
+	NMPolicy *self = user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	const GSList *iter;
+
+	priv->schedule_activate_all_id = 0;
+
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter))
+		schedule_activate_check (self, iter->data);
+
+	return G_SOURCE_REMOVE;
+}
+
 static void
 schedule_activate_all (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *iter;
 
-	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter))
-		schedule_activate_check (self, NM_DEVICE (iter->data));
+	/* always restart the idle handler. That way, we settle
+	 * all other events before restarting to activate them. */
+	nm_clear_g_source (&priv->schedule_activate_all_id);
+	priv->schedule_activate_all_id = g_idle_add (schedule_activate_all_cb, self);
 }
 
 static void
@@ -1648,39 +1664,34 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 
 static void
 connection_updated (NMSettings *settings,
-                    NMConnection *connection,
+                    NMSettingsConnection *connection,
+                    gboolean by_user,
                     gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = priv->self;
-
-	schedule_activate_all (self);
-}
-
-static void
-connection_updated_by_user (NMSettings *settings,
-                            NMSettingsConnection *connection,
-                            gpointer user_data)
-{
-	NMPolicyPrivate *priv = user_data;
 	const GSList *iter;
 	NMDevice *device = NULL;
 
-	/* find device with given connection */
-	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
+	if (by_user) {
+		/* find device with given connection */
+		for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
+			NMDevice *dev = NM_DEVICE (iter->data);
 
-		if (nm_device_get_settings_connection (dev) == connection) {
-			device = dev;
-			break;
+			if (nm_device_get_settings_connection (dev) == connection) {
+				device = dev;
+				break;
+			}
 		}
+
+		if (device)
+			nm_device_reapply_settings_immediately (device);
+
+		/* Reset auto retries back to default since connection was updated */
+		nm_settings_connection_reset_autoconnect_retries (connection);
 	}
 
-	if (device)
-		nm_device_reapply_settings_immediately (device);
-
-	/* Reset auto retries back to default since connection was updated */
-	nm_settings_connection_reset_autoconnect_retries (connection);
+	schedule_activate_all (self);
 }
 
 static void
@@ -1876,7 +1887,6 @@ constructed (GObject *object)
 
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, priv);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, priv);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,    (GCallback) connection_updated_by_user, priv);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,            (GCallback) connection_removed, priv);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED, (GCallback) connection_visibility_changed, priv);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, priv);
@@ -1941,6 +1951,7 @@ dispose (GObject *object)
 	g_assert (connections == NULL);
 
 	nm_clear_g_source (&priv->reset_retries_id);
+	nm_clear_g_source (&priv->schedule_activate_all_id);
 
 	g_clear_pointer (&priv->orig_hostname, g_free);
 	g_clear_pointer (&priv->cur_hostname, g_free);

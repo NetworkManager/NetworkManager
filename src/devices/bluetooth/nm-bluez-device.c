@@ -54,6 +54,8 @@ typedef struct {
 	gboolean usable;
 	NMBluetoothCapabilities connection_bt_type;
 
+	guint check_emit_usable_id;
+
 	char *adapter_address;
 	char *address;
 	char *name;
@@ -257,14 +259,14 @@ pan_connection_check_create (NMBluezDevice *self)
 	g_free (uuid);
 }
 
-static void
+static gboolean
 check_emit_usable (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	gboolean new_usable;
 
 	/* only expect the supported capabilities set. */
-	g_assert ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP | NM_BT_CAPABILITY_DUN)) == NM_BT_CAPABILITY_NONE );
+	nm_assert ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP | NM_BT_CAPABILITY_DUN)) == NM_BT_CAPABILITY_NONE );
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 	              ((priv->bluez_version == 4) ||
@@ -291,6 +293,17 @@ END:
 		priv->usable = new_usable;
 		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
 	}
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+check_emit_usable_schedule (NMBluezDevice *self)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	if (priv->check_emit_usable_id == 0)
+		priv->check_emit_usable_id = g_idle_add ((GSourceFunc) check_emit_usable, self);
 }
 
 /********************************************************************/
@@ -331,15 +344,26 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
-static void
-_internal_add_connection (NMBluezDevice *self, NMConnection *connection)
+static gboolean
+_internal_track_connection (NMBluezDevice *self, NMConnection *connection, gboolean tracked)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	gboolean was_tracked;
 
-	if (!g_slist_find (priv->connections, connection)) {
+	was_tracked = !!g_slist_find (priv->connections, connection);
+	if (was_tracked == !!tracked)
+		return FALSE;
+
+	if (tracked)
 		priv->connections = g_slist_prepend (priv->connections, g_object_ref (connection));
-		check_emit_usable (self);
+	else {
+		priv->connections = g_slist_remove (priv->connections, connection);
+		if (priv->pan_connection == connection)
+			priv->pan_connection = NULL;
+		g_object_unref (connection);
 	}
+
+	return TRUE;
 }
 
 static void
@@ -347,8 +371,10 @@ cp_connection_added (NMConnectionProvider *provider,
                      NMConnection *connection,
                      NMBluezDevice *self)
 {
-	if (connection_compatible (self, connection))
-		_internal_add_connection (self, connection);
+	if (connection_compatible (self, connection)) {
+		if (_internal_track_connection (self, connection, TRUE))
+			check_emit_usable (self);
+	}
 }
 
 static void
@@ -356,15 +382,8 @@ cp_connection_removed (NMConnectionProvider *provider,
                        NMConnection *connection,
                        NMBluezDevice *self)
 {
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-
-	if (g_slist_find (priv->connections, connection)) {
-		priv->connections = g_slist_remove (priv->connections, connection);
-		if (priv->pan_connection == connection)
-			priv->pan_connection = NULL;
-		g_object_unref (connection);
+	if (_internal_track_connection (self, connection, FALSE))
 		check_emit_usable (self);
-	}
 }
 
 static void
@@ -372,10 +391,9 @@ cp_connection_updated (NMConnectionProvider *provider,
                        NMConnection *connection,
                        NMBluezDevice *self)
 {
-	if (connection_compatible (self, connection))
-		_internal_add_connection (self, connection);
-	else
-		cp_connection_removed (provider, connection, self);
+	if (_internal_track_connection (self, connection,
+	                                connection_compatible (self, connection)))
+		check_emit_usable_schedule (self);
 }
 
 static void
@@ -383,10 +401,17 @@ load_connections (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	const GSList *connections, *iter;
+	gboolean changed = FALSE;
 
 	connections = nm_connection_provider_get_connections (priv->provider);
-	for (iter = connections; iter; iter = g_slist_next (iter))
-		cp_connection_added (priv->provider, NM_CONNECTION (iter->data), self);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = iter->data;
+
+		if (connection_compatible (self, connection))
+			changed |= _internal_track_connection (self, connection, TRUE);
+	}
+	if (changed)
+		check_emit_usable (self);
 }
 
 /***********************************************************/
@@ -1031,20 +1056,9 @@ nm_bluez_device_new (const char *path,
 	if (adapter_address)
 		set_adapter_address (self, adapter_address);
 
-	g_signal_connect (priv->provider,
-	                  NM_CP_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (cp_connection_added),
-	                  self);
-
-	g_signal_connect (priv->provider,
-	                  NM_CP_SIGNAL_CONNECTION_REMOVED,
-	                  G_CALLBACK (cp_connection_removed),
-	                  self);
-
-	g_signal_connect (priv->provider,
-	                  NM_CP_SIGNAL_CONNECTION_UPDATED,
-	                  G_CALLBACK (cp_connection_updated),
-	                  self);
+	g_signal_connect (priv->provider, NM_CP_SIGNAL_CONNECTION_ADDED,   G_CALLBACK (cp_connection_added),   self);
+	g_signal_connect (priv->provider, NM_CP_SIGNAL_CONNECTION_REMOVED, G_CALLBACK (cp_connection_removed), self);
+	g_signal_connect (priv->provider, NM_CP_SIGNAL_CONNECTION_UPDATED, G_CALLBACK (cp_connection_updated), self);
 
 	g_bus_get (G_BUS_TYPE_SYSTEM,
 	           NULL,
@@ -1083,6 +1097,8 @@ dispose (GObject *object)
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	NMConnection *to_delete = NULL;
+
+	nm_clear_g_source (&priv->check_emit_usable_id);
 
 	if (priv->pan_connection) {
 		/* Check whether we want to remove the created connection. If so, we take a reference

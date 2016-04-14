@@ -80,8 +80,7 @@ static gboolean find_master (NMManager *self,
 
 static void nm_manager_update_state (NMManager *manager);
 
-static void connection_changed (NMSettings *settings, NMConnection *connection,
-                                NMManager *manager);
+static void connection_changed (NMManager *self, NMConnection *connection);
 
 #define TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE "act-con-add-and-activate"
 
@@ -1148,7 +1147,7 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 			ifname = nm_manager_get_connection_iface (self, candidate, &parent, &error);
 			if (ifname) {
 				if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname))
-					connection_changed (priv->settings, candidate, self);
+					connection_changed (self, candidate);
 			}
 		}
 	}
@@ -1157,34 +1156,40 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 }
 
 static void
-connection_changed (NMSettings *settings,
-                    NMConnection *connection,
-                    NMManager *manager)
+connection_changed (NMManager *self,
+                    NMConnection *connection)
 {
 	NMDevice *device;
 
 	if (!nm_connection_is_virtual (connection))
 		return;
 
-	device = system_create_virtual_device (manager, connection);
+	device = system_create_virtual_device (self, connection);
 	if (!device)
 		return;
 
 	/* Maybe the device that was created was needed by some other
 	 * connection's device (parent of a VLAN). Let the connections
 	 * can use the newly created device as a parent know. */
-	retry_connections_for_parent_device (manager, device);
+	retry_connections_for_parent_device (self, device);
 }
 
 static void
-connection_removed (NMSettings *settings,
-                    NMSettingsConnection *connection,
-                    NMManager *manager)
+connection_added_cb (NMSettings *settings,
+                     NMConnection *connection,
+                     NMManager *self)
 {
-	/*
-	 * Do not delete existing virtual devices to keep connectivity up.
-	 * Virtual devices are reused when NetworkManager is restarted.
-	 */
+	connection_changed (self, connection);
+}
+
+static void
+connection_updated_cb (NMSettings *settings,
+                       NMConnection *connection,
+                       gboolean by_user,
+                       NMManager *self)
+{
+	if (by_user)
+		connection_changed (self, connection);
 }
 
 static void
@@ -4403,7 +4408,7 @@ nm_manager_start (NMManager *self, GError **error)
 	_LOGD (LOGD_CORE, "creating virtual devices...");
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = iter->next)
-		connection_changed (priv->settings, NM_CONNECTION (iter->data), self);
+		connection_changed (self, NM_CONNECTION (iter->data));
 	g_slist_free (connections);
 
 	priv->devices_inited = TRUE;
@@ -5080,11 +5085,14 @@ constructed (GObject *object)
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (connection_changed), self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
-	                  G_CALLBACK (connection_changed), self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
-	                  G_CALLBACK (connection_removed), self);
+	                  G_CALLBACK (connection_added_cb), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
+	                  G_CALLBACK (connection_updated_cb), self);
+	/*
+	 * Do not delete existing virtual devices to keep connectivity up.
+	 * Virtual devices are reused when NetworkManager is restarted.
+	 * Hence, don't react on NM_SETTINGS_SIGNAL_CONNECTION_REMOVED.
+	 */
 
 	priv->policy = nm_policy_new (self, priv->settings);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
@@ -5394,8 +5402,8 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, system_hostname_changed_cb, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_changed, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_removed, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_added_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_cb, manager);
 		g_clear_object (&priv->settings);
 	}
 
