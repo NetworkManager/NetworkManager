@@ -200,16 +200,21 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		} else if (   !strcmp (item, "layer2")
 		           || !strcmp (item, "portname")
 		           || !strcmp (item, "portno")) {
-			char *path, *value;
+			gs_free char *path = NULL, *value = NULL;
+
 			path = g_strdup_printf ("%s/%s", parent_path, item);
 			value = nm_platform_sysctl_get (NM_PLATFORM_GET, path);
-			if (value && *value)
-				g_hash_table_insert (priv->s390_options, g_strdup (item), g_strdup (value));
-			else
+
+			if (   !strcmp (item, "portname")
+			    && !g_strcmp0 (value, "no portname required")) {
+				/* Do nothing */
+			} else if (value && *value) {
+				g_hash_table_insert (priv->s390_options, g_strdup (item), value);
+				value = NULL;
+			} else
 				_LOGW (LOGD_DEVICE | LOGD_HW, "error reading %s", path);
-			g_free (path);
-			g_free (value);
 		}
+
 		if (error) {
 			_LOGW (LOGD_DEVICE | LOGD_HW, "%s", error->message);
 			g_clear_error (&error);
