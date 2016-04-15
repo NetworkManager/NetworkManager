@@ -1887,9 +1887,14 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			if (   ops_type == NMP_CACHE_OPS_UPDATED
 			    && old && new /* <-- nonsensical, make coverity happy */
 			    && old->_link.netlink.is_in_netlink
-			    && NM_FLAGS_HAS (old->link.flags, IFF_LOWER_UP)
 			    && new->_link.netlink.is_in_netlink
-			    && !NM_FLAGS_HAS (new->link.flags, IFF_LOWER_UP)) {
+			    && (   (   NM_FLAGS_HAS (old->link.flags, IFF_UP)
+			            && !NM_FLAGS_HAS (new->link.flags, IFF_UP))
+			        || (   NM_FLAGS_HAS (old->link.flags, IFF_LOWER_UP)
+			            && !NM_FLAGS_HAS (new->link.flags, IFF_LOWER_UP)))) {
+				/* FIXME: I suspect that IFF_LOWER_UP must not be considered, and I
+				 * think kernel does send RTM_DELROUTE events for IPv6 routes, so
+				 * we might not need to refresh IPv6 routes. */
 				delayed_action_schedule (platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
