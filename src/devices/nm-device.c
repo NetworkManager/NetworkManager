@@ -370,6 +370,9 @@ static gboolean nm_device_set_ip6_config (NMDevice *self,
                                           gboolean commit,
                                           gboolean routes_full_sync,
                                           NMDeviceStateReason *reason);
+static gboolean ip6_config_merge_and_apply (NMDevice *self,
+                                            gboolean commit,
+                                            NMDeviceStateReason *out_reason);
 
 static gboolean nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
 static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
@@ -1513,6 +1516,19 @@ device_link_changed (NMDevice *self)
 				                         TRUE,
 				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
+		}
+	}
+
+	if (priv->up && !was_up) {
+		/* the link was down and just came up. That happens for example, while changing MTU.
+		 * We must restore IP configuration. */
+		if (priv->ip4_state == IP_DONE) {
+			if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
+		}
+		if (priv->ip6_state == IP_DONE) {
+			if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 		}
 	}
 
