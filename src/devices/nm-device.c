@@ -10025,6 +10025,9 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 		_update_default_route (self, AF_INET,  FALSE, FALSE);
 		_update_default_route (self, AF_INET6, FALSE, FALSE);
+	} else {
+		_update_default_route (self, AF_INET,  priv->default_route.v4_has, TRUE);
+		_update_default_route (self, AF_INET6, priv->default_route.v6_has, TRUE);
 	}
 	_update_default_route (self, AF_INET,  FALSE, TRUE);
 	_update_default_route (self, AF_INET6, FALSE, TRUE);
