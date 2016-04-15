@@ -1510,7 +1510,7 @@ config_changed_cb (NMConfig *config,
 	                           NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
 	                           NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG)) {
-		if (!update_dns (self, TRUE, &error)) {
+		if (!update_dns (self, FALSE, &error)) {
 			_LOGW ("could not commit DNS changes: %s", error->message);
 			g_clear_error (&error);
 		}
