@@ -586,8 +586,8 @@ update_resolv_conf (NMDnsManager *self,
 		gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
 
 		if (g_strcmp0 (path, MY_RESOLV_CONF) == 0) {
-			_LOGD ("not updating " MY_RESOLV_CONF
-			       " since it points to " _PATH_RESCONF);
+			_LOGD ("not updating " _PATH_RESCONF
+			       " since it points to " MY_RESOLV_CONF);
 			return SR_SUCCESS;
 		}
 	}
