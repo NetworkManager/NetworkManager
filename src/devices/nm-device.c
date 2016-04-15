@@ -2634,11 +2634,20 @@ nm_device_removed (NMDevice *self)
 	 * is reacting via NM_DEVICE_IP4_CONFIG_CHANGED/NM_DEVICE_IP6_CONFIG_CHANGED
 	 * signal. As NMPolicy registered the NMIPxConfig instances in NMDnsManager,
 	 * these would be leaked otherwise. */
+	if (   priv->default_route.v4_has
+	    && !priv->default_route.v4_is_assumed) {
+		priv->default_route.v4_is_assumed = TRUE;
+		nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
+	}
+	if (   priv->default_route.v6_has
+	    && !priv->default_route.v6_is_assumed) {
+		priv->default_route.v6_is_assumed = TRUE;
+		nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
+	}
+
 	priv->default_route.v4_has = FALSE;
-	priv->default_route.v4_is_assumed = TRUE;
 	nm_device_set_ip4_config (self, NULL, 0, FALSE, FALSE, NULL);
 	priv->default_route.v6_has = FALSE;
-	priv->default_route.v6_is_assumed = TRUE;
 	nm_device_set_ip6_config (self, NULL, FALSE, FALSE, NULL);
 }
 
