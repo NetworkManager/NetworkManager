@@ -2019,7 +2019,10 @@ nm_vpn_connection_activate (NMVpnConnection *self,
 	s_vpn = nm_connection_get_setting_vpn (_get_applied_connection (self));
 	g_return_if_fail (s_vpn);
 
-	service = nm_setting_vpn_get_service_type (s_vpn);
+	service = nm_vpn_plugin_info_lookup_property (plugin_info,
+	                                              NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
+	                                              "service");
+	g_return_if_fail (service);
 
 	if (nm_vpn_plugin_info_supports_multiple (plugin_info)) {
 		const char *path;
