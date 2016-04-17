@@ -236,7 +236,7 @@ nm_fake_rdisc_done (NMFakeRDisc *self)
 /******************************************************************/
 
 static gboolean
-send_rs (NMRDisc *rdisc)
+send_rs (NMRDisc *rdisc, GError **error)
 {
 	g_signal_emit (rdisc, signals[RS_SENT], 0);
 	return TRUE;

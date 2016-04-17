@@ -133,7 +133,7 @@ typedef struct {
 	GObjectClass parent;
 
 	void (*start) (NMRDisc *rdisc);
-	gboolean (*send_rs) (NMRDisc *rdisc);
+	gboolean (*send_rs) (NMRDisc *rdisc, GError **error);
 	void (*config_changed) (NMRDisc *rdisc, NMRDiscConfigMap changed);
 	void (*ra_process) (NMRDisc *rdisc);
 	void (*ra_timeout) (NMRDisc *rdisc);

@@ -59,6 +59,8 @@
 #define CLOCK_BOOTTIME 7
 #endif
 
+G_DEFINE_QUARK (nm-utils-error-quark, nm_utils_error)
+
 G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
 int _nm_utils_testing = 0;
 
