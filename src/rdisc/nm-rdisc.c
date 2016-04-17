@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+#include "nm-glib-compat.h"
 #include "nm-rdisc.h"
 #include "nm-rdisc-private.h"
 
