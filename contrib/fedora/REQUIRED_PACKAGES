@@ -42,4 +42,5 @@ yum install \
     rpm-build \
     perl-YAML-LibYAM \
     perl-YAML \
+    jansson-devel \
 

@@ -31,6 +31,9 @@
 gboolean    _nm_utils_string_slist_validate (GSList *list,
                                              const char **valid_values);
 
+gboolean    _nm_utils_check_valid_json  (const char *json, GError **error);
+gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
+
 /* D-Bus transform funcs */
 
 GVariant *  _nm_utils_hwaddr_to_dbus   (const GValue *prop_value);

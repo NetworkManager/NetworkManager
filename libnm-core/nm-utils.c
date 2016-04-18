@@ -33,6 +33,10 @@
 #include <gmodule.h>
 #include <sys/stat.h>
 
+#if WITH_JANSSON
+#include <jansson.h>
+#endif
+
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
@@ -4090,3 +4094,140 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 	return (const char **) g_ptr_array_free (array, FALSE);
 }
 
+#if WITH_JANSSON
+gboolean
+_nm_utils_check_valid_json (const char *str, GError **error)
+{
+	json_t *json;
+	json_error_t jerror;
+
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (!str || !str[0]) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     "value is NULL or empty");
+		return FALSE;
+	}
+
+	json = json_loads (str, 0, &jerror);
+	if (!json) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             "%s at position %d",
+		             jerror.text,
+		             jerror.position);
+		return FALSE;
+	}
+
+	json_decref (json);
+	return TRUE;
+}
+
+/* json_object_foreach_safe() is only available since Jansson 2.8,
+ * reimplement it */
+#define _json_object_foreach_safe(object, n, key, value) \
+    for (key = json_object_iter_key (json_object_iter (object)), \
+         n = json_object_iter_next (object, json_object_iter_at (object, key)); \
+         key && (value = json_object_iter_value (json_object_iter_at (object, key))); \
+         key = json_object_iter_key (n), \
+         n = json_object_iter_next (object, json_object_iter_at (object, key)))
+
+gboolean
+_nm_utils_team_config_equal (const char *conf1,
+                             const char *conf2,
+                             gboolean port_config)
+{
+	json_t *json1 = NULL, *json2 = NULL, *json;
+	gs_free char *dump1 = NULL, *dump2 = NULL;
+	json_t *value, *property;
+	json_error_t jerror;
+	const char *key;
+	gboolean ret;
+	void *tmp;
+	int i;
+
+	if (nm_streq0 (conf1, conf2))
+		return TRUE;
+
+	/* A NULL configuration is equivalent to default value '{}' */
+	json1 = json_loads (conf1 ?: "{}", 0, &jerror);
+	if (json1)
+		json2 = json_loads (conf2 ?: "{}", 0, &jerror);
+
+	if (!json1 || !json2) {
+		ret = FALSE;
+		goto out;
+	}
+
+	/* Some properties are added by teamd when missing from the initial
+	 * configuration.  Add them with the default value if necessary, depending
+	 * on the configuration type.
+	 */
+	for (i = 0, json = json1; i < 2; i++, json = json2) {
+		if  (port_config) {
+			property = json_object_get (json, "link_watch");
+			if (!property) {
+				property = json_object ();
+				json_object_set_new (property, "name", json_string ("ethtool"));
+				json_object_set_new (json, "link_watch", property);
+			}
+		} else {
+			property = json_object_get (json, "runner");
+			if (!property) {
+				property = json_object ();
+				json_object_set_new (property, "name", json_string ("roundrobin"));
+				json_object_set_new (json, "runner", property);
+			}
+		}
+	}
+
+	/* Only consider a given subset of nodes, others can change depending on
+	 * current state */
+	for (i = 0, json = json1; i < 2; i++, json = json2) {
+		_json_object_foreach_safe (json, tmp, key, value) {
+			if (!NM_IN_STRSET (key, "runner", "link_watch"))
+				json_object_del (json, key);
+		}
+	}
+
+	dump1 = json_dumps (json1, JSON_INDENT(0) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
+	dump2 = json_dumps (json2, JSON_INDENT(0) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
+
+	ret = nm_streq0 (dump1, dump2);
+out:
+
+	if (json1)
+		json_decref (json1);
+	if (json2)
+		json_decref (json2);
+
+	return ret;
+}
+
+#else /* WITH_JANSSON */
+
+gboolean
+_nm_utils_check_valid_json (const char *str, GError **error)
+{
+	if (!str || !str[0]) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     "value is NULL or empty");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
+_nm_utils_team_config_equal (const char *conf1,
+                             const char *conf2,
+                             gboolean port_config)
+{
+	return nm_streq0 (conf1, conf2);
+}
+#endif

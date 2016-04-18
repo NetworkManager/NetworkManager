@@ -169,6 +169,7 @@ BuildRequires: pygobject3-base
 BuildRequires: dbus-python
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
+BuildRequires: jansson-devel
 
 
 %description

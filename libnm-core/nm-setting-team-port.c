@@ -85,6 +85,18 @@ nm_setting_team_port_get_config (NMSettingTeamPort *setting)
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+
+	if (priv->config) {
+		if (!_nm_utils_check_valid_json (priv->config, error)) {
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_TEAM_PORT_SETTING_NAME,
+			                NM_SETTING_TEAM_PORT_CONFIG);
+			return FALSE;
+		}
+	}
+
 	if (connection) {
 		NMSettingConnection *s_con;
 		const char *slave_type;
@@ -114,6 +126,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 	return TRUE;
+}
+
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	NMSettingClass *parent_class;
+
+	if (nm_streq0 (prop_spec->name, NM_SETTING_TEAM_PORT_CONFIG)) {
+		return _nm_utils_team_config_equal (NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->config,
+		                                    NM_SETTING_TEAM_PORT_GET_PRIVATE (other)->config,
+		                                    TRUE);
+	}
+
+	/* Otherwise chain up to parent to handle generic compare */
+	parent_class = NM_SETTING_CLASS (nm_setting_team_port_parent_class);
+	return parent_class->compare_property (setting, other, prop_spec, flags);
 }
 
 static void
@@ -173,10 +204,11 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 	g_type_class_add_private (setting_class, sizeof (NMSettingTeamPortPrivate));
 
 	/* virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->finalize = finalize;
-	parent_class->verify       = verify;
+	object_class->set_property     = set_property;
+	object_class->get_property     = get_property;
+	object_class->finalize         = finalize;
+	parent_class->compare_property = compare_property;
+	parent_class->verify           = verify;
 
 	/* Properties */
 	/**

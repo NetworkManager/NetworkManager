@@ -4382,6 +4382,110 @@ test_nm_utils_dns_option_find_idx (void)
 
 /******************************************************************************/
 
+static void
+_json_config_check_valid (const char *conf, gboolean expected)
+{
+	GError *error = NULL;
+	gboolean res;
+
+	res = _nm_utils_check_valid_json (conf, &error);
+	g_assert_cmpint (res, ==, expected);
+	g_assert (res || error);
+}
+
+static void
+test_nm_utils_check_valid_json (void)
+{
+	_json_config_check_valid (NULL, FALSE);
+	_json_config_check_valid ("", FALSE);
+#if WITH_JANSSON
+	_json_config_check_valid ("{ }", TRUE);
+	_json_config_check_valid ("{ \"a\" : 1 }", TRUE);
+	_json_config_check_valid ("{ \"a\" : }", FALSE);
+#else
+	/* Without JSON library everything except empty string is considered valid */
+	_json_config_check_valid ("{ }", TRUE);
+	_json_config_check_valid ("{'%!-a1", TRUE);
+#endif
+}
+
+static void
+_team_config_equal_check (const char *conf1,
+                          const char *conf2,
+                          gboolean port_config,
+                          gboolean expected)
+{
+	g_assert_cmpint (_nm_utils_team_config_equal (conf1, conf2, port_config), ==, expected);
+}
+
+static void
+test_nm_utils_team_config_equal (void)
+{
+#if WITH_JANSSON
+	_team_config_equal_check ("", "", TRUE, TRUE);
+	_team_config_equal_check ("{}",
+	                          "{ }",
+	                          TRUE,
+	                          TRUE);
+	_team_config_equal_check ("{}",
+	                          "{",
+	                          TRUE,
+	                          FALSE);
+
+	/* team config */
+	_team_config_equal_check ("{ }",
+	                          "{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+	                          FALSE,
+	                          TRUE);
+	_team_config_equal_check ("{ }",
+	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+	                          FALSE,
+	                          FALSE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+	                          FALSE,
+	                          FALSE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"} }",
+	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+	                          FALSE,
+	                          TRUE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth0\" : {} } }",
+	                          "{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth1\" : {} } }",
+	                          FALSE,
+	                          TRUE);
+
+	/* team port config */
+	_team_config_equal_check ("{ }",
+	                          "{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
+	                          TRUE,
+	                          TRUE);
+	_team_config_equal_check ("{ }",
+	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+	                          TRUE,
+	                          FALSE);
+	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
+	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+	                          TRUE,
+	                          FALSE);
+	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+	                          TRUE,
+	                          TRUE);
+	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth0\" : {} } }",
+	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth1\" : {} } }",
+	                          TRUE,
+	                          TRUE);
+#else
+	/* Without JSON library, strings are compared for equality */
+	_team_config_equal_check ("", "", TRUE, TRUE);
+	_team_config_equal_check ("", " ", TRUE, FALSE);
+	_team_config_equal_check ("{ \"a\": 1 }", "{ \"a\": 1 }", TRUE, TRUE);
+	_team_config_equal_check ("{ \"a\": 1 }", "{ \"a\":   1 }", TRUE, FALSE);
+#endif
+}
+
+/******************************************************************************/
+
 enum TEST_IS_POWER_OF_TWP_ENUM_SIGNED {
 	_DUMMY_1 = -1,
 };
@@ -5066,7 +5170,8 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
-
+	g_test_add_func ("/core/general/_nm_utils_validate_json", test_nm_utils_check_valid_json);
+	g_test_add_func ("/core/general/_nm_utils_team_config_equal", test_nm_utils_team_config_equal);
 	g_test_add_func ("/core/general/test_nm_utils_enum", test_nm_utils_enum);
 
 	return g_test_run ();

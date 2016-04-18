@@ -5,7 +5,7 @@ before_install:
     libnl-3-dev libnl-route-3-dev libnl-genl-3-dev ppp-dev libpolkit-gobject-1-dev libgnutls28-dev libgcrypt11-dev
     uuid-dev libudev-dev libgudev-1.0-dev libgirepository1.0-dev gobject-introspection libsoup2.4-dev gtk-doc-tools
     libglib2.0-doc libreadline-dev libnewt-dev libnss3-dev iptables make python-software-properties python-gi
-    python-dbus dbus dbus-x11
+    python-dbus dbus dbus-x11 libjansson4 libjansson-dev
   - sudo dbus-uuidgen --ensure
   - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty main'
   - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse'
