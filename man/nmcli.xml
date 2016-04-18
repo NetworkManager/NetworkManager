@@ -232,20 +232,6 @@
 
       <varlistentry>
         <term><group choice='plain'>
-          <arg choice='plain'><option>-n</option></arg>
-          <arg choice='plain'><option>--nocheck</option></arg>
-        </group></term>
-
-        <listitem>
-          <para>This option can be used to force <command>nmcli</command> to skip
-          checking <command>nmcli</command> and <command>NetworkManager</command>
-          version compatibility. Use it with care, because using incompatible versions
-          may produce incorrect results.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><group choice='plain'>
           <arg choice='plain'><option>-a</option></arg>
           <arg choice='plain'><option>--ask</option></arg>
         </group></term>
@@ -2803,14 +2789,6 @@
         <term><errorcode>8</errorcode></term>
         <listitem>
           <para>NetworkManager is not running.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><errorcode>9</errorcode></term>
-        <listitem>
-          <para><command>nmcli</command> and <command>NetworkManager</command>
-          versions mismatch.</para>
         </listitem>
       </varlistentry>
 

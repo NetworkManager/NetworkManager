@@ -5452,8 +5452,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -6562,26 +6560,6 @@ msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ ನಿಶ್ಚಿತವಾದ '--fields' ಆಯ್ಕೆಯ ಮೌಲ್ಯದ ಅಗತ್ಯವಿರುತ್ತದೆಯೆ ಹೊರತು, "
 "'%s' ಎಂಬುದಲ್ಲ"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"ಎಚ್ಚರಿಕೆ: nmcli (%s) ಮತ್ತು NetworkManager (%s) ಆವೃತ್ತಿಗಳು ತಾಳೆಯಾಗುತ್ತಿಲ್ಲ. "
-"ಎಚ್ಚರಿಕೆಯನ್ನು ಮರೆಮಾಚಲು --nocheck ಬಳಸು.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"ಎಚ್ಚರಿಕೆ: nmcli (%s) ಮತ್ತು NetworkManager (%s) ಆವೃತ್ತಿಗಳು ತಾಳೆಯಾಗುತ್ತಿಲ್ಲ. --"
-"nocheck ಅನ್ನು ಬಳಸಿಕೊಂಡು ಕಾರ್ಯಗತಗೊಳಿಸಲು ಒತ್ತಾಯಪಡಿಸು, ಆದರೆ ಫಲಿತಾಂಶಗಳು "
-"ಅನಿರೀಕ್ಷಿತವಾಗಿರುತ್ತವೆ.\n"
-"."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

@@ -5554,8 +5554,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5583,8 +5581,6 @@ msgstr ""
 "  -f[ields] <pole1,pole2,…>|all|common       określa pola do wyjścia\n"
 "  -e[scape] yes|no                           modyfikuje separatory kolumn\n"
 "                                             w wartościach\n"
-"  -n[ocheck]                                 bez sprawdzania wersji nmcli\n"
-"                                             i NetworkManager\n"
 "  -a[sk]                                     pyta o brakujące parametry\n"
 "  -s[how-secrets]                            zezwala na wyświetlanie haseł\n"
 "  -w[ait] <sekundy>                          ustawia czas oczekiwania\n"
@@ -6708,25 +6704,6 @@ msgstr "Opcja „--terse” wymaga podania opcji „--fields”"
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "Opcja „--terse” wymaga konkretnej wartości opcji „--fields”, nie „%s”"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"Ostrzeżenie: wersje programu nmcli (%s) i usługi NetworkManager (%s) się nie "
-"zgadzają. Użycie opcji --nocheck ukrywa ostrzeżenie.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"Błąd: wersje programu nmcli (%s) i usługi NetworkManager (%s) się nie "
-"zgadzają. Wymuszono wykonanie używając opcji --nocheck, ale wynik może być "
-"nieprzewidywalny."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

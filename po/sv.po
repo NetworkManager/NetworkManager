@@ -5551,8 +5551,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5581,8 +5579,6 @@ msgstr ""
 "  -f[ields] <field1,field2,…>|all|common     ange fält för utdata\n"
 "  -e[scape] yes|no                           omge kolumnseparatorer i värden "
 "med säker sträng\n"
-"  -n[ocheck]                                 kontrollera inte nmcli och "
-"Nätverkshanterarens versioner\n"
 "  -a[sk]                                     fråga efter saknade parametrar\n"
 "  -s[how-secrets]                            tillåt att lösenord visas\n"
 "  -w[ait] <seconds>                          sätt en tidsgräns för åtgärder\n"
@@ -6691,24 +6687,6 @@ msgstr "Flaggan ”--terse” kräver att ”--fields” anges"
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "Flaggan ”--terse” kräver angivna värden för ”--fields”-flaggan , inte ”%s”"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"Varning: versionerna för nmcli (%s) och NetworkManager (%s) stämmer inte "
-"överens. Använd --nocheck för att inte visa varningen.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"Fel: versionerna för nmcli (%s) och NetworkManager (%s) matchar inte. Tvinga "
-"körning med --nocheck, men resultatet är inte förutsägbart."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

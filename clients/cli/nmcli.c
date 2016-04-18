@@ -89,7 +89,6 @@ usage (const char *prog_name)
 	              "  -c[olors] auto|yes|no                      whether to use colors in output\n"
 	              "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 	              "  -e[scape] yes|no                           escape columns separators in values\n"
-	              "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
 	              "  -a[sk]                                     ask for missing parameters\n"
 	              "  -s[how-secrets]                            allow displaying passwords\n"
 	              "  -w[ait] <seconds>                          set timeout waiting for finishing operations\n"
@@ -254,7 +253,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			}
 			nmc->required_fields = g_strdup (argv[1]);
 		} else if (matches (opt, "-nocheck") == 0) {
-			nmc->nocheck_ver = TRUE;
+			/* ignore for backward compatibility */
 		} else if (matches (opt, "-ask") == 0) {
 			nmc->ask = TRUE;
 		} else if (matches (opt, "-show-secrets") == 0) {
@@ -545,7 +544,6 @@ nmc_init (NmCli *nmc)
 	nmc->required_fields = NULL;
 	nmc->output_data = g_ptr_array_new_full (20, g_free);
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
-	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
 	nmc->show_secrets = FALSE;
 	nmc->use_colors = NMC_USE_COLOR_AUTO;

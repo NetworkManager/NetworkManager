@@ -5392,8 +5392,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5420,8 +5418,6 @@ msgstr ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
 "finishing operations\n"
@@ -6496,24 +6492,6 @@ msgstr "ఐచ్చికము '--terse' కు '--fields' తెలుపు�
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "ఐచ్చికము '--terse' కు ప్రత్యేకించి '--fields' ఐచ్చికము విలువలు అవసరము , '%s' కాదు"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"హెచ్చరిక: nmcli (%s) మరియు నెట్వర్కుమేనేజర్ (%s) వర్షన్లు సరిపోలటంలేదు. హెచ్చరికను అరికట్టుటకు --"
-"nocheck వుపయోగించు.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"దోషం: nmcli (%s) మరియు నెట్వర్కుమేనేజర్ (%s) వర్షన్లు సరిపోలడంలేదు. --nocheck వుపయోగించి "
-"బలవంతపు నిర్వర్తన,  అయితే ఫలితాలు ఊహించనివిధంగా వుంటాయి."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

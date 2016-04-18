@@ -5465,8 +5465,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5493,8 +5491,6 @@ msgstr ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
 "finishing operations\n"
@@ -6564,25 +6560,6 @@ msgstr "Opción «--terse» requiere especificar «--fields»"
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "Opción «--terse» requiere valores de «--fields» específicos, no «%s»"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"Advertencia: las versiones de nmcli (%s) y de NetworkManager (%s) no "
-"coinciden. Use «--nocheck» para evitar el aviso.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"Error: las versiones de nmcli (%s) y de NetworkManager (%s) no coinciden. "
-"Fuerce la ejecución usando «--nocheck», pero los resultados son "
-"impredecibles."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

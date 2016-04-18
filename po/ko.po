@@ -5362,8 +5362,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5390,8 +5388,6 @@ msgstr ""
 "  -f[ields] <field1,field2,...>|all|common   출력할 필드 지정\n"
 "  -e[scape] yes|no                           값으로된 칼럼 분리기에서 나가"
 "기 \n"
-"  -n[ocheck]                                 nmcli and NetworkManager 버전을 "
-"확인하지 않음\n"
 "  -a[sk]                                     누락된 매개 변수 요청 \n"
 "  -w[ait] <seconds>                          동작 완료의 대기 시간을 설정\n"
 "  -v[ersion]                                 프로그램 버전 표시\n"
@@ -6455,24 +6451,6 @@ msgstr "옵션 '--terse'는 '--fields' 설정을 요구합니다"
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "옵션 '--terse'는 '%s'이(가) 아닌 구체적인 '--fields' 값을 요구합니다"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"경고: nmcli (%s) 및 네트워크 관리 (%s) 버전이 맞지 않습니다. 이 경고를 무시하"
-"려면 --nocheck 옵션을 사용하십시오.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"경고: nmcli (%s) 및 네트워크 관리 (%s) 버전이 맞지 않습니다. --nocheck 옵션"
-"을 사용했으므로 계속하지만, 예상치 못한 결과가 나타날 수 있습니다."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."
