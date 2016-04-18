@@ -1562,6 +1562,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
 		if (   link_cached
 		    && link_cached->link.type == obj->link.type
+		    && link_cached->_link.netlink.lnk
 		    && (   !lnk_data
 		        || nmp_object_equal (lnk_data, link_cached->_link.netlink.lnk))) {
 			nmp_object_unref (lnk_data);
