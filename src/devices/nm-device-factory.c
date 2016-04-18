@@ -187,10 +187,9 @@ nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
 
 	klass = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
 
-	if (klass->get_connection_iface)
+	ifname = g_strdup (nm_connection_get_interface_name (connection));
+	if (!ifname && klass->get_connection_iface)
 		ifname = klass->get_connection_iface (factory, connection, parent_iface);
-	else
-		ifname = g_strdup (nm_connection_get_interface_name (connection));
 
 	if (!ifname) {
 		g_set_error (error,
