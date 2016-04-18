@@ -125,7 +125,7 @@ gint
 nm_config_parse_boolean (const char *str,
                          gint default_value)
 {
-	return nm_utils_ascii_str_to_bool (str, default_value);
+	return _nm_utils_ascii_str_to_bool (str, default_value);
 }
 
 gint
