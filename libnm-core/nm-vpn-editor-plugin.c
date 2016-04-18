@@ -74,11 +74,7 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 /**
  * nm_vpn_editor_plugin_load_from_file:
  * @plugin_filename: The path to the share library to load.
- *  Apply some common heuristics to find the library, such as
- *  appending "so" file ending.
- *  If the path is not an absolute path or no matching module
- *  can be found, lookup inside a directory defined at compile time.
- *  Due to this, @check_file might be called for two different paths.
+ *  The path must be an absolute filename to an existing file.
  * @check_service: if not-null, check that the loaded plugin advertises
  *  the given service.
  * @check_owner: if non-negative, check whether the file is owned
