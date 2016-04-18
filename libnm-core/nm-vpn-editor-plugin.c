@@ -198,7 +198,7 @@ _nm_vpn_editor_plugin_load (const char *plugin_filename,
 
 /**
  * nm_vpn_editor_plugin_load_from_file:
- * @plugin_filename: The path to the share library to load.
+ * @plugin_filename: The path to the shared library to load.
  *  The path must be an absolute filename to an existing file.
  * @check_service: if not-null, check that the loaded plugin advertises
  *  the given service.
@@ -232,6 +232,46 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 	                                   check_owner,
 	                                   check_file,
 	                                   user_data,
+	                                   error);
+}
+
+/**
+ * nm_vpn_editor_plugin_load:
+ * @plugin_name: The name of the shared library to load.
+ *  If it is an absolute path, for further checks will be
+ *  performed on the file (aside from being a regular file
+ *  and existing).
+ *  The @plugin_name can also be a library name only. In this
+ *  case, system dependent directories will be searched for a
+ *  matching library.
+ * @check_service: if not-null, check that the loaded plugin advertises
+ *  the given service.
+  * @error: on failure the error reason.
+ *
+ * Load the shared libary @plugin_filename and create a new
+ * #NMVpnEditorPlugin instace via the #NMVpnEditorPluginFactory
+ * function.
+ *
+ * This is similar to nm_vpn_editor_plugin_load_from_file(), but
+ * also allows searching for a matching library and not perform
+ * any checks on the file. If you have the full path to a plugin
+ * file, nm_vpn_editor_plugin_load_from_file() is preferred.
+ *
+ * Returns: (transfer full): a new plugin instance or %NULL on error.
+ *
+ * Since: 1.4
+ */
+NMVpnEditorPlugin *
+nm_vpn_editor_plugin_load (const char *plugin_name,
+                           const char *check_service,
+                           GError **error)
+{
+	return _nm_vpn_editor_plugin_load (plugin_name,
+	                                   FALSE,
+	                                   check_service,
+	                                   -1,
+	                                   NULL,
+	                                   NULL,
 	                                   error);
 }
 

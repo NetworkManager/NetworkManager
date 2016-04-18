@@ -147,6 +147,11 @@ NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file  (const char *plugin_file
                                                          gpointer user_data,
                                                          GError **error);
 
+NM_AVAILABLE_IN_1_4
+NMVpnEditorPlugin *nm_vpn_editor_plugin_load (const char *plugin_name,
+                                              const char *check_service,
+                                              GError **error);
+
 G_END_DECLS
 
 #endif	/* __NM_VPN_EDITOR_PLUGIN_H__ */
