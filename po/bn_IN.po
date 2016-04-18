@@ -5408,8 +5408,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5436,8 +5434,6 @@ msgstr ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
 "finishing operations\n"
@@ -6517,24 +6513,6 @@ msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "'--terse' বিকল্পের ক্ষেত্রে '--fields' বিকল্পের সুনির্দিষ্ট মান উল্লেখ করা আবশ্যক, "
 "'%s' ব্যবহার করা যাবে না"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"সতর্কবার্তা: nmcli (%s) ও NetworkManager-র (%s) সংস্করণে গরমিল। সতর্কবার্তা আড়াল "
-"করার জন্য --nocheck ব্যবহার করুন।\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"ত্রুটি: nmcli (%s) ও NetworkManager-র (%s) সংস্করণে গরমিল। বাধ্যতামূলক ভাবে "
-"সঞ্চালন করার জন্য --nocheck ব্যবহার করুন, কিন্তু অপ্রত্যাশিত ফলাফল সৃষ্টি হতে পারে।"
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

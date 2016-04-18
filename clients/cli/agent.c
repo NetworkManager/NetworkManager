@@ -207,9 +207,6 @@ do_agent (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		return nmc->return_value;
 	}
-	/* Compare NM and nmcli versions */
-	if (!nmc_versions_match (nmc))
-		return nmc->return_value;
 
 	if (argc == 0) {
 		nmc->return_value = do_agent_all (nmc, 0, NULL);

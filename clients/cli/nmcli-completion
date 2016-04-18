@@ -178,9 +178,6 @@ _nmcli_compl_OPTIONS()
             pretty)
                 _nmcli_array_delete_at words 0
                 ;;
-            nocheck)
-                _nmcli_array_delete_at words 0
-                ;;
             ask)
                 _nmcli_array_delete_at words 0
                 ;;
@@ -804,7 +801,7 @@ _nmcli()
     local COMMAND_CONNECTION_ACTIVE=""
 
     HELP_ONLY_AS_FIRST=
-    local LONG_OPTIONS=(terse pretty mode fields colors escape nocheck ask show-secrets wait version help)
+    local LONG_OPTIONS=(terse pretty mode fields colors escape ask show-secrets wait version help)
     _nmcli_compl_OPTIONS
     i=$?
 

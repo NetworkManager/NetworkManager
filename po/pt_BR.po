@@ -5544,8 +5544,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5572,8 +5570,6 @@ msgstr ""
 "  -f[ields] <campo1,campo2,...>|all|common especifica os campos para saída\n"
 "  -e[scape] yes|no                         descarta separadores de colunas\n"
 "                                            em valores\n"
-"  -n[ocheck]                               não verifica as versões do nmcli\n"
-"                                            e do NetworkManager\n"
 "  -a[sk]                                   questiona sobre os parâmetros "
 "que\n"
 "                                            faltam\n"
@@ -6699,24 +6695,6 @@ msgstr "Opção \"--terse\" requer especificação de \"--fields\""
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "Opção \"--terse\" requer valores da opção \"--fields\", não \"%s\""
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"Aviso: As versões do nmcli (%s) e do NetworkManager (%s) não correspondem. "
-"Use --nocheck para omitir este aviso.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"Aviso: As versões do nmcli (%s) e do NetworkManager (%s) não correspondem. "
-"Force a execução usando --nocheck, mas os resultados são imprevisíveis."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

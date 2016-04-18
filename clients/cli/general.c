@@ -345,9 +345,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 		return FALSE;
 	}
 
-	if (!nmc_versions_match (nmc))
-		return FALSE;
-
 	state = nm_client_get_state (nmc->client);
 	startup = nm_client_get_startup (nmc->client);
 	connectivity = nm_client_get_connectivity (nmc->client);

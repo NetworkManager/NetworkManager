@@ -3670,9 +3670,6 @@ do_devices (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		return nmc->return_value;
 	}
-	/* Compare NM and nmcli versions */
-	if (!nmc_versions_match (nmc))
-		return nmc->return_value;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))

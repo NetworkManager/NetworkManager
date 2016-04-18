@@ -5563,8 +5563,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5594,8 +5592,6 @@ msgstr ""
 "sortida\n"
 "  -e[scape] yes|no                          separadors de columnes "
 "d'escapament als valors\n"
-"  -n[ocheck]                                 no comprovis les versions de "
-"nmcli i de NetworkManager\n"
 "  -a[sk]                                     demana els paràmetres que "
 "faltin\n"
 "  -s[how-secrets]                            permet que es mostrin les "
@@ -6729,24 +6725,6 @@ msgstr "L'opció «--terse» requereix que s'especifiqui «--fields»"
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "L'opció «--terse» requereix valors específics de l'opció «--fields» i no «%s»"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"Advertiment: les versions del nmcli (%s) i del NetworkManager (%s) no "
-"concorden. Useu --nocheck per suprimir l'advertiment.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"Error: les versions del nmcli (%s) i del NetworkManager (%s) no concorden. "
-"Forceu l'execució usant --nocheck, però els resultats no són predicibles."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

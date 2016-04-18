@@ -5360,8 +5360,6 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
-"  -n[ocheck]                                 don't check nmcli and "
-"NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
 "  -s[how-secrets]                            allow displaying passwords\n"
 "  -w[ait] <seconds>                          set timeout waiting for "
@@ -5387,8 +5385,6 @@ msgstr ""
 "  -m[ode] tabular|multiline                  આઉટપુટ સ્થિતિ\n"
 "  -f[ields] <field1,field2,...>|all|common   આઉટપુટમાં ક્ષેત્રોને સ્પષ્ટ કરો\n"
 "  -e[scape] yes|no                           કિંમતોમાં સ્તંભ વિભાજકને છોડો\n"
-"  -n[ocheck]                                 nmcli અને NetworkManager આવૃત્તિને "
-"ચકાસો નહિં\n"
 "  -a[sk]                                     ગેરહાજર પરિમાણો વિશે પૂછો\n"
 "  -w[ait] <seconds>                         ક્રિયાઓ સમાપ્ત કરવાની રાહ જોવા સમય "
 "સમાપ્તિને સુયોજિક કરો \n"
@@ -6449,24 +6445,6 @@ msgstr "વિકલ્પ '--terse' ને '--fields' ની જરૂર છ�
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "વિકલ્પ '--terse' ને ચોક્કસ '--fields' વિકલ્પ કિંમતોની જરૂર છે, '%s' ની નહિં"
-
-#: ../clients/cli/utils.c:1390
-#, c-format
-msgid ""
-"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
-"nocheck to suppress the warning.\n"
-msgstr ""
-"ચેતવણી: nmcli (%s) અને NetworkManager (%s) આવૃત્તિઓ બંધબેસતી નથી. ચેતવણીઓ પર પ્રતિબંધ "
-"મૂકવા માટે --nocheck વાપરો.\n"
-
-#: ../clients/cli/utils.c:1399
-#, c-format
-msgid ""
-"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
-"execution using --nocheck, but the results are unpredictable."
-msgstr ""
-"ભૂલ: nmcli (%s) અને NetworkManager (%s) આવૃત્તિઓ બંધબેસતી નથી. --nocheck મદદથી "
-"ચલાવવા પર દબાણ કરો, પરંતુ પરિણામો ધારી શકાય તેમ નથી."
 
 #: ../clients/common/nm-polkit-listener.c:212
 msgid "An authentication session is already underway."

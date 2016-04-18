@@ -105,6 +105,5 @@ NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guin
 void nmc_empty_output_fields (NmCli *nmc);
 void print_required_fields (NmCli *nmc, const NmcOutputField field_values[]);
 void print_data (NmCli *nmc);
-gboolean nmc_versions_match (NmCli *nmc);
 
 #endif /* NMC_UTILS_H */
