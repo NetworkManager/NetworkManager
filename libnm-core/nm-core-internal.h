@@ -72,6 +72,7 @@
 #include "nm-utils.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-types-internal.h"
+#include "nm-vpn-editor-plugin.h"
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
@@ -244,6 +245,14 @@ GSList *_nm_vpn_plugin_info_list_load_dir (const char *dirname,
                                            gint64 check_owner,
                                            NMUtilsCheckFilePredicate check_file,
                                            gpointer user_data);
+
+NMVpnEditorPlugin * _nm_vpn_editor_plugin_load (const char *plugin_filename,
+                                                gboolean force_absolute_path,
+                                                const char *check_service,
+                                                int check_owner,
+                                                NMUtilsCheckFilePredicate check_file,
+                                                gpointer user_data,
+                                                GError **error);
 
 /***********************************************************/
 
