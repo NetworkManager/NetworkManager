@@ -26,6 +26,9 @@
 
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
+gint _nm_utils_ascii_str_to_bool (const char *str,
+                                  gint default_value);
+
 /******************************************************************************/
 
 /**

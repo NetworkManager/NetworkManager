@@ -91,11 +91,6 @@ GETTER (void) \
 
 /*****************************************************************************/
 
-gint nm_utils_ascii_str_to_bool (const char *str,
-                                 gint default_value);
-
-/*****************************************************************************/
-
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
