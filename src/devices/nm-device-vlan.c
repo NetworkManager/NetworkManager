@@ -222,6 +222,12 @@ create_and_realize (NMDevice *device,
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
+	if (!parent) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "VLAN devices can not be created without a parent interface");
+		return FALSE;
+	}
+
 	if (!nm_device_supports_vlans (parent)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "no support for VLANs on interface %s of type %s",

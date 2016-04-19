@@ -223,6 +223,12 @@ create_and_realize (NMDevice *device,
 	s_macvlan = nm_connection_get_setting_macvlan (connection);
 	g_assert (s_macvlan);
 
+	if (!parent) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "MACVLAN devices can not be created without a parent interface");
+		return FALSE;
+	}
+
 	parent_ifindex = nm_device_get_ifindex (parent);
 	g_warn_if_fail (parent_ifindex > 0);
 
