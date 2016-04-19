@@ -60,13 +60,14 @@
 #include "process-util.h"
 #endif /* NM_IGNORED */
 #include "set.h"
-#if 0 /* NM_IGNORED */
 #include "signal-util.h"
+#if 0 /* NM_IGNORED */
 #include "stat-util.h"
 #endif /* NM_IGNORED */
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
+#include "umask-util.h"
 #if 0 /* NM_IGNORED */
 #include "user-util.h"
 #endif /* NM_IGNORED */
@@ -436,13 +437,17 @@ int fork_agent(pid_t *pid, const int except[], unsigned n_except, const char *pa
                         _exit(EXIT_FAILURE);
                 }
 
-                if (!stdout_is_tty)
-                        dup2(fd, STDOUT_FILENO);
+                if (!stdout_is_tty && dup2(fd, STDOUT_FILENO) < 0) {
+                        log_error_errno(errno, "Failed to dup2 /dev/tty: %m");
+                        _exit(EXIT_FAILURE);
+                }
 
-                if (!stderr_is_tty)
-                        dup2(fd, STDERR_FILENO);
+                if (!stderr_is_tty && dup2(fd, STDERR_FILENO) < 0) {
+                        log_error_errno(errno, "Failed to dup2 /dev/tty: %m");
+                        _exit(EXIT_FAILURE);
+                }
 
-                if (fd > 2)
+                if (fd > STDERR_FILENO)
                         close(fd);
         }
 
@@ -790,15 +795,25 @@ uint64_t physical_memory(void) {
         return (uint64_t) mem * (uint64_t) page_size();
 }
 
-int update_reboot_param_file(const char *param) {
-        int r = 0;
+int update_reboot_parameter_and_warn(const char *param) {
+        int r;
 
-        if (param) {
-                r = write_string_file(REBOOT_PARAM_FILE, param, WRITE_STRING_FILE_CREATE);
+        if (isempty(param)) {
+                if (unlink("/run/systemd/reboot-param") < 0) {
+                        if (errno == ENOENT)
+                                return 0;
+
+                        return log_warning_errno(errno, "Failed to unlink reboot parameter file: %m");
+                }
+
+                return 0;
+        }
+
+        RUN_WITH_UMASK(0022) {
+                r = write_string_file("/run/systemd/reboot-param", param, WRITE_STRING_FILE_CREATE);
                 if (r < 0)
-                        return log_error_errno(r, "Failed to write reboot param to "REBOOT_PARAM_FILE": %m");
-        } else
-                (void) unlink(REBOOT_PARAM_FILE);
+                        return log_warning_errno(r, "Failed to write reboot parameter file: %m");
+        }
 
         return 0;
 }

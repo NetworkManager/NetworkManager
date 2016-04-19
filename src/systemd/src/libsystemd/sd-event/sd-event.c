@@ -42,9 +42,7 @@
 #include "process-util.h"
 #endif
 #include "set.h"
-#if 0 /* NM_IGNORED */
 #include "signal-util.h"
-#endif
 #include "string-table.h"
 #include "string-util.h"
 #include "time-util.h"
@@ -1156,8 +1154,7 @@ _public_ int sd_event_add_signal(
         int r;
 
         assert_return(e, -EINVAL);
-        assert_return(sig > 0, -EINVAL);
-        assert_return(sig < _NSIG, -EINVAL);
+        assert_return(SIGNAL_VALID(sig), -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
 
@@ -2212,7 +2209,7 @@ static int process_signal(sd_event *e, struct signal_data *d, uint32_t events) {
                 if (_unlikely_(n != sizeof(si)))
                         return -EIO;
 
-                assert(si.ssi_signo < _NSIG);
+                assert(SIGNAL_VALID(si.ssi_signo));
 
                 read_one = true;
 
@@ -2540,7 +2537,7 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
         }
 
         dual_timestamp_get(&e->timestamp);
-        e->timestamp_boottime = now(CLOCK_BOOTTIME);
+        e->timestamp_boottime = now(clock_boottime_or_monotonic());
 
         for (i = 0; i < m; i++) {
 

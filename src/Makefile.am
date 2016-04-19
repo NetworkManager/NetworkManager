@@ -107,6 +107,7 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/basic/random-util.h \
 	systemd/src/basic/refcnt.h \
 	systemd/src/basic/set.h \
+	systemd/src/basic/signal-util.h \
 	systemd/src/basic/siphash24.c \
 	systemd/src/basic/siphash24.h \
 	systemd/src/basic/socket-util.c \
