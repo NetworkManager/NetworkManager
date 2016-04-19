@@ -3512,7 +3512,6 @@ activation_add_done (NMSettings *settings,
 	                            FALSE,
 	                            nm_active_connection_get_subject (active),
 	                            error->message);
-	g_object_unref (active);
 	g_clear_error (&local);
 }
 
