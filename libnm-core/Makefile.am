@@ -11,6 +11,7 @@ AM_CPPFLAGS = \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
+	-DNMPLUGINDIR=\"$(pkglibdir)\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS)

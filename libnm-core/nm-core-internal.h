@@ -246,14 +246,6 @@ GSList *_nm_vpn_plugin_info_list_load_dir (const char *dirname,
                                            NMUtilsCheckFilePredicate check_file,
                                            gpointer user_data);
 
-NMVpnEditorPlugin * _nm_vpn_editor_plugin_load (const char *plugin_filename,
-                                                gboolean force_absolute_path,
-                                                const char *check_service,
-                                                int check_owner,
-                                                NMUtilsCheckFilePredicate check_file,
-                                                gpointer user_data,
-                                                GError **error);
-
 /***********************************************************/
 
 typedef struct {
