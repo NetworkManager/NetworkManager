@@ -71,69 +71,59 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 
 /*********************************************************************/
 
-/**
- * nm_vpn_editor_plugin_load_from_file:
- * @plugin_filename: The path to the share library to load.
- *  Apply some common heuristics to find the library, such as
- *  appending "so" file ending.
- *  If the path is not an absolute path or no matching module
- *  can be found, lookup inside a directory defined at compile time.
- *  Due to this, @check_file might be called for two different paths.
- * @check_service: if not-null, check that the loaded plugin advertises
- *  the given service.
- * @check_owner: if non-negative, check whether the file is owned
- *  by UID @check_owner or by root. In this case also check that
- *  the file is not writable by anybody else.
- * @check_file: (scope call): optional callback to validate the file prior to
- *   loading the shared library.
- * @user_data: user data for @check_file
- * @error: on failure the error reason.
- *
- * Load the shared libary @plugin_filename and create a new
- * #NMVpnEditorPlugin instace via the #NMVpnEditorPluginFactory
- * function.
- *
- * Returns: (transfer full): a new plugin instance or %NULL on error.
- *
- * Since: 1.2
- */
-NMVpnEditorPlugin *
-nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
-                                      const char *check_service,
-                                      int check_owner,
-                                      NMUtilsCheckFilePredicate check_file,
-                                      gpointer user_data,
-                                      GError **error)
+static NMVpnEditorPlugin *
+_nm_vpn_editor_plugin_load (const char *plugin_name,
+                            gboolean do_file_checks,
+                            const char *check_service,
+                            int check_owner,
+                            NMUtilsCheckFilePredicate check_file,
+                            gpointer user_data,
+                            GError **error)
 {
 	GModule *module = NULL;
-	gs_free_error GError *local = NULL;
 	NMVpnEditorPluginFactory factory = NULL;
 	NMVpnEditorPlugin *editor_plugin = NULL;
+	gs_free char *plugin_filename_free = NULL;
+	const char *plugin_filename;
 
-	g_return_val_if_fail (plugin_filename && *plugin_filename, NULL);
+	g_return_val_if_fail (plugin_name && *plugin_name, NULL);
 
-	/* _nm_utils_check_module_file() fails with ENOENT if the plugin file
-	 * does not exist. That is relevant, because nm-applet checks for that. */
-	if (_nm_utils_check_module_file (plugin_filename,
-		                             check_owner,
-		                             check_file,
-		                             user_data,
-		                             &local))
-		module = g_module_open (plugin_filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
-
-	if (!module) {
-		if (local) {
-			g_propagate_error (error, local);
-			local = NULL;
-		} else {
-			g_set_error (error,
-			             NM_VPN_PLUGIN_ERROR,
-			             NM_VPN_PLUGIN_ERROR_FAILED,
-			             _("cannot load plugin %s"), plugin_filename);
+	/* if @do_file_checks is FALSE, we pass plugin_name directly to
+	 * g_module_open().
+	 *
+	 * Otherwise, we allow for library names without path component.
+	 * In which case, we prepend the plugin directory and form an
+	 * absolute path. In that case, we perform checks on the file.
+	 *
+	 * One exception is that we don't allow for the "la" suffix. The
+	 * reason is that g_module_open() interprets files with this extension
+	 * special and we don't want that. */
+	plugin_filename = plugin_name;
+	if (do_file_checks) {
+		if (   !strchr (plugin_name, '/')
+		    && !g_str_has_suffix (plugin_name, ".la")) {
+			plugin_filename_free = g_module_build_path (NMPLUGINDIR, plugin_name);
+			plugin_filename = plugin_filename_free;
 		}
+
+		/* _nm_utils_check_module_file() fails with ENOENT if the plugin file
+		 * does not exist. That is relevant, because nm-applet checks for that. */
+		if (!_nm_utils_check_module_file (plugin_filename,
+		                                  check_owner,
+		                                  check_file,
+		                                  user_data,
+		                                  error))
+			return NULL;
+	}
+
+	module = g_module_open (plugin_filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
+	if (!module) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("cannot load plugin %s"), plugin_name);
 		return NULL;
 	}
-	g_clear_error (&local);
 
 	if (g_module_symbol (module, "nm_vpn_editor_plugin_factory", (gpointer) &factory)) {
 		gs_free_error GError *factory_error = NULL;
@@ -180,7 +170,7 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 				g_set_error (error,
 				             NM_VPN_PLUGIN_ERROR,
 				             NM_VPN_PLUGIN_ERROR_FAILED,
-				             _("unknown error initializing plugin %s"), plugin_filename);
+				             _("unknown error initializing plugin %s"), plugin_name);
 			}
 		}
 
@@ -199,6 +189,52 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 	}
 
 	return editor_plugin;
+}
+
+/**
+ * nm_vpn_editor_plugin_load_from_file:
+ * @plugin_name: The path or name of the shared library to load.
+ *  The path must either be an absolute filename to an existing file.
+ *  Alternatively, it can be the name (without path) of a library in the
+ *  plugin directory of NetworkManager.
+ * @check_service: if not-null, check that the loaded plugin advertises
+ *  the given service.
+ * @check_owner: if non-negative, check whether the file is owned
+ *  by UID @check_owner or by root. In this case also check that
+ *  the file is not writable by anybody else.
+ * @check_file: (scope call): optional callback to validate the file prior to
+ *   loading the shared library.
+ * @user_data: user data for @check_file
+ * @error: on failure the error reason.
+ *
+ * Load the shared libary @plugin_name and create a new
+ * #NMVpnEditorPlugin instace via the #NMVpnEditorPluginFactory
+ * function.
+ *
+ * If @plugin_name is not an absolute path name, it assumes the file
+ * is in the plugin directory of NetworkManager. In any case, the call
+ * will do certain checks on the file before passing it to dlopen.
+ * A consequence for that is, that you cannot omit the ".so" suffix.
+ *
+ * Returns: (transfer full): a new plugin instance or %NULL on error.
+ *
+ * Since: 1.2
+ */
+NMVpnEditorPlugin *
+nm_vpn_editor_plugin_load_from_file  (const char *plugin_name,
+                                      const char *check_service,
+                                      int check_owner,
+                                      NMUtilsCheckFilePredicate check_file,
+                                      gpointer user_data,
+                                      GError **error)
+{
+	return _nm_vpn_editor_plugin_load (plugin_name,
+	                                   TRUE,
+	                                   check_service,
+	                                   check_owner,
+	                                   check_file,
+	                                   user_data,
+	                                   error);
 }
 
 /*********************************************************************/
