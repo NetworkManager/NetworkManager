@@ -228,7 +228,8 @@ create_and_realize (NMDevice *device,
 
 	lnk.mode = setting_mode_to_platform (nm_setting_macvlan_get_mode (s_macvlan));
 	if (!lnk.mode) {
-		nm_log_info (LOGD_DEVICE, "unsupported MACVLAN mode %u in connection %s",
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "unsupported MACVLAN mode %u in connection %s",
 		             nm_setting_macvlan_get_mode (s_macvlan),
 		             nm_connection_get_uuid (connection));
 		return FALSE;
