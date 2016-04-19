@@ -240,7 +240,7 @@ create_and_realize (NMDevice *device,
 	NMPlatformError plerr;
 
 	if (!NM_IS_DEVICE_INFINIBAND (parent)) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "Parent interface %s must be an InfiniBand interface",
 		             nm_device_get_iface (parent));
 		return FALSE;
@@ -251,14 +251,14 @@ create_and_realize (NMDevice *device,
 	/* Can only create partitions at this time */
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 	if (p_key < 0) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "only InfiniBand partitions can be created");
 		return FALSE;
 	}
 
 	parent_ifindex = nm_device_get_ifindex (parent);
 	if (parent_ifindex <= 0) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "failed to get InfiniBand parent %s ifindex",
 		             nm_device_get_iface (parent));
 		return FALSE;
