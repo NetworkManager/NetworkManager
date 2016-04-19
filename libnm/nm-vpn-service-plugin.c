@@ -994,19 +994,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (!proxy)
 		goto out;
 
-	ret = g_dbus_proxy_call_sync (proxy,
-	                              "RequestName",
-	                              g_variant_new ("(su)", priv->dbus_service_name, 0),
-	                              G_DBUS_CALL_FLAGS_NONE, -1,
-	                              cancellable, error);
-	g_object_unref (proxy);
-	if (!ret) {
-		if (error && *error)
-			g_dbus_error_strip_remote_error (*error);
-		goto out;
-	}
-	g_variant_unref (ret);
-
 	priv->dbus_vpn_service_plugin = nmdbus_vpn_plugin_skeleton_new ();
 	if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (priv->dbus_vpn_service_plugin),
 	                                       connection,
@@ -1029,6 +1016,19 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	nm_vpn_service_plugin_set_connection (plugin, connection);
 	nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_INIT);
+
+	ret = g_dbus_proxy_call_sync (proxy,
+	                              "RequestName",
+	                              g_variant_new ("(su)", priv->dbus_service_name, 0),
+	                              G_DBUS_CALL_FLAGS_NONE, -1,
+	                              cancellable, error);
+	g_object_unref (proxy);
+	if (!ret) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
+		goto out;
+	}
+	g_variant_unref (ret);
 
 	success = TRUE;
 
