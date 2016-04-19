@@ -1058,3 +1058,8 @@ global:
 	nm_vpn_service_plugin_set_ip6_config;
 	nm_vpn_service_plugin_set_login_banner;
 } libnm_1_0_0;
+
+libnm_1_4_0 {
+global:
+	nm_vpn_editor_plugin_load;
+} libnm_1_2_0;

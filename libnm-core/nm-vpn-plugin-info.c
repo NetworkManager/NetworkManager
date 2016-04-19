@@ -620,12 +620,12 @@ nm_vpn_plugin_info_get_program (NMVpnPluginInfo *self)
 gboolean
 nm_vpn_plugin_info_supports_multiple (NMVpnPluginInfo *self)
 {
+	const char *s;
+
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), FALSE);
 
-	return g_key_file_get_boolean (NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->keyfile,
-	                               NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
-	                               "supports-multiple-connections",
-	                               NULL);
+	s = nm_vpn_plugin_info_lookup_property (self, NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION, "supports-multiple-connections");
+	return _nm_utils_ascii_str_to_bool (s, FALSE);
 }
 
 
@@ -752,12 +752,13 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 	}
 
 	priv->editor_plugin_loaded = TRUE;
-	priv->editor_plugin = nm_vpn_editor_plugin_load_from_file (plugin_filename,
-	                                                           priv->service,
-	                                                           getuid (),
-	                                                           NULL,
-	                                                           NULL,
-	                                                           error);
+	priv->editor_plugin = _nm_vpn_editor_plugin_load (plugin_filename,
+	                                                  FALSE,
+	                                                  priv->service,
+	                                                  getuid (),
+	                                                  NULL,
+	                                                  NULL,
+	                                                  error);
 	return priv->editor_plugin;
 }
 
@@ -877,14 +878,15 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		for (j = 0; keys && keys[j]; j++) {
 			char *s;
 
-			/* Lookup the value via get_string(). We want that behavior.
-			 * You could still lookup the original values via g_key_file_get_value()
-			 * based on priv->keyfile. */
+			/* Lookup the value via get_string(). We want that behavior for all our
+			 * values. */
 			s = g_key_file_get_string (priv->keyfile, groups[i], keys[j], NULL);
 			if (s)
 				g_hash_table_insert (priv->keys, _nm_utils_strstrdictkey_create (groups[i], keys[j]), s);
 		}
 	}
+
+	g_clear_pointer (&priv->keyfile, g_key_file_unref);
 
 	return TRUE;
 }
@@ -948,8 +950,9 @@ finalize (GObject *object)
 	g_free (priv->service);
 	g_strfreev (priv->aliases);
 	g_free (priv->filename);
-	g_key_file_unref (priv->keyfile);
 	g_hash_table_unref (priv->keys);
+
+	g_clear_pointer (&priv->keyfile, g_key_file_unref);
 
 	G_OBJECT_CLASS (nm_vpn_plugin_info_parent_class)->finalize (object);
 }
