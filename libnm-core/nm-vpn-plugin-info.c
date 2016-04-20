@@ -633,6 +633,25 @@ nm_vpn_plugin_info_get_auth_dialog (NMVpnPluginInfo *self)
 }
 
 /**
+ * nm_vpn_plugin_info_supports_hints:
+ * @self: plugin info instance
+ *
+ * Returns: %TRUE if the supports hints for secret requests, otherwise %FALSE
+ *
+ * Since: 1.4
+ */
+gboolean
+nm_vpn_plugin_info_supports_hints (NMVpnPluginInfo *self)
+{
+	const char *s;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), FALSE);
+
+	s = nm_vpn_plugin_info_lookup_property (self, NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "supports-hints");
+	return _nm_utils_ascii_str_to_bool (s, FALSE);
+}
+
+/**
  * nm_vpn_plugin_info_get_plugin:
  * @self: plugin info instance
  *
