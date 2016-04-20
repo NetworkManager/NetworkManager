@@ -2138,8 +2138,12 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	_LOGD (LOGD_DEVICE, "unrealize (ifindex %d)", ifindex > 0 ? ifindex : 0);
 
 	if (remove_resources) {
-		if (ifindex > 0)
+		if (NM_DEVICE_GET_CLASS (self)->unrealize) {
+			if (!NM_DEVICE_GET_CLASS (self)->unrealize (self, error))
+				return FALSE;
+		} else if (ifindex > 0) {
 			nm_platform_link_delete (NM_PLATFORM_GET, ifindex);
+		}
 	}
 
 	NM_DEVICE_GET_CLASS (self)->unrealize_notify (self);

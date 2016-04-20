@@ -180,6 +180,14 @@ typedef struct {
 	void        (*realize_start_notify) (NMDevice *self, const NMPlatformLink *plink);
 
 	/**
+	 * unrealize():
+	 * @self: the #NMDevice
+	 *
+	 * Remove the device backing resources.
+	 */
+	gboolean               (*unrealize) (NMDevice *self, GError **error);
+
+	/**
 	 * unrealize_notify():
 	 * @self: the #NMDevice
 	 *
