@@ -5100,7 +5100,7 @@ link_release (NMPlatform *platform, int master, int slave)
 /******************************************************************/
 
 static gboolean
-_infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const char *action, char **ifname)
+_infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const char *action, char *out_partition_name)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
@@ -5110,10 +5110,13 @@ _infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const
 	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
 
 	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
-	if (!obj_parent || !obj_parent->link.name[0])
-		g_return_val_if_reached (FALSE);
+	if (!obj_parent || !obj_parent->link.name[0]) {
+		errno = ENOENT;
+		return FALSE;
+	}
 
-	*ifname = g_strdup_printf ("%s.%04x", obj_parent->link.name, p_key);
+	if (out_partition_name)
+		nm_utils_new_infiniband_name (out_partition_name, obj_parent->link.name, p_key);
 
 	path = g_strdup_printf ("/sys/class/net/%s/%s",
 	                        NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
@@ -5128,15 +5131,15 @@ static gboolean
 infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	const NMPObject *obj;
-	gs_free char *ifname = NULL;
+	char name[IFNAMSIZ];
 
-	if (!_infiniband_partition_action (platform, parent, p_key, "create_child", &ifname))
+	if (!_infiniband_partition_action (platform, parent, p_key, "create_child", name))
 		return FALSE;
 
-	do_request_link (platform, 0, ifname);
+	do_request_link (platform, 0, name);
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-	                                  0, ifname, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
+	                                  0, name, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
 	if (out_link)
 		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
@@ -5145,9 +5148,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMP
 static gboolean
 infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 {
-	gs_free char *ifname = NULL;
-
-	if (!_infiniband_partition_action (platform, parent, p_key, "delete_child", &ifname)) {
+	if (!_infiniband_partition_action (platform, parent, p_key, "delete_child", NULL)) {
 		if (errno != ENODEV)
 			return FALSE;
 	}

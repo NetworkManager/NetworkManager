@@ -709,12 +709,13 @@ static gboolean
 infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device, *parent_device;
-	gs_free char *name = NULL;
+	char name[IFNAMSIZ];
 
 	parent_device = link_get (platform, parent);
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
-	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
+	nm_utils_new_infiniband_name (name, parent_device->link.name, p_key);
+
 	if (!link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0, out_link))
 		return FALSE;
 
@@ -726,7 +727,6 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMP
 	device->lnk->lnk_infiniband.p_key = p_key;
 	device->lnk->lnk_infiniband.mode = "datagram";
 	device->link.parent = parent;
-
 	return TRUE;
 }
 
@@ -739,7 +739,7 @@ infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 	parent_device = link_get (platform, parent);
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
-	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
+	nm_utils_new_infiniband_name (name, parent_device->link.name, p_key);
 	return link_delete (platform, nm_platform_link_get_ifindex (platform, name));
 }
 
