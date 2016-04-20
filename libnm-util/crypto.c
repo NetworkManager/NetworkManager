@@ -654,6 +654,9 @@ crypto_is_pkcs12_data (const GByteArray *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	if (!data->len)
+		return FALSE;
+
 	success = crypto_verify_pkcs12 (data, NULL, &error);
 	if (success == FALSE) {
 		/* If the error was just a decryption error, then it's pkcs#12 */

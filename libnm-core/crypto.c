@@ -641,6 +641,9 @@ crypto_is_pkcs12_data (const guint8 *data,
 	GError *local = NULL;
 	gboolean success;
 
+	if (!data_len)
+		return FALSE;
+
 	g_return_val_if_fail (data != NULL, FALSE);
 
 	if (!crypto_init (error))
