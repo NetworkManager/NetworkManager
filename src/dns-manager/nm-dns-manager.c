@@ -468,12 +468,16 @@ write_resolv_conf_contents (FILE *f,
                             const char *content,
                             GError **error)
 {
+	int errsv;
+
 	if (fprintf (f, "%s", content) < 0) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not write " _PATH_RESCONF ": %s",
-		             g_strerror (errno));
+		             g_strerror (errsv));
+		errno = errsv;
 		return FALSE;
 	}
 
@@ -572,6 +576,7 @@ update_resolv_conf (NMDnsManager *self,
 	gboolean success;
 	gs_free char *content = NULL;
 	SpawnResult write_file_result = SR_SUCCESS;
+	int errsv;
 
 	/* If we are not managing /etc/resolv.conf and it points to
 	 * MY_RESOLV_CONF, don't write the private DNS configuration to
@@ -584,7 +589,7 @@ update_resolv_conf (NMDnsManager *self,
 		gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
 
 		if (g_strcmp0 (path, MY_RESOLV_CONF) == 0) {
-			_LOGD ("not updating " _PATH_RESCONF
+			_LOGD ("update-resolv-conf: not updating " _PATH_RESCONF
 			       " since it points to " MY_RESOLV_CONF);
 			return SR_SUCCESS;
 		}
@@ -593,29 +598,46 @@ update_resolv_conf (NMDnsManager *self,
 	content = create_resolv_conf (searches, nameservers, options);
 
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
+		GError *local = NULL;
+
 		/* we first write to /etc/resolv.conf directly. If that fails,
 		 * we still continue to write to runstatedir but remember the
 		 * error. */
-		if (!g_file_set_contents (_PATH_RESCONF, content, -1, error)) {
+		if (!g_file_set_contents (_PATH_RESCONF, content, -1, &local)) {
+			_LOGT ("update-resolv-conf: write to %s failed (rc-managed=file, %s)",
+			       _PATH_RESCONF, local->message);
 			write_file_result = SR_ERROR;
+			g_propagate_error (error, local);
 			error = NULL;
+		} else {
+			_LOGT ("update-resolv-conf: write to %s succeeded (rc-managed=file)",
+			       _PATH_RESCONF);
 		}
 	}
 
 	if ((f = fopen (MY_RESOLV_CONF_TMP, "w")) == NULL) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not open %s: %s",
 		             MY_RESOLV_CONF_TMP,
-		             g_strerror (errno));
+		             g_strerror (errsv));
+		_LOGT ("update-resolv-conf: open temporary file %s failed (%s)",
+		       MY_RESOLV_CONF_TMP, g_strerror (errsv));
 		return SR_ERROR;
 	}
 
 	success = write_resolv_conf_contents (f, content, error);
+	if (!success) {
+		errsv = errno;
+		_LOGT ("update-resolv-conf: write temporary file %s failed (%s)",
+		       MY_RESOLV_CONF_TMP, g_strerror (errsv));
+	}
 
 	if (fclose (f) < 0) {
 		if (success) {
+			errsv = errno;
 			/* only set an error here if write_resolv_conf() was successful,
 			 * since its error is more important.
 			 */
@@ -624,39 +646,66 @@ update_resolv_conf (NMDnsManager *self,
 			             NM_MANAGER_ERROR_FAILED,
 			             "Could not close %s: %s",
 			             MY_RESOLV_CONF_TMP,
-			             g_strerror (errno));
+			             g_strerror (errsv));
+			_LOGT ("update-resolv-conf: close temporary file %s failed (%s)",
+			       MY_RESOLV_CONF_TMP, g_strerror (errsv));
 		}
 		return SR_ERROR;
 	} else if (!success)
 		return SR_ERROR;
 
 	if (rename (MY_RESOLV_CONF_TMP, MY_RESOLV_CONF) < 0) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not replace %s: %s",
 		             MY_RESOLV_CONF,
 		             g_strerror (errno));
+		_LOGT ("update-resolv-conf: failed to rename temporary file %s to %s (%s)",
+		       MY_RESOLV_CONF_TMP, MY_RESOLV_CONF, g_strerror (errsv));
 		return SR_ERROR;
 	}
 
-	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE)
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
+		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=file)",
+		       MY_RESOLV_CONF);
 		return write_file_result;
+	}
 
-	if (rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE)
+	if (rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE) {
+		_LOGT ("update-resolv-conf: write internal file %s succeeded", MY_RESOLV_CONF);
 		return SR_SUCCESS;
+	}
 
 	/* A symlink pointing to NM's own resolv.conf (MY_RESOLV_CONF) is always
 	 * overwritten to ensure that changes are indicated with inotify.  Symlinks
 	 * pointing to any other file are never overwritten.
 	 */
-	if (lstat (_PATH_RESCONF, &st) != -1) {
+	if (lstat (_PATH_RESCONF, &st) != 0) {
+		errsv = errno;
+		if (errsv != ENOENT) {
+			/* NM cannot read /etc/resolv.conf */
+			_LOGT ("update-resolv-conf: write internal file %s succeeded but lstat(%s) failed (%s)",
+			       MY_RESOLV_CONF, _PATH_RESCONF, g_strerror (errsv));
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_FAILED,
+			             "Could not lstat %s: %s",
+			             _PATH_RESCONF,
+			             g_strerror (errsv));
+			return SR_ERROR;
+		}
+	} else {
 		if (S_ISLNK (st.st_mode)) {
 			if (stat (_PATH_RESCONF, &st) != -1) {
 				gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
 
-				if (g_strcmp0 (path, MY_RESOLV_CONF) != 0) {
+				if (!path || !nm_streq (path, MY_RESOLV_CONF)) {
 					/* It's not NM's symlink; do nothing */
+					_LOGT ("update-resolv-conf: write internal file %s succeeded "
+					       "but don't update %s as it points to %s",
+					       MY_RESOLV_CONF, _PATH_RESCONF, path ?: "");
 					return SR_SUCCESS;
 				}
 
@@ -667,56 +716,64 @@ update_resolv_conf (NMDnsManager *self,
 				 * some other program is probably managing resolv.conf and
 				 * NM should not touch it.
 				 */
+				_LOGT ("update-resolv-conf: write internal file %s succeeded "
+				       "but don't update %s as the symlinks points somewhere else",
+				       MY_RESOLV_CONF, _PATH_RESCONF);
 				return SR_SUCCESS;
 			}
 		}
-	} else if (errno != ENOENT) {
-		/* NM cannot read /etc/resolv.conf */
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "Could not lstat %s: %s",
-		             _PATH_RESCONF,
-		             g_strerror (errno));
-		return SR_ERROR;
 	}
 
 	/* By this point, either /etc/resolv.conf does not exist, is a regular
 	 * file, or is a symlink already owned by NM.  In all cases /etc/resolv.conf
 	 * is replaced with a symlink pointing to NM's resolv.conf in /var/run/.
 	 */
-	if (unlink (RESOLV_CONF_TMP) == -1 && errno != ENOENT) {
+	if (   unlink (RESOLV_CONF_TMP) != 0
+	    && ((errsv = errno) != ENOENT)) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not unlink %s: %s",
 		             RESOLV_CONF_TMP,
-		             g_strerror (errno));
+		             g_strerror (errsv));
+		_LOGT ("update-resolv-conf: write internal file %s succeeded "
+		       "but canot delete temporary file %s: %s",
+		       MY_RESOLV_CONF, RESOLV_CONF_TMP, g_strerror (errsv));
 		return SR_ERROR;
 	}
 
 	if (symlink (MY_RESOLV_CONF, RESOLV_CONF_TMP) == -1) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not create symlink %s pointing to %s: %s",
 		             RESOLV_CONF_TMP,
 		             MY_RESOLV_CONF,
-		             g_strerror (errno));
+		             g_strerror (errsv));
+		_LOGT ("update-resolv-conf: write internal file %s succeeded "
+		       "but failed to symlink %s: %s",
+		       MY_RESOLV_CONF, RESOLV_CONF_TMP, g_strerror (errsv));
 		return SR_ERROR;
 	}
 
 	if (rename (RESOLV_CONF_TMP, _PATH_RESCONF) == -1) {
+		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not rename %s to %s: %s",
 		             RESOLV_CONF_TMP,
 		             _PATH_RESCONF,
-		             g_strerror (errno));
+		             g_strerror (errsv));
+		_LOGT ("update-resolv-conf: write internal file %s succeeded "
+		       "but failed to rename temporary symlink %s to %s: %s",
+		       MY_RESOLV_CONF, RESOLV_CONF_TMP, _PATH_RESCONF, g_strerror (errsv));
 		return SR_ERROR;
 	}
 
+	_LOGT ("update-resolv-conf: write internal file %s succeeded and update symlink %s",
+	       MY_RESOLV_CONF, _PATH_RESCONF);
 	return SR_SUCCESS;
 }
 
