@@ -1888,11 +1888,12 @@ nm_platform_link_gre_add (NMPlatform *self,
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
-NMPlatformError
-nm_platform_link_infiniband_add (NMPlatform *self,
-                                 int parent,
-                                 int p_key,
-                                 const NMPlatformLink **out_link)
+static NMPlatformError
+_infiniband_add_add_or_delete (NMPlatform *self,
+                               int parent,
+                               int p_key,
+                               gboolean add,
+                               const NMPlatformLink **out_link)
 {
 	gs_free char *parent_name = NULL;
 	gs_free char *name = NULL;
@@ -1909,16 +1910,41 @@ nm_platform_link_infiniband_add (NMPlatform *self,
 		return NM_PLATFORM_ERROR_WRONG_TYPE;
 
 	name = g_strdup_printf ("%s.%04x", parent_name, p_key);
-	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_INFINIBAND, out_link);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
-		return plerr;
 
-	_LOGD ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
-	       name, parent_name, parent, p_key);
-	if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
-		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	if (add) {
+		plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_INFINIBAND, out_link);
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+			return plerr;
+
+		_LOGD ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
+		       name, parent_name, parent, p_key);
+		if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
+			return NM_PLATFORM_ERROR_UNSPECIFIED;
+	} else {
+		if (!klass->infiniband_partition_delete (self, parent, p_key))
+			return NM_PLATFORM_ERROR_UNSPECIFIED;
+	}
+
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
+
+NMPlatformError
+nm_platform_link_infiniband_add (NMPlatform *self,
+                                 int parent,
+                                 int p_key,
+                                 const NMPlatformLink **out_link)
+{
+	return _infiniband_add_add_or_delete (self, parent, p_key, TRUE, out_link);
+}
+
+NMPlatformError
+nm_platform_link_infiniband_delete (NMPlatform *self,
+                                   int parent,
+                                   int p_key)
+{
+	return _infiniband_add_add_or_delete (self, parent, p_key, FALSE, NULL);
+}
+
 
 gboolean
 nm_platform_link_infiniband_get_properties (NMPlatform *self,

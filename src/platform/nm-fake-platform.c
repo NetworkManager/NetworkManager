@@ -731,6 +731,19 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMP
 }
 
 static gboolean
+infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
+{
+	NMFakePlatformLink *parent_device;
+	gs_free char *name = NULL;
+
+	parent_device = link_get (platform, parent);
+	g_return_val_if_fail (parent_device != NULL, FALSE);
+
+	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
+	return link_delete (platform, nm_platform_link_get_ifindex (platform, name));
+}
+
+static gboolean
 wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -1460,6 +1473,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_vxlan_add = link_vxlan_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
+	platform_class->infiniband_partition_delete = infiniband_partition_delete;
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;
