@@ -39,7 +39,7 @@ added_cb (GObject *client,
 {
 	GMainLoop *loop = user_data;
 	NMRemoteConnection *remote;
-	GError *error;
+	GError *error = NULL;
 
 	/* NM responded to our request; either handle the resulting error or
 	 * print out the object path of the connection we just added.
