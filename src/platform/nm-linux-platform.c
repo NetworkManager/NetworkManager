@@ -5085,6 +5085,8 @@ _infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const
 	gs_free char *path = NULL;
 	gs_free char *id = NULL;
 
+	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
+
 	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
 	if (!obj_parent || !obj_parent->link.name[0])
 		g_return_val_if_reached (FALSE);
