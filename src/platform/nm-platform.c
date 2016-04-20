@@ -1895,8 +1895,8 @@ _infiniband_add_add_or_delete (NMPlatform *self,
                                gboolean add,
                                const NMPlatformLink **out_link)
 {
-	gs_free char *parent_name = NULL;
 	gs_free char *name = NULL;
+	const NMPlatformLink *parent_link;
 	NMPlatformError plerr;
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
@@ -1904,12 +1904,14 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (p_key >= 0, NM_PLATFORM_ERROR_BUG);
 
-	parent_name = g_strdup (nm_platform_link_get_name (self, parent));
-	if (   !parent_name
-	    || nm_platform_link_get_type (self, parent) != NM_LINK_TYPE_INFINIBAND)
+	parent_link = nm_platform_link_get (self, parent);
+	if (!parent_link)
+		return NM_PLATFORM_ERROR_NOT_FOUND;
+
+	if (parent_link->type != NM_LINK_TYPE_INFINIBAND)
 		return NM_PLATFORM_ERROR_WRONG_TYPE;
 
-	name = g_strdup_printf ("%s.%04x", parent_name, p_key);
+	name = g_strdup_printf ("%s.%04x", parent_link->name, p_key);
 
 	if (add) {
 		plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_INFINIBAND, out_link);
@@ -1917,7 +1919,7 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 			return plerr;
 
 		_LOGD ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
-		       name, parent_name, parent, p_key);
+		       name, parent_link->name, parent, p_key);
 		if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	} else {
