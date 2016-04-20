@@ -3304,7 +3304,7 @@ _activation_auth_done (NMActiveConnection *active,
 			g_dbus_method_invocation_return_value (context,
 			                                       g_variant_new ("(o)",
 			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
-			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE,
+			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE, NULL,
 			                            subject, NULL);
 			g_object_unref (active);
 			return;
@@ -3316,7 +3316,7 @@ _activation_auth_done (NMActiveConnection *active,
 	}
 
 	g_assert (error);
-	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE,
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 	                            subject, error->message);
 	_internal_activation_failed (self, active, error->message);
 
@@ -3404,7 +3404,7 @@ impl_manager_activate_connection (NMManager *self,
 
 error:
 	if (connection) {
-		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE,
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 		                            subject, error->message);
 	}
 	g_clear_object (&active);
@@ -3453,6 +3453,7 @@ activation_add_done (NMSettings *settings,
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 			                            nm_active_connection_get_settings_connection (active),
 			                            TRUE,
+			                            NULL,
 			                            nm_active_connection_get_subject (active),
 			                            NULL);
 			return;
@@ -3467,6 +3468,7 @@ activation_add_done (NMSettings *settings,
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 	                            NULL,
 	                            FALSE,
+	                            NULL,
 	                            nm_active_connection_get_subject (active),
 	                            error->message);
 	g_clear_error (&local);
@@ -3511,6 +3513,7 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 		                            NULL,
 		                            FALSE,
+		                            NULL,
 		                            nm_active_connection_get_subject (active),
 		                            error->message);
 		g_dbus_method_invocation_take_error (context, error);
@@ -3612,7 +3615,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	return;
 
 error:
-	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, NULL, FALSE, subject, error->message);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, NULL, FALSE, NULL, subject, error->message);
 	g_clear_object (&connection);
 	g_slist_free (all_connections);
 	g_clear_object (&subject);
@@ -3708,6 +3711,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE,
 		                            nm_active_connection_get_settings_connection (active),
 		                            !error,
+		                            NULL,
 		                            nm_auth_chain_get_subject (chain),
 		                            error ? error->message : NULL);
 	}
@@ -3781,7 +3785,7 @@ impl_manager_deactivate_connection (NMManager *self,
 done:
 	if (error) {
 		if (connection) {
-			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE, connection, FALSE,
+			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE, connection, FALSE, NULL,
 			                            subject, error->message);
 		}
 		g_dbus_method_invocation_take_error (context, error);

@@ -67,13 +67,13 @@ GType nm_audit_manager_get_type (void);
 NMAuditManager *nm_audit_manager_get (void);
 gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
 
-#define nm_audit_log_connection_op(op, connection, result, subject_context, reason) \
+#define nm_audit_log_connection_op(op, connection, result, args, subject_context, reason) \
 	G_STMT_START { \
 		NMAuditManager *_audit = nm_audit_manager_get (); \
 		\
 		if (nm_audit_manager_audit_enabled (_audit)) { \
 			_nm_audit_manager_log_connection_op (_audit, __FILE__, __LINE__, G_STRFUNC, \
-			                                     (op), (connection), (result), (subject_context), \
+			                                     (op), (connection), (result), (args), (subject_context), \
 			                                     (reason)); \
 		} \
 	} G_STMT_END
@@ -100,7 +100,8 @@ gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
 
 void _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, NMSettingsConnection *connection,
-                                          gboolean result, gpointer subject_context, const char *reason);
+                                          gboolean result, const char *args, gpointer subject_context,
+                                          const char *reason);
 
 void _nm_audit_manager_log_control_op    (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, const char *arg,

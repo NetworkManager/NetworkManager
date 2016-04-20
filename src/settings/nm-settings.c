@@ -1373,12 +1373,12 @@ impl_settings_add_connection_add_cb (NMSettings *self,
 {
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
-		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, subject, error->message);
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, NULL, subject, error->message);
 	} else {
 		g_dbus_method_invocation_return_value (
 		    context,
 		    g_variant_new ("(o)", nm_connection_get_path (NM_CONNECTION (connection))));
-		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE,
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE, NULL,
 		                            subject, NULL);
 	}
 }
