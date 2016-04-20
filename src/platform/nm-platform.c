@@ -1895,14 +1895,18 @@ _infiniband_add_add_or_delete (NMPlatform *self,
                                gboolean add,
                                const NMPlatformLink **out_link)
 {
-	gs_free char *name = NULL;
+	char name[IFNAMSIZ];
 	const NMPlatformLink *parent_link;
 	NMPlatformError plerr;
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
-	g_return_val_if_fail (p_key >= 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (p_key >= 0 && p_key <= 0xffff, NM_PLATFORM_ERROR_BUG);
+
+	/* the special keys 0x0000 and 0x8000 are not allowed. */
+	if (NM_IN_SET (p_key, 0, 0x8000))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
 
 	parent_link = nm_platform_link_get (self, parent);
 	if (!parent_link)
@@ -1911,7 +1915,7 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 	if (parent_link->type != NM_LINK_TYPE_INFINIBAND)
 		return NM_PLATFORM_ERROR_WRONG_TYPE;
 
-	name = g_strdup_printf ("%s.%04x", parent_link->name, p_key);
+	nm_utils_new_infiniband_name (name, parent_link->name, p_key);
 
 	if (add) {
 		plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_INFINIBAND, out_link);

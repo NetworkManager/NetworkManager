@@ -176,6 +176,11 @@
  * Forward declarations and enums
  ******************************************************************/
 
+typedef enum {
+	INFINIBAND_ACTION_CREATE_CHILD,
+	INFINIBAND_ACTION_DELETE_CHILD,
+} InfinibandAction;
+
 enum {
 	DELAYED_ACTION_IDX_REFRESH_ALL_LINKS,
 	DELAYED_ACTION_IDX_REFRESH_ALL_IP4_ADDRESSES,
@@ -2473,6 +2478,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	gsize len;
 	char *actual;
 	gs_free char *actual_free = NULL;
+	int errsv;
 
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
@@ -2483,18 +2489,22 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	/* Don't write to suspicious locations */
 	g_assert (!strstr (path, "/../"));
 
-	if (!nm_platform_netns_push (platform, &netns))
+	if (!nm_platform_netns_push (platform, &netns)) {
+		errno = ENETDOWN;
 		return FALSE;
+	}
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
-		if (errno == ENOENT) {
+		errsv = errno;
+		if (errsv == ENOENT) {
 			_LOGD ("sysctl: failed to open '%s': (%d) %s",
-			       path, errno, strerror (errno));
+			       path, errsv, strerror (errsv));
 		} else {
 			_LOGE ("sysctl: failed to open '%s': (%d) %s",
-			       path, errno, strerror (errno));
+			       path, errsv, strerror (errsv));
 		}
+		errno = errsv;
 		return FALSE;
 	}
 
@@ -2515,26 +2525,43 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	actual[len] = '\0';
 
 	/* Try to write the entire value three times if a partial write occurs */
+	errsv = 0;
 	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
-			if (errno == EINTR) {
+			errsv = errno;
+			if (errsv == EINTR) {
 				_LOGD ("sysctl: interrupted, will try again");
 				continue;
 			}
 			break;
 		}
 	}
-	if (nwrote == -1 && errno != EEXIST) {
+	if (nwrote == -1 && errsv != EEXIST) {
 		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
-		       path, value, errno, strerror (errno));
+		       path, value, errsv, strerror (errsv));
 	} else if (nwrote < len) {
 		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
 	}
 
-	close (fd);
-	return (nwrote == len);
+	if (nwrote != len) {
+		if (close (fd) != 0) {
+			if (errsv != 0)
+				errno = errsv;
+		} else if (errsv != 0)
+			errno = errsv;
+		else
+			errno = EIO;
+		return FALSE;
+	}
+	if (close (fd) != 0) {
+		/* errno is already properly set. */
+		return FALSE;
+	}
+
+	/* success. errno is undefined (no need to set). */
+	return TRUE;
 }
 
 static GSList *sysctl_clear_cache_list;
@@ -5078,57 +5105,67 @@ link_release (NMPlatform *platform, int master, int slave)
 /******************************************************************/
 
 static gboolean
-_infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const char *action, char **ifname)
+_infiniband_partition_action (NMPlatform *platform,
+                              InfinibandAction action,
+                              int parent,
+                              int p_key,
+                              const NMPlatformLink **out_link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
-	gs_free char *path = NULL;
-	gs_free char *id = NULL;
+	const NMPObject *obj;
+	char path[NM_STRLEN ("/sys/class/net/%s/%s") + IFNAMSIZ + 100];
+	char id[20];
+	char name[IFNAMSIZ];
+	gboolean success;
+
+	nm_assert (NM_IN_SET (action, INFINIBAND_ACTION_CREATE_CHILD, INFINIBAND_ACTION_DELETE_CHILD));
+	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
 
 	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
-	if (!obj_parent || !obj_parent->link.name[0])
-		g_return_val_if_reached (FALSE);
-
-	*ifname = g_strdup_printf ("%s.%04x", obj_parent->link.name, p_key);
-
-	path = g_strdup_printf ("/sys/class/net/%s/%s",
-	                        NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
-	                        action);
-	id = g_strdup_printf ("0x%04x", p_key);
-
-	return nm_platform_sysctl_set (platform, path, id);
-}
-
-
-static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
-{
-	const NMPObject *obj;
-	gs_free char *ifname = NULL;
-
-	if (!_infiniband_partition_action (platform, parent, p_key, "create_child", &ifname))
+	if (!obj_parent || !obj_parent->link.name[0]) {
+		errno = ENOENT;
 		return FALSE;
+	}
 
-	do_request_link (platform, 0, ifname);
+	nm_sprintf_buf (path,
+	                "/sys/class/net/%s/%s",
+	                NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
+	                (action == INFINIBAND_ACTION_CREATE_CHILD
+	                     ? "create_child"
+	                     : "delete_child"));
+	nm_sprintf_buf (id, "0x%04x", p_key);
+	success = nm_platform_sysctl_set (platform, path, id);
+	if (!success) {
+		if (   action == INFINIBAND_ACTION_DELETE_CHILD
+		    && errno == ENODEV)
+			return TRUE;
+		return FALSE;
+	}
 
-	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-	                                  0, ifname, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
+	nm_utils_new_infiniband_name (name, obj_parent->link.name, p_key);
+	do_request_link (platform, 0, name);
+
+	if (action == INFINIBAND_ACTION_DELETE_CHILD)
+		return TRUE;
+
+	obj = nmp_cache_lookup_link_full (priv->cache, 0, name, FALSE,
+	                                  NM_LINK_TYPE_INFINIBAND, NULL, NULL);
 	if (out_link)
 		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
 }
 
 static gboolean
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
+{
+	return _infiniband_partition_action (platform, INFINIBAND_ACTION_CREATE_CHILD, parent, p_key, out_link);
+}
+
+static gboolean
 infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 {
-	gs_free char *ifname = NULL;
-
-	if (!_infiniband_partition_action (platform, parent, p_key, "delete_child", &ifname)) {
-		if (errno != ENODEV)
-			return FALSE;
-	}
-
-	return TRUE;
+	return _infiniband_partition_action (platform, INFINIBAND_ACTION_DELETE_CHILD, parent, p_key, NULL);
 }
 
 /******************************************************************/

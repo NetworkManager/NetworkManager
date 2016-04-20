@@ -281,6 +281,7 @@ const char *nm_utils_get_ip_config_method (NMConnection *connection,
                                            GType         ip_setting_type);
 
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
+const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, int p_key);
 
 GPtrArray *nm_utils_read_resolv_conf_nameservers (const char *rc_contents);
 GPtrArray *nm_utils_read_resolv_conf_dns_options (const char *rc_contents);
