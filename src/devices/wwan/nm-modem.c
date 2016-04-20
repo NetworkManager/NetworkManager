@@ -742,7 +742,8 @@ cancel_get_secrets (NMModem *self)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 
-	nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
+	if (priv->secrets_id)
+		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
 }
 
 static void
