@@ -176,6 +176,11 @@
  * Forward declarations and enums
  ******************************************************************/
 
+typedef enum {
+	INFINIBAND_ACTION_CREATE_CHILD,
+	INFINIBAND_ACTION_DELETE_CHILD,
+} InfinibandAction;
+
 enum {
 	DELAYED_ACTION_IDX_REFRESH_ALL_LINKS,
 	DELAYED_ACTION_IDX_REFRESH_ALL_IP4_ADDRESSES,
@@ -5100,13 +5105,21 @@ link_release (NMPlatform *platform, int master, int slave)
 /******************************************************************/
 
 static gboolean
-_infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const char *action, char *out_partition_name)
+_infiniband_partition_action (NMPlatform *platform,
+                              InfinibandAction action,
+                              int parent,
+                              int p_key,
+                              const NMPlatformLink **out_link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
+	const NMPObject *obj;
 	char path[NM_STRLEN ("/sys/class/net/%s/%s") + IFNAMSIZ + 100];
 	char id[20];
+	char name[IFNAMSIZ];
+	gboolean success;
 
+	nm_assert (NM_IN_SET (action, INFINIBAND_ACTION_CREATE_CHILD, INFINIBAND_ACTION_DELETE_CHILD));
 	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
 
 	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
@@ -5115,45 +5128,44 @@ _infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const
 		return FALSE;
 	}
 
-	if (out_partition_name)
-		nm_utils_new_infiniband_name (out_partition_name, obj_parent->link.name, p_key);
-
 	nm_sprintf_buf (path,
 	                "/sys/class/net/%s/%s",
 	                NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
-	                action);
+	                (action == INFINIBAND_ACTION_CREATE_CHILD
+	                     ? "create_child"
+	                     : "delete_child"));
 	nm_sprintf_buf (id, "0x%04x", p_key);
-	return nm_platform_sysctl_set (platform, path, id);
-}
-
-
-static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
-{
-	const NMPObject *obj;
-	char name[IFNAMSIZ];
-
-	if (!_infiniband_partition_action (platform, parent, p_key, "create_child", name))
+	success = nm_platform_sysctl_set (platform, path, id);
+	if (!success) {
+		if (   action == INFINIBAND_ACTION_DELETE_CHILD
+		    && errno == ENODEV)
+			return TRUE;
 		return FALSE;
+	}
 
+	nm_utils_new_infiniband_name (name, obj_parent->link.name, p_key);
 	do_request_link (platform, 0, name);
 
-	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-	                                  0, name, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
+	if (action == INFINIBAND_ACTION_DELETE_CHILD)
+		return TRUE;
+
+	obj = nmp_cache_lookup_link_full (priv->cache, 0, name, FALSE,
+	                                  NM_LINK_TYPE_INFINIBAND, NULL, NULL);
 	if (out_link)
 		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
 }
 
 static gboolean
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
+{
+	return _infiniband_partition_action (platform, INFINIBAND_ACTION_CREATE_CHILD, parent, p_key, out_link);
+}
+
+static gboolean
 infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 {
-	if (!_infiniband_partition_action (platform, parent, p_key, "delete_child", NULL)) {
-		if (errno != ENODEV)
-			return FALSE;
-	}
-
-	return TRUE;
+	return _infiniband_partition_action (platform, INFINIBAND_ACTION_DELETE_CHILD, parent, p_key, NULL);
 }
 
 /******************************************************************/
