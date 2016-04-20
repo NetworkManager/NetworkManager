@@ -45,6 +45,7 @@ typedef struct {
 	char *filename;
 	char *name;
 	char *service;
+	char *auth_dialog;
 	char **aliases;
 	GKeyFile *keyfile;
 
@@ -595,6 +596,43 @@ nm_vpn_plugin_info_get_service (NMVpnPluginInfo *self)
 }
 
 /**
+ * nm_vpn_plugin_info_get_auth_dialog:
+ * @self: plugin info instance
+ *
+ * Returns: the absolute path to the auth-dialog helper or %NULL.
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_vpn_plugin_info_get_auth_dialog (NMVpnPluginInfo *self)
+{
+	NMVpnPluginInfoPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
+
+	priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (priv->auth_dialog == NULL)) {
+		const char *s;
+
+		s = g_hash_table_lookup (priv->keys, _nm_utils_strstrdictkey_static (NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "auth-dialog"));
+		if (!s || !s[0])
+			priv->auth_dialog = g_strdup ("");
+		else if (g_path_is_absolute (s))
+			priv->auth_dialog = g_strdup (s);
+		else {
+			gs_free char *prog_basename;
+
+			/* for relative paths, we take the basename and assume it's in LIBEXECDIR. */
+			prog_basename = g_path_get_basename (s);
+			priv->auth_dialog = g_build_filename (LIBEXECDIR, prog_basename, NULL);
+		}
+	}
+
+	return priv->auth_dialog[0] ? priv->auth_dialog : NULL;
+}
+
+/**
  * nm_vpn_plugin_info_get_plugin:
  * @self: plugin info instance
  *
@@ -966,6 +1004,7 @@ finalize (GObject *object)
 
 	g_free (priv->name);
 	g_free (priv->service);
+	g_free (priv->auth_dialog);
 	g_strfreev (priv->aliases);
 	g_free (priv->filename);
 	g_hash_table_unref (priv->keys);
