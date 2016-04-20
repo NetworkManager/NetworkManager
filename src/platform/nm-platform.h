@@ -570,6 +570,7 @@ typedef struct {
 	                          const NMPlatformLink **out_link);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, const NMPlatformLink **out_link);
+	gboolean (*infiniband_partition_delete) (NMPlatform *, int parent, int p_key);
 
 	gboolean (*tun_add) (NMPlatform *platform, const char *name, gboolean tap, gint64 owner, gint64 group, gboolean pi,
 	                     gboolean vnet_hdr, gboolean multi_queue, const NMPlatformLink **out_link);
@@ -815,6 +816,9 @@ NMPlatformError nm_platform_link_infiniband_add (NMPlatform *self,
                                                  int parent,
                                                  int p_key,
                                                  const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_infiniband_delete (NMPlatform *self,
+                                                    int parent,
+                                                    int p_key);
 gboolean nm_platform_link_infiniband_get_properties (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
 
 gboolean nm_platform_link_veth_get_properties   (NMPlatform *self, int ifindex, int *out_peer_ifindex);

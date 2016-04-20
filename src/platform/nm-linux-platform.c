@@ -5078,24 +5078,35 @@ link_release (NMPlatform *platform, int master, int slave)
 /******************************************************************/
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
+_infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const char *action, char **ifname)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
-	const NMPObject *obj;
 	gs_free char *path = NULL;
 	gs_free char *id = NULL;
-	gs_free char *ifname = NULL;
 
 	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
 	if (!obj_parent || !obj_parent->link.name[0])
 		g_return_val_if_reached (FALSE);
 
-	ifname = g_strdup_printf ("%s.%04x", obj_parent->link.name, p_key);
+	*ifname = g_strdup_printf ("%s.%04x", obj_parent->link.name, p_key);
 
-	path = g_strdup_printf ("/sys/class/net/%s/create_child", NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name));
+	path = g_strdup_printf ("/sys/class/net/%s/%s",
+	                        NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
+	                        action);
 	id = g_strdup_printf ("0x%04x", p_key);
-	if (!nm_platform_sysctl_set (platform, path, id))
+
+	return nm_platform_sysctl_set (platform, path, id);
+}
+
+
+static gboolean
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
+{
+	const NMPObject *obj;
+	gs_free char *ifname = NULL;
+
+	if (!_infiniband_partition_action (platform, parent, p_key, "create_child", &ifname))
 		return FALSE;
 
 	do_request_link (platform, 0, ifname);
@@ -5105,6 +5116,19 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMP
 	if (out_link)
 		*out_link = obj ? &obj->link : NULL;
 	return !!obj;
+}
+
+static gboolean
+infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
+{
+	gs_free char *ifname = NULL;
+
+	if (!_infiniband_partition_action (platform, parent, p_key, "delete_child", &ifname)) {
+		if (errno != ENODEV)
+			return FALSE;
+	}
+
+	return TRUE;
 }
 
 /******************************************************************/
@@ -6381,6 +6405,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->tun_add = tun_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
+	platform_class->infiniband_partition_delete = infiniband_partition_delete;
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;
