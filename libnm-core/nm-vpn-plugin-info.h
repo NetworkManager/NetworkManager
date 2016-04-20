@@ -74,6 +74,8 @@ NM_AVAILABLE_IN_1_2
 const char *nm_vpn_plugin_info_get_name        (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2
 const char *nm_vpn_plugin_info_get_filename    (NMVpnPluginInfo *self);
+NM_AVAILABLE_IN_1_4
+const char *nm_vpn_plugin_info_get_service     (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2
 const char *nm_vpn_plugin_info_get_plugin      (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2
