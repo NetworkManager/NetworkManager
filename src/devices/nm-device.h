@@ -385,7 +385,7 @@ gboolean        nm_device_has_unmodified_applied_connection (NMDevice *self,
                                                              NMSettingCompareFlags compare_flags);
 NMSetting *     nm_device_get_applied_setting   (NMDevice *dev, GType setting_type);
 
-void            nm_device_removed               (NMDevice *dev);
+void            nm_device_removed               (NMDevice *self, gboolean unconfigure_ip_config);
 
 gboolean        nm_device_is_available          (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
 gboolean        nm_device_has_carrier           (NMDevice *dev);
