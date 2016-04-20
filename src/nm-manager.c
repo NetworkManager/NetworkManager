@@ -829,13 +829,13 @@ remove_device (NMManager *self,
                gboolean allow_unmanage)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean unmanage = FALSE;
 
 	_LOGD (LOGD_DEVICE, "(%s): removing device (allow_unmanage %d, managed %d)",
 	       nm_device_get_iface (device), allow_unmanage, nm_device_get_managed (device, FALSE));
 
 	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
 		NMActRequest *req = nm_device_get_act_request (device);
-		gboolean unmanage = FALSE;
 
 		/* Leave activated interfaces up when quitting so their configuration
 		 * can be taken over when NM restarts.  This ensures connectivity while
@@ -865,7 +865,18 @@ remove_device (NMManager *self,
 	priv->devices = g_slist_remove (priv->devices, device);
 
 	if (nm_device_is_real (device)) {
-		nm_device_removed (device);
+		gboolean unconfigure_ip_config = !quitting || unmanage;
+
+		/* When we don't unmanage the device on shutdown, we want to preserve the DNS
+		 * configuration in resolv.conf. For that, we must leak the configuration
+		 * in NMPolicy/NMDnsManager. We do that, by emitting the device-removed signal
+		 * with device's ip-config object still uncleared. In that case, NMPolicy
+		 * never learns to unconfigure the ip-config objects and does not remove them
+		 * from DNS on shutdown (which is ugly, because we don't cleanup the memory
+		 * properly).
+		 *
+		 * Control that by passing @unconfigure_ip_config.  */
+		nm_device_removed (device, unconfigure_ip_config);
 
 		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 		_notify (self, PROP_DEVICES);

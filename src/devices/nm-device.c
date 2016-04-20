@@ -2643,12 +2643,14 @@ nm_device_get_enslaved (NMDevice *self)
 /**
  * nm_device_removed:
  * @self: the #NMDevice
+ * @unconfigure_ip_config: whether to clear the IP config objects
+ *   of the device (provided, it is still not cleared at this point).
  *
  * Called by the manager when the device was removed. Releases the device from
  * the master in case it's enslaved.
  */
 void
-nm_device_removed (NMDevice *self)
+nm_device_removed (NMDevice *self, gboolean unconfigure_ip_config)
 {
 	NMDevicePrivate *priv;
 
@@ -2660,6 +2662,9 @@ nm_device_removed (NMDevice *self)
 		 * Release the slave from master, but don't touch the device. */
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
+
+	if (!unconfigure_ip_config)
+		return;
 
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface, it just clears the configuration to which policy
