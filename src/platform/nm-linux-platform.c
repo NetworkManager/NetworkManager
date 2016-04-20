@@ -5104,8 +5104,8 @@ _infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
-	gs_free char *path = NULL;
-	gs_free char *id = NULL;
+	char path[NM_STRLEN ("/sys/class/net/%s/%s") + IFNAMSIZ + 100];
+	char id[20];
 
 	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
 
@@ -5118,11 +5118,11 @@ _infiniband_partition_action (NMPlatform *platform, int parent, int p_key, const
 	if (out_partition_name)
 		nm_utils_new_infiniband_name (out_partition_name, obj_parent->link.name, p_key);
 
-	path = g_strdup_printf ("/sys/class/net/%s/%s",
-	                        NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
-	                        action);
-	id = g_strdup_printf ("0x%04x", p_key);
-
+	nm_sprintf_buf (path,
+	                "/sys/class/net/%s/%s",
+	                NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
+	                action);
+	nm_sprintf_buf (id, "0x%04x", p_key);
 	return nm_platform_sysctl_set (platform, path, id);
 }
 
