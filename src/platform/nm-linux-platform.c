@@ -2473,6 +2473,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	gsize len;
 	char *actual;
 	gs_free char *actual_free = NULL;
+	int errsv;
 
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
@@ -2483,18 +2484,22 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	/* Don't write to suspicious locations */
 	g_assert (!strstr (path, "/../"));
 
-	if (!nm_platform_netns_push (platform, &netns))
+	if (!nm_platform_netns_push (platform, &netns)) {
+		errno = ENETDOWN;
 		return FALSE;
+	}
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
-		if (errno == ENOENT) {
+		errsv = errno;
+		if (errsv == ENOENT) {
 			_LOGD ("sysctl: failed to open '%s': (%d) %s",
-			       path, errno, strerror (errno));
+			       path, errsv, strerror (errsv));
 		} else {
 			_LOGE ("sysctl: failed to open '%s': (%d) %s",
-			       path, errno, strerror (errno));
+			       path, errsv, strerror (errsv));
 		}
+		errno = errsv;
 		return FALSE;
 	}
 
@@ -2515,26 +2520,43 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	actual[len] = '\0';
 
 	/* Try to write the entire value three times if a partial write occurs */
+	errsv = 0;
 	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
-			if (errno == EINTR) {
+			errsv = errno;
+			if (errsv == EINTR) {
 				_LOGD ("sysctl: interrupted, will try again");
 				continue;
 			}
 			break;
 		}
 	}
-	if (nwrote == -1 && errno != EEXIST) {
+	if (nwrote == -1 && errsv != EEXIST) {
 		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
-		       path, value, errno, strerror (errno));
+		       path, value, errsv, strerror (errsv));
 	} else if (nwrote < len) {
 		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
 	}
 
-	close (fd);
-	return (nwrote == len);
+	if (nwrote != len) {
+		if (close (fd) != 0) {
+			if (errsv != 0)
+				errno = errsv;
+		} else if (errsv != 0)
+			errno = errsv;
+		else
+			errno = EIO;
+		return FALSE;
+	}
+	if (close (fd) != 0) {
+		/* errno is already properly set. */
+		return FALSE;
+	}
+
+	/* success. errno is undefined (no need to set). */
+	return TRUE;
 }
 
 static GSList *sysctl_clear_cache_list;
