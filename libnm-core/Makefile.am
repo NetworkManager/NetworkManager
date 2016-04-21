@@ -53,5 +53,11 @@ libnm_core_la_SOURCES += crypto_nss.c
 libnm_core_la_LIBADD += $(NSS_LIBS)
 endif
 
-BUILT_SOURCES = $(GLIB_GENERATED)
+nm-vpn-dbus-types.xml: nm-vpn-dbus-interface.h $(top_srcdir)/tools/enums-to-docbook.pl
+	$(AM_V_GEN) @PERL@ $(top_srcdir)/tools/enums-to-docbook.pl 'nm-vpn-dbus-types' 'VPN Plugin D-Bus API Types' $^ >$@
+
+nm-dbus-types.xml: nm-dbus-interface.h $(top_srcdir)/tools/enums-to-docbook.pl
+	$(AM_V_GEN) @PERL@ $(top_srcdir)/tools/enums-to-docbook.pl 'nm-dbus-types' 'NetworkManager D-Bus API Types' $^ >$@
+
+BUILT_SOURCES = $(GLIB_GENERATED) nm-vpn-dbus-types.xml nm-dbus-types.xml
 CLEANFILES = $(BUILT_SOURCES)
