@@ -21,16 +21,18 @@
 
 #include "nm-default.h"
 
+#include "wifi-utils.h"
+
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "wifi-utils.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
 #if HAVE_WEXT
 #include "wifi-utils-wext.h"
 #endif
+#include "nm-core-utils.h"
 
 gpointer
 wifi_data_new (const char *iface, int ifindex, gsize len)
@@ -162,19 +164,20 @@ wifi_utils_deinit (WifiData *data)
 }
 
 gboolean
-wifi_utils_is_wifi (const char *iface, const char *sysfs_path)
+wifi_utils_is_wifi (const char *iface)
 {
-	char phy80211_path[255];
+	char phy80211_path[NM_STRLEN ("/sys/class/net/123456789012345/phy80211\0") + 100 /*safety*/];
 	struct stat s;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
-	if (sysfs_path) {
-		/* Check for nl80211 sysfs paths */
-		g_snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", sysfs_path);
-		if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
-			return TRUE;
-	}
+	nm_sprintf_buf (phy80211_path,
+	                "/sys/class/net/%s/phy80211",
+	                NM_ASSERT_VALID_PATH_COMPONENT (iface));
+	nm_assert (strlen (phy80211_path) < sizeof (phy80211_path) - 1);
+
+	if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+		return TRUE;
 
 #if HAVE_WEXT
 	if (wifi_wext_is_wifi (iface))
