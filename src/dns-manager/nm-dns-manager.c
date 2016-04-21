@@ -164,11 +164,12 @@ typedef struct {
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,    "symlink"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,       "file"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF, "resolvconf"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,  "netconfig"),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,        "unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,        "symlink"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,           "file"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF,     "resolvconf"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,      "netconfig"),
+	NM_UTILS_LOOKUP_STR_ITEM (_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY, "internal-only"),
 );
 
 static void
@@ -1417,6 +1418,39 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 
 /******************************************************************/
 
+static NMDnsManagerResolvConfManager
+_get_resolv_conf_manager_default (void)
+{
+#if defined(RESOLVCONF_SELECTED)
+	return NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
+#elif defined(NETCONFIG_SELECTED)
+	return NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
+#else
+	return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+#endif
+}
+
+static NMDnsManagerResolvConfManager
+_get_resolv_conf_manager (NMConfig *config)
+{
+	const char *man;
+
+	man = nm_config_data_get_rc_manager (nm_config_get_data (config));
+	if (!man)
+		return _get_resolv_conf_manager_default ();
+
+	if (NM_IN_STRSET (man, "symlink", "none"))
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+	if (nm_streq (man, "file"))
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
+	if (nm_streq (man, "resolvconf"))
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
+	if (nm_streq (man, "netconfig"))
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
+
+	return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN;
+}
+
 static bool
 _get_resconf_immutable (int *immutable_cached)
 {
@@ -1509,29 +1543,19 @@ static void
 init_resolv_conf_manager (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	const char *man;
+	NMDnsManagerResolvConfManager rc_manager;
 
-	man = nm_config_data_get_rc_manager (nm_config_get_data (priv->config));
-	if (NM_IN_STRSET (man, "symlink", "none"))
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
-	else if (nm_streq0 (man, "file"))
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
-	else if (!g_strcmp0 (man, "resolvconf"))
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
-	else if (!g_strcmp0 (man, "netconfig"))
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
-	else {
-#if defined(RESOLVCONF_SELECTED)
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
-#elif defined(NETCONFIG_SELECTED)
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
-#else
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
-#endif
-		if (man)
-			_LOGW ("unknown resolv.conf manager '%s'", man);
+	rc_manager = _get_resolv_conf_manager (priv->config);
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
+		_LOGW ("unknown resolv.conf manager '%s'",
+		       nm_config_data_get_rc_manager (nm_config_get_data (priv->config)));
+		rc_manager = _get_resolv_conf_manager_default ();
 	}
 
+	if (rc_manager == priv->rc_manager)
+		return;
+
+	priv->rc_manager = rc_manager;
 	_LOGI ("using resolv.conf manager '%s'", _rc_manager_to_string (priv->rc_manager));
 }
 
