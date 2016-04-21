@@ -1470,6 +1470,8 @@ _get_resolv_conf_manager (NMConfig *config)
 		return NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
 	if (nm_streq (man, "netconfig"))
 		return NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
+	if (nm_streq (man, "unmanaged"))
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
 
 	return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN;
 }
