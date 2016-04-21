@@ -164,7 +164,7 @@ typedef struct {
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE,       "none"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,    "symlink"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,       "file"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF, "resolvconf"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,  "netconfig"),
@@ -673,7 +673,7 @@ update_resolv_conf (NMDnsManager *self,
 		return write_file_result;
 	}
 
-	if (rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE) {
+	if (rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK) {
 		_LOGT ("update-resolv-conf: write internal file %s succeeded", MY_RESOLV_CONF);
 		return SR_SUCCESS;
 	}
@@ -1068,7 +1068,7 @@ update_dns (NMDnsManager *self,
 
 	if (update) {
 		switch (priv->rc_manager) {
-		case NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE:
+		case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
 			result = update_resolv_conf (self, searches, nameservers, options, error, priv->rc_manager);
 			resolv_conf_updated = TRUE;
@@ -1087,7 +1087,7 @@ update_dns (NMDnsManager *self,
 		if (result == SR_NOTFOUND) {
 			_LOGD ("update-dns: program not available, writing to resolv.conf");
 			g_clear_error (error);
-			result = update_resolv_conf (self, searches, nameservers, options, error, NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE);
+			result = update_resolv_conf (self, searches, nameservers, options, error, NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK);
 			resolv_conf_updated = TRUE;
 		}
 	}
@@ -1512,8 +1512,8 @@ init_resolv_conf_manager (NMDnsManager *self)
 	const char *man;
 
 	man = nm_config_data_get_rc_manager (nm_config_get_data (priv->config));
-	if (!g_strcmp0 (man, "none"))
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE;
+	if (NM_IN_STRSET (man, "symlink", "none"))
+		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
 	else if (nm_streq0 (man, "file"))
 		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
 	else if (!g_strcmp0 (man, "resolvconf"))
@@ -1526,7 +1526,7 @@ init_resolv_conf_manager (NMDnsManager *self)
 #elif defined(NETCONFIG_SELECTED)
 		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
 #else
-		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE;
+		priv->rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
 #endif
 		if (man)
 			_LOGW ("unknown resolv.conf manager '%s'", man);
