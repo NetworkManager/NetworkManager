@@ -697,9 +697,8 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_IP6TNL;
 
 	if (ifname) {
+		char anycast_mask[NM_STRLEN ("/sys/class/net/123456789012345/anycast_mask\0") + 100 /*safety*/];
 		gs_free char *driver = NULL;
-		gs_free char *sysfs_path = NULL;
-		gs_free char *anycast_mask = NULL;
 		gs_free char *devtype = NULL;
 
 		/* Fallback OVS detection for kernel <= 3.16 */
@@ -716,8 +715,11 @@ _linktype_get_type (NMPlatform *platform,
 			}
 		}
 
-		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
-		anycast_mask = g_strdup_printf ("%s/anycast_mask", sysfs_path);
+		nm_sprintf_buf (anycast_mask,
+		                "/sys/class/net/%s/anycast_mask",
+		                NM_ASSERT_VALID_PATH_COMPONENT (ifname));
+		nm_assert (strlen (anycast_mask) < sizeof (anycast_mask) - 1);
+
 		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
 			return NM_LINK_TYPE_OLPC_MESH;
 
