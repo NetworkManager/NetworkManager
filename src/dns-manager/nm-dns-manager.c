@@ -1418,6 +1418,18 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 
 /******************************************************************/
 
+static void
+_clear_plugin (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	if (priv->plugin) {
+		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
+		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
+		g_clear_object (&priv->plugin);
+	}
+}
+
 static NMDnsManagerResolvConfManager
 _get_resolv_conf_manager_default (void)
 {
@@ -1509,7 +1521,7 @@ init_resolv_conf_mode (NMDnsManager *self)
 	g_free (priv->last_mode);
 	priv->last_mode = g_strdup (mode);
 	priv->last_immutable = FALSE;
-	g_clear_object (&priv->plugin);
+	_clear_plugin (self);
 	priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 
 	if (nm_streq0 (mode, "none")) {
@@ -1612,11 +1624,7 @@ dispose (GObject *object)
 
 	_LOGT ("disposing");
 
-	if (priv->plugin) {
-		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
-		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
-		g_clear_object (&priv->plugin);
-	}
+	_clear_plugin (self);
 
 	g_clear_pointer (&priv->last_mode, g_free);
 
