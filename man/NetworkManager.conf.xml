@@ -313,7 +313,7 @@ no-auto-default=*
         management mode. The default value depends on how NetworkManager
         was built. Regardless of this setting, NetworkManager will
         always write resolv.conf to its runtime state directory.</para>
-        <para><literal>none</literal>: NetworkManager will symlink
+        <para><literal>symlink</literal>: NetworkManager will symlink
         <filename>/etc/resolv.conf</filename> to its private
         resolv.conf file in the runtime state directory.</para>
         <para><literal>file</literal>: NetworkManager will write
@@ -322,6 +322,8 @@ no-auto-default=*
         resolvconf to update the DNS configuration.</para>
         <para><literal>netconfig</literal>: NetworkManager will run
         netconfig to update the DNS configuration.</para>
+        <para><literal>none</literal>: deprecated alias for
+        <literal>symlink</literal>.</para>
         </listitem>
       </varlistentry>
 

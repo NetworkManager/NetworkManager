@@ -110,10 +110,10 @@ typedef enum {
  * @_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY: dummy-manager
  *   to not write resolv.conf at all, only the internal file in
  *   NM's run state directory.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE: NM writes resolv.conf
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK: NM writes resolv.conf
  *   by symlinking it to the run state directory.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like NONE, but instead of symlinking
- *   resolv.conf, write it as a file.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like SYMLINK, but instead of
+ *   symlinking /etc/resolv.conf, write it as a file.
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF: NM is managing resolv.conf
      through resolvconf
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG: NM is managing resolv.conf
@@ -123,7 +123,7 @@ typedef enum {
  */
 typedef enum {
 	_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY,
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,
