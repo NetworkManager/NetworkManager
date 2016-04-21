@@ -154,6 +154,8 @@ test-*.trs
 /libnm-core/tests/test-setting-8021x
 /libnm-core/tests/test-setting-bond
 /libnm-core/tests/test-setting-dcb
+/libnm-core/nm-dbus-types.xml
+/libnm-core/nm-vpn-dbus-types.xml
 
 /libnm-glib/nm-secret-agent-glue.h
 /libnm-glib/nm-vpn-plugin-glue.h
