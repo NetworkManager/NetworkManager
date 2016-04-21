@@ -88,29 +88,13 @@ void nm_dns_manager_set_hostname         (NMDnsManager *self,
                                           const char *hostname);
 
 /**
- * NMDnsManagerResolvConfMode:
- * @NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED: NM is not managing resolv.conf
- * @NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT: NM is managing resolv.conf by
- *   adding and removing "nameserver" lines corresponding to the currently
- *   active connections
- * @NM_DNS_MANAGER_RESOLV_CONF_PROXY: NM is managing resolv.conf by
- *   pointing it to some other service (eg, dnsmasq) that knows the
- *   nameservers corresponding to the currently active connections.
- *
- * NMDnsManager's behavior toward /etc/resolv.conf.
- */
-typedef enum {
-	NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED,
-	NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT,
-	NM_DNS_MANAGER_RESOLV_CONF_PROXY
-} NMDnsManagerResolvConfMode;
-
-/**
  * NMDnsManagerResolvConfManager
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN: unspecified rc-manager.
- * @_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY: dummy-manager
- *   to not write resolv.conf at all, only the internal file in
- *   NM's run state directory.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED: do not touch /etc/resolv.conf
+ *   (but still write the internal copy -- unless it is symlinked by
+ *   /etc/resolv.conf)
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE: similar to "unmanaged",
+ *   but indicates that resolv.conf cannot be modified.
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK: NM writes resolv.conf
  *   by symlinking it to the run state directory.
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like SYMLINK, but instead of
@@ -124,14 +108,15 @@ typedef enum {
  */
 typedef enum {
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,
-	_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,
 } NMDnsManagerResolvConfManager;
 
-NMDnsManagerResolvConfMode nm_dns_manager_get_resolv_conf_mode (NMDnsManager *self);
+gboolean nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self);
 
 G_END_DECLS
 

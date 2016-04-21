@@ -121,11 +121,7 @@ typedef struct _NMDnsManagerPrivate {
 	guint8 hash[HASH_LEN];  /* SHA1 hash of current DNS config */
 	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
-	NMDnsManagerResolvConfMode resolv_conf_mode;
 	NMDnsManagerResolvConfManager rc_manager;
-	char *last_mode;
-	bool last_immutable:1;
-	bool mode_initialized:1;
 	NMDnsPlugin *plugin;
 
 	NMConfig *config;
@@ -165,11 +161,12 @@ typedef struct {
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,        "unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,      "unmanaged"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE,      "immutable"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,        "symlink"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,           "file"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF,     "resolvconf"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,      "netconfig"),
-	NM_UTILS_LOOKUP_STR_ITEM (_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY, "internal-only"),
 );
 
 static void
@@ -586,7 +583,7 @@ update_resolv_conf (NMDnsManager *self,
 	 *
 	 * This is the only situation, where we don't try to update our
 	 * internal resolv.conf file. */
-	if (rc_manager == _NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY) {
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED) {
 		gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
 
 		if (g_strcmp0 (path, MY_RESOLV_CONF) == 0) {
@@ -909,7 +906,8 @@ update_dns (NMDnsManager *self,
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 
-	if (priv->resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED) {
+	if (NM_IN_SET (priv->rc_manager, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
+	                                 NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE)) {
 		update = FALSE;
 		_LOGD ("update-dns: not updating resolv.conf");
 	} else {
@@ -1096,7 +1094,7 @@ update_dns (NMDnsManager *self,
 	/* Unless we've already done it, update private resolv.conf in NMRUNDIR
 	   ignoring any errors */
 	if (!resolv_conf_updated)
-		update_resolv_conf (self, searches, nameservers, options, NULL, _NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY);
+		update_resolv_conf (self, searches, nameservers, options, NULL, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED);
 
 	/* signal that resolv.conf was changed */
 	if (update && result == SR_SUCCESS)
@@ -1360,10 +1358,21 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
 	}
 }
 
-NMDnsManagerResolvConfMode
-nm_dns_manager_get_resolv_conf_mode (NMDnsManager *self)
+gboolean
+nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self)
 {
-	return NM_DNS_MANAGER_GET_PRIVATE (self)->resolv_conf_mode;
+	NMDnsManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	if (   NM_IN_SET (priv->rc_manager, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
+	                                    NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE)
+	    || priv->plugin)
+		return FALSE;
+
+	return TRUE;
 }
 
 void
@@ -1418,7 +1427,7 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 
 /******************************************************************/
 
-static void
+static gboolean
 _clear_plugin (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
@@ -1427,7 +1436,9 @@ _clear_plugin (NMDnsManager *self)
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
 		g_clear_object (&priv->plugin);
+		return TRUE;
 	}
+	return FALSE;
 }
 
 static NMDnsManagerResolvConfManager
@@ -1464,21 +1475,16 @@ _get_resolv_conf_manager (NMConfig *config)
 }
 
 static bool
-_get_resconf_immutable (int *immutable_cached)
+_get_resconf_immutable (void)
 {
 	int fd, flags;
-	int immutable;
+	bool immutable = FALSE;
 
-	immutable = *immutable_cached;
-	if (!NM_IN_SET (immutable, FALSE, TRUE)) {
-		immutable = FALSE;
-		fd = open (_PATH_RESCONF, O_RDONLY);
-		if (fd != -1) {
-			if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
-				immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
-			close (fd);
-		}
-		*immutable_cached = immutable;
+	fd = open (_PATH_RESCONF, O_RDONLY);
+	if (fd != -1) {
+		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
+			immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
+		close (fd);
 	}
 	return immutable;
 }
@@ -1490,77 +1496,57 @@ init_resolv_conf_mode (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsManagerResolvConfManager rc_manager;
-	const char *mode, *mode_unknown;
-	int immutable = -1;
-
-	rc_manager = _get_resolv_conf_manager (priv->config);
-	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
-		_LOGW ("unknown resolv.conf manager '%s'",
-		       nm_config_data_get_rc_manager (nm_config_get_data (priv->config)));
-		rc_manager = _get_resolv_conf_manager_default ();
-	}
+	const char *mode;
+	gboolean plugin_changed = FALSE;
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 
-	if (   priv->mode_initialized
-	    && rc_manager == priv->rc_manager
-	    && nm_streq0 (mode, priv->last_mode)
-	    && (   nm_streq0 (mode, "none")
-	        || priv->last_immutable == _get_resconf_immutable (&immutable))) {
-		/* we call init_resolv_conf_mode() on every SIGHUP to possibly reload
-		 * when either "mode" or "immutable" changed. However, we don't want to
-		 * re-create the plugin, when the paramters didn't actually change. So
-		 * detect that we would recreate the same plugin and return early. */
-		return;
+	if (nm_streq0 (mode, "none"))
+		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
+	else if (_get_resconf_immutable ())
+		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE;
+	else {
+		rc_manager = _get_resolv_conf_manager (priv->config);
+		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
+			_LOGW ("init: unknown resolv.conf manager '%s'",
+			       nm_config_data_get_rc_manager (nm_config_get_data (priv->config)));
+			rc_manager = _get_resolv_conf_manager_default ();
+		}
 	}
 
-	priv->rc_manager = rc_manager;
-	_LOGI ("using resolv.conf manager '%s'", _rc_manager_to_string (priv->rc_manager));
-
-	priv->mode_initialized = TRUE;
-	g_free (priv->last_mode);
-	priv->last_mode = g_strdup (mode);
-	priv->last_immutable = FALSE;
-	_clear_plugin (self);
-	priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
-
-	if (nm_streq0 (mode, "none")) {
-		_LOGI ("%s%s", "set resolv-conf-mode: ", "none");
-		return;
-	}
-
-	priv->last_immutable = _get_resconf_immutable (&immutable);
-
-	if (NM_IN_STRSET (mode, "dnsmasq", "unbound")) {
-		if (!immutable)
-			priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
-		if (nm_streq (mode, "dnsmasq"))
+	if (nm_streq0 (mode, "dnsmasq")) {
+		if (!NM_IS_DNS_DNSMASQ (priv->plugin)) {
+			_clear_plugin (self);
 			priv->plugin = nm_dns_dnsmasq_new ();
-		else
+			plugin_changed = TRUE;
+		}
+	} else if (nm_streq0 (mode, "unbound")) {
+		if (!NM_IS_DNS_UNBOUND (priv->plugin)) {
+			_clear_plugin (self);
 			priv->plugin = nm_dns_unbound_new ();
+			plugin_changed = TRUE;
+		}
+	} else {
+		if (!NM_IN_STRSET (mode, NULL, "none", "default")) {
+			_LOGW ("init: unknown dns mode '%s'", mode);
+			mode = "default";
+		}
+		if (_clear_plugin (self))
+			plugin_changed = TRUE;
+	}
 
+	if (plugin_changed && priv->plugin) {
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_CHILD_QUIT, G_CALLBACK (plugin_child_quit), self);
-
-		_NMLOG (immutable ? LOGL_WARN : LOGL_INFO,
-		        "%s%s%s%s%s%s",
-		        "set resolv-conf-mode: ",
-		        immutable ? "none" : mode,
-		        ", plugin=\"", nm_dns_plugin_get_name (priv->plugin), "\"",
-		        immutable ? ", resolv.conf immutable" : "");
-		return;
 	}
 
-	if (!immutable)
-		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT;
-
-	mode_unknown = mode && !nm_streq (mode, "default") ? mode : NULL;
-	_NMLOG (mode_unknown ? LOGL_WARN : LOGL_INFO,
-	        "%s%s%s%s%s%s",
-	        "set resolv-conf-mode: ",
-	        immutable ? "none" : "default",
-	        NM_PRINT_FMT_QUOTED (mode_unknown, " -- unknown configuration '", mode_unknown, "'", ""),
-	        immutable ? ", resolv.conf immutable" : "");
+	if (   plugin_changed
+	    || priv->rc_manager != rc_manager) {
+		priv->rc_manager = rc_manager;
+		_LOGI ("init: dns=%s, rc-manager=%s%s%s%s",
+		       mode, _rc_manager_to_string (rc_manager),
+		       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=", nm_dns_plugin_get_name (priv->plugin), "", ""));
+	}
 }
 
 static void
@@ -1625,8 +1611,6 @@ dispose (GObject *object)
 	_LOGT ("disposing");
 
 	_clear_plugin (self);
-
-	g_clear_pointer (&priv->last_mode, g_free);
 
 	/* If we're quitting, leave a valid resolv.conf in place, not one
 	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
