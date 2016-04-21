@@ -593,11 +593,16 @@ _lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_fro
 #define DEVTYPE_PREFIX "DEVTYPE="
 
 static char *
-_linktype_read_devtype (const char *sysfs_path)
+_linktype_read_devtype (const char *ifname)
 {
-	gs_free char *uevent = g_strdup_printf ("%s/uevent", sysfs_path);
+	char uevent[NM_STRLEN ("/sys/class/net/123456789012345/uevent\0") + 100 /*safety*/];
 	char *contents = NULL;
 	char *cont, *end;
+
+	nm_sprintf_buf (uevent,
+	                "/sys/class/net/%s/uevent",
+	                NM_ASSERT_VALID_PATH_COMPONENT (ifname));
+	nm_assert (strlen (uevent) < sizeof (uevent) - 1);
 
 	if (!g_file_get_contents (uevent, &contents, NULL, NULL))
 		return NULL;
@@ -716,7 +721,7 @@ _linktype_get_type (NMPlatform *platform,
 		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
 			return NM_LINK_TYPE_OLPC_MESH;
 
-		devtype = _linktype_read_devtype (sysfs_path);
+		devtype = _linktype_read_devtype (ifname);
 		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
 			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
 				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
