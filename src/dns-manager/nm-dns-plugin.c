@@ -241,18 +241,6 @@ dispose (GObject *object)
 }
 
 static void
-finalize (GObject *object)
-{
-	NMDnsPlugin *self = NM_DNS_PLUGIN (object);
-	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
-
-	g_free (priv->progname);
-	g_free (priv->pidfile);
-
-	G_OBJECT_CLASS (nm_dns_plugin_parent_class)->finalize (object);
-}
-
-static void
 nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (plugin_class);
@@ -261,7 +249,6 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 	plugin_class->is_caching = is_caching;
 
 	/* signals */
