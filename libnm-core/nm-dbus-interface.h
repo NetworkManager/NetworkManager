@@ -150,8 +150,8 @@ typedef enum {
  * @NM_DEVICE_TYPE_VXLAN: a VXLAN interface
  * @NM_DEVICE_TYPE_VETH: a VETH interface
  *
- * #NMDeviceType values indicate the type of hardware represented by
- * an #NMDevice.
+ * #NMDeviceType values indicate the type of hardware represented by a
+ * device object.
  **/
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN    = 0,
