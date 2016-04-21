@@ -107,6 +107,7 @@ typedef enum {
 
 /**
  * NMDnsManagerResolvConfManager
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN: unspecified rc-manager.
  * @_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY: dummy-manager
  *   to not write resolv.conf at all, only the internal file in
  *   NM's run state directory.
@@ -122,6 +123,7 @@ typedef enum {
  * NMDnsManager's management of resolv.conf
  */
 typedef enum {
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,
 	_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,
