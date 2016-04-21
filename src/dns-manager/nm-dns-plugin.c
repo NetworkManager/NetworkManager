@@ -96,8 +96,7 @@ _clear_pidfile (NMDnsPlugin *self)
 
 	if (priv->pidfile) {
 		unlink (priv->pidfile);
-		g_free (priv->pidfile);
-		priv->pidfile = NULL;
+		g_clear_pointer (&priv->pidfile, g_free);
 	}
 }
 
@@ -154,8 +153,8 @@ watch_cb (GPid pid, gint status, gpointer user_data)
 
 	priv->pid = 0;
 	priv->watch_id = 0;
-	g_free (priv->progname);
-	priv->progname = NULL;
+
+	g_clear_pointer (&priv->progname, g_free);
 
 	_clear_pidfile (self);
 
@@ -172,8 +171,7 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 	GError *error = NULL;
 	char *cmdline;
 
-	g_return_val_if_fail (argv != NULL, 0);
-	g_return_val_if_fail (argv[0] != NULL, 0);
+	g_return_val_if_fail (argv && argv[0], 0);
 
 	g_warn_if_fail (priv->progname == NULL);
 	g_free (priv->progname);
@@ -217,8 +215,7 @@ nm_dns_plugin_child_kill (NMDnsPlugin *self)
 	if (priv->pid) {
 		nm_utils_kill_child_sync (priv->pid, SIGTERM, LOGD_DNS, priv->progname, NULL, 1000, 0);
 		priv->pid = 0;
-		g_free (priv->progname);
-		priv->progname = NULL;
+		g_clear_pointer (&priv->progname, g_free);
 	}
 
 	_clear_pidfile (self);
