@@ -1477,12 +1477,21 @@ static void
 init_resolv_conf_mode (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	NMDnsManagerResolvConfManager rc_manager;
 	const char *mode, *mode_unknown;
 	int immutable = -1;
+
+	rc_manager = _get_resolv_conf_manager (priv->config);
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
+		_LOGW ("unknown resolv.conf manager '%s'",
+		       nm_config_data_get_rc_manager (nm_config_get_data (priv->config)));
+		rc_manager = _get_resolv_conf_manager_default ();
+	}
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 
 	if (   priv->mode_initialized
+	    && rc_manager == priv->rc_manager
 	    && nm_streq0 (mode, priv->last_mode)
 	    && (   nm_streq0 (mode, "none")
 	        || priv->last_immutable == _get_resconf_immutable (&immutable))) {
@@ -1492,6 +1501,9 @@ init_resolv_conf_mode (NMDnsManager *self)
 		 * detect that we would recreate the same plugin and return early. */
 		return;
 	}
+
+	priv->rc_manager = rc_manager;
+	_LOGI ("using resolv.conf manager '%s'", _rc_manager_to_string (priv->rc_manager));
 
 	priv->mode_initialized = TRUE;
 	g_free (priv->last_mode);
@@ -1540,26 +1552,6 @@ init_resolv_conf_mode (NMDnsManager *self)
 }
 
 static void
-init_resolv_conf_manager (NMDnsManager *self)
-{
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	NMDnsManagerResolvConfManager rc_manager;
-
-	rc_manager = _get_resolv_conf_manager (priv->config);
-	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
-		_LOGW ("unknown resolv.conf manager '%s'",
-		       nm_config_data_get_rc_manager (nm_config_get_data (priv->config)));
-		rc_manager = _get_resolv_conf_manager_default ();
-	}
-
-	if (rc_manager == priv->rc_manager)
-		return;
-
-	priv->rc_manager = rc_manager;
-	_LOGI ("using resolv.conf manager '%s'", _rc_manager_to_string (priv->rc_manager));
-}
-
-static void
 config_changed_cb (NMConfig *config,
                    NMConfigData *config_data,
                    NMConfigChangeFlags changes,
@@ -1569,6 +1561,7 @@ config_changed_cb (NMConfig *config,
 	GError *error = NULL;
 
 	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_DNS_MODE |
+	                           NM_CONFIG_CHANGE_RC_MANAGER |
 	                           NM_CONFIG_CHANGE_SIGHUP)) {
 		/* reload the resolv-conf mode also on SIGHUP (when DNS_MODE didn't change).
 		 * The reason is, that the configuration also depends on whether resolv.conf
@@ -1576,9 +1569,6 @@ config_changed_cb (NMConfig *config,
 		 * re-configure the mode. */
 		init_resolv_conf_mode (self);
 	}
-
-	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_RC_MANAGER))
-		init_resolv_conf_manager (self);
 
 	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_SIGHUP |
 	                           NM_CONFIG_CHANGE_SIGUSR1 |
@@ -1611,7 +1601,6 @@ nm_dns_manager_init (NMDnsManager *self)
 	                  G_CALLBACK (config_changed_cb),
 	                  self);
 	init_resolv_conf_mode (self);
-	init_resolv_conf_manager (self);
 }
 
 static void
