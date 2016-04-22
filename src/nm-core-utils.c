@@ -445,8 +445,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 	gs_strfreev gchar **tokens = NULL;
 	guint num_tokens;
 	gchar *p;
-	gchar *endp;
-	char state = '\0';
+	char state = ' ';
 	gint64 ppid = 0;
 
 	start_time = 0;
@@ -457,7 +456,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 	nm_sprintf_buf (filename, "/proc/%"G_GUINT64_FORMAT"/stat", (guint64) pid);
 
 	if (!g_file_get_contents (filename, &contents, &length, NULL))
-		goto out;
+		goto fail;
 
 	/* start time is the token at index 19 after the '(process name)' entry - since only this
 	 * field can contain the ')' character, search backwards for this to avoid malicious
@@ -465,10 +464,10 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 	 */
 	p = strrchr (contents, ')');
 	if (p == NULL)
-		goto out;
+		goto fail;
 	p += 2; /* skip ') ' */
 	if (p - contents >= (int) length)
-		goto out;
+		goto fail;
 
 	state = p[0];
 
@@ -477,23 +476,26 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 	num_tokens = g_strv_length (tokens);
 
 	if (num_tokens < 20)
-		goto out;
+		goto fail;
 
-	if (out_ppid)
+	if (out_ppid) {
 		ppid = _nm_utils_ascii_str_to_int64 (tokens[1], 10, 1, G_MAXINT, 0);
+		if (ppid == 0)
+			goto fail;
+	}
 
-	errno = 0;
-	start_time = strtoull (tokens[19], &endp, 10);
-	if (*endp != '\0' || errno != 0)
-		start_time = 0;
+	start_time = _nm_utils_ascii_str_to_int64 (tokens[19], 10, 1, G_MAXINT64, 0);
+	if (start_time == 0)
+		goto fail;
 
-out:
-	if (out_state)
-		*out_state = state;
-	if (out_ppid)
-		*out_ppid = ppid;
-
+	NM_SET_OUT (out_state, state);
+	NM_SET_OUT (out_ppid, ppid);
 	return start_time;
+
+fail:
+	NM_SET_OUT (out_state, ' ');
+	NM_SET_OUT (out_ppid, 0);
+	return 0;
 }
 
 /******************************************************************************************/
