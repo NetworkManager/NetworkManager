@@ -2240,13 +2240,19 @@ nm_connection_private_free (NMConnectionPrivate *priv)
 static NMConnectionPrivate *
 nm_connection_get_private (NMConnection *connection)
 {
+	static GQuark key = 0;
 	NMConnectionPrivate *priv;
 
-	priv = g_object_get_data (G_OBJECT (connection), "NMConnectionPrivate");
+	nm_assert (NM_IS_CONNECTION (connection));
+
+	if (G_UNLIKELY (key == 0))
+		key = g_quark_from_static_string ("NMConnectionPrivate");
+
+	priv = g_object_get_qdata ((GObject *) connection, key);
 	if (!priv) {
 		priv = g_slice_new0 (NMConnectionPrivate);
-		g_object_set_data_full (G_OBJECT (connection), "NMConnectionPrivate",
-		                        priv, (GDestroyNotify) nm_connection_private_free);
+		g_object_set_qdata_full ((GObject *) connection, key,
+		                         priv, (GDestroyNotify) nm_connection_private_free);
 
 		priv->self = connection;
 		priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
