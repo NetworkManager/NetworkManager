@@ -176,7 +176,7 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
 
 		if (!success) {
 			g_module_close (module);
-			editor_plugin = NULL;
+			g_clear_object (&editor_plugin);
 		}
 	} else {
 		g_set_error (error,
@@ -185,7 +185,6 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
 		             _("failed to load nm_vpn_editor_plugin_factory() from %s (%s)"),
 		             g_module_name (module), g_module_error ());
 		g_module_close (module);
-		editor_plugin = NULL;
 	}
 
 	return editor_plugin;
