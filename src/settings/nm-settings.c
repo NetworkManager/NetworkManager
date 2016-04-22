@@ -267,6 +267,7 @@ load_connections (NMSettings *self)
 	}
 
 	priv->connections_loaded = TRUE;
+	_notify (self, PROP_CONNECTIONS);
 
 	unmanaged_specs_changed (NULL, self);
 	unrecognized_specs_changed (NULL, self);
