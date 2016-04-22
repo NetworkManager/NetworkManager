@@ -678,10 +678,9 @@ nm_vpn_plugin_info_get_auth_dialog (NMVpnPluginInfo *self)
 		else if (g_path_is_absolute (s))
 			priv->auth_dialog = g_strdup (s);
 		else {
-			gs_free char *prog_basename;
-
 			/* for relative paths, we take the basename and assume it's in LIBEXECDIR. */
-			prog_basename = g_path_get_basename (s);
+			gs_free char *prog_basename = g_path_get_basename (s);
+
 			priv->auth_dialog = g_build_filename (LIBEXECDIR, prog_basename, NULL);
 		}
 	}
