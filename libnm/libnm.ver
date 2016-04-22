@@ -1062,4 +1062,8 @@ global:
 libnm_1_4_0 {
 global:
 	nm_vpn_editor_plugin_load;
+	nm_vpn_plugin_info_get_auth_dialog;
+	nm_vpn_plugin_info_get_service;
+	nm_vpn_plugin_info_new_search_file;
+	nm_vpn_plugin_info_supports_hints;
 } libnm_1_2_0;

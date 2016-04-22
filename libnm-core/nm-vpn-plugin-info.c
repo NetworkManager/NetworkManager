@@ -45,6 +45,7 @@ typedef struct {
 	char *filename;
 	char *name;
 	char *service;
+	char *auth_dialog;
 	char **aliases;
 	GKeyFile *keyfile;
 
@@ -188,6 +189,23 @@ _sort_files (LoadDirInfo *a, LoadDirInfo *b)
 	                  nm_vpn_plugin_info_get_filename (b->plugin_info));
 }
 
+#define DEFINE_DEFAULT_DIR_LIST(dir) \
+	const char *dir[] = { \
+		/* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
+		 * preference to the former.
+		 *
+		 * load user directory with highest priority. */ \
+		_nm_vpn_plugin_info_get_default_dir_user (), \
+		\
+		/* lib directory has higher priority then etc. The reason is that
+		 * etc is deprecated and used by old plugins. We expect newer plugins
+		 * to install their file in lib, where they have higher priority.
+		 *
+		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */ \
+		_nm_vpn_plugin_info_get_default_dir_lib (), \
+		_nm_vpn_plugin_info_get_default_dir_etc (), \
+	}
+
 /**
  * _nm_vpn_plugin_info_get_default_dir_etc:
  *
@@ -253,7 +271,10 @@ _nm_vpn_plugin_info_list_load_dir (const char *dirname,
 	GSList *res = NULL;
 	guint i;
 
-	g_return_val_if_fail (dirname && dirname[0], NULL);
+	g_return_val_if_fail (dirname, NULL);
+
+	if (!dirname[0])
+		return NULL;
 
 	dir = g_dir_open (dirname, 0, NULL);
 	if (!dir)
@@ -312,21 +333,7 @@ nm_vpn_plugin_info_list_load ()
 	gint64 uid;
 	GSList *list = NULL;
 	GSList *infos, *info;
-	const char *dir[] = {
-		/* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
-		 * preference to the former.
-		 *
-		 * load user directory with highest priority. */
-		_nm_vpn_plugin_info_get_default_dir_user (),
-
-		/* lib directory has higher priority then etc. The reason is that
-		 * etc is deprecated and used by old plugins. We expect newer plugins
-		 * to install their file in lib, where they have higher priority.
-		 *
-		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */
-		_nm_vpn_plugin_info_get_default_dir_lib (),
-		_nm_vpn_plugin_info_get_default_dir_etc (),
-	};
+	DEFINE_DEFAULT_DIR_LIST (dir);
 
 	uid = getuid ();
 
@@ -343,6 +350,60 @@ nm_vpn_plugin_info_list_load ()
 		g_slist_free_full (infos, g_object_unref);
 	}
 	return list;
+}
+
+/**
+ * nm_vpn_plugin_info_new_search_file:
+ * @name: (allow-none): the name to search for. Either @name or @service
+ *   must be present.
+ * @service: (allow-none): the service to search for. Either @name  or
+ *   @service must be present.
+ *
+ * This has the same effect as doing a full nm_vpn_plugin_info_list_load()
+ * followed by a search for the first matching VPN plugin info that has the
+ * given @name and/or @service.
+ *
+ * Returns: (transfer full): a newly created instance of plugin info
+ *   or %NULL if no matching value was found.
+ *
+ * Since: 1.4
+ */
+NMVpnPluginInfo *
+nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
+{
+	int i;
+	gint64 uid;
+	NMVpnPluginInfo *plugin_info = NULL;
+	GSList *infos, *info;
+	DEFINE_DEFAULT_DIR_LIST (dir);
+
+	if (!name && !service)
+		g_return_val_if_reached (NULL);
+
+	uid = getuid ();
+
+	for (i = 0; !plugin_info && i < G_N_ELEMENTS (dir); i++) {
+		if (   !dir[i]
+		    || _nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
+			continue;
+
+		/* We still must load the entire directory while searching for the matching
+		 * plugin-info. The reason is that reading the directory has no stable
+		 * order and we can only sort them after reading the entire directory --
+		 * which _nm_vpn_plugin_info_list_load_dir() does. */
+		infos = _nm_vpn_plugin_info_list_load_dir (dir[i], TRUE, uid, NULL, NULL);
+
+		for (info = infos; info; info = info->next) {
+			if (   (!name || nm_streq (nm_vpn_plugin_info_get_name (info->data), name))
+			    && (!service || nm_streq (nm_vpn_plugin_info_get_service (info->data), service))) {
+				plugin_info = g_object_ref (info->data);
+				break;
+			}
+		}
+
+		g_slist_free_full (infos, g_object_unref);
+	}
+	return plugin_info;
 }
 
 /*********************************************************************/
@@ -525,7 +586,7 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 
 	/* First, consider the primary service name. */
 	for (iter = list; iter; iter = iter->next) {
-		if (strcmp (NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data)->service, service) == 0)
+		if (strcmp (nm_vpn_plugin_info_get_service (iter->data), service) == 0)
 			return iter->data;
 	}
 
@@ -573,6 +634,78 @@ nm_vpn_plugin_info_get_name (NMVpnPluginInfo *self)
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
 
 	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->name;
+}
+
+/**
+ * nm_vpn_plugin_info_get_service:
+ * @self: plugin info instance
+ *
+ * Returns: (transfer none): the service. Cannot be %NULL.
+ *
+ * Since: 1.4
+ */
+const char *
+nm_vpn_plugin_info_get_service (NMVpnPluginInfo *self)
+{
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
+
+	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->service;
+}
+
+/**
+ * nm_vpn_plugin_info_get_auth_dialog:
+ * @self: plugin info instance
+ *
+ * Returns: the absolute path to the auth-dialog helper or %NULL.
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_vpn_plugin_info_get_auth_dialog (NMVpnPluginInfo *self)
+{
+	NMVpnPluginInfoPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
+
+	priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (priv->auth_dialog == NULL)) {
+		const char *s;
+
+		s = g_hash_table_lookup (priv->keys, _nm_utils_strstrdictkey_static (NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "auth-dialog"));
+		if (!s || !s[0])
+			priv->auth_dialog = g_strdup ("");
+		else if (g_path_is_absolute (s))
+			priv->auth_dialog = g_strdup (s);
+		else {
+			gs_free char *prog_basename;
+
+			/* for relative paths, we take the basename and assume it's in LIBEXECDIR. */
+			prog_basename = g_path_get_basename (s);
+			priv->auth_dialog = g_build_filename (LIBEXECDIR, prog_basename, NULL);
+		}
+	}
+
+	return priv->auth_dialog[0] ? priv->auth_dialog : NULL;
+}
+
+/**
+ * nm_vpn_plugin_info_supports_hints:
+ * @self: plugin info instance
+ *
+ * Returns: %TRUE if the supports hints for secret requests, otherwise %FALSE
+ *
+ * Since: 1.4
+ */
+gboolean
+nm_vpn_plugin_info_supports_hints (NMVpnPluginInfo *self)
+{
+	const char *s;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), FALSE);
+
+	s = nm_vpn_plugin_info_lookup_property (self, NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "supports-hints");
+	return _nm_utils_ascii_str_to_bool (s, FALSE);
 }
 
 /**
@@ -753,7 +886,7 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 
 	priv->editor_plugin_loaded = TRUE;
 	priv->editor_plugin = nm_vpn_editor_plugin_load_from_file (plugin_filename,
-	                                                           priv->service,
+	                                                           nm_vpn_plugin_info_get_service (self),
 	                                                           getuid (),
 	                                                           NULL,
 	                                                           NULL,
@@ -947,6 +1080,7 @@ finalize (GObject *object)
 
 	g_free (priv->name);
 	g_free (priv->service);
+	g_free (priv->auth_dialog);
 	g_strfreev (priv->aliases);
 	g_free (priv->filename);
 	g_hash_table_unref (priv->keys);
