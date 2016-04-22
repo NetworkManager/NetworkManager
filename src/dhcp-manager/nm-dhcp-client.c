@@ -597,51 +597,49 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 void
 nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 {
-	char *pid_contents = NULL, *proc_contents = NULL, *proc_path = NULL;
-	long int tmp;
+	guint64 start_time;
+	pid_t pid, ppid;
+	const char *exe;
+	char proc_path[NM_STRLEN ("/proc/%lu/cmdline") + 100];
+	gs_free char *pid_contents = NULL, *proc_contents = NULL;
 
 	/* Check for an existing instance and stop it */
 	if (!g_file_get_contents (pid_file, &pid_contents, NULL, NULL))
 		return;
 
-	errno = 0;
-	tmp = strtol (pid_contents, NULL, 10);
-	if ((errno == 0) && (tmp > 1)) {
-		guint64 start_time;
-		const char *exe;
-		pid_t ppid;
+	pid = _nm_utils_ascii_str_to_int64 (pid_contents, 10, 1, G_MAXINT64, 0);
+	if (pid <= 0)
+		goto out;
 
-		/* Ensure the process is a DHCP client */
-		start_time = nm_utils_get_start_time_for_pid (tmp, NULL, &ppid);
-		proc_path = g_strdup_printf ("/proc/%ld/cmdline", tmp);
-		if (   start_time
-		    && g_file_get_contents (proc_path, &proc_contents, NULL, NULL)) {
-			exe = strrchr (proc_contents, '/');
-			if (exe)
-				exe++;
-			else
-				exe = proc_contents;
+	start_time = nm_utils_get_start_time_for_pid (pid, NULL, &ppid);
+	if (start_time == 0)
+		goto out;
 
-			if (!strcmp (exe, binary_name)) {
-				if (ppid == getpid ()) {
-					/* the process is our own child. */
-					nm_utils_kill_child_sync (tmp, SIGTERM, LOGD_DHCP, "dhcp-client", NULL, 1000 / 2, 1000 / 20);
-				} else {
-					nm_utils_kill_process_sync (tmp, start_time, SIGTERM, LOGD_DHCP,
-					                            "dhcp-client", 1000 / 2, 1000 / 20, 2000);
-				}
-			}
-		}
+	nm_sprintf_buf (proc_path, "/proc/%lu/cmdline", (long unsigned) pid);
+	if (!g_file_get_contents (proc_path, &proc_contents, NULL, NULL))
+		goto out;
+
+	exe = strrchr (proc_contents, '/');
+	if (exe)
+		exe++;
+	else
+		exe = proc_contents;
+	if (!nm_streq0 (exe, binary_name))
+		goto out;
+
+	if (ppid == getpid ()) {
+		/* the process is our own child. */
+		nm_utils_kill_child_sync (pid, SIGTERM, LOGD_DHCP, "dhcp-client", NULL, 1000 / 2, 1000 / 20);
+	} else {
+		nm_utils_kill_process_sync (pid, start_time, SIGTERM, LOGD_DHCP,
+		                            "dhcp-client", 1000 / 2, 1000 / 20, 2000);
 	}
 
+out:
 	if (remove (pid_file) == -1) {
 		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %d (%s)",
 		            pid_file, errno, g_strerror (errno));
 	}
-
-	g_free (proc_path);
-	g_free (pid_contents);
-	g_free (proc_contents);
 }
 
 void
