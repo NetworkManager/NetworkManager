@@ -70,6 +70,10 @@ NMVpnPluginInfo *nm_vpn_plugin_info_new_with_data (const char *filename,
                                                    GKeyFile *keyfile,
                                                    GError **error);
 
+NM_AVAILABLE_IN_1_4
+NMVpnPluginInfo *nm_vpn_plugin_info_new_search_file (const char *name,
+                                                     const char *service);
+
 NM_AVAILABLE_IN_1_2
 const char *nm_vpn_plugin_info_get_name        (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2

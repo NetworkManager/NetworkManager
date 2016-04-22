@@ -189,6 +189,23 @@ _sort_files (LoadDirInfo *a, LoadDirInfo *b)
 	                  nm_vpn_plugin_info_get_filename (b->plugin_info));
 }
 
+#define DEFINE_DEFAULT_DIR_LIST(dir) \
+	const char *dir[] = { \
+		/* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
+		 * preference to the former.
+		 *
+		 * load user directory with highest priority. */ \
+		_nm_vpn_plugin_info_get_default_dir_user (), \
+		\
+		/* lib directory has higher priority then etc. The reason is that
+		 * etc is deprecated and used by old plugins. We expect newer plugins
+		 * to install their file in lib, where they have higher priority.
+		 *
+		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */ \
+		_nm_vpn_plugin_info_get_default_dir_lib (), \
+		_nm_vpn_plugin_info_get_default_dir_etc (), \
+	}
+
 /**
  * _nm_vpn_plugin_info_get_default_dir_etc:
  *
@@ -316,21 +333,7 @@ nm_vpn_plugin_info_list_load ()
 	gint64 uid;
 	GSList *list = NULL;
 	GSList *infos, *info;
-	const char *dir[] = {
-		/* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
-		 * preference to the former.
-		 *
-		 * load user directory with highest priority. */
-		_nm_vpn_plugin_info_get_default_dir_user (),
-
-		/* lib directory has higher priority then etc. The reason is that
-		 * etc is deprecated and used by old plugins. We expect newer plugins
-		 * to install their file in lib, where they have higher priority.
-		 *
-		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */
-		_nm_vpn_plugin_info_get_default_dir_lib (),
-		_nm_vpn_plugin_info_get_default_dir_etc (),
-	};
+	DEFINE_DEFAULT_DIR_LIST (dir);
 
 	uid = getuid ();
 
@@ -347,6 +350,60 @@ nm_vpn_plugin_info_list_load ()
 		g_slist_free_full (infos, g_object_unref);
 	}
 	return list;
+}
+
+/**
+ * nm_vpn_plugin_info_new_search_file:
+ * @name: (allow-none): the name to search for. Either @name or @service
+ *   must be present.
+ * @service: (allow-none): the service to search for. Either @name  or
+ *   @service must be present.
+ *
+ * This has the same effect as doing a full nm_vpn_plugin_info_list_load()
+ * followed by a search for the first matching VPN plugin info that has the
+ * given @name and/or @service.
+ *
+ * Returns: (transfer full): a newly created instance of plugin info
+ *   or %NULL if no matching value was found.
+ *
+ * Since: 1.4
+ */
+NMVpnPluginInfo *
+nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
+{
+	int i;
+	gint64 uid;
+	NMVpnPluginInfo *plugin_info = NULL;
+	GSList *infos, *info;
+	DEFINE_DEFAULT_DIR_LIST (dir);
+
+	if (!name && !service)
+		g_return_val_if_reached (NULL);
+
+	uid = getuid ();
+
+	for (i = 0; !plugin_info && i < G_N_ELEMENTS (dir); i++) {
+		if (   !dir[i]
+		    || _nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
+			continue;
+
+		/* We still must load the entire directory while searching for the matching
+		 * plugin-info. The reason is that reading the directory has no stable
+		 * order and we can only sort them after reading the entire directory --
+		 * which _nm_vpn_plugin_info_list_load_dir() does. */
+		infos = _nm_vpn_plugin_info_list_load_dir (dir[i], TRUE, uid, NULL, NULL);
+
+		for (info = infos; info; info = info->next) {
+			if (   (!name || nm_streq (nm_vpn_plugin_info_get_name (info->data), name))
+			    && (!service || nm_streq (nm_vpn_plugin_info_get_service (info->data), service))) {
+				plugin_info = g_object_ref (info->data);
+				break;
+			}
+		}
+
+		g_slist_free_full (infos, g_object_unref);
+	}
+	return plugin_info;
 }
 
 /*********************************************************************/
