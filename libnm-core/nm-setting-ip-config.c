@@ -2274,6 +2274,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->gateway && priv->never_default) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("a gateway is incompatible with '%s'"),
+		             NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_GATEWAY);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
 	return TRUE;
 }
 
