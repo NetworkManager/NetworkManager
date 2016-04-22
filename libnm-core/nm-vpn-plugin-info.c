@@ -253,7 +253,10 @@ _nm_vpn_plugin_info_list_load_dir (const char *dirname,
 	GSList *res = NULL;
 	guint i;
 
-	g_return_val_if_fail (dirname && dirname[0], NULL);
+	g_return_val_if_fail (dirname, NULL);
+
+	if (!dirname[0])
+		return NULL;
 
 	dir = g_dir_open (dirname, 0, NULL);
 	if (!dir)
