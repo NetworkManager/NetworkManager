@@ -360,9 +360,18 @@ constructed (GObject *object)
 		priv->unix_process.start_time = nm_utils_get_start_time_for_pid (priv->unix_process.pid, NULL, NULL);
 
 		if (!priv->unix_process.start_time) {
-			/* could not detect the process start time. The subject is invalid, but don't
-			 * assert against it. */
-			_clear_private (priv);
+			/* Is the process already gone? Then fail creation of the auth subject
+			 * by clearing the type. */
+			if (kill (priv->unix_process.pid, 0) != 0)
+				_clear_private (priv);
+
+			/* Otherwise, although we didn't detect a start_time, the process is still around.
+			 * That could be due to procfs mounted with hidepid. So just accept the request.
+			 *
+			 * Polkit on the other side, will accept 0 and try to lookup /proc/$PID/stat
+			 * itself (and if it fails to do so, assume a start-time of 0 and proceed).
+			 * The only combination that would fail here, is when NM is able to read the
+			 * start-time, but polkit is not. */
 		}
 		return;
 	default:
