@@ -262,6 +262,7 @@ load_connections (NMSettings *self)
 	}
 
 	priv->connections_loaded = TRUE;
+	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
 
 	unmanaged_specs_changed (NULL, self);
 	unrecognized_specs_changed (NULL, self);
