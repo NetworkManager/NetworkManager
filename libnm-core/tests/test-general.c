@@ -3718,6 +3718,57 @@ test_connection_normalize_infiniband_mtu (void)
 }
 
 static void
+test_connection_normalize_gateway_never_default (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMIPAddress *addr;
+	gs_free_error GError *error = NULL;
+
+	con = nmtst_create_minimal_connection ("test1", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.254",
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE,
+	              NULL);
+
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	nm_connection_add_setting (con, (NMSetting *) s_ip4);
+	nm_connection_add_setting (con, (NMSetting *) s_ip6);
+
+	nmtst_assert_connection_verifies_without_normalization (con);
+	g_assert_cmpstr ("1.1.1.254", ==, nm_setting_ip_config_get_gateway (s_ip4));
+
+	/* Now set never-default to TRUE and check that the gateway is
+	 * removed during normalization
+	 * */
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, TRUE,
+	              NULL);
+
+	nmtst_assert_connection_verifies_after_normalization (con,
+	                                                      NM_CONNECTION_ERROR,
+	                                                      NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	nmtst_connection_normalize (con);
+	g_assert_cmpstr (NULL, ==, nm_setting_ip_config_get_gateway (s_ip4));
+}
+
+static void
 test_setting_ip4_gateway (void)
 {
 	NMConnection *conn;
@@ -5011,6 +5062,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);
 	g_test_add_func ("/core/general/test_connection_normalize_infiniband_mtu", test_connection_normalize_infiniband_mtu);
+	g_test_add_func ("/core/general/test_connection_normalize_gateway_never_default", test_connection_normalize_gateway_never_default);
 
 	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
 	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);
