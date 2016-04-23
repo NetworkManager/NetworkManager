@@ -1061,6 +1061,7 @@ global:
 
 libnm_1_4_0 {
 global:
+	nm_setting_ip_config_get_dns_priority;
 	nm_vpn_editor_plugin_load;
 	nm_vpn_plugin_info_get_auth_dialog;
 	nm_vpn_plugin_info_get_service;
