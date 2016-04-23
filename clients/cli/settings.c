@@ -272,20 +272,21 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS),                 /* 2 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_SEARCH),          /* 3 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_OPTIONS),         /* 4 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES),           /* 5 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_GATEWAY),             /* 6 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES),              /* 7 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTE_METRIC),        /* 8 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 9 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 10 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),     /* 11 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT),        /* 12 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 13 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 14 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_FQDN),          /* 15 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 16 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 17 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DAD_TIMEOUT),         /* 18 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_PRIORITY),        /* 5 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES),           /* 6 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_GATEWAY),             /* 7 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES),              /* 8 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTE_METRIC),        /* 9 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 10 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 11 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),     /* 12 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT),        /* 13 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 14 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 15 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_FQDN),          /* 16 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 17 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 18 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DAD_TIMEOUT),         /* 19 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
@@ -293,6 +294,7 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
                                               NM_SETTING_IP_CONFIG_DNS","\
                                               NM_SETTING_IP_CONFIG_DNS_SEARCH","\
                                               NM_SETTING_IP_CONFIG_DNS_OPTIONS","\
+                                              NM_SETTING_IP_CONFIG_DNS_PRIORITY","\
                                               NM_SETTING_IP_CONFIG_ADDRESSES","\
                                               NM_SETTING_IP_CONFIG_GATEWAY","\
                                               NM_SETTING_IP_CONFIG_ROUTES","\
@@ -315,18 +317,19 @@ NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS),                 /* 2 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_SEARCH),          /* 3 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_OPTIONS),         /* 4 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES),           /* 5 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_GATEWAY),             /* 6 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES),              /* 7 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTE_METRIC),        /* 8 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 9 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 10 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 11 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 12 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY),        /* 13 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE),      /* 14 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 15 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 16 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_PRIORITY),        /* 5 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES),           /* 6 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_GATEWAY),             /* 7 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES),              /* 8 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTE_METRIC),        /* 9 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 10 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 11 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 12 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 13 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY),        /* 14 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE),      /* 15 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 16 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 17 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
@@ -334,6 +337,7 @@ NmcOutputField nmc_fields_setting_ip6_config[] = {
                                               NM_SETTING_IP_CONFIG_DNS","\
                                               NM_SETTING_IP_CONFIG_DNS_SEARCH","\
                                               NM_SETTING_IP_CONFIG_DNS_OPTIONS","\
+                                              NM_SETTING_IP_CONFIG_DNS_PRIORITY","\
                                               NM_SETTING_IP_CONFIG_ADDRESSES","\
                                               NM_SETTING_IP_CONFIG_GATEWAY","\
                                               NM_SETTING_IP_CONFIG_ROUTES","\
@@ -1488,6 +1492,7 @@ DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
 DEFINE_GETTER_WITH_DEFAULT (nmc_property_ipv4_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS, !nm_setting_ip_config_has_dns_options ((NMSettingIPConfig *) setting))
+DEFINE_GETTER (nmc_property_ipv4_get_dns_priority, NM_SETTING_IP_CONFIG_DNS_PRIORITY)
 
 static char *
 nmc_property_ip_get_addresses (NMSetting *setting, NmcPropertyGetType get_type)
@@ -1608,6 +1613,7 @@ DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
 DEFINE_GETTER_WITH_DEFAULT (nmc_property_ipv6_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS, !nm_setting_ip_config_has_dns_options ((NMSettingIPConfig *) setting))
+DEFINE_GETTER (nmc_property_ipv6_get_dns_priority, NM_SETTING_IP_CONFIG_DNS_PRIORITY)
 
 static char *
 nmc_property_ipv6_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
@@ -6496,6 +6502,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE_IP (4, DNS_PRIORITY),
+	                    nmc_property_ipv4_get_dns_priority,
+	                    nmc_property_set_int,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (4, ADDRESSES),
 	                    nmc_property_ip_get_addresses,
 	                    nmc_property_ipv4_set_addresses,
@@ -6621,6 +6634,13 @@ nmc_properties_init (void)
 	                    nmc_property_ipv6_get_dns_options,
 	                    nmc_property_ipv6_set_dns_options,
 	                    nmc_property_ipv6_remove_dns_option,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE_IP (6, DNS_PRIORITY),
+	                    nmc_property_ipv6_get_dns_priority,
+	                    nmc_property_set_int,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -8179,20 +8199,21 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 2, nmc_property_ipv4_get_dns (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 3, nmc_property_ipv4_get_dns_search (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 4, nmc_property_ipv4_get_dns_options (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_ipv4_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_ipv4_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_ipv4_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_ipv4_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_ipv4_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_ipv4_get_dhcp_client_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_timeout (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_ipv4_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_ipv4_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_ipv4_get_dhcp_fqdn (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 18, nmc_property_ipv4_get_dad_timeout (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_ipv4_get_dns_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_ipv4_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_ipv4_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_ipv4_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_ipv4_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_ipv4_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_client_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_ipv4_get_dhcp_timeout (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_ipv4_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_ipv4_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_ipv4_get_dhcp_fqdn (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 18, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 19, nmc_property_ipv4_get_dad_timeout (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -8222,18 +8243,19 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 2, nmc_property_ipv6_get_dns (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 3, nmc_property_ipv6_get_dns_search (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 4, nmc_property_ipv6_get_dns_options (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_ipv6_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_ipv6_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_ipv6_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_ipv6_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_ipv6_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_ipv6_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ipv6_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_ipv6_get_ip6_privacy (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_ipv6_get_addr_gen_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_ipv6_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_ipv6_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_ipv6_get_dns_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_ipv6_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_ipv6_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_ipv6_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_ipv6_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_ipv6_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_ipv6_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_ipv6_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_ipv6_get_ip6_privacy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_ipv6_get_addr_gen_mode (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_ipv6_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_ipv6_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
