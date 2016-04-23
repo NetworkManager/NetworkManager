@@ -77,6 +77,13 @@
     <property name="DnsOptions" type="as" access="read"/>
 
     <!--
+        DnsPriority:
+
+        The relative priority of DNS servers.
+    -->
+    <property name="DnsPriority" type="i" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
     -->
