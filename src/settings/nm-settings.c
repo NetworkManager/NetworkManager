@@ -500,6 +500,41 @@ read_hostname_gentoo (const char *path)
 }
 #endif
 
+#if defined(HOSTNAME_PERSIST_SLACKWARE)
+static gchar *
+read_hostname_slackware (const char *path)
+{
+	gchar *contents = NULL, *result = NULL, *tmp;
+	gchar **all_lines = NULL;
+	guint line_num, i, j = 0;
+
+	if (!g_file_get_contents (path, &contents, NULL, NULL))
+		return NULL;
+	all_lines = g_strsplit (contents, "\n", 0);
+	line_num = g_strv_length (all_lines);
+	for (i = 0; i < line_num; i++) {
+		g_strstrip (all_lines[i]);
+		if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
+			continue;
+		tmp = &all_lines[i][0];
+		/* We only want up to the first '.' -- the rest of the */
+		/* fqdn is defined in /etc/hosts */
+		while (tmp[j] != '\0') {
+			if (tmp[j] == '.') {
+				tmp[j] = '\0';
+				break;    
+			}
+			j++;
+		}
+		result = g_shell_unquote (tmp, NULL);
+		break;
+	}
+	g_strfreev (all_lines);
+	g_free (contents);
+	return result;
+}
+#endif
+
 #if defined(HOSTNAME_PERSIST_SUSE)
 static gboolean
 hostname_is_dynamic (void)
@@ -547,6 +582,10 @@ nm_settings_get_hostname (NMSettings *self)
 	hostname = read_hostname_gentoo (priv->hostname.file);
 #else
 
+#if defined(HOSTNAME_PERSIST_SLACKWARE)
+	hostname = read_hostname_slackware (priv->hostname.file);
+#else
+
 #if defined(HOSTNAME_PERSIST_SUSE)
 	if (priv->hostname.dhcp_monitor_id && hostname_is_dynamic ())
 		return NULL;
@@ -555,6 +594,7 @@ nm_settings_get_hostname (NMSettings *self)
 		g_strchomp (hostname);
 
 #endif /* HOSTNAME_PERSIST_GENTOO */
+#endif /* HOSTNAME_PERSIST_SLACKWARE */
 
 out:
 	if (hostname && !hostname[0]) {
