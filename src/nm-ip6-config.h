@@ -57,6 +57,7 @@ typedef struct {
 #define NM_IP6_CONFIG_DOMAINS "domains"
 #define NM_IP6_CONFIG_SEARCHES "searches"
 #define NM_IP6_CONFIG_DNS_OPTIONS "dns-options"
+#define NM_IP6_CONFIG_DNS_PRIORITY "dns-priority"
 
 /* deprecated */
 #define NM_IP6_CONFIG_ADDRESSES "addresses"
@@ -138,6 +139,10 @@ void nm_ip6_config_add_dns_option (NMIP6Config *config, const char *option);
 void nm_ip6_config_del_dns_option (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_dns_options (const NMIP6Config *config);
 const char * nm_ip6_config_get_dns_option (const NMIP6Config *config, guint i);
+
+/* DNS priority */
+void nm_ip6_config_set_dns_priority (NMIP6Config *config, gint priority);
+gint nm_ip6_config_get_dns_priority (const NMIP6Config *config);
 
 /* MSS */
 void nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss);
