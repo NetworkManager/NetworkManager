@@ -4,4 +4,5 @@ EXTRA_DIST = \
 	run-test-valgrind.sh \
 	run-test-dbus-session.sh \
 	test-networkmanager-service.py \
-	test-sudo-wrapper.sh
+	test-sudo-wrapper.sh \
+	enums-to-docbook.pl
