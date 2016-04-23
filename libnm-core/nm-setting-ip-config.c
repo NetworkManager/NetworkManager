@@ -1120,6 +1120,7 @@ typedef struct {
 	GPtrArray *dns;        /* array of IP address strings */
 	GPtrArray *dns_search; /* array of domain name strings */
 	GPtrArray *dns_options;/* array of DNS options */
+	gint dns_priority;
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
 	gint64 route_metric;
@@ -1140,6 +1141,7 @@ enum {
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_DNS_OPTIONS,
+	PROP_DNS_PRIORITY,
 	PROP_ADDRESSES,
 	PROP_GATEWAY,
 	PROP_ROUTES,
@@ -1681,6 +1683,22 @@ nm_setting_ip_config_clear_dns_options (NMSettingIPConfig *setting, gboolean is_
 		}
 	}
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+}
+
+/**
+ * nm_setting_ip_config_get_dns_priority:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the priority of DNS servers
+ *
+ * Since: 1.2.4
+ **/
+gint
+nm_setting_ip_config_get_dns_priority (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dns_priority;
 }
 
 /**
@@ -2352,6 +2370,9 @@ set_property (GObject *object, guint prop_id,
 			}
 		}
 		break;
+	case PROP_DNS_PRIORITY:
+		priv->dns_priority = g_value_get_int (value);
+		break;
 	case PROP_ADDRESSES:
 		g_ptr_array_unref (priv->addresses);
 		priv->addresses = _nm_utils_copy_array (g_value_get_boxed (value),
@@ -2423,6 +2444,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DNS_OPTIONS:
 		g_value_take_boxed (value, priv->dns_options ? _nm_utils_ptrarray_to_strv (priv->dns_options) : NULL);
+		break;
+	case PROP_DNS_PRIORITY:
+		g_value_set_int (value, priv->dns_priority);
 		break;
 	case PROP_ADDRESSES:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->addresses,
@@ -2574,6 +2598,34 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dns-priority:
+	 *
+	 * DNS priority.
+	 *
+	 * The relative priority to be used when determining the order of DNS
+	 * servers in resolv.conf.  A lower value means that servers will be on top
+	 * of the file.  Zero selects the default value, which is 50 for VPNs and
+	 * 100 for other connections.  When multiple devices have configurations
+	 * with the same priority, the one with an active default route will be
+	 * preferred.  Note that when using dns=dnsmasq the order is meaningless
+	 * since dnsmasq forwards queries to all known servers at the same time.
+	 *
+	 * Negative values have the special effect of excluding other configurations
+	 * with a greater priority value; so in presence of at least a negative
+	 * priority, only DNS servers from configurations with the lowest priority
+	 * value will be used.
+	 *
+	 * Since: 1.2.4
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_DNS_PRIORITY,
+	     g_param_spec_int (NM_SETTING_IP_CONFIG_DNS_PRIORITY, "", "",
+	                       G_MININT32, G_MAXINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIPConfig:addresses:

@@ -136,6 +136,7 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_IP_CONFIG_DNS                "dns"
 #define NM_SETTING_IP_CONFIG_DNS_SEARCH         "dns-search"
 #define NM_SETTING_IP_CONFIG_DNS_OPTIONS        "dns-options"
+#define NM_SETTING_IP_CONFIG_DNS_PRIORITY       "dns-priority"
 #define NM_SETTING_IP_CONFIG_ADDRESSES          "addresses"
 #define NM_SETTING_IP_CONFIG_GATEWAY            "gateway"
 #define NM_SETTING_IP_CONFIG_ROUTES             "routes"
@@ -218,6 +219,9 @@ void          nm_setting_ip_config_remove_dns_option          (NMSettingIPConfig
 gboolean      nm_setting_ip_config_remove_dns_option_by_value (NMSettingIPConfig *setting,
                                                                const char        *dns_option);
 void          nm_setting_ip_config_clear_dns_options          (NMSettingIPConfig *setting, gboolean is_set);
+
+NM_AVAILABLE_IN_1_2_4
+gint          nm_setting_ip_config_get_dns_priority (NMSettingIPConfig *setting);
 
 guint         nm_setting_ip_config_get_num_addresses          (NMSettingIPConfig *setting);
 NMIPAddress  *nm_setting_ip_config_get_address                (NMSettingIPConfig *setting,
