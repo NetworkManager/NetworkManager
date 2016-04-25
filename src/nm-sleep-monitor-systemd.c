@@ -55,7 +55,10 @@ struct _NMSleepMonitor {
 	GObject parent_instance;
 
 	GDBusProxy *sd_proxy;
+
+	/* used both during construction of sd_proxy and during Inhibit call. */
 	GCancellable *cancellable;
+
 	gint inhibit_fd;
 };
 
@@ -111,6 +114,8 @@ drop_inhibitor (NMSleepMonitor *self)
 		close (self->inhibit_fd);
 		self->inhibit_fd = -1;
 	}
+
+	nm_clear_g_cancellable (&self->cancellable);
 }
 
 static void
@@ -120,33 +125,40 @@ inhibit_done (GObject      *source,
 {
 	GDBusProxy *sd_proxy = G_DBUS_PROXY (source);
 	NMSleepMonitor *self = user_data;
-	GError *error = NULL;
-	GVariant *res;
-	GUnixFDList *fd_list;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *res = NULL;
+	gs_unref_object GUnixFDList *fd_list = NULL;
 
 	res = g_dbus_proxy_call_with_unix_fd_list_finish (sd_proxy, &fd_list, result, &error);
 	if (!res) {
-		g_dbus_error_strip_remote_error (error);
-		_LOGW ("Inhibit failed: %s", error->message);
-		g_error_free (error);
-	} else {
-		if (!fd_list || g_unix_fd_list_get_length (fd_list) != 1)
-			_LOGW ("Didn't get a single fd back");
-
-		self->inhibit_fd = g_unix_fd_list_get (fd_list, 0, NULL);
-
-		_LOGD ("Inhibitor fd is %d", self->inhibit_fd);
-		g_object_unref (fd_list);
-		g_variant_unref (res);
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			g_clear_object (&self->cancellable);
+			_LOGW ("Inhibit failed: %s", error->message);
+		}
+		return;
 	}
+
+	g_clear_object (&self->cancellable);
+
+	if (!fd_list || g_unix_fd_list_get_length (fd_list) != 1) {
+		_LOGW ("Didn't get a single fd back");
+		return;
+	}
+
+	self->inhibit_fd = g_unix_fd_list_get (fd_list, 0, NULL);
+	_LOGD ("Inhibitor fd is %d", self->inhibit_fd);
 }
 
 static void
 take_inhibitor (NMSleepMonitor *self)
 {
-	g_assert (self->inhibit_fd == -1);
+	g_return_if_fail (NM_IS_SLEEP_MONITOR (self));
+	g_return_if_fail (G_IS_DBUS_PROXY (self->sd_proxy));
+
+	drop_inhibitor (self);
 
 	_LOGD ("Taking systemd sleep inhibitor");
+	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_call_with_unix_fd_list (self->sd_proxy,
 	                                     "Inhibit",
 	                                     g_variant_new ("(ssss)",
@@ -157,7 +169,7 @@ take_inhibitor (NMSleepMonitor *self)
 	                                     0,
 	                                     G_MAXINT,
 	                                     NULL,
-	                                     NULL,
+	                                     self->cancellable,
 	                                     inhibit_done,
 	                                     self);
 }
@@ -247,9 +259,8 @@ dispose (GObject *object)
 {
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
+	/* drop_inhibitor() also clears our "cancellable" */
 	drop_inhibitor (self);
-
-	nm_clear_g_cancellable (&self->cancellable);
 
 	g_clear_object (&self->sd_proxy);
 
