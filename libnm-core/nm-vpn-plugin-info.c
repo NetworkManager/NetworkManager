@@ -395,18 +395,14 @@ nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
 
 		for (info = infos; info; info = info->next) {
 			NMVpnPluginInfo *p = info->data;
-			char **aliases;
 
 			if (name && !nm_streq (nm_vpn_plugin_info_get_name (p), name))
 				continue;
-			if (service) {
-				if (!nm_streq (nm_vpn_plugin_info_get_service (p), service))
-					continue;
-
-				aliases = NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases;
-				if (_nm_utils_strv_find_first (aliases, -1, service) < 0)
-					continue;
-			}
+			if (   service
+			    && !nm_streq (nm_vpn_plugin_info_get_service (p), service)
+			    && (_nm_utils_strv_find_first (NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases,
+			                                   -1, service) < 0))
+				continue;
 			plugin_info = g_object_ref (p);
 			break;
 		}
