@@ -112,6 +112,10 @@ EXPORT(nm_settings_connection_replace_and_commit)
 
 #define PLUGIN_MODULE_PATH      "plugin-module-path"
 
+#if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) + defined(HOSTNAME_PERSIST_GENTOO)) > 1
+#error "Can only define one of HOSTNAME_PERSIST_*"
+#endif
+
 #if defined(HOSTNAME_PERSIST_SUSE)
 #define HOSTNAME_FILE           HOSTNAME_FILE_UCASE_HOSTNAME
 #elif defined(HOSTNAME_PERSIST_SLACKWARE)
@@ -476,27 +480,58 @@ get_plugin (NMSettings *self, guint32 capability)
 static gchar *
 read_hostname_gentoo (const char *path)
 {
-	gchar *contents = NULL, *result = NULL, *tmp;
-	gchar **all_lines = NULL;
-	guint line_num, i;
+	gs_free char *contents = NULL;
+	gs_strfreev char **all_lines = NULL;
+	const char *tmp;
+	guint i;
 
 	if (!g_file_get_contents (path, &contents, NULL, NULL))
 		return NULL;
+
 	all_lines = g_strsplit (contents, "\n", 0);
-	line_num = g_strv_length (all_lines);
-	for (i = 0; i < line_num; i++) {
+	for (i = 0; all_lines[i]; i++) {
 		g_strstrip (all_lines[i]);
 		if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
 			continue;
 		if (g_str_has_prefix (all_lines[i], "hostname=")) {
 			tmp = &all_lines[i][NM_STRLEN ("hostname=")];
-			result = g_shell_unquote (tmp, NULL);
-			break;
+			return g_shell_unquote (tmp, NULL);
 		}
 	}
-	g_strfreev (all_lines);
-	g_free (contents);
-	return result;
+	return NULL;
+}
+#endif
+
+#if defined(HOSTNAME_PERSIST_SLACKWARE)
+static gchar *
+read_hostname_slackware (const char *path)
+{
+	gs_free char *contents = NULL;
+	gs_strfreev char **all_lines = NULL;
+	char *tmp;
+	guint i, j = 0;
+
+	if (!g_file_get_contents (path, &contents, NULL, NULL))
+		return NULL;
+
+	all_lines = g_strsplit (contents, "\n", 0);
+	for (i = 0; all_lines[i]; i++) {
+		g_strstrip (all_lines[i]);
+		if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
+			continue;
+		tmp = &all_lines[i][0];
+		/* We only want up to the first '.' -- the rest of the */
+		/* fqdn is defined in /etc/hosts */
+		while (tmp[j] != '\0') {
+			if (tmp[j] == '.') {
+				tmp[j] = '\0';
+				break;
+			}
+			j++;
+		}
+		return g_shell_unquote (tmp, NULL);
+	}
+	return NULL;
 }
 #endif
 
@@ -543,18 +578,19 @@ nm_settings_get_hostname (NMSettings *self)
 		goto out;
 	}
 
-#if defined(HOSTNAME_PERSIST_GENTOO)
-	hostname = read_hostname_gentoo (priv->hostname.file);
-#else
-
 #if defined(HOSTNAME_PERSIST_SUSE)
 	if (priv->hostname.dhcp_monitor_id && hostname_is_dynamic ())
 		return NULL;
 #endif
+
+#if defined(HOSTNAME_PERSIST_GENTOO)
+	hostname = read_hostname_gentoo (priv->hostname.file);
+#elif defined(HOSTNAME_PERSIST_SLACKWARE)
+	hostname = read_hostname_slackware (priv->hostname.file);
+#else
 	if (g_file_get_contents (priv->hostname.file, &hostname, NULL, NULL))
 		g_strchomp (hostname);
-
-#endif /* HOSTNAME_PERSIST_GENTOO */
+#endif
 
 out:
 	if (hostname && !hostname[0]) {
