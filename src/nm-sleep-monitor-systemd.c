@@ -55,6 +55,7 @@ struct _NMSleepMonitor {
 	GObject parent_instance;
 
 	GDBusProxy *sd_proxy;
+	GCancellable *cancellable;
 	gint inhibit_fd;
 };
 
@@ -205,13 +206,17 @@ on_proxy_acquired (GObject *object,
 {
 	GError *error = NULL;
 	char *owner;
+	GDBusProxy *sd_proxy;
 
-	self->sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-	if (!self->sd_proxy) {
-		_LOGW ("Failed to acquire logind proxy: %s", error->message);
+	sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
+	if (!sd_proxy) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			_LOGW ("Failed to acquire logind proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
+	self->sd_proxy = sd_proxy;
+	g_clear_object (&self->cancellable);
 
 	g_signal_connect (self->sd_proxy, "notify::g-name-owner", G_CALLBACK (name_owner_cb), self);
 	_nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep", G_VARIANT_TYPE ("(b)"),
@@ -227,12 +232,13 @@ static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
 	self->inhibit_fd = -1;
+	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
 	                          SUSPEND_DBUS_NAME, SUSPEND_DBUS_PATH, SUSPEND_DBUS_INTERFACE,
-	                          NULL,
+	                          self->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired, self);
 }
 
@@ -242,6 +248,8 @@ dispose (GObject *object)
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
 	drop_inhibitor (self);
+
+	nm_clear_g_cancellable (&self->cancellable);
 
 	g_clear_object (&self->sd_proxy);
 
