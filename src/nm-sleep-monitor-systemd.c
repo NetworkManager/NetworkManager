@@ -241,16 +241,15 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
 	drop_inhibitor (self);
-	if (self->sd_proxy)
-		g_object_unref (self->sd_proxy);
 
-	if (G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize != NULL)
-		G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize (object);
+	g_clear_object (&self->sd_proxy);
+
+	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->dispose (object);
 }
 
 static void
@@ -260,7 +259,7 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 
 	gobject_class = G_OBJECT_CLASS (klass);
 
-	gobject_class->finalize = finalize;
+	gobject_class->dispose = dispose;
 
 	signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
 	                                  NM_TYPE_SLEEP_MONITOR,
