@@ -55,16 +55,19 @@ struct _NMSleepMonitor {
 	GObject parent_instance;
 
 	GDBusProxy *sd_proxy;
+
+	/* used both during construction of sd_proxy and during Inhibit call. */
+	GCancellable *cancellable;
+
 	gint inhibit_fd;
+
+	gulong sig_id_1;
+	gulong sig_id_2;
 };
 
 struct _NMSleepMonitorClass {
 	GObjectClass parent_class;
-
-	void (*sleeping) (NMSleepMonitor *monitor);
-	void (*resuming) (NMSleepMonitor *monitor);
 };
-
 
 enum {
 	SLEEPING,
@@ -75,18 +78,47 @@ static guint signals[LAST_SIGNAL] = {0};
 
 G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 
-/********************************************************************/
+NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
 
-static gboolean
+/*****************************************************************************/
+
+#ifdef SUSPEND_RESUME_SYSTEMD
+#define _NMLOG_PREFIX_NAME                "sleep-monitor-sd"
+#else
+#define _NMLOG_PREFIX_NAME                "sleep-monitor-ck"
+#endif
+
+#define _NMLOG_DOMAIN                     LOGD_SUSPEND
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            char __prefix[20]; \
+            const NMSleepMonitor *const __self = (self); \
+            \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     (!__self || __self == singleton_instance \
+                        ? "" \
+                        : nm_sprintf_buf (__prefix, "[%p]", __self)) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
+
+static void
 drop_inhibitor (NMSleepMonitor *self)
 {
 	if (self->inhibit_fd >= 0) {
-		nm_log_dbg (LOGD_SUSPEND, "Dropping systemd sleep inhibitor");
+		_LOGD ("Dropping systemd sleep inhibitor %d", self->inhibit_fd);
 		close (self->inhibit_fd);
 		self->inhibit_fd = -1;
-		return TRUE;
 	}
-	return FALSE;
+
+	nm_clear_g_cancellable (&self->cancellable);
 }
 
 static void
@@ -96,44 +128,51 @@ inhibit_done (GObject      *source,
 {
 	GDBusProxy *sd_proxy = G_DBUS_PROXY (source);
 	NMSleepMonitor *self = user_data;
-	GError *error = NULL;
-	GVariant *res;
-	GUnixFDList *fd_list;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *res = NULL;
+	gs_unref_object GUnixFDList *fd_list = NULL;
 
 	res = g_dbus_proxy_call_with_unix_fd_list_finish (sd_proxy, &fd_list, result, &error);
 	if (!res) {
-		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUSPEND, "Inhibit failed: %s", error->message);
-		g_error_free (error);
-	} else {
-		if (!fd_list || g_unix_fd_list_get_length (fd_list) != 1)
-			nm_log_warn (LOGD_SUSPEND, "Didn't get a single fd back");
-
-		self->inhibit_fd = g_unix_fd_list_get (fd_list, 0, NULL);
-
-		nm_log_dbg (LOGD_SUSPEND, "Inhibitor fd is %d", self->inhibit_fd);
-		g_object_unref (fd_list);
-		g_variant_unref (res);
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			g_clear_object (&self->cancellable);
+			_LOGW ("Inhibit failed: %s", error->message);
+		}
+		return;
 	}
+
+	g_clear_object (&self->cancellable);
+
+	if (!fd_list || g_unix_fd_list_get_length (fd_list) != 1) {
+		_LOGW ("Didn't get a single fd back");
+		return;
+	}
+
+	self->inhibit_fd = g_unix_fd_list_get (fd_list, 0, NULL);
+	_LOGD ("Inhibitor fd is %d", self->inhibit_fd);
 }
 
 static void
 take_inhibitor (NMSleepMonitor *self)
 {
-	g_assert (self->inhibit_fd == -1);
+	g_return_if_fail (NM_IS_SLEEP_MONITOR (self));
+	g_return_if_fail (G_IS_DBUS_PROXY (self->sd_proxy));
 
-	nm_log_dbg (LOGD_SUSPEND, "Taking systemd sleep inhibitor");
+	drop_inhibitor (self);
+
+	_LOGD ("Taking systemd sleep inhibitor");
+	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_call_with_unix_fd_list (self->sd_proxy,
 	                                     "Inhibit",
 	                                     g_variant_new ("(ssss)",
 	                                                    "sleep",
 	                                                    "NetworkManager",
-	                                                    _("NetworkManager needs to turn off networks"),
+	                                                    "NetworkManager needs to turn off networks",
 	                                                    "delay"),
 	                                     0,
 	                                     G_MAXINT,
 	                                     NULL,
-	                                     NULL,
+	                                     self->cancellable,
 	                                     inhibit_done,
 	                                     self);
 }
@@ -145,7 +184,7 @@ prepare_for_sleep_cb (GDBusProxy  *proxy,
 {
 	NMSleepMonitor *self = data;
 
-	nm_log_dbg (LOGD_SUSPEND, "Received PrepareForSleep signal: %d", is_about_to_suspend);
+	_LOGD ("Received PrepareForSleep signal: %d", is_about_to_suspend);
 
 	if (is_about_to_suspend) {
 		g_signal_emit (self, signals[SLEEPING], 0);
@@ -182,17 +221,23 @@ on_proxy_acquired (GObject *object,
 {
 	GError *error = NULL;
 	char *owner;
+	GDBusProxy *sd_proxy;
 
-	self->sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-	if (!self->sd_proxy) {
-		nm_log_warn (LOGD_SUSPEND, "Failed to acquire logind proxy: %s", error->message);
+	sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
+	if (!sd_proxy) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			_LOGW ("Failed to acquire logind proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
+	self->sd_proxy = sd_proxy;
+	g_clear_object (&self->cancellable);
 
-	g_signal_connect (self->sd_proxy, "notify::g-name-owner", G_CALLBACK (name_owner_cb), self);
-	_nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep", G_VARIANT_TYPE ("(b)"),
-	                         G_CALLBACK (prepare_for_sleep_cb), self);
+	self->sig_id_1 = g_signal_connect (self->sd_proxy, "notify::g-name-owner",
+	                                   G_CALLBACK (name_owner_cb), self);
+	self->sig_id_2 = _nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep",
+	                                          G_VARIANT_TYPE ("(b)"),
+	                                          G_CALLBACK (prepare_for_sleep_cb), self);
 
 	owner = g_dbus_proxy_get_name_owner (self->sd_proxy);
 	if (owner)
@@ -204,26 +249,31 @@ static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
 	self->inhibit_fd = -1;
+	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
 	                          SUSPEND_DBUS_NAME, SUSPEND_DBUS_PATH, SUSPEND_DBUS_INTERFACE,
-	                          NULL,
+	                          self->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired, self);
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
+	/* drop_inhibitor() also clears our "cancellable" */
 	drop_inhibitor (self);
-	if (self->sd_proxy)
-		g_object_unref (self->sd_proxy);
 
-	if (G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize != NULL)
-		G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize (object);
+	if (self->sd_proxy) {
+		nm_clear_g_signal_handler (self->sd_proxy, &self->sig_id_1);
+		nm_clear_g_signal_handler (self->sd_proxy, &self->sig_id_2);
+		g_clear_object (&self->sd_proxy);
+	}
+
+	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->dispose (object);
 }
 
 static void
@@ -233,26 +283,19 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 
 	gobject_class = G_OBJECT_CLASS (klass);
 
-	gobject_class->finalize = finalize;
+	gobject_class->dispose = dispose;
 
 	signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
 	                                  NM_TYPE_SLEEP_MONITOR,
 	                                  G_SIGNAL_RUN_LAST,
-	                                  G_STRUCT_OFFSET (NMSleepMonitorClass, sleeping),
-	                                  NULL,                   /* accumulator      */
-	                                  NULL,                   /* accumulator data */
+	                                  0, NULL, NULL,
 	                                  g_cclosure_marshal_VOID__VOID,
 	                                  G_TYPE_NONE, 0);
 	signals[RESUMING] = g_signal_new (NM_SLEEP_MONITOR_RESUMING,
 	                                  NM_TYPE_SLEEP_MONITOR,
 	                                  G_SIGNAL_RUN_LAST,
-	                                  G_STRUCT_OFFSET (NMSleepMonitorClass, resuming),
-	                                  NULL,                   /* accumulator      */
-	                                  NULL,                   /* accumulator data */
+	                                  0, NULL, NULL,
 	                                  g_cclosure_marshal_VOID__VOID,
 	                                  G_TYPE_NONE, 0);
 }
 
-NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
-
-/* ---------------------------------------------------------------------------------------------------- */
