@@ -60,6 +60,9 @@ struct _NMSleepMonitor {
 	GCancellable *cancellable;
 
 	gint inhibit_fd;
+
+	gulong sig_id_1;
+	gulong sig_id_2;
 };
 
 struct _NMSleepMonitorClass {
@@ -230,9 +233,11 @@ on_proxy_acquired (GObject *object,
 	self->sd_proxy = sd_proxy;
 	g_clear_object (&self->cancellable);
 
-	g_signal_connect (self->sd_proxy, "notify::g-name-owner", G_CALLBACK (name_owner_cb), self);
-	_nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep", G_VARIANT_TYPE ("(b)"),
-	                         G_CALLBACK (prepare_for_sleep_cb), self);
+	self->sig_id_1 = g_signal_connect (self->sd_proxy, "notify::g-name-owner",
+	                                   G_CALLBACK (name_owner_cb), self);
+	self->sig_id_2 = _nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep",
+	                                          G_VARIANT_TYPE ("(b)"),
+	                                          G_CALLBACK (prepare_for_sleep_cb), self);
 
 	owner = g_dbus_proxy_get_name_owner (self->sd_proxy);
 	if (owner)
@@ -262,7 +267,11 @@ dispose (GObject *object)
 	/* drop_inhibitor() also clears our "cancellable" */
 	drop_inhibitor (self);
 
-	g_clear_object (&self->sd_proxy);
+	if (self->sd_proxy) {
+		nm_clear_g_signal_handler (self->sd_proxy, &self->sig_id_1);
+		nm_clear_g_signal_handler (self->sd_proxy, &self->sig_id_2);
+		g_clear_object (&self->sd_proxy);
+	}
 
 	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->dispose (object);
 }
