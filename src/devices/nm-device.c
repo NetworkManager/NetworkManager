@@ -1314,7 +1314,7 @@ void
 nm_device_update_dynamic_ip_setup (NMDevice *self)
 {
 	NMDevicePrivate *priv;
-	GError *error;
+	GError *error = NULL;
 	gconstpointer addr;
 	size_t addr_length;
 
