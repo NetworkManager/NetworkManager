@@ -601,7 +601,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 *
 	 * Configure method for creating the address for use with RFC4862 IPv6
 	 * Stateless Address Autoconfiguration. The permitted values are: "eui64",
-	 * "stable-privacy" or unset.
+	 * or "stable-privacy".
 	 *
 	 * If the property is set to "eui64", the addresses will be generated
 	 * using the interface tokens derived from  hardware address. This makes
@@ -616,8 +616,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * and makes the address stable when the network interface hardware is
 	 * replaced.
 	 *
-	 * Leaving this unset causes a default that could be subject to change
-	 * in future versions to be used.
+	 * On D-Bus, the absence of an addr-gen-mode setting equals enabling
+	 * "stable-privacy". For keyfile plugin, the absence of the setting
+	 * on disk means "eui64" so that the property doesn't change on upgrade
+	 * from older versions.
 	 *
 	 * Note that this setting is distinct from the Privacy Extensions as
 	 * configured by "ip6-privacy" property and it does not affect the
