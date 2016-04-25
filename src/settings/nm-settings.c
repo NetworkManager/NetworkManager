@@ -112,6 +112,10 @@ EXPORT(nm_settings_connection_replace_and_commit)
 
 #define PLUGIN_MODULE_PATH      "plugin-module-path"
 
+#if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) + defined(HOSTNAME_PERSIST_GENTOO)) > 1
+#error "Can only define one of HOSTNAME_PERSIST_*"
+#endif
+
 #if defined(HOSTNAME_PERSIST_SUSE)
 #define HOSTNAME_FILE           HOSTNAME_FILE_UCASE_HOSTNAME
 #elif defined(HOSTNAME_PERSIST_SLACKWARE)
@@ -526,7 +530,7 @@ read_hostname_slackware (const char *path)
 		while (tmp[j] != '\0') {
 			if (tmp[j] == '.') {
 				tmp[j] = '\0';
-				break;    
+				break;
 			}
 			j++;
 		}
@@ -582,23 +586,19 @@ nm_settings_get_hostname (NMSettings *self)
 		goto out;
 	}
 
-#if defined(HOSTNAME_PERSIST_GENTOO)
-	hostname = read_hostname_gentoo (priv->hostname.file);
-#else
-
-#if defined(HOSTNAME_PERSIST_SLACKWARE)
-	hostname = read_hostname_slackware (priv->hostname.file);
-#else
-
 #if defined(HOSTNAME_PERSIST_SUSE)
 	if (priv->hostname.dhcp_monitor_id && hostname_is_dynamic ())
 		return NULL;
 #endif
+
+#if defined(HOSTNAME_PERSIST_GENTOO)
+	hostname = read_hostname_gentoo (priv->hostname.file);
+#elif defined(HOSTNAME_PERSIST_SLACKWARE)
+	hostname = read_hostname_slackware (priv->hostname.file);
+#else
 	if (g_file_get_contents (priv->hostname.file, &hostname, NULL, NULL))
 		g_strchomp (hostname);
-
-#endif /* HOSTNAME_PERSIST_GENTOO */
-#endif /* HOSTNAME_PERSIST_SLACKWARE */
+#endif
 
 out:
 	if (hostname && !hostname[0]) {
