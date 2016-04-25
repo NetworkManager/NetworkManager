@@ -788,7 +788,7 @@ static void
 adapter5_on_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	GError *error;
+	GError *error = NULL;
 	GVariant *v;
 
 	priv->adapter5 = g_dbus_proxy_new_for_bus_finish (res, &error);
