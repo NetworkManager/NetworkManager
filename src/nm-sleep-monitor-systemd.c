@@ -106,16 +106,14 @@ NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_
 
 /*****************************************************************************/
 
-static gboolean
+static void
 drop_inhibitor (NMSleepMonitor *self)
 {
 	if (self->inhibit_fd >= 0) {
-		_LOGD ("Dropping systemd sleep inhibitor");
+		_LOGD ("Dropping systemd sleep inhibitor %d", self->inhibit_fd);
 		close (self->inhibit_fd);
 		self->inhibit_fd = -1;
-		return TRUE;
 	}
-	return FALSE;
 }
 
 static void
