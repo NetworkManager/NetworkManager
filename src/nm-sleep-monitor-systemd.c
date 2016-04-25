@@ -60,11 +60,7 @@ struct _NMSleepMonitor {
 
 struct _NMSleepMonitorClass {
 	GObjectClass parent_class;
-
-	void (*sleeping) (NMSleepMonitor *monitor);
-	void (*resuming) (NMSleepMonitor *monitor);
 };
-
 
 enum {
 	SLEEPING,
@@ -264,17 +260,13 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 	signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
 	                                  NM_TYPE_SLEEP_MONITOR,
 	                                  G_SIGNAL_RUN_LAST,
-	                                  G_STRUCT_OFFSET (NMSleepMonitorClass, sleeping),
-	                                  NULL,                   /* accumulator      */
-	                                  NULL,                   /* accumulator data */
+	                                  0, NULL, NULL,
 	                                  g_cclosure_marshal_VOID__VOID,
 	                                  G_TYPE_NONE, 0);
 	signals[RESUMING] = g_signal_new (NM_SLEEP_MONITOR_RESUMING,
 	                                  NM_TYPE_SLEEP_MONITOR,
 	                                  G_SIGNAL_RUN_LAST,
-	                                  G_STRUCT_OFFSET (NMSleepMonitorClass, resuming),
-	                                  NULL,                   /* accumulator      */
-	                                  NULL,                   /* accumulator data */
+	                                  0, NULL, NULL,
 	                                  g_cclosure_marshal_VOID__VOID,
 	                                  G_TYPE_NONE, 0);
 }
