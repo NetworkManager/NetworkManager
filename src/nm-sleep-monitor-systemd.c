@@ -164,7 +164,7 @@ take_inhibitor (NMSleepMonitor *self)
 	                                     g_variant_new ("(ssss)",
 	                                                    "sleep",
 	                                                    "NetworkManager",
-	                                                    _("NetworkManager needs to turn off networks"),
+	                                                    "NetworkManager needs to turn off networks",
 	                                                    "delay"),
 	                                     0,
 	                                     G_MAXINT,
