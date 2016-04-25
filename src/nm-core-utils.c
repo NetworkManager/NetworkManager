@@ -2588,6 +2588,63 @@ nm_utils_is_specific_hostname (const char *name)
 
 /******************************************************************/
 
+guint8 *
+nm_utils_secret_key_read (gsize *out_key_len, GError **error)
+{
+	guint8 *secret_key = NULL;
+	gsize key_len;
+
+	/* out_key_len is not optional, because without it you cannot safely
+	 * access the returned memory. */
+	*out_key_len = 0;
+
+	/* Let's try to load a saved secret key first. */
+	if (g_file_get_contents (NMSTATEDIR "/secret_key", (char **) &secret_key, &key_len, NULL)) {
+		if (key_len < 16) {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     "Key is too short to be usable");
+			key_len = 0;
+		}
+	} else {
+		int urandom = open ("/dev/urandom", O_RDONLY);
+		mode_t key_mask;
+
+		if (urandom == -1) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			             "Can't open /dev/urandom: %s", strerror (errno));
+			key_len = 0;
+			goto out;
+		}
+
+		/* RFC7217 mandates the key SHOULD be at least 128 bits.
+		 * Let's use twice as much. */
+		key_len = 32;
+		secret_key = g_malloc (key_len);
+
+		key_mask = umask (0077);
+		if (read (urandom, secret_key, key_len) == key_len) {
+			if (!g_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, error)) {
+				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
+				key_len = 0;
+			}
+		} else {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     "Could not obtain a secret");
+			key_len = 0;
+		}
+		umask (key_mask);
+		close (urandom);
+	}
+
+out:
+	if (key_len) {
+		*out_key_len = key_len;
+		return secret_key;
+	}
+	g_free (secret_key);
+	return NULL;
+}
+
 /* Returns the "u" (universal/local) bit value for a Modified EUI-64 */
 static gboolean
 get_gre_eui64_u_bit (guint32 addr)
@@ -2715,7 +2772,7 @@ _set_stable_privacy (struct in6_addr *addr,
                      const char *ifname,
                      const char *uuid,
                      guint dad_counter,
-                     gchar *secret_key,
+                     guint8 *secret_key,
                      gsize key_len,
                      GError **error)
 {
@@ -2773,9 +2830,8 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
                                        guint dad_counter,
                                        GError **error)
 {
-	gchar *secret_key = NULL;
+	gs_free guint8 *secret_key = NULL;
 	gsize key_len = 0;
-	gboolean success = FALSE;
 
 	if (dad_counter >= RFC7217_IDGEN_RETRIES) {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -2783,50 +2839,12 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 		return FALSE;
 	}
 
-	/* Let's try to load a saved secret key first. */
-	if (g_file_get_contents (NMSTATEDIR "/secret_key", &secret_key, &key_len, NULL)) {
-		if (key_len < 16) {
-			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			                     "Key is too short to be usable");
-			key_len = 0;
-		}
-	} else {
-		int urandom = open ("/dev/urandom", O_RDONLY);
-		mode_t key_mask;
+	secret_key = nm_utils_secret_key_read (&key_len, error);
+	if (!secret_key)
+		return FALSE;
 
-		if (urandom == -1) {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			             "Can't open /dev/urandom: %s", strerror (errno));
-			return FALSE;
-		}
-
-		/* RFC7217 mandates the key SHOULD be at least 128 bits.
-		 * Let's use twice as much. */
-		key_len = 32;
-		secret_key = g_malloc (key_len);
-
-		key_mask = umask (0077);
-		if (read (urandom, secret_key, key_len) == key_len) {
-			if (!g_file_set_contents (NMSTATEDIR "/secret_key", secret_key, key_len, error)) {
-				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
-				key_len = 0;
-			}
-		} else {
-			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			                     "Could not obtain a secret");
-			key_len = 0;
-		}
-		umask (key_mask);
-		close (urandom);
-	}
-
-	if (key_len) {
-		success = _set_stable_privacy (addr, ifname, uuid, dad_counter,
-		                               secret_key, key_len, error);
-	}
-
-	g_free (secret_key);
-	return success;
+	return _set_stable_privacy (addr, ifname, uuid, dad_counter,
+	                            secret_key, key_len, error);
 }
 
 /**

@@ -34,17 +34,17 @@ test_stable_privacy (void)
 	struct in6_addr addr1;
 
 	inet_pton (AF_INET6, "1234::", &addr1);
-	_set_stable_privacy (&addr1, "eth666", "6b138152-9f3e-4b97-aaf7-e6e553f2a24e", 0, "key", 3, NULL);
+	_set_stable_privacy (&addr1, "eth666", "6b138152-9f3e-4b97-aaf7-e6e553f2a24e", 0, (guint8 *) "key", 3, NULL);
 	nmtst_assert_ip6_address (&addr1, "1234::4ceb:14cd:3d54:793f");
 
 	/* We get an address without the UUID. */
 	inet_pton (AF_INET6, "1::", &addr1);
-	_set_stable_privacy (&addr1, "eth666", NULL, 384, "key", 3, NULL);
+	_set_stable_privacy (&addr1, "eth666", NULL, 384, (guint8 *) "key", 3, NULL);
 	nmtst_assert_ip6_address (&addr1, "1::11aa:2530:9144:dafa");
 
 	/* We get a different address in a different network. */
 	inet_pton (AF_INET6, "2::", &addr1);
-	_set_stable_privacy (&addr1, "eth666", NULL, 384, "key", 3, NULL);
+	_set_stable_privacy (&addr1, "eth666", NULL, 384, (guint8 *) "key", 3, NULL);
 	nmtst_assert_ip6_address (&addr1, "2::338e:8d:c11:8726");
 }
 
