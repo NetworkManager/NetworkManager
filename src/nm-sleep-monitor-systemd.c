@@ -75,13 +75,42 @@ static guint signals[LAST_SIGNAL] = {0};
 
 G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 
-/********************************************************************/
+NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
+
+/*****************************************************************************/
+
+#ifdef SUSPEND_RESUME_SYSTEMD
+#define _NMLOG_PREFIX_NAME                "sleep-monitor-sd"
+#else
+#define _NMLOG_PREFIX_NAME                "sleep-monitor-ck"
+#endif
+
+#define _NMLOG_DOMAIN                     LOGD_SUSPEND
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            char __prefix[20]; \
+            const NMSleepMonitor *const __self = (self); \
+            \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     (!__self || __self == singleton_instance \
+                        ? "" \
+                        : nm_sprintf_buf (__prefix, "[%p]", __self)) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 static gboolean
 drop_inhibitor (NMSleepMonitor *self)
 {
 	if (self->inhibit_fd >= 0) {
-		nm_log_dbg (LOGD_SUSPEND, "Dropping systemd sleep inhibitor");
+		_LOGD ("Dropping systemd sleep inhibitor");
 		close (self->inhibit_fd);
 		self->inhibit_fd = -1;
 		return TRUE;
@@ -103,15 +132,15 @@ inhibit_done (GObject      *source,
 	res = g_dbus_proxy_call_with_unix_fd_list_finish (sd_proxy, &fd_list, result, &error);
 	if (!res) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUSPEND, "Inhibit failed: %s", error->message);
+		_LOGW ("Inhibit failed: %s", error->message);
 		g_error_free (error);
 	} else {
 		if (!fd_list || g_unix_fd_list_get_length (fd_list) != 1)
-			nm_log_warn (LOGD_SUSPEND, "Didn't get a single fd back");
+			_LOGW ("Didn't get a single fd back");
 
 		self->inhibit_fd = g_unix_fd_list_get (fd_list, 0, NULL);
 
-		nm_log_dbg (LOGD_SUSPEND, "Inhibitor fd is %d", self->inhibit_fd);
+		_LOGD ("Inhibitor fd is %d", self->inhibit_fd);
 		g_object_unref (fd_list);
 		g_variant_unref (res);
 	}
@@ -122,7 +151,7 @@ take_inhibitor (NMSleepMonitor *self)
 {
 	g_assert (self->inhibit_fd == -1);
 
-	nm_log_dbg (LOGD_SUSPEND, "Taking systemd sleep inhibitor");
+	_LOGD ("Taking systemd sleep inhibitor");
 	g_dbus_proxy_call_with_unix_fd_list (self->sd_proxy,
 	                                     "Inhibit",
 	                                     g_variant_new ("(ssss)",
@@ -145,7 +174,7 @@ prepare_for_sleep_cb (GDBusProxy  *proxy,
 {
 	NMSleepMonitor *self = data;
 
-	nm_log_dbg (LOGD_SUSPEND, "Received PrepareForSleep signal: %d", is_about_to_suspend);
+	_LOGD ("Received PrepareForSleep signal: %d", is_about_to_suspend);
 
 	if (is_about_to_suspend) {
 		g_signal_emit (self, signals[SLEEPING], 0);
@@ -185,7 +214,7 @@ on_proxy_acquired (GObject *object,
 
 	self->sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
 	if (!self->sd_proxy) {
-		nm_log_warn (LOGD_SUSPEND, "Failed to acquire logind proxy: %s", error->message);
+		_LOGW ("Failed to acquire logind proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
@@ -253,6 +282,3 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 	                                  G_TYPE_NONE, 0);
 }
 
-NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
-
-/* ---------------------------------------------------------------------------------------------------- */
