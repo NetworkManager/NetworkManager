@@ -2559,6 +2559,64 @@ nm_utils_is_specific_hostname (const char *name)
 
 /******************************************************************/
 
+gboolean
+nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid)
+{
+	int i;
+	guint8 v0, v1;
+
+	if (!id_str)
+		return FALSE;
+
+	for (i = 0; i < 32; i++) {
+		if (!g_ascii_isxdigit (id_str[i]))
+			return FALSE;
+	}
+	if (id_str[i] != '\0')
+		return FALSE;
+
+	if (out_uuid) {
+		for (i = 0; i < 16; i++) {
+			v0 = g_ascii_xdigit_value (*(id_str++));
+			v1 = g_ascii_xdigit_value (*(id_str++));
+			out_uuid[i] = (v0 << 4) + v1;
+		}
+	}
+	return TRUE;
+}
+
+char *
+nm_utils_machine_id_read (void)
+{
+	gs_free char *contents = NULL;
+	int i;
+
+	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
+	 * where our configured SYSCONFDIR is.  Alternatively, it might be in
+	 * LOCALSTATEDIR /lib/dbus/machine-id.
+	 */
+	if (   !g_file_get_contents ("/etc/machine-id", &contents, NULL, NULL)
+	    && !g_file_get_contents (LOCALSTATEDIR "/lib/dbus/machine-id", &contents, NULL, NULL))
+		return FALSE;
+
+	contents = g_strstrip (contents);
+
+	for (i = 0; i < 32; i++) {
+		if (!g_ascii_isxdigit (contents[i]))
+			return FALSE;
+		if (contents[i] >= 'A' && contents[i] <= 'F') {
+			/* canonicalize to lower-case */
+			contents[i] = 'a' + (contents[i] - 'A');
+		}
+	}
+	if (contents[i] != '\0')
+		return FALSE;
+
+	return nm_unauto (&contents);
+}
+
+/*****************************************************************************/
+
 guint8 *
 nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 {
