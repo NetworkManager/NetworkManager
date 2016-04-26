@@ -436,37 +436,10 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, last_ip4_address);
 }
 
-/* uuid_parse does not work for machine-id, so we use our own converter */
-static gboolean
-machine_id_parse (const char *in, uuid_t uu)
-{
-	const char *cp;
-	int i;
-	char buf[3];
-
-	g_return_val_if_fail (in != NULL, FALSE);
-	g_return_val_if_fail (strlen (in) == 32, FALSE);
-
-	for (i = 0; i < 32; i++) {
-		if (!g_ascii_isxdigit (in[i]))
-			return FALSE;
-	}
-
-	buf[2] = 0;
-	cp = in;
-	for (i = 0; i < 16; i++) {
-		buf[0] = *cp++;
-		buf[1] = *cp++;
-		uu[i] = ((unsigned char) strtoul (buf, NULL, 16)) & 0xFF;
-	}
-	return TRUE;
-}
-
 static GByteArray *
 generate_duid_from_machine_id (void)
 {
 	GByteArray *duid;
-	char *contents = NULL;
 	GChecksum *sum;
 	guint8 buffer[32]; /* SHA256 digest size */
 	gsize sumlen = sizeof (buffer);
@@ -474,27 +447,16 @@ generate_duid_from_machine_id (void)
 	uuid_t uuid;
 	GRand *generator;
 	guint i;
-	gboolean success = FALSE;
+	gs_free char *machine_id_s = NULL;
 
-	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
-	 * where our configured SYSCONFDIR is.  Alternatively, it might be in
-	 * LOCALSTATEDIR /lib/dbus/machine-id.
-	 */
-	if (   g_file_get_contents ("/etc/machine-id", &contents, NULL, NULL)
-	    || g_file_get_contents (LOCALSTATEDIR "/lib/dbus/machine-id", &contents, NULL, NULL)) {
-		contents = g_strstrip (contents);
-		success = machine_id_parse (contents, uuid);
-		if (success) {
-			/* Hash the machine ID so it's not leaked to the network */
-			sum = g_checksum_new (G_CHECKSUM_SHA256);
-			g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
-			g_checksum_get_digest (sum, buffer, &sumlen);
-			g_checksum_free (sum);
-		}
-		g_free (contents);
-	}
-
-	if (!success) {
+	machine_id_s = nm_utils_machine_id_read ();
+	if (nm_utils_machine_id_parse (machine_id_s, uuid)) {
+		/* Hash the machine ID so it's not leaked to the network */
+		sum = g_checksum_new (G_CHECKSUM_SHA256);
+		g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
+		g_checksum_get_digest (sum, buffer, &sumlen);
+		g_checksum_free (sum);
+	} else {
 		nm_log_warn (LOGD_DHCP6, "dhcp6: failed to read " SYSCONFDIR "/machine-id "
 		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
 		             "DHCPv6 DUID; creating non-persistent random DUID.");

@@ -142,6 +142,7 @@ test_utils_DEPENDENCIES = \
 test_utils_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DPREFIX=\"/nonexistent\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DNMSTATEDIR=\"/nonsense\"
 
 test_utils_LDADD = \
