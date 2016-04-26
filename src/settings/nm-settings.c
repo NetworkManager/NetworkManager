@@ -2199,14 +2199,30 @@ setup_hostname_file_monitors (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GFileMonitor *monitor;
+	const char *path = HOSTNAME_FILE;
+	char *link_path = NULL;
+	struct stat file_stat;
 	GFile *file;
 
 	priv->hostname.value = nm_settings_get_hostname (self);
 
+	/* resolve the path to the hostname file if it is a symbolic link */
+	if (   lstat(path, &file_stat) == 0
+	    && S_ISLNK (file_stat.st_mode)
+	    && (link_path = nm_utils_read_link_absolute (path, NULL))) {
+		path = link_path;
+		if (   lstat(link_path, &file_stat) == 0
+		    && S_ISLNK (file_stat.st_mode)) {
+			_LOGW ("only one level of symbolic link indirection is allowed when monitoring "
+			       HOSTNAME_FILE);
+		}
+	}
+
 	/* monitor changes to hostname file */
-	file = g_file_new_for_path (HOSTNAME_FILE);
+	file = g_file_new_for_path (path);
 	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
 	g_object_unref (file);
+	g_free(link_path);
 	if (monitor) {
 		priv->hostname.monitor_id = g_signal_connect (monitor, "changed",
 		                                              G_CALLBACK (hostname_file_changed_cb),
