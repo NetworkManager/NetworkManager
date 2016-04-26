@@ -8822,14 +8822,13 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
-	NMDnsManagerResolvConfMode resolv_conf_mode;
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
 		return;
 
-	resolv_conf_mode = nm_dns_manager_get_resolv_conf_mode (nm_dns_manager_get ());
-	capture_resolv_conf = initial && (resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT);
+	capture_resolv_conf =    initial
+	                      && nm_dns_manager_get_resolv_conf_explicit (nm_dns_manager_get ());
 
 	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
@@ -8900,14 +8899,13 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
-	NMDnsManagerResolvConfMode resolv_conf_mode;
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
 		return;
 
-	resolv_conf_mode = nm_dns_manager_get_resolv_conf_mode (nm_dns_manager_get ());
-	capture_resolv_conf = initial && (resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT);
+	capture_resolv_conf =    initial
+	                      && nm_dns_manager_get_resolv_conf_explicit (nm_dns_manager_get ());
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);

@@ -303,7 +303,8 @@ no-auto-default=*
         configuration with DNSSEC support. The /etc/resolv.conf
         will be managed by dnssec-trigger daemon.</para>
         <para><literal>none</literal>: NetworkManager will not
-        modify resolv.conf.</para>
+        modify resolv.conf. This implies <varname>rc-manager</varname>
+        <literal>unmanaged</literal></para>
         </listitem>
       </varlistentry>
 
@@ -313,7 +314,7 @@ no-auto-default=*
         management mode. The default value depends on how NetworkManager
         was built. Regardless of this setting, NetworkManager will
         always write resolv.conf to its runtime state directory.</para>
-        <para><literal>none</literal>: NetworkManager will symlink
+        <para><literal>symlink</literal>: NetworkManager will symlink
         <filename>/etc/resolv.conf</filename> to its private
         resolv.conf file in the runtime state directory.</para>
         <para><literal>file</literal>: NetworkManager will write
@@ -322,6 +323,10 @@ no-auto-default=*
         resolvconf to update the DNS configuration.</para>
         <para><literal>netconfig</literal>: NetworkManager will run
         netconfig to update the DNS configuration.</para>
+        <para><literal>unmanaged</literal>: don't touch
+        <filename>resolv.conf</filename>.</para>
+        <para><literal>none</literal>: deprecated alias for
+        <literal>symlink</literal>.</para>
         </listitem>
       </varlistentry>
 
