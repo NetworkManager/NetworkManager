@@ -61,6 +61,18 @@ static const struct {
 	  nmtui_hostname }
 };
 static const int num_subprograms = G_N_ELEMENTS (subprograms);
+static NmtNewtForm *toplevel_form;
+
+static NmtNewtForm *
+quit_func (int argc, char **argv)
+{
+	if (toplevel_form)
+		nmt_newt_form_quit (toplevel_form);
+
+	nmtui_quit ();
+
+	return NULL;
+}
 
 static void
 main_list_activated (NmtNewtWidget *widget, NmtNewtListbox *listbox)
@@ -115,7 +127,7 @@ nmtui_main (gboolean is_top, int argc, char **argv)
 		                         subprograms[i].func);
 	}
 	nmt_newt_listbox_append (listbox, "", NULL);
-	nmt_newt_listbox_append (listbox, _("Quit"), nmtui_quit);
+	nmt_newt_listbox_append (listbox, _("Quit"), quit_func);
 
 	widget = nmt_newt_button_box_new (NMT_NEWT_BUTTON_BOX_HORIZONTAL);
 	nmt_newt_grid_add (grid, widget, 0, 2);
@@ -124,6 +136,8 @@ nmtui_main (gboolean is_top, int argc, char **argv)
 	ok = nmt_newt_button_box_add_end (bbox, _("OK"));
 	g_signal_connect (ok, "activated",
 	                  G_CALLBACK (main_list_activated), listbox);
+
+	toplevel_form = form;
 
 	return form;
 }
