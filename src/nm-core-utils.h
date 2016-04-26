@@ -306,6 +306,11 @@ const char *nm_utils_ip4_property_path (const char *ifname, const char *property
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
+char *nm_utils_machine_id_read (void);
+gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
+
+guint8 *nm_utils_secret_key_read (gsize *out_key_len, GError **error);
+
 /* IPv6 Interface Identifer helpers */
 
 /**

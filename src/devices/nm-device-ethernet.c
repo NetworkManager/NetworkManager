@@ -1433,7 +1433,9 @@ new_default_connection (NMDevice *self)
 	const GSList *connections;
 	NMSetting *setting;
 	const char *hw_address;
-	char *defname, *uuid;
+	gs_free char *defname = NULL;
+	gs_free char *uuid = NULL;
+	gs_free char *machine_id = NULL;
 
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
@@ -1448,7 +1450,19 @@ new_default_connection (NMDevice *self)
 
 	connections = nm_connection_provider_get_connections (nm_connection_provider_get ());
 	defname = nm_device_ethernet_utils_get_default_wired_name (connections);
-	uuid = nm_utils_uuid_generate ();
+	if (!defname)
+		return NULL;
+
+	machine_id = nm_utils_machine_id_read ();
+
+	/* Create a stable UUID. The UUID is also the Network_ID for stable-privacy addr-gen-mode,
+	 * thus when it changes we will also generate different IPv6 addresses. */
+	uuid = _nm_utils_uuid_generate_from_strings ("default-wired",
+	                                             machine_id ?: "",
+	                                             defname,
+	                                             hw_address,
+	                                             NULL);
+
 	g_object_set (setting,
 	              NM_SETTING_CONNECTION_ID, defname,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
@@ -1457,8 +1471,6 @@ new_default_connection (NMDevice *self)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
 	              NULL);
-	g_free (uuid);
-	g_free (defname);
 
 	/* Lock the connection to the device */
 	setting = nm_setting_wired_new ();

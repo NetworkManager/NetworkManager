@@ -1996,9 +1996,11 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	g_object_unref (connection);
 
 	if (!added) {
-		_LOGW ("(%s) couldn't create default wired connection: %s",
-		       nm_device_get_iface (device),
-		       error->message);
+		if (!g_error_matches (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_UUID_EXISTS)) {
+			_LOGW ("(%s) couldn't create default wired connection: %s",
+			       nm_device_get_iface (device),
+			       error->message);
+		}
 		g_clear_error (&error);
 		return;
 	}
