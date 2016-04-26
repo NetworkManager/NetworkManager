@@ -134,6 +134,10 @@ static void unrecognized_specs_changed (NMSettingsPlugin *config, gpointer user_
 
 static void connection_provider_iface_init (NMConnectionProviderInterface *cp_iface);
 
+static void connection_ready_changed (NMSettingsConnection *conn,
+                                      GParamSpec *pspec,
+                                      gpointer user_data);
+
 G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_iface_init))
 
@@ -203,6 +207,11 @@ check_startup_complete (NMSettings *self)
 		if (!nm_settings_connection_get_ready (conn))
 			return;
 	}
+
+	/* the connection_ready_changed signal handler is no longer needed. */
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &conn))
+		g_signal_handlers_disconnect_by_func (conn, G_CALLBACK (connection_ready_changed), self);
 
 	priv->startup_complete = TRUE;
 	_notify (self, PROP_STARTUP_COMPLETE);
@@ -274,7 +283,7 @@ nm_settings_for_each_connection (NMSettings *self,
 
 	g_return_if_fail (NM_IS_SETTINGS (self));
 	g_return_if_fail (for_each_func != NULL);
-	
+
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_iter_init (&iter, priv->connections);
@@ -918,7 +927,8 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
+	if (!priv->startup_complete)
+		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 	g_object_unref (self);
 
 	/* Forget about the connection internally */
