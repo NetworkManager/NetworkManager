@@ -632,7 +632,9 @@ _linktype_get_type (NMPlatform *platform,
 		obj = _lookup_cached_link (cache, ifindex, completed_from_cache, link_cached);
 
 		/* If we detected the link type before, we stick to that
-		 * decision unless the "kind" changed.
+		 * decision unless the "kind" no "name" changed. If "name" changed,
+		 * it means that their type may not have been determined correctly
+		 * due to race conditions while accessing sysfs.
 		 *
 		 * This way, we save edditional ethtool/sysctl lookups, but moreover,
 		 * we keep the linktype stable and don't change it as long as the link
@@ -643,6 +645,7 @@ _linktype_get_type (NMPlatform *platform,
 		 * of messing stuff up. */
 		if (   obj
 		    && !NM_IN_SET (obj->link.type, NM_LINK_TYPE_UNKNOWN, NM_LINK_TYPE_NONE)
+		    && !g_strcmp0 (ifname, obj->link.name)
 		    && (   !kind
 		        || !g_strcmp0 (kind, obj->link.kind))) {
 			nm_assert (obj->link.kind == g_intern_string (obj->link.kind));
