@@ -68,8 +68,6 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
 
 static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
-static void rfkill_change (const char *desc, RfKillType rtype, gboolean enabled);
-
 static gboolean find_master (NMManager *self,
                              NMConnection *connection,
                              NMDevice *device,
@@ -2792,13 +2790,13 @@ active_connection_parent_active (NMActiveConnection *active,
 			/* We can now proceed to disconnected state so that activation proceeds. */
 			unmanaged_to_disconnected (device);
 		} else {
-			nm_log_warn (LOGD_CORE, "Could not realize device '%s': %s",
-			             nm_device_get_iface (device), error->message);
+			_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
+			       nm_device_get_iface (device), error->message);
 			nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 		}
 	} else {
-		nm_log_warn (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
-		             nm_device_get_iface (device));
+		_LOGW (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
+		       nm_device_get_iface (device));
 		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 	}
 }
@@ -3956,7 +3954,11 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 static void
 _internal_sleep (NMManager *self, gboolean do_sleep)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (priv->sleeping == do_sleep)
 		return;
@@ -4071,15 +4073,19 @@ impl_manager_sleep (NMManager *self,
 static void
 sleeping_cb (NMSleepMonitor *monitor, gpointer user_data)
 {
-	nm_log_dbg (LOGD_SUSPEND, "Received sleeping signal");
-	_internal_sleep (NM_MANAGER (user_data), TRUE);
+	NMManager *self = user_data;
+
+	_LOGD (LOGD_SUSPEND, "Received sleeping signal");
+	_internal_sleep (self, TRUE);
 }
 
 static void
 resuming_cb (NMSleepMonitor *monitor, gpointer user_data)
 {
-	nm_log_dbg (LOGD_SUSPEND, "Received resuming signal");
-	_internal_sleep (NM_MANAGER (user_data), FALSE);
+	NMManager *self = user_data;
+
+	_LOGD (LOGD_SUSPEND, "Received resuming signal");
+	_internal_sleep (self, FALSE);
 }
 
 static void
@@ -4201,7 +4207,7 @@ done:
 /* Permissions */
 
 static void
-get_perm_add_result (NMAuthChain *chain, GVariantBuilder *results, const char *permission)
+get_perm_add_result (NMManager *self, NMAuthChain *chain, GVariantBuilder *results, const char *permission)
 {
 	NMAuthCallResult result;
 
@@ -4213,7 +4219,7 @@ get_perm_add_result (NMAuthChain *chain, GVariantBuilder *results, const char *p
 	else if (result == NM_AUTH_CALL_RESULT_AUTH)
 		g_variant_builder_add (results, "{ss}", permission, "auth");
 	else {
-		nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
+		_LOGD (LOGD_CORE, "unknown auth chain result %d", result);
 	}
 }
 
@@ -4241,17 +4247,17 @@ get_permissions_done_cb (NMAuthChain *chain,
 	} else {
 		g_variant_builder_init (&results, G_VARIANT_TYPE ("a{ss}"));
 
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SLEEP_WAKE);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN);
-		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SLEEP_WAKE);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
 		g_dbus_method_invocation_return_value (context,
 		                                       g_variant_new ("(a{ss})", &results));
@@ -4980,7 +4986,7 @@ struct rfkill_event {
 } __attribute__((packed));
 
 static void
-rfkill_change (const char *desc, RfKillType rtype, gboolean enabled)
+rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean enabled)
 {
 	int fd;
 	struct rfkill_event event;
@@ -4992,13 +4998,13 @@ rfkill_change (const char *desc, RfKillType rtype, gboolean enabled)
 	fd = open ("/dev/rfkill", O_RDWR);
 	if (fd < 0) {
 		if (errno == EACCES)
-			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device", desc);
+			_LOGW (LOGD_RFKILL, "(%s): failed to open killswitch device", desc);
 		return;
 	}
 
 	if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0) {
-		nm_log_warn (LOGD_RFKILL, "(%s): failed to set killswitch device for "
-		             "non-blocking operation", desc);
+		_LOGW (LOGD_RFKILL, "(%s): failed to set killswitch device for "
+		       "non-blocking operation", desc);
 		close (fd);
 		return;
 	}
@@ -5019,14 +5025,14 @@ rfkill_change (const char *desc, RfKillType rtype, gboolean enabled)
 
 	len = write (fd, &event, sizeof (event));
 	if (len < 0) {
-		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state: (%d) %s",
-		             desc, errno, g_strerror (errno));
+		_LOGW (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state: (%d) %s",
+		       desc, errno, g_strerror (errno));
 	} else if (len == sizeof (event)) {
-		nm_log_info (LOGD_RFKILL, "%s hardware radio set %s",
-		             desc, enabled ? "enabled" : "disabled");
+		_LOGI (LOGD_RFKILL, "%s hardware radio set %s",
+		       desc, enabled ? "enabled" : "disabled");
 	} else {
 		/* Failed to write full structure */
-		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state", desc);
+		_LOGW (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state", desc);
 	}
 
 	close (fd);
@@ -5079,7 +5085,7 @@ manager_radio_user_toggled (NMManager *self,
 	if (new_enabled != old_enabled) {
 		/* Try to change the kernel rfkill state */
 		if (rstate->rtype == RFKILL_TYPE_WLAN || rstate->rtype == RFKILL_TYPE_WWAN)
-			rfkill_change (rstate->desc, rstate->rtype, new_enabled);
+			rfkill_change (self, rstate->desc, rstate->rtype, new_enabled);
 
 		manager_update_radio_enabled (self, rstate, new_enabled);
 	}
@@ -5225,8 +5231,8 @@ constructed (GObject *object)
 	 * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
 	 * rfkill.
 	 */
-	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, priv->radio_states[RFKILL_TYPE_WLAN].user_enabled);
-	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, priv->radio_states[RFKILL_TYPE_WWAN].user_enabled);
+	rfkill_change (self, priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, priv->radio_states[RFKILL_TYPE_WLAN].user_enabled);
+	rfkill_change (self, priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, priv->radio_states[RFKILL_TYPE_WWAN].user_enabled);
 }
 
 static void
