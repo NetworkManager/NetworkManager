@@ -84,7 +84,6 @@ struct _NMSleepMonitorClass {
 
 enum {
 	SLEEPING,
-	RESUMING,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = {0};
@@ -238,17 +237,17 @@ sleep_signal (NMSleepMonitor *self,
 
 	_LOGD ("received %s signal", is_about_to_suspend ? "SLEEP" : "RESUME");
 
-	if (is_about_to_suspend) {
-		g_signal_emit (self, signals[SLEEPING], 0);
 #if !USE_UPOWER
-		drop_inhibitor (self);
-#endif
-	} else {
-#if !USE_UPOWER
+	if (!is_about_to_suspend)
 		take_inhibitor (self);
 #endif
-		g_signal_emit (self, signals[RESUMING], 0);
-	}
+
+	g_signal_emit (self, signals[SLEEPING], 0, is_about_to_suspend);
+
+#if !USE_UPOWER
+	if (is_about_to_suspend)
+		drop_inhibitor (self);
+#endif
 }
 
 static void
@@ -337,13 +336,7 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 	                                  NM_TYPE_SLEEP_MONITOR,
 	                                  G_SIGNAL_RUN_LAST,
 	                                  0, NULL, NULL,
-	                                  g_cclosure_marshal_VOID__VOID,
-	                                  G_TYPE_NONE, 0);
-	signals[RESUMING] = g_signal_new (NM_SLEEP_MONITOR_RESUMING,
-	                                  NM_TYPE_SLEEP_MONITOR,
-	                                  G_SIGNAL_RUN_LAST,
-	                                  0, NULL, NULL,
-	                                  g_cclosure_marshal_VOID__VOID,
-	                                  G_TYPE_NONE, 0);
+	                                  g_cclosure_marshal_VOID__BOOLEAN,
+	                                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }
 

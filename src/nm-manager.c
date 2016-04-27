@@ -4017,21 +4017,12 @@ impl_manager_sleep (NMManager *self,
 }
 
 static void
-sleeping_cb (NMSleepMonitor *monitor, gpointer user_data)
+sleeping_cb (NMSleepMonitor *monitor, gboolean is_about_to_suspend, gpointer user_data)
 {
 	NMManager *self = user_data;
 
-	_LOGD (LOGD_SUSPEND, "Received sleeping signal");
-	_internal_sleep (self, TRUE);
-}
-
-static void
-resuming_cb (NMSleepMonitor *monitor, gpointer user_data)
-{
-	NMManager *self = user_data;
-
-	_LOGD (LOGD_SUSPEND, "Received resuming signal");
-	_internal_sleep (self, FALSE);
+	_LOGD (LOGD_SUSPEND, "Received %s signal", is_about_to_suspend ? "sleeping" : "resuming");
+	_internal_sleep (self, is_about_to_suspend);
 }
 
 static void
@@ -5200,8 +5191,6 @@ nm_manager_init (NMManager *self)
 	priv->sleep_monitor = g_object_ref (nm_sleep_monitor_get ());
 	g_signal_connect (priv->sleep_monitor, NM_SLEEP_MONITOR_SLEEPING,
 	                  G_CALLBACK (sleeping_cb), self);
-	g_signal_connect (priv->sleep_monitor, NM_SLEEP_MONITOR_RESUMING,
-	                  G_CALLBACK (resuming_cb), self);
 
 	/* Listen for authorization changes */
 	g_signal_connect (nm_auth_manager_get (),
@@ -5438,7 +5427,6 @@ dispose (GObject *object)
 
 	if (priv->sleep_monitor) {
 		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, manager);
-		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, resuming_cb, manager);
 		g_clear_object (&priv->sleep_monitor);
 	}
 
