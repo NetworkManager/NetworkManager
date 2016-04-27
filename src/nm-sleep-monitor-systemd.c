@@ -54,9 +54,9 @@
 struct _NMSleepMonitor {
 	GObject parent_instance;
 
-	GDBusProxy *sd_proxy;
+	GDBusProxy *proxy;
 
-	/* used both during construction of sd_proxy and during Inhibit call. */
+	/* used both during construction of proxy and during Inhibit call. */
 	GCancellable *cancellable;
 
 	gint inhibit_fd;
@@ -126,13 +126,13 @@ inhibit_done (GObject      *source,
               GAsyncResult *result,
               gpointer      user_data)
 {
-	GDBusProxy *sd_proxy = G_DBUS_PROXY (source);
+	GDBusProxy *proxy = G_DBUS_PROXY (source);
 	NMSleepMonitor *self = user_data;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *res = NULL;
 	gs_unref_object GUnixFDList *fd_list = NULL;
 
-	res = g_dbus_proxy_call_with_unix_fd_list_finish (sd_proxy, &fd_list, result, &error);
+	res = g_dbus_proxy_call_with_unix_fd_list_finish (proxy, &fd_list, result, &error);
 	if (!res) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 			g_clear_object (&self->cancellable);
@@ -156,13 +156,13 @@ static void
 take_inhibitor (NMSleepMonitor *self)
 {
 	g_return_if_fail (NM_IS_SLEEP_MONITOR (self));
-	g_return_if_fail (G_IS_DBUS_PROXY (self->sd_proxy));
+	g_return_if_fail (G_IS_DBUS_PROXY (self->proxy));
 
 	drop_inhibitor (self);
 
 	_LOGD ("Taking systemd sleep inhibitor");
 	self->cancellable = g_cancellable_new ();
-	g_dbus_proxy_call_with_unix_fd_list (self->sd_proxy,
+	g_dbus_proxy_call_with_unix_fd_list (self->proxy,
 	                                     "Inhibit",
 	                                     g_variant_new ("(ssss)",
 	                                                    "sleep",
@@ -204,7 +204,7 @@ name_owner_cb (GObject    *object,
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (user_data);
 	char *owner;
 
-	g_assert (proxy == self->sd_proxy);
+	g_assert (proxy == self->proxy);
 
 	owner = g_dbus_proxy_get_name_owner (proxy);
 	if (owner)
@@ -221,25 +221,25 @@ on_proxy_acquired (GObject *object,
 {
 	GError *error = NULL;
 	char *owner;
-	GDBusProxy *sd_proxy;
+	GDBusProxy *proxy;
 
-	sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-	if (!sd_proxy) {
+	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
+	if (!proxy) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			_LOGW ("Failed to acquire logind proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
-	self->sd_proxy = sd_proxy;
+	self->proxy = proxy;
 	g_clear_object (&self->cancellable);
 
-	self->sig_id_1 = g_signal_connect (self->sd_proxy, "notify::g-name-owner",
+	self->sig_id_1 = g_signal_connect (self->proxy, "notify::g-name-owner",
 	                                   G_CALLBACK (name_owner_cb), self);
-	self->sig_id_2 = _nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep",
+	self->sig_id_2 = _nm_dbus_signal_connect (self->proxy, "PrepareForSleep",
 	                                          G_VARIANT_TYPE ("(b)"),
 	                                          G_CALLBACK (prepare_for_sleep_cb), self);
 
-	owner = g_dbus_proxy_get_name_owner (self->sd_proxy);
+	owner = g_dbus_proxy_get_name_owner (self->proxy);
 	if (owner)
 		take_inhibitor (self);
 	g_free (owner);
@@ -267,10 +267,10 @@ dispose (GObject *object)
 	/* drop_inhibitor() also clears our "cancellable" */
 	drop_inhibitor (self);
 
-	if (self->sd_proxy) {
-		nm_clear_g_signal_handler (self->sd_proxy, &self->sig_id_1);
-		nm_clear_g_signal_handler (self->sd_proxy, &self->sig_id_2);
-		g_clear_object (&self->sd_proxy);
+	if (self->proxy) {
+		nm_clear_g_signal_handler (self->proxy, &self->sig_id_1);
+		nm_clear_g_signal_handler (self->proxy, &self->sig_id_2);
+		g_clear_object (&self->proxy);
 	}
 
 	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->dispose (object);
