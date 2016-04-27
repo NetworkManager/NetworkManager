@@ -450,7 +450,7 @@ if SUSPEND_RESUME_UPOWER
 libNetworkManager_la_SOURCES += nm-sleep-monitor-upower.c
 else
 # systemd/consolekit suspend/resume used whenever upower is not enabled
-libNetworkManager_la_SOURCES += nm-sleep-monitor-systemd.c
+libNetworkManager_la_SOURCES += nm-sleep-monitor.c
 endif
 
 if WITH_WEXT
