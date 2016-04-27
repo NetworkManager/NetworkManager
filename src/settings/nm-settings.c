@@ -1655,7 +1655,7 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 	 */
 	if (   lstat (file, &file_stat) == 0
 	    && S_ISLNK (file_stat.st_mode)
-	    && (link_path = g_file_read_link (file, NULL)))
+	    && (link_path = nm_utils_read_link_absolute (file, NULL)))
 		file = link_path;
 
 #if HAVE_SELINUX
