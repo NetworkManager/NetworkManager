@@ -157,7 +157,6 @@ typedef struct {
 
 	struct {
 		char *value;
-		char *file;
 		GFileMonitor *monitor;
 		GFileMonitor *dhcp_monitor;
 		gulong monitor_id;
@@ -589,11 +588,11 @@ nm_settings_get_hostname (NMSettings *self)
 #endif
 
 #if defined(HOSTNAME_PERSIST_GENTOO)
-	hostname = read_hostname_gentoo (priv->hostname.file);
+	hostname = read_hostname_gentoo (HOSTNAME_FILE);
 #elif defined(HOSTNAME_PERSIST_SLACKWARE)
-	hostname = read_hostname_slackware (priv->hostname.file);
+	hostname = read_hostname_slackware (HOSTNAME_FILE);
 #else
-	if (g_file_get_contents (priv->hostname.file, &hostname, NULL, NULL))
+	if (g_file_get_contents (HOSTNAME_FILE, &hostname, NULL, NULL))
 		g_strchomp (hostname);
 #endif
 
@@ -1635,7 +1634,7 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 	char *hostname_eol;
 	gboolean ret;
 	gs_free_error GError *error = NULL;
-	const char *file = priv->hostname.file;
+	const char *file = HOSTNAME_FILE;
 	gs_free char *link_path = NULL;
 	gs_unref_variant GVariant *var = NULL;
 	struct stat file_stat;
@@ -2205,11 +2204,10 @@ setup_hostname_file_monitors (NMSettings *self)
 	GFileMonitor *monitor;
 	GFile *file;
 
-	priv->hostname.file = HOSTNAME_FILE;
 	priv->hostname.value = nm_settings_get_hostname (self);
 
 	/* monitor changes to hostname file */
-	file = g_file_new_for_path (priv->hostname.file);
+	file = g_file_new_for_path (HOSTNAME_FILE);
 	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
 	g_object_unref (file);
 	if (monitor) {
