@@ -984,6 +984,8 @@ make_ip4_setting (shvarFile *ifcfg,
 				goto done;
 			(void) nm_setting_ip_config_add_address (s_ip4, addr);
 			nm_ip_address_unref (addr);
+			if (never_default)
+				PARSE_WARNING ("GATEWAY will be ignored when DEFROUTE is disabled");
 			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
 		}
 		return NM_SETTING (s_ip4);
@@ -1081,6 +1083,9 @@ make_ip4_setting (shvarFile *ifcfg,
 		}
 	}
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
+
+	if (gateway && never_default)
+		PARSE_WARNING ("GATEWAY will be ignored when DEFROUTE is disabled");
 
 	/* DNS servers
 	 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
