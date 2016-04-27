@@ -134,6 +134,8 @@ const char *nm_utils_find_helper (const char *progname,
                                   const char *try_first,
                                   GError **error);
 
+char *nm_utils_read_link_absolute (const char *link_file, GError **error);
+
 typedef enum {
 	NM_MATCH_SPEC_NO_MATCH  = 0,
 	NM_MATCH_SPEC_MATCH     = 1,
