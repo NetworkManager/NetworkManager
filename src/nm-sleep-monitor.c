@@ -35,12 +35,16 @@
 #define SUSPEND_DBUS_NAME               "org.freedesktop.UPower"
 #define SUSPEND_DBUS_PATH               "/org/freedesktop/UPower"
 #define SUSPEND_DBUS_INTERFACE          "org.freedesktop.UPower"
+#define USE_UPOWER                      1
+#define _NMLOG_PREFIX_NAME              "sleep-monitor-up"
 
 #elif defined (SUSPEND_RESUME_SYSTEMD)
 
 #define SUSPEND_DBUS_NAME               "org.freedesktop.login1"
 #define SUSPEND_DBUS_PATH               "/org/freedesktop/login1"
 #define SUSPEND_DBUS_INTERFACE          "org.freedesktop.login1.Manager"
+#define USE_UPOWER                      0
+#define _NMLOG_PREFIX_NAME              "sleep-monitor-sd"
 
 #elif defined(SUSPEND_RESUME_CONSOLEKIT)
 
@@ -51,6 +55,8 @@
 #define SUSPEND_DBUS_NAME               "org.freedesktop.ConsoleKit"
 #define SUSPEND_DBUS_PATH               "/org/freedesktop/ConsoleKit/Manager"
 #define SUSPEND_DBUS_INTERFACE          "org.freedesktop.ConsoleKit.Manager"
+#define USE_UPOWER                      0
+#define _NMLOG_PREFIX_NAME              "sleep-monitor-ck"
 
 #else
 
@@ -89,12 +95,6 @@ NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_
 
 /*****************************************************************************/
 
-#ifdef SUSPEND_RESUME_SYSTEMD
-#define _NMLOG_PREFIX_NAME                "sleep-monitor-sd"
-#else
-#define _NMLOG_PREFIX_NAME                "sleep-monitor-ck"
-#endif
-
 #define _NMLOG_DOMAIN                     LOGD_SUSPEND
 #define _NMLOG(level, ...) \
     G_STMT_START { \
@@ -116,7 +116,7 @@ NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_
 
 /*****************************************************************************/
 
-#if defined (SUSPEND_RESUME_UPOWER)
+#if USE_UPOWER
 
 static void
 upower_sleeping_cb (GDBusProxy *proxy, gpointer user_data)
@@ -275,12 +275,12 @@ on_proxy_acquired (GObject *object,
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
-#if defined (SUSPEND_RESUME_UPOWER)
+#if USE_UPOWER
 	GError *error = NULL;
 #endif
 
 	self->inhibit_fd = -1;
-#if defined (SUSPEND_RESUME_UPOWER)
+#if USE_UPOWER
 	self->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                               G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START
 	                                             | G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
@@ -315,7 +315,7 @@ dispose (GObject *object)
 {
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
-#if ! defined (SUSPEND_RESUME_UPOWER)
+#if !USE_UPOWER
 	drop_inhibitor (self);
 #endif
 
