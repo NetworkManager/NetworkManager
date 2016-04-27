@@ -1145,6 +1145,39 @@ nm_utils_find_helper(const char *progname, const char *try_first, GError **error
 
 /******************************************************************************************/
 
+/**
+ * nm_utils_read_link_absolute:
+ * @link_file: file name of the symbolic link
+ * @error: error reason in case of failure
+ *
+ * Uses to g_file_read_link()/readlink() to read the symlink
+ * and returns the result as absolute path.
+ **/
+char *
+nm_utils_read_link_absolute (const char *link_file, GError **error)
+{
+	char *ln, *dirname, *ln_abs;
+
+	ln = g_file_read_link (link_file, error);
+	if (!ln)
+		return NULL;
+	if (g_path_is_absolute (ln))
+		return ln;
+
+	dirname = g_path_get_dirname (link_file);
+	if (!g_path_is_absolute (link_file)) {
+		gs_free char *dirname_rel = dirname;
+
+		dirname = g_build_filename (g_get_current_dir (), dirname_rel, NULL);
+	}
+	ln_abs = g_build_filename (dirname, ln, NULL);
+	g_free (dirname);
+	g_free (ln);
+	return ln_abs;
+}
+
+/******************************************************************************************/
+
 #define MAC_TAG "mac:"
 #define INTERFACE_NAME_TAG "interface-name:"
 #define DEVICE_TYPE_TAG "type:"
