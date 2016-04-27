@@ -29,19 +29,20 @@
 
 #include "nm-sleep-monitor.h"
 
-#if (defined (SUSPEND_RESUME_SYSTEMD) + defined (SUSPEND_RESUME_CONSOLEKIT) + defined (SUSPEND_RESUME_UPOWER)) != 1
-#error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_CONSOLEKIT, or SUSPEND_RESUME_UPOWER
-#endif
 
-#define UPOWER_DBUS_SERVICE "org.freedesktop.UPower"
+#if defined (SUSPEND_RESUME_UPOWER)
 
-#ifdef SUSPEND_RESUME_SYSTEMD
+#define SUSPEND_DBUS_NAME               "org.freedesktop.UPower"
+#define SUSPEND_DBUS_PATH               "/org/freedesktop/UPower"
+#define SUSPEND_DBUS_INTERFACE          "org.freedesktop.UPower"
+
+#elif defined (SUSPEND_RESUME_SYSTEMD)
 
 #define SUSPEND_DBUS_NAME               "org.freedesktop.login1"
 #define SUSPEND_DBUS_PATH               "/org/freedesktop/login1"
 #define SUSPEND_DBUS_INTERFACE          "org.freedesktop.login1.Manager"
 
-#else
+#elif defined(SUSPEND_RESUME_CONSOLEKIT)
 
 /* ConsoleKit2 has added the same suspend/resume DBUS API that Systemd
  * uses. http://consolekit2.github.io/ConsoleKit2/#Manager.Inhibit
@@ -50,6 +51,10 @@
 #define SUSPEND_DBUS_NAME               "org.freedesktop.ConsoleKit"
 #define SUSPEND_DBUS_PATH               "/org/freedesktop/ConsoleKit/Manager"
 #define SUSPEND_DBUS_INTERFACE          "org.freedesktop.ConsoleKit.Manager"
+
+#else
+
+#error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_CONSOLEKIT, or SUSPEND_RESUME_UPOWER
 
 #endif
 
@@ -280,9 +285,9 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 	                                               G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START
 	                                             | G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                                             NULL,
-	                                             UPOWER_DBUS_SERVICE,
-	                                             "/org/freedesktop/UPower",
-	                                             "org.freedesktop.UPower",
+	                                             SUSPEND_DBUS_NAME,
+	                                             SUSPEND_DBUS_PATH,
+	                                             SUSPEND_DBUS_INTERFACE,
 	                                             NULL, &error);
 	if (self->proxy) {
 		_nm_dbus_signal_connect (self->proxy, "Sleeping", NULL,
