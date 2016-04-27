@@ -13,15 +13,12 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 Red Hat, Inc.
+ * (C) Copyright 2012-2016 Red Hat, Inc.
  * Author: Matthias Clasen <mclasen@redhat.com>
  */
 
 #ifndef __NETWORKMANAGER_SLEEP_MONITOR_H__
 #define __NETWORKMANAGER_SLEEP_MONITOR_H__
-
-
-#include "nm-default.h"
 
 G_BEGIN_DECLS
 
@@ -33,7 +30,6 @@ G_BEGIN_DECLS
 #define NM_IS_SLEEP_MONITOR_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_SLEEP_MONITOR))
 
 #define NM_SLEEP_MONITOR_SLEEPING "sleeping"
-#define NM_SLEEP_MONITOR_RESUMING "resuming"
 
 typedef struct _NMSleepMonitorClass    NMSleepMonitorClass;
 
