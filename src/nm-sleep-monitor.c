@@ -132,7 +132,7 @@ upower_resuming_cb (GDBusProxy *proxy, gpointer user_data)
 	g_signal_emit (user_data, signals[RESUMING], 0);
 }
 
-#else
+#else /* USE_UPOWER */
 
 static void
 drop_inhibitor (NMSleepMonitor *self)
@@ -238,6 +238,7 @@ name_owner_cb (GObject    *object,
 		drop_inhibitor (self);
 	g_free (owner);
 }
+#endif /* USE_UPOWER */
 
 static void
 on_proxy_acquired (GObject *object,
@@ -245,60 +246,43 @@ on_proxy_acquired (GObject *object,
                    NMSleepMonitor *self)
 {
 	GError *error = NULL;
-	char *owner;
 	GDBusProxy *proxy;
 
 	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
 	if (!proxy) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			_LOGW ("Failed to acquire logind proxy: %s", error->message);
+			_LOGW ("Failed to acquire D-Bus proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
 	self->proxy = proxy;
 	g_clear_object (&self->cancellable);
 
+#if USE_UPOWER
+	self->sig_id_1 = _nm_dbus_signal_connect (self->proxy, "Sleeping", NULL,
+	                                          G_CALLBACK (upower_sleeping_cb), self);
+	self->sig_id_2 = _nm_dbus_signal_connect (self->proxy, "Resuming", NULL,
+	                                          G_CALLBACK (upower_resuming_cb), self);
+#else
 	self->sig_id_1 = g_signal_connect (self->proxy, "notify::g-name-owner",
 	                                   G_CALLBACK (name_owner_cb), self);
 	self->sig_id_2 = _nm_dbus_signal_connect (self->proxy, "PrepareForSleep",
 	                                          G_VARIANT_TYPE ("(b)"),
 	                                          G_CALLBACK (prepare_for_sleep_cb), self);
+	{
+		gs_free char *owner = NULL;
 
-	owner = g_dbus_proxy_get_name_owner (self->proxy);
-	if (owner)
-		take_inhibitor (self);
-	g_free (owner);
-}
-
+		owner = g_dbus_proxy_get_name_owner (self->proxy);
+		if (owner)
+			take_inhibitor (self);
+	}
 #endif
+}
 
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
-#if USE_UPOWER
-	GError *error = NULL;
-#endif
-
 	self->inhibit_fd = -1;
-#if USE_UPOWER
-	self->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                               G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START
-	                                             | G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                                             NULL,
-	                                             SUSPEND_DBUS_NAME,
-	                                             SUSPEND_DBUS_PATH,
-	                                             SUSPEND_DBUS_INTERFACE,
-	                                             NULL, &error);
-	if (self->proxy) {
-		_nm_dbus_signal_connect (self->proxy, "Sleeping", NULL,
-		                         G_CALLBACK (upower_sleeping_cb), self);
-		_nm_dbus_signal_connect (self->proxy, "Resuming", NULL,
-		                         G_CALLBACK (upower_resuming_cb), self);
-	} else {
-		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy: %s", error->message);
-		g_error_free (error);
-	}
-#else
 	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
@@ -307,7 +291,6 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 	                          SUSPEND_DBUS_NAME, SUSPEND_DBUS_PATH, SUSPEND_DBUS_INTERFACE,
 	                          self->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired, self);
-#endif
 }
 
 static void
