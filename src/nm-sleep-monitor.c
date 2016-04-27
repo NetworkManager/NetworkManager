@@ -29,9 +29,11 @@
 
 #include "nm-sleep-monitor.h"
 
-#if defined (SUSPEND_RESUME_SYSTEMD) == defined (SUSPEND_RESUME_CONSOLEKIT)
-#error either define SUSPEND_RESUME_SYSTEMD or SUSPEND_RESUME_CONSOLEKIT
+#if (defined (SUSPEND_RESUME_SYSTEMD) + defined (SUSPEND_RESUME_CONSOLEKIT) + defined (SUSPEND_RESUME_UPOWER)) != 1
+#error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_CONSOLEKIT, or SUSPEND_RESUME_UPOWER
 #endif
+
+#define UPOWER_DBUS_SERVICE "org.freedesktop.UPower"
 
 #ifdef SUSPEND_RESUME_SYSTEMD
 
@@ -108,6 +110,24 @@ NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_
     } G_STMT_END
 
 /*****************************************************************************/
+
+#if defined (SUSPEND_RESUME_UPOWER)
+
+static void
+upower_sleeping_cb (GDBusProxy *proxy, gpointer user_data)
+{
+	nm_log_dbg (LOGD_SUSPEND, "Received UPower sleeping signal");
+	g_signal_emit (user_data, signals[SLEEPING], 0);
+}
+
+static void
+upower_resuming_cb (GDBusProxy *proxy, gpointer user_data)
+{
+	nm_log_dbg (LOGD_SUSPEND, "Received UPower resuming signal");
+	g_signal_emit (user_data, signals[RESUMING], 0);
+}
+
+#else
 
 static void
 drop_inhibitor (NMSleepMonitor *self)
@@ -245,9 +265,32 @@ on_proxy_acquired (GObject *object,
 	g_free (owner);
 }
 
+#endif
+
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
+#if defined (SUSPEND_RESUME_UPOWER)
+	GError *error = NULL;
+
+	self->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                               G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START
+	                                             | G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                                             NULL,
+	                                             UPOWER_DBUS_SERVICE,
+	                                             "/org/freedesktop/UPower",
+	                                             "org.freedesktop.UPower",
+	                                             NULL, &error);
+	if (self->proxy) {
+		_nm_dbus_signal_connect (self->proxy, "Sleeping", NULL,
+		                         G_CALLBACK (upower_sleeping_cb), self);
+		_nm_dbus_signal_connect (self->proxy, "Resuming", NULL,
+		                         G_CALLBACK (upower_resuming_cb), self);
+	} else {
+		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy: %s", error->message);
+		g_error_free (error);
+	}
+#else
 	self->inhibit_fd = -1;
 	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
@@ -257,8 +300,20 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 	                          SUSPEND_DBUS_NAME, SUSPEND_DBUS_PATH, SUSPEND_DBUS_INTERFACE,
 	                          self->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired, self);
+#endif
 }
 
+#if defined (SUSPEND_RESUME_UPOWER)
+static void
+finalize (GObject *object)
+{
+	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
+
+	g_clear_object (&self->proxy);
+
+	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize (object);
+}
+#else
 static void
 dispose (GObject *object)
 {
@@ -275,6 +330,7 @@ dispose (GObject *object)
 
 	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->dispose (object);
 }
+#endif
 
 static void
 nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
@@ -283,7 +339,11 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 
 	gobject_class = G_OBJECT_CLASS (klass);
 
+#if defined (SUSPEND_RESUME_UPOWER)
+	gobject_class->finalize = finalize;
+#else
 	gobject_class->dispose = dispose;
+#endif
 
 	signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
 	                                  NM_TYPE_SLEEP_MONITOR,
