@@ -272,7 +272,10 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 {
 #if defined (SUSPEND_RESUME_UPOWER)
 	GError *error = NULL;
+#endif
 
+	self->inhibit_fd = -1;
+#if defined (SUSPEND_RESUME_UPOWER)
 	self->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                               G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START
 	                                             | G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
@@ -291,7 +294,6 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 		g_error_free (error);
 	}
 #else
-	self->inhibit_fd = -1;
 	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
@@ -303,24 +305,16 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 #endif
 }
 
-#if defined (SUSPEND_RESUME_UPOWER)
-static void
-finalize (GObject *object)
-{
-	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
-
-	g_clear_object (&self->proxy);
-
-	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize (object);
-}
-#else
 static void
 dispose (GObject *object)
 {
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
-	/* drop_inhibitor() also clears our "cancellable" */
+#if ! defined (SUSPEND_RESUME_UPOWER)
 	drop_inhibitor (self);
+#endif
+
+	nm_clear_g_cancellable (&self->cancellable);
 
 	if (self->proxy) {
 		nm_clear_g_signal_handler (self->proxy, &self->sig_id_1);
@@ -330,7 +324,6 @@ dispose (GObject *object)
 
 	G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->dispose (object);
 }
-#endif
 
 static void
 nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
@@ -339,11 +332,7 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 
 	gobject_class = G_OBJECT_CLASS (klass);
 
-#if defined (SUSPEND_RESUME_UPOWER)
-	gobject_class->finalize = finalize;
-#else
 	gobject_class->dispose = dispose;
-#endif
 
 	signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
 	                                  NM_TYPE_SLEEP_MONITOR,
