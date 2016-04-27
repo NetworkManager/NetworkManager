@@ -13,11 +13,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 Red Hat, Inc.
+ * (C) Copyright 2012-2016 Red Hat, Inc.
  * Author: Matthias Clasen <mclasen@redhat.com>
  */
 
 #include "nm-default.h"
+
+#include "nm-sleep-monitor.h"
 
 #include <errno.h>
 #include <string.h>
@@ -26,8 +28,6 @@
 
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-
-#include "nm-sleep-monitor.h"
 
 
 #if defined (SUSPEND_RESUME_UPOWER)
@@ -93,6 +93,8 @@ G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 
 NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
 
+static void sleep_signal (NMSleepMonitor *self, gboolean is_about_to_suspend);
+
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN                     LOGD_SUSPEND
@@ -121,15 +123,13 @@ NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_
 static void
 upower_sleeping_cb (GDBusProxy *proxy, gpointer user_data)
 {
-	nm_log_dbg (LOGD_SUSPEND, "Received UPower sleeping signal");
-	g_signal_emit (user_data, signals[SLEEPING], 0);
+	sleep_signal (user_data, TRUE);
 }
 
 static void
 upower_resuming_cb (GDBusProxy *proxy, gpointer user_data)
 {
-	nm_log_dbg (LOGD_SUSPEND, "Received UPower resuming signal");
-	g_signal_emit (user_data, signals[RESUMING], 0);
+	sleep_signal (user_data, FALSE);
 }
 
 #else /* USE_UPOWER */
@@ -138,7 +138,7 @@ static void
 drop_inhibitor (NMSleepMonitor *self)
 {
 	if (self->inhibit_fd >= 0) {
-		_LOGD ("Dropping systemd sleep inhibitor %d", self->inhibit_fd);
+		_LOGD ("inhibit: dropping sleep inhibitor %d", self->inhibit_fd);
 		close (self->inhibit_fd);
 		self->inhibit_fd = -1;
 	}
@@ -161,7 +161,7 @@ inhibit_done (GObject      *source,
 	if (!res) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 			g_clear_object (&self->cancellable);
-			_LOGW ("Inhibit failed: %s", error->message);
+			_LOGW ("inhibit: failed (%s)", error->message);
 		}
 		return;
 	}
@@ -169,12 +169,12 @@ inhibit_done (GObject      *source,
 	g_clear_object (&self->cancellable);
 
 	if (!fd_list || g_unix_fd_list_get_length (fd_list) != 1) {
-		_LOGW ("Didn't get a single fd back");
+		_LOGW ("inhibit: didn't get a single fd back");
 		return;
 	}
 
 	self->inhibit_fd = g_unix_fd_list_get (fd_list, 0, NULL);
-	_LOGD ("Inhibitor fd is %d", self->inhibit_fd);
+	_LOGD ("inhibit: inhibitor fd is %d", self->inhibit_fd);
 }
 
 static void
@@ -185,7 +185,7 @@ take_inhibitor (NMSleepMonitor *self)
 
 	drop_inhibitor (self);
 
-	_LOGD ("Taking systemd sleep inhibitor");
+	_LOGD ("inhibit: taking sleep inhibitor...");
 	self->cancellable = g_cancellable_new ();
 	g_dbus_proxy_call_with_unix_fd_list (self->proxy,
 	                                     "Inhibit",
@@ -207,17 +207,7 @@ prepare_for_sleep_cb (GDBusProxy  *proxy,
                       gboolean     is_about_to_suspend,
                       gpointer     data)
 {
-	NMSleepMonitor *self = data;
-
-	_LOGD ("Received PrepareForSleep signal: %d", is_about_to_suspend);
-
-	if (is_about_to_suspend) {
-		g_signal_emit (self, signals[SLEEPING], 0);
-		drop_inhibitor (self);
-	} else {
-		take_inhibitor (self);
-		g_signal_emit (self, signals[RESUMING], 0);
-	}
+	sleep_signal (data, is_about_to_suspend);
 }
 
 static void
@@ -241,6 +231,27 @@ name_owner_cb (GObject    *object,
 #endif /* USE_UPOWER */
 
 static void
+sleep_signal (NMSleepMonitor *self,
+              gboolean is_about_to_suspend)
+{
+	g_return_if_fail (NM_IS_SLEEP_MONITOR (self));
+
+	_LOGD ("received %s signal", is_about_to_suspend ? "SLEEP" : "RESUME");
+
+	if (is_about_to_suspend) {
+		g_signal_emit (self, signals[SLEEPING], 0);
+#if !USE_UPOWER
+		drop_inhibitor (self);
+#endif
+	} else {
+#if !USE_UPOWER
+		take_inhibitor (self);
+#endif
+		g_signal_emit (self, signals[RESUMING], 0);
+	}
+}
+
+static void
 on_proxy_acquired (GObject *object,
                    GAsyncResult *res,
                    NMSleepMonitor *self)
@@ -251,7 +262,7 @@ on_proxy_acquired (GObject *object,
 	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
 	if (!proxy) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			_LOGW ("Failed to acquire D-Bus proxy: %s", error->message);
+			_LOGW ("failed to acquire D-Bus proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
