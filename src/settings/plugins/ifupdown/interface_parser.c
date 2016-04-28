@@ -39,7 +39,7 @@ if_data* last_data;
 
 void add_block(const char *type, const char* name)
 {
-	if_block *ret = (if_block*)calloc(1,sizeof(struct _if_block));
+	if_block *ret = g_slice_new0 (struct _if_block);
 	ret->name = g_strdup(name);
 	ret->type = g_strdup(type);
 	if (first == NULL)
@@ -61,7 +61,7 @@ void add_data(const char *key,const char *data)
 	if (first == NULL)
 		return;
 
-	ret = (if_data*) calloc(1,sizeof(struct _if_data));
+	ret = g_slice_new0 (struct _if_data);
 	ret->key = g_strdup(key);
 
 	/* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
@@ -298,9 +298,9 @@ void _destroy_data(if_data *ifd)
 	if (ifd == NULL)
 		return;
 	_destroy_data(ifd->next);
-	free(ifd->key);
-	free(ifd->data);
-	free(ifd);
+	g_free(ifd->key);
+	g_free(ifd->data);
+	g_slice_free(struct _if_data, ifd);
 	return;
 }
 
@@ -310,9 +310,9 @@ void _destroy_block(if_block* ifb)
 		return;
 	_destroy_block(ifb->next);
 	_destroy_data(ifb->info);
-	free(ifb->name);
-	free(ifb->type);
-	free(ifb);
+	g_free(ifb->name);
+	g_free(ifb->type);
+	g_slice_free(struct _if_block, ifb);
 	return;
 }
 
