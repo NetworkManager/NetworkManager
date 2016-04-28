@@ -1541,15 +1541,12 @@ make_wireless_security_setting (const char *conn_name,
 		if (wsec == NULL)
 			goto error;
 	}
-
-	if (!wsec) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			     "Can't handle security information for ssid: %s",
-			     conn_name);
-	}
-
 	return wsec;
+
 error:
+	g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		     "Can't handle security information for ssid: %s",
+		     conn_name);
 	return NULL;
 }
 
