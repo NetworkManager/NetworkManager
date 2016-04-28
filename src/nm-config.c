@@ -1837,20 +1837,18 @@ _nm_config_state_set (NMConfig *self,
 		switch (property_type) {
 		case NM_CONFIG_STATE_PROPERTY_NETWORKING_ENABLED:
 			p_bool = &priv->state->p.net_enabled;
-			goto handle_p_bool;
+			break;
 		case NM_CONFIG_STATE_PROPERTY_WIFI_ENABLED:
 			p_bool = &priv->state->p.wifi_enabled;
-			goto handle_p_bool;
+			break;
 		case NM_CONFIG_STATE_PROPERTY_WWAN_ENABLED:
 			p_bool = &priv->state->p.wwan_enabled;
-			goto handle_p_bool;
-		default:
 			break;
+		default:
+			va_end (ap);
+			g_return_if_reached ();
 		}
 
-		g_return_if_reached ();
-
-handle_p_bool:
 		v_bool = va_arg (ap, gboolean);
 		if (*p_bool == v_bool)
 			continue;
