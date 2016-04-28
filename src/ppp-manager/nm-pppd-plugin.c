@@ -19,7 +19,7 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#include "config.h"
+#include <config.h>
 #define ___CONFIG_H__
 
 #include <string.h>
