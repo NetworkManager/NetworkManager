@@ -90,8 +90,6 @@ static guint signals[LAST_SIGNAL] = {0};
 
 G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 
-NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
-
 static void sleep_signal (NMSleepMonitor *self, gboolean is_about_to_suspend);
 
 /*****************************************************************************/
@@ -99,20 +97,10 @@ static void sleep_signal (NMSleepMonitor *self, gboolean is_about_to_suspend);
 #define _NMLOG_DOMAIN                     LOGD_SUSPEND
 #define _NMLOG(level, ...) \
     G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        \
-        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
-            char __prefix[20]; \
-            const NMSleepMonitor *const __self = (self); \
-            \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
-                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     _NMLOG_PREFIX_NAME, \
-                     (!__self || __self == singleton_instance \
-                        ? "" \
-                        : nm_sprintf_buf (__prefix, "[%p]", __self)) \
-                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-        } \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME \
+                _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
 
 /*****************************************************************************/
@@ -301,6 +289,12 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 	                          SUSPEND_DBUS_NAME, SUSPEND_DBUS_PATH, SUSPEND_DBUS_INTERFACE,
 	                          self->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired, self);
+}
+
+NMSleepMonitor *
+nm_sleep_monitor_new (void)
+{
+	return g_object_new (NM_TYPE_SLEEP_MONITOR, NULL);
 }
 
 static void
