@@ -71,14 +71,6 @@
 #define NM_MANAGER_INTERNAL_DEVICE_REMOVED   "internal-device-removed"
 
 
-struct _NMManager {
-	NMExportedObject parent;
-};
-
-typedef struct {
-	NMExportedObjectClass parent;
-} NMManagerClass;
-
 GType nm_manager_get_type (void);
 
 /* nm_manager_setup() should only be used by main.c */

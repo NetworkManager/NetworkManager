@@ -138,6 +138,14 @@ typedef struct {
 	gboolean devices_inited;
 } NMManagerPrivate;
 
+struct _NMManager {
+	NMExportedObject parent;
+};
+
+typedef struct {
+	NMExportedObjectClass parent;
+} NMManagerClass;
+
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
 
 G_DEFINE_TYPE (NMManager, nm_manager, NM_TYPE_EXPORTED_OBJECT)
