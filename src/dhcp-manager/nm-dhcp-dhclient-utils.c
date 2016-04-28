@@ -700,7 +700,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 
 		address.timestamp = now_monotonic_ts;
 		address.lifetime = address.preferred = expiry;
-		address.source = NM_IP_CONFIG_SOURCE_DHCP;
+		address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
 
 		ip4 = nm_ip4_config_new (ifindex);
 		nm_ip4_config_add_address (ip4, &address);

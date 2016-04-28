@@ -308,23 +308,6 @@ _support_user_ipv6ll_detect (struct nlattr **tb)
  * Various utilities
  ******************************************************************/
 
-static void
-clear_host_address (int family, const void *network, guint8 plen, void *dst)
-{
-	g_return_if_fail (network);
-
-	switch (family) {
-	case AF_INET:
-		*((in_addr_t *) dst) = nm_utils_ip4_address_clear_host_address (*((in_addr_t *) network), plen);
-		break;
-	case AF_INET6:
-		nm_utils_ip6_address_clear_host_address ((struct in6_addr *) dst, (const struct in6_addr *) network, plen);
-		break;
-	default:
-		g_assert_not_reached ();
-	}
-}
-
 static int
 _vlan_qos_mapping_cmp_from (gconstpointer a, gconstpointer b, gpointer user_data)
 {
@@ -1669,7 +1652,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 		}
 	}
 
-	obj->ip_address.source = NM_IP_CONFIG_SOURCE_KERNEL;
+	obj->ip_address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
 
 	obj->ip_address.n_ifa_flags = tb[IFA_FLAGS]
 	                              ? nla_get_u32 (tb[IFA_FLAGS])
@@ -1899,9 +1882,10 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		 *
 		 * This happens, because this route is not nmp_object_is_alive().
 		 * */
-		obj->ip_route.source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
-	} else
-		obj->ip_route.source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
+		obj->ip_route.rt_cloned = TRUE;
+	}
+
+	obj->ip_route.rt_source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
 
 	obj_result = obj;
 	obj = NULL;
@@ -2261,7 +2245,7 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_family = family,
 		.rtm_tos = 0,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
-		.rtm_protocol = nmp_utils_ip_config_source_to_rtprot (source),
+		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (source),
 		.rtm_scope = scope,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
@@ -2285,7 +2269,7 @@ _nl_msg_new_route (int nlmsg_type,
 
 	addr_len = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 
-	clear_host_address (family, network, plen, &network_clean);
+	nm_utils_ipx_address_clear_host_address (family, &network_clean, network, plen);
 	NLA_PUT (msg, RTA_DST, addr_len, &network_clean);
 
 	NLA_PUT_U32 (msg, RTA_PRIORITY, metric);
@@ -3742,6 +3726,16 @@ cache_lookup_link (NMPlatform *platform, int ifindex)
 		return NULL;
 
 	return obj_cache;
+}
+
+const NMPlatformObject *const*
+nm_linux_platform_lookup (NMPlatform *platform, const NMPCacheId *cache_id, guint *out_len)
+{
+	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), NULL);
+	g_return_val_if_fail (cache_id, NULL);
+
+	return nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+	                               cache_id, out_len);
 }
 
 static GArray *
@@ -5600,7 +5594,7 @@ ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NM
 		nm_assert (NMP_OBJECT_GET_CLASS (NMP_OBJECT_UP_CAST (routes[i])) == klass);
 
 		if (   with_rtprot_kernel
-		    || routes[i]->source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+		    || routes[i]->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			g_array_append_vals (array, routes[i], 1);
 	}
 	return array;

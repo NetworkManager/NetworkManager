@@ -200,7 +200,7 @@ typedef struct {
 
 #define __NMPlatformIPAddress_COMMON \
 	__NMPlatformObject_COMMON; \
-	NMIPConfigSource source; \
+	NMIPConfigSource addr_source; \
 	\
 	/* Timestamp in seconds in the reference system of nm_utils_get_monotonic_timestamp_*().
 	 *
@@ -303,8 +303,21 @@ typedef union {
 
 #define __NMPlatformIPRoute_COMMON \
 	__NMPlatformObject_COMMON; \
-	NMIPConfigSource source; \
+	\
+	/* The NMIPConfigSource. For routes that we receive from cache this corresponds
+	 * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
+	 * When adding a route, the source will be coerced to the protocol using
+	 * nmp_utils_ip_config_source_coerce_to_rtprot(). */ \
+	NMIPConfigSource rt_source; \
+	\
 	guint8 plen; \
+	\
+	/* the route has rtm_flags set to RTM_F_CLONED. Such a route
+	 * is hidden by platform and does not exist from the point-of-view
+	 * of platform users. This flag is internal to track those hidden
+	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
+	bool rt_cloned:1; \
+	\
 	guint32 metric; \
 	guint32 mss; \
 	;

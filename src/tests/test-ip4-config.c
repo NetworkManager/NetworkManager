@@ -161,18 +161,18 @@ test_compare_with_source (void)
 
 	/* Address */
 	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
-	addr.source = NM_IP_CONFIG_SOURCE_USER;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
-	addr.source = NM_IP_CONFIG_SOURCE_VPN;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip4_config_add_address (b, &addr);
 
 	/* Route */
 	route = *nmtst_platform_ip4_route ("10.0.0.0", 8, "192.168.1.1");
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
-	route.source = NM_IP_CONFIG_SOURCE_VPN;
+	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip4_config_add_route (b, &route);
 
 	/* Assert that the configs are basically the same, eg that the source is ignored */
@@ -193,31 +193,31 @@ test_add_address_with_source (void)
 
 	/* Test that a higher priority source is not overwritten */
 	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
-	addr.source = NM_IP_CONFIG_SOURCE_USER;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
 	test_addr = nm_ip4_config_get_address (a, 0);
-	g_assert_cmpint (test_addr->source, ==, NM_IP_CONFIG_SOURCE_USER);
+	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
-	addr.source = NM_IP_CONFIG_SOURCE_VPN;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip4_config_add_address (a, &addr);
 
 	test_addr = nm_ip4_config_get_address (a, 0);
-	g_assert_cmpint (test_addr->source, ==, NM_IP_CONFIG_SOURCE_USER);
+	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	/* Test that a lower priority address source is overwritten */
 	nm_ip4_config_del_address (a, 0);
-	addr.source = NM_IP_CONFIG_SOURCE_KERNEL;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	nm_ip4_config_add_address (a, &addr);
 
 	test_addr = nm_ip4_config_get_address (a, 0);
-	g_assert_cmpint (test_addr->source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
+	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
-	addr.source = NM_IP_CONFIG_SOURCE_USER;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
 	test_addr = nm_ip4_config_get_address (a, 0);
-	g_assert_cmpint (test_addr->source, ==, NM_IP_CONFIG_SOURCE_USER);
+	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	g_object_unref (a);
 }
@@ -233,31 +233,31 @@ test_add_route_with_source (void)
 
 	/* Test that a higher priority source is not overwritten */
 	route = *nmtst_platform_ip4_route ("1.2.3.4", 24, "1.2.3.1");
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
 	test_route = nm_ip4_config_get_route (a, 0);
-	g_assert_cmpint (test_route->source, ==, NM_IP_CONFIG_SOURCE_USER);
+	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
-	route.source = NM_IP_CONFIG_SOURCE_VPN;
+	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip4_config_add_route (a, &route);
 
 	test_route = nm_ip4_config_get_route (a, 0);
-	g_assert_cmpint (test_route->source, ==, NM_IP_CONFIG_SOURCE_USER);
+	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	/* Test that a lower priority address source is overwritten */
 	nm_ip4_config_del_route (a, 0);
-	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
+	route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	nm_ip4_config_add_route (a, &route);
 
 	test_route = nm_ip4_config_get_route (a, 0);
-	g_assert_cmpint (test_route->source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
+	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
-	route.source = NM_IP_CONFIG_SOURCE_USER;
+	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
 	test_route = nm_ip4_config_get_route (a, 0);
-	g_assert_cmpint (test_route->source, ==, NM_IP_CONFIG_SOURCE_USER);
+	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	g_object_unref (a);
 }

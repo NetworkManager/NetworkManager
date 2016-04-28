@@ -873,7 +873,7 @@ next:
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route, *p_effective_metric)) {
 
 				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, *p_effective_metric)) {
-					if (cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
+					if (cur_ipx_route->rx.rt_source < NM_IP_CONFIG_SOURCE_USER) {
 						_LOGD (vtable->vt->addr_family,
 						       "ignore error adding IPv%c route to kernel: %s",
 						       vtable->vt->is_ip4 ? '4' : '6',
@@ -1024,7 +1024,7 @@ _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		return;
 
-	if (   route->source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
+	if (   route->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
 	    || route->metric != 0) {
 		/* we don't have an automatically created device route at hand. Bail out early. */
 		return;

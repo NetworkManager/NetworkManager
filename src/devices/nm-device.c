@@ -3997,14 +3997,14 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 
 	memset (&address, 0, sizeof (address));
 	nm_platform_ip4_address_set_addr (&address, lla, 16);
-	address.source = NM_IP_CONFIG_SOURCE_IP4LL;
+	address.addr_source = NM_IP_CONFIG_SOURCE_IP4LL;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
 	memset (&route, 0, sizeof (route));
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
-	route.source = NM_IP_CONFIG_SOURCE_IP4LL;
+	route.rt_source = NM_IP_CONFIG_SOURCE_IP4LL;
 	route.metric = nm_device_get_ip4_route_metric (self);
 	nm_ip4_config_add_route (config, &route);
 
@@ -4441,7 +4441,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 	priv->default_route.v4_has = TRUE;
 	memset (&priv->default_route.v4, 0, sizeof (priv->default_route.v4));
-	priv->default_route.v4.source = NM_IP_CONFIG_SOURCE_USER;
+	priv->default_route.v4.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	priv->default_route.v4.gateway = gateway;
 	priv->default_route.v4.metric = default_route_metric;
 	priv->default_route.v4.mss = nm_ip4_config_get_mss (composite);
@@ -4806,7 +4806,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 	}
 
 	config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
-	address.source = NM_IP_CONFIG_SOURCE_SHARED;
+	address.addr_source = NM_IP_CONFIG_SOURCE_SHARED;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Remove the address lock when the object gets disposed */
@@ -5172,7 +5172,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	priv->default_route.v6_has = TRUE;
 	memset (&priv->default_route.v6, 0, sizeof (priv->default_route.v6));
-	priv->default_route.v6.source = NM_IP_CONFIG_SOURCE_USER;
+	priv->default_route.v6.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	priv->default_route.v6.gateway = *gateway;
 	priv->default_route.v6.metric = nm_device_get_ip6_route_metric (self);
 	priv->default_route.v6.mss = nm_ip6_config_get_mss (composite);
@@ -5799,7 +5799,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 			address.preferred = discovered_address->preferred;
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
-			address.source = NM_IP_CONFIG_SOURCE_RDISC;
+			address.addr_source = NM_IP_CONFIG_SOURCE_RDISC;
 			address.n_ifa_flags = ifa_flags;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
@@ -5824,7 +5824,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 				nm_assert (discovered_route->plen <= 128);
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
-				route.source = NM_IP_CONFIG_SOURCE_RDISC;
+				route.rt_source = NM_IP_CONFIG_SOURCE_RDISC;
 				route.metric = nm_device_get_ip6_route_metric (self);
 
 				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
@@ -9004,7 +9004,7 @@ queued_ip6_config_change (gpointer user_data)
 		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
 			NMPlatformIP6Address *addr = iter->data;
 
-			if (addr->source >= NM_IP_CONFIG_SOURCE_USER)
+			if (addr->addr_source >= NM_IP_CONFIG_SOURCE_USER)
 				continue;
 
 			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
@@ -10218,7 +10218,7 @@ find_dhcp4_address (NMDevice *self)
 	for (i = 0; i < n; i++) {
 		const NMPlatformIP4Address *a = nm_ip4_config_get_address (priv->ip4_config, i);
 
-		if (a->source == NM_IP_CONFIG_SOURCE_DHCP)
+		if (a->addr_source == NM_IP_CONFIG_SOURCE_DHCP)
 			return g_strdup (nm_utils_inet4_ntop (a->address, NULL));
 	}
 	return NULL;

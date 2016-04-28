@@ -482,7 +482,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		address.plen = u32;
 
 	if (address.address && address.plen && address.plen <= 32) {
-		address.source = NM_IP_CONFIG_SOURCE_PPP;
+		address.addr_source = NM_IP_CONFIG_SOURCE_PPP;
 		nm_ip4_config_add_address (config, &address);
 	} else {
 		_LOGE ("invalid IPv4 address received!");

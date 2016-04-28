@@ -93,6 +93,7 @@ GETTER (void) \
 
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
+gconstpointer nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
 const struct in6_addr *nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);
 gboolean nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen);

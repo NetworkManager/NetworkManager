@@ -433,14 +433,38 @@ nmp_utils_device_exists (const char *name)
 	return g_file_test (sysdir, G_FILE_TEST_EXISTS);
 }
 
-guint
-nmp_utils_ip_config_source_to_rtprot (NMIPConfigSource source)
+NMIPConfigSource
+nmp_utils_ip_config_source_from_rtprot (guint8 rtprot)
 {
-	switch (source) {
-	case NM_IP_CONFIG_SOURCE_UNKNOWN:
+	return ((int) rtprot) + 1;
+}
+
+NMIPConfigSource
+nmp_utils_ip_config_source_round_trip_rtprot (NMIPConfigSource source)
+{
+	/* when adding a route to kernel for a give @source, the resulting route
+	 * will be put into the cache with a source of NM_IP_CONFIG_SOURCE_RTPROT_*.
+	 * This function returns that. */
+	return nmp_utils_ip_config_source_from_rtprot (nmp_utils_ip_config_source_coerce_to_rtprot (source));
+}
+
+guint8
+nmp_utils_ip_config_source_coerce_to_rtprot (NMIPConfigSource source)
+{
+	/* when adding a route to kernel, we coerce the @source field
+	 * to rtm_protocol. This is not lossless as we map different
+	 * source values to the same RTPROT uint8 value. */
+	if (source <= NM_IP_CONFIG_SOURCE_UNKNOWN)
 		return RTPROT_UNSPEC;
+
+	if (source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST) {
+		nm_assert (NM_IS_IP_CONFIG_SOURCE_RTPROT (source));
+		return source - 1;
+	} else
+		nm_assert (!NM_IS_IP_CONFIG_SOURCE_RTPROT (source));
+
+	switch (source) {
 	case NM_IP_CONFIG_SOURCE_KERNEL:
-	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
 		return RTPROT_KERNEL;
 	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
@@ -453,22 +477,83 @@ nmp_utils_ip_config_source_to_rtprot (NMIPConfigSource source)
 }
 
 NMIPConfigSource
-nmp_utils_ip_config_source_from_rtprot (guint rtprot)
+nmp_utils_ip_config_source_coerce_from_rtprot (NMIPConfigSource source)
 {
-	switch (rtprot) {
-	case RTPROT_UNSPEC:
+	/* When we receive a route from kernel and put it into the platform cache,
+	 * we preserve the protocol field by converting it to a NMIPConfigSource
+	 * via nmp_utils_ip_config_source_from_rtprot().
+	 *
+	 * However, that is not the inverse of nmp_utils_ip_config_source_coerce_to_rtprot().
+	 * Instead, to go back to the original value, you need another step:
+	 *   nmp_utils_ip_config_source_coerce_from_rtprot (nmp_utils_ip_config_source_from_rtprot (rtprot)).
+	 *
+	 * This might partly restore the original source value, but of course that
+	 * is not really possible because nmp_utils_ip_config_source_coerce_to_rtprot()
+	 * is not injective.
+	 * */
+	switch (source) {
+	case NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC:
 		return NM_IP_CONFIG_SOURCE_UNKNOWN;
-	case RTPROT_KERNEL:
-		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
-	case RTPROT_REDIRECT:
+
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+	case NM_IP_CONFIG_SOURCE_RTPROT_REDIRECT:
 		return NM_IP_CONFIG_SOURCE_KERNEL;
-	case RTPROT_RA:
+
+	case NM_IP_CONFIG_SOURCE_RTPROT_RA:
 		return NM_IP_CONFIG_SOURCE_RDISC;
-	case RTPROT_DHCP:
+
+	case NM_IP_CONFIG_SOURCE_RTPROT_DHCP:
 		return NM_IP_CONFIG_SOURCE_DHCP;
 
 	default:
 		return NM_IP_CONFIG_SOURCE_USER;
 	}
+}
+
+const char *
+nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize len)
+{
+	const char *s = NULL;
+	nm_utils_to_string_buffer_init (&buf, &len); \
+
+	if (!len)
+		return buf;
+
+	switch (source) {
+	case NM_IP_CONFIG_SOURCE_UNKNOWN:         s = "unknown"; break;
+
+	case NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC:   s = "rt-unspec"; break;
+	case NM_IP_CONFIG_SOURCE_RTPROT_REDIRECT: s = "rt-redirect"; break;
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:   s = "rt-kernel"; break;
+	case NM_IP_CONFIG_SOURCE_RTPROT_BOOT:     s = "rt-boot"; break;
+	case NM_IP_CONFIG_SOURCE_RTPROT_STATIC:   s = "rt-static"; break;
+	case NM_IP_CONFIG_SOURCE_RTPROT_DHCP:     s = "rt-dhcp"; break;
+	case NM_IP_CONFIG_SOURCE_RTPROT_RA:       s = "rt-ra"; break;
+
+	case NM_IP_CONFIG_SOURCE_KERNEL:          s = "kernel"; break;
+	case NM_IP_CONFIG_SOURCE_SHARED:          s = "shared"; break;
+	case NM_IP_CONFIG_SOURCE_IP4LL:           s = "ipv4ll"; break;
+	case NM_IP_CONFIG_SOURCE_PPP:             s = "ppp"; break;
+	case NM_IP_CONFIG_SOURCE_WWAN:            s = "wwan"; break;
+	case NM_IP_CONFIG_SOURCE_VPN:             s = "vpn"; break;
+	case NM_IP_CONFIG_SOURCE_DHCP:            s = "dhcp"; break;
+	case NM_IP_CONFIG_SOURCE_RDISC:           s = "rdisc"; break;
+	case NM_IP_CONFIG_SOURCE_USER:            s = "user"; break;
+	default:
+		break;
+	}
+
+	if (source >= 1 && source <= 0x100) {
+		if (s)
+			g_snprintf (buf, len, "%s", s);
+		else
+			g_snprintf (buf, len, "rt-%d", ((int) source) - 1);
+	} else {
+		if (s)
+			g_strlcpy (buf, s, len);
+		else
+			g_snprintf (buf, len, "(%d)", source);
+	}
+	return buf;
 }
 

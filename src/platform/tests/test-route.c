@@ -23,9 +23,9 @@
 #include <linux/rtnetlink.h>
 
 #include "nm-core-utils.h"
-#include "test-common.h"
+#include "nm-platform-utils.h"
 
-#include "nm-test-utils.h"
+#include "test-common.h"
 
 #define DEVICE_NAME "nm-test-device"
 
@@ -178,7 +178,7 @@ test_ip4_route (void)
 	/* Test route listing */
 	routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	memset (rts, 0, sizeof (rts));
-	rts[0].source = NM_IP_CONFIG_SOURCE_USER;
+	rts[0].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[0].network = gateway;
 	rts[0].plen = 32;
 	rts[0].ifindex = ifindex;
@@ -186,7 +186,7 @@ test_ip4_route (void)
 	rts[0].metric = metric;
 	rts[0].mss = mss;
 	rts[0].scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK);
-	rts[1].source = NM_IP_CONFIG_SOURCE_USER;
+	rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
@@ -194,7 +194,7 @@ test_ip4_route (void)
 	rts[1].metric = metric;
 	rts[1].mss = mss;
 	rts[1].scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE);
-	rts[2].source = NM_IP_CONFIG_SOURCE_USER;
+	rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[2].network = 0;
 	rts[2].plen = 0;
 	rts[2].ifindex = ifindex;
@@ -265,21 +265,21 @@ test_ip6_route (void)
 	/* Test route listing */
 	routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	memset (rts, 0, sizeof (rts));
-	rts[0].source = NM_IP_CONFIG_SOURCE_USER;
+	rts[0].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[0].network = gateway;
 	rts[0].plen = 128;
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
 	rts[0].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[0].mss = mss;
-	rts[1].source = NM_IP_CONFIG_SOURCE_USER;
+	rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[1].mss = mss;
-	rts[2].source = NM_IP_CONFIG_SOURCE_USER;
+	rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[2].network = in6addr_any;
 	rts[2].plen = 0;
 	rts[2].ifindex = ifindex;
