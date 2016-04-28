@@ -518,8 +518,8 @@ connect_context_step (NMModemBroadband *self)
 				                                        "invalid bearer IP configuration");
 
 			nm_log_warn (LOGD_MB, "(%s): failed to connect modem: %s",
-					     nm_modem_get_uid (NM_MODEM (self)),
-					     ctx->first_error->message);
+			             nm_modem_get_uid (NM_MODEM (self)),
+			             ctx->first_error->message);
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (ctx->first_error));
 		}
 
@@ -1109,12 +1109,11 @@ disconnect (NMModem *self,
 
 	nm_log_dbg (LOGD_MB, "(%s): notifying ModemManager about the modem disconnection",
 	            nm_modem_get_uid (NM_MODEM (ctx->self)));
-	mm_modem_simple_disconnect (
-		ctx->self->priv->simple_iface,
-		NULL, /* bearer path; if NULL given ALL get disconnected */
-		cancellable,
-		(GAsyncReadyCallback)simple_disconnect_ready,
-		ctx);
+	mm_modem_simple_disconnect (ctx->self->priv->simple_iface,
+	                            NULL, /* bearer path; if NULL given ALL get disconnected */
+	                            cancellable,
+	                            (GAsyncReadyCallback) simple_disconnect_ready,
+	                            ctx);
 }
 
 /*****************************************************************************/
