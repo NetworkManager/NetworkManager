@@ -3425,6 +3425,15 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int famil
 	act_data->id = new_id;
 }
 
+static gboolean
+activation_source_is_scheduled (NMDevice *self, ActivationHandleFunc func, int family)
+{
+	ActivationHandleData *act_data;
+
+	act_data = activation_source_get_by_family (self, family, NULL);
+	return act_data->func == func;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -8823,6 +8832,18 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	int ifindex;
 	gboolean capture_resolv_conf;
 
+	/* If a commit is scheduled, this function would potentially interfere with
+	 * it changing IP configurations before they are applied. Postpone the
+	 * update in such case.
+	 */
+	if (activation_source_is_scheduled (self,
+	                                    activate_stage5_ip4_config_commit,
+	                                    AF_INET)) {
+		priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
+		_LOGT (LOGD_DEVICE, "IP4 update was postponed");
+		return;
+	}
+
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
 		return;
@@ -8899,6 +8920,18 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
+
+	/* If a commit is scheduled, this function would potentially interfere with
+	 * it changing IP configurations before they are applied. Postpone the
+	 * update in such case.
+	 */
+	if (activation_source_is_scheduled (self,
+	                                    activate_stage5_ip6_config_commit,
+	                                    AF_INET6)) {
+		priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
+		_LOGT (LOGD_DEVICE, "IP6 update was postponed");
+		return;
+	}
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
