@@ -5188,7 +5188,7 @@ nm_manager_init (NMManager *self)
 	                  self);
 
 	/* sleep/wake handling */
-	priv->sleep_monitor = g_object_ref (nm_sleep_monitor_get ());
+	priv->sleep_monitor = nm_sleep_monitor_new ();
 	g_signal_connect (priv->sleep_monitor, NM_SLEEP_MONITOR_SLEEPING,
 	                  G_CALLBACK (sleeping_cb), self);
 
