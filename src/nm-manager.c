@@ -140,13 +140,14 @@ typedef struct {
 
 struct _NMManager {
 	NMExportedObject parent;
+	NMManagerPrivate priv;
 };
 
 typedef struct {
 	NMExportedObjectClass parent;
 } NMManagerClass;
 
-#define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
+#define NM_MANAGER_GET_PRIVATE(o) ({ nm_assert (NM_IS_MANAGER (o)); &((o)->priv); })
 
 G_DEFINE_TYPE (NMManager, nm_manager, NM_TYPE_EXPORTED_OBJECT)
 
@@ -1942,11 +1943,12 @@ factory_component_added_cb (NMDeviceFactory *factory,
                             GObject *component,
                             gpointer user_data)
 {
+	NMManager *self = user_data;
 	GSList *iter;
 
-	g_return_val_if_fail (NM_IS_MANAGER (user_data), FALSE);
+	g_return_val_if_fail (self, FALSE);
 
-	for (iter = NM_MANAGER_GET_PRIVATE (user_data)->devices; iter; iter = iter->next) {
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
 		if (nm_device_notify_component_added ((NMDevice *) iter->data, component))
 			return TRUE;
 	}
@@ -5464,8 +5466,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH;
 
