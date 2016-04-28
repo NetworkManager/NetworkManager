@@ -439,6 +439,7 @@ libNetworkManager_la_SOURCES = \
 	nm-rfkill-manager.h \
 	nm-session-monitor.h \
 	nm-session-monitor.c \
+	nm-sleep-monitor.c \
 	nm-sleep-monitor.h \
 	nm-types.h \
 	nm-core-utils.c \
@@ -446,13 +447,6 @@ libNetworkManager_la_SOURCES = \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
-
-if SUSPEND_RESUME_UPOWER
-libNetworkManager_la_SOURCES += nm-sleep-monitor-upower.c
-else
-# systemd/consolekit suspend/resume used whenever upower is not enabled
-libNetworkManager_la_SOURCES += nm-sleep-monitor-systemd.c
-endif
 
 if WITH_WEXT
 libNetworkManager_la_SOURCES += \
