@@ -77,11 +77,6 @@ struct _NMManager {
 
 typedef struct {
 	NMExportedObjectClass parent;
-
-	/* Signals */
-	void (*device_added) (NMManager *manager, NMDevice *device);
-	void (*device_removed) (NMManager *manager, NMDevice *device);
-	void (*state_changed) (NMManager *manager, guint state);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);

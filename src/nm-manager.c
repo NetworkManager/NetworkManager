@@ -5627,8 +5627,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	    g_signal_new (NM_MANAGER_DEVICE_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMManagerClass, device_added),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 
 	/* Emitted for both realized devices and placeholder devices */
@@ -5644,8 +5643,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	    g_signal_new (NM_MANAGER_DEVICE_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMManagerClass, device_removed),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 
 	/* Emitted for both realized devices and placeholder devices */
@@ -5660,8 +5658,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	    g_signal_new (NM_MANAGER_STATE_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMManagerClass, state_changed),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[CHECK_PERMISSIONS] =
