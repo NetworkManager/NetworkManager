@@ -512,20 +512,20 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 			continue;
 		}
 
+		/* after loading glib types from the plugin, we cannot unload the library anymore.
+		 * Make it resident. */
+		g_module_make_resident (plugin);
+
 		factory = create_func (&error);
 		if (!factory) {
 			nm_log_warn (LOGD_HW, "(%s): failed to initialize device factory: %s",
 			             item, NM_G_ERROR_MSG (error));
 			g_clear_error (&error);
-			g_module_close (plugin);
 			continue;
 		}
 		g_clear_error (&error);
 
-		if (_add_factory (factory, TRUE, g_module_name (plugin), callback, user_data))
-			g_module_make_resident (plugin);
-		else
-			g_module_close (plugin);
+		_add_factory (factory, TRUE, g_module_name (plugin), callback, user_data);
 
 		g_object_unref (factory);
 	}

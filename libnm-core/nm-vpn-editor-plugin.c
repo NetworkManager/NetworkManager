@@ -24,6 +24,8 @@
 
 #include "nm-vpn-editor-plugin.h"
 
+#include <dlfcn.h>
+
 #include "nm-core-internal.h"
 
 static void nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface);
@@ -80,11 +82,15 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
                             gpointer user_data,
                             GError **error)
 {
-	GModule *module = NULL;
+	void *dl_module = NULL;
+	gboolean loaded_before;
 	NMVpnEditorPluginFactory factory = NULL;
-	NMVpnEditorPlugin *editor_plugin = NULL;
+	gs_unref_object NMVpnEditorPlugin *editor_plugin = NULL;
 	gs_free char *plugin_filename_free = NULL;
 	const char *plugin_filename;
+	gs_free_error GError *factory_error = NULL;
+	gs_free char *plug_name = NULL;
+	gs_free char *plug_service = NULL;
 
 	g_return_val_if_fail (plugin_name && *plugin_name, NULL);
 
@@ -105,8 +111,14 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
 			plugin_filename_free = g_module_build_path (NMPLUGINDIR, plugin_name);
 			plugin_filename = plugin_filename_free;
 		}
+	}
 
-		/* _nm_utils_check_module_file() fails with ENOENT if the plugin file
+	dl_module = dlopen (plugin_filename, RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD);
+	if (   !dl_module
+	    && do_file_checks) {
+		/* If the module is already loaded, we skip the file checks.
+		 *
+		 * _nm_utils_check_module_file() fails with ENOENT if the plugin file
 		 * does not exist. That is relevant, because nm-applet checks for that. */
 		if (!_nm_utils_check_module_file (plugin_filename,
 		                                  check_owner,
@@ -116,78 +128,85 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
 			return NULL;
 	}
 
-	module = g_module_open (plugin_filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
-	if (!module) {
+	if (dl_module) {
+		loaded_before = TRUE;
+	} else {
+		loaded_before = FALSE;
+		dl_module = dlopen (plugin_filename, RTLD_LAZY | RTLD_LOCAL);
+	}
+
+	if (!dl_module) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
-		             _("cannot load plugin %s"), plugin_name);
+		             _("cannot load plugin \"%s\": %s"),
+		             plugin_name,
+		             dlerror () ?: "unknown reason");
 		return NULL;
 	}
 
-	if (g_module_symbol (module, "nm_vpn_editor_plugin_factory", (gpointer) &factory)) {
-		gs_free_error GError *factory_error = NULL;
-		gboolean success = FALSE;
-
-		editor_plugin = factory (&factory_error);
-
-		g_assert (!editor_plugin || G_IS_OBJECT (editor_plugin));
-
-		if (editor_plugin) {
-			gs_free char *plug_name = NULL, *plug_service = NULL;
-
-			/* Validate plugin properties */
-
-			g_object_get (G_OBJECT (editor_plugin),
-			              NM_VPN_EDITOR_PLUGIN_NAME, &plug_name,
-			              NM_VPN_EDITOR_PLUGIN_SERVICE, &plug_service,
-			              NULL);
-
-			if (!plug_name || !*plug_name) {
-				g_set_error (error,
-				             NM_VPN_PLUGIN_ERROR,
-				             NM_VPN_PLUGIN_ERROR_FAILED,
-				             _("cannot load VPN plugin in '%s': missing plugin name"),
-				             g_module_name (module));
-			} else if (   check_service
-			           && g_strcmp0 (plug_service, check_service) != 0) {
-				g_set_error (error,
-				             NM_VPN_PLUGIN_ERROR,
-				             NM_VPN_PLUGIN_ERROR_FAILED,
-				             _("cannot load VPN plugin in '%s': invalid service name"),
-				             g_module_name (module));
-			} else {
-				/* Success! */
-				g_object_set_data_full (G_OBJECT (editor_plugin), "gmodule", module,
-				                        (GDestroyNotify) g_module_close);
-				success = TRUE;
-			}
-		} else {
-			if (factory_error) {
-				g_propagate_error (error, factory_error);
-				factory_error = NULL;
-			} else {
-				g_set_error (error,
-				             NM_VPN_PLUGIN_ERROR,
-				             NM_VPN_PLUGIN_ERROR_FAILED,
-				             _("unknown error initializing plugin %s"), plugin_name);
-			}
-		}
-
-		if (!success) {
-			g_module_close (module);
-			g_clear_object (&editor_plugin);
-		}
-	} else {
+	factory = dlsym (dl_module, "nm_vpn_editor_plugin_factory");
+	if (!factory) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
 		             _("failed to load nm_vpn_editor_plugin_factory() from %s (%s)"),
-		             g_module_name (module), g_module_error ());
-		g_module_close (module);
+		             plugin_name, dlerror ());
+		dlclose (dl_module);
+		return NULL;
 	}
 
-	return editor_plugin;
+	editor_plugin = factory (&factory_error);
+
+	if (loaded_before) {
+		/* we want to leak the library, because the factory will register glib
+		 * types, which cannot be unregistered.
+		 *
+		 * However, if the library was already loaded before, we want to return
+		 * our part of the reference count. */
+		dlclose (dl_module);
+	}
+
+	if (!editor_plugin) {
+		if (factory_error) {
+			g_propagate_error (error, factory_error);
+			factory_error = NULL;
+		} else {
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("unknown error initializing plugin %s"), plugin_name);
+		}
+		return NULL;
+	}
+
+	g_return_val_if_fail (G_IS_OBJECT (editor_plugin), NULL);
+
+	/* Validate plugin properties */
+	g_object_get (G_OBJECT (editor_plugin),
+	              NM_VPN_EDITOR_PLUGIN_NAME, &plug_name,
+	              NM_VPN_EDITOR_PLUGIN_SERVICE, &plug_service,
+	              NULL);
+
+	if (!plug_name || !*plug_name) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("cannot load VPN plugin in '%s': missing plugin name"),
+		             plugin_name);
+		return NULL;
+	}
+	if (   check_service
+	    && g_strcmp0 (plug_service, check_service) != 0) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("cannot load VPN plugin in '%s': invalid service name"),
+		             plugin_name);
+		return NULL;
+	}
+
+	return nm_unauto (&editor_plugin);
 }
 
 /**
