@@ -847,18 +847,19 @@ load_plugin:
 				break;
 			}
 
+			/* after accessing the plugin we cannot unload it anymore, because the glib
+			 * types cannot be properly unregistered. */
+			g_module_make_resident (plugin);
+
 			obj = (*factory_func) ();
 			if (!obj || !NM_IS_SETTINGS_PLUGIN (obj)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 				             "Plugin '%s' returned invalid system config object.",
 				             pname);
 				success = FALSE;
-				g_module_close (plugin);
 				break;
 			}
 
-			g_module_make_resident (plugin);
-			g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
 			g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
 			path = NULL;
 			if (add_plugin (self, NM_SETTINGS_PLUGIN (obj)))
