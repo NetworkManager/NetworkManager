@@ -147,11 +147,8 @@ struct _NMPlatformLink {
 		guint8 len;
 	} addr;
 
-	/* rtnl_link_inet6_get_token() */
-	struct {
-		NMUtilsIPv6IfaceId iid;
-		guint8 is_valid;
-	} inet6_token;
+	/* rtnl_link_inet6_get_token(), IFLA_INET6_TOKEN */
+	NMUtilsIPv6IfaceId inet6_token;
 
 	/* The bitwise inverse of rtnl_link_inet6_get_addr_gen_mode(). It is inverse
 	 * to have a default of 0 -- meaning: unspecified. That way, a struct

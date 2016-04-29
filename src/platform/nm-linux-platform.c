@@ -798,9 +798,10 @@ _nl_nlmsg_type_to_str (guint16 type, char *buf, gsize len)
 static gboolean
 _parse_af_inet6 (NMPlatform *platform,
                  struct nlattr *attr,
-                 NMUtilsIPv6IfaceId *out_iid,
-                 guint8 *out_iid_is_valid,
-                 guint8 *out_addr_gen_mode_inv)
+                 NMUtilsIPv6IfaceId *out_token,
+                 gboolean *out_token_valid,
+                 guint8 *out_addr_gen_mode_inv,
+                 gboolean *out_addr_gen_mode_valid)
 {
 	static struct nla_policy policy[IFLA_INET6_MAX+1] = {
 		[IFLA_INET6_FLAGS]              = { .type = NLA_U32 },
@@ -814,7 +815,8 @@ _parse_af_inet6 (NMPlatform *platform,
 	struct nlattr *tb[IFLA_INET6_MAX+1];
 	int err;
 	struct in6_addr i6_token;
-	gboolean iid_is_valid = FALSE;
+	gboolean token_valid = FALSE;
+	gboolean addr_gen_mode_valid = FALSE;
 	guint8 i6_addr_gen_mode_inv = 0;
 	gboolean success = FALSE;
 
@@ -831,8 +833,7 @@ _parse_af_inet6 (NMPlatform *platform,
 
 	if (_check_addr_or_errout (tb, IFLA_INET6_TOKEN, sizeof (struct in6_addr))) {
 		nla_memcpy (&i6_token, tb[IFLA_INET6_TOKEN], sizeof (struct in6_addr));
-		if (!IN6_IS_ADDR_UNSPECIFIED (&i6_token))
-			iid_is_valid = TRUE;
+		token_valid = TRUE;
 	}
 
 	/* Hack to detect support addrgenmode of the kernel. We only parse
@@ -847,14 +848,18 @@ _parse_af_inet6 (NMPlatform *platform,
 			 * to signal "unset". */
 			goto errout;
 		}
+		addr_gen_mode_valid = TRUE;
 	}
 
 	success = TRUE;
-	if (iid_is_valid) {
-		nm_utils_ipv6_interface_identifier_get_from_addr (out_iid, &i6_token);
-		*out_iid_is_valid = TRUE;
+	if (token_valid) {
+		*out_token_valid = token_valid;
+		nm_utils_ipv6_interface_identifier_get_from_addr (out_token, &i6_token);
 	}
-	*out_addr_gen_mode_inv = i6_addr_gen_mode_inv;
+	if (addr_gen_mode_valid) {
+		*out_addr_gen_mode_valid = addr_gen_mode_valid;
+		*out_addr_gen_mode_inv = i6_addr_gen_mode_inv;
+	}
 errout:
 	return success;
 }
@@ -1429,6 +1434,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	NMPObject *lnk_data = NULL;
 	gboolean address_complete_from_cache = TRUE;
 	gboolean lnk_data_complete_from_cache = TRUE;
+	gboolean af_inet6_token_valid = FALSE;
+	gboolean af_inet6_addr_gen_mode_valid = FALSE;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
 		return NULL;
@@ -1505,9 +1512,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			case AF_INET6:
 				_parse_af_inet6 (platform,
 				                 af_attr,
-				                 &obj->link.inet6_token.iid,
-				                 &obj->link.inet6_token.is_valid,
-				                 &obj->link.inet6_addr_gen_mode_inv);
+				                 &obj->link.inet6_token,
+				                 &af_inet6_token_valid,
+				                 &obj->link.inet6_addr_gen_mode_inv,
+				                 &af_inet6_addr_gen_mode_valid);
 				break;
 			}
 		}
@@ -1549,7 +1557,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	if (   completed_from_cache
 	    && (   lnk_data_complete_from_cache
-	        || address_complete_from_cache)) {
+	        || address_complete_from_cache
+	        || !af_inet6_token_valid
+	        || !af_inet6_addr_gen_mode_valid)) {
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
 		if (link_cached) {
 			if (   lnk_data_complete_from_cache
@@ -1568,6 +1578,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			}
 			if (address_complete_from_cache)
 				obj->link.addr = link_cached->link.addr;
+			if (!af_inet6_token_valid)
+				obj->link.inet6_token = link_cached->link.inet6_token;
+			if (!af_inet6_addr_gen_mode_valid)
+				obj->link.inet6_addr_gen_mode_inv = link_cached->link.inet6_addr_gen_mode_inv;
 		}
 	}
 
