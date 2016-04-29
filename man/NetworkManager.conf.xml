@@ -316,7 +316,12 @@ no-auto-default=*
         always write resolv.conf to its runtime state directory.</para>
         <para><literal>symlink</literal>: NetworkManager will symlink
         <filename>/etc/resolv.conf</filename> to its private
-        resolv.conf file in the runtime state directory.</para>
+        resolv.conf file in the runtime state directory. If
+        <filename>/etc/resolv.conf</filename>
+        already is a symlink pointing to a different location, the file
+        will not be modified. This allows the user to disable managing
+        by pointing the link <filename>/etc/resolv.conf</filename> to
+        somewhere else.</para>
         <para><literal>file</literal>: NetworkManager will write
         <filename>/etc/resolv.conf</filename> as file.</para>
         <para><literal>resolvconf</literal>: NetworkManager will run
@@ -324,7 +329,7 @@ no-auto-default=*
         <para><literal>netconfig</literal>: NetworkManager will run
         netconfig to update the DNS configuration.</para>
         <para><literal>unmanaged</literal>: don't touch
-        <filename>resolv.conf</filename>.</para>
+        <filename>/etc/resolv.conf</filename>.</para>
         <para><literal>none</literal>: deprecated alias for
         <literal>symlink</literal>.</para>
         </listitem>
