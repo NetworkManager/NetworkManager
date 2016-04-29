@@ -730,7 +730,6 @@ gboolean nm_platform_link_is_up (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
 guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
 gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
 int nm_platform_link_get_master (NMPlatform *self, int slave);

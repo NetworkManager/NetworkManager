@@ -1606,7 +1606,6 @@ device_link_changed (NMDevice *self)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMUtilsIPv6IfaceId token_iid;
 	gboolean ip_ifname_changed = FALSE;
 	const char *udi;
 	NMPlatformLink info;
@@ -1678,10 +1677,11 @@ device_link_changed (NMDevice *self)
 		nm_device_emit_recheck_auto_activate (self);
 	}
 
-	if (priv->rdisc && nm_platform_link_get_ipv6_token (NM_PLATFORM_GET, priv->ifindex, &token_iid)) {
-		_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
-		if (nm_rdisc_set_iid (priv->rdisc, token_iid))
+	if (priv->rdisc && info.inet6_token.id) {
+		if (nm_rdisc_set_iid (priv->rdisc, info.inet6_token)) {
+			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
 			nm_rdisc_start (priv->rdisc);
+		}
 	}
 
 	if (klass->link_changed)
@@ -6104,13 +6104,15 @@ static gboolean
 addrconf6_start_with_link_ready (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const NMPlatformLink *pllink;
 	NMUtilsIPv6IfaceId iid;
 
 	g_assert (priv->rdisc);
 
-	if (nm_platform_link_get_ipv6_token (NM_PLATFORM_GET, priv->ifindex, &iid)) {
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex);
+	if (pllink && pllink->inet6_token.id) {
 		_LOGD (LOGD_IP6, "addrconf6: IPv6 tokenized identifier present");
-		nm_rdisc_set_iid (priv->rdisc, iid);
+		nm_rdisc_set_iid (priv->rdisc, pllink->inet6_token);
 	} else if (nm_device_get_ip_iface_identifier (self, &iid)) {
 		_LOGD (LOGD_IP6, "addrconf6: using the device EUI-64 identifier");
 		nm_rdisc_set_iid (priv->rdisc, iid);
