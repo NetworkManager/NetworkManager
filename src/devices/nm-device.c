@@ -3061,6 +3061,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	gs_free char *uuid = NULL;
 	const char *ip4_method, *ip6_method;
 	GError *error = NULL;
+	const NMPlatformLink *pllink;
 
 	/* If update_connection() is not implemented, just fail. */
 	if (!klass->update_connection)
@@ -3107,6 +3108,15 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 
 		s_ip6 = nm_ip6_config_create_setting (priv->ip6_config);
 		nm_connection_add_setting (connection, s_ip6);
+
+		pllink = nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex);
+		if (pllink && pllink->inet6_token.id) {
+			_LOGD (LOGD_IP6, "IPv6 tokenized identifier present");
+			g_object_set (s_ip6,
+			              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, NM_IN6_ADDR_GEN_MODE_EUI64,
+			              NM_SETTING_IP6_CONFIG_TOKEN, nm_utils_inet6_interface_identifier_to_token (pllink->inet6_token, NULL),
+			              NULL);
+		}
 	}
 
 	klass->update_connection (self, connection);
