@@ -25,6 +25,7 @@
 #include "nm-vpn-editor-plugin.h"
 
 #include <dlfcn.h>
+#include <gmodule.h>
 
 #include "nm-core-internal.h"
 

@@ -31,7 +31,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <gmodule.h>
 #include <string.h>
 #include <sys/resource.h>
 

@@ -28,7 +28,6 @@
 #include "nm-vpn-helpers.h"
 
 #include <string.h>
-#include <gmodule.h>
 
 #include "nm-utils.h"
 
