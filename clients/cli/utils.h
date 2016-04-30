@@ -69,8 +69,6 @@ gboolean nmc_string_to_uint (const char *str,
                              unsigned long int *value);
 gboolean nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error);
 gboolean nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error);
-char *nmc_ip4_address_as_string (guint32 ip, GError **error);
-char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
 const char *nmc_term_color_sequence (NmcTermColor color);
@@ -83,7 +81,6 @@ char *nmc_get_user_input (const char *ask_str);
 int nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
                              char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
-GSList *nmc_util_strv_to_slist (char **strv);
 char * nmc_util_strv_for_display (const char **strv, gboolean brackets);
 char **nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens);
 int nmc_string_screen_width (const char *start, const char *end);
