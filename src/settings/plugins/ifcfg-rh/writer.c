@@ -2623,6 +2623,8 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		                            addr_gen_mode);
 		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", tmp, FALSE);
 		g_free (tmp);
+	} else {
+		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", NULL, FALSE);
 	}
 
 	priority = nm_setting_ip_config_get_dns_priority (s_ip6);
