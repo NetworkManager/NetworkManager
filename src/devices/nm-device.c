@@ -7503,6 +7503,7 @@ reapply_connection (NMDevice *self,
 		con_old = applied_clone  = nm_simple_connection_new_clone (applied);
 		con_new = applied;
 		nm_connection_replace_settings_from_connection (applied, connection);
+		nm_connection_clear_secrets (applied);
 	} else
 		con_old = con_new = applied;
 
