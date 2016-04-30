@@ -1527,6 +1527,13 @@ make_ip6_setting (shvarFile *ifcfg,
 		              NULL);
 	}
 
+	/* IPv6 tokenized interface identifier */
+	tmp = svGetValue (ifcfg, "IPV6_TOKEN", FALSE);
+	if (tmp) {
+		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, tmp, NULL);
+		g_free (tmp);
+	}
+
 	/* DNS servers
 	 * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
 	 */

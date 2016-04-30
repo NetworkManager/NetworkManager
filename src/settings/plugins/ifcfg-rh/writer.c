@@ -2627,6 +2627,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", NULL, FALSE);
 	}
 
+	/* IPv6 tokenized interface identifier */
+	value = nm_setting_ip6_config_get_token (NM_SETTING_IP6_CONFIG (s_ip6));
+	svSetValue (ifcfg, "IPV6_TOKEN", value, FALSE);
+
 	priority = nm_setting_ip_config_get_dns_priority (s_ip6);
 	if (priority)
 		svSetValueInt64 (ifcfg, "IPV6_DNS_PRIORITY", priority);

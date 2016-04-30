@@ -23,6 +23,7 @@
 #include "nm-default.h"
 
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "nm-connection.h"
 #include "nm-connection-private.h"
@@ -724,7 +725,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	const char *default_ip6_method = NULL;
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSetting *setting;
-	gboolean gateway_removed = FALSE;
+	gboolean changed = FALSE;
 
 	if (parameters)
 		default_ip6_method = g_hash_table_lookup (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
@@ -761,7 +762,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			if (   nm_setting_ip_config_get_gateway (s_ip4)
 			    && nm_setting_ip_config_get_never_default (s_ip4)) {
 				g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, NULL, NULL);
-				gateway_removed = TRUE;
+				changed = TRUE;
 			}
 		}
 		if (!s_ip6) {
@@ -773,13 +774,31 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			              NULL);
 			nm_connection_add_setting (self, setting);
 		} else {
+			const char *token;
+
+			token = nm_setting_ip6_config_get_token ((NMSettingIP6Config *) s_ip6);
+			if (   token
+			    && nm_setting_ip6_config_get_addr_gen_mode ((NMSettingIP6Config *) s_ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
+				struct in6_addr i6_token;
+				char normalized[NM_UTILS_INET_ADDRSTRLEN];
+
+				if (   inet_pton (AF_INET6, token, &i6_token) == 1
+				    && _nm_utils_inet6_is_token (&i6_token)) {
+					nm_utils_inet6_ntop (&i6_token, normalized);
+					if (g_strcmp0 (token, normalized)) {
+						g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, normalized, NULL);
+						changed = TRUE;
+					}
+				}
+			}
+
 			if (   nm_setting_ip_config_get_gateway (s_ip6)
 			    && nm_setting_ip_config_get_never_default (s_ip6)) {
 				g_object_set (s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, NULL, NULL);
-				gateway_removed = TRUE;
+				changed = TRUE;
 			}
 		}
-		return !s_ip4 || !s_ip6 || gateway_removed;
+		return !s_ip4 || !s_ip6 || changed;
 	}
 }
 
