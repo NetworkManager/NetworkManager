@@ -7329,14 +7329,10 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			for (i = 0; argv[i]; i++) {
-				if (!strcmp (argv[i], k)) {
-					first_invalid_key = k;
-					break;
-				}
-			}
-			if (first_invalid_key)
+			if (_nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
+				first_invalid_key = k;
 				break;
+			}
 		}
 		g_set_error (error,
 		             NM_DEVICE_ERROR,
