@@ -161,6 +161,8 @@ typedef struct _NmCli {
 	NmcTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
 } NmCli;
 
+extern NmCli nm_cli;
+
 /* Error quark for GError domain */
 #define NMCLI_ERROR (nmcli_error_quark ())
 GQuark nmcli_error_quark (void);
@@ -168,6 +170,5 @@ GQuark nmcli_error_quark (void);
 gboolean nmc_seen_sigint (void);
 void     nmc_clear_sigint (void);
 void     nmc_set_sigquit_internal (void);
-
 
 #endif /* NMC_NMCLI_H */
