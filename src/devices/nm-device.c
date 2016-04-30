@@ -7468,6 +7468,7 @@ reapply_connection (NMDevice *self,
 	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
 	                               NM_SETTING_CONNECTION_SETTING_NAME,
 	                               error,
+	                               NM_SETTING_CONNECTION_ID,
 	                               NM_SETTING_CONNECTION_ZONE,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
