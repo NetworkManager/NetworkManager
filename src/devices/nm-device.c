@@ -7465,10 +7465,16 @@ reapply_connection (NMDevice *self,
 	                               NM_SETTING_CONNECTION_SETTING_NAME))
 		return FALSE;
 
+	/* whitelist allowed properties from "connection" setting which are allowed to differ.
+	 *
+	 * This includes UUID, there is no principal problem with reapplying a connection
+	 * and changing it's UUID. In fact, disallowing it makes it cumbersome for the user
+	 * to reapply any connection but the original settings-connection. */
 	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
 	                               NM_SETTING_CONNECTION_SETTING_NAME,
 	                               error,
 	                               NM_SETTING_CONNECTION_ID,
+	                               NM_SETTING_CONNECTION_UUID,
 	                               NM_SETTING_CONNECTION_ZONE,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
