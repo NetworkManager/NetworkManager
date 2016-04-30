@@ -1847,7 +1847,7 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully reapplied to device '%s'.\n"),
-			 nm_device_get_iface (device));
+		         nm_device_get_iface (device));
 		device_cb_info_finish (info, device);
 	}
 }
@@ -1855,11 +1855,12 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static NMCResultCode
 do_device_reapply (NmCli *nmc, int argc, char **argv)
 {
-	NMDevice **devices;
+	gs_free NMDevice **devices = NULL;
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
-	GSList *queue = NULL, *iter;
-	char **arg_arr = NULL;
+	gs_free_slist GSList *queue = NULL;
+	GSList *iter;
+	gs_strfreev char **arg_arr = NULL;
 	char **arg_ptr = argv;
 	int arg_num = argc;
 	int i;
@@ -1878,7 +1879,7 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return nmc->return_value;
 		}
 	}
 
@@ -1906,12 +1907,11 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 		/* Take next argument */
 		next_arg (&arg_num, &arg_ptr);
 	}
-	g_free (devices);
 
 	if (!queue) {
 		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		goto error;
+		return nmc->return_value;
 	}
 	queue = g_slist_reverse (queue);
 
@@ -1930,9 +1930,6 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 		nm_device_reapply_async (device, NULL, 0, 0, NULL, reapply_device_cb, info);
 	}
 
-error:
-	g_strfreev (arg_arr);
-	g_slist_free (queue);
 	return nmc->return_value;
 }
 
