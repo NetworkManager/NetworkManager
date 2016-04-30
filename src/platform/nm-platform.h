@@ -520,6 +520,7 @@ typedef struct {
 	GObject *(*link_get_udev_device) (NMPlatform *self, int ifindex);
 
 	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
+	gboolean (*link_set_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId iid);
 
 	gboolean (*link_get_permanent_address) (NMPlatform *,
 	                                        int ifindex,
@@ -753,6 +754,7 @@ const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
 GObject *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
+gboolean nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
 
 gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
 gboolean nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);

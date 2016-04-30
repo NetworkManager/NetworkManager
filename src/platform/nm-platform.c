@@ -899,6 +899,29 @@ nm_platform_link_uses_arp (NMPlatform *self, int ifindex)
 	return !NM_FLAGS_HAS (_link_get_flags (self, ifindex), IFF_NOARP);
 }
 
+/**
+ * nm_platform_link_set_ipv6_token:
+ * @self: platform instance
+ * @ifindex: Interface index
+ * @iid: Tokenized interface identifier
+ *
+ * Sets then IPv6 tokenized interface identifier.
+ *
+ * Returns: %TRUE a tokenized identifier was available
+ */
+gboolean
+nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (iid.id, FALSE);
+
+	if (klass->link_set_token)
+		return klass->link_set_token (self, ifindex, iid);
+	return FALSE;
+}
+
 const char *
 nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 {

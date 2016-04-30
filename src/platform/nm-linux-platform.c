@@ -1954,7 +1954,8 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 
 static gboolean
 _nl_msg_new_link_set_afspec (struct nl_msg *msg,
-                             int addr_gen_mode)
+                             int addr_gen_mode,
+                             NMUtilsIPv6IfaceId *iid)
 {
 	struct nlattr *af_spec;
 	struct nlattr *af_attr;
@@ -1964,11 +1965,19 @@ _nl_msg_new_link_set_afspec (struct nl_msg *msg,
 	if (!(af_spec = nla_nest_start (msg, IFLA_AF_SPEC)))
 		goto nla_put_failure;
 
-	if (addr_gen_mode >= 0) {
+	if (addr_gen_mode >= 0 || iid) {
 		if (!(af_attr = nla_nest_start (msg, AF_INET6)))
 			goto nla_put_failure;
 
-		NLA_PUT_U8 (msg, IFLA_INET6_ADDR_GEN_MODE, addr_gen_mode);
+		if (addr_gen_mode >= 0)
+			NLA_PUT_U8 (msg, IFLA_INET6_ADDR_GEN_MODE, addr_gen_mode);
+
+		if (iid) {
+			struct in6_addr i6_token = { .s6_addr = { 0, } };
+
+			nm_utils_ipv6_addr_set_interface_identifier (&i6_token, *iid);
+			NLA_PUT (msg, IFLA_INET6_TOKEN, sizeof (struct in6_addr), &i6_token);
+		}
 
 		nla_nest_end (msg, af_attr);
 	}
@@ -4329,8 +4338,22 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	                          0,
 	                          0);
 	if (   !nlmsg
-	    || !_nl_msg_new_link_set_afspec (nlmsg,
-	                                     mode))
+	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
+		g_return_val_if_reached (FALSE);
+
+	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+}
+
+static gboolean
+link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+	_LOGD ("link: change %d: token: set IPv6 address generation token to %s",
+	       ifindex, nm_utils_inet6_interface_identifier_to_token (iid, NULL));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL, 0, 0);
+	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))
 		g_return_val_if_reached (FALSE);
 
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
@@ -6442,6 +6465,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_udev_device = link_get_udev_device;
 
 	platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
+	platform_class->link_set_token = link_set_token;
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_permanent_address = link_get_permanent_address;
