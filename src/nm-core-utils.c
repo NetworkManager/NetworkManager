@@ -2866,6 +2866,19 @@ nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 	}
 	return FALSE;
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_ipv6_addr_set_interface_identifier:
+ * @addr: output token encoded as %in6_addr
+ * @iid: %NMUtilsIPv6IfaceId interface identifier
+ *
+ * Converts the %NMUtilsIPv6IfaceId to an %in6_addr (suitable for use
+ * with Linux platform). This only copies the lower 8 bytes, ignoring
+ * the /64 network prefix which is expected to be all-zero for a valid
+ * token.
+ */
 void
 nm_utils_ipv6_addr_set_interface_identifier (struct in6_addr *addr,
                                             const NMUtilsIPv6IfaceId iid)
@@ -2873,12 +2886,71 @@ nm_utils_ipv6_addr_set_interface_identifier (struct in6_addr *addr,
 	memcpy (addr->s6_addr + 8, &iid.id_u8, 8);
 }
 
+/**
+ * nm_utils_ipv6_interface_identifier_get_from_addr:
+ * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
+ * @addr: token encoded as %in6_addr
+ *
+ * Converts the %in6_addr encoded token (as used by Linux platform) to
+ * the interface identifier.
+ */
 void
 nm_utils_ipv6_interface_identifier_get_from_addr (NMUtilsIPv6IfaceId *iid,
                                                  const struct in6_addr *addr)
 {
 	memcpy (iid, addr->s6_addr + 8, 8);
 }
+
+/**
+ * nm_utils_ipv6_interface_identifier_get_from_token:
+ * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
+ * @token: token encoded as string
+ *
+ * Converts the %in6_addr encoded token (as used in ip6 settings) to
+ * the interface identifier.
+ *
+ * Returns: %TRUE if the @token is a valid token, %FALSE otherwise
+ */
+gboolean
+nm_utils_ipv6_interface_identifier_get_from_token (NMUtilsIPv6IfaceId *iid,
+                                                  const char *token)
+{
+	struct in6_addr i6_token;
+
+	g_return_val_if_fail (token, FALSE);
+
+	if (!inet_pton (AF_INET6, token, &i6_token))
+		return FALSE;
+
+	if (!_nm_utils_inet6_is_token (&i6_token))
+		return FALSE;
+
+	nm_utils_ipv6_interface_identifier_get_from_addr (iid, &i6_token);
+	return TRUE;
+}
+
+/**
+ * nm_utils_inet6_interface_identifier_to_token:
+ * @iid: %NMUtilsIPv6IfaceId interface identifier
+ * @buf: the destination buffer or %NULL
+ *
+ * Converts the interface identifier to a string token.
+ * If the destination buffer it set, set it is used to store the
+ * resulting token, otherwise an internal static buffer is used.
+ * The buffer needs to be %NM_UTILS_INET_ADDRSTRLEN characters long.
+ *
+ * Returns: a statically allocated array. Do not g_free().
+ */
+const char *
+nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
+{
+	struct in6_addr i6_token = { .s6_addr = { 0, } };
+
+	nm_utils_ipv6_addr_set_interface_identifier (&i6_token, iid);
+	return nm_utils_inet6_ntop (&i6_token, buf);
+}
+
+/*****************************************************************************/
 
 static gboolean
 _set_stable_privacy (struct in6_addr *addr,

@@ -335,23 +335,29 @@ struct _NMUtilsIPv6IfaceId {
 
 #define NM_UTILS_IPV6_IFACE_ID_INIT { { .id = 0 } }
 
+void nm_utils_ipv6_addr_set_interface_identifier (struct in6_addr *addr,
+                                                 const NMUtilsIPv6IfaceId iid);
+
+void nm_utils_ipv6_interface_identifier_get_from_addr (NMUtilsIPv6IfaceId *iid,
+                                                      const struct in6_addr *addr);
+
+gboolean nm_utils_ipv6_interface_identifier_get_from_token (NMUtilsIPv6IfaceId *iid,
+                                                           const char *token);
+
+const char *nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid,
+                                                         char *buf);
+
 gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  const guint8 *hwaddr,
                                                  guint len,
                                                  guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
-void nm_utils_ipv6_addr_set_interface_identifier (struct in6_addr *addr,
-                                                 const NMUtilsIPv6IfaceId iid);
-
 gboolean nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
                                                 const char *ifname,
                                                 const char *uuid,
                                                 guint dad_counter,
                                                 GError **error);
-
-void nm_utils_ipv6_interface_identifier_get_from_addr (NMUtilsIPv6IfaceId *iid,
-                                                      const struct in6_addr *addr);
 
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 
