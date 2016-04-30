@@ -1425,12 +1425,12 @@ _nmcli()
                         fi
                         ;;
                     sh|sho|show| \
+                    r|re|rea|reap|reapp|reappl|reapply| \
                     c|co|con|conn|conne|connec|connect)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
                         ;;
-                    r|re|rea|reap|reapp|reappl|reapply| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect| \
                     de|del|dele|delet|delete| \
                     m|mo|mon|moni|monit|monito|monitor)
