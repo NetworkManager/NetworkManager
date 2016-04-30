@@ -1170,10 +1170,6 @@ nmc_set_in_readline (gboolean in_readline)
 	pthread_mutex_unlock (&readline_mutex);
 }
 
-/* Global variable defined in nmcli.c */
-extern NmCli nm_cli;
-
-
 static char *
 nmc_readline_helper (const char *prompt)
 {

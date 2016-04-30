@@ -3572,9 +3572,6 @@ is_single_word (const char* line)
 		return FALSE;
 }
 
-/* Global variable defined in nmcli.c */
-extern NmCli nm_cli;
-
 static char *
 gen_func_ifnames (const char *text, int state)
 {

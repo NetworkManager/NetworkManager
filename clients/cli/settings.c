@@ -2082,13 +2082,6 @@ typedef struct {
 	NmcPropertyFuncsFields
 } NmcPropertyFuncs;
 
-/*
- * We need NmCli in some _set_property functions, and they aren't passed NmCli.
- * So use the global variable.
- */
-/* Global variable defined in nmcli.c */
-extern NmCli nm_cli;
-
 NMSetting *
 nmc_setting_new_for_name (const char *name)
 {
