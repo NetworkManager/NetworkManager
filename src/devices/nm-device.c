@@ -7334,13 +7334,20 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 				break;
 			}
 		}
-		g_set_error (error,
-		             NM_DEVICE_ERROR,
-		             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		             "Can't reapply changes to '%s%s%s' setting",
-		             setting_name ? : "",
-		             setting_name ? "." : "",
-		             first_invalid_key ? : "<UNKNOWN>");
+		if (setting_name) {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply changes to '%s.%s' setting",
+			             setting_name,
+			             first_invalid_key);
+		} else {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply any changes to '%s' setting",
+			             first_invalid_key);
+		}
 		g_return_val_if_fail (first_invalid_key, FALSE);
 		return FALSE;
 	}
