@@ -65,60 +65,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void
-nm_dnsmasq_manager_init (NMDnsMasqManager *manager)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (object);
-
-	nm_dnsmasq_manager_stop (NM_DNSMASQ_MANAGER (object));
-
-	g_free (priv->iface);
-	g_free (priv->pidfile);
-
-	G_OBJECT_CLASS (nm_dnsmasq_manager_parent_class)->finalize (object);
-}
-
-static void
-nm_dnsmasq_manager_class_init (NMDnsMasqManagerClass *manager_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMDnsMasqManagerPrivate));
-
-	object_class->finalize = finalize;
-
-	/* signals */
-	signals[STATE_CHANGED] =
-	     g_signal_new (NM_DNS_MASQ_MANAGER_STATE_CHANGED,
-	                   G_OBJECT_CLASS_TYPE (object_class),
-	                   G_SIGNAL_RUN_FIRST,
-	                   G_STRUCT_OFFSET (NMDnsMasqManagerClass, state_changed),
-	                   NULL, NULL,
-	                   g_cclosure_marshal_VOID__UINT,
-	                   G_TYPE_NONE, 1,
-	                   G_TYPE_UINT);
-}
-
-NMDnsMasqManager *
-nm_dnsmasq_manager_new (const char *iface)
-{
-	NMDnsMasqManager *manager;
-	NMDnsMasqManagerPrivate *priv;
-
-	manager = (NMDnsMasqManager *) g_object_new (NM_TYPE_DNSMASQ_MANAGER, NULL);
-
-	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
-	priv->iface = g_strdup (iface);
-	priv->pidfile = g_strdup_printf (RUNSTATEDIR "/nm-dnsmasq-%s.pid", iface);
-
-	return manager;
-}
-
 typedef struct {
 	GPtrArray *array;
 	GStringChunk *chunk;
@@ -410,4 +356,58 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 	}
 
 	unlink (priv->pidfile);
+}
+
+NMDnsMasqManager *
+nm_dnsmasq_manager_new (const char *iface)
+{
+	NMDnsMasqManager *manager;
+	NMDnsMasqManagerPrivate *priv;
+
+	manager = (NMDnsMasqManager *) g_object_new (NM_TYPE_DNSMASQ_MANAGER, NULL);
+
+	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
+	priv->iface = g_strdup (iface);
+	priv->pidfile = g_strdup_printf (RUNSTATEDIR "/nm-dnsmasq-%s.pid", iface);
+
+	return manager;
+}
+
+static void
+nm_dnsmasq_manager_init (NMDnsMasqManager *manager)
+{
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (object);
+
+	nm_dnsmasq_manager_stop (NM_DNSMASQ_MANAGER (object));
+
+	g_free (priv->iface);
+	g_free (priv->pidfile);
+
+	G_OBJECT_CLASS (nm_dnsmasq_manager_parent_class)->finalize (object);
+}
+
+static void
+nm_dnsmasq_manager_class_init (NMDnsMasqManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMDnsMasqManagerPrivate));
+
+	object_class->finalize = finalize;
+
+	/* signals */
+	signals[STATE_CHANGED] =
+	     g_signal_new (NM_DNS_MASQ_MANAGER_STATE_CHANGED,
+	                   G_OBJECT_CLASS_TYPE (object_class),
+	                   G_SIGNAL_RUN_FIRST,
+	                   G_STRUCT_OFFSET (NMDnsMasqManagerClass, state_changed),
+	                   NULL, NULL,
+	                   g_cclosure_marshal_VOID__UINT,
+	                   G_TYPE_NONE, 1,
+	                   G_TYPE_UINT);
 }
