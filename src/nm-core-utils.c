@@ -3168,3 +3168,40 @@ nm_utils_lifetime_get (guint32 timestamp,
 	return TRUE;
 }
 
+const char *
+nm_utils_dnsmasq_status_to_string (int status, char *dest, guint size)
+{
+	static char buffer[128];
+	char *msg, *ret;
+	gs_free char *msg_free = NULL;
+	int len;
+
+	if (status == 0)
+		msg = "Success";
+	else if (status == 1)
+		msg = "Configuration problem";
+	else if (status == 2)
+		msg = "Network access problem (address in use, permissions)";
+	else if (status == 3)
+		msg = "Filesystem problem (missing file/directory, permissions)";
+	else if (status == 4)
+		msg = "Memory allocation failure";
+	else if (status == 5)
+		msg = "Other problem";
+	else if (status >= 11)
+		msg = msg_free = g_strdup_printf ("Lease script failed with error %d", status - 10);
+	else
+		msg = "Unknown problem";
+
+	if (dest) {
+		ret = dest;
+		len = size;
+	} else {
+		ret = buffer;
+		len = sizeof (buffer);
+	}
+
+	g_snprintf (ret, len, "%s (%d)", msg, status);
+
+	return ret;
+}
