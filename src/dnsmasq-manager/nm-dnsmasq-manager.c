@@ -221,7 +221,7 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 
 static NMCmdLine *
 create_dm_cmd_line (const char *iface,
-                    const NMPlatformIP4Address *listen_address,
+                    const NMIP4Config *ip4_config,
                     const char *pidfile,
                     GError **error)
 {
@@ -232,7 +232,9 @@ create_dm_cmd_line (const char *iface,
 	char localaddr[INET_ADDRSTRLEN];
 	char *error_desc = NULL;
 	const char *dm_binary;
+	const NMPlatformIP4Address *listen_address;
 
+	listen_address = nm_ip4_config_get_address (ip4_config, 0);
 	g_return_val_if_fail (listen_address, NULL);
 
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, error);
@@ -290,10 +292,12 @@ create_dm_cmd_line (const char *iface,
 	nm_cmd_line_add_string (cmd, s->str);
 	g_string_free (s, TRUE);
 
-	s = g_string_new ("--dhcp-option=option:router,");
-	g_string_append (s, localaddr);
-	nm_cmd_line_add_string (cmd, s->str);
-	g_string_free (s, TRUE);
+	if (!nm_ip4_config_get_never_default (ip4_config)) {
+		s = g_string_new ("--dhcp-option=option:router,");
+		g_string_append (s, localaddr);
+		nm_cmd_line_add_string (cmd, s->str);
+		g_string_free (s, TRUE);
+	}
 
 	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
 
@@ -365,7 +369,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	kill_existing_by_pidfile (priv->pidfile);
 
-	dm_cmd = create_dm_cmd_line (priv->iface, nm_ip4_config_get_address (ip4_config, 0), priv->pidfile, error);
+	dm_cmd = create_dm_cmd_line (priv->iface, ip4_config, priv->pidfile, error);
 	if (!dm_cmd)
 		return FALSE;
 
