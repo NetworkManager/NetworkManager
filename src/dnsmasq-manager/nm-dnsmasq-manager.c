@@ -405,8 +405,7 @@ nm_dnsmasq_manager_class_init (NMDnsMasqManagerClass *manager_class)
 	     g_signal_new (NM_DNS_MASQ_MANAGER_STATE_CHANGED,
 	                   G_OBJECT_CLASS_TYPE (object_class),
 	                   G_SIGNAL_RUN_FIRST,
-	                   G_STRUCT_OFFSET (NMDnsMasqManagerClass, state_changed),
-	                   NULL, NULL,
+	                   0, NULL, NULL,
 	                   g_cclosure_marshal_VOID__UINT,
 	                   G_TYPE_NONE, 1,
 	                   G_TYPE_UINT);
