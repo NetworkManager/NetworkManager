@@ -165,36 +165,6 @@ nm_cmd_line_add_string (NMCmdLine *cmd, const char *str)
 /*******************************************/
 
 static void
-dm_exit_code (guint dm_exit_status)
-{
-	char *msg = "Unknown error";
-
-	switch (dm_exit_status) {
-	case 1:
-		msg = "Configuration problem";
-		break;
-	case 2:
-		msg = "Network access problem (address in use; permissions; etc)";
-		break;
-	case 3:
-		msg = "Filesystem problem (missing file/directory; permissions; etc)";
-		break;
-	case 4:
-		msg = "Memory allocation failure";
-		break;
-	case 5:
-		msg = "Other problem";
-		break;
-	default:
-		if (dm_exit_status >= 11)
-			msg = "Lease-script 'init' process failure";
-		break;
-	}
-
-	_LOGW ("dnsmasq exited with error: %s (%d)", msg, dm_exit_status);
-}
-
-static void
 dm_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDnsMasqManager *manager = NM_DNSMASQ_MANAGER (user_data);
@@ -203,8 +173,10 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
-		if (err != 0)
-			dm_exit_code (err);
+		if (err != 0) {
+			_LOGW ("dnsmasq exited with error: %s",
+			       nm_utils_dnsmasq_status_to_string (err, NULL, 0));
+		}
 	} else if (WIFSTOPPED (status)) {
 		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
 	} else if (WIFSIGNALED (status)) {

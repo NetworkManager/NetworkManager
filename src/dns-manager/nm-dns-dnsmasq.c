@@ -518,24 +518,6 @@ update (NMDnsPlugin *plugin,
 
 /****************************************************************/
 
-static const char *
-dm_exit_code_to_msg (int status)
-{
-	if (status == 1)
-		return "Configuration problem";
-	else if (status == 2)
-		return "Network access problem (address in use; permissions; etc)";
-	else if (status == 3)
-		return "Filesystem problem (missing file/directory; permissions; etc)";
-	else if (status == 4)
-		return "Memory allocation failure";
-	else if (status == 5)
-		return "Other problem";
-	else if (status >= 11)
-		return "Lease-script 'init' process failure";
-	return "Unknown error";
-}
-
 static void
 child_quit (NMDnsPlugin *plugin, gint status)
 {
@@ -546,9 +528,8 @@ child_quit (NMDnsPlugin *plugin, gint status)
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
 		if (err) {
-			_LOGW ("dnsmasq exited with error: %s (%d)",
-			       dm_exit_code_to_msg (err),
-			       err);
+			_LOGW ("dnsmasq exited with error: %s",
+			       nm_utils_dnsmasq_status_to_string (err, NULL, 0));
 		} else
 			failed = FALSE;
 	} else if (WIFSTOPPED (status))
