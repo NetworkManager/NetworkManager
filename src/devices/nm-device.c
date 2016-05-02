@@ -3482,6 +3482,8 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 		                    NULL,
 		                    NULL,
 		                    NULL);
+
+		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
 	}
 }
 
@@ -4167,6 +4169,8 @@ dhcp6_lease_change (NMDevice *self)
 	} else {
 		/* Notify dispatcher scripts of new DHCPv6 config */
 		nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE, connection, self, NULL, NULL, NULL);
+
+		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 	}
 }
 
