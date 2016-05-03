@@ -7329,22 +7329,25 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			for (i = 0; argv[i]; i++) {
-				if (!strcmp (argv[i], k)) {
-					first_invalid_key = k;
-					break;
-				}
-			}
-			if (first_invalid_key)
+			if (_nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
+				first_invalid_key = k;
 				break;
+			}
 		}
-		g_set_error (error,
-		             NM_DEVICE_ERROR,
-		             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		             "Can't reapply changes to '%s%s%s' setting",
-		             setting_name ? : "",
-		             setting_name ? "." : "",
-		             first_invalid_key ? : "<UNKNOWN>");
+		if (setting_name) {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply changes to '%s.%s' setting",
+			             setting_name,
+			             first_invalid_key);
+		} else {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply any changes to '%s' setting",
+			             first_invalid_key);
+		}
 		g_return_val_if_fail (first_invalid_key, FALSE);
 		return FALSE;
 	}
@@ -7465,9 +7468,16 @@ reapply_connection (NMDevice *self,
 	                               NM_SETTING_CONNECTION_SETTING_NAME))
 		return FALSE;
 
+	/* whitelist allowed properties from "connection" setting which are allowed to differ.
+	 *
+	 * This includes UUID, there is no principal problem with reapplying a connection
+	 * and changing it's UUID. In fact, disallowing it makes it cumbersome for the user
+	 * to reapply any connection but the original settings-connection. */
 	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
 	                               NM_SETTING_CONNECTION_SETTING_NAME,
 	                               error,
+	                               NM_SETTING_CONNECTION_ID,
+	                               NM_SETTING_CONNECTION_UUID,
 	                               NM_SETTING_CONNECTION_ZONE,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
@@ -7496,6 +7506,7 @@ reapply_connection (NMDevice *self,
 		con_old = applied_clone  = nm_simple_connection_new_clone (applied);
 		con_new = applied;
 		nm_connection_replace_settings_from_connection (applied, connection);
+		nm_connection_clear_secrets (applied);
 	} else
 		con_old = con_new = applied;
 

@@ -286,7 +286,7 @@ usage (void)
 	              "  show [<ifname>]\n\n"
 	              "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
 	              "  connect <ifname>\n\n"
-	              "  reapply <ifname> ...\n\n"
+	              "  reapply <ifname>\n\n"
 	              "  disconnect <ifname> ...\n\n"
 	              "  delete <ifname> ...\n\n"
 	              "  monitor <ifname> ...\n\n"
@@ -342,7 +342,7 @@ usage_device_reapply (void)
 {
 	g_printerr (_("Usage: nmcli device reapply { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := <ifname> ...\n"
+	              "ARGUMENTS := <ifname>\n"
 	              "\n"
 	              "Attempts to update device with changes to the currently active connection\n"
                       "made since it was last applied.\n\n"));
@@ -1835,11 +1835,10 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!nm_device_reapply_finish (device, result, &error)) {
-		g_string_printf (nmc->return_text, _("Error: not all connections reapplied."));
-		g_printerr (_("Error: Reapplying connection to device '%s' (%s) failed: %s\n"),
-		            nm_device_get_iface (device),
-		            nm_object_get_path (NM_OBJECT (device)),
-		            error->message);
+		g_string_printf (nmc->return_text, _("Error: Reapplying connection to device '%s' (%s) failed: %s"),
+		                 nm_device_get_iface (device),
+		                 nm_object_get_path (NM_OBJECT (device)),
+		                 error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
 		device_cb_info_finish (info, device);
@@ -1847,7 +1846,7 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully reapplied to device '%s'.\n"),
-			 nm_device_get_iface (device));
+		         nm_device_get_iface (device));
 		device_cb_info_finish (info, device);
 	}
 }
@@ -1855,14 +1854,14 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static NMCResultCode
 do_device_reapply (NmCli *nmc, int argc, char **argv)
 {
-	NMDevice **devices;
-	NMDevice *device;
+	gs_free NMDevice **devices = NULL;
+	NMDevice *device = NULL;
 	DeviceCbInfo *info = NULL;
-	GSList *queue = NULL, *iter;
-	char **arg_arr = NULL;
 	char **arg_ptr = argv;
 	int arg_num = argc;
 	int i;
+	gs_free char *device_name_free = NULL;
+	const char *device_name = NULL;
 
 	/* Set default timeout for reapply operation. */
 	if (nmc->timeout == -1)
@@ -1870,69 +1869,48 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			char *line = nmc_readline (PROMPT_INTERFACES);
-			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
-			g_free (line);
-			arg_ptr = arg_arr;
+			device_name_free = nmc_readline (PROMPT_INTERFACE);
+			device_name = device_name_free;
 		}
-		if (arg_num == 0) {
+		if (!device_name) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return nmc->return_value;
 		}
+	} else if (argc == 1) {
+		device_name = arg_ptr[0];
+		next_arg (&arg_num, &arg_ptr);
+	} else {
+		next_arg (&arg_num, &arg_ptr);
+		g_string_printf (nmc->return_text, _("Error: unsupported argument '%s'."), *arg_ptr);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return nmc->return_value;
 	}
 
 	devices = get_devices_sorted (nmc->client);
-	while (arg_num > 0) {
-		device = NULL;
-		for (i = 0; devices[i]; i++) {
-			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
-				device = devices[i];
-				break;
-			}
+	for (i = 0; devices[i]; i++) {
+		if (!g_strcmp0 (nm_device_get_iface (devices[i]), device_name)) {
+			device = devices[i];
+			break;
 		}
-
-		if (device) {
-			if (!g_slist_find (queue, device))
-				queue = g_slist_prepend (queue, device);
-			else
-				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
-		} else {
-			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
-			g_string_printf (nmc->return_text, _("Error: not all devices found."));
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		}
-
-		/* Take next argument */
-		next_arg (&arg_num, &arg_ptr);
 	}
-	g_free (devices);
 
-	if (!queue) {
-		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
+	if (!device) {
+		g_string_printf (nmc->return_text, _("Error: device '%s' not found."), device_name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		goto error;
+		return nmc->return_value;
 	}
-	queue = g_slist_reverse (queue);
-
-	info = g_slice_new0 (DeviceCbInfo);
-	info->nmc = nmc;
 
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 
-	for (iter = queue; iter; iter = g_slist_next (iter)) {
-		device = iter->data;
+	info = g_slice_new0 (DeviceCbInfo);
+	info->nmc = nmc;
+	info->queue = g_slist_prepend (info->queue, g_object_ref (device));
 
-		info->queue = g_slist_prepend (info->queue, g_object_ref (device));
+	/* Now reapply the connection to the device */
+	nm_device_reapply_async (device, NULL, 0, 0, NULL, reapply_device_cb, info);
 
-		/* Now reapply the connection to the device */
-		nm_device_reapply_async (device, NULL, 0, 0, NULL, reapply_device_cb, info);
-	}
-
-error:
-	g_strfreev (arg_arr);
-	g_slist_free (queue);
 	return nmc->return_value;
 }
 
@@ -3593,9 +3571,6 @@ is_single_word (const char* line)
 	else
 		return FALSE;
 }
-
-/* Global variable defined in nmcli.c */
-extern NmCli nm_cli;
 
 static char *
 gen_func_ifnames (const char *text, int state)
