@@ -99,6 +99,10 @@ nm_vpn_get_secret_names (const char *vpn_type)
 {
 	const char *type;
 	static VpnPasswordName generic_vpn_secrets[] = { {"password", N_("Password")}, {NULL, NULL} };
+	static VpnPasswordName openvpn_secrets[] = { {"password", N_("Password")},
+	                                             {"cert-pass", N_("Certificate password")},
+	                                             {"http-proxy-password", N_("HTTP proxy password")},
+	                                             {NULL, NULL} };
 	static VpnPasswordName vpnc_secrets[] = { {"Xauth password", N_("Password")},
 	                                          {"IPSec secret", N_("Group password")},
 	                                          {NULL, NULL} };
@@ -118,13 +122,14 @@ nm_vpn_get_secret_names (const char *vpn_type)
 	else
 		type = vpn_type;
 
-	if (   !g_strcmp0 (type, "openvpn")
-	    || !g_strcmp0 (type, "pptp")
+	if (   !g_strcmp0 (type, "pptp")
 	    || !g_strcmp0 (type, "iodine")
 	    || !g_strcmp0 (type, "ssh")
 	    || !g_strcmp0 (type, "l2tp")
 	    || !g_strcmp0 (type, "fortisslvpn"))
 		 return generic_vpn_secrets;
+	else if (!g_strcmp0 (type, "openvpn"))
+		return openvpn_secrets;
 	else if (!g_strcmp0 (type, "vpnc"))
 		return vpnc_secrets;
 	else if (   !g_strcmp0 (type, "openswan")
