@@ -261,9 +261,6 @@ typedef struct {
 } TabCompletionInfo;
 static TabCompletionInfo nmc_tab_completion = {NULL, NULL, NULL, NULL};
 
-/* Global variable defined in nmcli.c - used for TAB completion */
-extern NmCli nm_cli;
-
 static char *gen_connection_types (const char *text, int state);
 
 static void
