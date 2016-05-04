@@ -1187,6 +1187,7 @@ nm_modem_device_state_changed (NMModem *self,
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_FAILED:
+	case NM_DEVICE_STATE_DISCONNECTED:
 		if (priv->act_request) {
 			cancel_get_secrets (self);
 			g_object_unref (priv->act_request);
@@ -1195,7 +1196,7 @@ nm_modem_device_state_changed (NMModem *self,
 
 		if (was_connected) {
 			/* Don't bother warning on FAILED since the modem is already gone */
-			if (new_state == NM_DEVICE_STATE_FAILED)
+			if (new_state == NM_DEVICE_STATE_FAILED || new_state == NM_DEVICE_STATE_DISCONNECTED)
 				warn = FALSE;
 			/* First cleanup */
 			NM_MODEM_GET_CLASS (self)->deactivate_cleanup (self, NULL);
