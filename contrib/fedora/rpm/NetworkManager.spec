@@ -325,6 +325,15 @@ ethernet devices with no carrier.
 This package is intended to be installed by default for server
 deployments.
 
+%package config-routing-rules
+Summary: NetworkManager config file for advanced routing rules
+Group: System Environment/Base
+
+%description config-routing-rules
+This adds a NetworkManager configuration file to support networking
+configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
+(eg, to do policy-based routing).
+
 %if 0%{with_nmtui}
 %package tui
 Summary: NetworkManager curses-based UI
@@ -499,12 +508,9 @@ fi
 %{_datadir}/bash-completion/completions/nmcli
 %dir %{_sysconfdir}/%{name}/
 %dir %{_sysconfdir}/%{name}/dispatcher.d
-%{_sysconfdir}/%{name}/dispatcher.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
-%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
-%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dnsmasq.d
 %dir %{_sysconfdir}/%{name}/dnsmasq-shared.d
 %dir %{_sysconfdir}/%{name}/VPN
@@ -633,6 +639,11 @@ fi
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/00-server.conf
+
+%files config-routing-rules
+%{_sysconfdir}/%{name}/dispatcher.d/10-ifcfg-rh-routes.sh
+%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
+%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 
 %if %{with nmtui}
 %files tui
