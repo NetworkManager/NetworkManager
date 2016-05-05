@@ -38,7 +38,6 @@ IGNORE_HFILES= \
 	crypto.h \
 	nm-dbus-helpers.h \
 	nm-core-internal.h \
-	nm-core-types.h \
 	nm-core-types-internal.h \
 	nm-device-private.h \
 	nm-dhcp4-config.h \
@@ -52,7 +51,6 @@ IGNORE_HFILES= \
 	nm-remote-connection-private.h \
 	nm-remote-settings.h \
 	nm-setting-private.h \
-	nm-types.h \
 	nm-utils-private.h \
 	nm-core-tests-enum-types.h \
 	nm-keyfile-internal.h \
