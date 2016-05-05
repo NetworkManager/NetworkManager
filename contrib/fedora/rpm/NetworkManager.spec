@@ -325,12 +325,14 @@ ethernet devices with no carrier.
 This package is intended to be installed by default for server
 deployments.
 
-%package config-routing-rules
-Summary: NetworkManager config file for advanced routing rules
+%package dispatcher-routing-rules
+Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
+Provides: %{name}-config-routing-rules = %{epoch}:%{version}-%{release}
+Obsoletes: %{name}-config-routing-rules < %{epoch}:%{version}-%{release}
 
-%description config-routing-rules
-This adds a NetworkManager configuration file to support networking
+%description dispatcher-routing-rules
+This adds a NetworkManager dispatcher file to support networking
 configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
 (eg, to do policy-based routing).
 
@@ -640,7 +642,7 @@ fi
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/00-server.conf
 
-%files config-routing-rules
+%files dispatcher-routing-rules
 %{_sysconfdir}/%{name}/dispatcher.d/10-ifcfg-rh-routes.sh
 %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
 %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
