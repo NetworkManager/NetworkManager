@@ -11368,6 +11368,10 @@ dispose (GObject *object)
 
 	_LOGD (LOGD_DEVICE, "disposing");
 
+	platform = nm_platform_get ();
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
+
 	g_slist_free_full (priv->arping.dad_list, (GDestroyNotify) nm_arping_manager_destroy);
 	priv->arping.dad_list = NULL;
 
@@ -11407,10 +11411,6 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->carrier_wait_id);
 
 	_clear_queued_act_request (priv);
-
-	platform = nm_platform_get ();
-	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
-	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
 
 	nm_clear_g_source (&priv->device_link_changed_id);
 	nm_clear_g_source (&priv->device_ip_link_changed_id);
