@@ -6973,30 +6973,6 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	check_ip_done (self);
 }
 
-static void
-queued_ip4_config_change_clear (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->queued_ip4_config_id) {
-		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
-		g_source_remove (priv->queued_ip4_config_id);
-		priv->queued_ip4_config_id = 0;
-	}
-}
-
-static void
-queued_ip6_config_change_clear (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->queued_ip6_config_id) {
-		_LOGD (LOGD_DEVICE, "clearing queued IP6 config change");
-		g_source_remove (priv->queued_ip6_config_id);
-		priv->queued_ip6_config_id = 0;
-	}
-}
-
 void
 nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
 {
@@ -7009,7 +6985,9 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	if (config)
 		priv->dev_ip4_config = g_object_ref (config);
 
-	queued_ip4_config_change_clear (self);
+	if (nm_clear_g_source (&priv->queued_ip4_config_id))
+		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
+
 	activation_source_schedule (self, activate_stage5_ip4_config_commit, AF_INET);
 }
 
@@ -7269,7 +7247,9 @@ _cleanup_ip4_pre (NMDevice *self, CleanupType cleanup_type)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->ip4_state =  IP_NONE;
-	queued_ip4_config_change_clear (self);
+
+	if (nm_clear_g_source (&priv->queued_ip4_config_id))
+		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
 
 	dhcp4_cleanup (self, cleanup_type, FALSE);
 	arp_cleanup (self);
@@ -7283,7 +7263,9 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->ip6_state = IP_NONE;
-	queued_ip6_config_change_clear (self);
+
+	if (nm_clear_g_source (&priv->queued_ip6_config_id))
+		_LOGD (LOGD_DEVICE, "clearing queued IP6 config change");
 
 	dhcp6_cleanup (self, cleanup_type, FALSE);
 	linklocal6_cleanup (self);
