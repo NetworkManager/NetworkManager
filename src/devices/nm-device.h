@@ -489,6 +489,10 @@ void nm_device_set_unmanaged_by_flags (NMDevice *device,
                                        NMUnmanagedFlags flags,
                                        NMUnmanFlagOp set_op,
                                        NMDeviceStateReason reason);
+void nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
+                                             NMUnmanagedFlags flags,
+                                             NMUnmanFlagOp set_op,
+                                             NMDeviceStateReason reason);
 void nm_device_set_unmanaged_by_user_config (NMDevice *self, const GSList *unmanaged_specs);
 void nm_device_set_unmanaged_by_user_udev (NMDevice *self);
 void nm_device_set_unmanaged_by_quitting (NMDevice *device);
