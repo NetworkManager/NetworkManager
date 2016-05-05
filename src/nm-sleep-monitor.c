@@ -73,6 +73,8 @@ struct _NMSleepMonitor {
 	GCancellable *cancellable;
 
 	gint inhibit_fd;
+	GSList *handles_active;
+	GSList *handles_stale;
 
 	gulong sig_id_1;
 	gulong sig_id_2;
@@ -122,12 +124,20 @@ upower_resuming_cb (GDBusProxy *proxy, gpointer user_data)
 #else /* USE_UPOWER */
 
 static void
-drop_inhibitor (NMSleepMonitor *self)
+drop_inhibitor (NMSleepMonitor *self, gboolean force)
 {
+	if (!force && self->handles_active)
+		return;
+
 	if (self->inhibit_fd >= 0) {
 		_LOGD ("inhibit: dropping sleep inhibitor %d", self->inhibit_fd);
 		close (self->inhibit_fd);
 		self->inhibit_fd = -1;
+	}
+
+	if (self->handles_active) {
+		self->handles_stale = g_slist_concat (self->handles_stale, self->handles_active);
+		self->handles_active = NULL;
 	}
 
 	nm_clear_g_cancellable (&self->cancellable);
@@ -170,7 +180,7 @@ take_inhibitor (NMSleepMonitor *self)
 	g_return_if_fail (NM_IS_SLEEP_MONITOR (self));
 	g_return_if_fail (G_IS_DBUS_PROXY (self->proxy));
 
-	drop_inhibitor (self);
+	drop_inhibitor (self, TRUE);
 
 	_LOGD ("inhibit: taking sleep inhibitor...");
 	self->cancellable = g_cancellable_new ();
@@ -212,7 +222,7 @@ name_owner_cb (GObject    *object,
 	if (owner)
 		take_inhibitor (self);
 	else
-		drop_inhibitor (self);
+		drop_inhibitor (self, TRUE);
 	g_free (owner);
 }
 #endif /* USE_UPOWER */
@@ -234,7 +244,57 @@ sleep_signal (NMSleepMonitor *self,
 
 #if !USE_UPOWER
 	if (is_about_to_suspend)
-		drop_inhibitor (self);
+		drop_inhibitor (self, FALSE);
+#endif
+}
+
+/**
+ * nm_sleep_monitor_inhibit_take:
+ * @self: the #NMSleepMonitor instance
+ *
+ * Prevent the release of inhibitor lock
+ *
+ * Returns: an inhibitor handle that must be returned via
+ *   nm_sleep_monitor_inhibit_release().
+ **/
+NMSleepMonitorInhibitorHandle *
+nm_sleep_monitor_inhibit_take (NMSleepMonitor *self)
+{
+	g_return_val_if_fail (NM_IS_SLEEP_MONITOR (self), NULL);
+
+	self->handles_active = g_slist_prepend (self->handles_active, NULL);
+	return (NMSleepMonitorInhibitorHandle *) self->handles_active;
+}
+
+/**
+ * nm_sleep_monitor_inhibit_release:
+ * @self: the #NMSleepMonitor instance
+ * @handle: the #NMSleepMonitorInhibitorHandle inhibitor handle.
+ *
+ * Allow again the release of inhibitor lock
+ **/
+void
+nm_sleep_monitor_inhibit_release (NMSleepMonitor *self,
+                                  NMSleepMonitorInhibitorHandle *handle)
+{
+	GSList *l;
+
+	g_return_if_fail (NM_IS_SLEEP_MONITOR (self));
+	g_return_if_fail (handle);
+
+	l = (GSList *) handle;
+
+	if (g_slist_position (self->handles_active, l) < 0) {
+		if (g_slist_position (self->handles_stale, l) < 0)
+			g_return_if_reached ();
+		self->handles_stale = g_slist_delete_link (self->handles_stale, l);
+		return;
+	}
+
+	self->handles_active = g_slist_delete_link (self->handles_active, l);
+
+#if !USE_UPOWER
+	drop_inhibitor (self, FALSE);
 #endif
 }
 
@@ -303,7 +363,7 @@ dispose (GObject *object)
 	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
 #if !USE_UPOWER
-	drop_inhibitor (self);
+	drop_inhibitor (self, TRUE);
 #endif
 
 	nm_clear_g_cancellable (&self->cancellable);
