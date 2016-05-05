@@ -136,6 +136,9 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
  * properties to the paths to their respective objects.
  */
 
+/**
+ * NMSetting8021x:
+ */
 struct _NMSetting8021x {
 	NMSetting parent;
 };

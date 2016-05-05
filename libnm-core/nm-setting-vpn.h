@@ -47,6 +47,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_VPN_SECRETS      "secrets"
 #define NM_SETTING_VPN_TIMEOUT      "timeout"
 
+/**
+ * NMSettingVpn:
+ */
 struct _NMSettingVpn {
 	NMSetting parent;
 };

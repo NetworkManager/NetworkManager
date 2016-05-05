@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_TEAM_CONFIG "config"
 
+/**
+ * NMSettingTeam:
+ */
 struct _NMSettingTeam {
 	NMSetting parent;
 };

@@ -59,6 +59,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPP_LCP_ECHO_FAILURE  "lcp-echo-failure"
 #define NM_SETTING_PPP_LCP_ECHO_INTERVAL "lcp-echo-interval"
 
+/**
+ * NMSettingPpp:
+ */
 struct _NMSettingPpp {
 	NMSetting parent;
 };

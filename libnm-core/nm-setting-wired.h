@@ -93,6 +93,9 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_WIRED_WAKE_ON_LAN "wake-on-lan"
 #define NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD "wake-on-lan-password"
 
+/**
+ * NMSettingWired:
+ */
 struct _NMSettingWired {
 	NMSetting parent;
 };

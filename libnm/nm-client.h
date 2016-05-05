@@ -157,6 +157,9 @@ typedef enum {
 #define NM_CLIENT_ERROR nm_client_error_quark ()
 GQuark nm_client_error_quark (void);
 
+/**
+ * NMClient:
+ */
 struct _NMClient {
 	GObject parent;
 };

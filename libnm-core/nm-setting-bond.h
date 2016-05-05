@@ -70,6 +70,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB    "tlb_dynamic_lb"
 #define NM_SETTING_BOND_OPTION_LP_INTERVAL       "lp_interval"
 
+/**
+ * NMSettingBond:
+ */
 struct _NMSettingBond {
 	NMSetting parent;
 };

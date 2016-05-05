@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_BOND_CARRIER     "carrier"
 #define NM_DEVICE_BOND_SLAVES      "slaves"
 
+/**
+ * NMDeviceBond:
+ */
 struct _NMDeviceBond {
 	NMDevice parent;
 };

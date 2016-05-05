@@ -37,6 +37,9 @@ G_BEGIN_DECLS
 #define NM_IS_IP_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP_CONFIG))
 #define NM_IP_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP_CONFIG, NMIPConfigClass))
 
+/**
+ * NMIPConfig:
+ */
 struct _NMIPConfig {
 	NMObject parent;
 };

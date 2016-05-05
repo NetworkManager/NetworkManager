@@ -37,6 +37,9 @@ G_BEGIN_DECLS
 #define NM_SECRET_AGENT_OLD_REGISTERED          "registered"
 #define NM_SECRET_AGENT_OLD_CAPABILITIES        "capabilities"
 
+/**
+ * NMSecretAgentOld:
+ */
 typedef struct {
 	GObject parent;
 } NMSecretAgentOld;

@@ -42,6 +42,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MACVLAN_TAP         "tap"
 #define NM_DEVICE_MACVLAN_HW_ADDRESS  "hw-address"
 
+/**
+ * NMDeviceMacvlan:
+ */
 struct _NMDeviceMacvlan {
 	NMDevice parent;
 };

@@ -135,6 +135,9 @@ typedef enum {
 	NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY = 1,
 } NMSettingIP6ConfigAddrGenMode;
 
+/**
+ * NMSettingIP6Config:
+ */
 struct _NMSettingIP6Config {
 	NMSettingIPConfig parent;
 };

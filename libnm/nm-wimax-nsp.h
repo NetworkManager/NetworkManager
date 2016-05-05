@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define NM_WIMAX_NSP_SIGNAL_QUALITY "signal-quality"
 #define NM_WIMAX_NSP_NETWORK_TYPE   "network-type"
 
+/**
+ * NMWimaxNsp:
+ */
 struct _NMWimaxNsp {
 	NMObject parent;
 };

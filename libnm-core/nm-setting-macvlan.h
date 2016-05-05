@@ -44,6 +44,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_MACVLAN_PROMISCUOUS          "promiscuous"
 #define NM_SETTING_MACVLAN_TAP                  "tap"
 
+/**
+ * NMSettingMacvlan:
+ */
 struct _NMSettingMacvlan {
 	NMSetting parent;
 };

@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_BT_NAME         "name"
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
 
+/**
+ * NMDeviceBt:
+ */
 struct _NMDeviceBt {
 	NMDevice parent;
 };

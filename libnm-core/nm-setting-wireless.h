@@ -98,7 +98,9 @@ typedef enum {
 	NM_SETTING_WIRELESS_POWERSAVE_LAST          =  _NM_SETTING_WIRELESS_POWERSAVE_NUM - 1, /*< skip >*/
 } NMSettingWirelessPowersave;
 
-
+/**
+ * NMSettingWireless:
+ */
 struct _NMSettingWireless {
 	NMSetting parent;
 };

@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_TEAM_CARRIER     "carrier"
 #define NM_DEVICE_TEAM_SLAVES      "slaves"
 
+/**
+ * NMDeviceTeam:
+ */
 struct _NMDeviceTeam {
 	NMDevice parent;
 };

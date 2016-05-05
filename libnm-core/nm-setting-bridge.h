@@ -48,6 +48,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_AGEING_TIME    "ageing-time"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING "multicast-snooping"
 
+/**
+ * NMSettingBridge:
+ */
 struct _NMSettingBridge {
 	NMSetting parent;
 };

@@ -165,6 +165,9 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_DNS_OPTION_NO_TLD_QUERY              "no-tld-query"
 #define NM_SETTING_DNS_OPTION_USE_VC                    "use-vc"
 
+/**
+ * NMSettingIPConfig:
+ */
 struct _NMSettingIPConfig {
 	NMSetting parent;
 };

@@ -45,6 +45,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_CDMA_PASSWORD       "password"
 #define NM_SETTING_CDMA_PASSWORD_FLAGS "password-flags"
 
+/**
+ * NMSettingCdma:
+ */
 struct _NMSettingCdma {
 	NMSetting parent;
 };

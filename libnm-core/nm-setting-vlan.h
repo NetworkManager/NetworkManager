@@ -46,6 +46,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_VLAN_INGRESS_PRIORITY_MAP "ingress-priority-map"
 #define NM_SETTING_VLAN_EGRESS_PRIORITY_MAP  "egress-priority-map"
 
+/**
+ * NMSettingVlan:
+ */
 struct _NMSettingVlan {
 	NMSetting parent;
 };

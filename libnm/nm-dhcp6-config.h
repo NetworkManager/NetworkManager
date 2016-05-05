@@ -31,6 +31,9 @@ G_BEGIN_DECLS
 #define NM_IS_DHCP6_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP6_CONFIG))
 #define NM_IS_DHCP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP6_CONFIG))
 
+/**
+ * NMDhcp6Config:
+ */
 typedef struct {
 	NMDhcpConfig parent;
 } NMDhcp6Config;

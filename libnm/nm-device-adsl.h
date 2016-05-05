@@ -38,6 +38,9 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_ADSL_CARRIER "carrier"
 
+/**
+ * NMDeviceAdsl:
+ */
 struct _NMDeviceAdsl {
 	NMDevice parent;
 };

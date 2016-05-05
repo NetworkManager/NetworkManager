@@ -43,6 +43,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_CARRIER     "carrier"
 #define NM_DEVICE_ETHERNET_S390_SUBCHANNELS "s390-subchannels"
 
+/**
+ * NMDeviceEthernet:
+ */
 struct _NMDeviceEthernet {
 	NMDevice parent;
 };

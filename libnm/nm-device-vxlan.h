@@ -55,6 +55,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_VXLAN_L3MISS        "l3miss"
 #define NM_DEVICE_VXLAN_DST_PORT      "dst-port"
 
+/**
+ * NMDeviceVxlan:
+ */
 struct _NMDeviceVxlan {
 	NMDevice parent;
 };

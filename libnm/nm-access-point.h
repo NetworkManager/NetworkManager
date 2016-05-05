@@ -51,7 +51,9 @@ G_BEGIN_DECLS
 /* DEPRECATED */
 #define NM_ACCESS_POINT_HW_ADDRESS  "hw-address"
 
-
+/**
+ * NMAccessPoint:
+ */
 struct _NMAccessPoint {
 	NMObject parent;
 };

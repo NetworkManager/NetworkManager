@@ -44,6 +44,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_TUN_VNET_HDR     "vnet-hdr"
 #define NM_DEVICE_TUN_MULTI_QUEUE  "multi-queue"
 
+/**
+ * NMDeviceTun:
+ */
 struct _NMDeviceTun {
 	NMDevice parent;
 };

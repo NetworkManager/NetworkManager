@@ -39,6 +39,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_INFINIBAND_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_INFINIBAND_CARRIER     "carrier"
 
+/**
+ * NMDeviceInfiniband:
+ */
 struct _NMDeviceInfiniband {
 	NMDevice parent;
 };

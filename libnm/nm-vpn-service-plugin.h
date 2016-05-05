@@ -43,6 +43,9 @@ G_BEGIN_DECLS
 #define NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER   "watch-peer"
 #define NM_VPN_SERVICE_PLUGIN_STATE             "state"
 
+/**
+ * NMVpnServicePlugin:
+ */
 typedef struct {
 	NM_AVAILABLE_IN_1_2
 	GObject parent;

@@ -92,7 +92,9 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH "priority-strict-bandwidth"
 #define NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS    "priority-traffic-class"
 
-
+/**
+ * NMSettingDcb:
+ */
 struct _NMSettingDcb {
 	NMSetting parent;
 };

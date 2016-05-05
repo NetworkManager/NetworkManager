@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_OLPC_MESH_COMPANION      "companion"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"
 
+/**
+ * NMDeviceOlpcMesh:
+ */
 struct _NMDeviceOlpcMesh {
 	NMDevice parent;
 };

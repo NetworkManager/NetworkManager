@@ -48,6 +48,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT "encapsulation-limit"
 #define NM_DEVICE_IP_TUNNEL_FLOW_LABEL          "flow-label"
 
+/**
+ * NMDeviceIPTunnel:
+ */
 struct _NMDeviceIPTunnel {
 	NMDevice parent;
 };
