@@ -8787,9 +8787,10 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	 * it changing IP configurations before they are applied. Postpone the
 	 * update in such case.
 	 */
-	if (activation_source_is_scheduled (self,
-	                                    activate_stage5_ip4_config_commit,
-	                                    AF_INET)) {
+	if (   !initial
+	    && activation_source_is_scheduled (self,
+	                                       activate_stage5_ip4_config_commit,
+	                                       AF_INET)) {
 		priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP4 update was postponed");
 		return;
@@ -8877,9 +8878,10 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	 * it changing IP configurations before they are applied. Postpone the
 	 * update in such case.
 	 */
-	if (activation_source_is_scheduled (self,
-	                                    activate_stage5_ip6_config_commit,
-	                                    AF_INET6)) {
+	if (   !initial
+	    && activation_source_is_scheduled (self,
+	                                       activate_stage5_ip6_config_commit,
+	                                       AF_INET6)) {
 		priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP6 update was postponed");
 		return;
