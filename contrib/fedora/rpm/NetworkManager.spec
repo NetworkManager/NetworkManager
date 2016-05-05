@@ -30,7 +30,14 @@
 
 %global _hardened_build 1
 
-%global git_sha_version %{?git_sha:.%{git_sha}}
+%if x%{?snapshot} != x
+%global snapshot_dot .%{snapshot}
+%endif
+%if x%{?git_sha} != x
+%global git_sha_dot .%{git_sha}
+%endif
+
+%global snap %{?git_sha_dot}%{?snapshot_dot}
 
 ###############################################################################
 
@@ -89,7 +96,7 @@ Name: NetworkManager
 Summary: Network connection manager and user applications
 Epoch: %{epoch_version}
 Version: %{rpm_version}
-Release: %{release_version}%{snapshot}%{git_sha_version}%{?dist}
+Release: %{release_version}%{?snap}%{?dist}
 Group: System Environment/Base
 License: GPLv2+
 URL: http://www.gnome.org/projects/NetworkManager/

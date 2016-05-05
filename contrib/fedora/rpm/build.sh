@@ -70,7 +70,7 @@ get_version() {
 write_changelog() {
     if [[ "x$CHANGELOG" == x ]]; then
         cat <<- EOF
-	* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{epoch_version}:%{version}-%{release_version}%{snapshot}%{git_sha_version}
+	* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{epoch_version}:%{version}-%{release_version}%{?snap}
 	- build of NetworkManager ($DATE, uuid: $UUID, git: $COMMIT_FULL)
 	$(git log -n20 --date=local --format='- %h %s [%an] (%ci)')
 	- ...
@@ -163,6 +163,7 @@ sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
     -e "s/__COMMIT__/$COMMIT/g" \
     -e "s/__COMMIT_FULL__/$COMMIT_FULL/g" \
+    -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \
