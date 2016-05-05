@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MODEM_MODEM_CAPABILITIES   "modem-capabilities"
 #define NM_DEVICE_MODEM_CURRENT_CAPABILITIES "current-capabilities"
 
+/**
+ * NMDeviceModem:
+ */
 struct _NMDeviceModem {
 	NMDevice parent;
 };

@@ -53,6 +53,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_GSM_SIM_ID          "sim-id"
 #define NM_SETTING_GSM_SIM_OPERATOR_ID "sim-operator-id"
 
+/**
+ * NMSettingGsm:
+ */
 struct _NMSettingGsm {
 	NMSetting parent;
 };

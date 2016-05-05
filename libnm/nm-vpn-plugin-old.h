@@ -38,6 +38,9 @@ G_BEGIN_DECLS
 #define NM_VPN_PLUGIN_OLD_DBUS_SERVICE_NAME "service-name"
 #define NM_VPN_PLUGIN_OLD_STATE             "state"
 
+/**
+ * NMVpnPluginOld:
+ */
 typedef struct {
 	NM_DEPRECATED_IN_1_2
 	GObject parent;

@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
 
+/**
+ * NMVpnConnection:
+ */
 struct _NMVpnConnection {
 	NMActiveConnection parent;
 };

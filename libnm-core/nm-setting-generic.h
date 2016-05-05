@@ -39,6 +39,9 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GENERIC_SETTING_NAME "generic"
 
+/**
+ * NMSettingGeneric:
+ */
 struct _NMSettingGeneric {
 	NMSetting parent;
 };

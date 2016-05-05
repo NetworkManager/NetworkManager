@@ -56,6 +56,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_VXLAN_L2_MISS            "l2-miss"
 #define NM_SETTING_VXLAN_L3_MISS            "l3-miss"
 
+/**
+ * NMSettingVxlan:
+ */
 struct _NMSettingVxlan {
 	NMSetting parent;
 };

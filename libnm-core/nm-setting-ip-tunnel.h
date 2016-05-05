@@ -51,6 +51,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP_TUNNEL_FLOW_LABEL          "flow-label"
 #define NM_SETTING_IP_TUNNEL_MTU                 "mtu"
 
+/**
+ * NMSettingIPTunnel:
+ */
 struct _NMSettingIPTunnel {
 	NMSetting parent;
 };

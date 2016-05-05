@@ -43,6 +43,9 @@ G_BEGIN_DECLS
 typedef struct _NMRemoteSettings NMRemoteSettings;
 typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
 
+/**
+ * NMRemoteSettings:
+ */
 struct _NMRemoteSettings {
 	NMObject parent;
 };

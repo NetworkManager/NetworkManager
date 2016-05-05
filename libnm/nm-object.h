@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 #define NM_OBJECT_PATH "path"
 #define NM_OBJECT_DBUS_CONNECTION "dbus-connection"
 
+/**
+ * NMObject:
+ */
 struct _NMObject {
 	GObject parent;
 };

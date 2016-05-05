@@ -46,6 +46,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIMAX_BSID             "bsid"
 #define NM_DEVICE_WIMAX_NSPS             "nsps"
 
+/**
+ * NMDeviceWimax:
+ */
 struct _NMDeviceWimax {
 	NMDevice parent;
 };

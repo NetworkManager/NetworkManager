@@ -89,6 +89,9 @@ typedef enum {
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS "leap-password-flags"
 
+/**
+ * NMSettingWirelessSecurity:
+ */
 struct _NMSettingWirelessSecurity {
 	NMSetting parent;
 };

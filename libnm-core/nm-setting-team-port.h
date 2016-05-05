@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_TEAM_PORT_CONFIG     "config"
 
+/**
+ * NMSettingTeamPort:
+ */
 struct _NMSettingTeamPort {
 	NMSetting parent;
 };

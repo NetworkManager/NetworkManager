@@ -36,6 +36,9 @@ G_BEGIN_DECLS
 #define NM_IS_DHCP_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_CONFIG))
 #define NM_IS_DHCP_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_CONFIG))
 
+/**
+ * NMDhcpConfig:
+ */
 struct _NMDhcpConfig {
 	NMObject parent;
 };

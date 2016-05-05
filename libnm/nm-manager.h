@@ -53,6 +53,9 @@ G_BEGIN_DECLS
 #define NM_MANAGER_METERED "metered"
 #define NM_MANAGER_ALL_DEVICES "all-devices"
 
+/**
+ * NMManager:
+ */
 typedef struct {
 	NMObject parent;
 } NMManager;

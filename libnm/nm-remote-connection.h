@@ -44,6 +44,9 @@ G_BEGIN_DECLS
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
+/**
+ * NMRemoteConnection:
+ */
 struct _NMRemoteConnection {
 	NMObject parent;
 };

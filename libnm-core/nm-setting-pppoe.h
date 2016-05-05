@@ -45,6 +45,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPPOE_PASSWORD       "password"
 #define NM_SETTING_PPPOE_PASSWORD_FLAGS "password-flags"
 
+/**
+ * NMSettingPppoe:
+ */
 struct _NMSettingPppoe {
 	NMSetting parent;
 };

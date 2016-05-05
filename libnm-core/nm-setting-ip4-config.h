@@ -87,6 +87,9 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_IP4_CONFIG_METHOD_DISABLED   "disabled"
 
+/**
+ * NMSettingIP4Config:
+ */
 struct _NMSettingIP4Config {
 	NMSettingIPConfig parent;
 };

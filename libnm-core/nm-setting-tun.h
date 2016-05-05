@@ -60,6 +60,9 @@ typedef enum {
 	NM_SETTING_TUN_MODE_TAP        = 2,
 } NMSettingTunMode;
 
+/**
+ * NMSettingTun:
+ */
 struct _NMSettingTun {
 	NMSetting parent;
 };

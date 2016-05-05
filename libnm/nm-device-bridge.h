@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_BRIDGE_CARRIER     "carrier"
 #define NM_DEVICE_BRIDGE_SLAVES      "slaves"
 
+/**
+ * NMDeviceBridge:
+ */
 struct _NMDeviceBridge {
 	NMDevice parent;
 };

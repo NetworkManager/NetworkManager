@@ -60,6 +60,9 @@ typedef enum {
 #define NM_SETTING_SERIAL_STOPBITS "stopbits"
 #define NM_SETTING_SERIAL_SEND_DELAY "send-delay"
 
+/**
+ * NMSettingSerial:
+ */
 struct _NMSettingSerial {
 	NMSetting parent;
 };

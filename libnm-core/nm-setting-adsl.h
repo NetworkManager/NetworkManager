@@ -54,6 +54,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_ADSL_ENCAPSULATION_VCMUX "vcmux"
 #define NM_SETTING_ADSL_ENCAPSULATION_LLC   "llc"
 
+/**
+ * NMSettingAdsl:
+ */
 struct _NMSettingAdsl {
 	NMSetting parent;
 };

@@ -59,6 +59,9 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_BLUETOOTH_TYPE_PANU "panu"
 
+/**
+ * NMSettingBluetooth:
+ */
 struct _NMSettingBluetooth {
 	NMSetting parent;
 };

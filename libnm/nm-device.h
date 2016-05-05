@@ -65,6 +65,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_METERED "metered"
 #define NM_DEVICE_LLDP_NEIGHBORS "lldp-neighbors"
 
+/**
+ * NMDevice:
+ */
 struct _NMDevice {
 	NMObject parent;
 };

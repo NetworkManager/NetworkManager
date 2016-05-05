@@ -39,6 +39,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_GENERIC_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 
+/**
+ * NMDeviceGeneric:
+ */
 struct _NMDeviceGeneric {
 	NMDevice parent;
 };

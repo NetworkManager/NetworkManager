@@ -43,6 +43,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_PORT_PATH_COST    "path-cost"
 #define NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE "hairpin-mode"
 
+/**
+ * NMSettingBridgePort:
+ */
 struct _NMSettingBridgePort {
 	NMSetting parent;
 };

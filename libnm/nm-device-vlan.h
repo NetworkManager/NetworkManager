@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_VLAN_PARENT      "parent"
 #define NM_DEVICE_VLAN_VLAN_ID     "vlan-id"
 
+/**
+ * NMDeviceVlan:
+ */
 struct _NMDeviceVlan {
 	NMDevice parent;
 };

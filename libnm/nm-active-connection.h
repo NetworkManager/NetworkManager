@@ -53,6 +53,9 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_VPN                  "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER               "master"
 
+/**
+ * NMActiveConnection:
+ */
 struct _NMActiveConnection {
 	NMObject parent;
 };

@@ -45,6 +45,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_ACCESS_POINTS       "access-points"
 
+/**
+ * NMDeviceWifi:
+ */
 struct _NMDeviceWifi {
 	NMDevice parent;
 };
