@@ -1887,6 +1887,8 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	g_return_if_fail (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT));
 	g_return_if_fail (priv->ip_ifindex <= 0);
 	g_return_if_fail (priv->ip_iface == NULL);
+	g_return_if_fail (!priv->queued_ip4_config_id);
+	g_return_if_fail (!priv->queued_ip6_config_id);
 
 	_LOGD (LOGD_DEVICE, "start setup of %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), plink ? plink->ifindex : 0);
 
@@ -8948,8 +8950,12 @@ nm_device_capture_initial_config (NMDevice *self)
 static gboolean
 queued_ip4_config_change (gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
@@ -8968,10 +8974,14 @@ queued_ip4_config_change (gpointer user_data)
 static gboolean
 queued_ip6_config_change (gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
 	GSList *iter;
 	gboolean need_ipv6ll = FALSE;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
