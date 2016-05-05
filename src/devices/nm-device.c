@@ -6850,9 +6850,6 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	if (config)
 		priv->dev_ip4_config = g_object_ref (config);
 
-	if (nm_clear_g_source (&priv->queued_ip4_config_id))
-		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
-
 	activation_source_schedule (self, activate_stage5_ip4_config_commit, AF_INET);
 }
 
