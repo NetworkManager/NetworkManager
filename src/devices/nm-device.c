@@ -9096,9 +9096,7 @@ queued_ip4_config_change (gpointer user_data)
 		return TRUE;
 
 	priv->queued_ip4_config_id = 0;
-	g_object_ref (self);
 	update_ip4_config (self, FALSE);
-	g_object_unref (self);
 
 	set_unmanaged_external_down (self, TRUE);
 
@@ -9122,7 +9120,6 @@ queued_ip6_config_change (gpointer user_data)
 		return TRUE;
 
 	priv->queued_ip6_config_id = 0;
-	g_object_ref (self);
 	update_ip6_config (self, FALSE);
 
 	if (   nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex)
@@ -9157,8 +9154,6 @@ queued_ip6_config_change (gpointer user_data)
 
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	priv->dad6_failed_addrs = NULL;
-
-	g_object_unref (self);
 
 	set_unmanaged_external_down (self, TRUE);
 
