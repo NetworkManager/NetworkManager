@@ -28,9 +28,7 @@ G_DEFINE_TYPE (NMDnsUnbound, nm_dns_unbound, NM_TYPE_DNS_PLUGIN)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const GSList *vpn_configs,
-        const GSList *dev_configs,
-        const GSList *other_configs,
+        const NMDnsIPConfigData **configs,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
