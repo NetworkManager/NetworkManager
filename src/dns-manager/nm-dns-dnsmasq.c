@@ -202,17 +202,15 @@ add_global_config (NMDnsDnsmasq *self, GVariantBuilder *dnsmasq_servers, const N
 }
 
 static gboolean
-add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6, gboolean split)
+add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
+                const char *iface, gboolean split)
 {
 	const struct in6_addr *addr;
 	char *buf = NULL;
 	int nnameservers, i_nameserver, n, i;
 	gboolean added = FALSE;
-	const char *iface;
 
 	nnameservers = nm_ip6_config_get_num_nameservers (ip6);
-
-	iface = g_object_get_data (G_OBJECT (ip6), IP_CONFIG_IFACE_TAG);
 	g_assert (iface);
 
 	if (split) {
@@ -262,6 +260,24 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6, 
 	}
 
 	return TRUE;
+}
+
+static gboolean
+add_ip_config_data (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfigData *data)
+{
+	if (NM_IS_IP4_CONFIG (data->config)) {
+		return add_ip4_config (self,
+		                       servers,
+		                       (NMIP4Config *) data->config,
+		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
+	} else if (NM_IS_IP6_CONFIG (data->config)) {
+		return add_ip6_config (self,
+		                       servers,
+		                       (NMIP6Config *) data->config,
+		                       data->iface,
+		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
+	} else
+		g_return_val_if_reached (FALSE);
 }
 
 static void
@@ -429,15 +445,12 @@ start_dnsmasq (NMDnsDnsmasq *self)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const GSList *vpn_configs,
-        const GSList *dev_configs,
-        const GSList *other_configs,
+        const NMDnsIPConfigData **configs,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
-	const GSList *iter;
 	GVariantBuilder servers;
 
 	start_dnsmasq (self);
@@ -447,28 +460,9 @@ update (NMDnsPlugin *plugin,
 	if (global_config)
 		add_global_config (self, &servers, global_config);
 	else {
-		/* Use split DNS for VPN configs */
-		for (iter = vpn_configs; iter; iter = g_slist_next (iter)) {
-			if (NM_IS_IP4_CONFIG (iter->data))
-				add_ip4_config (self, &servers, iter->data, TRUE);
-			else if (NM_IS_IP6_CONFIG (iter->data))
-				add_ip6_config (self, &servers, iter->data, TRUE);
-		}
-
-		/* Now add interface configs without split DNS */
-		for (iter = dev_configs; iter; iter = g_slist_next (iter)) {
-			if (NM_IS_IP4_CONFIG (iter->data))
-				add_ip4_config (self, &servers, iter->data, FALSE);
-			else if (NM_IS_IP6_CONFIG (iter->data))
-				add_ip6_config (self, &servers, iter->data, FALSE);
-		}
-
-		/* And any other random configs */
-		for (iter = other_configs; iter; iter = g_slist_next (iter)) {
-			if (NM_IS_IP4_CONFIG (iter->data))
-				add_ip4_config (self, &servers, iter->data, FALSE);
-			else if (NM_IS_IP6_CONFIG (iter->data))
-				add_ip6_config (self, &servers, iter->data, FALSE);
+		while (*configs) {
+			add_ip_config_data (self, &servers, *configs);
+			configs++;
 		}
 	}
 

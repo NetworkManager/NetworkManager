@@ -36,6 +36,12 @@ typedef enum {
 	NM_DNS_IP_CONFIG_TYPE_VPN
 } NMDnsIPConfigType;
 
+typedef struct {
+	gpointer config;
+	NMDnsIPConfigType type;
+	char *iface;
+} NMDnsIPConfigData;
+
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
 #define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))
 #define NM_DNS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_DNS_MANAGER, NMDnsManagerClass))

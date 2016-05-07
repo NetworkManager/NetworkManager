@@ -109,12 +109,6 @@ NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
 
 /*********************************************************************************************/
 
-typedef struct {
-	gpointer config;
-	NMDnsIPConfigType type;
-	char *iface;
-} NMDnsIPConfigData;
-
 typedef struct _NMDnsManagerPrivate {
 	GPtrArray *configs;
 	NMDnsIPConfigData *best_conf4, *best_conf6;
@@ -191,12 +185,6 @@ ip_config_data_new (gpointer config, NMDnsIPConfigType type, const char *iface)
 	data->iface = g_strdup (iface);
 	data->type = type;
 
-	/* Plugins still receive plain config, attach iface through object data */
-	g_object_set_data_full (G_OBJECT (config),
-	                        IP_CONFIG_IFACE_TAG,
-	                        g_strdup (iface),
-	                        g_free);
-
 	return data;
 }
 
@@ -205,7 +193,9 @@ ip_config_data_destroy (gpointer ptr)
 {
 	NMDnsIPConfigData *data = ptr;
 
-	g_object_set_data (G_OBJECT (data->config), IP_CONFIG_IFACE_TAG, NULL);
+	if (!data)
+		return;
+
 	g_object_unref (data->config);
 	g_free (data->iface);
 	g_slice_free (NMDnsIPConfigData, data);
@@ -879,43 +869,6 @@ compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer
 	g_checksum_free (sum);
 }
 
-static void
-build_plugin_config_lists (NMDnsManager *self,
-                           GSList **out_vpn_configs,
-                           GSList **out_dev_configs,
-                           GSList **out_other_configs)
-{
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	guint i;
-
-	g_return_if_fail (out_vpn_configs && !*out_vpn_configs);
-	g_return_if_fail (out_dev_configs && !*out_dev_configs);
-	g_return_if_fail (out_other_configs && !*out_other_configs);
-
-	/* Build up config lists for plugins; we use the raw configs here, not the
-	 * merged information that we write to resolv.conf so that the plugins can
-	 * still use the domain information in each config to provide split DNS if
-	 * they want to.
-	 */
-	for (i = 0; i < priv->configs->len; i++) {
-		NMDnsIPConfigData *data = priv->configs->pdata[i];
-
-		switch (data->type) {
-		case NM_DNS_IP_CONFIG_TYPE_VPN:
-			*out_vpn_configs = g_slist_append (*out_vpn_configs, data->config);
-			break;
-		case NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE:
-			*out_dev_configs = g_slist_append (*out_dev_configs, data->config);
-			break;
-		case NM_DNS_IP_CONFIG_TYPE_DEFAULT:
-			*out_other_configs = g_slist_append (*out_other_configs, data->config);
-			break;
-		default:
-			g_return_if_reached ();
-		}
-	}
-}
-
 static gboolean
 merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 {
@@ -1065,7 +1018,6 @@ update_dns (NMDnsManager *self,
 	if (priv->plugin) {
 		NMDnsPlugin *plugin = priv->plugin;
 		const char *plugin_name = nm_dns_plugin_get_name (plugin);
-		GSList *vpn_configs = NULL, *dev_configs = NULL, *other_configs = NULL;
 
 		if (nm_dns_plugin_is_caching (plugin)) {
 			if (no_caching) {
@@ -1076,14 +1028,11 @@ update_dns (NMDnsManager *self,
 			caching = TRUE;
 		}
 
-		if (!global_config)
-			build_plugin_config_lists (self, &vpn_configs, &dev_configs, &other_configs);
-
 		_LOGD ("update-dns: updating plugin %s", plugin_name);
+		g_ptr_array_add (priv->configs, NULL);
+
 		if (!nm_dns_plugin_update (plugin,
-		                           vpn_configs,
-		                           dev_configs,
-		                           other_configs,
+		                           (const NMDnsIPConfigData **) priv->configs->pdata,
 		                           global_config,
 		                           priv->hostname)) {
 			_LOGW ("update-dns: plugin %s update failed", plugin_name);
@@ -1093,9 +1042,7 @@ update_dns (NMDnsManager *self,
 			 */
 			caching = FALSE;
 		}
-		g_slist_free (vpn_configs);
-		g_slist_free (dev_configs);
-		g_slist_free (other_configs);
+		g_ptr_array_remove_index (priv->configs, priv->configs->len - 1);
 
 	skip:
 		;
