@@ -204,6 +204,27 @@ ip_config_data_destroy (gpointer ptr)
 static gint
 ip_config_data_compare (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 {
+	gboolean a_v4, b_v4;
+	gint a_prio, b_prio;
+
+	a_v4 = NM_IS_IP4_CONFIG (a->config);
+	b_v4 = NM_IS_IP4_CONFIG (b->config);
+
+	a_prio = a_v4 ?
+		nm_ip4_config_get_dns_priority ((NMIP4Config *) a->config) :
+		nm_ip6_config_get_dns_priority ((NMIP6Config *) a->config);
+
+	b_prio = b_v4 ?
+		nm_ip4_config_get_dns_priority ((NMIP4Config *) b->config) :
+		nm_ip6_config_get_dns_priority ((NMIP6Config *) b->config);
+
+	/* Configurations with lower priority value first */
+	if (a_prio < b_prio)
+		return -1;
+	else if (a_prio > b_prio)
+		return 1;
+
+	/* Sort also according to type */
 	if (a->type > b->type)
 		return -1;
 	else if (a->type < b->type)
@@ -365,11 +386,6 @@ merge_one_ip_config_data (NMDnsManager *self,
                           NMResolvConfData *rc,
                           NMDnsIPConfigData *data)
 {
-	_LOGT ("merge config: [ %-7s v%c %s ]",
-	       _config_type_to_string (data->type),
-	       NM_IS_IP4_CONFIG (data->config) ? '4' : '6',
-	       data->iface);
-
 	if (NM_IS_IP4_CONFIG (data->config))
 		merge_one_ip4_config (rc, (NMIP4Config *) data->config);
 	else if (NM_IS_IP6_CONFIG (data->config))
@@ -919,6 +935,7 @@ update_dns (NMDnsManager *self,
 	SpawnResult result = SR_ERROR;
 	NMConfigData *data;
 	NMGlobalDnsConfig *global_config;
+	gs_free NMDnsIPConfigData **plugin_confs = NULL;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -954,8 +971,40 @@ update_dns (NMDnsManager *self,
 	if (global_config)
 		merge_global_dns_config (&rc, global_config);
 	else {
-		for (i = 0; i < priv->configs->len; i++)
-			merge_one_ip_config_data (self, &rc, priv->configs->pdata[i]);
+		int prio, prev_prio = 0;
+		NMDnsIPConfigData *current;
+		gboolean skip = FALSE, v4;
+
+		plugin_confs = g_new (NMDnsIPConfigData *, priv->configs->len + 1);
+
+		for (i = 0; i < priv->configs->len; i++) {
+			current = priv->configs->pdata[i];
+			v4 = NM_IS_IP4_CONFIG (current->config);
+
+			prio = v4 ?
+				nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config) :
+				nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
+
+			if (prev_prio < 0 && prio != prev_prio) {
+				skip = TRUE;
+				plugin_confs[i] = NULL;
+			}
+
+			prev_prio = prio;
+
+			_LOGT ("config: %8d %-7s v%c %-16s %s",
+			       prio,
+			       _config_type_to_string (current->type),
+			        v4 ? '4' : '6',
+			       current->iface,
+			       skip ? "<SKIP>" : "");
+
+			if (!skip) {
+				merge_one_ip_config_data (self, &rc, current);
+				plugin_confs[i] = current;
+			}
+		}
+		plugin_confs[i] = NULL;
 	}
 
 	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
@@ -1029,10 +1078,8 @@ update_dns (NMDnsManager *self,
 		}
 
 		_LOGD ("update-dns: updating plugin %s", plugin_name);
-		g_ptr_array_add (priv->configs, NULL);
-
 		if (!nm_dns_plugin_update (plugin,
-		                           (const NMDnsIPConfigData **) priv->configs->pdata,
+		                           (const NMDnsIPConfigData **) plugin_confs,
 		                           global_config,
 		                           priv->hostname)) {
 			_LOGW ("update-dns: plugin %s update failed", plugin_name);
@@ -1042,7 +1089,6 @@ update_dns (NMDnsManager *self,
 			 */
 			caching = FALSE;
 		}
-		g_ptr_array_remove_index (priv->configs, priv->configs->len - 1);
 
 	skip:
 		;
@@ -1166,6 +1212,14 @@ plugin_child_quit (NMDnsPlugin *plugin, int exit_status, gpointer user_data)
 	plugin_child_quit_update_dns (self);
 }
 
+static void
+ip_config_dns_priority_changed (gpointer config,
+                                GParamSpec *pspec,
+                                NMDnsManager *self)
+{
+	NM_DNS_MANAGER_GET_PRIVATE (self)->need_sort = TRUE;
+}
+
 static gboolean
 nm_dns_manager_add_ip_config (NMDnsManager *self,
                               const char *iface,
@@ -1198,6 +1252,11 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 
 	data = ip_config_data_new (config, cfg_type, iface);
 	g_ptr_array_add (priv->configs, data);
+	g_signal_connect (config,
+	                  v4 ?
+	                    "notify::" NM_IP4_CONFIG_DNS_PRIORITY :
+	                    "notify::" NM_IP6_CONFIG_DNS_PRIORITY,
+	                  (GCallback) ip_config_dns_priority_changed, self);
 	priv->need_sort = TRUE;
 
 	if (cfg_type == NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE) {
@@ -1261,6 +1320,7 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 			else if (config == priv->best_conf6)
 				priv->best_conf6 = NULL;
 
+			g_signal_handlers_disconnect_by_func (config, ip_config_dns_priority_changed, self);
 			g_ptr_array_remove_index (priv->configs, i);
 
 			if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
@@ -1580,7 +1640,9 @@ dispose (GObject *object)
 {
 	NMDnsManager *self = NM_DNS_MANAGER (object);
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	NMDnsIPConfigData *data;
 	GError *error = NULL;
+	guint i;
 
 	_LOGT ("disposing");
 
@@ -1603,6 +1665,12 @@ dispose (GObject *object)
 	}
 
 	if (priv->configs) {
+		for (i = 0; i < priv->configs->len; i++) {
+			data = priv->configs->pdata[i];
+			g_signal_handlers_disconnect_by_func (data->config,
+			                                      ip_config_dns_priority_changed,
+			                                      self);
+		}
 		g_ptr_array_free (priv->configs, TRUE);
 		priv->configs = NULL;
 	}
