@@ -735,9 +735,7 @@ static gboolean
 get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMLinkType link_type;
-	const guint8 *hwaddr = NULL;
-	size_t hwaddr_len = 0;
+	const NMPlatformLink *pllink;
 	int ifindex;
 	gboolean success;
 
@@ -745,21 +743,22 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	ifindex = nm_device_get_ip_ifindex (self);
 	g_assert (ifindex);
 
-	link_type = nm_platform_link_get_type (NM_PLATFORM_GET, ifindex);
-	g_return_val_if_fail (link_type > NM_LINK_TYPE_UNKNOWN, 0);
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+	g_return_val_if_fail (pllink && pllink->type > NM_LINK_TYPE_UNKNOWN, 0);
 
-	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddr_len);
-	if (!hwaddr_len)
+	if (pllink->addr.len <= 0)
 		return FALSE;
+	if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX)
+		g_return_val_if_reached (FALSE);
 
-	success = nm_utils_get_ipv6_interface_identifier (link_type,
-	                                                  hwaddr,
-	                                                  hwaddr_len,
+	success = nm_utils_get_ipv6_interface_identifier (pllink->type,
+	                                                  pllink->addr.data,
+	                                                  pllink->addr.len,
 	                                                  priv->dev_id,
 	                                                  out_iid);
 	if (!success) {
 		_LOGW (LOGD_HW, "failed to generate interface identifier "
-		       "for link type %u hwaddr_len %zu", link_type, hwaddr_len);
+		       "for link type %u hwaddr_len %u", pllink->type, (unsigned) pllink->addr.len);
 	}
 	return success;
 }
