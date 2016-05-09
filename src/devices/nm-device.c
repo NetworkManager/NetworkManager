@@ -741,10 +741,12 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 
 	/* If we get here, we *must* have a kernel netdev, which implies an ifindex */
 	ifindex = nm_device_get_ip_ifindex (self);
-	g_assert (ifindex);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
-	g_return_val_if_fail (pllink && pllink->type > NM_LINK_TYPE_UNKNOWN, 0);
+	if (   !pllink
+	    || NM_IN_SET (pllink->type, NM_LINK_TYPE_NONE, NM_LINK_TYPE_UNKNOWN))
+		return FALSE;
 
 	if (pllink->addr.len <= 0)
 		return FALSE;
