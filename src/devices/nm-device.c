@@ -8653,6 +8653,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean device_is_up = FALSE;
+	NMDeviceCapabilities capabilities;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -8687,6 +8688,13 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 			_LOGD (LOGD_HW, "device not up immediately");
 		return FALSE;
 	}
+
+	/* some ethernet devices fail to report capabilities unless the device
+	 * is up. Re-read the capabilities. */
+	capabilities = 0;
+	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
+		capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
+	_add_capabilities (self, capabilities);
 
 	/* Devices that support carrier detect must be IFF_UP to report carrier
 	 * changes; so after setting the device IFF_UP we must suppress startup
