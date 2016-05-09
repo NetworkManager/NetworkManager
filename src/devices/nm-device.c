@@ -8658,6 +8658,10 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 			return FALSE;
 	}
 
+	/* Store carrier immediately. */
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
+		check_carrier (self);
+
 	device_is_up = nm_device_is_up (self);
 	if (block && !device_is_up) {
 		int ifindex = nm_device_get_ip_ifindex (self);
@@ -8710,10 +8714,6 @@ bring_up (NMDevice *self, gboolean *no_firmware)
 	}
 
 	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, no_firmware);
-
-	/* Store carrier immediately. */
-	if (result && nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
-		check_carrier (self);
 
 	return result;
 }
