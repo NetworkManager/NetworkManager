@@ -44,6 +44,7 @@
 #include "nm-config.h"
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-manager.h"
+#include "nm-dns-manager.h"
 
 #include "nmdbus-vpn-connection.h"
 
@@ -1364,6 +1365,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		ifindex = nm_device_get_ip_ifindex (parent_dev);
 	}
 	config = nm_ip4_config_new (ifindex);
+	nm_ip4_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 24;
@@ -1497,6 +1499,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	}
 
 	config = nm_ip6_config_new (priv->ip_ifindex);
+	nm_ip6_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 128;
