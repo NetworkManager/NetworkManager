@@ -279,8 +279,9 @@ lease_to_ip4_config (const char *iface,
 	/* Domain Name */
 	r = sd_dhcp_lease_get_domainname (lease, &str);
 	if (r == 0) {
-		/* Multiple domains sometimes stuffed into the option */
-		char **domains = g_strsplit (str, " ", 0);
+		/* Multiple domains sometimes stuffed into option 15 "Domain Name".
+		 * As systemd escapes such characters, split them at \\032. */
+		char **domains = g_strsplit (str, "\\032", 0);
 		char **s;
 
 		for (s = domains; *s; s++) {
