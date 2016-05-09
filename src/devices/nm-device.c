@@ -550,6 +550,17 @@ nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
 	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->capabilities, caps);
 }
 
+static void
+_add_capabilities (NMDevice *self, NMDeviceCapabilities capabilities)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!NM_FLAGS_ALL (priv->capabilities, capabilities)) {
+		priv->capabilities |= capabilities;
+		_notify (self, PROP_CAPABILITIES);
+	}
+}
+
 /***********************************************************/
 
 const char *
@@ -1931,6 +1942,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	NMDevicePrivate *priv;
 	NMDeviceClass *klass;
 	static guint32 id = 0;
+	NMDeviceCapabilities capabilities = 0;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -1963,7 +1975,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
 
 		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
-			priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
+			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
 		_notify (self, PROP_MTU);
@@ -1983,7 +1995,9 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	}
 
 	if (klass->get_generic_capabilities)
-		priv->capabilities |= klass->get_generic_capabilities (self);
+		capabilities |= klass->get_generic_capabilities (self);
+
+	_add_capabilities (self, capabilities);
 
 	if (!priv->udi) {
 		/* Use a placeholder UDI until we get a real one */
@@ -2017,8 +2031,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
-
-	_notify (self, PROP_CAPABILITIES);
 
 	klass->realize_start_notify (self, plink);
 
