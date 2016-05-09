@@ -1403,7 +1403,7 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		                     e_invalid_property,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		/* we would like to make this a NORMALIZEABLE_ERROR, but that might
+		/* we would like to make this a NORMALIZABLE_ERROR, but that might
 		 * break older connections. */
 		return NM_SETTING_VERIFY_NORMALIZABLE;
 	}
