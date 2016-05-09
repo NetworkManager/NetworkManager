@@ -851,14 +851,7 @@ _parse_af_inet6 (NMPlatform *platform,
 
 	success = TRUE;
 	if (iid_is_valid) {
-		out_iid->id_u8[7] = i6_token.s6_addr[15];
-		out_iid->id_u8[6] = i6_token.s6_addr[14];
-		out_iid->id_u8[5] = i6_token.s6_addr[13];
-		out_iid->id_u8[4] = i6_token.s6_addr[12];
-		out_iid->id_u8[3] = i6_token.s6_addr[11];
-		out_iid->id_u8[2] = i6_token.s6_addr[10];
-		out_iid->id_u8[1] = i6_token.s6_addr[9];
-		out_iid->id_u8[0] = i6_token.s6_addr[8];
+		nm_utils_ipv6_interface_identifier_get_from_addr (out_iid, &i6_token);
 		*out_iid_is_valid = TRUE;
 	}
 	*out_addr_gen_mode_inv = i6_addr_gen_mode_inv;
