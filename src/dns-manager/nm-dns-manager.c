@@ -1593,8 +1593,7 @@ nm_dns_manager_init (NMDnsManager *self)
 
 	priv->config = g_object_ref (nm_config_get ());
 	/* Set the initial hash */
-	compute_hash (self, nm_config_data_get_global_dns_config (nm_config_get_data (priv->config)),
-	              NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
+	compute_hash (self, NULL, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
 
 	g_signal_connect (G_OBJECT (priv->config),
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
