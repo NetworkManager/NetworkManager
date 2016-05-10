@@ -381,9 +381,12 @@ connect_ready (MMModemSimple *simple_iface,
 static void
 send_pin_ready (MMSim *sim, GAsyncResult *result, NMModemBroadband *self)
 {
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	mm_sim_send_pin_finish (sim, result, &error);
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
 
 	if (!self->priv->ctx || self->priv->ctx->step != CONNECT_STEP_UNLOCK)
 		return;
@@ -396,7 +399,6 @@ send_pin_ready (MMSim *sim, GAsyncResult *result, NMModemBroadband *self)
 		} else {
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
 		}
-		g_error_free (error);
 		return;
 	}
 
