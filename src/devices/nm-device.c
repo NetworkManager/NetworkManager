@@ -4545,6 +4545,8 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 	                    NULL,
 	                    NULL);
 
+	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+
 	return TRUE;
 }
 
@@ -5296,6 +5298,8 @@ dhcp6_lease_change (NMDevice *self)
 	                    settings_connection,
 	                    nm_device_get_applied_connection (self),
 	                    self, NULL, NULL, NULL);
+
+	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 
 	return TRUE;
 }
