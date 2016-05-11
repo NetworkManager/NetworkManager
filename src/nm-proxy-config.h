@@ -46,3 +46,11 @@ void nm_proxy_config_add_proxy (NMProxyConfig *config, const char *proxy);
 void nm_proxy_config_del_proxy (NMProxyConfig *config, guint i);
 guint32 nm_proxy_config_get_num_proxies (const NMProxyConfig *config);
 const char * nm_proxy_config_get_proxy (const NMProxyConfig *config, guint i);
+
+void nm_proxy_config_set_pac_url (NMProxyConfig *config, const char *url);
+const char * nm_proxy_config_get_pac_url (const NMProxyConfig *config);
+
+void nm_proxy_config_set_pac_script (NMProxyConfig *config, const char *script);
+const char * nm_proxy_config_get_pac_script (const NMProxyConfig *config);
+
+#endif /* __NETWORKMANAGER_PROXY_CONFIG_H__ */
