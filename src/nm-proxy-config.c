@@ -116,3 +116,20 @@ nm_proxy_config_reset_proxies (NMProxyConfig *config)
 		_notify (config, PROP_PROXIES);
 	}
 }
+
+void
+nm_proxy_config_add_proxy (NMProxyConfig *config, const char *proxy)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	int i;
+
+	g_return_if_fail (proxy != NULL);
+	g_return_if_fail (proxy[0] != '\0');
+
+	for (i = 0; i < priv->proxies->len; i++)
+		if (!g_strcmp0 (g_ptr_array_index (priv->proxies, i), proxy))
+			return;
+
+	g_ptr_array_add (priv->proxies, g_strdup (proxy));
+	_notify (config, PROP_PROXIES);
+}
