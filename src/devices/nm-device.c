@@ -764,10 +764,42 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	return success;
 }
 
+/**
+ * nm_device_get_ip_iface_identifier:
+ * @self: an #NMDevice
+ * @iid: where to place the interface identifier
+ * @ignore_token: force creation of a non-tokenized address
+ *
+ * Return the interface's identifier for the EUI64 address generation mode.
+ * It's either a manually set token or and identifier generated in a
+ * hardware-specific way.
+ *
+ * Unless @ignore_token is set the token is preferred. That is the case
+ * for link-local addresses (to mimic kernel behavior).
+ *
+ * Returns: #TRUE if the @iid could be set
+ */
 static gboolean
-nm_device_get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *iid)
+nm_device_get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *iid, gboolean ignore_token)
 {
-	return NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, iid);
+	NMSettingIP6Config *s_ip6;
+	const char *token = NULL;
+	NMConnection *connection;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	connection = nm_device_get_applied_connection (self);
+	nm_assert (connection);
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
+	nm_assert (s_ip6);
+
+	if (!ignore_token)
+		token = nm_setting_ip6_config_get_token (s_ip6);
+	if (token)
+		return nm_utils_ipv6_interface_identifier_get_from_token (iid, token);
+	else
+		return NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, iid);
 }
 
 const char *
@@ -5204,6 +5236,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean ignore_auto_routes = FALSE;
 	gboolean ignore_auto_dns = FALSE;
 	gboolean auto_method = FALSE;
+	const char *token = NULL;
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
@@ -5211,8 +5244,13 @@ ip6_config_merge_and_apply (NMDevice *self,
 		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
 
 		if (s_ip6) {
+			NMSettingIP6Config *ip6 = NM_SETTING_IP6_CONFIG (s_ip6);
+
 			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip6);
 			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip6);
+
+			if (nm_setting_ip6_config_get_addr_gen_mode (ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64)
+				token = nm_setting_ip6_config_get_token (ip6);
 
 			if (NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
 			                  NM_SETTING_IP6_CONFIG_METHOD_AUTO,
@@ -5361,6 +5399,14 @@ END_ADD_DEFAULT_ROUTE:
 
 	/* Allow setting MTU etc */
 	if (commit) {
+		NMUtilsIPv6IfaceId iid;
+
+		if (token && nm_utils_ipv6_interface_identifier_get_from_token (&iid, token)) {
+			nm_platform_link_set_ipv6_token (NM_PLATFORM_GET,
+			                                 nm_device_get_ip_ifindex (self),
+			                                 iid);
+		}
+
 		if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
 			NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, composite);
 	}
@@ -5833,7 +5879,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 			return;
 		}
 
-		if (!nm_device_get_ip_iface_identifier (self, &iid)) {
+		if (!nm_device_get_ip_iface_identifier (self, &iid, TRUE)) {
 			_LOGW (LOGD_IP6, "linklocal6: failed to get interface identifier; IPv6 cannot continue");
 			return;
 		}
@@ -6114,16 +6160,11 @@ static gboolean
 addrconf6_start_with_link_ready (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const NMPlatformLink *pllink;
 	NMUtilsIPv6IfaceId iid;
 
 	g_assert (priv->rdisc);
 
-	pllink = nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex);
-	if (pllink && pllink->inet6_token.id) {
-		_LOGD (LOGD_IP6, "addrconf6: IPv6 tokenized identifier present");
-		nm_rdisc_set_iid (priv->rdisc, pllink->inet6_token);
-	} else if (nm_device_get_ip_iface_identifier (self, &iid)) {
+	if (nm_device_get_ip_iface_identifier (self, &iid, FALSE)) {
 		_LOGD (LOGD_IP6, "addrconf6: using the device EUI-64 identifier");
 		nm_rdisc_set_iid (priv->rdisc, iid);
 	} else {
@@ -10670,7 +10711,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		g_ptr_array_add (argv, g_strdup ("--slaac-tempaddr"));
 		g_ptr_array_add (argv, g_strdup_printf ("%d", priv->rdisc_use_tempaddr));
 
-		if (nm_device_get_ip_iface_identifier (self, &iid)) {
+		if (nm_device_get_ip_iface_identifier (self, &iid, FALSE)) {
 			g_ptr_array_add (argv, g_strdup ("--iid"));
 			hex_iid = bin2hexstr ((const char *) iid.id_u8, sizeof (NMUtilsIPv6IfaceId));
 			g_ptr_array_add (argv, hex_iid);
