@@ -26,5 +26,7 @@ typedef struct {
 	GObjectClass parent;
 } NMProxyConfigClass;
 
-
-
+#define NM_PROXY_CONFIG_METHOD "method"
+#define NM_PROXY_CONFIG_PROXIES "proxies"
+#define NM_PROXY_CONFIG_PAC_URL "pac-url"
+#define NM_PROXY_CONFIG_PAC_SCRIPT "pac-script"
