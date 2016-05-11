@@ -152,3 +152,11 @@ nm_proxy_config_get_num_proxies (const NMProxyConfig *config)
 
 	return priv->proxies->len;
 }
+
+const char *
+nm_proxy_config_get_proxy (const NMProxyConfig *config, guint i)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	return g_ptr_array_index (priv->proxies, i);
+}
