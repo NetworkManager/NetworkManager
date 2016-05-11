@@ -160,3 +160,12 @@ nm_proxy_config_get_proxy (const NMProxyConfig *config, guint i)
 
 	return g_ptr_array_index (priv->proxies, i);
 }
+
+void
+nm_proxy_config_set_pac_url (NMProxyConfig *config, const char *url)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	g_free (priv->pac_url);
+	priv->pac_url = g_strdup (url);
+}
