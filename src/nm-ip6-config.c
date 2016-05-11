@@ -59,12 +59,17 @@ struct _NMIP6ConfigClass {
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_IP6_CONFIG_GET_PRIVATE(o) \
+#define NM_IP6_CONFIG_GET_PRIVATE(self) \
 	({ \
-		const NMIP6ConfigPrivate *_priv = &(o)->_priv; \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
 		\
-		/* cast away the const. */ \
-		((NMIP6ConfigPrivate *) _priv); \
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMIP6Config *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_IP6_CONFIG (_self)); \
+		&_self->_priv; \
 	})
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
@@ -386,7 +391,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 gboolean
 nm_ip6_config_commit (const NMIP6Config *config, int ifindex, gboolean routes_full_sync)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
 	gboolean success;
 
@@ -647,7 +652,8 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 void
 nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFlags merge_flags)
 {
-	NMIP6ConfigPrivate *dst_priv, *src_priv;
+	NMIP6ConfigPrivate *dst_priv;
+	const NMIP6ConfigPrivate *src_priv;
 	guint32 i;
 
 	g_return_if_fail (src != NULL);
@@ -733,7 +739,7 @@ nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6
 static int
 _addresses_get_index (const NMIP6Config *self, const NMPlatformIP6Address *addr)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	guint i;
 
 	for (i = 0; i < priv->addresses->len; i++) {
@@ -748,7 +754,7 @@ _addresses_get_index (const NMIP6Config *self, const NMPlatformIP6Address *addr)
 static int
 _nameservers_get_index (const NMIP6Config *self, const struct in6_addr *ns)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	guint i;
 
 	for (i = 0; i < priv->nameservers->len; i++) {
@@ -763,7 +769,7 @@ _nameservers_get_index (const NMIP6Config *self, const struct in6_addr *ns)
 static int
 _routes_get_index (const NMIP6Config *self, const NMPlatformIP6Route *route)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	guint i;
 
 	for (i = 0; i < priv->routes->len; i++) {
@@ -778,7 +784,7 @@ _routes_get_index (const NMIP6Config *self, const NMPlatformIP6Route *route)
 static int
 _domains_get_index (const NMIP6Config *self, const char *domain)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	guint i;
 
 	for (i = 0; i < priv->domains->len; i++) {
@@ -793,7 +799,7 @@ _domains_get_index (const NMIP6Config *self, const char *domain)
 static int
 _searches_get_index (const NMIP6Config *self, const char *search)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	guint i;
 
 	for (i = 0; i < priv->searches->len; i++) {
@@ -808,7 +814,7 @@ _searches_get_index (const NMIP6Config *self, const char *search)
 static int
 _dns_options_get_index (const NMIP6Config *self, const char *option)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	guint i;
 
 	for (i = 0; i < priv->dns_options->len; i++) {
@@ -972,7 +978,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 #endif
 	gboolean has_minor_changes = FALSE, has_relevant_changes = FALSE, are_equal;
 	guint i, num;
-	NMIP6ConfigPrivate *dst_priv, *src_priv;
+	NMIP6ConfigPrivate *dst_priv;
+	const NMIP6ConfigPrivate *src_priv;
 	const NMPlatformIP6Address *dst_addr, *src_addr;
 	const NMPlatformIP6Route *dst_route, *src_route;
 
@@ -1220,7 +1227,7 @@ nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default)
 gboolean
 nm_ip6_config_get_never_default (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->never_default;
 }
@@ -1245,7 +1252,7 @@ nm_ip6_config_set_gateway (NMIP6Config *config, const struct in6_addr *gateway)
 const struct in6_addr *
 nm_ip6_config_get_gateway (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return IN6_IS_ADDR_UNSPECIFIED (&priv->gateway) ? NULL : &priv->gateway;
 }
@@ -1253,7 +1260,7 @@ nm_ip6_config_get_gateway (const NMIP6Config *config)
 gint64
 nm_ip6_config_get_route_metric (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->route_metric;
 }
@@ -1344,7 +1351,7 @@ nm_ip6_config_del_address (NMIP6Config *config, guint i)
 guint
 nm_ip6_config_get_num_addresses (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->addresses->len;
 }
@@ -1352,7 +1359,7 @@ nm_ip6_config_get_num_addresses (const NMIP6Config *config)
 const NMPlatformIP6Address *
 nm_ip6_config_get_address (const NMIP6Config *config, guint i)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 }
@@ -1367,7 +1374,7 @@ nm_ip6_config_address_exists (const NMIP6Config *config,
 const NMPlatformIP6Address *
 nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolean linklocal)
 {
-	NMIP6ConfigPrivate *priv;
+	const NMIP6ConfigPrivate *priv;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
@@ -1459,7 +1466,7 @@ nm_ip6_config_del_route (NMIP6Config *config, guint i)
 guint
 nm_ip6_config_get_num_routes (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->routes->len;
 }
@@ -1467,7 +1474,7 @@ nm_ip6_config_get_num_routes (const NMIP6Config *config)
 const NMPlatformIP6Route *
 nm_ip6_config_get_route (const NMIP6Config *config, guint i)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return &g_array_index (priv->routes, NMPlatformIP6Route, i);
 }
@@ -1475,7 +1482,7 @@ nm_ip6_config_get_route (const NMIP6Config *config, guint i)
 const NMPlatformIP6Route *
 nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	guint i;
 	NMPlatformIP6Route *best_route = NULL;
 
@@ -1506,7 +1513,7 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 const NMPlatformIP6Address *
 nm_ip6_config_get_subnet_for_host (const NMIP6Config *config, const struct in6_addr *host)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	guint i;
 	NMPlatformIP6Address *subnet = NULL;
 	struct in6_addr subnet2, host2;
@@ -1573,7 +1580,7 @@ nm_ip6_config_del_nameserver (NMIP6Config *config, guint i)
 guint32
 nm_ip6_config_get_num_nameservers (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->nameservers->len;
 }
@@ -1581,7 +1588,7 @@ nm_ip6_config_get_num_nameservers (const NMIP6Config *config)
 const struct in6_addr *
 nm_ip6_config_get_nameserver (const NMIP6Config *config, guint i)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return &g_array_index (priv->nameservers, struct in6_addr, i);
 }
@@ -1630,7 +1637,7 @@ nm_ip6_config_del_domain (NMIP6Config *config, guint i)
 guint32
 nm_ip6_config_get_num_domains (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->domains->len;
 }
@@ -1638,7 +1645,7 @@ nm_ip6_config_get_num_domains (const NMIP6Config *config)
 const char *
 nm_ip6_config_get_domain (const NMIP6Config *config, guint i)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return g_ptr_array_index (priv->domains, i);
 }
@@ -1702,7 +1709,7 @@ nm_ip6_config_del_search (NMIP6Config *config, guint i)
 guint32
 nm_ip6_config_get_num_searches (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->searches->len;
 }
@@ -1710,7 +1717,7 @@ nm_ip6_config_get_num_searches (const NMIP6Config *config)
 const char *
 nm_ip6_config_get_search (const NMIP6Config *config, guint i)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return g_ptr_array_index (priv->searches, i);
 }
@@ -1759,7 +1766,7 @@ nm_ip6_config_del_dns_option (NMIP6Config *config, guint i)
 guint32
 nm_ip6_config_get_num_dns_options (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->dns_options->len;
 }
@@ -1767,7 +1774,7 @@ nm_ip6_config_get_num_dns_options (const NMIP6Config *config)
 const char *
 nm_ip6_config_get_dns_option (const NMIP6Config *config, guint i)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return g_ptr_array_index (priv->dns_options, i);
 }
@@ -1785,7 +1792,7 @@ nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss)
 guint32
 nm_ip6_config_get_mss (const NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->mss;
 }
