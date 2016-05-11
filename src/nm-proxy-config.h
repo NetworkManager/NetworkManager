@@ -5,6 +5,12 @@
 
 #include "nm-setting-proxy-config.h"
 
+typedef enum {
+	NM_PROXY_CONFIG_METHOD_NONE = 0,
+	NM_PROXY_CONFIG_METHOD_AUTO,
+	NM_PROXY_CONFIG_METHOD_MANUAL
+} NMProxyConfigMethod;
+
 #define NM_TYPE_PROXY_CONFIG (nm_proxy_config_get_type ())
 #define NM_PROXY_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PROXY_CONFIG, NMProxyConfig))
 #define NM_PROXY_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_PROXY_CONFIG, NMProxyConfigClass))
