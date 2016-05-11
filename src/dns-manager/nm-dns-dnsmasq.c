@@ -163,7 +163,7 @@ ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
 	if (IN6_IS_ADDR_V4MAPPED (addr)) {
 		buf = g_malloc (INET_ADDRSTRLEN);
 		nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
-	} else if (!iface || !iface[0] || !IN6_IS_ADDR_LINKLOCAL (addr)) {
+	} else if (!IN6_IS_ADDR_LINKLOCAL (addr)) {
 		buf = g_malloc (INET6_ADDRSTRLEN);
 		nm_utils_inet6_ntop (addr, buf);
 	} else {
@@ -210,8 +210,8 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
 	int nnameservers, i_nameserver, n, i;
 	gboolean added = FALSE;
 
+	g_return_val_if_fail (iface, FALSE);
 	nnameservers = nm_ip6_config_get_num_nameservers (ip6);
-	g_assert (iface);
 
 	if (split) {
 		if (nnameservers == 0)
