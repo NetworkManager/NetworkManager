@@ -1,4 +1,21 @@
 ============================================
+NetworkManager-1.2.2
+Overview of changes since NetworkManager-1.2
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The dnsmasq DNS management mode now uses D-Bus API of dnsmasq to make signal
+    nameserver changes.
+* Hostname is now correctly read on Slackware.
+* IPv6 addresses for default wired connections now stay stable.
+* Reading portname on s390 systems on 4.4 kernels and newer has been corrected.
+* nmcli no longer warns about version mismatches.
+* Updated translations.
+* Improved developer documentations.
+* Multiple minor bugfixes.
+
+============================================
 NetworkManager-1.2
 Overview of changes since NetworkManager-1.0
 ============================================
