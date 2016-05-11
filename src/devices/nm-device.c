@@ -267,6 +267,7 @@ typedef struct _NMDevicePrivate {
 	bool            carrier;
 	guint           carrier_wait_id;
 	bool            ignore_carrier;
+	gulong          ignore_carrier_id;
 	guint32         mtu;
 	bool            up;   /* IFF_UP */
 
@@ -1943,6 +1944,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	NMDeviceClass *klass;
 	static guint32 id = 0;
 	NMDeviceCapabilities capabilities = 0;
+	NMConfig *config;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2013,15 +2015,16 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	nm_device_update_initial_hw_address (self);
 
 	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
+	config = nm_config_get ();
+	priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
+	if (!priv->ignore_carrier_id) {
+		priv->ignore_carrier_id = g_signal_connect (config,
+		                                            NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+		                                            G_CALLBACK (config_changed_update_ignore_carrier),
+		                                            self);
+	}
+
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		NMConfig *config = nm_config_get ();
-
-		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
-		g_signal_connect (G_OBJECT (config),
-		                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
-		                  G_CALLBACK (config_changed_update_ignore_carrier),
-		                  self);
-
 		check_carrier (self);
 		_LOGD (LOGD_HW,
 		       "carrier is %s%s",
@@ -2210,6 +2213,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 	_notify (self, PROP_CAPABILITIES);
+
+	nm_clear_g_signal_handler (nm_config_get (), &priv->ignore_carrier_id);
 
 	priv->real = FALSE;
 	_notify (self, PROP_REAL);
@@ -10776,11 +10781,9 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_DEACTIVATING:
 		_cancel_activation (self);
 
-		if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-			/* We cache the ignore_carrier state to not react on config-reloads while the connection
-			 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
-			priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
-		}
+		/* We cache the ignore_carrier state to not react on config-reloads while the connection
+		 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
 
 		if (quitting) {
 			nm_dispatcher_call_sync (DISPATCHER_ACTION_PRE_DOWN,
@@ -11388,7 +11391,7 @@ dispose (GObject *object)
 
 	arp_cleanup (self);
 
-	g_signal_handlers_disconnect_by_func (nm_config_get (), config_changed_update_ignore_carrier, self);
+	nm_clear_g_signal_handler (nm_config_get (), &priv->ignore_carrier_id);
 
 	dispatcher_cleanup (self);
 
