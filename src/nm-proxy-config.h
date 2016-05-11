@@ -30,3 +30,19 @@ typedef struct {
 #define NM_PROXY_CONFIG_PROXIES "proxies"
 #define NM_PROXY_CONFIG_PAC_URL "pac-url"
 #define NM_PROXY_CONFIG_PAC_SCRIPT "pac-script"
+
+GType nm_proxy_config_get_type (void);
+
+NMProxyConfig * nm_proxy_config_new (void);
+
+void nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *setting);
+NMSetting nm_proxy_config_create_setting (const NMProxyConfig *config);
+
+void nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod method);
+NMProxyConfigMethod nm_proxy_config_get_method (const NMProxyConfig *config);
+
+void nm_proxy_config_reset_proxies (NMProxyConfig *config);
+void nm_proxy_config_add_proxy (NMProxyConfig *config, const char *proxy);
+void nm_proxy_config_del_proxy (NMProxyConfig *config, guint i);
+guint32 nm_proxy_config_get_num_proxies (const NMProxyConfig *config);
+const char * nm_proxy_config_get_proxy (const NMProxyConfig *config, guint i);
