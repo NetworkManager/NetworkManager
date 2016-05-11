@@ -9,8 +9,8 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
-	-DSRCDIR=\""$(srcdir)"\" \
-	-DBUILDDIR=\""$(builddir)"\"
+	-DSRCDIR=\""$(abs_srcdir)"\" \
+	-DBUILDDIR=\""$(abs_builddir)"\"
 
 noinst_PROGRAMS = \
 	test-config
