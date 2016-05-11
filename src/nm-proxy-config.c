@@ -133,3 +133,14 @@ nm_proxy_config_add_proxy (NMProxyConfig *config, const char *proxy)
 	g_ptr_array_add (priv->proxies, g_strdup (proxy));
 	_notify (config, PROP_PROXIES);
 }
+
+void
+nm_proxy_config_del_proxy (NMProxyConfig *config, guint i)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->proxies->len);
+
+	g_ptr_array_remove_index (priv->proxies, i);
+	_notify (config, PROP_PROXIES);
+}
