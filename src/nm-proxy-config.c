@@ -169,3 +169,11 @@ nm_proxy_config_set_pac_url (NMProxyConfig *config, const char *url)
 	g_free (priv->pac_url);
 	priv->pac_url = g_strdup (url);
 }
+
+const char *
+nm_proxy_config_get_pac_url (const NMProxyConfig *config)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	return priv->pac_url;
+}
