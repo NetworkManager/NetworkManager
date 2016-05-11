@@ -34,11 +34,7 @@
 
 #include "nmdbus-ip6-config.h"
 
-G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
-
-#define NM_IP6_CONFIG_GET_PRIVATE(o) ((o)->priv)
-
-typedef struct _NMIP6ConfigPrivate {
+typedef struct {
 	gboolean never_default;
 	struct in6_addr gateway;
 	GArray *addresses;
@@ -52,6 +48,24 @@ typedef struct _NMIP6ConfigPrivate {
 	gint64 route_metric;
 } NMIP6ConfigPrivate;
 
+struct _NMIP6Config {
+	NMExportedObject parent;
+	NMIP6ConfigPrivate _priv;
+};
+
+struct _NMIP6ConfigClass {
+	NMExportedObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_IP6_CONFIG_GET_PRIVATE(o) \
+	({ \
+		const NMIP6ConfigPrivate *_priv = &(o)->_priv; \
+		\
+		/* cast away the const. */ \
+		((NMIP6ConfigPrivate *) _priv); \
+	})
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
 	PROP_IFINDEX,
@@ -1887,10 +1901,7 @@ nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 static void
 nm_ip6_config_init (NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv;
-
-	priv = G_TYPE_INSTANCE_GET_PRIVATE (config, NM_TYPE_IP6_CONFIG, NMIP6ConfigPrivate);
-	config->priv = priv;
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	priv->addresses = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Address));
 	priv->routes = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Route));
@@ -2109,8 +2120,6 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
-
-	g_type_class_add_private (config_class, sizeof (NMIP6ConfigPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH "/IP6Config/%u";
 
