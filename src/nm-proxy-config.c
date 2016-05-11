@@ -64,3 +64,44 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *sett
 		_notify (config, PROP_PAC_SCRIPT);
 	}
 }
+
+NMSetting
+nm_proxy_config_create_setting (const NMProxyConfig *config)
+{
+	NMSettingProxyConfig *s_p;
+	guint nproxies;
+	int i;
+
+	s_p = NM_SETTING_PROXY_CONFIG (nm_setting_proxy_config_new ());
+
+	if (!config)
+		return NM_SETTING (s_p);
+	
+	nproxies = nm_proxy_config_get_num_proxies (config);
+	for (i = 0; i < nproxies; i++) {
+		const char *proxy = nm_proxy_config_get_proxy (config, i);
+	
+		nm_setting_proxy_config_add_proxy (s_p, proxy);
+	}
+
+	nm_setting_proxy_config_set_pac_url (s_p, nm_proxy_config_get_pac_url (config));
+	nm_setting_proxy_config_set_pac_script (s_p, nm_proxy_config_get_pac_script (config));
+
+	return NM_SETTING (s_p);
+}
+
+void
+nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod method)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	priv->method = method;
+}
+
+NMProxyConfigMethod
+nm_proxy_config_get_method (const NMProxyConfig *config)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	return priv->method;
+}
