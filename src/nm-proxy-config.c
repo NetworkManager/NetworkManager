@@ -144,3 +144,11 @@ nm_proxy_config_del_proxy (NMProxyConfig *config, guint i)
 	g_ptr_array_remove_index (priv->proxies, i);
 	_notify (config, PROP_PROXIES);
 }
+
+guint32
+nm_proxy_config_get_num_proxies (const NMProxyConfig *config)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	return priv->proxies->len;
+}
