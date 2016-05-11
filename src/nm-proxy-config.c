@@ -105,3 +105,14 @@ nm_proxy_config_get_method (const NMProxyConfig *config)
 
 	return priv->method;
 }
+
+void
+nm_proxy_config_reset_proxies (NMProxyConfig *config)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	if (priv->proxies->len !=0) {
+		g_ptr_array_set_size (priv->proxies, 0);
+		_notify (config, PROP_PROXIES);
+	}
+}
