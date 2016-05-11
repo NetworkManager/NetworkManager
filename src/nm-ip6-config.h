@@ -33,18 +33,7 @@
 #define NM_IS_IP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP6_CONFIG))
 #define NM_IP6_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
 
-struct _NMIP6ConfigPrivate;
-
-struct _NMIP6Config {
-	NMExportedObject parent;
-
-	/* private */
-	struct _NMIP6ConfigPrivate *priv;
-};
-
-typedef struct {
-	NMExportedObjectClass parent;
-} NMIP6ConfigClass;
+typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 
 /* internal */
 #define NM_IP6_CONFIG_IFINDEX "ifindex"

@@ -35,11 +35,7 @@
 
 #include "nmdbus-ip4-config.h"
 
-G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
-
-#define NM_IP4_CONFIG_GET_PRIVATE(o) ((o)->priv)
-
-typedef struct _NMIP4ConfigPrivate {
+typedef struct {
 	gboolean never_default;
 	guint32 gateway;
 	gboolean has_gateway;
@@ -59,6 +55,25 @@ typedef struct _NMIP4ConfigPrivate {
 	gint64 route_metric;
 	gboolean metered;
 } NMIP4ConfigPrivate;
+
+struct _NMIP4Config {
+	NMExportedObject parent;
+	NMIP4ConfigPrivate _priv;
+};
+
+struct _NMIP4ConfigClass {
+	NMExportedObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_IP4_CONFIG_GET_PRIVATE(o) \
+	({ \
+		const NMIP4ConfigPrivate *_priv = &(o)->_priv; \
+		\
+		/* cast away the const. */ \
+		((NMIP4ConfigPrivate *) _priv); \
+	})
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
 G_STATIC_ASSERT (sizeof (uint) >= sizeof (guint32));
@@ -2199,10 +2214,7 @@ nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b)
 static void
 nm_ip4_config_init (NMIP4Config *config)
 {
-	NMIP4ConfigPrivate *priv;
-
-	priv = G_TYPE_INSTANCE_GET_PRIVATE (config, NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate);
-	config->priv = priv;
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	priv->addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
 	priv->routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
@@ -2423,8 +2435,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
-
-	g_type_class_add_private (config_class, sizeof (NMIP4ConfigPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH "/IP4Config/%u";
 
