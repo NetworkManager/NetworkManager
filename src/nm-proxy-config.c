@@ -194,3 +194,12 @@ nm_proxy_config_get_pac_script (const NMProxyConfig *config)
 
 	return priv->pac_script;
 }
+
+static void
+nm_proxy_config_init (NMProxyConfig *config)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_PRIVATE (config);
+
+	priv->method = NM_PROXY_CONFIG_METHOD_NONE;
+	priv->proxies = g_ptr_array_new_with_free_func (g_free);
+}
