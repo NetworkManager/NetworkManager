@@ -177,3 +177,12 @@ nm_proxy_config_get_pac_url (const NMProxyConfig *config)
 
 	return priv->pac_url;
 }
+
+void
+nm_proxy_config_set_pac_script (NMProxyConfig *config, const char *script)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	g_free (priv->pac_script);
+	priv->pac_script = g_strdup (script);
+}
