@@ -43,12 +43,6 @@ GType             nm_session_monitor_get_type       (void) G_GNUC_CONST;
 
 NMSessionMonitor *nm_session_monitor_get (void);
 
-gulong            nm_session_monitor_connect        (NMSessionMonitor *self,
-                                                     NMSessionCallback callback,
-                                                     gpointer user_data);
-void              nm_session_monitor_disconnect     (NMSessionMonitor *self,
-                                                     gulong handler_id);
-
 gboolean          nm_session_monitor_uid_to_user    (uid_t uid, const char **out_user);
 gboolean          nm_session_monitor_user_to_uid    (const char *user, uid_t *out_uid);
 gboolean          nm_session_monitor_session_exists (NMSessionMonitor *self,

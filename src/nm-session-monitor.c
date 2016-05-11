@@ -279,45 +279,6 @@ ck_finalize (NMSessionMonitor *monitor)
 NM_DEFINE_SINGLETON_GETTER (NMSessionMonitor, nm_session_monitor_get, NM_TYPE_SESSION_MONITOR);
 
 /**
- * nm_session_monitor_connect:
- * @self: the session monitor
- * @callback: The callback.
- * @user_data: User data for the callback.
- *
- * Connect a callback to the session monitor.
- *
- * Returns: Handler ID to be used with nm_session_monitor_disconnect().
- */
-gulong
-nm_session_monitor_connect (NMSessionMonitor *self,
-                            NMSessionCallback callback,
-                            gpointer user_data)
-{
-	g_return_val_if_fail (NM_IS_SESSION_MONITOR (self), 0);
-
-	return g_signal_connect (self,
-                             NM_SESSION_MONITOR_CHANGED,
-                             G_CALLBACK (callback),
-                             user_data);
-}
-
-/**
- * nm_session_monitor_disconnect:
- * @self: the session monitor
- * @handler_id: Handler ID returned by nm_session_monitor-connect().
- *
- * Disconnect callback from the session handler.
- */
-void
-nm_session_monitor_disconnect (NMSessionMonitor *self,
-                               gulong handler_id)
-{
-	g_return_if_fail (NM_IS_SESSION_MONITOR (self));
-
-	g_signal_handler_disconnect (self, handler_id);
-}
-
-/**
  * nm_session_monitor_uid_to_user:
  * @uid: UID.
  * @out_user: Return location for user name.

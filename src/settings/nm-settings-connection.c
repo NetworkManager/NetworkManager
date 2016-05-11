@@ -91,7 +91,7 @@ typedef struct {
 
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
-	guint session_changed_id;
+	gulong session_changed_id;
 
 	NMSettingsConnectionFlags flags;
 	gboolean ready;
@@ -2613,7 +2613,9 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->ready = TRUE;
 
 	priv->session_monitor = g_object_ref (nm_session_monitor_get ());
-	priv->session_changed_id = nm_session_monitor_connect (priv->session_monitor, session_changed_cb, self);
+	priv->session_changed_id = g_signal_connect (priv->session_monitor,
+	                                             NM_SESSION_MONITOR_CHANGED,
+	                                             G_CALLBACK (session_changed_cb), self);
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
@@ -2673,11 +2675,9 @@ dispose (GObject *object)
 
 	set_visible (self, FALSE);
 
-	if (priv->session_monitor) {
-		nm_session_monitor_disconnect (priv->session_monitor, priv->session_changed_id);
-		priv->session_changed_id = 0;
-		g_clear_object (&priv->session_monitor);
-	}
+	nm_clear_g_signal_handler (priv->session_monitor, &priv->session_changed_id);
+	g_clear_object (&priv->session_monitor);
+
 	g_clear_object (&priv->agent_mgr);
 
 	g_clear_pointer (&priv->filename, g_free);
