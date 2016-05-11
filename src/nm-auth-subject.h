@@ -39,13 +39,7 @@ typedef enum {
 #define NM_AUTH_SUBJECT_UNIX_PROCESS_PID           "unix-process-pid"
 #define NM_AUTH_SUBJECT_UNIX_PROCESS_UID           "unix-process-uid"
 
-struct _NMAuthSubject {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMAuthSubjectClass;
+typedef struct _NMAuthSubjectClass NMAuthSubjectClass;
 
 GType nm_auth_subject_get_type (void);
 
