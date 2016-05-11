@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <linux/if.h>
 
 #include "nm-dns-dnsmasq.h"
 #include "nm-utils.h"
@@ -90,13 +91,16 @@ add_dnsmasq_nameserver (NMDnsDnsmasq *self,
 }
 
 static gboolean
-add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, gboolean split)
+add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
+                const char *iface, gboolean split)
 {
-	char buf[INET_ADDRSTRLEN];
+	char buf[INET_ADDRSTRLEN + 1 + IFNAMSIZ];
+	char buf2[INET_ADDRSTRLEN];
 	in_addr_t addr;
 	int nnameservers, i_nameserver, n, i;
 	gboolean added = FALSE;
 
+	g_return_val_if_fail (iface, FALSE);
 	nnameservers = nm_ip4_config_get_num_nameservers (ip4);
 
 	if (split) {
@@ -107,7 +111,8 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 
 		for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i_nameserver);
-			nm_utils_inet4_ntop (addr, buf);
+			g_snprintf (buf, sizeof (buf), "%s@%s",
+			            nm_utils_inet4_ntop (addr, buf2), iface);
 
 			/* searches are preferred over domains */
 			n = nm_ip4_config_get_num_searches (ip4);
@@ -147,8 +152,9 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i);
-			add_dnsmasq_nameserver (self, servers,
-			                        nm_utils_inet4_ntop (addr, NULL), NULL);
+			g_snprintf (buf, sizeof (buf), "%s@%s",
+			            nm_utils_inet4_ntop (addr, buf2), iface);
+			add_dnsmasq_nameserver (self, servers, buf, NULL);
 		}
 	}
 
@@ -158,23 +164,22 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 static char *
 ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
 {
-	char *buf;
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
 
-	if (IN6_IS_ADDR_V4MAPPED (addr)) {
-		buf = g_malloc (INET_ADDRSTRLEN);
+	if (IN6_IS_ADDR_V4MAPPED (addr))
 		nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
-	} else if (!IN6_IS_ADDR_LINKLOCAL (addr)) {
-		buf = g_malloc (INET6_ADDRSTRLEN);
+	else
 		nm_utils_inet6_ntop (addr, buf);
-	} else {
-		/* Need to scope the address with %<zone-id>. Before dnsmasq 2.58,
-		 * only '@' was supported as delimiter. Since 2.58, '@' and '%'
-		 * are supported. Due to a bug, since 2.73 only '%' works properly
-		 * as "server" address.
-		 */
-		buf = g_strconcat (nm_utils_inet6_ntop (addr, NULL), "%", iface, NULL);
-	}
-	return buf;
+
+	/* Need to scope link-local addresses with %<zone-id>. Before dnsmasq 2.58,
+	 * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
+	 * supported. Due to a bug, since 2.73 only '%' works properly as "server"
+	 * address.
+	 */
+	return g_strdup_printf ("%s%c%s",
+	                        buf,
+	                        IN6_IS_ADDR_LINKLOCAL (addr) ? '%' : '@',
+	                        iface);
 }
 
 static void
@@ -247,7 +252,7 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
 		}
 	}
 
-	/* If no searches or domains, just add the namservers */
+	/* If no searches or domains, just add the nameservers */
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
 			addr = nm_ip6_config_get_nameserver (ip6, i);
@@ -269,6 +274,7 @@ add_ip_config_data (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPC
 		return add_ip4_config (self,
 		                       servers,
 		                       (NMIP4Config *) data->config,
+		                       data->iface,
 		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
 	} else if (NM_IS_IP6_CONFIG (data->config)) {
 		return add_ip6_config (self,
