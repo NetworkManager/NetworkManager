@@ -186,3 +186,11 @@ nm_proxy_config_set_pac_script (NMProxyConfig *config, const char *script)
 	g_free (priv->pac_script);
 	priv->pac_script = g_strdup (script);
 }
+
+const char *
+nm_proxy_config_get_pac_script (const NMProxyConfig *config)
+{
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	return priv->pac_script;
+}
