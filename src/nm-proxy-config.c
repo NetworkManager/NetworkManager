@@ -203,3 +203,17 @@ nm_proxy_config_init (NMProxyConfig *config)
 	priv->method = NM_PROXY_CONFIG_METHOD_NONE;
 	priv->proxies = g_ptr_array_new_with_free_func (g_free);
 }
+
+static void
+finalize (GObject *object)
+{
+	NMProxyConfig *self = NM_PROXY_CONFIG (object);
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (self);
+
+	g_free (priv->method);
+	g_ptr_array_unref (priv->proxies);
+	g_free (priv->pac_url);
+	g_free (priv->pac_script);
+
+	G_OBJECT_CLASS (nm_proxy_config_parent_class)->finalize (object);
+}
