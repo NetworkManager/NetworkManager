@@ -1861,7 +1861,7 @@ _test_netns_setup (gpointer fixture, gconstpointer test_data)
 {
 	/* the singleton platform instance has netns support disabled.
 	 * Destroy the instance before the test and re-create it afterwards. */
-	g_object_unref (nm_platform_get ());
+	g_object_unref (NM_PLATFORM_GET);
 }
 
 static void
