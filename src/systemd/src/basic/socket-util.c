@@ -23,6 +23,7 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <netinet/ip.h>
+#include <poll.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -42,7 +43,9 @@
 #include "socket-util.h"
 #include "string-table.h"
 #include "string-util.h"
+#include "strv.h"
 #include "user-util.h"
+#include "utf8.h"
 #include "util.h"
 
 int socket_address_parse(SocketAddress *a, const char *s) {
@@ -794,6 +797,42 @@ static const char* const ip_tos_table[] = {
 
 DEFINE_STRING_TABLE_LOOKUP_WITH_FALLBACK(ip_tos, int, 0xff);
 
+bool ifname_valid(const char *p) {
+        bool numeric = true;
+
+        /* Checks whether a network interface name is valid. This is inspired by dev_valid_name() in the kernel sources
+         * but slightly stricter, as we only allow non-control, non-space ASCII characters in the interface name. We
+         * also don't permit names that only container numbers, to avoid confusion with numeric interface indexes. */
+
+        if (isempty(p))
+                return false;
+
+        if (strlen(p) >= IFNAMSIZ)
+                return false;
+
+        if (STR_IN_SET(p, ".", ".."))
+                return false;
+
+        while (*p) {
+                if ((unsigned char) *p >= 127U)
+                        return false;
+
+                if ((unsigned char) *p <= 32U)
+                        return false;
+
+                if (*p == ':' || *p == '/')
+                        return false;
+
+                numeric = numeric && (*p >= '0' && *p <= '9');
+                p++;
+        }
+
+        if (numeric)
+                return false;
+
+        return true;
+}
+
 int getpeercred(int fd, struct ucred *ucred) {
         socklen_t n = sizeof(struct ucred);
         struct ucred u;
@@ -969,4 +1008,43 @@ fallback:
                 return -errno;
 
         return (ssize_t) k;
+}
+
+int flush_accept(int fd) {
+
+        struct pollfd pollfd = {
+                .fd = fd,
+                .events = POLLIN,
+        };
+        int r;
+
+
+        /* Similar to flush_fd() but flushes all incoming connection by accepting them and immediately closing them. */
+
+        for (;;) {
+                int cfd;
+
+                r = poll(&pollfd, 1, 0);
+                if (r < 0) {
+                        if (errno == EINTR)
+                                continue;
+
+                        return -errno;
+
+                } else if (r == 0)
+                        return 0;
+
+                cfd = accept4(fd, NULL, NULL, SOCK_NONBLOCK|SOCK_CLOEXEC);
+                if (cfd < 0) {
+                        if (errno == EINTR)
+                                continue;
+
+                        if (errno == EAGAIN)
+                                return 0;
+
+                        return -errno;
+                }
+
+                close(cfd);
+        }
 }

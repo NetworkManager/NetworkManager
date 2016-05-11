@@ -25,11 +25,13 @@
 #include <unistd.h>
 
 #include "fd-util.h"
+#include "fs-util.h"
 #include "macro.h"
 #include "missing.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "socket-util.h"
+#include "stdio-util.h"
 #include "util.h"
 
 int close_nointr(int fd) {
@@ -229,7 +231,7 @@ int close_all_fds(const int except[], unsigned n_except) {
         while ((de = readdir(d))) {
                 int fd = -1;
 
-                if (hidden_file(de->d_name))
+                if (hidden_or_backup_file(de->d_name))
                         continue;
 
                 if (safe_atoi(de->d_name, &fd) < 0)
@@ -355,4 +357,18 @@ bool fdname_is_valid(const char *s) {
         }
 
         return p - s < 256;
+}
+
+int fd_get_path(int fd, char **ret) {
+        char procfs_path[strlen("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+        int r;
+
+        xsprintf(procfs_path, "/proc/self/fd/%i", fd);
+
+        r = readlink_malloc(procfs_path, ret);
+
+        if (r == -ENOENT) /* If the file doesn't exist the fd is invalid */
+                return -EBADF;
+
+        return r;
 }
