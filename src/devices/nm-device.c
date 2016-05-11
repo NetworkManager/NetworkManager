@@ -166,9 +166,9 @@ typedef struct {
 
 typedef struct {
 	NMDevice *slave;
-	gboolean slave_is_enslaved;
-	gboolean configure;
 	gulong watch_id;
+	bool slave_is_enslaved;
+	bool configure;
 } SlaveInfo;
 
 typedef struct {
@@ -196,7 +196,7 @@ typedef struct {
 } ArpingData;
 
 typedef struct _NMDevicePrivate {
-	gboolean in_state_changed;
+	bool in_state_changed;
 
 	guint device_link_changed_id;
 	guint device_ip_link_changed_id;
@@ -212,7 +212,7 @@ typedef struct _NMDevicePrivate {
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
-	gboolean      real;
+	bool          real;
 	char *        ip_iface;
 	int           ip_ifindex;
 	NMDeviceType  type;
@@ -224,8 +224,8 @@ typedef struct _NMDevicePrivate {
 	char *        driver_version;
 	char *        firmware_version;
 	RfKillType    rfkill_type;
-	gboolean      firmware_missing;
-	gboolean      nm_plugin_missing;
+	bool          firmware_missing;
+	bool          nm_plugin_missing;
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
@@ -236,7 +236,7 @@ typedef struct _NMDevicePrivate {
 
 	NMUnmanagedFlags        unmanaged_mask;
 	NMUnmanagedFlags        unmanaged_flags;
-	gboolean                is_nm_owned; /* whether the device is a device owned and created by NM */
+	bool                    is_nm_owned; /* whether the device is a device owned and created by NM */
 	DeleteOnDeactivateData *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
 
 	GCancellable *deactivating_cancellable;
@@ -244,7 +244,7 @@ typedef struct _NMDevicePrivate {
 	guint32         ip4_address;
 
 	NMActRequest *  queued_act_request;
-	gboolean        queued_act_request_is_waiting_for_carrier;
+	bool            queued_act_request_is_waiting_for_carrier;
 	NMActRequest *  act_request;
 	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
 	ActivationHandleData act_handle6;
@@ -264,11 +264,11 @@ typedef struct _NMDevicePrivate {
 	guint           link_connected_id;
 	guint           link_disconnected_id;
 	guint           carrier_defer_id;
-	gboolean        carrier;
+	bool            carrier;
 	guint           carrier_wait_id;
-	gboolean        ignore_carrier;
+	bool            ignore_carrier;
 	guint32         mtu;
-	gboolean        up;   /* IFF_UP */
+	bool            up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
@@ -291,8 +291,8 @@ typedef struct _NMDevicePrivate {
 		NMPlatformIP6Route v6;
 	} default_route;
 
-	gboolean v4_commit_first_time;
-	gboolean v6_commit_first_time;
+	bool v4_commit_first_time;
+	bool v6_commit_first_time;
 
 	/* DHCPv4 tracking */
 	struct {
@@ -310,7 +310,7 @@ typedef struct _NMDevicePrivate {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	gboolean       fw_ready;
+	bool fw_ready;
 	NMFirewallManagerCallId fw_call;
 
 	/* IPv4LL stuff */
@@ -331,7 +331,7 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
-	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
+	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	guint32        ip6_mtu;
 
 	NMRDisc *      rdisc;
@@ -360,16 +360,16 @@ typedef struct _NMDevicePrivate {
 	} dhcp6;
 
 	/* allow autoconnect feature */
-	gboolean        autoconnect;
+	bool autoconnect;
 
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
-	gboolean        is_enslaved;
-	gboolean        master_ready_handled;
+	bool            is_enslaved;
+	bool            master_ready_handled;
 	gulong          master_ready_id;
 
 	/* slave management */
-	gboolean        is_master;
+	bool            is_master;
 	GSList *        slaves;    /* list of SlaveInfo */
 
 	NMMetered       metered;
