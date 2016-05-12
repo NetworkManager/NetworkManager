@@ -370,6 +370,9 @@ static gboolean nm_device_set_ip6_config (NMDevice *self,
                                           gboolean commit,
                                           gboolean routes_full_sync,
                                           NMDeviceStateReason *reason);
+static gboolean ip6_config_merge_and_apply (NMDevice *self,
+                                            gboolean commit,
+                                            NMDeviceStateReason *out_reason);
 
 static gboolean nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
 static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
@@ -1513,6 +1516,19 @@ device_link_changed (NMDevice *self)
 				                         TRUE,
 				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
+		}
+	}
+
+	if (priv->up && !was_up) {
+		/* the link was down and just came up. That happens for example, while changing MTU.
+		 * We must restore IP configuration. */
+		if (priv->ip4_state == IP_DONE) {
+			if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
+		}
+		if (priv->ip6_state == IP_DONE) {
+			if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 		}
 	}
 
@@ -6544,6 +6560,9 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
+	_LOGD (LOGD_IP4, "ip4-config: update (commit=%d, routes-full-sync=%d, new-config=%p)",
+	       commit, routes_full_sync, new_config);
+
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 
@@ -6571,7 +6590,7 @@ nm_device_set_ip4_config (NMDevice *self,
 			 * this causes a re-read and reset. This should only happen for relevant changes */
 			nm_ip4_config_replace (old_config, new_config, &has_changes);
 			if (has_changes) {
-				_LOGD (LOGD_IP4, "update IP4Config instance (%s)",
+				_LOGD (LOGD_IP4, "ip4-config: update IP4Config instance (%s)",
 				       nm_ip4_config_get_dbus_path (old_config));
 			}
 		} else {
@@ -6583,13 +6602,13 @@ nm_device_set_ip4_config (NMDevice *self,
 				nm_ip4_config_export (new_config);
 			}
 
-			_LOGD (LOGD_IP4, "set IP4Config instance (%s)",
+			_LOGD (LOGD_IP4, "ip4-config: set IP4Config instance (%s)",
 			       nm_ip4_config_get_dbus_path (new_config));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip4_config = NULL;
-		_LOGD (LOGD_IP4, "clear IP4Config instance (%s)",
+		_LOGD (LOGD_IP4, "ip4-config: clear IP4Config instance (%s)",
 		       nm_ip4_config_get_dbus_path (old_config));
 		/* Device config is invalid if combined config is invalid */
 		g_clear_object (&priv->dev_ip4_config);
@@ -6677,6 +6696,9 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
+	_LOGD (LOGD_IP6, "ip6-config: update (commit=%d, routes-full-sync=%d, new-config=%p)",
+	       commit, routes_full_sync, new_config);
+
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 
@@ -6698,7 +6720,7 @@ nm_device_set_ip6_config (NMDevice *self,
 			 * this causes a re-read and reset. This should only happen for relevant changes */
 			nm_ip6_config_replace (old_config, new_config, &has_changes);
 			if (has_changes) {
-				_LOGD (LOGD_IP6, "update IP6Config instance (%s)",
+				_LOGD (LOGD_IP6, "ip6-config: update IP6Config instance (%s)",
 				       nm_ip6_config_get_dbus_path (old_config));
 			}
 		} else {
@@ -6710,13 +6732,13 @@ nm_device_set_ip6_config (NMDevice *self,
 				nm_ip6_config_export (new_config);
 			}
 
-			_LOGD (LOGD_IP6, "set IP6Config instance (%s)",
+			_LOGD (LOGD_IP6, "ip6-config: set IP6Config instance (%s)",
 			       nm_ip6_config_get_dbus_path (new_config));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip6_config = NULL;
-		_LOGD (LOGD_IP6, "clear IP6Config instance (%s)",
+		_LOGD (LOGD_IP6, "ip6-config: clear IP6Config instance (%s)",
 		       nm_ip6_config_get_dbus_path (old_config));
 	}
 
