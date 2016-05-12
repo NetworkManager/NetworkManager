@@ -28,9 +28,7 @@
 #include <xlocale.h>
 
 #include "alloc-util.h"
-#if 0 /* NM_IGNORED */
 #include "extract-word.h"
-#endif /* NM_IGNORED */
 #include "macro.h"
 #include "parse-util.h"
 #include "string-util.h"

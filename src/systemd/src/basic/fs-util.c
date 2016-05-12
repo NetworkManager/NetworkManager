@@ -44,6 +44,7 @@
 #endif /* NM_IGNORED */
 #include "parse-util.h"
 #include "path-util.h"
+#include "stdio-util.h"
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
@@ -151,6 +152,7 @@ int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 int readlinkat_malloc(int fd, const char *p, char **ret) {
         size_t l = 100;
@@ -189,6 +191,7 @@ int readlink_malloc(const char *p, char **ret) {
         return readlinkat_malloc(AT_FDCWD, p, ret);
 }
 
+#if 0 /* NM_IGNORED */
 int readlink_value(const char *p, char **ret) {
         _cleanup_free_ char *link = NULL;
         char *value;
@@ -503,5 +506,19 @@ int get_files_in_directory(const char *path, char ***list) {
         }
 
         return n;
+}
+
+int inotify_add_watch_fd(int fd, int what, uint32_t mask) {
+        char path[strlen("/proc/self/fd/") + DECIMAL_STR_MAX(int) + 1];
+        int r;
+
+        /* This is like inotify_add_watch(), except that the file to watch is not referenced by a path, but by an fd */
+        xsprintf(path, "/proc/self/fd/%i", what);
+
+        r = inotify_add_watch(fd, path, mask);
+        if (r < 0)
+                return -errno;
+
+        return r;
 }
 #endif /* NM_IGNORED */

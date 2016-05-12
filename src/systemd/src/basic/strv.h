@@ -25,9 +25,7 @@
 #include <stddef.h>
 
 #include "alloc-util.h"
-#if 0 /* NM_IGNORED */
 #include "extract-word.h"
-#endif /* NM_IGNORED */
 #include "macro.h"
 #include "util.h"
 
@@ -82,9 +80,7 @@ static inline bool strv_isempty(char * const *l) {
 char **strv_split(const char *s, const char *separator);
 char **strv_split_newlines(const char *s);
 
-#if 0 /* NM_IGNORED */
 int strv_split_extract(char ***t, const char *s, const char *separators, ExtractFlags flags);
-#endif /* NM_IGNORED */
 
 char *strv_join(char **l, const char *separator);
 char *strv_join_quoted(char **l);

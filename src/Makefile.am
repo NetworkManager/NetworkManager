@@ -74,6 +74,8 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/basic/escape.h \
 	systemd/src/basic/ether-addr-util.c \
 	systemd/src/basic/ether-addr-util.h \
+	systemd/src/basic/extract-word.c \
+	systemd/src/basic/extract-word.h \
 	systemd/src/basic/fd-util.c \
 	systemd/src/basic/fd-util.h \
 	systemd/src/basic/fileio.c \

@@ -28,9 +28,7 @@
 
 #include "alloc-util.h"
 #include "escape.h"
-#if 0 /* NM_IGNORED */
 #include "extract-word.h"
-#endif /* NM_IGNORED */
 #include "fileio.h"
 #include "string-util.h"
 #include "strv.h"
