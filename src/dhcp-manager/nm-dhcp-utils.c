@@ -365,6 +365,26 @@ out:
 	g_free (unescaped);
 }
 
+NMProxyConfig *
+nm_dhcp_utils_proxy_config_from_options (GHashTable *options)
+{
+	NMProxyConfig *Proxy_config = NULL;
+	char *str = NULL;
+	
+	g_return_val_if_fail (options !=NULL, NULL);
+
+	proxy_config = nm_proxy_config_new ();
+	nm_proxy_config_set_method (proxy_config, NM_PROXY_CONFIG_METHOD_AUTOMATIC);
+
+	str = g_hash_table_lookup (options, "wpad");
+	if (str) {
+		nm_log_info (LOGD_DHCP4, "  wpad '%s'", str);
+		nm_ip4_config_set_pac_url (proxy_config, str);
+	}
+
+	return proxy_config;
+}
+
 static void
 ip4_add_domain_search (gpointer data, gpointer user_data)
 {
