@@ -1050,19 +1050,6 @@ disconnect_context_complete (DisconnectContext *ctx)
 }
 
 static gboolean
-disconnect_context_complete_if_cancelled (DisconnectContext *ctx)
-{
-	GError *error = NULL;
-
-	if (g_cancellable_set_error_if_cancelled (ctx->cancellable, &error)) {
-		g_simple_async_result_take_error (ctx->result, error);
-		disconnect_context_complete (ctx);
-		return TRUE;
-	}
-	return FALSE;
-}
-
-static gboolean
 disconnect_finish (NMModem *self,
                    GAsyncResult *res,
                    GError **error)
@@ -1098,6 +1085,7 @@ disconnect (NMModem *modem,
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 	DisconnectContext *ctx;
+	GError *error = NULL;
 
 	connect_context_clear (self);
 	ctx = g_slice_new (DisconnectContext);
@@ -1109,10 +1097,12 @@ disconnect (NMModem *modem,
 	/* Don't bother warning on FAILED since the modem is already gone */
 	ctx->warn = warn;
 
-	/* Setup cancellable */
-	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-	if (disconnect_context_complete_if_cancelled (ctx))
+	/* Already cancelled? */
+	if (g_cancellable_set_error_if_cancelled (cancellable, &error)) {
+		g_simple_async_result_take_error (ctx->result, error);
+		disconnect_context_complete (ctx);
 		return;
+	}
 
 	/* If no simple iface, we're done */
 	if (!ctx->self->priv->simple_iface) {
@@ -1122,6 +1112,7 @@ disconnect (NMModem *modem,
 
 	nm_log_dbg (LOGD_MB, "(%s): notifying ModemManager about the modem disconnection",
 	            nm_modem_get_uid (NM_MODEM (ctx->self)));
+	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 	mm_modem_simple_disconnect (ctx->self->priv->simple_iface,
 	                            NULL, /* bearer path; if NULL given ALL get disconnected */
 	                            cancellable,
