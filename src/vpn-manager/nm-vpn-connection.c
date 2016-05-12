@@ -1916,9 +1916,6 @@ _daemon_exec_timeout (gpointer data)
 	_LOGW ("Timed out waiting for the service to start");
 	priv->start_timeout = 0;
 	nm_vpn_connection_disconnect (self, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT, FALSE);
-
-	g_object_unref (self);
-
 	return G_SOURCE_REMOVE;
 }
 
