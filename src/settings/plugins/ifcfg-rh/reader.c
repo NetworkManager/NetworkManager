@@ -919,6 +919,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE;
 	gint64 timeout;
+	gint priority;
 
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
@@ -1141,6 +1142,13 @@ make_ip4_setting (shvarFile *ifcfg,
 	g_free (dns_options);
 	dns_options = NULL;
 
+	/* DNS priority */
+	priority = svGetValueInt64 (ifcfg, "IPV4_DNS_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_DNS_PRIORITY,
+	              priority,
+	              NULL);
+
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (ifcfg->fileName);
 
@@ -1323,6 +1331,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *ipv6addr, *ipv6addr_secondaries;
 	char **list = NULL, **iter;
 	guint32 i;
+	gint priority;
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
@@ -1571,6 +1580,13 @@ make_ip6_setting (shvarFile *ifcfg,
 	parse_dns_options (s_ip6, dns_options);
 	g_free (value);
 	g_free (dns_options);
+
+	/* DNS priority */
+	priority = svGetValueInt64 (ifcfg, "IPV6_DNS_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_DNS_PRIORITY,
+	              priority,
+	              NULL);
 
 	return NM_SETTING (s_ip6);
 

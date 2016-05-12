@@ -1970,6 +1970,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint32 j;
 	guint32 i, n, num;
 	gint64 route_metric;
+	gint priority;
 	int timeout;
 	GString *searches;
 	gboolean success = FALSE;
@@ -2281,6 +2282,12 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValueInt64 (ifcfg, "ARPING_WAIT", (timeout - 1) / 1000 + 1);
 	}
 
+	priority = nm_setting_ip_config_get_dns_priority (s_ip4);
+	if (priority)
+		svSetValueInt64 (ifcfg, "IPV4_DNS_PRIORITY", priority);
+	else
+		svSetValue (ifcfg, "IPV4_DNS_PRIORITY", NULL, FALSE);
+
 	success = TRUE;
 
 out:
@@ -2440,6 +2447,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char *addr_key;
 	char *tmp;
 	guint32 i, num, num4;
+	gint priority;
 	GString *searches;
 	NMIPAddress *addr;
 	const char *dns;
@@ -2605,6 +2613,12 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", tmp, FALSE);
 		g_free (tmp);
 	}
+
+	priority = nm_setting_ip_config_get_dns_priority (s_ip6);
+	if (priority)
+		svSetValueInt64 (ifcfg, "IPV6_DNS_PRIORITY", priority);
+	else
+		svSetValue (ifcfg, "IPV6_DNS_PRIORITY", NULL, FALSE);
 
 	/* Static routes go to route6-<dev> file */
 	route6_path = utils_get_route6_path (ifcfg->fileName);

@@ -28,13 +28,24 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 
+G_BEGIN_DECLS
+
 typedef enum {
 	NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
 	NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
 	NM_DNS_IP_CONFIG_TYPE_VPN
 } NMDnsIPConfigType;
 
-G_BEGIN_DECLS
+enum {
+	NM_DNS_PRIORITY_DEFAULT_NORMAL  = 100,
+	NM_DNS_PRIORITY_DEFAULT_VPN     = 50,
+};
+
+typedef struct {
+	gpointer config;
+	NMDnsIPConfigType type;
+	char *iface;
+} NMDnsIPConfigData;
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
 #define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))

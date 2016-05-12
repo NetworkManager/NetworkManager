@@ -556,6 +556,17 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * ---end---
 	 */
 
+	/* ---ifcfg-rh---
+	 * property: dns-priority
+	 * variable: IPV6_DNS_PRIORITY(+)
+	 * description: The priority for DNS servers of this connection. Lower values have higher priority.
+	 *    If zero, the default value will be used (50 for VPNs, 100 for other connections).
+	 *    A negative value prevents DNS from other connections with greater values to be used.
+	 * default: 0
+	 * example: IPV6_DNS_PRIORITY=20
+	 * ---end---
+	 */
+
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
 	 *

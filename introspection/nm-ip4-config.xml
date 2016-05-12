@@ -77,6 +77,13 @@
     <property name="DnsOptions" type="as" access="read"/>
 
     <!--
+        DnsPriority:
+
+        The relative priority of DNS servers.
+    -->
+    <property name="DnsPriority" type="i" access="read"/>
+
+    <!--
         WinsServers:
 
         The Windows Internet Name Service servers associated with the connection.

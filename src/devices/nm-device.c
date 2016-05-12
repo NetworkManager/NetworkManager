@@ -536,6 +536,34 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 
 /***********************************************************/
 
+static void
+init_ip4_config_dns_priority (NMDevice *self, NMIP4Config *config)
+{
+	gs_free char *value = NULL;
+	gint priority;
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "ipv4.dns-priority",
+	                                               self);
+	priority = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT, G_MAXINT, 0);
+	nm_ip4_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
+}
+
+static void
+init_ip6_config_dns_priority (NMDevice *self, NMIP6Config *config)
+{
+	gs_free char *value = NULL;
+	gint priority;
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "ipv6.dns-priority",
+	                                               self);
+	priority = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT, G_MAXINT, 0);
+	nm_ip6_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
+}
+
+/***********************************************************/
+
 gboolean
 nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
 {
@@ -4416,6 +4444,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
+	init_ip4_config_dns_priority (self, composite);
 
 	if (commit)
 		ensure_con_ip4_config (self);
@@ -5155,9 +5184,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+	init_ip6_config_dns_priority (self, composite);
 
 	if (commit)
 		ensure_con_ip6_config (self);
+
 	g_assert (composite);
 
 	/* Merge all the IP configs into the composite config */
