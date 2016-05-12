@@ -8,7 +8,7 @@ G_DEFINE_TYPE (NMProxyConfig, nm_proxy_config, G_TYPE_OBJECT)
 
 typedef struct {
 	NMProxyConfigMethod method;
-	GArray *proxies;
+	GPtrArray *proxies;
 	char *pac_url;
 	char *pac_script;
 } NMProxyConfigPrivate;
