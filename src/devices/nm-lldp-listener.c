@@ -531,7 +531,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	neigh->valid = TRUE;
 
 out:
-	return nm_unauto (&neigh);
+	return g_steal_pointer (&neigh);
 }
 
 static GVariant *
@@ -694,7 +694,7 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 	        LOG_NEIGH_ARG (neigh));
 
 	changed = TRUE;
-	g_hash_table_add (priv->lldp_neighbors, nm_unauto (&neigh));
+	g_hash_table_add (priv->lldp_neighbors, g_steal_pointer (&neigh));
 
 done:
 	if (changed)

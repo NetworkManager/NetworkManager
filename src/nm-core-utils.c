@@ -2695,7 +2695,7 @@ nm_utils_machine_id_read (void)
 	if (contents[i] != '\0')
 		return FALSE;
 
-	return nm_unauto (&contents);
+	return g_steal_pointer (&contents);
 }
 
 /*****************************************************************************/

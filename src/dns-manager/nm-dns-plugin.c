@@ -224,7 +224,7 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 	_LOGD ("%s started with pid %d", progname, pid);
 	priv->watch_id = g_child_watch_add (pid, (GChildWatchFunc) watch_cb, self);
 	priv->pid = pid;
-	priv->progname = nm_unauto (&progname);
+	priv->progname = g_steal_pointer (&progname);
 	priv->pidfile = g_strdup (pidfile);
 
 	return pid;
