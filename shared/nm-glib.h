@@ -374,4 +374,22 @@ _nm_g_hash_table_get_keys_as_array (GHashTable *hash_table,
                                __VA_ARGS__)
 #endif
 
+#if !GLIB_CHECK_VERSION(2, 44, 0)
+static inline gpointer
+g_steal_pointer (gpointer pp)
+{
+	gpointer *ptr = (gpointer *) pp;
+	gpointer ref;
+
+	ref = *ptr;
+	*ptr = NULL;
+
+	return ref;
+}
+
+/* type safety */
+#define g_steal_pointer(pp) \
+  (0 ? (*(pp)) : (g_steal_pointer) (pp))
+#endif
+
 #endif  /* __NM_GLIB_H__ */
