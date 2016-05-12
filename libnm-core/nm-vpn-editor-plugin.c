@@ -206,7 +206,7 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
 		return NULL;
 	}
 
-	return nm_unauto (&editor_plugin);
+	return g_steal_pointer (&editor_plugin);
 }
 
 /**

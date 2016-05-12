@@ -945,7 +945,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 		}
 	}
 
-	return nm_unauto (&setting);
+	return g_steal_pointer (&setting);
 }
 
 /**

@@ -326,18 +326,6 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
-#define nm_unauto(pp)                                               \
-    ({                                                              \
-        G_STATIC_ASSERT (sizeof *(pp) == sizeof (gpointer));        \
-        gpointer *_pp = (gpointer *) (pp);                          \
-        gpointer _p = *_pp;                                         \
-                                                                    \
-        *_pp = NULL;                                                \
-        _p;                                                         \
-    })
-
-/*****************************************************************************/
-
 static inline gpointer
 nm_g_object_ref (gpointer obj)
 {
