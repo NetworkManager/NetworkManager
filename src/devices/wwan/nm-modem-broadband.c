@@ -288,7 +288,7 @@ connect_context_clear (NMModemBroadband *self)
 
 		g_clear_error (&ctx->first_error);
 		g_clear_pointer (&ctx->ip_types, (GDestroyNotify) g_array_unref);
-		g_clear_object (&ctx->cancellable);
+		nm_clear_g_cancellable (&ctx->cancellable);
 		g_clear_object (&ctx->connection);
 		g_clear_object (&ctx->connect_properties);
 		g_clear_object (&ctx->self);
@@ -389,7 +389,7 @@ send_pin_ready (MMSim *sim, GAsyncResult *result, NMModemBroadband *self)
 		return;
 
 	if (!self->priv->ctx || self->priv->ctx->step != CONNECT_STEP_UNLOCK)
-		return;
+		g_return_if_reached ();
 
 	if (error) {
 		if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
