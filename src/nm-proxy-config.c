@@ -27,7 +27,7 @@ nm_proxy_config_new (void)
 }
 
 void
-nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *setting)
+nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting)
 {
 	NMProxyConfigPrivate *priv;
 	guint nproxies;
@@ -37,7 +37,7 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *sett
 	if (!setting)
 		return;
 
-	g_return_if_fail (NM_IS_SETTING_PROXY_CONFIG (setting));
+	g_return_if_fail (NM_IS_SETTING_PROXY (setting));
 
 	priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
@@ -45,19 +45,19 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *sett
 	priv->method = NM_PROXY_CONFIG_METHOD_MANUAL;
 	_notify (config, PROP_METHOD);
 
-	nproxies = nm_setting_proxy_config_get_num_proxies (setting);
+	nproxies = nm_setting_proxy_get_num_proxies (setting);
 	for (i = 0; i < nproxies; i++)
-		nm_proxy_config_add_proxy (config, nm_setting_proxy_config_get_proxy (setting, i));
+		nm_proxy_config_add_proxy (config, nm_setting_proxy_get_proxy (setting, i));
 	_notify (config, PROP_PROXIES);
 
-	pac_url = nm_setting_proxy_config_get_pac_url (setting);
+	pac_url = nm_setting_proxy_get_pac_url (setting);
 	if (!nm_streq0 (pac_url, priv->pac_url)) {
 		g_free (priv->pac_url);
 		priv->pac_url = g_strdup (pac_url);
 		_notify (config, PROP_PAC_URL);
 	}
 
-	pac_script = nm_setting_proxy_config_get_pac_script (setting);
+	pac_script = nm_setting_proxy_get_pac_script (setting);
 	if (!nm_streq0 (pac_script, priv->pac_script)) {
 		g_free (priv->pac_script);
 		priv->pac_script = g_strdup (pac_script);
@@ -68,11 +68,11 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *sett
 NMSetting
 nm_proxy_config_create_setting (const NMProxyConfig *config)
 {
-	NMSettingProxyConfig *s_p;
+	NMSettingProxy *s_p;
 	guint nproxies;
 	int i;
 
-	s_p = NM_SETTING_PROXY_CONFIG (nm_setting_proxy_config_new ());
+	s_p = NM_SETTING_PROXY (nm_setting_proxy_new ());
 
 	if (!config)
 		return NM_SETTING (s_p);
@@ -81,11 +81,11 @@ nm_proxy_config_create_setting (const NMProxyConfig *config)
 	for (i = 0; i < nproxies; i++) {
 		const char *proxy = nm_proxy_config_get_proxy (config, i);
 	
-		nm_setting_proxy_config_add_proxy (s_p, proxy);
+		nm_setting_proxy_add_proxy (s_p, proxy);
 	}
 
-	nm_setting_proxy_config_set_pac_url (s_p, nm_proxy_config_get_pac_url (config));
-	nm_setting_proxy_config_set_pac_script (s_p, nm_proxy_config_get_pac_script (config));
+	nm_setting_proxy_set_pac_url (s_p, nm_proxy_config_get_pac_url (config));
+	nm_setting_proxy_set_pac_script (s_p, nm_proxy_config_get_pac_script (config));
 
 	return NM_SETTING (s_p);
 }

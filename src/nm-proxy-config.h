@@ -3,7 +3,7 @@
 #ifndef __NETWORKMANAGER_PROXY_CONFIG_H__
 #define __NETWORKMANAGER_PROXY_CONFIG_H__
 
-#include "nm-setting-proxy-config.h"
+#include "nm-setting-proxy.h"
 
 typedef enum {
 	NM_PROXY_CONFIG_METHOD_NONE = 0,
@@ -35,7 +35,7 @@ GType nm_proxy_config_get_type (void);
 
 NMProxyConfig * nm_proxy_config_new (void);
 
-void nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxyConfig *setting);
+void nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting);
 NMSetting nm_proxy_config_create_setting (const NMProxyConfig *config);
 
 void nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod method);
