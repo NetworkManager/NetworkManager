@@ -166,9 +166,9 @@ typedef struct {
 
 typedef struct {
 	NMDevice *slave;
-	gboolean slave_is_enslaved;
-	gboolean configure;
 	gulong watch_id;
+	bool slave_is_enslaved;
+	bool configure;
 } SlaveInfo;
 
 typedef struct {
@@ -196,7 +196,7 @@ typedef struct {
 } ArpingData;
 
 typedef struct _NMDevicePrivate {
-	gboolean in_state_changed;
+	bool in_state_changed;
 
 	guint device_link_changed_id;
 	guint device_ip_link_changed_id;
@@ -212,7 +212,7 @@ typedef struct _NMDevicePrivate {
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
-	gboolean      real;
+	bool          real;
 	char *        ip_iface;
 	int           ip_ifindex;
 	NMDeviceType  type;
@@ -224,8 +224,8 @@ typedef struct _NMDevicePrivate {
 	char *        driver_version;
 	char *        firmware_version;
 	RfKillType    rfkill_type;
-	gboolean      firmware_missing;
-	gboolean      nm_plugin_missing;
+	bool          firmware_missing;
+	bool          nm_plugin_missing;
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
@@ -236,7 +236,7 @@ typedef struct _NMDevicePrivate {
 
 	NMUnmanagedFlags        unmanaged_mask;
 	NMUnmanagedFlags        unmanaged_flags;
-	gboolean                is_nm_owned; /* whether the device is a device owned and created by NM */
+	bool                    is_nm_owned; /* whether the device is a device owned and created by NM */
 	DeleteOnDeactivateData *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
 
 	GCancellable *deactivating_cancellable;
@@ -244,7 +244,7 @@ typedef struct _NMDevicePrivate {
 	guint32         ip4_address;
 
 	NMActRequest *  queued_act_request;
-	gboolean        queued_act_request_is_waiting_for_carrier;
+	bool            queued_act_request_is_waiting_for_carrier;
 	NMActRequest *  act_request;
 	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
 	ActivationHandleData act_handle6;
@@ -264,11 +264,12 @@ typedef struct _NMDevicePrivate {
 	guint           link_connected_id;
 	guint           link_disconnected_id;
 	guint           carrier_defer_id;
-	gboolean        carrier;
+	bool            carrier;
 	guint           carrier_wait_id;
-	gboolean        ignore_carrier;
+	bool            ignore_carrier;
+	gulong          ignore_carrier_id;
 	guint32         mtu;
-	gboolean        up;   /* IFF_UP */
+	bool            up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
@@ -291,8 +292,8 @@ typedef struct _NMDevicePrivate {
 		NMPlatformIP6Route v6;
 	} default_route;
 
-	gboolean v4_commit_first_time;
-	gboolean v6_commit_first_time;
+	bool v4_commit_first_time;
+	bool v6_commit_first_time;
 
 	/* DHCPv4 tracking */
 	struct {
@@ -310,7 +311,7 @@ typedef struct _NMDevicePrivate {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	gboolean       fw_ready;
+	bool fw_ready;
 	NMFirewallManagerCallId fw_call;
 
 	/* IPv4LL stuff */
@@ -331,7 +332,7 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
-	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
+	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	guint32        ip6_mtu;
 
 	NMRDisc *      rdisc;
@@ -360,16 +361,16 @@ typedef struct _NMDevicePrivate {
 	} dhcp6;
 
 	/* allow autoconnect feature */
-	gboolean        autoconnect;
+	bool autoconnect;
 
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
-	gboolean        is_enslaved;
-	gboolean        master_ready_handled;
+	bool            is_enslaved;
+	bool            master_ready_handled;
 	gulong          master_ready_id;
 
 	/* slave management */
-	gboolean        is_master;
+	bool            is_master;
 	GSList *        slaves;    /* list of SlaveInfo */
 
 	NMMetered       metered;
@@ -548,6 +549,17 @@ gboolean
 nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
 {
 	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->capabilities, caps);
+}
+
+static void
+_add_capabilities (NMDevice *self, NMDeviceCapabilities capabilities)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!NM_FLAGS_ALL (priv->capabilities, capabilities)) {
+		priv->capabilities |= capabilities;
+		_notify (self, PROP_CAPABILITIES);
+	}
 }
 
 /***********************************************************/
@@ -1931,6 +1943,8 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	NMDevicePrivate *priv;
 	NMDeviceClass *klass;
 	static guint32 id = 0;
+	NMDeviceCapabilities capabilities = 0;
+	NMConfig *config;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -1963,7 +1977,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
 
 		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
-			priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
+			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
 		_notify (self, PROP_MTU);
@@ -1983,7 +1997,9 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	}
 
 	if (klass->get_generic_capabilities)
-		priv->capabilities |= klass->get_generic_capabilities (self);
+		capabilities |= klass->get_generic_capabilities (self);
+
+	_add_capabilities (self, capabilities);
 
 	if (!priv->udi) {
 		/* Use a placeholder UDI until we get a real one */
@@ -1999,15 +2015,16 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	nm_device_update_initial_hw_address (self);
 
 	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
+	config = nm_config_get ();
+	priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
+	if (!priv->ignore_carrier_id) {
+		priv->ignore_carrier_id = g_signal_connect (config,
+		                                            NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+		                                            G_CALLBACK (config_changed_update_ignore_carrier),
+		                                            self);
+	}
+
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		NMConfig *config = nm_config_get ();
-
-		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
-		g_signal_connect (G_OBJECT (config),
-		                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
-		                  G_CALLBACK (config_changed_update_ignore_carrier),
-		                  self);
-
 		check_carrier (self);
 		_LOGD (LOGD_HW,
 		       "carrier is %s%s",
@@ -2017,8 +2034,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
-
-	_notify (self, PROP_CAPABILITIES);
 
 	klass->realize_start_notify (self, plink);
 
@@ -2198,6 +2213,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 	_notify (self, PROP_CAPABILITIES);
+
+	nm_clear_g_signal_handler (nm_config_get (), &priv->ignore_carrier_id);
 
 	priv->real = FALSE;
 	_notify (self, PROP_REAL);
@@ -8636,6 +8653,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean device_is_up = FALSE;
+	NMDeviceCapabilities capabilities;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -8645,6 +8663,10 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 		if (!NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware))
 			return FALSE;
 	}
+
+	/* Store carrier immediately. */
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
+		check_carrier (self);
 
 	device_is_up = nm_device_is_up (self);
 	if (block && !device_is_up) {
@@ -8666,6 +8688,13 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 			_LOGD (LOGD_HW, "device not up immediately");
 		return FALSE;
 	}
+
+	/* some ethernet devices fail to report capabilities unless the device
+	 * is up. Re-read the capabilities. */
+	capabilities = 0;
+	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
+		capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
+	_add_capabilities (self, capabilities);
 
 	/* Devices that support carrier detect must be IFF_UP to report carrier
 	 * changes; so after setting the device IFF_UP we must suppress startup
@@ -8698,10 +8727,6 @@ bring_up (NMDevice *self, gboolean *no_firmware)
 	}
 
 	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, no_firmware);
-
-	/* Store carrier immediately. */
-	if (result && nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
-		check_carrier (self);
 
 	return result;
 }
@@ -10764,11 +10789,9 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_DEACTIVATING:
 		_cancel_activation (self);
 
-		if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-			/* We cache the ignore_carrier state to not react on config-reloads while the connection
-			 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
-			priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
-		}
+		/* We cache the ignore_carrier state to not react on config-reloads while the connection
+		 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
 
 		if (quitting) {
 			nm_dispatcher_call_sync (DISPATCHER_ACTION_PRE_DOWN,
@@ -11376,7 +11399,7 @@ dispose (GObject *object)
 
 	arp_cleanup (self);
 
-	g_signal_handlers_disconnect_by_func (nm_config_get (), config_changed_update_ignore_carrier, self);
+	nm_clear_g_signal_handler (nm_config_get (), &priv->ignore_carrier_id);
 
 	dispatcher_cleanup (self);
 
