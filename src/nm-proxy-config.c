@@ -217,3 +217,29 @@ finalize (GObject *object)
 
 	G_OBJECT_CLASS (nm_proxy_config_parent_class)->finalize (object);
 }
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+    NMProxyConfig *config = NM_PROXY_CONFIG (object);
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+
+	switch (prop_id) {
+	case PROP_METHOD:
+		g_value_set_int (value, priv->method);
+		break;
+	case PROP_PROXIES:
+		nm_utils_g_value_set_strv (value, priv->proxies);
+		break;
+	case PROP_PAC_URL:
+		g_value_set_string (value, priv->pac_url);
+		break;
+	case PROP_PAC_SCRIPT:
+		g_value_set_string (value, priv->pac_script);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
