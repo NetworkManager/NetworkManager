@@ -1041,19 +1041,30 @@ nmc_property_802_1X_get_ca_cert (NMSetting *setting, NmcPropertyGetType get_type
 }
 
 static char *
-nmc_property_802_1X_get_client_cert (NMSetting *setting, NmcPropertyGetType get_type)
+nmc_property_802_1X_get_client_cert (NMSetting *setting,
+                                     NmcPropertyGetType get_type,
+                                     gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
-	char *client_cert_str = NULL;
+	char *cert_str = NULL;
 
 	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		client_cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		client_cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		if (show_secrets)
+			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
+		else
+			cert_str = g_strdup (_("<hidden>"));
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
 
-	return client_cert_str;
+	return cert_str;
+}
+
+static char *
+nmc_property_802_1X_get_client_cert_full (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	return nmc_property_802_1X_get_client_cert (setting, get_type, TRUE);
 }
 
 static char *
@@ -1073,19 +1084,30 @@ nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting, NmcPropertyGetType g
 }
 
 static char *
-nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting, NmcPropertyGetType get_type)
+nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting,
+                                            NmcPropertyGetType get_type,
+                                            gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
-	char *phase2_client_cert_str = NULL;
+	char *cert_str = NULL;
 
 	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_client_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		phase2_client_cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		if (show_secrets)
+			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
+		else
+			cert_str = g_strdup (_("<hidden>"));
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
 
-	return phase2_client_cert_str;
+	return cert_str;
+}
+
+static char *
+nmc_property_802_1X_get_phase2_client_cert_full (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	return nmc_property_802_1X_get_phase2_client_cert (setting, get_type, TRUE);
 }
 
 static char *
@@ -1096,19 +1118,30 @@ nmc_property_802_1X_get_password_raw (NMSetting *setting, NmcPropertyGetType get
 }
 
 static char *
-nmc_property_802_1X_get_private_key (NMSetting *setting, NmcPropertyGetType get_type)
+nmc_property_802_1X_get_private_key (NMSetting *setting,
+                                     NmcPropertyGetType get_type,
+                                     gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
-	char *private_key_str = NULL;
+	char *key_str = NULL;
 
 	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		private_key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		private_key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		if (show_secrets)
+			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
+		else
+			key_str = g_strdup (_("<hidden>"));
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
 
-	return private_key_str;
+	return key_str;
+}
+
+static char *
+nmc_property_802_1X_get_private_key_full (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	return nmc_property_802_1X_get_private_key (setting, get_type, TRUE);
 }
 
 static char *
@@ -5709,7 +5742,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, CLIENT_CERT),
-	                    nmc_property_802_1X_get_client_cert,
+	                    nmc_property_802_1X_get_client_cert_full,
 	                    nmc_property_802_1X_set_client_cert,
 	                    NULL,
 	                    nmc_property_802_1X_describe_client_cert,
@@ -5786,7 +5819,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_CLIENT_CERT),
-	                    nmc_property_802_1X_get_phase2_client_cert,
+	                    nmc_property_802_1X_get_phase2_client_cert_full,
 	                    nmc_property_802_1X_set_phase2_client_cert,
 	                    NULL,
 	                    nmc_property_802_1X_describe_phase2_client_cert,
@@ -5821,7 +5854,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY),
-	                    nmc_property_802_1X_get_private_key,
+	                    nmc_property_802_1X_get_private_key_full,
 	                    nmc_property_802_1X_set_private_key,
 	                    NULL,
 	                    nmc_property_802_1X_describe_private_key,
@@ -7999,7 +8032,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 	set_val_str (arr, 7, nmc_property_802_1X_get_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 8, nmc_property_802_1X_get_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 9, nmc_property_802_1X_get_domain_suffix_match (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_802_1X_get_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_802_1X_get_client_cert (setting, NMC_PROPERTY_GET_PRETTY, secrets));
 	set_val_str (arr, 11, nmc_property_802_1X_get_phase1_peapver (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 12, nmc_property_802_1X_get_phase1_peaplabel (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 13, nmc_property_802_1X_get_phase1_fast_provisioning (setting, NMC_PROPERTY_GET_PRETTY));
@@ -8010,12 +8043,12 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 	set_val_str (arr, 18, nmc_property_802_1X_get_phase2_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 19, nmc_property_802_1X_get_phase2_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 20, nmc_property_802_1X_get_phase2_domain_suffix_match (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 21, nmc_property_802_1X_get_phase2_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 21, nmc_property_802_1X_get_phase2_client_cert (setting, NMC_PROPERTY_GET_PRETTY, secrets));
 	set_val_str (arr, 22, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password));
 	set_val_str (arr, 23, nmc_property_802_1X_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 24, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password_raw));
 	set_val_str (arr, 25, nmc_property_802_1X_get_password_raw_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 26, nmc_property_802_1X_get_private_key (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 26, nmc_property_802_1X_get_private_key (setting, NMC_PROPERTY_GET_PRETTY, secrets));
 	set_val_str (arr, 27, GET_SECRET (secrets, setting, nmc_property_802_1X_get_private_key_password));
 	set_val_str (arr, 28, nmc_property_802_1X_get_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key (setting, NMC_PROPERTY_GET_PRETTY));
