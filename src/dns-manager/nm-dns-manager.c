@@ -1220,6 +1220,19 @@ ip_config_dns_priority_changed (gpointer config,
 	NM_DNS_MANAGER_GET_PRIVATE (self)->need_sort = TRUE;
 }
 
+static void
+forget_data (NMDnsManager *self, NMDnsIPConfigData *data)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	if (data == priv->best_conf4)
+		priv->best_conf4 = NULL;
+	else if (data == priv->best_conf6)
+		priv->best_conf6 = NULL;
+
+	g_signal_handlers_disconnect_by_func (data->config, ip_config_dns_priority_changed, self);
+}
+
 static gboolean
 nm_dns_manager_add_ip_config (NMDnsManager *self,
                               const char *iface,
@@ -1244,6 +1257,7 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 			    && data->type == cfg_type)
 				return FALSE;
 			else {
+				forget_data (self, data);
 				g_ptr_array_remove_index_fast (priv->configs, i);
 				break;
 			}
@@ -1315,12 +1329,7 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 		data = priv->configs->pdata[i];
 
 		if (data->config == config) {
-			if (config == priv->best_conf4)
-				priv->best_conf4 = NULL;
-			else if (config == priv->best_conf6)
-				priv->best_conf6 = NULL;
-
-			g_signal_handlers_disconnect_by_func (config, ip_config_dns_priority_changed, self);
+			forget_data (self, data);
 			g_ptr_array_remove_index (priv->configs, i);
 
 			if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
@@ -1667,9 +1676,7 @@ dispose (GObject *object)
 	if (priv->configs) {
 		for (i = 0; i < priv->configs->len; i++) {
 			data = priv->configs->pdata[i];
-			g_signal_handlers_disconnect_by_func (data->config,
-			                                      ip_config_dns_priority_changed,
-			                                      self);
+			forget_data (self, data);
 		}
 		g_ptr_array_free (priv->configs, TRUE);
 		priv->configs = NULL;
