@@ -657,8 +657,10 @@ ipv6.ip6-privacy=1
           considered even if the property in question is not present. In
           the example above, if <literal>[connection-wifi-wlan0]</literal> would
           have <literal>stop-match</literal> set to <literal>yes</literal>,
-          its <literal>ipv6.ip6-privacy</literal> value would be
-          unspecified.
+          the device <literal>wlan0</literal> would have <literal>ipv6.ip6-privacy</literal>
+          property unspecified. That is, the search for the property would not continue
+          in the connection sections <literal>[connection-wifi-other]</literal>
+          or <literal>[connection]</literal>.
           </para></listitem>
         </varlistentry>
       </variablelist>
