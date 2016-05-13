@@ -1,6 +1,13 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
+#include "nm-default.h"
+
 #include "nm-proxy-config.h"
+
+#include <string.h>
+
+#include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_PROXY_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PROXY_CONFIG, NMProxyConfigPrivate))
 
@@ -17,13 +24,13 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMProxyConfig,
 	PROP_METHOD,
 	PROP_PROXIES,
 	PROP_PAC_URL,
-	PROP_PAC_SCRIPT
+	PROP_PAC_SCRIPT,
 );
 
 NMProxyConfig *
 nm_proxy_config_new (void)
 {
-	return NM_PROXY_CONFIG (g_object_new (NM_PROXY_CONFIG, NULL));
+	return NM_PROXY_CONFIG (g_object_new (NM_TYPE_PROXY_CONFIG, NULL));
 }
 
 void
@@ -198,7 +205,7 @@ nm_proxy_config_get_pac_script (const NMProxyConfig *config)
 static void
 nm_proxy_config_init (NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_PRIVATE (config);
+	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	priv->method = NM_PROXY_CONFIG_METHOD_NONE;
 	priv->proxies = g_ptr_array_new_with_free_func (g_free);
@@ -210,7 +217,6 @@ finalize (GObject *object)
 	NMProxyConfig *self = NM_PROXY_CONFIG (object);
 	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (self);
 
-	g_free (priv->method);
 	g_ptr_array_unref (priv->proxies);
 	g_free (priv->pac_url);
 	g_free (priv->pac_script);
