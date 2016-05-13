@@ -1145,19 +1145,30 @@ nmc_property_802_1X_get_private_key_full (NMSetting *setting, NmcPropertyGetType
 }
 
 static char *
-nmc_property_802_1X_get_phase2_private_key (NMSetting *setting, NmcPropertyGetType get_type)
+nmc_property_802_1X_get_phase2_private_key (NMSetting *setting,
+                                            NmcPropertyGetType get_type,
+                                            gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
-	char *phase2_private_key_str = NULL;
+	char *key_str = NULL;
 
 	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_private_key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		if (show_secrets)
+			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
+		else
+			key_str = g_strdup (_("<hidden>"));
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
 
-	return phase2_private_key_str;
+	return key_str;
+}
+
+static char *
+nmc_property_802_1X_get_phase2_private_key_full (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	return nmc_property_802_1X_get_phase2_private_key (setting, get_type, TRUE);
 }
 
 /* --- NM_SETTING_ADSL_SETTING_NAME property get functions --- */
@@ -5875,7 +5886,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY),
-	                    nmc_property_802_1X_get_phase2_private_key,
+	                    nmc_property_802_1X_get_phase2_private_key_full,
 	                    nmc_property_802_1X_set_phase2_private_key,
 	                    NULL,
 	                    nmc_property_802_1X_describe_private_key,
@@ -8051,7 +8062,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 	set_val_str (arr, 26, nmc_property_802_1X_get_private_key (setting, NMC_PROPERTY_GET_PRETTY, secrets));
 	set_val_str (arr, 27, GET_SECRET (secrets, setting, nmc_property_802_1X_get_private_key_password));
 	set_val_str (arr, 28, nmc_property_802_1X_get_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key (setting, NMC_PROPERTY_GET_PRETTY, secrets));
 	set_val_str (arr, 30, GET_SECRET (secrets, setting, nmc_property_802_1X_get_phase2_private_key_password));
 	set_val_str (arr, 31, nmc_property_802_1X_get_phase2_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 32, GET_SECRET (secrets, setting, nmc_property_802_1X_get_pin));
