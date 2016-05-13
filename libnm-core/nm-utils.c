@@ -2399,8 +2399,8 @@ nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted)
 	const char *extensions[] = { ".der", ".pem", ".p12", ".key", NULL };
 
 	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (out_encrypted == NULL || *out_encrypted == FALSE, FALSE);
 
+	NM_SET_OUT (out_encrypted, FALSE);
 	if (!file_has_extension (filename, extensions))
 		return FALSE;
 
