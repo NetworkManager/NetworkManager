@@ -755,7 +755,9 @@ nm_dhcp_client_handle_event (gpointer unused,
 		if (g_hash_table_size (str_options))
 				proxy_config = (GObject *) nm_dhcp_utils_proxy_config_from_options (str_options);
 		if (proxy_config == NULL) 
-			_LOGW ("PAC url not received");
+			_LOGW ("Proxy config not created");
+		else
+			_LOGI ("Proxy Config created");
 
 		/* Create the IP config */
 		g_warn_if_fail (g_hash_table_size (str_options));
