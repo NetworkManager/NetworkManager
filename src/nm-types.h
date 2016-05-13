@@ -44,6 +44,7 @@ typedef struct _NMDhcp4Config        NMDhcp4Config;
 typedef struct _NMDhcp6Config        NMDhcp6Config;
 typedef struct _NMIP4Config          NMIP4Config;
 typedef struct _NMIP6Config          NMIP6Config;
+typedef struct _NMProxyConfig        NMProxyConfig;
 typedef struct _NMManager            NMManager;
 typedef struct _NMPolicy             NMPolicy;
 typedef struct _NMRfkillManager      NMRfkillManager;
