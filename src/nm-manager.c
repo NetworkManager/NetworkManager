@@ -846,7 +846,7 @@ remove_device (NMManager *self,
 	       nm_device_get_iface (device), allow_unmanage, nm_device_get_managed (device, FALSE));
 
 	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
-		gboolean unmanage = TRUE;
+		unmanage = TRUE;
 
 		if (!quitting) {
 			/* the device is already gone. Unmanage it. */
