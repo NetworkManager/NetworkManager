@@ -251,6 +251,7 @@ detect_build_type 'initscripts-[0-9]*' initscripts.spec
 detect_build_type 'libqmi-[0-9]*' libqmi.spec
 detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
 detect_build_type 'iproute2-*' iproute.spec
+detect_build_type 'vpnc-*' vpnc.spec
 
 if [[ -z "$BUILD_TYPE" ]]; then
 	SPEC="$(ls -1 *.spec 2>/dev/null | head -n1)"
@@ -338,6 +339,8 @@ pushd "$DIRNAME"
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     elif [[ "$BUILD_TYPE" == "iproute" ]]; then
         git remote add origin "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
+    elif [[ "$BUILD_TYPE" == "vpnc" ]]; then
+        git remote add origin "https://github.com/ndpgroup/vpnc.git"
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
