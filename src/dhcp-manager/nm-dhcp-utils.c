@@ -381,7 +381,7 @@ nm_dhcp_utils_proxy_config_from_options (GHashTable *options)
 		nm_log_info (LOGD_DHCP4, "  wpad '%s'", str);
 		nm_proxy_config_set_pac_url (proxy_config, str);
 	} else if (str == NULL) {
-		nm_log_info (LOGD_DHCP4, " PAC url not obtained '%s'", str);
+		nm_log_info (LOGD_DHCP4, " PAC url not obtained ");
 	}
 
 	return proxy_config;

@@ -164,7 +164,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-    NMProxyConfig *config = NM_PROXY_CONFIG (object);
+	NMProxyConfig *config = NM_PROXY_CONFIG (object);
 	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	switch (prop_id) {
@@ -199,25 +199,25 @@ nm_proxy_config_class_init (NMProxyConfigClass *klass)
 
 	obj_properties[PROP_METHOD] =
 		g_param_spec_int (NM_PROXY_CONFIG_METHOD, "", "",
-                          0, G_MAXINT, 0,
-                          G_PARAM_READWRITE |
-                          G_PARAM_CONSTRUCT_ONLY |
-                          G_PARAM_STATIC_STRINGS);
+		                  0, G_MAXINT, 0,
+		                  G_PARAM_READWRITE |
+		                  G_PARAM_CONSTRUCT_ONLY |
+		                  G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_PROXIES] =
 		g_param_spec_boxed (NM_PROXY_CONFIG_PROXIES, "", "",
-                            G_TYPE_STRV,
-                            G_PARAM_READABLE |
-                            G_PARAM_STATIC_STRINGS);
+		                    G_TYPE_STRV,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_PAC_URL] =
 		g_param_spec_string (NM_PROXY_CONFIG_PAC_URL, "", "",
-                             NULL,
-                             G_PARAM_READABLE |
-                             G_PARAM_STATIC_STRINGS);
+		                     NULL,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_PAC_SCRIPT] =
 		g_param_spec_string (NM_PROXY_CONFIG_PAC_SCRIPT, "", "",
-                             NULL,
-                             G_PARAM_READABLE |
-                             G_PARAM_STATIC_STRINGS);
+		                     NULL,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

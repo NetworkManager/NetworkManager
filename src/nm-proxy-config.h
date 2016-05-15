@@ -1,9 +1,9 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
+#include "nm-default.h"
+
 #ifndef __NETWORKMANAGER_PROXY_CONFIG_H__
 #define __NETWORKMANAGER_PROXY_CONFIG_H__
-
-#include "nm-setting-proxy.h"
 
 typedef enum {
 	NM_PROXY_CONFIG_METHOD_NONE = 0,

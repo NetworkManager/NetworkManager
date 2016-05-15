@@ -753,7 +753,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 		/* Create the Proxy Config */
 		g_warn_if_fail (g_hash_table_size (str_options));
 		if (g_hash_table_size (str_options))
-				proxy_config = (GObject *) nm_dhcp_utils_proxy_config_from_options (str_options);
+			proxy_config = (GObject *) nm_dhcp_utils_proxy_config_from_options (str_options);
 		if (proxy_config == NULL) 
 			_LOGW ("Proxy config not created");
 		else
