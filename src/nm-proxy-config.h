@@ -35,9 +35,6 @@ GType nm_proxy_config_get_type (void);
 
 NMProxyConfig * nm_proxy_config_new (void);
 
-void nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting);
-NMSetting nm_proxy_config_create_setting (const NMProxyConfig *config);
-
 void nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod method);
 NMProxyConfigMethod nm_proxy_config_get_method (const NMProxyConfig *config);
 
