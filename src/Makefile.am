@@ -419,6 +419,8 @@ libNetworkManager_la_SOURCES = \
 	nm-exported-object.h \
 	nm-firewall-manager.c \
 	nm-firewall-manager.h \
+	nm-proxy-config.c \
+	nm-proxy-config.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
@@ -569,6 +571,8 @@ libnm_iface_helper_la_SOURCES = \
 	\
 	nm-exported-object.c \
 	nm-exported-object.h \
+	nm-proxy-config.c \
+	nm-proxy-config.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
