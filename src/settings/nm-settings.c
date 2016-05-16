@@ -415,7 +415,7 @@ connection_sort (gconstpointer pa, gconstpointer pb)
  * Caller must free the list with g_slist_free().
  */
 GSList *
-nm_settings_get_connections (NMSettings *self)
+nm_settings_get_connections_sorted (NMSettings *self)
 {
 	GHashTableIter iter;
 	gpointer data = NULL;

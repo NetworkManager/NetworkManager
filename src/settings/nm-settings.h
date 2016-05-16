@@ -89,7 +89,7 @@ void nm_settings_add_connection_dbus (NMSettings *self,
 /* Returns a list of NMSettingsConnections.  Caller must free the list with
  * g_slist_free().
  */
-GSList *nm_settings_get_connections (NMSettings *settings);
+GSList *nm_settings_get_connections_sorted (NMSettings *settings);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,

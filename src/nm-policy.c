@@ -862,7 +862,7 @@ reset_autoconnect_all (NMPolicy *self, NMDevice *device)
 	} else
 		_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections");
 
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		if (!device || nm_device_check_connection_compatible (device, iter->data)) {
 			nm_settings_connection_reset_autoconnect_retries (iter->data);
@@ -880,7 +880,7 @@ reset_autoconnect_for_failed_secrets (NMPolicy *self)
 
 	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections with failed secrets");
 
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMSettingsConnection *connection = NM_SETTINGS_CONNECTION (iter->data);
 
@@ -908,7 +908,7 @@ block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
 	if (!nm_device_is_software (device))
 		return;
 
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		if (nm_device_check_connection_compatible (device, iter->data)) {
 			nm_settings_connection_set_autoconnect_blocked_reason (NM_SETTINGS_CONNECTION (iter->data),
@@ -990,7 +990,7 @@ reset_connections_retries (gpointer user_data)
 
 	min_stamp = 0;
 	now = nm_utils_get_monotonic_timestamp_s ();
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMSettingsConnection *connection = NM_SETTINGS_CONNECTION (iter->data);
 
@@ -1043,7 +1043,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		}
 	}
 
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *slave;
 		NMSettingConnection *s_slave_con;

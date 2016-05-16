@@ -407,7 +407,7 @@ find_ac_for_connection (NMManager *manager, NMConnection *connection)
 }
 
 /* Filter out connections that are already active.
- * nm_settings_get_connections() returns sorted list. We need to preserve the
+ * nm_settings_get_connections_sorted() returns sorted list. We need to preserve the
  * order so that we didn't change auto-activation order (recent timestamps
  * are first).
  * Caller is responsible for freeing the returned list with g_slist_free().
@@ -416,7 +416,7 @@ GSList *
 nm_manager_get_activatable_connections (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *all_connections = nm_settings_get_connections (priv->settings);
+	GSList *all_connections = nm_settings_get_connections_sorted (priv->settings);
 	GSList *connections = NULL, *iter;
 	NMSettingsConnection *connection;
 
@@ -1131,7 +1131,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	/* Create backing resources if the device has any autoconnect connections */
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *candidate = iter->data;
 		NMSettingConnection *s_con;
@@ -1166,7 +1166,7 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 
 	g_return_if_fail (device);
 
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *candidate = iter->data;
 		gs_free_error GError *error = NULL;
@@ -2603,7 +2603,7 @@ find_slaves (NMManager *manager,
 	 * even if a slave was already active, it might be deactivated during
 	 * master reactivation.
 	 */
-	all_connections = nm_settings_get_connections (priv->settings);
+	all_connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = all_connections; iter; iter = iter->next) {
 		NMSettingsConnection *master_connection = NULL;
 		NMDevice *master_device = NULL;
@@ -3598,7 +3598,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	if (!subject)
 		goto error;
 
-	all_connections = nm_settings_get_connections (priv->settings);
+	all_connections = nm_settings_get_connections_sorted (priv->settings);
 	if (vpn) {
 		/* Try to fill the VPN's connection setting and name at least */
 		if (!nm_connection_get_setting_vpn (connection)) {
@@ -4546,7 +4546,7 @@ nm_manager_start (NMManager *self, GError **error)
 	 * connection-added signals thus devices have to be created manually.
 	 */
 	_LOGD (LOGD_CORE, "creating virtual devices...");
-	connections = nm_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections_sorted (priv->settings);
 	for (iter = connections; iter; iter = iter->next)
 		connection_changed (self, NM_CONNECTION (iter->data));
 	g_slist_free (connections);
