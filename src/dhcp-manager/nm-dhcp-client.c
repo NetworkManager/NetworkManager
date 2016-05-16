@@ -716,6 +716,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 	guint32 old_state;
 	guint32 new_state;
 	GHashTable *str_options = NULL;
+	GObject *proxy_config = NULL;
 	GObject *ip_config = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
@@ -749,6 +750,15 @@ nm_dhcp_client_handle_event (gpointer unused,
 			g_variant_unref (value);
 		}
 
+		/* Create the Proxy Config */
+		g_warn_if_fail (g_hash_table_size (str_options));
+		if (g_hash_table_size (str_options))
+			proxy_config = (GObject *) nm_dhcp_utils_proxy_config_from_options (str_options);
+		if (proxy_config == NULL) 
+			_LOGW ("Proxy config not created");
+		else
+			_LOGI ("Proxy Config created");
+
 		/* Create the IP config */
 		g_warn_if_fail (g_hash_table_size (str_options));
 		if (g_hash_table_size (str_options)) {
@@ -778,6 +788,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 
 	if (str_options)
 		g_hash_table_destroy (str_options);
+	g_clear_object (&proxy_config);
 	g_clear_object (&ip_config);
 
 	return TRUE;
