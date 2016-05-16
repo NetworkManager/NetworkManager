@@ -21,13 +21,14 @@
 
 #include "nm-default.h"
 
+#include "nm-device-wifi.h"
+
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include "nm-device.h"
-#include "nm-device-wifi.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
@@ -45,8 +46,9 @@
 #include "nm-platform.h"
 #include "nm-auth-utils.h"
 #include "nm-settings-connection.h"
-#include "nm-enum-types.h"
+#include "nm-settings.h"
 #include "nm-connection-provider.h"
+#include "nm-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
@@ -1224,7 +1226,7 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	if (G_UNLIKELY (nullssid == NULL))
 		nullssid = g_byte_array_new ();
 
-	connections = nm_connection_provider_get_best_connections (nm_connection_provider_get (),
+	connections = nm_connection_provider_get_best_connections ((NMConnectionProvider *) nm_device_get_settings ((NMDevice *) self),
 	                                                           max_scan_ssids - 1,
 	                                                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                                                           NULL,
@@ -1456,10 +1458,12 @@ schedule_ap_list_dump (NMDeviceWifi *self)
 }
 
 static void
-try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
+try_fill_ssid_for_hidden_ap (NMDeviceWifi *self,
+                             NMAccessPoint *ap)
 {
 	const char *bssid;
-	const GSList *connections, *iter;
+	NMSettingsConnection *const*connections;
+	guint i;
 
 	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
 
@@ -1468,9 +1472,9 @@ try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
-	connections = nm_connection_provider_get_connections (nm_connection_provider_get ());
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
+	connections = nm_settings_get_connections (nm_device_get_settings ((NMDevice *) self), NULL);
+	for (i = 0; connections[i]; i++) {
+		NMConnection *connection = (NMConnection *) connections[i];
 		NMSettingWireless *s_wifi;
 
 		s_wifi = nm_connection_get_setting_wireless (connection);
@@ -1520,7 +1524,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	ssid = nm_ap_get_ssid (ap);
 	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
 		/* Try to fill the SSID from the AP database */
-		try_fill_ssid_for_hidden_ap (ap);
+		try_fill_ssid_for_hidden_ap (self, ap);
 
 		ssid = nm_ap_get_ssid (ap);
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {

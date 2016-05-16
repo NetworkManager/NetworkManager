@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-device-ethernet.h"
+
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,7 +31,6 @@
 
 #include <gudev/gudev.h>
 
-#include "nm-device-ethernet.h"
 #include "nm-device-private.h"
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
@@ -44,7 +45,7 @@
 #include "nm-settings-connection.h"
 #include "nm-config.h"
 #include "nm-device-ethernet-utils.h"
-#include "nm-connection-provider.h"
+#include "nm-settings.h"
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -1435,7 +1436,7 @@ static NMConnection *
 new_default_connection (NMDevice *self)
 {
 	NMConnection *connection;
-	const GSList *connections;
+	NMSettingsConnection *const*connections;
 	NMSetting *setting;
 	const char *hw_address;
 	gs_free char *defname = NULL;
@@ -1453,8 +1454,8 @@ new_default_connection (NMDevice *self)
 	setting = nm_setting_connection_new ();
 	nm_connection_add_setting (connection, setting);
 
-	connections = nm_connection_provider_get_connections (nm_connection_provider_get ());
-	defname = nm_device_ethernet_utils_get_default_wired_name (connections);
+	connections = nm_settings_get_connections (nm_device_get_settings (self), NULL);
+	defname = nm_device_ethernet_utils_get_default_wired_name ((NMConnection *const*) connections);
 	if (!defname)
 		return NULL;
 

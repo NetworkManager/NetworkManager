@@ -42,6 +42,8 @@ enum NMActStageReturn {
 
 #define NM_DEVICE_CAP_INTERNAL_MASK 0xc0000000
 
+NMSettings *nm_device_get_settings (NMDevice *self);
+
 void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
 void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);

@@ -550,6 +550,12 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 
 /***********************************************************/
 
+NMSettings *
+nm_device_get_settings (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->settings;
+}
+
 static void
 init_ip4_config_dns_priority (NMDevice *self, NMIP4Config *config)
 {
