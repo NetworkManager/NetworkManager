@@ -62,8 +62,6 @@
                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
 
-#define ERR_GET_MSG(err) (((err) && (err)->message) ? (err)->message : "(unknown)")
-
 
 static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
                                              NMConnection *source,
