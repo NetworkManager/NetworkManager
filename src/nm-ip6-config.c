@@ -28,6 +28,7 @@
 
 #include "nm-utils.h"
 #include "nm-platform.h"
+#include "nm-platform-utils.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -621,7 +622,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			continue;
 
 		/* Ignore routes provided by external sources */
-		if (route->rt_source != NM_IP_CONFIG_SOURCE_USER)
+		if (route->rt_source != nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER))
 			continue;
 
 		s_route = nm_ip_route_new_binary (AF_INET6,
