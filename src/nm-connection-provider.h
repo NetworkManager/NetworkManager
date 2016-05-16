@@ -16,9 +16,7 @@
 #ifndef __NETWORKMANAGER_CONNECTION_PROVIDER_H__
 #define __NETWORKMANAGER_CONNECTION_PROVIDER_H__
 
-#include <nm-connection.h>
-
-#include "nm-default.h"
+#include "nm-connection.h"
 
 #define NM_TYPE_CONNECTION_PROVIDER               (nm_connection_provider_get_type ())
 #define NM_CONNECTION_PROVIDER(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))
@@ -63,6 +61,8 @@ typedef struct {
 
 	NMConnection * (*get_connection_by_uuid) (NMConnectionProvider *self,
 	                                          const char *uuid);
+
+	const GSList * (*get_unmanaged_specs) (NMConnectionProvider *self);
 } NMConnectionProviderInterface;
 
 GType nm_connection_provider_get_type (void);
@@ -123,5 +123,7 @@ NMConnection *nm_connection_provider_add_connection (NMConnectionProvider *self,
 
 NMConnection *nm_connection_provider_get_connection_by_uuid (NMConnectionProvider *self,
                                                              const char *uuid);
+
+const GSList *nm_connection_provider_get_unmanaged_specs (NMConnectionProvider *self);
 
 #endif /* __NETWORKMANAGER_CONNECTION_PROVIDER_H__ */

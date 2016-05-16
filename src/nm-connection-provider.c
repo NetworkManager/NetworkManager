@@ -16,6 +16,7 @@
 #include "nm-default.h"
 
 #include "nm-connection-provider.h"
+
 #include "nm-utils.h"
 
 G_DEFINE_INTERFACE (NMConnectionProvider, nm_connection_provider, G_TYPE_OBJECT)
@@ -88,6 +89,14 @@ nm_connection_provider_get_connection_by_uuid (NMConnectionProvider *self,
 
 	g_assert (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_connection_by_uuid);
 	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_connection_by_uuid (self, uuid);
+}
+
+const GSList *
+nm_connection_provider_get_unmanaged_specs (NMConnectionProvider *self)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
+
+	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_unmanaged_specs (self);
 }
 
 /*****************************************************************************/
