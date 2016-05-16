@@ -186,7 +186,7 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON        "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
 #define NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIMAX_LIST_COMMON
 
-/* Available fields for 'device show' - BOND, TEAM, BRIDGE part */
+/* Available fields for 'device show' - BOND, BRIDGE part */
 static NmcOutputField nmc_fields_dev_show_master_prop[] = {
 	{"NAME",       N_("NAME")},    /* 0 */
 	{"SLAVES",     N_("SLAVES")},  /* 1 */
@@ -194,6 +194,16 @@ static NmcOutputField nmc_fields_dev_show_master_prop[] = {
 };
 #define NMC_FIELDS_DEV_SHOW_MASTER_PROP_ALL     "NAME,SLAVES"
 #define NMC_FIELDS_DEV_SHOW_MASTER_PROP_COMMON  "NAME,SLAVES"
+
+/* Available fields for 'device show' - TEAM part */
+static NmcOutputField nmc_fields_dev_show_team_prop[] = {
+	{"NAME",       N_("NAME")},    /* 0 */
+	{"SLAVES",     N_("SLAVES")},  /* 1 */
+	{"CONFIG",     N_("CONFIG")},  /* 2 */
+	{NULL, NULL}
+};
+#define NMC_FIELDS_DEV_SHOW_TEAM_PROP_ALL     "NAME,SLAVES,CONFIG"
+#define NMC_FIELDS_DEV_SHOW_TEAM_PROP_COMMON  "NAME,SLAVES,CONFIG"
 
 /* Available fields for 'device show' - VLAN part */
 static NmcOutputField nmc_fields_dev_show_vlan_prop[] = {
@@ -234,7 +244,7 @@ static NmcOutputField nmc_fields_dev_show_sections[] = {
 	{"IP6",               N_("IP6"),               0, nmc_fields_ip6_config + 1           },  /* 9 */
 	{"DHCP6",             N_("DHCP6"),             0, nmc_fields_dhcp6_config + 1         },  /* 10 */
 	{"BOND",              N_("BOND"),              0, nmc_fields_dev_show_master_prop + 1 },  /* 11 */
-	{"TEAM",              N_("TEAM"),              0, nmc_fields_dev_show_master_prop + 1 },  /* 12 */
+	{"TEAM",              N_("TEAM"),              0, nmc_fields_dev_show_team_prop + 1   },  /* 12 */
 	{"BRIDGE",            N_("BRIDGE"),            0, nmc_fields_dev_show_master_prop + 1 },  /* 13 */
 	{"VLAN",              N_("VLAN"),              0, nmc_fields_dev_show_vlan_prop  + 1  },  /* 14 */
 	{"BLUETOOTH",         N_("BLUETOOTH"),         0, nmc_fields_dev_show_bluetooth + 1   },  /* 15 */
@@ -840,10 +850,10 @@ get_active_connection_id (NMDevice *device)
 }
 
 static gboolean
-print_bond_team_bridge_info (NMDevice *device,
-                             NmCli *nmc,
-                             const char *group_prefix,
-                             const char *one_field)
+print_bond_bridge_info (NMDevice *device,
+                        NmCli *nmc,
+                        const char *group_prefix,
+                        const char *one_field)
 {
 	const GPtrArray *slaves = NULL;
 	GString *slaves_str;
@@ -853,10 +863,10 @@ print_bond_team_bridge_info (NMDevice *device,
 
 	if (NM_IS_DEVICE_BOND (device))
 		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
-	else if (NM_IS_DEVICE_TEAM (device))
-		slaves = nm_device_team_get_slaves (NM_DEVICE_TEAM (device));
 	else if (NM_IS_DEVICE_BRIDGE (device))
 		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
+	else
+		g_return_val_if_reached (FALSE);
 
 	slaves_str = g_string_new (NULL);
 	for (idx = 0; slaves && idx < slaves->len; idx++) {
@@ -881,6 +891,76 @@ print_bond_team_bridge_info (NMDevice *device,
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);     /* i.e. BOND, TEAM, BRIDGE */
 	set_val_str  (arr, 1, slaves_str->str);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	g_string_free (slaves_str, FALSE);
+	nmc_empty_output_fields (nmc);
+
+	return TRUE;
+}
+
+static char *
+sanitize_team_config (const char *config)
+{
+	char *ret;
+	int i;
+
+	if (!config)
+		return NULL;
+
+	ret = g_strdup (config);
+
+	for (i = 0; i < strlen (ret); i++) {
+		if (ret[i] == '\n')
+			ret[i] = ' ';
+	}
+
+	return ret;
+}
+
+static gboolean
+print_team_info (NMDevice *device,
+                 NmCli *nmc,
+                 const char *group_prefix,
+                 const char *one_field)
+{
+	const GPtrArray *slaves = NULL;
+	GString *slaves_str;
+	int idx;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	if (NM_IS_DEVICE_TEAM (device))
+		slaves = nm_device_team_get_slaves (NM_DEVICE_TEAM (device));
+	else
+		g_return_val_if_reached (FALSE);
+
+	slaves_str = g_string_new (NULL);
+	for (idx = 0; slaves && idx < slaves->len; idx++) {
+		NMDevice *slave = g_ptr_array_index (slaves, idx);
+		const char *iface = nm_device_get_iface (slave);
+
+		if (iface) {
+			g_string_append (slaves_str, iface);
+			g_string_append_c (slaves_str, ' ');
+		}
+	}
+	if (slaves_str->len > 0)
+		g_string_truncate (slaves_str, slaves_str->len-1);  /* Chop off last space */
+
+	tmpl = nmc_fields_dev_show_team_prop;
+	tmpl_len = sizeof (nmc_fields_dev_show_team_prop);
+	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DEV_SHOW_TEAM_PROP_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_strc (arr, 0, group_prefix);     /* TEAM */
+	set_val_str  (arr, 1, slaves_str->str);
+	set_val_str (arr, 2, sanitize_team_config (nm_device_team_get_config (NM_DEVICE_TEAM (device))));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -1146,19 +1226,19 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		/* Bond specific information */
 		if (NM_IS_DEVICE_BOND (device)) {
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[11].name))
-				was_output = print_bond_team_bridge_info (device, nmc, nmc_fields_dev_show_sections[11].name, section_fld);
+				was_output = print_bond_bridge_info (device, nmc, nmc_fields_dev_show_sections[11].name, section_fld);
 		}
 
 		/* Team specific information */
 		if (NM_IS_DEVICE_TEAM (device)) {
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[12].name))
-				was_output = print_bond_team_bridge_info (device, nmc, nmc_fields_dev_show_sections[12].name, section_fld);
+				was_output = print_team_info (device, nmc, nmc_fields_dev_show_sections[12].name, section_fld);
 		}
 
 		/* Bridge specific information */
 		if (NM_IS_DEVICE_BRIDGE (device)) {
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[13].name))
-				was_output = print_bond_team_bridge_info (device, nmc, nmc_fields_dev_show_sections[13].name, section_fld);
+				was_output = print_bond_bridge_info (device, nmc, nmc_fields_dev_show_sections[13].name, section_fld);
 		}
 
 		/* VLAN-specific information */

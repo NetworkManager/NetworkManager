@@ -39,6 +39,7 @@ typedef struct {
 	char *hw_address;
 	gboolean carrier;
 	GPtrArray *slaves;
+	char *config;
 } NMDeviceTeamPrivate;
 
 enum {
@@ -46,6 +47,7 @@ enum {
 	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_SLAVES,
+	PROP_CONFIG,
 
 	LAST_PROP
 };
@@ -101,6 +103,25 @@ nm_device_team_get_slaves (NMDeviceTeam *device)
 	return NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves;
 }
 
+/**
+ * nm_device_team_get_config:
+ * @device: a #NMDeviceTeam
+ *
+ * Gets the current JSON configuration of the #NMDeviceTeam
+ *
+ * Returns: the current configuration. This is the internal string used by the
+ * device, and must not be modified.
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_device_team_get_config (NMDeviceTeam *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), NULL);
+
+	return NM_DEVICE_TEAM_GET_PRIVATE (device)->config;
+}
+
 static const char *
 get_hw_address (NMDevice *device)
 {
@@ -150,6 +171,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_TEAM_HW_ADDRESS, &priv->hw_address },
 		{ NM_DEVICE_TEAM_CARRIER,    &priv->carrier },
 		{ NM_DEVICE_TEAM_SLAVES,     &priv->slaves, NULL, NM_TYPE_DEVICE },
+		{ NM_DEVICE_TEAM_CONFIG,     &priv->config },
 		{ NULL },
 	};
 
@@ -176,6 +198,7 @@ finalize (GObject *object)
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
 
 	g_free (priv->hw_address);
+	g_free (priv->config);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->finalize (object);
 }
@@ -197,6 +220,9 @@ get_property (GObject *object,
 		break;
 	case PROP_SLAVES:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_team_get_slaves (device)));
+		break;
+	case PROP_CONFIG:
+		g_value_set_string (value, nm_device_team_get_config (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -265,4 +291,18 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceTeam:config:
+	 *
+	 * The current JSON configuration of the device.
+	 *
+	 * Since: 1.4
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CONFIG,
+		 g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 }

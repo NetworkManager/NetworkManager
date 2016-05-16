@@ -45,6 +45,10 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
 
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceTeam,
+	PROP_CONFIG,
+);
+
 typedef struct {
 	struct teamdctl *tdc;
 	GPid teamd_pid;
@@ -52,6 +56,7 @@ typedef struct {
 	guint teamd_timeout;
 	guint teamd_dbus_watch;
 	gboolean teamd_dbus_name_owned;
+	char *config;
 } NMDeviceTeamPrivate;
 
 static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
@@ -149,6 +154,27 @@ ensure_teamd_connection (NMDevice *device)
 }
 
 static void
+teamd_read_config (NMDevice *device)
+{
+	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+	char *config = NULL;
+	int err;
+
+	if (priv->tdc) {
+		err = teamdctl_config_get_raw_direct (priv->tdc, &config);
+		if (err)
+			_LOGI (LOGD_TEAM, "failed to read teamd config (err=%d)", err);
+	}
+
+	if (!nm_streq0 (config, priv->config)) {
+		g_free (priv->config);
+		priv->config = g_strdup (config);
+		_notify (self, PROP_CONFIG);
+	}
+}
+
+static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
@@ -159,18 +185,12 @@ update_connection (NMDevice *device, NMConnection *connection)
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_team);
 	}
-	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
-	if (ensure_teamd_connection (device)) {
-		const char *config = NULL;
-		int err;
+	/* Read the configuration only if not already set */
+	if (!priv->config && ensure_teamd_connection (device))
+		teamd_read_config (device);
 
-		err = teamdctl_config_get_raw_direct (priv->tdc, (char **)&config);
-		if (err == 0)
-			g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, config, NULL);
-		else
-			_LOGE (LOGD_TEAM, "failed to read teamd config (err=%d)", err);
-	}
+	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, priv->config, NULL);
 }
 
 /******************************************************************/
@@ -279,6 +299,11 @@ teamd_timeout_cb (gpointer user_data)
 
 		g_warn_if_fail (nm_device_is_activating (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+	} else {
+		/* Read again the configuration after the timeout since it might
+		 * have changed.
+		 */
+		teamd_read_config (device);
 	}
 
 	return G_SOURCE_REMOVE;
@@ -331,9 +356,10 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	 */
 	success = ensure_teamd_connection (device);
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_PREPARE) {
-		if (success)
+		if (success) {
+			teamd_read_config (device);
 			nm_device_activate_schedule_stage2_device_config (device);
-		else if (!nm_device_uses_assumed_connection (device))
+		} else if (!nm_device_uses_assumed_connection (device))
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
 }
@@ -696,6 +722,23 @@ nm_device_team_new (const char *iface)
 }
 
 static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDeviceTeam *self = NM_DEVICE_TEAM (object);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_CONFIG:
+		g_value_set_string (value, priv->config);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_device_team_init (NMDeviceTeam * self)
 {
 }
@@ -733,6 +776,7 @@ dispose (GObject *object)
 	}
 
 	teamd_cleanup (device, TRUE);
+	g_clear_pointer (&priv->config, g_free);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
 }
@@ -749,6 +793,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
+	object_class->get_property = get_property;
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
@@ -764,6 +809,14 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	parent_class->deactivate = deactivate;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
+
+	obj_properties[PROP_CONFIG] =
+	    g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_TEAM_SKELETON,

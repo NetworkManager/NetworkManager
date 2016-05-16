@@ -26,6 +26,13 @@
     <property name="Slaves" type="ao" access="read"/>
 
     <!--
+        Config:
+
+        The JSON configuration currently applied on the device.
+     -->
+    <property name="Config" type="s" access="read" />
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
     -->
