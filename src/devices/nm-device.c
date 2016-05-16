@@ -72,7 +72,18 @@ _LOG_DECLARE_SELF (NMDevice);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_DEVICE_GET_PRIVATE(o) ((o)->priv)
+#define NM_DEVICE_GET_PRIVATE(o) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMDevice *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_DEVICE (_self)); \
+		_self->priv; \
+	})
 
 enum {
 	STATE_CHANGED,
