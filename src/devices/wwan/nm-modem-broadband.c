@@ -1106,6 +1106,7 @@ disconnect (NMModem *modem,
 
 	connect_context_clear (self);
 	ctx = g_slice_new (DisconnectContext);
+	ctx->cancellable = NULL;
 	ctx->self = g_object_ref (self);
 	ctx->result = g_simple_async_result_new (G_OBJECT (self),
 	                                         callback,
