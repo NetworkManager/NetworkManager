@@ -3782,7 +3782,7 @@ make_wired_setting (shvarFile *ifcfg,
 	if (value) {
 		if (get_int (value, &mtu)) {
 			if (mtu >= 0 && mtu < 65536)
-				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu, NULL);
+				g_object_set (s_wired, NM_SETTING_WIRED_MTU, (guint) mtu, NULL);
 		} else {
 			/* Shouldn't be fatal... */
 			PARSE_WARNING ("invalid MTU '%s'", value);
@@ -4032,7 +4032,7 @@ make_infiniband_setting (shvarFile *ifcfg,
 	if (value) {
 		if (get_int (value, &mtu)) {
 			if (mtu >= 0 && mtu < 65536)
-				g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu, NULL);
+				g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, (guint) mtu, NULL);
 		} else {
 			/* Shouldn't be fatal... */
 			PARSE_WARNING ("invalid MTU '%s'", value);
