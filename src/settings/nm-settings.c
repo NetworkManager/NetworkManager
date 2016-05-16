@@ -2130,21 +2130,40 @@ nm_settings_sort_connections (gconstpointer a, gconstpointer b)
 	return 0;
 }
 
-static GSList *
-get_best_connections (NMConnectionProvider *provider,
-                      guint max_requested,
-                      const char *ctype1,
-                      const char *ctype2,
-                      NMConnectionFilterFunc func,
-                      gpointer func_data)
+/**
+ * nm_settings_get_best_connections:
+ * @self: the #NMSetting
+ * @max_requested: if non-zero, the maximum number of connections to return
+ * @ctype1: an #NMSetting base type (eg NM_SETTING_WIRELESS_SETTING_NAME) to
+ *   filter connections against
+ * @ctype2: a second #NMSetting base type (eg NM_SETTING_WIRELESS_SETTING_NAME)
+ *   to filter connections against
+ * @func: caller-supplied function for filtering connections
+ * @func_data: caller-supplied data passed to @func
+ *
+ * Returns: a #GSList of #NMConnection objects in sorted order representing the
+ *   "best" or highest-priority connections filtered by @ctype1 and/or @ctype2,
+ *   and/or @func.  Caller is responsible for freeing the returned #GSList, but
+ *   the contained values do not need to be unreffed.
+ */
+GSList *
+nm_settings_get_best_connections (NMSettings *self,
+                                  guint max_requested,
+                                  const char *ctype1,
+                                  const char *ctype2,
+                                  NMConnectionFilterFunc func,
+                                  gpointer func_data)
 {
-	NMSettings *self = NM_SETTINGS (provider);
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMSettingsPrivate *priv;
 	GSList *sorted = NULL;
 	GHashTableIter iter;
 	NMSettingsConnection *connection;
 	guint added = 0;
 	guint64 oldest = 0;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
@@ -2154,7 +2173,7 @@ get_best_connections (NMConnectionProvider *provider,
 			continue;
 		if (ctype2 && !nm_connection_is_type (NM_CONNECTION (connection), ctype2))
 			continue;
-		if (func && !func (provider, NM_CONNECTION (connection), func_data))
+		if (func && !func (self, NM_CONNECTION (connection), func_data))
 			continue;
 
 		/* Don't bother with a connection that's older than the oldest one in the list */
@@ -2370,10 +2389,9 @@ nm_settings_start (NMSettings *self, GError **error)
 static void
 connection_provider_iface_init (NMConnectionProviderInterface *cp_iface)
 {
-    cp_iface->get_best_connections = get_best_connections;
-    cp_iface->get_connections = get_connections;
-    cp_iface->add_connection = _nm_connection_provider_add_connection;
-    cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
+	cp_iface->get_connections = get_connections;
+	cp_iface->add_connection = _nm_connection_provider_add_connection;
+	cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
 	cp_iface->get_unmanaged_specs = cp_get_unmanaged_specs;
 }
 

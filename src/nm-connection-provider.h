@@ -28,30 +28,10 @@
 #define NM_CP_SIGNAL_CONNECTION_REMOVED      "cp-connection-removed"
 
 
-/**
- * NMConnectionFilterFunc:
- * @provider: The provider requesting the filtering
- * @connection: the connection to be filtered
- * @func_data: the caller-provided data pointer
- *
- * Returns: %TRUE to allow the connection, %FALSE to ignore it
- */
-typedef gboolean (*NMConnectionFilterFunc) (NMConnectionProvider *provider,
-                                            NMConnection *connection,
-                                            gpointer func_data);
-
-
 typedef struct {
 	GTypeInterface g_iface;
 
 	/* Methods */
-	GSList * (*get_best_connections) (NMConnectionProvider *self,
-	                                  guint max_requested,
-	                                  const char *ctype1,
-	                                  const char *ctype2,
-	                                  NMConnectionFilterFunc func,
-	                                  gpointer func_data);
-
 	const GSList * (*get_connections) (NMConnectionProvider *self);
 
 	NMConnection * (*add_connection) (NMConnectionProvider *self,
@@ -73,29 +53,6 @@ GType nm_connection_provider_get_type (void);
  * Returns: the global #NMConnectionProvider
  */
 NMConnectionProvider *nm_connection_provider_get (void);
-
-/**
- * nm_connection_provider_get_best_connections:
- * @self: the #NMConnectionProvider
- * @max_requested: if non-zero, the maximum number of connections to return
- * @ctype1: an #NMSetting base type (eg NM_SETTING_WIRELESS_SETTING_NAME) to
- *   filter connections against
- * @ctype2: a second #NMSetting base type (eg NM_SETTING_WIRELESS_SETTING_NAME)
- *   to filter connections against
- * @func: caller-supplied function for filtering connections
- * @func_data: caller-supplied data passed to @func
- *
- * Returns: a #GSList of #NMConnection objects in sorted order representing the
- *   "best" or highest-priority connections filtered by @ctype1 and/or @ctype2,
- *   and/or @func.  Caller is responsible for freeing the returned #GSList, but
- *   the contained values do not need to be unreffed.
- */
-GSList *nm_connection_provider_get_best_connections (NMConnectionProvider *self,
-                                                     guint max_requested,
-                                                     const char *ctype1,
-                                                     const char *ctype2,
-                                                     NMConnectionFilterFunc func,
-                                                     gpointer func_data);
 
 /**
  * nm_connection_provider_get_connections:

@@ -47,7 +47,6 @@
 #include "nm-auth-utils.h"
 #include "nm-settings-connection.h"
 #include "nm-settings.h"
-#include "nm-connection-provider.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
@@ -1199,7 +1198,7 @@ check_scanning_allowed (NMDeviceWifi *self)
 }
 
 static gboolean
-hidden_filter_func (NMConnectionProvider *provider,
+hidden_filter_func (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
@@ -1226,12 +1225,12 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	if (G_UNLIKELY (nullssid == NULL))
 		nullssid = g_byte_array_new ();
 
-	connections = nm_connection_provider_get_best_connections ((NMConnectionProvider *) nm_device_get_settings ((NMDevice *) self),
-	                                                           max_scan_ssids - 1,
-	                                                           NM_SETTING_WIRELESS_SETTING_NAME,
-	                                                           NULL,
-	                                                           hidden_filter_func,
-	                                                           NULL);
+	connections = nm_settings_get_best_connections (nm_device_get_settings ((NMDevice *) self),
+	                                                max_scan_ssids - 1,
+	                                                NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                NULL,
+	                                                hidden_filter_func,
+	                                                NULL);
 	if (connections && connections->data) {
 		ssids = g_ptr_array_new_full (max_scan_ssids - 1, (GDestroyNotify) g_byte_array_unref);
 		g_ptr_array_add (ssids, g_byte_array_ref (nullssid));  /* Add wildcard SSID */

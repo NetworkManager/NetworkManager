@@ -21,21 +21,6 @@
 
 G_DEFINE_INTERFACE (NMConnectionProvider, nm_connection_provider, G_TYPE_OBJECT)
 
-GSList *
-nm_connection_provider_get_best_connections (NMConnectionProvider *self,
-                                             guint max_requested,
-                                             const char *ctype1,
-                                             const char *ctype2,
-                                             NMConnectionFilterFunc func,
-                                             gpointer func_data)
-{
-	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
-
-	if (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_best_connections)
-		return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_best_connections (self, max_requested, ctype1, ctype2, func, func_data);
-	return NULL;
-}
-
 const GSList *
 nm_connection_provider_get_connections (NMConnectionProvider *self)
 {

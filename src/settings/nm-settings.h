@@ -49,6 +49,18 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
 #define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
 
+/**
+ * NMConnectionFilterFunc:
+ * @settings: The #NMSettings requesting the filtering
+ * @connection: the connection to be filtered
+ * @func_data: the caller-provided data pointer
+ *
+ * Returns: %TRUE to allow the connection, %FALSE to ignore it
+ */
+typedef gboolean (*NMConnectionFilterFunc) (NMSettings *settings,
+                                            NMConnection *connection,
+                                            gpointer func_data);
+
 struct _NMSettings {
 	NMExportedObject parent_instance;
 };
@@ -92,6 +104,13 @@ void nm_settings_add_connection_dbus (NMSettings *self,
 NMSettingsConnection *const* nm_settings_get_connections (NMSettings *settings, guint *out_len);
 
 GSList *nm_settings_get_connections_sorted (NMSettings *settings);
+
+GSList *nm_settings_get_best_connections (NMSettings *self,
+                                          guint max_requested,
+                                          const char *ctype1,
+                                          const char *ctype2,
+                                          NMConnectionFilterFunc func,
+                                          gpointer func_data);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,
