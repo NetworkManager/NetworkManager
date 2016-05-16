@@ -457,11 +457,8 @@ nmp_utils_ip_config_source_coerce_to_rtprot (NMIPConfigSource source)
 	if (source <= NM_IP_CONFIG_SOURCE_UNKNOWN)
 		return RTPROT_UNSPEC;
 
-	if (source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST) {
-		nm_assert (NM_IS_IP_CONFIG_SOURCE_RTPROT (source));
+	if (source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST)
 		return source - 1;
-	} else
-		nm_assert (!NM_IS_IP_CONFIG_SOURCE_RTPROT (source));
 
 	switch (source) {
 	case NM_IP_CONFIG_SOURCE_KERNEL:
