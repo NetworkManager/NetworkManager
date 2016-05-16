@@ -21,10 +21,9 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-#include <nm-connection.h>
-#include "nm-default.h"
+#include "nm-connection.h"
+
 #include "shvar.h"
-#include "common.h"
 
 #define NM_IFCFG_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
 #define NM_IFCFG_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"

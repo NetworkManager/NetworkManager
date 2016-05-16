@@ -42,7 +42,6 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
-#include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -51,7 +50,6 @@
 #include "shvar.h"
 #include "reader.h"
 #include "utils.h"
-#include "crypto.h"
 
 /*****************************************************************************/
 

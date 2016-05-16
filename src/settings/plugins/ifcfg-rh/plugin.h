@@ -24,8 +24,6 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-exported-object.h"
-
 #define SETTINGS_TYPE_PLUGIN_IFCFG            (settings_plugin_ifcfg_get_type ())
 #define SETTINGS_PLUGIN_IFCFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfg))
 #define SETTINGS_PLUGIN_IFCFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgClass))
@@ -46,5 +44,5 @@ struct _SettingsPluginIfcfgClass {
 
 GType settings_plugin_ifcfg_get_type (void);
 
-#endif	/* _PLUGIN_H_ */
+#endif /* _PLUGIN_H_ */
 

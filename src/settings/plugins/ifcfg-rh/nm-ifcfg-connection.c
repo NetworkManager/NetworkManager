@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "nm-ifcfg-connection.h"
+
 #include <string.h>
 
 #include <glib/gstdio.h>
@@ -37,7 +39,6 @@
 
 #include "common.h"
 #include "nm-config.h"
-#include "nm-ifcfg-connection.h"
 #include "reader.h"
 #include "writer.h"
 #include "nm-inotify-helper.h"
