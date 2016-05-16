@@ -59,7 +59,21 @@
 
 #include "reader.h"
 
-#define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN      LOGD_SETTINGS
+#define _NMLOG_PREFIX_NAME "ifcfg-rh"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), (_NMLOG_DOMAIN), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+#define PARSE_WARNING(...) _LOGW ("%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), "    " _NM_UTILS_MACRO_REST(__VA_ARGS__))
+
+/*****************************************************************************/
 
 static gboolean
 get_uint (const char *str, guint32 *value)
