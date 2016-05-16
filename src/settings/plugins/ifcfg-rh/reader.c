@@ -4641,7 +4641,7 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "VLAN_ID", FALSE);
 	if (value) {
-		vlan_id = _nm_utils_ascii_str_to_int64 (value, 10, 0, 4096, -1);
+		vlan_id = _nm_utils_ascii_str_to_int64 (value, 10, 0, 4095, -1);
 		if (vlan_id == -1) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid VLAN_ID '%s'", value);
