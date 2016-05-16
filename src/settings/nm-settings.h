@@ -61,6 +61,9 @@ typedef void (*NMSettingsSetHostnameCb) (const char *name, gboolean result, gpoi
 
 GType nm_settings_get_type (void);
 
+NMSettings *nm_settings_get (void);
+#define NM_SETTINGS_GET (nm_settings_get ())
+
 NMSettings *nm_settings_new (void);
 gboolean nm_settings_start (NMSettings *self, GError **error);
 

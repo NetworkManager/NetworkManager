@@ -5186,6 +5186,14 @@ nm_connection_provider_get (void)
 	return p;
 }
 
+NMSettings *
+nm_settings_get (void)
+{
+	g_return_val_if_fail (singleton_instance, NULL);
+
+	return NM_MANAGER_GET_PRIVATE (singleton_instance)->settings;
+}
+
 NMManager *
 nm_manager_setup (void)
 {
