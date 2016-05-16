@@ -62,18 +62,6 @@
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 
 static gboolean
-get_int (const char *str, int *value)
-{
-	gint64 tmp;
-
-	tmp = _nm_utils_ascii_str_to_int64 (str, 0, G_MININT, G_MAXINT, 0);
-	if (tmp == 0 && errno)
-		return FALSE;
-	*value = (int) tmp;
-	return TRUE;
-}
-
-static gboolean
 get_uint (const char *str, guint32 *value)
 {
 	gint64 tmp;
@@ -1693,10 +1681,9 @@ read_dcb_app (shvarFile *ifcfg,
 	tmp = g_strdup_printf ("DCB_APP_%s_PRIORITY", app);
 	val = svGetValue (ifcfg, tmp, FALSE);
 	if (val) {
-		success = get_int (val, &priority);
-		if (success)
-			success = (priority >= 0 && priority <= 7);
-		if (!success) {
+		priority = _nm_utils_ascii_str_to_int64 (val, 0, 0, 7, -1);
+		if (priority < 0) {
+			success = FALSE;
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid %s value '%s' (expected 0 - 7)",
 			             tmp, val);
@@ -1836,7 +1823,6 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	char *val;
 	gboolean success = FALSE;
 	char **split = NULL, **iter;
-	int tmp;
 	guint i, sum = 0;
 
 	val = svGetValue (ifcfg, prop, FALSE);
@@ -1859,7 +1845,10 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	}
 
 	for (iter = split, i = 0; iter && *iter; iter++, i++) {
-		if (!get_int (*iter, &tmp) || tmp < 0 || tmp > 100) {
+		int tmp;
+
+		tmp = _nm_utils_ascii_str_to_int64 (*iter, 0, 0, 100, -1);
+		if (tmp < 0) {
 			PARSE_WARNING ("invalid %s percentage value '%s'", prop, *iter);
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			                     "invalid percent element");
@@ -2181,7 +2170,7 @@ make_wep_setting (shvarFile *ifcfg,
 	char *value;
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
-	gboolean has_default_key = FALSE, success;
+	gboolean has_default_key = FALSE;
 	NMSettingSecretFlags key_flags;
 
 	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
@@ -2189,17 +2178,16 @@ make_wep_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "DEFAULTKEY", FALSE);
 	if (value) {
-		success = get_int (value, &default_key_idx);
-		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
-			has_default_key = TRUE;
-			default_key_idx--;  /* convert to [0...3] */
-			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
-		} else {
+		default_key_idx = _nm_utils_ascii_str_to_int64 (value, 0, 1, 4, 0);
+		if (default_key_idx == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid default WEP key '%s'", value);
 			g_free (value);
 			goto error;
 		}
+		has_default_key = TRUE;
+		default_key_idx--;  /* convert to [0...3] */
+		g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, (guint) default_key_idx, NULL);
 		g_free (value);
 	}
 
