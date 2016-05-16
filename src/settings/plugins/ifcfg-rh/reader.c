@@ -3773,20 +3773,19 @@ make_wired_setting (shvarFile *ifcfg,
 {
 	NMSettingWired *s_wired;
 	char *value = NULL;
-	int mtu;
 	char *nettype;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
 	value = svGetValue (ifcfg, "MTU", FALSE);
 	if (value) {
-		if (get_int (value, &mtu)) {
-			if (mtu >= 0 && mtu < 65536)
-				g_object_set (s_wired, NM_SETTING_WIRED_MTU, (guint) mtu, NULL);
-		} else {
-			/* Shouldn't be fatal... */
+		int mtu;
+
+		mtu = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
+		if (mtu >= 0)
+			g_object_set (s_wired, NM_SETTING_WIRED_MTU, (guint) mtu, NULL);
+		else
 			PARSE_WARNING ("invalid MTU '%s'", value);
-		}
 		g_free (value);
 	}
 
@@ -4024,19 +4023,18 @@ make_infiniband_setting (shvarFile *ifcfg,
 {
 	NMSettingInfiniband *s_infiniband;
 	char *value = NULL;
-	int mtu;
 
 	s_infiniband = NM_SETTING_INFINIBAND (nm_setting_infiniband_new ());
 
 	value = svGetValue (ifcfg, "MTU", FALSE);
 	if (value) {
-		if (get_int (value, &mtu)) {
-			if (mtu >= 0 && mtu < 65536)
-				g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, (guint) mtu, NULL);
-		} else {
-			/* Shouldn't be fatal... */
+		int mtu;
+
+		mtu = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
+		if (mtu >= 0)
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, (guint) mtu, NULL);
+		else
 			PARSE_WARNING ("invalid MTU '%s'", value);
-		}
 		g_free (value);
 	}
 
