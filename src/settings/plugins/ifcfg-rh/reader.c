@@ -64,12 +64,10 @@
 static gboolean
 get_int (const char *str, int *value)
 {
-	char *e;
-	long int tmp;
+	gint64 tmp;
 
-	errno = 0;
-	tmp = strtol (str, &e, 0);
-	if (errno || *e != '\0' || tmp > G_MAXINT || tmp < G_MININT)
+	tmp = _nm_utils_ascii_str_to_int64 (str, 0, G_MININT, G_MAXINT, 0);
+	if (tmp == 0 && errno)
 		return FALSE;
 	*value = (int) tmp;
 	return TRUE;
@@ -78,14 +76,12 @@ get_int (const char *str, int *value)
 static gboolean
 get_uint (const char *str, guint32 *value)
 {
-	char *e;
-	long unsigned int tmp;
+	gint64 tmp;
 
-	errno = 0;
-	tmp = strtoul (str, &e, 0);
-	if (errno || *e != '\0')
+	tmp = _nm_utils_ascii_str_to_int64 (str, 0, 0, G_MAXUINT32, -1);
+	if (tmp == -1)
 		return FALSE;
-	*value = (guint32) tmp;
+	*value = tmp;
 	return TRUE;
 }
 
@@ -2201,10 +2197,10 @@ make_wep_setting (shvarFile *ifcfg,
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid default WEP key '%s'", value);
-	 		g_free (value);
+			g_free (value);
 			goto error;
 		}
- 		g_free (value);
+		g_free (value);
 	}
 
 	/* Read WEP key flags */
