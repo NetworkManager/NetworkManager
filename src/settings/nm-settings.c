@@ -25,6 +25,8 @@
 
 #include "nm-default.h"
 
+#include "nm-settings.h"
+
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -59,7 +61,6 @@
 #include "nm-core-internal.h"
 
 #include "nm-device-ethernet.h"
-#include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
 #include "nm-bus-manager.h"
@@ -68,7 +69,6 @@
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
-#include "nm-connection-provider.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
 #include "NetworkManagerUtils.h"
@@ -132,15 +132,11 @@ static void claim_connection (NMSettings *self,
 static void unmanaged_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 static void unrecognized_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 
-static void connection_provider_iface_init (NMConnectionProviderInterface *cp_iface);
-
 static void connection_ready_changed (NMSettingsConnection *conn,
                                       GParamSpec *pspec,
                                       gpointer user_data);
 
-G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_iface_init))
-
+G_DEFINE_TYPE (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT);
 
 typedef struct {
 	NMAgentManager *agent_mgr;
@@ -155,7 +151,6 @@ typedef struct {
 	NMSettingsConnection **connections_cached_list;
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
-	GSList *get_connections_cache;
 
 	gboolean started;
 	gboolean startup_complete;
@@ -942,7 +937,6 @@ connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer
 	               0,
 	               connection,
 	               by_user);
-	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_UPDATED, connection);
 }
 
 static void
@@ -988,7 +982,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
 
 	/* Re-emit for listeners like NMPolicy */
-	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 	_notify (self, PROP_CONNECTIONS);
 	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (connection)))
 		nm_exported_object_unexport (NM_EXPORTED_OBJECT (connection));
@@ -1137,7 +1130,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	if (priv->connections_loaded) {
 		/* Internal added signal */
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
-		g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_ADDED, connection);
 		_notify (self, PROP_CONNECTIONS);
 
 		/* Exported D-Bus signal */
@@ -1211,16 +1203,6 @@ nm_settings_add_connection (NMSettings *self,
 	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 	                     "No plugin supported adding this connection");
 	return NULL;
-}
-
-static NMConnection *
-_nm_connection_provider_add_connection (NMConnectionProvider *provider,
-                                        NMConnection *connection,
-                                        gboolean save_to_disk,
-                                        GError **error)
-{
-	g_assert (NM_IS_CONNECTION_PROVIDER (provider) && NM_IS_SETTINGS (provider));
-	return NM_CONNECTION (nm_settings_add_connection (NM_SETTINGS (provider), connection, save_to_disk, error));
 }
 
 static gboolean
@@ -2199,33 +2181,6 @@ nm_settings_get_best_connections (NMSettings *self,
 	return g_slist_reverse (sorted);
 }
 
-static const GSList *
-get_connections (NMConnectionProvider *provider)
-{
-	GSList *list = NULL;
-	NMSettings *self = NM_SETTINGS (provider);
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	list = _nm_utils_hash_values_to_slist (priv->connections);
-
-	/* Cache the list every call so we can keep it 'const' for callers */
-	g_slist_free (priv->get_connections_cache);
-	priv->get_connections_cache = list;
-	return list;
-}
-
-static NMConnection *
-cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
-{
-	return NM_CONNECTION (nm_settings_get_connection_by_uuid (NM_SETTINGS (provider), uuid));
-}
-
-static const GSList *
-cp_get_unmanaged_specs (NMConnectionProvider *provider)
-{
-	return nm_settings_get_unmanaged_specs (NM_SETTINGS (provider));
-}
-
 /***************************************************************/
 
 gboolean
@@ -2387,15 +2342,6 @@ nm_settings_start (NMSettings *self, GError **error)
 }
 
 static void
-connection_provider_iface_init (NMConnectionProviderInterface *cp_iface)
-{
-	cp_iface->get_connections = get_connections;
-	cp_iface->add_connection = _nm_connection_provider_add_connection;
-	cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
-	cp_iface->get_unmanaged_specs = cp_get_unmanaged_specs;
-}
-
-static void
 nm_settings_init (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
@@ -2460,7 +2406,6 @@ finalize (GObject *object)
 
 	g_hash_table_destroy (priv->connections);
 	g_clear_pointer (&priv->connections_cached_list, g_free);
-	g_slist_free (priv->get_connections_cache);
 
 	g_slist_free_full (priv->unmanaged_specs, g_free);
 	g_slist_free_full (priv->unrecognized_specs, g_free);

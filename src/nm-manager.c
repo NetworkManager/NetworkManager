@@ -21,13 +21,14 @@
 
 #include "nm-default.h"
 
+#include "nm-manager.h"
+
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "nm-manager.h"
 #include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
@@ -45,7 +46,6 @@
 #include "nm-sleep-monitor.h"
 #include "nm-connectivity.h"
 #include "nm-policy.h"
-#include "nm-connection-provider.h"
 #include "nm-session-monitor.h"
 #include "nm-activation-request.h"
 #include "nm-core-internal.h"
@@ -5172,18 +5172,6 @@ nm_manager_get (void)
 {
 	g_return_val_if_fail (singleton_instance, NULL);
 	return singleton_instance;
-}
-
-NMConnectionProvider *
-nm_connection_provider_get (void)
-{
-	NMConnectionProvider *p;
-
-	g_return_val_if_fail (singleton_instance, NULL);
-
-	p = NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton_instance)->settings);
-	g_return_val_if_fail (p, NULL);
-	return p;
 }
 
 NMSettings *
