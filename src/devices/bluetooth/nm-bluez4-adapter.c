@@ -20,13 +20,15 @@
 
 #include "nm-default.h"
 
+#include "nm-bluez4-adapter.h"
+
 #include <string.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-bluez4-adapter.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 #include "nm-core-internal.h"
+#include "nm-settings.h"
 
 G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)
 
@@ -41,7 +43,7 @@ typedef struct {
 	GHashTable *devices;
 
 	/* Cached for devices */
-	NMConnectionProvider *provider;
+	NMSettings *settings;
 } NMBluez4AdapterPrivate;
 
 
@@ -160,7 +162,7 @@ device_created (GDBusProxy *proxy, const char *path, gpointer user_data)
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	device = nm_bluez_device_new (path, priv->address, priv->provider, 4);
+	device = nm_bluez_device_new (path, priv->address, priv->settings, 4);
 	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
@@ -234,17 +236,19 @@ query_properties (NMBluez4Adapter *self)
 /***********************************************************/
 
 NMBluez4Adapter *
-nm_bluez4_adapter_new (const char *path, NMConnectionProvider *provider)
+nm_bluez4_adapter_new (const char *path, NMSettings *settings)
 {
 	NMBluez4Adapter *self;
 	NMBluez4AdapterPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (settings), NULL);
 
 	self = (NMBluez4Adapter *) g_object_new (NM_TYPE_BLUEZ4_ADAPTER,
 	                                         NM_BLUEZ4_ADAPTER_PATH, path,
 	                                         NULL);
 	priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
-	priv->provider = provider;
+	priv->settings = g_object_ref (settings);
 
 	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
@@ -301,6 +305,8 @@ finalize (GObject *object)
 	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_bluez4_adapter_parent_class)->finalize (object);
+
+	g_object_unref (priv->settings);
 }
 
 static void

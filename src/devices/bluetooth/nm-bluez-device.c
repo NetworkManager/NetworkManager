@@ -28,6 +28,7 @@
 #include "nm-bt-error.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
+#include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "NetworkManagerUtils.h"
 
@@ -67,7 +68,7 @@ typedef struct {
 	NMBluez5DunContext *b5_dun_context;
 #endif
 
-	NMConnectionProvider *provider;
+	NMSettings *settings;
 	GSList *connections;
 
 	NMConnection *pan_connection;
@@ -96,7 +97,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 
-static void cp_connection_added (NMConnectionProvider *provider,
+static void cp_connection_added (NMSettings *settings,
                                  NMConnection *connection, NMBluezDevice *self);
 static gboolean connection_compatible (NMBluezDevice *self, NMConnection *connection);
 
@@ -233,9 +234,9 @@ pan_connection_check_create (NMBluezDevice *self)
 	/* Adding a new connection raises a signal which eventually calls check_emit_usable (again)
 	 * which then already finds the suitable connection in priv->connections. This is confusing,
 	 * so block the signal. check_emit_usable will succeed after this function call returns. */
-	g_signal_handlers_block_by_func (priv->provider, cp_connection_added, self);
-	added = nm_connection_provider_add_connection (priv->provider, connection, FALSE, &error);
-	g_signal_handlers_unblock_by_func (priv->provider, cp_connection_added, self);
+	g_signal_handlers_block_by_func (priv->settings, cp_connection_added, self);
+	added = NM_CONNECTION (nm_settings_add_connection (priv->settings, connection, FALSE, &error));
+	g_signal_handlers_unblock_by_func (priv->settings, cp_connection_added, self);
 
 	if (added) {
 		g_assert (!g_slist_find (priv->connections, added));
@@ -367,7 +368,7 @@ _internal_track_connection (NMBluezDevice *self, NMConnection *connection, gbool
 }
 
 static void
-cp_connection_added (NMConnectionProvider *provider,
+cp_connection_added (NMSettings *settings,
                      NMConnection *connection,
                      NMBluezDevice *self)
 {
@@ -378,7 +379,7 @@ cp_connection_added (NMConnectionProvider *provider,
 }
 
 static void
-cp_connection_removed (NMConnectionProvider *provider,
+cp_connection_removed (NMSettings *settings,
                        NMConnection *connection,
                        NMBluezDevice *self)
 {
@@ -387,8 +388,9 @@ cp_connection_removed (NMConnectionProvider *provider,
 }
 
 static void
-cp_connection_updated (NMConnectionProvider *provider,
+cp_connection_updated (NMSettings *settings,
                        NMConnection *connection,
+                       gboolean by_user,
                        NMBluezDevice *self)
 {
 	if (_internal_track_connection (self, connection,
@@ -400,12 +402,13 @@ static void
 load_connections (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	const GSList *connections, *iter;
+	NMSettingsConnection *const*connections;
+	guint i;
 	gboolean changed = FALSE;
 
-	connections = nm_connection_provider_get_connections (priv->provider);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = iter->data;
+	connections = nm_settings_get_connections (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMConnection *connection = (NMConnection *) connections[i];
 
 		if (connection_compatible (self, connection))
 			changed |= _internal_track_connection (self, connection, TRUE);
@@ -1029,7 +1032,7 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 NMBluezDevice *
 nm_bluez_device_new (const char *path,
                      const char *adapter_address,
-                     NMConnectionProvider *provider,
+                     NMSettings *settings,
                      int bluez_version)
 {
 	NMBluezDevice *self;
@@ -1037,7 +1040,7 @@ nm_bluez_device_new (const char *path,
 	const char *interface_name = NULL;
 
 	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (provider), NULL);
+	g_return_val_if_fail (NM_IS_SETTINGS (settings), NULL);
 	g_return_val_if_fail (bluez_version == 4 || bluez_version == 5, NULL);
 
 	self = (NMBluezDevice *) g_object_new (NM_TYPE_BLUEZ_DEVICE,
@@ -1051,14 +1054,14 @@ nm_bluez_device_new (const char *path,
 	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
 	priv->bluez_version = bluez_version;
-	priv->provider = g_object_ref (provider);
+	priv->settings = g_object_ref (settings);
 	g_return_val_if_fail (bluez_version == 5 || (bluez_version == 4 && adapter_address), NULL);
 	if (adapter_address)
 		set_adapter_address (self, adapter_address);
 
-	g_signal_connect (priv->provider, NM_CP_SIGNAL_CONNECTION_ADDED,   G_CALLBACK (cp_connection_added),   self);
-	g_signal_connect (priv->provider, NM_CP_SIGNAL_CONNECTION_REMOVED, G_CALLBACK (cp_connection_removed), self);
-	g_signal_connect (priv->provider, NM_CP_SIGNAL_CONNECTION_UPDATED, G_CALLBACK (cp_connection_updated), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,   G_CALLBACK (cp_connection_added),   self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, G_CALLBACK (cp_connection_removed), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, G_CALLBACK (cp_connection_updated), self);
 
 	g_bus_get (G_BUS_TYPE_SYSTEM,
 	           NULL,
@@ -1116,10 +1119,10 @@ dispose (GObject *object)
 	}
 #endif
 
-	if (priv->provider) {
-		g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
-		g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
-		g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_added, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_removed, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_updated, self);
 	}
 
 	g_slist_free_full (priv->connections, g_object_unref);
@@ -1137,7 +1140,7 @@ dispose (GObject *object)
 		g_object_unref (to_delete);
 	}
 
-	g_clear_object (&priv->provider);
+	g_clear_object (&priv->settings);
 }
 
 static void

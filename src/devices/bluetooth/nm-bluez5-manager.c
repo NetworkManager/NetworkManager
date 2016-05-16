@@ -22,19 +22,21 @@
 
 #include "nm-default.h"
 
+#include "nm-bluez5-manager.h"
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-bluez-manager.h"
-#include "nm-bluez5-manager.h"
-#include "nm-bluez-device.h"
-#include "nm-bluez-common.h"
-
 #include "nm-core-internal.h"
 
+#include "nm-bluez-manager.h"
+#include "nm-bluez-device.h"
+#include "nm-bluez-common.h"
+#include "nm-settings.h"
+
 typedef struct {
-	NMConnectionProvider *provider;
+	NMSettings *settings;
 
 	GDBusProxy *proxy;
 
@@ -140,7 +142,7 @@ device_added (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	device = nm_bluez_device_new (path, NULL, priv->provider, 5);
+	device = nm_bluez_device_new (path, NULL, priv->settings, 5);
 	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
@@ -309,12 +311,14 @@ bluez_cleanup (NMBluez5Manager *self, gboolean do_signal)
 /****************************************************************/
 
 NMBluez5Manager *
-nm_bluez5_manager_new (NMConnectionProvider *provider)
+nm_bluez5_manager_new (NMSettings *settings)
 {
 	NMBluez5Manager *instance = NULL;
 
+	g_return_val_if_fail (NM_IS_SETTINGS (settings), NULL);
+
 	instance = g_object_new (NM_TYPE_BLUEZ5_MANAGER, NULL);
-	NM_BLUEZ5_MANAGER_GET_PRIVATE (instance)->provider = provider;
+	NM_BLUEZ5_MANAGER_GET_PRIVATE (instance)->settings = g_object_ref (settings);
 	return instance;
 }
 
@@ -347,6 +351,8 @@ finalize (GObject *object)
 	g_hash_table_destroy (priv->devices);
 
 	G_OBJECT_CLASS (nm_bluez5_manager_parent_class)->finalize (object);
+
+	g_object_unref (priv->settings);
 }
 
 static void

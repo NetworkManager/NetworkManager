@@ -22,11 +22,6 @@
 #ifndef __NETWORKMANAGER_BLUEZ5_MANAGER_H__
 #define __NETWORKMANAGER_BLUEZ5_MANAGER_H__
 
-#include "nm-default.h"
-#include "nm-connection-provider.h"
-
-G_BEGIN_DECLS
-
 #define NM_TYPE_BLUEZ5_MANAGER            (nm_bluez5_manager_get_type ())
 #define NM_BLUEZ5_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ5_MANAGER, NMBluez5Manager))
 #define NM_BLUEZ5_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_BLUEZ5_MANAGER, NMBluez5ManagerClass))
@@ -51,7 +46,7 @@ typedef struct {
 
 GType nm_bluez5_manager_get_type (void);
 
-NMBluez5Manager *nm_bluez5_manager_new (NMConnectionProvider *provider);
+NMBluez5Manager *nm_bluez5_manager_new (NMSettings *settings);
 
 void nm_bluez5_manager_query_devices (NMBluez5Manager *manager);
 
