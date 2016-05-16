@@ -1978,7 +1978,7 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 	           && state == NM_DEVICE_STATE_FAILED) {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		g_print (_("Error: Connection activation failed."));
+		g_print (_("Error: Connection activation failed.\n"));
 		quit ();
 	} else if (active && ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
