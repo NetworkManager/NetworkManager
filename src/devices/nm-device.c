@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-device.h"
+
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,7 +36,6 @@
 #include <netlink/route/addr.h>
 #include <linux/if_addr.h>
 
-#include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
@@ -52,7 +53,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
-#include "nm-connection-provider.h"
+#include "nm-settings.h"
 #include "nm-auth-utils.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"
@@ -387,7 +388,8 @@ typedef struct _NMDevicePrivate {
 
 	NMMetered       metered;
 
-	NMConnectionProvider *con_provider;
+	NMSettings *settings;
+
 	NMLldpListener *lldp_listener;
 
 	guint check_delete_unrealized_id;
@@ -1653,7 +1655,7 @@ device_link_changed (NMDevice *self)
 		ip_ifname_changed = !priv->ip_iface;
 
 		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT))
-			nm_device_set_unmanaged_by_user_settings (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
+			nm_device_set_unmanaged_by_user_settings (self, nm_settings_get_unmanaged_specs (priv->settings));
 		else
 			update_unmanaged_specs = TRUE;
 
@@ -1731,7 +1733,7 @@ device_link_changed (NMDevice *self)
 	}
 
 	if (update_unmanaged_specs)
-		nm_device_set_unmanaged_by_user_settings (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
+		nm_device_set_unmanaged_by_user_settings (self, nm_settings_get_unmanaged_specs (priv->settings));
 
 	return G_SOURCE_REMOVE;
 }
@@ -8999,7 +9001,7 @@ capture_lease_config (NMDevice *self,
                       NMIP6Config **out_ip6_config)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const GSList *connections, *citer;
+	NMSettingsConnection *const*connections;
 	guint i;
 	gboolean dhcp_used = FALSE;
 
@@ -9032,9 +9034,9 @@ capture_lease_config (NMDevice *self,
 	if (!dhcp_used)
 		return;
 
-	connections = nm_connection_provider_get_connections (priv->con_provider);
-	for (citer = connections; citer; citer = citer->next) {
-		NMConnection *candidate = citer->data;
+	connections = nm_settings_get_connections (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMConnection *candidate = (NMConnection *) connections[i];
 		const char *method;
 
 		if (!nm_device_check_connection_compatible (self, candidate))
@@ -10082,50 +10084,45 @@ void
 nm_device_recheck_available_connections (NMDevice *self)
 {
 	NMDevicePrivate *priv;
-	const GSList *connections, *iter;
+	NMSettingsConnection *const*connections;
 	gboolean changed = FALSE;
 	GHashTableIter h_iter;
 	NMConnection *connection;
+	guint i;
+	gs_unref_hashtable GHashTable *prune_list = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE(self);
 
-	if (priv->con_provider) {
-		gs_unref_hashtable GHashTable *prune_list = NULL;
+	if (g_hash_table_size (priv->available_connections) > 0) {
+		prune_list = g_hash_table_new (g_direct_hash, g_direct_equal);
+		g_hash_table_iter_init (&h_iter, priv->available_connections);
+		while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL))
+			g_hash_table_add (prune_list, connection);
+	}
 
-		if (g_hash_table_size (priv->available_connections) > 0) {
-			prune_list = g_hash_table_new (g_direct_hash, g_direct_equal);
-			g_hash_table_iter_init (&h_iter, priv->available_connections);
-			while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL))
-				g_hash_table_add (prune_list, connection);
+	connections = nm_settings_get_connections (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		connection = (NMConnection *) connections[i];
+
+		if (nm_device_check_connection_available (self,
+		                                          connection,
+		                                          NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
+		                                          NULL)) {
+			if (available_connections_add (self, connection))
+				changed = TRUE;
+			if (prune_list)
+				g_hash_table_remove (prune_list, connection);
 		}
+	}
 
-		connections = nm_connection_provider_get_connections (priv->con_provider);
-		for (iter = connections; iter; iter = g_slist_next (iter)) {
-			connection = NM_CONNECTION (iter->data);
-
-			if (nm_device_check_connection_available (self,
-			                                          connection,
-			                                          NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
-			                                          NULL)) {
-				if (available_connections_add (self, connection))
-					changed = TRUE;
-				if (prune_list)
-					g_hash_table_remove (prune_list, connection);
-			}
+	if (prune_list) {
+		g_hash_table_iter_init (&h_iter, prune_list);
+		while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL)) {
+			if (available_connections_del (self, connection))
+				changed = TRUE;
 		}
-
-		if (prune_list) {
-			g_hash_table_iter_init (&h_iter, prune_list);
-			while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL)) {
-				if (available_connections_del (self, connection))
-					changed = TRUE;
-			}
-		}
-	} else {
-		if (available_connections_del_all (self))
-			changed = TRUE;
 	}
 
 	if (changed)
@@ -10186,10 +10183,9 @@ nm_device_get_best_connection (NMDevice *self,
 }
 
 static void
-cp_connection_added_or_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+cp_connection_added_or_updated (NMDevice *self, NMConnection *connection)
 {
 	gboolean changed;
-	NMDevice *self = user_data;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
@@ -10206,6 +10202,18 @@ cp_connection_added_or_updated (NMConnectionProvider *cp, NMConnection *connecti
 		_notify (self, PROP_AVAILABLE_CONNECTIONS);
 		available_connections_check_delete_unrealized (self);
 	}
+}
+
+static void
+cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+{
+	cp_connection_added_or_updated (user_data, connection);
+}
+
+static void
+cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gboolean by_user, gpointer user_data)
+{
+	cp_connection_added_or_updated (user_data, connection);
 }
 
 static void
@@ -11521,21 +11529,20 @@ constructed (GObject *object)
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
 
-	priv->con_provider = nm_connection_provider_get ();
-	g_assert (priv->con_provider);
-	g_signal_connect (priv->con_provider,
-	                  NM_CP_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (cp_connection_added_or_updated),
-	                  self);
+	priv->settings = g_object_ref (NM_SETTINGS_GET);
+	g_assert (priv->settings);
 
-	g_signal_connect (priv->con_provider,
-	                  NM_CP_SIGNAL_CONNECTION_REMOVED,
+	g_signal_connect (priv->settings,
+	                  NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
+	                  G_CALLBACK (cp_connection_added),
+	                  self);
+	g_signal_connect (priv->settings,
+	                  NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
+	                  G_CALLBACK (cp_connection_updated),
+	                  self);
+	g_signal_connect (priv->settings,
+	                  NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
 	                  G_CALLBACK (cp_connection_removed),
-	                  self);
-
-	g_signal_connect (priv->con_provider,
-	                  NM_CP_SIGNAL_CONNECTION_UPDATED,
-	                  G_CALLBACK (cp_connection_added_or_updated),
 	                  self);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
@@ -11584,10 +11591,10 @@ dispose (GObject *object)
 
 	link_disconnect_action_cancel (self);
 
-	if (priv->con_provider) {
-		g_signal_handlers_disconnect_by_func (priv->con_provider, cp_connection_added_or_updated, self);
-		g_signal_handlers_disconnect_by_func (priv->con_provider, cp_connection_removed, self);
-		priv->con_provider = NULL;
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_added, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_updated, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_removed, self);
 	}
 
 	available_connections_del_all (self);
@@ -11645,6 +11652,11 @@ finalize (GObject *object)
 	g_hash_table_unref (priv->available_connections);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
+
+	/* for testing, NMDeviceTest does not invoke NMDevice::constructed,
+	 * and thus @settings might be unset. */
+	if (priv->settings)
+		g_object_unref (priv->settings);
 }
 
 static void
