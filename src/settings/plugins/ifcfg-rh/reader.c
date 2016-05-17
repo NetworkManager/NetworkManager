@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "reader.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -57,35 +59,31 @@
 #include "shvar.h"
 #include "utils.h"
 
-#include "reader.h"
+/*****************************************************************************/
 
-#define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
+#define _NMLOG_DOMAIN      LOGD_SETTINGS
+#define _NMLOG_PREFIX_NAME "ifcfg-rh"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), (_NMLOG_DOMAIN), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
 
-static gboolean
-get_int (const char *str, int *value)
-{
-	char *e;
-	long int tmp;
+#define PARSE_WARNING(...) _LOGW ("%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), "    " _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
-	errno = 0;
-	tmp = strtol (str, &e, 0);
-	if (errno || *e != '\0' || tmp > G_MAXINT || tmp < G_MININT)
-		return FALSE;
-	*value = (int) tmp;
-	return TRUE;
-}
+/*****************************************************************************/
 
 static gboolean
 get_uint (const char *str, guint32 *value)
 {
-	char *e;
-	long unsigned int tmp;
+	gint64 tmp;
 
-	errno = 0;
-	tmp = strtoul (str, &e, 0);
-	if (errno || *e != '\0')
+	tmp = _nm_utils_ascii_str_to_int64 (str, 0, 0, G_MAXUINT32, -1);
+	if (tmp == -1)
 		return FALSE;
-	*value = (guint32) tmp;
+	*value = tmp;
 	return TRUE;
 }
 
@@ -242,15 +240,12 @@ make_connection_setting (const char *file,
 
 	value = svGetValue (ifcfg, "GATEWAY_PING_TIMEOUT", FALSE);
 	if (value) {
-		long int tmp;
-		guint32 timeout;
+		gint64 tmp;
 
-		errno = 0;
-		tmp = strtol (value, NULL, 10);
-		if (errno == 0 && tmp >= 0 && tmp < G_MAXINT32) {
-			timeout = (guint32) tmp;
-			g_object_set (s_con, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, timeout, NULL);
-		} else
+		tmp = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32 - 1, -1);
+		if (tmp >= 0)
+			g_object_set (s_con, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, (guint) tmp, NULL);
+		else
 			PARSE_WARNING ("invalid GATEWAY_PING_TIMEOUT time");
 		g_free (value);
 	}
@@ -541,7 +536,8 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	gint64 prefix_int, metric_int;
+	int prefix_int;
+	gint64 metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -609,9 +605,8 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 		g_match_info_free (match_info);
 		prefix_int = 32;
 		if (prefix) {
-			errno = 0;
-			prefix_int = strtol (prefix, NULL, 10);
-			if (errno || prefix_int <= 0 || prefix_int > 32) {
+			prefix_int = _nm_utils_ascii_str_to_int64 (prefix, 10, 1, 32, -1);
+			if (prefix_int == -1) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route destination prefix '%s'", prefix);
 				g_free (prefix);
@@ -641,9 +636,8 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 		metric_int = -1;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
-			errno = 0;
-			metric_int = strtol (metric, NULL, 10);
-			if (errno || metric_int < 0) {
+			metric_int = _nm_utils_ascii_str_to_int64 (metric, 10, 0, G_MAXUINT32, -1);
+			if (metric_int == -1) {
 				g_match_info_free (match_info);
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route metric '%s'", metric);
@@ -766,7 +760,8 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
 	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
-	gint64 prefix_int, metric_int;
+	int prefix_int;
+	gint64 metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -828,9 +823,8 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 		g_match_info_free (match_info);
 		prefix_int = 128;
 		if (prefix) {
-			errno = 0;
-			prefix_int = strtol (prefix, NULL, 10);
-			if (errno || prefix_int <= 0 || prefix_int > 128) {
+			prefix_int = _nm_utils_ascii_str_to_int64 (prefix, 10, 1, 128, -1);
+			if (prefix_int == -1) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 route destination prefix '%s'", prefix);
 				g_free (dest);
@@ -864,9 +858,8 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 		metric_int = -1;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
-			errno = 0;
-			metric_int = strtol (metric, NULL, 10);
-			if (errno || metric_int < 0 || metric_int > G_MAXUINT32) {
+			metric_int = _nm_utils_ascii_str_to_int64 (metric, 10, 0, G_MAXUINT32, -1);
+			if (metric_int == -1) {
 				g_match_info_free (match_info);
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 route metric '%s'", metric);
@@ -1697,10 +1690,9 @@ read_dcb_app (shvarFile *ifcfg,
 	tmp = g_strdup_printf ("DCB_APP_%s_PRIORITY", app);
 	val = svGetValue (ifcfg, tmp, FALSE);
 	if (val) {
-		success = get_int (val, &priority);
-		if (success)
-			success = (priority >= 0 && priority <= 7);
-		if (!success) {
+		priority = _nm_utils_ascii_str_to_int64 (val, 0, 0, 7, -1);
+		if (priority < 0) {
+			success = FALSE;
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid %s value '%s' (expected 0 - 7)",
 			             tmp, val);
@@ -1840,7 +1832,6 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	char *val;
 	gboolean success = FALSE;
 	char **split = NULL, **iter;
-	int tmp;
 	guint i, sum = 0;
 
 	val = svGetValue (ifcfg, prop, FALSE);
@@ -1863,7 +1854,10 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	}
 
 	for (iter = split, i = 0; iter && *iter; iter++, i++) {
-		if (!get_int (*iter, &tmp) || tmp < 0 || tmp > 100) {
+		int tmp;
+
+		tmp = _nm_utils_ascii_str_to_int64 (*iter, 0, 0, 100, -1);
+		if (tmp < 0) {
 			PARSE_WARNING ("invalid %s percentage value '%s'", prop, *iter);
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			                     "invalid percent element");
@@ -2185,7 +2179,7 @@ make_wep_setting (shvarFile *ifcfg,
 	char *value;
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
-	gboolean has_default_key = FALSE, success;
+	gboolean has_default_key = FALSE;
 	NMSettingSecretFlags key_flags;
 
 	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
@@ -2193,18 +2187,17 @@ make_wep_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "DEFAULTKEY", FALSE);
 	if (value) {
-		success = get_int (value, &default_key_idx);
-		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
-			has_default_key = TRUE;
-			default_key_idx--;  /* convert to [0...3] */
-			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
-		} else {
+		default_key_idx = _nm_utils_ascii_str_to_int64 (value, 0, 1, 4, 0);
+		if (default_key_idx == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid default WEP key '%s'", value);
-	 		g_free (value);
+			g_free (value);
 			goto error;
 		}
- 		g_free (value);
+		has_default_key = TRUE;
+		default_key_idx--;  /* convert to [0...3] */
+		g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, (guint) default_key_idx, NULL);
+		g_free (value);
 	}
 
 	/* Read WEP key flags */
@@ -3505,17 +3498,16 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "MTU", FALSE);
 	if (value) {
-		long int mtu;
+		int mtu;
 
-		errno = 0;
-		mtu = strtol (value, NULL, 10);
-		if (errno || mtu < 0 || mtu > 50000) {
+		mtu = _nm_utils_ascii_str_to_int64 (value, 10, 0, 50000, -1);
+		if (mtu == -1) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless MTU '%s'", value);
 			g_free (value);
 			goto error;
 		}
-		g_object_set (s_wireless, NM_SETTING_WIRELESS_MTU, (guint32) mtu, NULL);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_MTU, (guint) mtu, NULL);
 		g_free (value);
 	}
 
@@ -3777,20 +3769,19 @@ make_wired_setting (shvarFile *ifcfg,
 {
 	NMSettingWired *s_wired;
 	char *value = NULL;
-	int mtu;
 	char *nettype;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
 	value = svGetValue (ifcfg, "MTU", FALSE);
 	if (value) {
-		if (get_int (value, &mtu)) {
-			if (mtu >= 0 && mtu < 65536)
-				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu, NULL);
-		} else {
-			/* Shouldn't be fatal... */
+		int mtu;
+
+		mtu = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
+		if (mtu >= 0)
+			g_object_set (s_wired, NM_SETTING_WIRED_MTU, (guint) mtu, NULL);
+		else
 			PARSE_WARNING ("invalid MTU '%s'", value);
-		}
 		g_free (value);
 	}
 
@@ -3961,9 +3952,9 @@ parse_infiniband_p_key (shvarFile *ifcfg,
                         char **out_parent,
                         GError **error)
 {
-	char *device = NULL, *physdev = NULL, *pkey_id = NULL, *end;
+	char *device = NULL, *physdev = NULL, *pkey_id = NULL;
 	char *ifname = NULL;
-	guint32 id = G_MAXUINT32;
+	int id;
 	gboolean ret = FALSE;
 
 	device = svGetValue (ifcfg, "DEVICE", FALSE);
@@ -3984,19 +3975,14 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 		goto done;
 	}
 
-	if (g_str_has_prefix (pkey_id, "0x"))
-		id = strtoul (pkey_id, &end, 16);
-	else if (!g_str_has_prefix (pkey_id, "0"))
-		id = strtoul (pkey_id, &end, 10);
-	else
-		end = pkey_id;
-	if (end == pkey_id || *end || id > 0xFFFF) {
+	id = _nm_utils_ascii_str_to_int64 (pkey_id, 0, 0, 0xFFFF, -1);
+	if (id == -1) {
 		PARSE_WARNING ("invalid InfiniBand PKEY_ID '%s'", pkey_id);
 		goto done;
 	}
 	id = (id | 0x8000);
 
-	ifname = g_strdup_printf ("%s.%04x", physdev, id);
+	ifname = g_strdup_printf ("%s.%04x", physdev, (unsigned) id);
 	if (strcmp (device, ifname) != 0) {
 		PARSE_WARNING ("InfiniBand DEVICE (%s) does not match PHYSDEV+PKEY_ID (%s)",
 		               device, ifname);
@@ -4028,19 +4014,18 @@ make_infiniband_setting (shvarFile *ifcfg,
 {
 	NMSettingInfiniband *s_infiniband;
 	char *value = NULL;
-	int mtu;
 
 	s_infiniband = NM_SETTING_INFINIBAND (nm_setting_infiniband_new ());
 
 	value = svGetValue (ifcfg, "MTU", FALSE);
 	if (value) {
-		if (get_int (value, &mtu)) {
-			if (mtu >= 0 && mtu < 65536)
-				g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu, NULL);
-		} else {
-			/* Shouldn't be fatal... */
+		int mtu;
+
+		mtu = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
+		if (mtu >= 0)
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, (guint) mtu, NULL);
+		else
 			PARSE_WARNING ("invalid MTU '%s'", value);
-		}
 		g_free (value);
 	}
 
@@ -4664,16 +4649,14 @@ make_vlan_setting (shvarFile *ifcfg,
 	char *iface_name = NULL;
 	char *parent = NULL;
 	const char *p = NULL;
-	char *end = NULL;
-	gint vlan_id = -1;
+	int vlan_id = -1;
 	guint32 vlan_flags = 0;
 	gint gvrp, reorder_hdr;
 
 	value = svGetValue (ifcfg, "VLAN_ID", FALSE);
 	if (value) {
-		errno = 0;
-		vlan_id = (gint) g_ascii_strtoll (value, NULL, 10);
-		if (vlan_id < 0 || vlan_id > 4096 || errno) {
+		vlan_id = _nm_utils_ascii_str_to_int64 (value, 10, 0, 4095, -1);
+		if (vlan_id == -1) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid VLAN_ID '%s'", value);
 			g_free (value);
@@ -4717,12 +4700,13 @@ make_vlan_setting (shvarFile *ifcfg,
 		}
 
 		if (p) {
+			int device_vlan_id;
+
 			/* Grab VLAN ID from interface name; this takes precedence over the
 			 * separate VLAN_ID property for backwards compat.
 			 */
-
-			gint device_vlan_id = (gint) g_ascii_strtoll (p, &end, 10);
-			if (device_vlan_id >= 0 && device_vlan_id <= 4095 && end != p && !*end)
+			device_vlan_id = _nm_utils_ascii_str_to_int64 (p, 10, 0, 4095, -1);
+			if (device_vlan_id != -1)
 				vlan_id = device_vlan_id;
 		}
 	}

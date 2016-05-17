@@ -21,8 +21,6 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "nm-default.h"
-
 #define IFCFG_TAG "ifcfg-"
 #define KEYS_TAG "keys-"
 #define ROUTE_TAG "route-"
@@ -38,7 +36,7 @@
 #define AUGNEW_TAG ".augnew"
 #define AUGTMP_TAG ".augtmp"
 
-#define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts"
+#define IFCFG_DIR SYSCONFDIR "/sysconfig/network-scripts"
 
 #define IFCFG_PLUGIN_NAME "ifcfg-rh"
 #define IFCFG_PLUGIN_INFO "(c) 2007 - 2015 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."

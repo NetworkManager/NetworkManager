@@ -21,11 +21,7 @@
 #ifndef _WRITER_H_
 #define _WRITER_H_
 
-#include <sys/types.h>
-
-#include <nm-connection.h>
-
-#include "nm-default.h"
+#include "nm-connection.h"
 
 gboolean writer_can_write_connection (NMConnection *connection,
                                       GError **error);

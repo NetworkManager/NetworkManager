@@ -27,7 +27,8 @@
 
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "shvar.h"
+
+#include "common.h"
 
 /*
  * utils_single_quote_string

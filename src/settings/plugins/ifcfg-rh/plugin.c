@@ -23,6 +23,8 @@
 
 #include "nm-default.h"
 
+#include "plugin.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -31,20 +33,19 @@
 
 #include <gmodule.h>
 
+#include "nm-dbus-compat.h"
 #include "nm-setting-connection.h"
 
-#include "common.h"
-#include "plugin.h"
 #include "nm-settings-plugin.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
 #include "nm-ifcfg-connection.h"
 #include "shvar.h"
+#include "common.h"
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
-#include "nm-dbus-compat.h"
 #include "nm-exported-object.h"
 
 #include "nmdbus-ifcfg-rh.h"
@@ -60,8 +61,6 @@
                 "ifcfg-rh: " \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
-
-#define ERR_GET_MSG(err) (((err) && (err)->message) ? (err)->message : "(unknown)")
 
 
 static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,

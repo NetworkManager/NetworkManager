@@ -42,7 +42,6 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
-#include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -51,8 +50,20 @@
 #include "shvar.h"
 #include "reader.h"
 #include "utils.h"
-#include "crypto.h"
 
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN      LOGD_SETTINGS
+#define _NMLOG_PREFIX_NAME "ifcfg-rh"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), (_NMLOG_DOMAIN), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 static void
 save_secret_flags (shvarFile *ifcfg,
@@ -100,7 +111,7 @@ set_secret (shvarFile *ifcfg,
 {
 	shvarFile *keyfile;
 	GError *error = NULL;
-	
+
 	/* Clear the secret from the ifcfg and the associated "keys" file */
 	svSetValue (ifcfg, key, NULL, FALSE);
 
@@ -109,7 +120,7 @@ set_secret (shvarFile *ifcfg,
 
 	keyfile = utils_get_keys_ifcfg (ifcfg->fileName, TRUE);
 	if (!keyfile) {
-		nm_log_warn (LOGD_SETTINGS, "    could not create ifcfg file for '%s'", ifcfg->fileName);
+		_LOGW ("could not create ifcfg file for '%s'", ifcfg->fileName);
 		goto error;
 	}
 
@@ -121,8 +132,8 @@ set_secret (shvarFile *ifcfg,
 		svSetValue (keyfile, key, value, verbatim);
 
 	if (!svWriteFile (keyfile, 0600, &error)) {
-		nm_log_warn (LOGD_SETTINGS, "    could not update ifcfg file '%s': %s",
-		             keyfile->fileName, error->message);
+		_LOGW ("could not update ifcfg file '%s': %s",
+		       keyfile->fileName, error->message);
 		g_clear_error (&error);
 		svCloseFile (keyfile);
 		goto error;
@@ -715,7 +726,7 @@ write_wireless_security_setting (NMConnection *connection,
 						key = ascii_key;
 					}
 				} else {
-					nm_log_warn (LOGD_SETTINGS, "    invalid WEP key '%s'", key);
+					_LOGW ("invalid WEP key '%s'", key);
 					tmp = NULL;
 				}
 
