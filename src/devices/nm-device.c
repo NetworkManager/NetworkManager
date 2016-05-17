@@ -1593,6 +1593,7 @@ device_link_changed (NMDevice *self)
 	const NMPlatformLink *pllink;
 	int ifindex;
 	gboolean was_up;
+	gboolean update_unmanaged_specs = FALSE;
 
 	priv->device_link_changed_id = 0;
 
@@ -1638,6 +1639,11 @@ device_link_changed (NMDevice *self)
 
 		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
 		ip_ifname_changed = !priv->ip_iface;
+
+		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT))
+			nm_device_set_unmanaged_by_user_settings (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
+		else
+			update_unmanaged_specs = TRUE;
 
 		_notify (self, PROP_IFACE);
 		if (ip_ifname_changed)
@@ -1711,6 +1717,9 @@ device_link_changed (NMDevice *self)
 				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 		}
 	}
+
+	if (update_unmanaged_specs)
+		nm_device_set_unmanaged_by_user_settings (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
 
 	return G_SOURCE_REMOVE;
 }
@@ -9637,7 +9646,7 @@ nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
 }
 
 void
-nm_device_set_unmanaged_by_user_config (NMDevice *self, const GSList *unmanaged_specs)
+nm_device_set_unmanaged_by_user_settings (NMDevice *self, const GSList *unmanaged_specs)
 {
 	NMDevicePrivate *priv;
 	gboolean unmanaged;

@@ -2151,6 +2151,12 @@ cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
 	return NM_CONNECTION (nm_settings_get_connection_by_uuid (NM_SETTINGS (provider), uuid));
 }
 
+static const GSList *
+cp_get_unmanaged_specs (NMConnectionProvider *provider)
+{
+	return nm_settings_get_unmanaged_specs (NM_SETTINGS (provider));
+}
+
 /***************************************************************/
 
 gboolean
@@ -2318,6 +2324,7 @@ connection_provider_iface_init (NMConnectionProviderInterface *cp_iface)
     cp_iface->get_connections = get_connections;
     cp_iface->add_connection = _nm_connection_provider_add_connection;
     cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
+	cp_iface->get_unmanaged_specs = cp_get_unmanaged_specs;
 }
 
 static void
