@@ -1641,7 +1641,7 @@ device_link_changed (NMDevice *self)
 		ip_ifname_changed = !priv->ip_iface;
 
 		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT))
-			nm_device_set_unmanaged_by_user_config (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
+			nm_device_set_unmanaged_by_user_settings (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
 		else
 			update_unmanaged_specs = TRUE;
 
@@ -1719,7 +1719,7 @@ device_link_changed (NMDevice *self)
 	}
 
 	if (update_unmanaged_specs)
-		nm_device_set_unmanaged_by_user_config (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
+		nm_device_set_unmanaged_by_user_settings (self, nm_connection_provider_get_unmanaged_specs (priv->con_provider));
 
 	return G_SOURCE_REMOVE;
 }
@@ -9646,7 +9646,7 @@ nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
 }
 
 void
-nm_device_set_unmanaged_by_user_config (NMDevice *self, const GSList *unmanaged_specs)
+nm_device_set_unmanaged_by_user_settings (NMDevice *self, const GSList *unmanaged_specs)
 {
 	NMDevicePrivate *priv;
 	gboolean unmanaged;

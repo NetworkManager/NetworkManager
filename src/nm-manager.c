@@ -1235,7 +1235,7 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	for (iter = priv->devices; iter; iter = g_slist_next (iter))
-		nm_device_set_unmanaged_by_user_config (NM_DEVICE (iter->data), unmanaged_specs);
+		nm_device_set_unmanaged_by_user_settings (NM_DEVICE (iter->data), unmanaged_specs);
 }
 
 static void
@@ -1902,7 +1902,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
 
-	nm_device_set_unmanaged_by_user_config (device, nm_settings_get_unmanaged_specs (priv->settings));
+	nm_device_set_unmanaged_by_user_settings (device, nm_settings_get_unmanaged_specs (priv->settings));
 
 	nm_device_set_unmanaged_flags (device,
 	                               NM_UNMANAGED_SLEEPING,
