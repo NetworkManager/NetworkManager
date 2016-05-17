@@ -152,6 +152,7 @@ typedef struct {
 	GSList *plugins;
 	gboolean connections_loaded;
 	GHashTable *connections;
+	NMSettingsConnection **connections_cached_list;
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
 	GSList *get_connections_cache;
@@ -407,6 +408,53 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	else if (ts_a == ts_b)
 		return 0;
 	return 1;
+}
+
+/**
+ * nm_settings_get_connections:
+ * @self: the #NMSettings
+ * @out_len: (out): (allow-none): returns the number of returned
+ *   connections.
+ *
+ * Returns: (transfer-none): a list of NMSettingsConnections. The list is
+ * unsorted and NULL terminated. The result is never %NULL, in case of no
+ * connections, it returns an empty list.
+ * The returned list is cached internally, only valid until the next
+ * NMSettings operation.
+ */
+NMSettingsConnection *const*
+nm_settings_get_connections (NMSettings *self, guint *out_len)
+{
+	GHashTableIter iter;
+	NMSettingsPrivate *priv;
+	guint l, i;
+	NMSettingsConnection **v;
+	NMSettingsConnection *con;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	if (priv->connections_cached_list) {
+		NM_SET_OUT (out_len, g_hash_table_size (priv->connections));
+		return priv->connections_cached_list;
+	}
+
+	l = g_hash_table_size (priv->connections);
+
+	v = g_new (NMSettingsConnection *, l + 1);
+
+	i = 0;
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &con))
+		v[i++] = con;
+	v[i] = NULL;
+
+	nm_assert (i == l);
+
+	NM_SET_OUT (out_len, l);
+	priv->connections_cached_list = v;
+	return v;
 }
 
 /* Returns a list of NMSettingsConnections.
@@ -934,6 +982,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	/* Forget about the connection internally */
 	g_hash_table_remove (priv->connections, (gpointer) cpath);
+	g_clear_pointer (&priv->connections_cached_list, g_free);
 
 	/* Notify D-Bus */
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
@@ -1078,6 +1127,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	g_hash_table_insert (priv->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
 	                     g_object_ref (connection));
+	g_clear_pointer (&priv->connections_cached_list, g_free);
 
 	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ");
 
@@ -2391,6 +2441,7 @@ finalize (GObject *object)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->connections);
+	g_clear_pointer (&priv->connections_cached_list, g_free);
 	g_slist_free (priv->get_connections_cache);
 
 	g_slist_free_full (priv->unmanaged_specs, g_free);
