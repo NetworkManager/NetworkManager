@@ -34,7 +34,7 @@
 #include "nm-platform-utils.h"
 #include "nmp-object.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /*********************************************************************************************/
 

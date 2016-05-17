@@ -24,7 +24,7 @@
 #include "nm-setting-connection.h"
 #include "nm-device-ethernet-utils.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static NMConnection *
 _new_connection (const char *id)

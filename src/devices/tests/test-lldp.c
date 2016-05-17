@@ -33,7 +33,7 @@
 
 #include "test-common.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /*****************************************************************************/
 

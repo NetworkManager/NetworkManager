@@ -28,7 +28,7 @@
 #include "nm-dhcp-utils.h"
 #include "nm-platform.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 typedef struct {
 	const char *name;

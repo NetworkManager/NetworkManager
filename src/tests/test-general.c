@@ -26,7 +26,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /* Reference implementation for nm_utils_ip6_address_clear_host_address.
  * Taken originally from set_address_masked(), src/rdisc/nm-lndp-rdisc.c

@@ -30,7 +30,7 @@
 #include "nm-platform-utils.h"
 
 #include "test-common.h"
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 #define LO_INDEX 1
 #define LO_NAME "lo"

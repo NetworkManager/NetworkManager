@@ -27,7 +27,7 @@
 #include "nm-fake-platform.h"
 #include "nm-bus-manager.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /********************************************************************************/
 

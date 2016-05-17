@@ -632,6 +632,7 @@ dbusservice_DATA = org.freedesktop.NetworkManager.conf
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
 	$(NetworkManager_DATA) \
+	nm-test-utils-core.h \
 	NetworkManager.ver
 
 rundir=$(runstatedir)/NetworkManager

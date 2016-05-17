@@ -26,7 +26,7 @@
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static NMIP4Config *
 build_test_config (void)

@@ -28,7 +28,7 @@
 #include "common.h"
 #include "utils.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static void
 test_get_ifcfg_name (const char *desc,

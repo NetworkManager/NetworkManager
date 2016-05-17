@@ -24,7 +24,7 @@
 
 #include "nm-dcb.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 typedef struct {
 	guint num;

@@ -38,7 +38,7 @@
 #include "connection_parser.h"
 #include "nm-config.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /* Fake NMConfig handling; the values it returns don't matter, so this
  * is easier than forcing it to read our own config file, etc.

@@ -34,7 +34,7 @@
 #include "writer.h"
 #include "utils.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static void
 check_ip_address (NMSettingIPConfig *config, int idx, const char *address, int plen)

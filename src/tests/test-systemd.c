@@ -25,7 +25,7 @@
 #include "sd-lldp.h"
 #include "sd-event.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /*****************************************************************************/
 

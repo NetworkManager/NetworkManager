@@ -55,7 +55,7 @@
 #include "writer.h"
 #include "utils.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 /*****************************************************************************/
 

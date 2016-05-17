@@ -28,7 +28,7 @@
 
 #include "nm-fake-platform.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static NMFakeRDisc *
 rdisc_new (void)

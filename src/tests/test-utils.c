@@ -26,7 +26,7 @@
 
 #include "nm-core-utils.c"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static void
 test_stable_privacy (void)

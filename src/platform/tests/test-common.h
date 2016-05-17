@@ -8,7 +8,7 @@
 #include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 #define DEVICE_NAME "nm-test-device"
 

@@ -26,7 +26,7 @@
 #include "nm-ip6-config.h"
 
 #include "nm-platform.h"
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static NMIP6Config *
 build_test_config (void)

@@ -26,7 +26,7 @@
 #include "interface_parser.h"
 #include "parser.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 typedef struct {
 	char *key;

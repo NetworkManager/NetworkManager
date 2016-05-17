@@ -35,7 +35,7 @@
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static gboolean
 validate_opt (const char *detail,

@@ -25,7 +25,7 @@
 
 #include "nm-linux-platform.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 NMTST_DEFINE ();
 

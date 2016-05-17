@@ -22,7 +22,7 @@
 
 #include "nmp-object.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 struct {
 	GList *udev_devices;

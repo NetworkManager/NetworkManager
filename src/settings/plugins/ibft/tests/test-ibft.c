@@ -34,7 +34,7 @@
 
 #include "reader.h"
 
-#include "nm-test-utils.h"
+#include "nm-test-utils-core.h"
 
 static GPtrArray *
 read_block (const char *iscsiadm_path, const char *expected_mac)
