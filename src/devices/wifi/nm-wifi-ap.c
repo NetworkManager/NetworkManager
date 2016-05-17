@@ -1051,7 +1051,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ap_class),
-	                                       NMDBUS_TYPE_ACCESS_POINT_SKELETON,
-	                                       NULL);
+	                                        NMDBUS_TYPE_ACCESS_POINT_SKELETON,
+	                                        NULL);
 }
 
