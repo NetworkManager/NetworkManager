@@ -27,6 +27,8 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <syslog.h>
 
 #include "nm-vpn-connection.h"
 #include "nm-ip4-config.h"
@@ -1922,6 +1924,41 @@ _daemon_exec_timeout (gpointer data)
 	return G_SOURCE_REMOVE;
 }
 
+static int
+_get_log_level (void)
+{
+	NMLogLevel level;
+
+	/* curiously enough, nm-logging also uses syslog. But it
+	 * maps NMLogLevel differently to the syslog levels then we
+	 * do here.
+	 *
+	 * The reason is, that LOG_NOTICE is already something worth
+	 * highlighting in the journal, but we have 3 levels that are
+	 * lower then LOG_NOTICE (LOGL_TRACE, LOGL_DEBUG, LOGL_INFO),
+	 * On the other hand, syslog only defines LOG_DEBUG and LOG_INFO.
+	 * Thus, we must map them differently.
+	 *
+	 * Inside the VPN plugin, you might want to treat LOG_NOTICE as
+	 * as low severity, not worthy to be highlighted (like NM does). */
+
+	level = nm_logging_get_level (LOGD_VPN_PLUGIN);
+	if (level != _LOGL_OFF) {
+		if (level <= LOGL_TRACE)
+			return LOG_DEBUG;
+		if (level <= LOGL_DEBUG)
+			return LOG_INFO;
+		if (level <= LOGL_INFO)
+			return LOG_NOTICE;
+		if (level <= LOGL_WARN)
+			return LOG_WARNING;
+		if (level <= LOGL_ERR)
+			return LOG_ERR;
+	}
+
+	return LOG_EMERG;
+}
+
 static gboolean
 nm_vpn_service_daemon_exec (NMVpnConnection *self, GError **error)
 {
@@ -1930,20 +1967,50 @@ nm_vpn_service_daemon_exec (NMVpnConnection *self, GError **error)
 	char *vpn_argv[4];
 	gboolean success = FALSE;
 	GError *spawn_error = NULL;
-	int i = 0;
+	guint i, j, n_environ;
+	gs_free char **envp = NULL;
+	char env_log_level[NM_STRLEN ("NM_VPN_LOG_LEVEL=") + 100];
+	char env_log_syslog[NM_STRLEN ("NM_VPN_LOG_SYSLOG=") + 10];
+	const int N_ENVIRON_EXTRA = 3;
+	char **p_environ;
 
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), FALSE);
+
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
+	i = 0;
 	vpn_argv[i++] = (char *) nm_vpn_plugin_info_get_program (priv->plugin_info);
+	g_return_val_if_fail (vpn_argv[0], FALSE);
 	if (nm_vpn_plugin_info_supports_multiple (priv->plugin_info)) {
 		vpn_argv[i++] = "--bus-name";
 		vpn_argv[i++] = priv->bus_name;
 	}
-	vpn_argv[i] = NULL;
-	g_assert (vpn_argv[0]);
+	vpn_argv[i++] = NULL;
 
-	success = g_spawn_async (NULL, vpn_argv, NULL, 0, nm_utils_setpgid, NULL, &pid, &spawn_error);
+	/* we include <unistd.h> and "config.h" defines _GNU_SOURCE for us. So, we have @environ. */
+	p_environ = environ;
+	n_environ = p_environ ? g_strv_length (p_environ) : 0;
+	envp = g_new (char *, n_environ + N_ENVIRON_EXTRA);
+	for (i = 0, j = 0; j < n_environ; j++) {
+		if (   g_str_has_prefix (p_environ[j], "NM_VPN_LOG_LEVEL=")
+		    || g_str_has_prefix (p_environ[j], "NM_VPN_LOG_SYSLOG="))
+			continue;
+		envp[i++] = p_environ[j];
+	}
+
+	/* NM_VPN_LOG_LEVEL: the syslog logging level for the plugin. */
+	envp[i++] = nm_sprintf_buf (env_log_level,  "NM_VPN_LOG_LEVEL=%d", _get_log_level ());
+
+	/* NM_VPN_LOG_SYSLOG: whether to log to stdout or syslog. If NetworkManager itself runs in
+	 * foreground, we also want the plugin to log to stdout.
+	 * If the plugin runs in background, the plugin should prefer logging to syslog. Otherwise
+	 * logging messages will be lost (unless using journald, in which case it wouldn't matter). */
+	envp[i++] = nm_sprintf_buf (env_log_syslog, "NM_VPN_LOG_SYSLOG=%c", nm_logging_syslog_enabled () ? '1' : '0');
+
+	envp[i++] = NULL;
+	nm_assert (i <= n_environ + N_ENVIRON_EXTRA);
+
+	success = g_spawn_async (NULL, vpn_argv, envp, 0, nm_utils_setpgid, NULL, &pid, &spawn_error);
 
 	if (success) {
 		_LOGI ("Started the VPN service, PID %ld", (long int) pid);
