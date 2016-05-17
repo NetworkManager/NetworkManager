@@ -44,14 +44,8 @@
 #define NM_AP_STRENGTH "strength"
 #define NM_AP_LAST_SEEN "last-seen"
 
-typedef struct {
-	NMExportedObject parent;
-} NMAccessPoint;
-
-typedef struct {
-	NMExportedObjectClass parent;
-
-} NMAccessPointClass;
+typedef struct _NMAccessPoint NMAccessPoint;
+typedef struct _NMAccessPointClass NMAccessPointClass;
 
 GType nm_ap_get_type (void);
 

@@ -42,24 +42,44 @@ typedef struct
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
 
 	/* Scanned or cached values */
-	GByteArray *	ssid;
-	char *          address;
-	NM80211Mode		mode;
-	guint8			strength;
-	guint32			freq;		/* Frequency in MHz; ie 2412 (== 2.412 GHz) */
-	guint32			max_bitrate;/* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
+	GByteArray *       ssid;
+	char *             address;
+	NM80211Mode        mode;
+	guint8             strength;
+	guint32            freq;        /* Frequency in MHz; ie 2412 (== 2.412 GHz) */
+	guint32            max_bitrate; /* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
 
 	NM80211ApFlags         flags;      /* General flags */
 	NM80211ApSecurityFlags wpa_flags;  /* WPA-related flags */
 	NM80211ApSecurityFlags rsn_flags;  /* RSN (WPA2) -related flags */
 
 	/* Non-scanned attributes */
-	gboolean			fake;	/* Whether or not the AP is from a scan */
-	gboolean            hotspot;    /* Whether the AP is a local device's hotspot network */
+	bool                fake;       /* Whether or not the AP is from a scan */
+	bool                hotspot;    /* Whether the AP is a local device's hotspot network */
 	gint32              last_seen;  /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
 } NMAccessPointPrivate;
 
-#define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
+struct _NMAccessPoint {
+	NMExportedObject parent;
+	NMAccessPointPrivate _priv;
+};
+
+struct _NMAccessPointClass{
+	NMExportedObjectClass parent;
+};
+
+#define NM_AP_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMAccessPoint *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_AP (_self)); \
+		&_self->_priv; \
+	})
 
 G_DEFINE_TYPE (NMAccessPoint, nm_ap, NM_TYPE_EXPORTED_OBJECT)
 
@@ -877,7 +897,7 @@ nm_ap_init (NMAccessPoint *ap)
 static void
 finalize (GObject *object)
 {
-	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE ((NMAccessPoint *) object);
 
 	g_free (priv->supplicant_path);
 	if (priv->ssid)
@@ -889,16 +909,16 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 }
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE ((NMAccessPoint *) object);
 	GVariant *ssid;
 
 	switch (prop_id) {
@@ -962,8 +982,6 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	                                             | NM_802_11_AP_SEC_GROUP_CCMP
 	                                             | NM_802_11_AP_SEC_KEY_MGMT_PSK
 	                                             | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-
-	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
 	exported_object_class->export_path = NM_DBUS_PATH_ACCESS_POINT "/%u";
 
