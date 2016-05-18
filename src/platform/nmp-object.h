@@ -94,7 +94,6 @@ typedef enum { /*< skip >*/
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
 } NMPCacheIdType;
 
-typedef struct _NMPObject NMPObject;
 typedef struct _NMPCacheId NMPCacheId;
 
 struct _NMPCacheId {
