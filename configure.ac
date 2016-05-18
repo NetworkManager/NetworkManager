@@ -35,6 +35,10 @@ AC_PROG_CXX
 
 AC_PROG_LN_S
 
+# Prefer gcc-* variants; the ones libtool would choose don't work with LTO
+AC_CHECK_TOOLS(AR, [gcc-ar ar], false)
+AC_CHECK_TOOLS(RANLIB, [gcc-ranlib ranlib], :)
+
 dnl Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT([disable-static])
