@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-sleep-monitor.h"
 
