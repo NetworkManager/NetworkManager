@@ -341,7 +341,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 			nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
 		else {
 			nm_utils_inet6_ntop (addr, buf);
-			if (iface && IN6_IS_ADDR_LINKLOCAL (addr)) {
+			if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 				g_strlcat (buf, "%", sizeof (buf));
 				g_strlcat (buf, iface, sizeof (buf));
 			}
@@ -1247,6 +1247,7 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
 	g_return_val_if_fail (config, FALSE);
+	g_return_val_if_fail (iface && iface[0], FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
