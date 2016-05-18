@@ -2,7 +2,7 @@ dnl Check whether a particular compiler flag works with code provided,
 dnl disable it in CFLAGS if the check fails.
 AC_DEFUN([NM_COMPILER_WARNING], [
 	CFLAGS_SAVED="$CFLAGS"
-	CFLAGS="$CFLAGS -Werror -W$1"
+	CFLAGS="$CFLAGS $GLIB_CFLAGS -Werror $1"
 	AC_MSG_CHECKING(whether -W$1 works)
 
 	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[]])], [
