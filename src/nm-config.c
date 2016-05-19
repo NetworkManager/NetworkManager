@@ -634,6 +634,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 
 	kf = nm_config_create_keyfile ();
 	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, error)) {
+		g_prefix_error (error, "%s: ", path);
 		g_key_file_free (kf);
 		return FALSE;
 	}
@@ -815,8 +816,7 @@ read_base_config (GKeyFile *keyfile,
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-		nm_log_warn (LOGD_CORE, "Old default config file %s invalid: %s\n",
-		             DEFAULT_CONFIG_MAIN_FILE_OLD,
+		nm_log_warn (LOGD_CORE, "Old default config file invalid: %s\n",
 		             my_error->message);
 	}
 	g_clear_error (&my_error);
@@ -828,8 +828,7 @@ read_base_config (GKeyFile *keyfile,
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-		nm_log_warn (LOGD_CORE, "Default config file %s invalid: %s\n",
-		             DEFAULT_CONFIG_MAIN_FILE,
+		nm_log_warn (LOGD_CORE, "Default config file invalid: %s\n",
 		             my_error->message);
 		g_propagate_error (error, my_error);
 		return FALSE;
