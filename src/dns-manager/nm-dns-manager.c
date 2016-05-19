@@ -67,15 +67,11 @@ G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
 #define HASH_LEN 20
 
-#ifdef RESOLVCONF_PATH
-#define RESOLVCONF_SELECTED
-#else
+#ifndef RESOLVCONF_PATH
 #define RESOLVCONF_PATH "/sbin/resolvconf"
 #endif
 
-#ifdef NETCONFIG_PATH
-#define NETCONFIG_SELECTED
-#else
+#ifndef NETCONFIG_PATH
 #define NETCONFIG_PATH "/sbin/netconfig"
 #endif
 
@@ -1482,41 +1478,6 @@ _clear_plugin (NMDnsManager *self)
 	return FALSE;
 }
 
-static NMDnsManagerResolvConfManager
-_get_resolv_conf_manager_default (void)
-{
-#if defined(RESOLVCONF_SELECTED)
-	return NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
-#elif defined(NETCONFIG_SELECTED)
-	return NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
-#else
-	return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
-#endif
-}
-
-static NMDnsManagerResolvConfManager
-_get_resolv_conf_manager (NMConfig *config)
-{
-	const char *man;
-
-	man = nm_config_data_get_rc_manager (nm_config_get_data (config));
-	if (!man)
-		return _get_resolv_conf_manager_default ();
-
-	if (NM_IN_STRSET (man, "symlink", "none"))
-		return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
-	if (nm_streq (man, "file"))
-		return NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
-	if (nm_streq (man, "resolvconf"))
-		return NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
-	if (nm_streq (man, "netconfig"))
-		return NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
-	if (nm_streq (man, "unmanaged"))
-		return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
-
-	return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN;
-}
-
 static bool
 _get_resconf_immutable (void)
 {
@@ -1549,11 +1510,33 @@ init_resolv_conf_mode (NMDnsManager *self)
 	else if (_get_resconf_immutable ())
 		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE;
 	else {
-		rc_manager = _get_resolv_conf_manager (priv->config);
+		const char *man;
+
+		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN;
+		man = nm_config_data_get_rc_manager (nm_config_get_data (priv->config));
+
+again:
+		if (!man) {
+			/* nop */
+		} else if (NM_IN_STRSET (man, "symlink", "none"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+		else if (nm_streq (man, "file"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
+		else if (nm_streq (man, "resolvconf"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
+		else if (nm_streq (man, "netconfig"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
+		else if (nm_streq (man, "unmanaged"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
+
 		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
-			_LOGW ("init: unknown resolv.conf manager '%s'",
-			       nm_config_data_get_rc_manager (nm_config_get_data (priv->config)));
-			rc_manager = _get_resolv_conf_manager_default ();
+			if (man) {
+				_LOGW ("init: unknown resolv.conf manager \"%s\", fallback to \"%s\"",
+				       man, ""NM_CONFIG_DEFAULT_DNS_RC_MANAGER);
+			}
+			man = ""NM_CONFIG_DEFAULT_DNS_RC_MANAGER;
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+			goto again;
 		}
 	}
 
