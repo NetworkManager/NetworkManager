@@ -35,6 +35,10 @@ AC_PROG_CXX
 
 AC_PROG_LN_S
 
+# Prefer gcc-* variants; the ones libtool would choose don't work with LTO
+AC_CHECK_TOOLS(AR, [gcc-ar ar], false)
+AC_CHECK_TOOLS(RANLIB, [gcc-ranlib ranlib], :)
+
 dnl Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT([disable-static])
@@ -931,6 +935,16 @@ else
     enable_lto='no'
 fi
 
+AC_ARG_ENABLE(ld-gc, AS_HELP_STRING([--enable-ld-gc], [Enable garbage collection of unused symbols on linking (default: auto)]))
+if (test "${enable_ld_gc}" != "no"); then
+    NM_COMPILER_FLAG([-fdata-sections -ffunction-sections -Wl,--gc-sections], [enable_ld_gc='yes'], [
+        if (test "${enable_ld_gc}" = "yes"); then
+            AC_MSG_ERROR([Unused symbol eviction requested but not supported.])
+        else
+            enable_ld_gc='no'
+        fi
+    ])
+fi
 
 dnl -------------------------
 dnl Vala bindings
@@ -1190,5 +1204,6 @@ echo "  more-asserts: $more_asserts"
 echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
+echo "  linker garbage collection: $enable_ld_gc"
 echo "  JSON validation: $enable_json_validation"
 echo

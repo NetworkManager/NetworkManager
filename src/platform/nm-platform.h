@@ -49,8 +49,6 @@
 
 /******************************************************************/
 
-typedef struct _NMPlatform NMPlatform;
-
 /* workaround for older libnl version, that does not define these flags. */
 #ifndef IFA_F_MANAGETEMPADDR
 #define IFA_F_MANAGETEMPADDR 0x100

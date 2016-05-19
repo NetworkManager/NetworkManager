@@ -1,6 +1,7 @@
 {
 global:
-	nm*;
+	nm_*;
+	nmp_*;
 	_nm*;
 	NM*;
 	_NM*;
