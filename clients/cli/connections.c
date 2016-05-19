@@ -10690,7 +10690,7 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	}
 
 	/* Import VPN configuration */
-	plugin = nm_vpn_get_plugin_by_service (type, &error);
+	plugin = nm_vpn_lookup_plugin (type, NULL, &error);
 	if (!plugin) {
 		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 		                 error->message);
@@ -10797,7 +10797,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
 
 	/* Export VPN configuration */
-	plugin = nm_vpn_get_plugin_by_service (type, &error);
+	plugin = nm_vpn_lookup_plugin (type, NULL, &error);
 	if (!plugin) {
 		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 		                 error->message);
