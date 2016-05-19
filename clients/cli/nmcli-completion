@@ -494,7 +494,7 @@ _nmcli_compl_ARGS()
                 ;;
             vpn-type)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list "vpnc openvpn pptp openconnect openswan libreswan ssh l2tp iodine"
+                    _nmcli_list "vpnc openvpn pptp openconnect openswan libreswan strongswan ssh l2tp iodine fortisslvpn"
                     return 0
                 fi
                 ;;
@@ -579,10 +579,16 @@ _nmcli_compl_ARGS()
             user| \
             username| \
             service| \
-            password| \
+            password)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    return 0
+                fi
+                ;;
             passwd-file| \
             file)
                 if [[ "${#words[@]}" -eq 2 ]]; then
+                    compopt -o default
+                    COMPREPLY=()
                     return 0
                 fi
                 ;;
@@ -1379,8 +1385,7 @@ _nmcli()
 
                             OPTIONS=(type file)
                             OPTIONS_MANDATORY=(type file)
-                            ALIASES=("type:vpn-type")
-                            _nmcli_compl_ARGS ${ALIASES[@]}
+                            _nmcli_compl_ARGS type:vpn-type
                             return 0
                         fi
                         ;;
