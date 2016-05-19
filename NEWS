@@ -5,10 +5,12 @@ Overview of changes since NetworkManager-1.0
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Added an option to enable use of random MAC addresses for Wi-Fi access
-    point scanning (defaults to disabled).  Controlled with
-    'wifi.mac-address-randomization' property (MAC_ADDRESS_RANDOMIZATION key in
-    ifcfg files).
+* MAC addresses during Wi-Fi access point scanning are now randomized
+    if wpa_supplicant supports PreassocMacAddr.
+* Added an option to enable random MAC addresses for association to Wi-Fi access
+    point (defaults to disabled).  Controlled with 'wifi.mac-address-randomization'
+    property (MAC_ADDRESS_RANDOMIZATION key in ifcfg files).  Requires support from
+    wpa_supplicant.
 * Wi-Fi scanning now utilizes wpa_supplicant's AP list.
 * Added support for Wi-Fi powersave, configured with POWERSAVE key in ifcfg
     files.
