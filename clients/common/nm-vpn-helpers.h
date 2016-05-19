@@ -30,7 +30,12 @@ struct {
 
 GSList *nm_vpn_get_plugins (void);
 
-NMVpnEditorPlugin *nm_vpn_get_plugin_by_service (const char *service, GError **error);
+const char **nm_vpn_get_plugin_names (gboolean only_available_plugins);
+
+const char *nm_vpn_get_service_for_name (const char *name);
+char *      nm_vpn_get_service_for_name_default (const char *name);
+
+NMVpnEditorPlugin *nm_vpn_lookup_plugin (const char *name, const char *service, GError **error);
 
 gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
 
