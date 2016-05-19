@@ -36,30 +36,53 @@ static gboolean plugins_loaded;
 static GSList *plugins = NULL;
 
 NMVpnEditorPlugin *
-nm_vpn_get_plugin_by_service (const char *service, GError **error)
+nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
 {
 	NMVpnEditorPlugin *plugin = NULL;
 	NMVpnPluginInfo *plugin_info;
-	char *type = NULL;
+	gs_free_error GError *local = NULL;
 
-	g_return_val_if_fail (service != NULL, NULL);
+	g_return_val_if_fail (!service ^ !name, NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
 	if (G_UNLIKELY (!plugins_loaded))
 		nm_vpn_get_plugins ();
 
-	if (!g_str_has_prefix (service, NM_DBUS_INTERFACE))
-		service = type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, service);
+	if (service)
+		plugin_info = nm_vpn_plugin_info_list_find_by_service (plugins, service);
+	else
+		plugin_info = nm_vpn_plugin_info_list_find_by_name (plugins, name);
 
-	plugin_info = nm_vpn_plugin_info_list_find_by_service (plugins, service);
-	if (plugin_info) {
-		plugin = nm_vpn_plugin_info_get_editor_plugin (plugin_info);
-		if (!plugin)
-			plugin = nm_vpn_plugin_info_load_editor_plugin (plugin_info, error);
-	} else
-		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
-		                     _("could not get VPN plugin info"));
-	g_free (type);
+	if (!plugin_info) {
+		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("unknown VPN plugin \"%s\""), service ?: name);
+		return NULL;
+	}
+	plugin = nm_vpn_plugin_info_get_editor_plugin (plugin_info);
+	if (!plugin)
+		plugin = nm_vpn_plugin_info_load_editor_plugin (plugin_info, &local);
+
+	if (!plugin) {
+		if (   !nm_vpn_plugin_info_get_plugin (plugin_info)
+		    && nm_vpn_plugin_info_lookup_property (plugin_info, NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "properties")) {
+			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("cannot cannot load legacy-only VPN plugin \"%s\" for \"%s\""),
+			             nm_vpn_plugin_info_get_name (plugin_info),
+			             nm_vpn_plugin_info_get_filename (plugin_info));
+		} else if (g_error_matches (local, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("cannot load VPN plugin \"%s\" due to missing \"%s\". Missing client plugin?"),
+			             nm_vpn_plugin_info_get_name (plugin_info),
+			             nm_vpn_plugin_info_get_plugin (plugin_info));
+		} else {
+			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("failed to load VPN plugin \"%s\": %s"),
+			             nm_vpn_plugin_info_get_name (plugin_info),
+			             local->message);
+		}
+		return NULL;
+	}
+
 	return plugin;
 }
 
@@ -71,6 +94,78 @@ nm_vpn_get_plugins (void)
 	plugins_loaded = TRUE;
 	plugins = nm_vpn_plugin_info_list_load ();
 	return plugins;
+}
+
+static int
+_strcmp_data (gconstpointer a, gconstpointer b, gpointer unused)
+{
+	return strcmp (a, b);
+}
+
+const char **
+nm_vpn_get_plugin_names (gboolean only_available_plugins)
+{
+	GSList *p;
+	const char **list;
+	const char *known_names[] = {
+		"openvpn",
+		"vpnc",
+		"pptp",
+		"openconnect",
+		"openswan",
+		"libreswan",
+		"strongswan",
+		"ssh",
+		"l2tp",
+		"iodine",
+		"fortisslvpn",
+	};
+	guint i, j, k;
+
+	p = nm_vpn_get_plugins ();
+	list = g_new0 (const char *, g_slist_length (p) + G_N_ELEMENTS (known_names) + 1);
+
+	i = 0;
+	for (i = 0; p; p = p->next)
+		list[i++] = nm_vpn_plugin_info_get_name (p->data);
+	if (!only_available_plugins) {
+		for (j = 0; j < G_N_ELEMENTS (known_names); j++)
+			list[i++] = known_names[j];
+	}
+
+	g_qsort_with_data (list, i, sizeof (gpointer), _strcmp_data, NULL);
+
+	/* remove duplicates */
+	for (k = 0, j = 1; j < i; j++) {
+		if (nm_streq (list[k], list[j]))
+			continue;
+		list[k++] = list[j];
+	}
+	list[k++] = NULL;
+
+	return list;
+}
+
+const char *
+nm_vpn_get_service_for_name (const char *name)
+{
+	NMVpnPluginInfo *plugin_info;
+
+	g_return_val_if_fail (name, NULL);
+
+	plugin_info = nm_vpn_plugin_info_list_find_by_name (nm_vpn_get_plugins (), name);
+	if (plugin_info) {
+		/* this only means we have a .name file (NMVpnPluginInfo). Possibly the
+		 * NMVpnEditorPlugin is not loadable. */
+		return nm_vpn_plugin_info_get_service (plugin_info);
+	}
+	return NULL;
+}
+
+char *
+nm_vpn_get_service_for_name_default (const char *name)
+{
+	return g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);
 }
 
 gboolean
@@ -85,10 +180,12 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 	g_return_val_if_fail (s_vpn != NULL, FALSE);
 
 	service_type = nm_setting_vpn_get_service_type (s_vpn);
-	g_return_val_if_fail (service_type != NULL, FALSE);
+	if (!service_type)
+		return FALSE;
 
-	plugin = nm_vpn_get_plugin_by_service (service_type, NULL);
-	g_return_val_if_fail (plugin != NULL, FALSE);
+	plugin = nm_vpn_lookup_plugin (NULL, service_type, NULL);
+	if (!plugin)
+		return FALSE;
 
 	capabilities = nm_vpn_editor_plugin_get_capabilities (plugin);
 	return NM_FLAGS_HAS (capabilities, NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6);
