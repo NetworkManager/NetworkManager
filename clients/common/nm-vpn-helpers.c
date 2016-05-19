@@ -157,7 +157,9 @@ nm_vpn_get_service_for_name (const char *name)
 	if (plugin_info) {
 		/* this only means we have a .name file (NMVpnPluginInfo). Possibly the
 		 * NMVpnEditorPlugin is not loadable. */
-		return nm_vpn_plugin_info_get_service (plugin_info);
+		return nm_vpn_plugin_info_lookup_property (plugin_info,
+		                                           NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
+		                                           "service");
 	}
 	return NULL;
 }
