@@ -98,9 +98,15 @@ typedef struct {
 	LogFormatFlags log_format_level;
 } LogLevelDesc;
 
+static NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
+	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
+	[LOGL_INFO] = LOGD_DEFAULT,
+	[LOGL_WARN] = LOGD_DEFAULT,
+	[LOGL_ERR]  = LOGD_DEFAULT,
+};
+
 static struct {
 	NMLogLevel log_level;
-	NMLogDomain logging[_LOGL_N_REAL];
 	LogFormatFlags log_format_flags;
 	enum {
 		LOG_BACKEND_GLIB,
@@ -117,11 +123,6 @@ static struct {
 } global = {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
-	.logging = {
-		[LOGL_INFO] = LOGD_DEFAULT,
-		[LOGL_WARN] = LOGD_DEFAULT,
-		[LOGL_ERR]  = LOGD_DEFAULT,
-	},
 	.log_backend = LOG_BACKEND_GLIB,
 	.log_format_flags = _LOG_FORMAT_FLAG_DEFAULT,
 	.level_desc = {
@@ -216,7 +217,7 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	NMLogDomain new_logging[G_N_ELEMENTS (global.logging)];
+	NMLogDomain new_logging[G_N_ELEMENTS (_nm_logging_enabled_state)];
 	NMLogLevel new_log_level = global.log_level;
 	char **tmp, **iter;
 	int i;
@@ -240,7 +241,7 @@ nm_logging_setup (const char  *level,
 		if (new_log_level == _LOGL_KEEP) {
 			new_log_level = global.log_level;
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-				new_logging[i] = global.logging[i];
+				new_logging[i] = _nm_logging_enabled_state[i];
 		}
 	}
 
@@ -308,7 +309,7 @@ nm_logging_setup (const char  *level,
 
 		if (domain_log_level == _LOGL_KEEP) {
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-				new_logging[i] = (new_logging[i] & ~bits) | (global.logging[i] & bits);
+				new_logging[i] = (new_logging[i] & ~bits) | (_nm_logging_enabled_state[i] & bits);
 		} else {
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
 				if (i < domain_log_level)
@@ -326,7 +327,7 @@ nm_logging_setup (const char  *level,
 
 	global.log_level = new_log_level;
 	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
-		global.logging[i] = new_logging[i];
+		_nm_logging_enabled_state[i] = new_logging[i];
 
 	if (   had_platform_debug
 	    && _nm_logging_clear_platform_logging_cache
@@ -391,7 +392,7 @@ _domains_to_string (gboolean include_level_override)
 	str = g_string_sized_new (75);
 	for (diter = &global.domain_desc[0]; diter->name; diter++) {
 		/* If it's set for any lower level, it will also be set for LOGL_ERR */
-		if (!(diter->num & global.logging[LOGL_ERR]))
+		if (!(diter->num & _nm_logging_enabled_state[LOGL_ERR]))
 			continue;
 
 		if (str->len)
@@ -403,15 +404,15 @@ _domains_to_string (gboolean include_level_override)
 
 		/* Check if it's logging at a lower level than the default. */
 		for (i = 0; i < global.log_level; i++) {
-			if (diter->num & global.logging[i]) {
+			if (diter->num & _nm_logging_enabled_state[i]) {
 				g_string_append_printf (str, ":%s", global.level_desc[i].name);
 				break;
 			}
 		}
 		/* Check if it's logging at a higher level than the default. */
-		if (!(diter->num & global.logging[global.log_level])) {
-			for (i = global.log_level + 1; i < G_N_ELEMENTS (global.logging); i++) {
-				if (diter->num & global.logging[i]) {
+		if (!(diter->num & _nm_logging_enabled_state[global.log_level])) {
+			for (i = global.log_level + 1; i < G_N_ELEMENTS (_nm_logging_enabled_state); i++) {
+				if (diter->num & _nm_logging_enabled_state[i]) {
 					g_string_append_printf (str, ":%s", global.level_desc[i].name);
 					break;
 				}
@@ -447,9 +448,9 @@ nm_logging_all_domains_to_string (void)
 gboolean
 nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
-	nm_assert (((guint) level) < G_N_ELEMENTS (global.logging));
+	nm_assert (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state));
 
-	return !!(global.logging[level] & domain);
+	return !!(_nm_logging_enabled_state[level] & domain);
 }
 
 #if SYSTEMD_JOURNAL
@@ -496,10 +497,10 @@ _nm_log_impl (const char *file,
 	char s_buf_location[1024];
 	GTimeVal tv;
 
-	if ((guint) level >= G_N_ELEMENTS (global.logging))
+	if ((guint) level >= G_N_ELEMENTS (_nm_logging_enabled_state))
 		g_return_if_reached ();
 
-	if (!(global.logging[level] & domain))
+	if (!(_nm_logging_enabled_state[level] & domain))
 		return;
 
 	/* Make sure that %m maps to the specified error */
@@ -588,7 +589,7 @@ _nm_log_impl (const char *file,
 				const char *s_domain_1 = NULL;
 				GString *s_domain_all = NULL;
 				NMLogDomain dom_all = domain;
-				NMLogDomain dom = dom_all & global.logging[level];
+				NMLogDomain dom = dom_all & _nm_logging_enabled_state[level];
 
 				for (diter = &global.domain_desc[0]; diter->name; diter++) {
 					if (!NM_FLAGS_HAS (dom_all, diter->num))
