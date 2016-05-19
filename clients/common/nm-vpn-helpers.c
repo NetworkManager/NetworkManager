@@ -40,6 +40,7 @@ nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
 {
 	NMVpnEditorPlugin *plugin = NULL;
 	NMVpnPluginInfo *plugin_info;
+	gs_free_error GError *local = NULL;
 
 	g_return_val_if_fail (!service ^ !name, NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -52,13 +53,36 @@ nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
 	else
 		plugin_info = nm_vpn_plugin_info_list_find_by_name (plugins, name);
 
-	if (plugin_info) {
-		plugin = nm_vpn_plugin_info_get_editor_plugin (plugin_info);
-		if (!plugin)
-			plugin = nm_vpn_plugin_info_load_editor_plugin (plugin_info, error);
-	} else
+	if (!plugin_info) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
 		             _("unknown VPN plugin \"%s\""), service ?: name);
+		return NULL;
+	}
+	plugin = nm_vpn_plugin_info_get_editor_plugin (plugin_info);
+	if (!plugin)
+		plugin = nm_vpn_plugin_info_load_editor_plugin (plugin_info, &local);
+
+	if (!plugin) {
+		if (   !nm_vpn_plugin_info_get_plugin (plugin_info)
+		    && nm_vpn_plugin_info_lookup_property (plugin_info, NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "properties")) {
+			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("cannot cannot load legacy-only VPN plugin \"%s\" for \"%s\""),
+			             nm_vpn_plugin_info_get_name (plugin_info),
+			             nm_vpn_plugin_info_get_filename (plugin_info));
+		} else if (g_error_matches (local, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("cannot load VPN plugin \"%s\" due to missing \"%s\". Missing client plugin?"),
+			             nm_vpn_plugin_info_get_name (plugin_info),
+			             nm_vpn_plugin_info_get_plugin (plugin_info));
+		} else {
+			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("failed to load VPN plugin \"%s\": %s"),
+			             nm_vpn_plugin_info_get_name (plugin_info),
+			             local->message);
+		}
+		return NULL;
+	}
+
 	return plugin;
 }
 
