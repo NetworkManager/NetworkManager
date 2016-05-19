@@ -447,8 +447,7 @@ nm_logging_all_domains_to_string (void)
 gboolean
 nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
-	if ((guint) level >= G_N_ELEMENTS (global.logging))
-		g_return_val_if_reached (FALSE);
+	nm_assert (((guint) level) < G_N_ELEMENTS (global.logging));
 
 	return !!(global.logging[level] & domain);
 }
