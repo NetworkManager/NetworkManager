@@ -84,10 +84,12 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 	g_return_val_if_fail (s_vpn != NULL, FALSE);
 
 	service_type = nm_setting_vpn_get_service_type (s_vpn);
-	g_return_val_if_fail (service_type != NULL, FALSE);
+	if (!service_type)
+		return FALSE;
 
 	plugin = nm_vpn_lookup_plugin (NULL, service_type, NULL);
-	g_return_val_if_fail (plugin != NULL, FALSE);
+	if (!plugin)
+		return FALSE;
 
 	capabilities = nm_vpn_editor_plugin_get_capabilities (plugin);
 	return NM_FLAGS_HAS (capabilities, NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6);
