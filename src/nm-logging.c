@@ -101,7 +101,6 @@ typedef struct {
 static struct {
 	NMLogLevel log_level;
 	NMLogDomain logging[_LOGL_N_REAL];
-	gboolean logging_set_up;
 	LogFormatFlags log_format_flags;
 	enum {
 		LOG_BACKEND_GLIB,
@@ -116,7 +115,13 @@ static struct {
 	 * but that feature doesn't seem well supported. */
 	const LogDesc domain_desc[_DOMAIN_DESC_LEN];
 } global = {
+	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
+	.logging = {
+		[LOGL_INFO] = LOGD_DEFAULT,
+		[LOGL_WARN] = LOGD_DEFAULT,
+		[LOGL_ERR]  = LOGD_DEFAULT,
+	},
 	.log_backend = LOG_BACKEND_GLIB,
 	.log_format_flags = _LOG_FORMAT_FLAG_DEFAULT,
 	.level_desc = {
@@ -185,19 +190,6 @@ static char *_domains_to_string (gboolean include_level_override);
 
 /************************************************************************/
 
-static void
-_ensure_initialized (void)
-{
-	if (G_UNLIKELY (!global.logging_set_up)) {
-		int errsv = errno;
-
-		nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
-
-		/* must ensure that errno is not modified. */
-		errno = errsv;
-	}
-}
-
 static gboolean
 match_log_level (const char  *level,
                  NMLogLevel  *out_level,
@@ -235,13 +227,8 @@ nm_logging_setup (const char  *level,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* domains */
-	if (!domains || !*domains) {
-		domains = global.logging_set_up
-		          ? (domains_free = _domains_to_string (FALSE))
-		          : LOGD_DEFAULT_STRING;
-	}
-
-	global.logging_set_up = TRUE;
+	if (!domains || !*domains)
+		domains = (domains_free = _domains_to_string (FALSE));
 
 	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
 		new_logging[i] = 0;
@@ -384,8 +371,6 @@ nm_logging_all_levels_to_string (void)
 const char *
 nm_logging_domains_to_string (void)
 {
-	_ensure_initialized ();
-
 	if (G_UNLIKELY (!global.logging_domains_to_string))
 		global.logging_domains_to_string = _domains_to_string (TRUE);
 
@@ -465,9 +450,6 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 	if ((guint) level >= G_N_ELEMENTS (global.logging))
 		g_return_val_if_reached (FALSE);
 
-	/* This function is guaranteed not to modify errno. */
-	_ensure_initialized ();
-
 	return !!(global.logging[level] & domain);
 }
 
@@ -517,8 +499,6 @@ _nm_log_impl (const char *file,
 
 	if ((guint) level >= G_N_ELEMENTS (global.logging))
 		g_return_if_reached ();
-
-	_ensure_initialized ();
 
 	if (!(global.logging[level] & domain))
 		return;
