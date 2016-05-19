@@ -98,7 +98,7 @@ typedef struct {
 	LogFormatFlags log_format_level;
 } LogLevelDesc;
 
-static NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
+NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	[LOGL_INFO] = LOGD_DEFAULT,
 	[LOGL_WARN] = LOGD_DEFAULT,
@@ -443,14 +443,6 @@ nm_logging_all_domains_to_string (void)
 	}
 
 	return str->str;
-}
-
-gboolean
-nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
-{
-	nm_assert (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state));
-
-	return !!(_nm_logging_enabled_state[level] & domain);
 }
 
 #if SYSTEMD_JOURNAL

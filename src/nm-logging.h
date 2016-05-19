@@ -158,7 +158,14 @@ void _nm_log_impl (const char *file,
 
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);
-gboolean nm_logging_enabled (NMLogLevel level, NMLogDomain domain);
+
+extern NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL];
+static inline gboolean
+nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
+{
+	nm_assert (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state));
+	return !!(_nm_logging_enabled_state[level] & domain);
+}
 
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
