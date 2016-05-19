@@ -2916,7 +2916,6 @@ check_valid_name (const char *val, const NameItem *array, const NameItem *array_
 	GError *tmp_err = NULL;
 	int i;
 
-	g_return_val_if_fail (val, NULL);
 	g_return_val_if_fail (array, NULL);
 
 	/* Create a temporary array that can be used in nmc_string_is_valid() */
