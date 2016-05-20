@@ -920,6 +920,11 @@ AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
 NM_COMPILER_WARNINGS
 
+CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
+	-fno-strict-aliasing \
+])
+CFLAGS="$CFLAGS $with_cflags"
+
 AC_ARG_ENABLE(more-asserts,
               AS_HELP_STRING([--enable-more-asserts], [Enable more assertions for debugging (default: no). Deprecated option. Use --with-more-asserts=level]))
 more_asserts=0
