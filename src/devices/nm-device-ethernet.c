@@ -408,7 +408,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
 
-		perm_hw_addr = nm_device_get_permanent_hw_address (device);
+		perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 		mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_hw_addr) {
 			if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
@@ -1405,7 +1405,7 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 	}
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	if (perm_hw_addr) {
 		setting_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_mac) {
@@ -1502,7 +1502,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
-	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	const char *mac = nm_device_get_hw_address (device);
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GHashTableIter iter;
@@ -1636,7 +1636,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, nm_device_get_permanent_hw_address (NM_DEVICE (object)));
+		g_value_set_string (value, nm_device_get_permanent_hw_address ((NMDevice *) object, FALSE));
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);

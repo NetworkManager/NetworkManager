@@ -237,8 +237,9 @@ typedef struct _NMDevicePrivate {
 	char *        driver_version;
 	char *        firmware_version;
 	RfKillType    rfkill_type;
-	bool          firmware_missing;
-	bool          nm_plugin_missing;
+	bool          firmware_missing:1;
+	bool          nm_plugin_missing:1;
+	bool          hw_addr_perm_fake:1; /* whether the permanent HW address could not be read and is a fake */
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
@@ -11371,17 +11372,14 @@ void
 nm_device_update_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv;
-	int ifindex;
 	const guint8 *hwaddr;
 	gsize hwaddrlen = 0;
 
-	ifindex = nm_device_get_ifindex (self);
-	if (ifindex <= 0)
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->ifindex <= 0)
 		return;
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddrlen);
+	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &hwaddrlen);
 
 	if (   priv->type == NM_DEVICE_TYPE_ETHERNET
 	    && hwaddr
@@ -11433,29 +11431,49 @@ void
 nm_device_update_permanent_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+	size_t len = 0;
+	gboolean success_read;
 
-	if (priv->hw_addr_len) {
-		if (priv->ifindex > 0) {
-			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-			size_t len = 0;
-			gboolean success_read;
-
-			success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len);
-
-			if (success_read && len == priv->hw_addr_len) {
-				priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
-				       priv->hw_addr_perm);
-			} else {
-				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "%s",
-				       success_read
-				           ? "unable to read permanent MAC address"
-				           : "read HW addr length of permanent MAC address differs");
-				priv->hw_addr_perm = g_strdup (priv->hw_addr);
-			}
-		}
+	if (priv->hw_addr_perm) {
+		/* the permanent hardware address is only read once and not
+		 * re-read later.
+		 *
+		 * Except during unrealize/realize cycles, where we clear the permanent
+		 * hardware address during unrealization. */
+		return;
 	}
+
+	if (priv->ifindex <= 0)
+		return;
+
+	if (!priv->hw_addr_len) {
+		nm_device_update_hw_address (self);
+		if (!priv->hw_addr_len)
+			return;
+	}
+
+	success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len);
+	if (!success_read || len != priv->hw_addr_len) {
+		/* Fall back to current address. We use the fake address and keep it
+		 * until the device unrealizes.
+		 *
+		 * In some cases it might be necessary to know whether this is a "real" or
+		 * a temporary address (fake). */
+		_LOGD (LOGD_HW | LOGD_ETHER, "hw-addr: %s (use current: %s)",
+		       success_read
+		           ? "unable to read permanent MAC address"
+		           : "read HW addr length of permanent MAC address differs",
+		       priv->hw_addr);
+		priv->hw_addr_perm_fake = TRUE;
+		priv->hw_addr_perm = g_strdup (priv->hw_addr);
+		return;
+	}
+
+	priv->hw_addr_perm_fake = FALSE;
+	priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
+	_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
+	       priv->hw_addr_perm);
 }
 
 static gboolean
@@ -11529,7 +11547,7 @@ nm_device_hw_addr_set (NMDevice *self, const char *addr)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (!addr) {
-		addr = priv->hw_addr_perm;
+		addr = nm_device_get_permanent_hw_address (self, TRUE);
 		if (!addr)
 			return FALSE;
 	}
@@ -11546,18 +11564,26 @@ nm_device_hw_addr_reset (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	addr = priv->hw_addr_initial;
+	addr = nm_device_get_initial_hw_address (self);
 	if (!addr)
 		return FALSE;
 	return _hw_addr_set (self, addr, "reset");
 }
 
 const char *
-nm_device_get_permanent_hw_address (NMDevice *self)
+nm_device_get_permanent_hw_address (NMDevice *self, gboolean fallback_fake)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (self)->hw_addr_perm;
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (!priv->hw_addr_perm)
+		return NULL;
+	if (   priv->hw_addr_perm_fake
+	    && !fallback_fake)
+		return NULL;
+	return priv->hw_addr_perm;
 }
 
 const char *

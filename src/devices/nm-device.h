@@ -353,7 +353,8 @@ guint32         nm_device_get_ip4_route_metric  (NMDevice *dev);
 guint32         nm_device_get_ip6_route_metric  (NMDevice *dev);
 
 const char *    nm_device_get_hw_address        (NMDevice *dev);
-const char *    nm_device_get_permanent_hw_address (NMDevice *dev);
+const char *    nm_device_get_permanent_hw_address (NMDevice *dev,
+                                                    gboolean fallback_fake);
 const char *    nm_device_get_initial_hw_address (NMDevice *dev);
 
 NMDhcp4Config * nm_device_get_dhcp4_config      (NMDevice *dev);

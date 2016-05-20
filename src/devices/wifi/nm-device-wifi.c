@@ -570,7 +570,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_wireless)
 		return FALSE;
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (perm_hw_addr) {
 		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
@@ -862,7 +862,7 @@ complete_connection (NMDevice *device,
 	if (hidden)
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	if (perm_hw_addr) {
 		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
 		if (setting_mac) {
@@ -2981,7 +2981,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, nm_device_get_permanent_hw_address (NM_DEVICE (device)));
+		g_value_set_string (value, nm_device_get_permanent_hw_address ((NMDevice *) device, FALSE));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);
