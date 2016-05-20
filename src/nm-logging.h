@@ -164,7 +164,8 @@ static inline gboolean
 nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
 	nm_assert (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state));
-	return !!(_nm_logging_enabled_state[level] & domain);
+	return    (((guint) level) < G_N_ELEMENTS (_nm_logging_enabled_state))
+	       && !!(_nm_logging_enabled_state[level] & domain);
 }
 
 const char *nm_logging_all_levels_to_string (void);
