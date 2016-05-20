@@ -1593,6 +1593,7 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 			_LOGD (LOGD_DEVICE, "device got a valid hw address");
 			nm_device_update_hw_address (self);
 			nm_device_update_initial_hw_address (self);
+			nm_device_update_permanent_hw_address (self);
 			if (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE) {
 				/*
 				 * If the device is UNAVAILABLE, any previous try to
