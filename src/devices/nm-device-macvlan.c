@@ -516,7 +516,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
 	if (s_wired)
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_HW);
+	nm_device_hw_addr_set (dev, cloned_mac);
 
 	return TRUE;
 }
@@ -550,11 +550,7 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 static void
 deactivate (NMDevice *device)
 {
-	/* Reset MAC address back to initial address */
-	if (nm_device_get_initial_hw_address (device)) {
-		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device),
-		                       "reset", LOGD_DEVICE);
-	}
+	nm_device_hw_addr_reset (device);
 }
 
 /******************************************************************/

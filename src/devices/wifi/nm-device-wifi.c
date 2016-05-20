@@ -491,9 +491,7 @@ deactivate (NMDevice *device)
 	/* Clear any critical protocol notification in the Wi-Fi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
-	/* Reset MAC address back to initial address */
-	if (nm_device_get_initial_hw_address (device))
-		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_WIFI);
+	nm_device_hw_addr_reset (device);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
@@ -2328,7 +2326,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	/* Set spoof MAC to the interface */
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
-	nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_WIFI);
+	nm_device_hw_addr_set (device, cloned_mac);
 
 	/* AP mode never uses a specific object or existing scanned AP */
 	if (priv->mode != NM_802_11_MODE_AP) {

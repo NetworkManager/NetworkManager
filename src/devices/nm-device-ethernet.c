@@ -824,7 +824,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
 		if (s_wired)
 			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_ETHER);
+		nm_device_hw_addr_set (dev, cloned_mac);
 
 		/* If we're re-activating a PPPoE connection a short while after
 		 * a previous PPPoE connection was torn down, wait a bit to allow the
@@ -1364,9 +1364,7 @@ deactivate (NMDevice *device)
 	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
 		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 
-	/* Reset MAC address back to initial address */
-	if (nm_device_get_initial_hw_address (device))
-		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_ETHER);
+	nm_device_hw_addr_reset (device);
 }
 
 static gboolean

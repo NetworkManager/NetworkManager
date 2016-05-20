@@ -11406,54 +11406,96 @@ nm_device_update_initial_hw_address (NMDevice *self)
 	}
 }
 
-gboolean
-nm_device_set_hw_addr (NMDevice *self, const char *addr,
-                       const char *detail, guint64 hw_log_domain)
+static gboolean
+_hw_addr_set (NMDevice *self,
+              const char *addr,
+              const char *detail)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	gboolean success = FALSE;
-	const char *cur_addr = nm_device_get_hw_address (self);
+	const char *cur_addr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
+	guint hw_addr_len;
 
-	/* Fall back to the permanent address */
-	if (!addr)
-		addr = priv->perm_hw_addr;
-	if (!addr)
-		return FALSE;
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (addr);
+	nm_assert (detail);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	cur_addr = nm_device_get_hw_address (self);
 
 	/* Do nothing if current MAC is same */
 	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-		_LOGD (LOGD_DEVICE | hw_log_domain, "no MAC address change needed");
+		_LOGD (LOGD_DEVICE, "no MAC address change needed");
 		return TRUE;
 	}
-	if (!nm_utils_hwaddr_aton (addr, addr_bytes, priv->hw_addr_len)) {
-		_LOGW (LOGD_DEVICE | hw_log_domain, "invalid MAC address %s", addr);
+
+	hw_addr_len = priv->hw_addr_len;
+	if (!hw_addr_len)
+		hw_addr_len = _nm_utils_hwaddr_length (addr);
+	if (   !hw_addr_len
+	    || !nm_utils_hwaddr_aton (addr, addr_bytes, hw_addr_len)) {
+		_LOGW (LOGD_DEVICE, "invalid MAC address %s", addr);
 		return FALSE;
 	}
 
 	/* Can't change MAC address while device is up */
 	nm_device_take_down (self, FALSE);
 
-	success = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, priv->hw_addr_len);
+	success = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, hw_addr_len);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
 		cur_addr = nm_device_get_hw_address (self);
 		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-			_LOGI (LOGD_DEVICE | hw_log_domain, "%s MAC address to %s",
+			_LOGI (LOGD_DEVICE, "%s MAC address to %s",
 			       detail, addr);
 		} else {
-			_LOGW (LOGD_DEVICE | hw_log_domain,
+			_LOGW (LOGD_DEVICE,
 			       "new MAC address %s not successfully set", addr);
 			success = FALSE;
 		}
 	} else {
-		_LOGW (LOGD_DEVICE | hw_log_domain, "failed to %s MAC address to %s",
+		_LOGW (LOGD_DEVICE, "failed to %s MAC address to %s",
 		       detail, addr);
 	}
 	nm_device_bring_up (self, TRUE, NULL);
 
 	return success;
+}
+
+gboolean
+nm_device_hw_addr_set (NMDevice *self, const char *addr)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!addr) {
+		addr = priv->perm_hw_addr;
+		if (!addr)
+			return FALSE;
+	}
+	return _hw_addr_set (self, addr, "set");
+}
+
+gboolean
+nm_device_hw_addr_reset (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+	const char *addr;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	addr = priv->initial_hw_addr;
+	if (!addr)
+		return FALSE;
+	return _hw_addr_set (self, addr, "reset");
 }
 
 const char *

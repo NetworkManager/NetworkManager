@@ -308,7 +308,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
 	if (s_wired)
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_DEVICE);
+	nm_device_hw_addr_set (device, cloned_mac);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }

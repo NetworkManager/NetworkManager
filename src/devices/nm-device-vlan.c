@@ -114,7 +114,7 @@ parent_hwaddr_maybe_changed (NMDevice *parent,
 	_LOGD (LOGD_VLAN, "parent hardware address changed to %s%s%s",
 	       NM_PRINT_FMT_QUOTE_STRING (new_mac));
 	if (new_mac) {
-		nm_device_set_hw_addr (self, new_mac, "set", LOGD_VLAN);
+		nm_device_hw_addr_set (self, new_mac);
 		/* When changing the hw address the interface is taken down,
 		 * removing the IPv6 configuration; reapply it.
 		 */
@@ -563,7 +563,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
 	if (s_wired)
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_VLAN);
+	nm_device_hw_addr_set (dev, cloned_mac);
 
 	/* Change MAC address to parent's one if needed */
 	if (priv->parent)
@@ -620,9 +620,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 static void
 deactivate (NMDevice *device)
 {
-	/* Reset MAC address back to initial address */
-	if (nm_device_get_initial_hw_address (device))
-		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_VLAN);
+	nm_device_hw_addr_reset (device);
 }
 
 /******************************************************************/
