@@ -11391,10 +11391,12 @@ nm_device_update_initial_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->hw_addr_len) {
+	if (   priv->hw_addr
+	    && !nm_streq0 (priv->initial_hw_addr, priv->hw_addr)) {
 		g_free (priv->initial_hw_addr);
 		priv->initial_hw_addr = g_strdup (priv->hw_addr);
-		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
+		_LOGD (LOGD_DEVICE, "hw-addr: update initial MAC address %s",
+		       priv->initial_hw_addr);
 	}
 }
 
@@ -11448,7 +11450,7 @@ _hw_addr_set (NMDevice *self,
 
 	/* Do nothing if current MAC is same */
 	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-		_LOGD (LOGD_DEVICE, "no MAC address change needed");
+		_LOGD (LOGD_DEVICE, "set-hw-addr: no MAC address change needed");
 		return TRUE;
 	}
 
@@ -11457,9 +11459,11 @@ _hw_addr_set (NMDevice *self,
 		hw_addr_len = _nm_utils_hwaddr_length (addr);
 	if (   !hw_addr_len
 	    || !nm_utils_hwaddr_aton (addr, addr_bytes, hw_addr_len)) {
-		_LOGW (LOGD_DEVICE, "invalid MAC address %s", addr);
+		_LOGW (LOGD_DEVICE, "set-hw-addr: invalid MAC address %s", addr);
 		return FALSE;
 	}
+
+	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s'...", addr);
 
 	/* Can't change MAC address while device is up */
 	nm_device_take_down (self, FALSE);
@@ -11470,15 +11474,15 @@ _hw_addr_set (NMDevice *self,
 		nm_device_update_hw_address (self);
 		cur_addr = nm_device_get_hw_address (self);
 		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-			_LOGI (LOGD_DEVICE, "%s MAC address to %s",
+			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s",
 			       detail, addr);
 		} else {
 			_LOGW (LOGD_DEVICE,
-			       "new MAC address %s not successfully set", addr);
+			       "set-hw-addr: new MAC address %s not successfully set", addr);
 			success = FALSE;
 		}
 	} else {
-		_LOGW (LOGD_DEVICE, "failed to %s MAC address to %s",
+		_LOGW (LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s",
 		       detail, addr);
 	}
 	nm_device_bring_up (self, TRUE, NULL);
