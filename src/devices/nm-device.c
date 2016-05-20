@@ -11391,15 +11391,20 @@ nm_device_update_initial_hw_address (NMDevice *self)
 		if (priv->ifindex > 0) {
 			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
 			size_t len = 0;
+			gboolean success_read;
 
-			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
-				g_warn_if_fail (len == priv->hw_addr_len);
+			success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len);
+
+			if (success_read && len == priv->hw_addr_len) {
 				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
 				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
 				       priv->perm_hw_addr);
 			} else {
 				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
+				_LOGD (LOGD_HW | LOGD_ETHER, "%s",
+				       success_read
+				           ? "unable to read permanent MAC address"
+				           : "read HW addr length of permanent MAC address differs");
 				priv->perm_hw_addr = g_strdup (priv->hw_addr);
 			}
 		}
