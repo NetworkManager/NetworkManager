@@ -814,7 +814,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
-	const char *cloned_mac;
+	const char *cloned_mac = NULL;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -822,11 +822,9 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 		s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
-		if (s_wired) {
-			/* Set device MAC address if the connection wants to change it */
+		if (s_wired)
 			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-			nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_ETHER);
-		}
+		nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_ETHER);
 
 		/* If we're re-activating a PPPoE connection a short while after
 		 * a previous PPPoE connection was torn down, wait a bit to allow the

@@ -551,7 +551,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (dev);
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
-	const char *cloned_mac;
+	const char *cloned_mac = NULL;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -561,11 +561,9 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		return ret;
 
 	s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
-	if (s_wired) {
-		/* Set device MAC address if the connection wants to change it */
+	if (s_wired)
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_VLAN);
-	}
+	nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_VLAN);
 
 	/* Change MAC address to parent's one if needed */
 	if (priv->parent)
