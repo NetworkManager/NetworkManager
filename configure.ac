@@ -954,13 +954,17 @@ fi
 
 AC_ARG_ENABLE(ld-gc, AS_HELP_STRING([--enable-ld-gc], [Enable garbage collection of unused symbols on linking (default: auto)]))
 if (test "${enable_ld_gc}" != "no"); then
-    NM_COMPILER_FLAG([-fdata-sections -ffunction-sections -Wl,--gc-sections], [enable_ld_gc='yes'], [
-        if (test "${enable_ld_gc}" = "yes"); then
-            AC_MSG_ERROR([Unused symbol eviction requested but not supported.])
-        else
-            enable_ld_gc='no'
-        fi
-    ])
+	CC_CHECK_FLAG_APPEND([ld_gc_flags], [CFLAGS], [-fdata-sections -ffunction-sections -Wl,--gc-sections])
+	if (test -n "${ld_gc_flags}"); then
+		enable_ld_gc="yes"
+		CFLAGS="$CFLAGS $ld_gc_flags"
+	else
+		if (test "${enable_ld_gc}" = "yes"); then
+			AC_MSG_ERROR([Unused symbol eviction requested but not supported.])
+		else
+			enable_ld_gc="no"
+		fi
+	fi
 fi
 
 dnl -------------------------
