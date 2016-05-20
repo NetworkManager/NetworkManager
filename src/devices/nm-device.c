@@ -11041,6 +11041,9 @@ _set_state_full (NMDevice *self,
 			}
 		}
 		break;
+	case NM_DEVICE_STATE_PREPARE:
+		nm_device_update_initial_hw_address (self);
+		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
 		if (old_state > NM_DEVICE_STATE_NEED_AUTH) {
 			/* Clean up any half-done IP operations if the device's layer2
