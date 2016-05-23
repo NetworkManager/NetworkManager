@@ -303,8 +303,8 @@ no-auto-default=*
         configuration with DNSSEC support. The /etc/resolv.conf
         will be managed by dnssec-trigger daemon.</para>
         <para><literal>none</literal>: NetworkManager will not
-        modify resolv.conf. This implies <varname>rc-manager</varname>
-        <literal>unmanaged</literal></para>
+        modify resolv.conf. This implies
+        <literal>rc-manager</literal>&nbsp;<literal>unmanaged</literal></para>
         </listitem>
       </varlistentry>
 
