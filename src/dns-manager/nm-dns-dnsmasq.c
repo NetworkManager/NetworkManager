@@ -143,12 +143,11 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
 				for (iter = domains; iter && *iter; iter++)
 					add_dnsmasq_nameserver (self, servers, buf, *iter);
 				g_strfreev (domains);
-				added = TRUE;
 			}
 		}
 	}
 
-	/* If no searches or domains, just add the namservers */
+	/* If no searches or domains, just add the nameservers */
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i);
