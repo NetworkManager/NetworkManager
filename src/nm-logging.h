@@ -168,6 +168,8 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 	       && !!(_nm_logging_enabled_state[level] & domain);
 }
 
+NMLogLevel nm_logging_get_level (NMLogDomain domain);
+
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
 

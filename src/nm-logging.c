@@ -445,6 +445,27 @@ nm_logging_all_domains_to_string (void)
 	return str->str;
 }
 
+/**
+ * nm_logging_get_level:
+ * @domain: find the lowest enabled logging level for the
+ *   given domain. If this is a set of multiple
+ *   domains, the most verbose level will be returned.
+ *
+ * Returns: the lowest (most verbose) logging level for the
+ *   give @domain, or %_LOGL_OFF if it is disabled.
+ **/
+NMLogLevel
+nm_logging_get_level (NMLogDomain domain)
+{
+	NMLogLevel sl = _LOGL_OFF;
+
+	G_STATIC_ASSERT (LOGL_TRACE == 0);
+	while (   sl > LOGL_TRACE
+	       && nm_logging_enabled (sl - 1, domain))
+		sl--;
+	return sl;
+}
+
 #if SYSTEMD_JOURNAL
 __attribute__((__format__ (__printf__, 4, 5)))
 static void
