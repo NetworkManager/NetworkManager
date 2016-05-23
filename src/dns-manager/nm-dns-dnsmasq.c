@@ -100,12 +100,11 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 				for (iter = domains; iter && *iter; iter++)
 					g_string_append_printf (str, "server=/%s/%s\n", *iter, buf);
 				g_strfreev (domains);
-				added = TRUE;
 			}
 		}
 	}
 
-	/* If no searches or domains, just add the namservers */
+	/* If no searches or domains, just add the nameservers */
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i);
