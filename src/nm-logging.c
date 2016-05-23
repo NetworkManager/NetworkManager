@@ -108,6 +108,7 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 static struct {
 	NMLogLevel log_level;
 	LogFormatFlags log_format_flags;
+	bool uses_syslog:1;
 	enum {
 		LOG_BACKEND_GLIB,
 		LOG_BACKEND_SYSLOG,
@@ -737,6 +738,12 @@ nm_log_handler (const gchar *log_domain,
 	}
 }
 
+gboolean
+nm_logging_syslog_enabled (void)
+{
+	return global.uses_syslog;
+}
+
 void
 nm_logging_syslog_openlog (const char *logging_backend)
 {
@@ -756,6 +763,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 #if SYSTEMD_JOURNAL
 	} else if (strcmp (logging_backend, "syslog") != 0) {
 		global.log_backend = LOG_BACKEND_JOURNAL;
+		global.uses_syslog = TRUE;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
@@ -763,6 +771,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 #endif
 	} else {
 		global.log_backend = LOG_BACKEND_SYSLOG;
+		global.uses_syslog = TRUE;
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	}
 
