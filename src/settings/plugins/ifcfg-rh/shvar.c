@@ -271,26 +271,23 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
 {
 	char *value = NULL;
 	char *line;
-	char *keyString;
-	int len;
+	guint len;
 
 	g_return_val_if_fail (s != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
 
-	keyString = g_strdup_printf ("%s=", key);
-	len = strlen (keyString);
+	len = strlen (key);
 
 	for (s->current = s->lineList; s->current; s->current = s->current->next) {
 		line = s->current->data;
-		if (!strncmp (keyString, line, len)) {
+		if (!strncmp (key, line, len) && line[len] == '=') {
 			/* Strip trailing spaces before unescaping to preserve spaces quoted whitespace */
-			value = g_strchomp (g_strdup (line + len));
+			value = g_strchomp (g_strdup (line + len + 1));
 			if (!verbatim)
 				svUnescape (value);
 			break;
 		}
 	}
-	g_free (keyString);
 
 	return value;
 }
