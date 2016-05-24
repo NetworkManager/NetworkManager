@@ -93,7 +93,16 @@ typedef struct {
 typedef struct {
 	const char *name;
 	const char *level_str;
+
+	/* nm-logging uses syslog internally. Note that the three most-verbose syslog levels
+	 * are LOG_DEBUG, LOG_INFO and LOG_NOTICE. Journal already highlights LOG_NOTICE
+	 * as special.
+	 *
+	 * On the other hand, we have three levels LOGL_TRACE, LOGL_DEBUG and LOGL_INFO,
+	 * which are regular messages not to be highlighted. For that reason, we must map
+	 * LOGL_TRACE and LOGL_DEBUG both to syslog level LOG_DEBUG. */
 	int syslog_level;
+
 	GLogLevelFlags g_log_level;
 	LogFormatFlags log_format_level;
 } LogLevelDesc;
@@ -128,7 +137,7 @@ static struct {
 	.log_format_flags = _LOG_FORMAT_FLAG_DEFAULT,
 	.level_desc = {
 		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
-		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
+		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
 		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    _LOG_FORMAT_FLAG_LEVEL_INFO },
 		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_INFO },
 		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_ERROR },
