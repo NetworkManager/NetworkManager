@@ -170,6 +170,5 @@ src/nm-config.c
 src/nm-iface-helper.c
 src/nm-logging.c
 src/nm-manager.c
-src/nm-sleep-monitor-systemd.c
 src/settings/plugins/ibft/plugin.c
 src/settings/plugins/ifcfg-rh/reader.c
