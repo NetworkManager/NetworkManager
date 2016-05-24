@@ -697,6 +697,7 @@ manf_defaults[] = {
 	"WLAN",
 	"ALICE-WLAN",
 	"Speedport W 501V",
+	"TURBONETT",
 };
 
 #define ARRAY_SIZE(a)  (sizeof (a) / sizeof (a[0]))
