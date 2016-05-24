@@ -48,6 +48,7 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 typedef struct {
 	GDBusProxy *dnsmasq;
 	GCancellable *dnsmasq_cancellable;
+	GCancellable *update_cancellable;
 	gboolean running;
 
 	GVariant *set_server_ex_args;
@@ -264,14 +265,20 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6, 
 }
 
 static void
-dnsmasq_update_done (GObject *source, GAsyncResult *res, gpointer user_data)
+dnsmasq_update_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
-	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (user_data);
-	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+	NMDnsDnsmasq *self;
+	NMDnsDnsmasqPrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *response = NULL;
 
-	response = g_dbus_proxy_call_finish (priv->dnsmasq, res, &error);
+	response = g_dbus_proxy_call_finish (proxy, res, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_DNS_DNSMASQ (user_data);
+	priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+
 	if (!response)
 		_LOGW ("dnsmasq update failed: %s", error->message);
 	else
@@ -289,12 +296,15 @@ send_dnsmasq_update (NMDnsDnsmasq *self)
 	if (priv->running) {
 		_LOGD ("trying to update dnsmasq nameservers");
 
+		nm_clear_g_cancellable (&priv->update_cancellable);
+		priv->update_cancellable = g_cancellable_new ();
+
 		g_dbus_proxy_call (priv->dnsmasq,
 		                   "SetServersEx",
 		                   priv->set_server_ex_args,
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
-		                   NULL,
+		                   priv->update_cancellable,
 		                   (GAsyncReadyCallback) dnsmasq_update_done,
 		                   self);
 		g_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
@@ -558,6 +568,7 @@ dispose (GObject *object)
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (object);
 
 	nm_clear_g_cancellable (&priv->dnsmasq_cancellable);
+	nm_clear_g_cancellable (&priv->update_cancellable);
 
 	g_clear_object (&priv->dnsmasq);
 
