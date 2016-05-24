@@ -20,11 +20,12 @@
 
 #include "nm-default.h"
 
+#include "nm-device-macvlan.h"
+
 #include <string.h>
 
-#include "nm-device-macvlan.h"
 #include "nm-device-private.h"
-#include "nm-connection-provider.h"
+#include "nm-settings.h"
 #include "nm-activation-request.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
@@ -488,7 +489,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 			NMConnection *parent_connection;
 
 			/* Don't change a parent specified by UUID if it's still valid */
-			parent_connection = nm_connection_provider_get_connection_by_uuid (nm_connection_provider_get (), setting_parent);
+			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device), setting_parent);
 			if (parent_connection && nm_device_check_connection_compatible (priv->parent, parent_connection))
 				new_parent = NULL;
 		}

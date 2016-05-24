@@ -21,10 +21,7 @@
 #ifndef __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
 #define __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
 
-
-#include "nm-default.h"
 #include "nm-bluez-device.h"
-#include "nm-connection-provider.h"
 
 #define NM_TYPE_BLUEZ4_ADAPTER            (nm_bluez4_adapter_get_type ())
 #define NM_BLUEZ4_ADAPTER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4Adapter))
@@ -54,7 +51,7 @@ typedef struct {
 GType nm_bluez4_adapter_get_type (void);
 
 NMBluez4Adapter *nm_bluez4_adapter_new (const char *path,
-                                        NMConnectionProvider *provider);
+                                        NMSettings *settings);
 
 const char *nm_bluez4_adapter_get_path (NMBluez4Adapter *self);
 

@@ -25,6 +25,8 @@
 
 #include "nm-default.h"
 
+#include "nm-settings.h"
+
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -59,7 +61,6 @@
 #include "nm-core-internal.h"
 
 #include "nm-device-ethernet.h"
-#include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
 #include "nm-bus-manager.h"
@@ -68,7 +69,6 @@
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
-#include "nm-connection-provider.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
 #include "NetworkManagerUtils.h"
@@ -132,15 +132,11 @@ static void claim_connection (NMSettings *self,
 static void unmanaged_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 static void unrecognized_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 
-static void connection_provider_iface_init (NMConnectionProviderInterface *cp_iface);
-
 static void connection_ready_changed (NMSettingsConnection *conn,
                                       GParamSpec *pspec,
                                       gpointer user_data);
 
-G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_iface_init))
-
+G_DEFINE_TYPE (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT);
 
 typedef struct {
 	NMAgentManager *agent_mgr;
@@ -152,9 +148,9 @@ typedef struct {
 	GSList *plugins;
 	gboolean connections_loaded;
 	GHashTable *connections;
+	NMSettingsConnection **connections_cached_list;
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
-	GSList *get_connections_cache;
 
 	gboolean started;
 	gboolean startup_complete;
@@ -409,13 +405,60 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	return 1;
 }
 
+/**
+ * nm_settings_get_connections:
+ * @self: the #NMSettings
+ * @out_len: (out): (allow-none): returns the number of returned
+ *   connections.
+ *
+ * Returns: (transfer-none): a list of NMSettingsConnections. The list is
+ * unsorted and NULL terminated. The result is never %NULL, in case of no
+ * connections, it returns an empty list.
+ * The returned list is cached internally, only valid until the next
+ * NMSettings operation.
+ */
+NMSettingsConnection *const*
+nm_settings_get_connections (NMSettings *self, guint *out_len)
+{
+	GHashTableIter iter;
+	NMSettingsPrivate *priv;
+	guint l, i;
+	NMSettingsConnection **v;
+	NMSettingsConnection *con;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	if (priv->connections_cached_list) {
+		NM_SET_OUT (out_len, g_hash_table_size (priv->connections));
+		return priv->connections_cached_list;
+	}
+
+	l = g_hash_table_size (priv->connections);
+
+	v = g_new (NMSettingsConnection *, l + 1);
+
+	i = 0;
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &con))
+		v[i++] = con;
+	v[i] = NULL;
+
+	nm_assert (i == l);
+
+	NM_SET_OUT (out_len, l);
+	priv->connections_cached_list = v;
+	return v;
+}
+
 /* Returns a list of NMSettingsConnections.
  * The list is sorted in the order suitable for auto-connecting, i.e.
  * first go connections with autoconnect=yes and most recent timestamp.
  * Caller must free the list with g_slist_free().
  */
 GSList *
-nm_settings_get_connections (NMSettings *self)
+nm_settings_get_connections_sorted (NMSettings *self)
 {
 	GHashTableIter iter;
 	gpointer data = NULL;
@@ -894,7 +937,6 @@ connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer
 	               0,
 	               connection,
 	               by_user);
-	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_UPDATED, connection);
 }
 
 static void
@@ -934,12 +976,12 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	/* Forget about the connection internally */
 	g_hash_table_remove (priv->connections, (gpointer) cpath);
+	g_clear_pointer (&priv->connections_cached_list, g_free);
 
 	/* Notify D-Bus */
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
 
 	/* Re-emit for listeners like NMPolicy */
-	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 	_notify (self, PROP_CONNECTIONS);
 	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (connection)))
 		nm_exported_object_unexport (NM_EXPORTED_OBJECT (connection));
@@ -1078,6 +1120,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	g_hash_table_insert (priv->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
 	                     g_object_ref (connection));
+	g_clear_pointer (&priv->connections_cached_list, g_free);
 
 	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ");
 
@@ -1087,7 +1130,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	if (priv->connections_loaded) {
 		/* Internal added signal */
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
-		g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_ADDED, connection);
 		_notify (self, PROP_CONNECTIONS);
 
 		/* Exported D-Bus signal */
@@ -1161,16 +1203,6 @@ nm_settings_add_connection (NMSettings *self,
 	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 	                     "No plugin supported adding this connection");
 	return NULL;
-}
-
-static NMConnection *
-_nm_connection_provider_add_connection (NMConnectionProvider *provider,
-                                        NMConnection *connection,
-                                        gboolean save_to_disk,
-                                        GError **error)
-{
-	g_assert (NM_IS_CONNECTION_PROVIDER (provider) && NM_IS_SETTINGS (provider));
-	return NM_CONNECTION (nm_settings_add_connection (NM_SETTINGS (provider), connection, save_to_disk, error));
 }
 
 static gboolean
@@ -2080,21 +2112,40 @@ nm_settings_sort_connections (gconstpointer a, gconstpointer b)
 	return 0;
 }
 
-static GSList *
-get_best_connections (NMConnectionProvider *provider,
-                      guint max_requested,
-                      const char *ctype1,
-                      const char *ctype2,
-                      NMConnectionFilterFunc func,
-                      gpointer func_data)
+/**
+ * nm_settings_get_best_connections:
+ * @self: the #NMSetting
+ * @max_requested: if non-zero, the maximum number of connections to return
+ * @ctype1: an #NMSetting base type (eg NM_SETTING_WIRELESS_SETTING_NAME) to
+ *   filter connections against
+ * @ctype2: a second #NMSetting base type (eg NM_SETTING_WIRELESS_SETTING_NAME)
+ *   to filter connections against
+ * @func: caller-supplied function for filtering connections
+ * @func_data: caller-supplied data passed to @func
+ *
+ * Returns: a #GSList of #NMConnection objects in sorted order representing the
+ *   "best" or highest-priority connections filtered by @ctype1 and/or @ctype2,
+ *   and/or @func.  Caller is responsible for freeing the returned #GSList, but
+ *   the contained values do not need to be unreffed.
+ */
+GSList *
+nm_settings_get_best_connections (NMSettings *self,
+                                  guint max_requested,
+                                  const char *ctype1,
+                                  const char *ctype2,
+                                  NMConnectionFilterFunc func,
+                                  gpointer func_data)
 {
-	NMSettings *self = NM_SETTINGS (provider);
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMSettingsPrivate *priv;
 	GSList *sorted = NULL;
 	GHashTableIter iter;
 	NMSettingsConnection *connection;
 	guint added = 0;
 	guint64 oldest = 0;
+
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
@@ -2104,7 +2155,7 @@ get_best_connections (NMConnectionProvider *provider,
 			continue;
 		if (ctype2 && !nm_connection_is_type (NM_CONNECTION (connection), ctype2))
 			continue;
-		if (func && !func (provider, NM_CONNECTION (connection), func_data))
+		if (func && !func (self, NM_CONNECTION (connection), func_data))
 			continue;
 
 		/* Don't bother with a connection that's older than the oldest one in the list */
@@ -2128,33 +2179,6 @@ get_best_connections (NMConnectionProvider *provider,
 	}
 
 	return g_slist_reverse (sorted);
-}
-
-static const GSList *
-get_connections (NMConnectionProvider *provider)
-{
-	GSList *list = NULL;
-	NMSettings *self = NM_SETTINGS (provider);
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	list = _nm_utils_hash_values_to_slist (priv->connections);
-
-	/* Cache the list every call so we can keep it 'const' for callers */
-	g_slist_free (priv->get_connections_cache);
-	priv->get_connections_cache = list;
-	return list;
-}
-
-static NMConnection *
-cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
-{
-	return NM_CONNECTION (nm_settings_get_connection_by_uuid (NM_SETTINGS (provider), uuid));
-}
-
-static const GSList *
-cp_get_unmanaged_specs (NMConnectionProvider *provider)
-{
-	return nm_settings_get_unmanaged_specs (NM_SETTINGS (provider));
 }
 
 /***************************************************************/
@@ -2318,16 +2342,6 @@ nm_settings_start (NMSettings *self, GError **error)
 }
 
 static void
-connection_provider_iface_init (NMConnectionProviderInterface *cp_iface)
-{
-    cp_iface->get_best_connections = get_best_connections;
-    cp_iface->get_connections = get_connections;
-    cp_iface->add_connection = _nm_connection_provider_add_connection;
-    cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
-	cp_iface->get_unmanaged_specs = cp_get_unmanaged_specs;
-}
-
-static void
 nm_settings_init (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
@@ -2391,7 +2405,7 @@ finalize (GObject *object)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->connections);
-	g_slist_free (priv->get_connections_cache);
+	g_clear_pointer (&priv->connections_cached_list, g_free);
 
 	g_slist_free_full (priv->unmanaged_specs, g_free);
 	g_slist_free_full (priv->unrecognized_specs, g_free);

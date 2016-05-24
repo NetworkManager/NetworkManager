@@ -49,6 +49,18 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
 #define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
 
+/**
+ * NMConnectionFilterFunc:
+ * @settings: The #NMSettings requesting the filtering
+ * @connection: the connection to be filtered
+ * @func_data: the caller-provided data pointer
+ *
+ * Returns: %TRUE to allow the connection, %FALSE to ignore it
+ */
+typedef gboolean (*NMConnectionFilterFunc) (NMSettings *settings,
+                                            NMConnection *connection,
+                                            gpointer func_data);
+
 struct _NMSettings {
 	NMExportedObject parent_instance;
 };
@@ -60,6 +72,9 @@ typedef struct {
 typedef void (*NMSettingsSetHostnameCb) (const char *name, gboolean result, gpointer user_data);
 
 GType nm_settings_get_type (void);
+
+NMSettings *nm_settings_get (void);
+#define NM_SETTINGS_GET (nm_settings_get ())
 
 NMSettings *nm_settings_new (void);
 gboolean nm_settings_start (NMSettings *self, GError **error);
@@ -86,10 +101,16 @@ void nm_settings_add_connection_dbus (NMSettings *self,
                                       NMSettingsAddCallback callback,
                                       gpointer user_data);
 
-/* Returns a list of NMSettingsConnections.  Caller must free the list with
- * g_slist_free().
- */
-GSList *nm_settings_get_connections (NMSettings *settings);
+NMSettingsConnection *const* nm_settings_get_connections (NMSettings *settings, guint *out_len);
+
+GSList *nm_settings_get_connections_sorted (NMSettings *settings);
+
+GSList *nm_settings_get_best_connections (NMSettings *self,
+                                          guint max_requested,
+                                          const char *ctype1,
+                                          const char *ctype2,
+                                          NMConnectionFilterFunc func,
+                                          gpointer func_data);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,

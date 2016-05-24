@@ -20,19 +20,20 @@
 
 #include "nm-default.h"
 
+#include "nm-bluez-manager.h"
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include "nm-bluez-manager.h"
 #include "nm-device-factory.h"
 #include "nm-setting-bluetooth.h"
+#include "nm-settings.h"
 #include "nm-bluez4-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
-#include "nm-connection-provider.h"
 #include "nm-device-bt.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
@@ -51,7 +52,7 @@
 typedef struct {
 	int bluez_version;
 
-	NMConnectionProvider *provider;
+	NMSettings *settings;
 	NMBluez4Manager *manager4;
 	NMBluez5Manager *manager5;
 
@@ -190,7 +191,7 @@ setup_bluez4 (NMBluezManager *self)
 	g_return_if_fail (!priv->manager4 && !priv->manager5 && !priv->bluez_version);
 
 	setup_version_number (self, 4);
-	priv->manager4 = manager = nm_bluez4_manager_new (priv->provider);
+	priv->manager4 = manager = nm_bluez4_manager_new (priv->settings);
 
 	g_signal_connect (manager,
 	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
@@ -209,7 +210,7 @@ setup_bluez5 (NMBluezManager *self)
 	g_return_if_fail (!priv->manager4 && !priv->manager5 && !priv->bluez_version);
 
 	setup_version_number (self, 5);
-	priv->manager5 = manager = nm_bluez5_manager_new (priv->provider);
+	priv->manager5 = manager = nm_bluez5_manager_new (priv->settings);
 
 	g_signal_connect (manager,
 	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
@@ -407,9 +408,9 @@ dispose (GObject *object)
 
 	priv->bluez_version = 0;
 
-	g_clear_object (&priv->provider);
-
 	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
+
+	g_clear_object (&priv->settings);
 }
 
 static void
@@ -417,7 +418,7 @@ nm_bluez_manager_init (NMBluezManager *self)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	priv->provider = g_object_ref (nm_connection_provider_get ());
+	priv->settings = g_object_ref (NM_SETTINGS_GET);
 }
 
 static NMDevice *
