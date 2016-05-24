@@ -11251,7 +11251,6 @@ nm_device_update_hw_address (NMDevice *self)
 	int ifindex = nm_device_get_ifindex (self);
 	const guint8 *hwaddr;
 	gsize hwaddrlen = 0;
-	static const guint8 zero_hwaddr[ETH_ALEN];
 
 	if (ifindex <= 0)
 		return;
@@ -11259,7 +11258,7 @@ nm_device_update_hw_address (NMDevice *self)
 	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddrlen);
 
 	if (   priv->type == NM_DEVICE_TYPE_ETHERNET
-	    && nm_utils_hwaddr_matches (hwaddr, hwaddrlen, zero_hwaddr, sizeof (zero_hwaddr)))
+	    && nm_utils_hwaddr_matches (hwaddr, hwaddrlen, nm_ip_addr_zero.addr_eth, sizeof (nm_ip_addr_zero.addr_eth)))
 		hwaddrlen = 0;
 
 	if (hwaddrlen) {
