@@ -65,12 +65,16 @@ typedef enum  { /*< skip >*/
 	LOGD_DISPATCH   = (1LL << 33),
 	LOGD_AUDIT      = (1LL << 34),
 	LOGD_SYSTEMD    = (1LL << 35),
+	LOGD_VPN_PLUGIN = (1LL << 36),
 
 	__LOGD_MAX,
-	LOGD_ALL       = ((__LOGD_MAX - 1LL) << 1) - 1LL,
+	LOGD_ALL       = (((__LOGD_MAX - 1LL) << 1) - 1LL) & ~(
+	                                                       LOGD_VPN_PLUGIN | /*not even part of ALL, because it might expose sensitive information. */
+	                                                       0),
 	LOGD_DEFAULT   = LOGD_ALL & ~(
 	                              LOGD_DBUS_PROPS |
 	                              LOGD_WIFI_SCAN |
+	                              LOGD_VPN_PLUGIN |
 	                              0),
 
 	/* aliases: */
@@ -168,6 +172,8 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 	       && !!(_nm_logging_enabled_state[level] & domain);
 }
 
+NMLogLevel nm_logging_get_level (NMLogDomain domain);
+
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
 
@@ -176,6 +182,7 @@ gboolean nm_logging_setup (const char  *level,
                            char       **bad_domains,
                            GError     **error);
 void     nm_logging_syslog_openlog (const char *logging_backend);
+gboolean nm_logging_syslog_enabled (void);
 
 /*****************************************************************************/
 

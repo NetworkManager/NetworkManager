@@ -93,7 +93,16 @@ typedef struct {
 typedef struct {
 	const char *name;
 	const char *level_str;
+
+	/* nm-logging uses syslog internally. Note that the three most-verbose syslog levels
+	 * are LOG_DEBUG, LOG_INFO and LOG_NOTICE. Journal already highlights LOG_NOTICE
+	 * as special.
+	 *
+	 * On the other hand, we have three levels LOGL_TRACE, LOGL_DEBUG and LOGL_INFO,
+	 * which are regular messages not to be highlighted. For that reason, we must map
+	 * LOGL_TRACE and LOGL_DEBUG both to syslog level LOG_DEBUG. */
 	int syslog_level;
+
 	GLogLevelFlags g_log_level;
 	LogFormatFlags log_format_level;
 } LogLevelDesc;
@@ -108,6 +117,7 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 static struct {
 	NMLogLevel log_level;
 	LogFormatFlags log_format_flags;
+	bool uses_syslog:1;
 	enum {
 		LOG_BACKEND_GLIB,
 		LOG_BACKEND_SYSLOG,
@@ -116,7 +126,7 @@ static struct {
 	char *logging_domains_to_string;
 	const LogLevelDesc level_desc[_LOGL_N];
 
-#define _DOMAIN_DESC_LEN 37
+#define _DOMAIN_DESC_LEN 38
 	/* Would be nice to use C99 flexible array member here,
 	 * but that feature doesn't seem well supported. */
 	const LogDesc domain_desc[_DOMAIN_DESC_LEN];
@@ -127,7 +137,7 @@ static struct {
 	.log_format_flags = _LOG_FORMAT_FLAG_DEFAULT,
 	.level_desc = {
 		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
-		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
+		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
 		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    _LOG_FORMAT_FLAG_LEVEL_INFO },
 		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_INFO },
 		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_ERROR },
@@ -171,6 +181,7 @@ static struct {
 		{ LOGD_DISPATCH,  "DISPATCH" },
 		{ LOGD_AUDIT,     "AUDIT" },
 		{ LOGD_SYSTEMD,   "SYSTEMD" },
+		{ LOGD_VPN_PLUGIN,"VPN_PLUGIN" },
 		{ 0, NULL }
 		/* keep _DOMAIN_DESC_LEN in sync */
 	},
@@ -445,6 +456,27 @@ nm_logging_all_domains_to_string (void)
 	return str->str;
 }
 
+/**
+ * nm_logging_get_level:
+ * @domain: find the lowest enabled logging level for the
+ *   given domain. If this is a set of multiple
+ *   domains, the most verbose level will be returned.
+ *
+ * Returns: the lowest (most verbose) logging level for the
+ *   give @domain, or %_LOGL_OFF if it is disabled.
+ **/
+NMLogLevel
+nm_logging_get_level (NMLogDomain domain)
+{
+	NMLogLevel sl = _LOGL_OFF;
+
+	G_STATIC_ASSERT (LOGL_TRACE == 0);
+	while (   sl > LOGL_TRACE
+	       && nm_logging_enabled (sl - 1, domain))
+		sl--;
+	return sl;
+}
+
 #if SYSTEMD_JOURNAL
 __attribute__((__format__ (__printf__, 4, 5)))
 static void
@@ -716,6 +748,12 @@ nm_log_handler (const gchar *log_domain,
 	}
 }
 
+gboolean
+nm_logging_syslog_enabled (void)
+{
+	return global.uses_syslog;
+}
+
 void
 nm_logging_syslog_openlog (const char *logging_backend)
 {
@@ -735,6 +773,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 #if SYSTEMD_JOURNAL
 	} else if (strcmp (logging_backend, "syslog") != 0) {
 		global.log_backend = LOG_BACKEND_JOURNAL;
+		global.uses_syslog = TRUE;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
@@ -742,6 +781,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 #endif
 	} else {
 		global.log_backend = LOG_BACKEND_SYSLOG;
+		global.uses_syslog = TRUE;
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	}
 
