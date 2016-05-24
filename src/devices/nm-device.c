@@ -9775,12 +9775,6 @@ nm_device_check_connection_available (NMDevice *self,
 	return available;
 }
 
-static void
-available_connections_notify (NMDevice *self)
-{
-	_notify (self, PROP_AVAILABLE_CONNECTIONS);
-}
-
 static gboolean
 available_connections_del_all (NMDevice *self)
 {
@@ -9880,7 +9874,7 @@ nm_device_recheck_available_connections (NMDevice *self)
 	}
 
 	if (changed)
-		available_connections_notify (self);
+		_notify (self, PROP_AVAILABLE_CONNECTIONS);
 	available_connections_check_delete_unrealized (self);
 }
 
@@ -9954,7 +9948,7 @@ cp_connection_added_or_updated (NMConnectionProvider *cp, NMConnection *connecti
 		changed = available_connections_del (self, connection);
 
 	if (changed) {
-		available_connections_notify (self);
+		_notify (self, PROP_AVAILABLE_CONNECTIONS);
 		available_connections_check_delete_unrealized (self);
 	}
 }
@@ -9967,7 +9961,7 @@ cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpoin
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (available_connections_del (self, connection)) {
-		available_connections_notify (self);
+		_notify (self, PROP_AVAILABLE_CONNECTIONS);
 		available_connections_check_delete_unrealized (self);
 	}
 }
@@ -10589,7 +10583,7 @@ _set_state_full (NMDevice *self,
 
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		if (available_connections_del_all (self))
-			available_connections_notify (self);
+			_notify (self, PROP_AVAILABLE_CONNECTIONS);
 		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
 			_clear_queued_act_request (priv);
 	}

@@ -70,19 +70,18 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_E
                                                NM_TYPE_SETTINGS_CONNECTION, \
                                                NMSettingsConnectionPrivate))
 
-enum {
-	PROP_0 = 0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
 	PROP_VISIBLE,
 	PROP_UNSAVED,
 	PROP_READY,
 	PROP_FLAGS,
 	PROP_FILENAME,
-};
+);
 
 enum {
 	UPDATED,
 	REMOVED,
-	UPDATED_BY_USER,
+	UPDATED_INTERNAL,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -96,8 +95,6 @@ typedef struct {
 
 	NMSettingsConnectionFlags flags;
 	gboolean ready;
-
-	guint updated_idle_id;
 
 	GSList *pending_auths; /* List of pending authentication requests */
 	gboolean visible; /* Is this connection is visible by some session? */
@@ -130,6 +127,15 @@ typedef struct {
 	char *filename;
 
 } NMSettingsConnectionPrivate;
+
+/*******************************************************************/
+
+static void
+_emit_updated (NMSettingsConnection *self, gboolean by_user)
+{
+	g_signal_emit (self, signals[UPDATED], 0);
+	g_signal_emit (self, signals[UPDATED_INTERNAL], 0, by_user);
+}
 
 /*******************************************************************/
 
@@ -292,7 +298,7 @@ set_visible (NMSettingsConnection *self, gboolean new_visible)
 	if (new_visible == priv->visible)
 		return;
 	priv->visible = new_visible;
-	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_VISIBLE);
+	_notify (self, PROP_VISIBLE);
 }
 
 gboolean
@@ -465,14 +471,6 @@ secrets_cleared_cb (NMSettingsConnection *self)
 	priv->agent_secrets = NULL;
 }
 
-static gboolean
-emit_updated (NMSettingsConnection *self)
-{
-	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->updated_idle_id = 0;
-	g_signal_emit (self, signals[UPDATED], 0);
-	return FALSE;
-}
-
 static void
 set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 {
@@ -491,16 +489,10 @@ set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 }
 
 static void
-changed_cb (NMSettingsConnection *self, gpointer user_data)
+connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
-	gboolean update_unsaved = !!user_data;
-
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	if (update_unsaved)
-		set_unsaved (self, TRUE);
-	if (priv->updated_idle_id == 0)
-		priv->updated_idle_id = g_idle_add ((GSourceFunc) emit_updated, self);
+	set_unsaved (self, TRUE);
+	_emit_updated (self, FALSE);
 }
 
 /* Update the settings of this connection to match that of 'new_connection',
@@ -543,7 +535,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
 	 * it's not required.
 	 */
-	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_handlers_block_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	if (log_diff_name)
 		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
@@ -580,11 +572,12 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	/* Manually emit changed signal since we disconnected the handler, but
 	 * only update Unsaved if the caller wanted us to.
 	 */
-	changed_cb (self, GUINT_TO_POINTER (update_unsaved));
+	if (update_unsaved)
+		set_unsaved (self, TRUE);
 
-	g_signal_emit (self, signals[UPDATED_BY_USER], 0);
+	g_signal_handlers_unblock_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
-	g_signal_handlers_unblock_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	_emit_updated (self, TRUE);
 
 	return success;
 }
@@ -2099,9 +2092,9 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 	old_flags = priv->flags;
 	if (old_flags != flags) {
 		priv->flags = flags;
-		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_FLAGS);
+		_notify (self, PROP_FLAGS);
 		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
-			g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_UNSAVED);
+			_notify (self, PROP_UNSAVED);
 	}
 	return old_flags;
 }
@@ -2506,7 +2499,7 @@ nm_settings_connection_set_ready (NMSettingsConnection *self,
 	ready = !!ready;
 	if (priv->ready != ready) {
 		priv->ready = ready;
-		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_READY);
+		_notify (self, PROP_READY);
 	}
 }
 
@@ -2527,7 +2520,7 @@ nm_settings_connection_set_filename (NMSettingsConnection *self,
 	if (g_strcmp0 (filename, priv->filename) != 0) {
 		g_free (priv->filename);
 		priv->filename = g_strdup (filename);
-		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_FILENAME);
+		_notify (self, PROP_FILENAME);
 	}
 }
 
@@ -2582,7 +2575,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->autoconnect_blocked_reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_signal_connect (self, NM_CONNECTION_SECRETS_CLEARED, G_CALLBACK (secrets_cleared_cb), NULL);
-	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (connection_changed_cb), NULL);
 }
 
 static void
@@ -2613,14 +2606,12 @@ dispose (GObject *object)
 		}
 	}
 
-	nm_clear_g_source (&priv->updated_idle_id);
-
 	/* Disconnect handlers.
-	 * changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),
+	 * connection_changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),
 	 * because nm_connection_clear_secrets() emits NM_CONNECTION_CHANGED signal.
 	 */
 	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (secrets_cleared_cb), NULL);
-	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	nm_connection_clear_secrets (NM_CONNECTION (self));
 	g_clear_object (&priv->system_secrets);
@@ -2719,72 +2710,68 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	class->supports_secrets = supports_secrets;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_VISIBLE,
-		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VISIBLE] =
+	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE, "", "",
+	                           FALSE,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_UNSAVED,
-		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UNSAVED] =
+	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",
+	                           FALSE,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_READY,
-		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_READY, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_READY] =
+	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_READY, "", "",
+	                           TRUE,
+	                           G_PARAM_READWRITE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-	    (object_class, PROP_FLAGS,
+	obj_properties[PROP_FLAGS] =
 	     g_param_spec_uint (NM_SETTINGS_CONNECTION_FLAGS, "", "",
 	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
 	                        NM_SETTINGS_CONNECTION_FLAGS_ALL,
 	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
 	                        G_PARAM_READWRITE |
-	                        G_PARAM_STATIC_STRINGS));
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_FILENAME,
-		 g_param_spec_string (NM_SETTINGS_CONNECTION_FILENAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FILENAME] =
+	     g_param_spec_string (NM_SETTINGS_CONNECTION_FILENAME, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
 
-	/* Emitted when the connection is changed for any reason */
 	signals[UPDATED] =
-		g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,
-		              G_TYPE_FROM_CLASS (class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,
+	                  G_TYPE_FROM_CLASS (class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 
-	/* Emitted when connection is changed from D-Bus */
-	signals[UPDATED_BY_USER] =
-		g_signal_new (NM_SETTINGS_CONNECTION_UPDATED_BY_USER,
-		              G_TYPE_FROM_CLASS (class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	/* internal signal, with an argument (gboolean by_user). */
+	signals[UPDATED_INTERNAL] =
+	    g_signal_new (NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
+	                  G_TYPE_FROM_CLASS (class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__BOOLEAN,
+	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
-	signals[REMOVED] = 
-		g_signal_new (NM_SETTINGS_CONNECTION_REMOVED,
-		              G_TYPE_FROM_CLASS (class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	signals[REMOVED] =
+	    g_signal_new (NM_SETTINGS_CONNECTION_REMOVED,
+	                  G_TYPE_FROM_CLASS (class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (class),
 	                                        NMDBUS_TYPE_SETTINGS_CONNECTION_SKELETON,

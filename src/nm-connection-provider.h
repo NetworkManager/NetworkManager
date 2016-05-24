@@ -63,14 +63,6 @@ typedef struct {
 
 	NMConnection * (*get_connection_by_uuid) (NMConnectionProvider *self,
 	                                          const char *uuid);
-
-	/* Signals */
-	void (*connection_added)   (NMConnectionProvider *self, NMConnection *connection);
-
-	void (*connection_updated) (NMConnectionProvider *self, NMConnection *connection);
-
-	void (*connection_removed) (NMConnectionProvider *self, NMConnection *connection);
-
 } NMConnectionProviderInterface;
 
 GType nm_connection_provider_get_type (void);

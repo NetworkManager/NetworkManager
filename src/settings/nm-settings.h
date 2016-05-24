@@ -41,11 +41,10 @@
 #define NM_SETTINGS_HOSTNAME         "hostname"
 #define NM_SETTINGS_CAN_MODIFY       "can-modify"
 #define NM_SETTINGS_CONNECTIONS      "connections"
-#define NM_SETTINGS_STARTUP_COMPLETE "connections"
+#define NM_SETTINGS_STARTUP_COMPLETE "startup-complete"
 
 #define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
-#define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER    "connection-updated-by-user"
 #define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
 #define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
@@ -56,19 +55,6 @@ struct _NMSettings {
 
 typedef struct {
 	NMExportedObjectClass parent_class;
-
-	/* Signals */
-	void (*properties_changed) (NMSettings *self, GHashTable *properties);
-
-	void (*connection_added)   (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connection_updated) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connection_removed) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connection_visibility_changed) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*agent_registered) (NMSettings *self, NMSecretAgent *agent);
 } NMSettingsClass;
 
 typedef void (*NMSettingsSetHostnameCb) (const char *name, gboolean result, gpointer user_data);
