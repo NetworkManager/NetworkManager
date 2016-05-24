@@ -371,6 +371,11 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
                                                 guint dad_counter,
                                                 GError **error);
 
+char *nm_utils_hw_addr_gen_random_eth (void);
+char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
+                                       const char *stable_id,
+                                       const char *iname);
+
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 
 void nm_utils_setpgid (gpointer unused);

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
+#include "nm-common-macros.h"
 #include "utils.h"
 #include "common.h"
 #include "nm-vpn-helpers.h"
@@ -2889,17 +2890,30 @@ nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GE
 }
 
 static gboolean
-nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
+_property_set_mac (NMSetting *setting, const char *prop, const char *val, gboolean cloned_mac_addr, GError **error)
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!nm_utils_hwaddr_valid (val, ETH_ALEN)) {
+	if (   (!cloned_mac_addr || !NM_CLONED_MAC_IS_SPECIAL (val))
+	    && !nm_utils_hwaddr_valid (val, ETH_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
 		return FALSE;
 	}
 
 	g_object_set (setting, prop, val, NULL);
 	return TRUE;
+}
+
+static gboolean
+nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return _property_set_mac (setting, prop, val, FALSE, error);
+}
+
+static gboolean
+nmc_property_set_mac_cloned (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return _property_set_mac (setting, prop, val, TRUE, error);
 }
 
 static gboolean
@@ -7198,7 +7212,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, CLONED_MAC_ADDRESS),
 	                    nmc_property_wired_get_cloned_mac_address,
-	                    nmc_property_set_mac,
+	                    nmc_property_set_mac_cloned,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -7316,7 +7330,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, CLONED_MAC_ADDRESS),
 	                    nmc_property_wireless_get_cloned_mac_address,
-	                    nmc_property_set_mac,
+	                    nmc_property_set_mac_cloned,
 	                    NULL,
 	                    NULL,
 	                    NULL,

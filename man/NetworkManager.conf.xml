@@ -566,6 +566,10 @@ ipv6.ip6-privacy=0
           <term><varname>connection.lldp</varname></term>
         </varlistentry>
         <varlistentry>
+          <term><varname>ethernet.cloned-mac-address</varname></term>
+          <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>
         </varlistentry>
         <varlistentry>
@@ -591,6 +595,10 @@ ipv6.ip6-privacy=0
         <varlistentry>
           <term><varname>vpn.timeout</varname></term>
           <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.cloned-mac-address</varname></term>
+          <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>wifi.mac-address-randomization</varname></term>

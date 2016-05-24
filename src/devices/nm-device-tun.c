@@ -291,8 +291,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
-	NMSettingWired *s_wired;
-	const char *cloned_mac = NULL;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -305,10 +303,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (g_strcmp0 (priv->mode, "tap"))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
-	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
-	if (s_wired)
-		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	nm_device_hw_addr_set (device, cloned_mac);
+	nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }

@@ -54,10 +54,45 @@ test_stable_privacy (void)
 	inet_pton (AF_INET6, "1234::", &addr1);
 	_set_stable_privacy (NM_UTILS_STABLE_TYPE_STABLE_ID, &addr1, "eth666", "stable-id-1", 0, (guint8 *) "key", 3, NULL);
 	nmtst_assert_ip6_address (&addr1, "1234::4944:67b0:7a6c:1cf");
-
 }
 
-/*******************************************/
+/*****************************************************************************/
+
+static void
+_do_test_hw_addr (NMUtilsStableType stable_type,
+                  const char *stable_id,
+                  const guint8 *secret_key,
+                  gsize key_len,
+                  const char *ifname,
+                  const char *expected)
+{
+	gs_free char *generated = NULL;
+
+	g_assert (expected);
+	g_assert (nm_utils_hwaddr_valid (expected, ETH_ALEN));
+
+	generated = _hw_addr_gen_stable_eth (stable_type,
+	                                     stable_id,
+	                                     secret_key,
+	                                     key_len,
+	                                     ifname);
+
+	g_assert (generated);
+	g_assert (nm_utils_hwaddr_valid (generated, ETH_ALEN));
+	g_assert_cmpstr (generated, ==, expected);
+	g_assert (nm_utils_hwaddr_matches (generated, -1, expected, -1));
+}
+#define do_test_hw_addr(stable_type, stable_id, secret_key, ifname, expected) \
+	_do_test_hw_addr ((stable_type), (stable_id), (const guint8 *) ""secret_key"", NM_STRLEN (secret_key), (ifname), ""expected"")
+
+static void
+test_hw_addr_gen_stable_eth (void)
+{
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "06:0D:CD:0C:9E:2C");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_STABLE_ID, "stable-1", "key1", "eth0", "C6:AE:A9:9A:76:09");
+}
+
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 
@@ -67,6 +102,7 @@ main (int argc, char **argv)
 	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
 	g_test_add_func ("/utils/stable_privacy", test_stable_privacy);
+	g_test_add_func ("/utils/hw_addr_gen_stable_eth", test_hw_addr_gen_stable_eth);
 
 	return g_test_run ();
 }

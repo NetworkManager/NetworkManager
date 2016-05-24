@@ -28,6 +28,7 @@
 #include <net/ethernet.h>
 
 #include "nm-utils.h"
+#include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 
@@ -692,7 +693,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->cloned_mac_address && !nm_utils_hwaddr_valid (priv->cloned_mac_address, ETH_ALEN)) {
+	if (   priv->cloned_mac_address
+	    && !NM_CLONED_MAC_IS_SPECIAL (priv->cloned_mac_address)
+	    && !nm_utils_hwaddr_valid (priv->cloned_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -731,6 +734,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	return TRUE;
 }
+
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	NMSettingClass *parent_class;
+
+	if (nm_streq (prop_spec->name, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)) {
+		return nm_streq0 (NM_SETTING_WIRED_GET_PRIVATE (setting)->cloned_mac_address,
+		                  NM_SETTING_WIRED_GET_PRIVATE (other)->cloned_mac_address);
+	}
+
+	parent_class = NM_SETTING_CLASS (nm_setting_wired_parent_class);
+	return parent_class->compare_property (setting, other, prop_spec, flags);
+}
+
+/*****************************************************************************/
 
 static void
 clear_blacklist_item (char **item_p)
@@ -900,18 +922,19 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
+nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (setting_wired_class);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (setting_wired_class);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingWiredPrivate));
+	g_type_class_add_private (setting_wired_class, sizeof (NMSettingWiredPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+	setting_class->verify      = verify;
+	setting_class->compare_property = compare_property;
 
 	/* Properties */
 	/**
@@ -1023,7 +1046,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_MAC_ADDRESS,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_WIRED_MAC_ADDRESS,
 	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
@@ -1033,6 +1056,20 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 *
 	 * If specified, request that the device use this MAC address instead of its
 	 * permanent MAC address.  This is known as MAC cloning or spoofing.
+	 *
+	 * Beside explicitly specifing a MAC address, the special values "preserve", "permanent",
+	 * "random" and "stable" are supported.
+	 * "preserve" means not to touch the MAC address on activation.
+	 * "permanent" means to use the permanent hardware address of the device.
+	 * "random" creates a random MAC address on each connect.
+	 * "stable" creates a hashed MAC address based on connection.stable-id (or
+	 * the connection's UUID) and a machine dependent key.
+	 *
+	 * If unspecified, the value can be overwritten via global defaults, see manual
+	 * of NetworkManager.conf. If still unspecified, it defaults to "permanent".
+	 *
+	 * On D-Bus, this field is expressed as "assigned-mac-address" or the deprecated
+	 * "cloned-mac-address".
 	 **/
 	/* ---keyfile---
 	 * property: cloned-mac-address
@@ -1047,6 +1084,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
 	 *    notation (e.g. 00:22:68:14:5A:99).
 	 * ---end---
+	 * ---dbus---
+	 * property: cloned-mac-address
+	 * format: byte array
+	 * description: This D-Bus field is deprecated in favor of "assigned-mac-address"
+	 *    which is more flexible and allows specifying special variants like "random".
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
@@ -1055,10 +1098,28 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+	_nm_setting_class_override_property (setting_class,
+	                                     NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	                                     G_VARIANT_TYPE_BYTESTRING,
+	                                     _nm_utils_hwaddr_cloned_get,
+	                                     _nm_utils_hwaddr_cloned_set,
+	                                     _nm_utils_hwaddr_cloned_not_set);
+
+	/* ---dbus---
+	 * property: assigned-mac-address
+	 * format: string
+	 * description: The new field for the cloned MAC address. It can be either
+	 *   a hardware address in ASCII representation, or one of the special values
+	 *   "preserve", "permanent", "random", "random" or "stable".
+	 *   This field replaces the deprecated "cloned-mac-address" on D-Bus, which
+	 *   can only contain explict hardware addresses.
+	 * ---end---
+	 */
+	_nm_setting_class_add_dbus_only_property (setting_class,
+	                                          "assigned-mac-address",
+	                                          G_VARIANT_TYPE_STRING,
+	                                          _nm_utils_hwaddr_cloned_data_synth,
+	                                          _nm_utils_hwaddr_cloned_data_set);
 
 	/**
 	 * NMSettingWired:mac-address-blacklist:
@@ -1183,7 +1244,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_S390_OPTIONS,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_WIRED_S390_OPTIONS,
 	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);

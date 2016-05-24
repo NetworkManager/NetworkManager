@@ -1415,6 +1415,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * The stable-id is used instead of the connection UUID for generating
 	 * IPv6 stable private addresses with ipv6.addr-gen-mode=stable-privacy.
+	 * It is also used to seed the generated cloned MAC address for
+	 * ethernet.cloned-mac-address=stable and wifi.cloned-mac-address=stable.
 	 *
 	 * Since: 1.4
 	 **/

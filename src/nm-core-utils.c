@@ -3173,6 +3173,100 @@ nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
 	                            secret_key, key_len, error);
 }
 
+/*****************************************************************************/
+
+static void
+_hw_addr_eth_complete (guint8 *bin_addr)
+{
+	/* this LSB of the first octet cannot be set,
+	 * it means Unicast vs. Multicast */
+	bin_addr[0] &= ~1;
+
+	/* the second LSB of the first octet means
+	 * "globally unique, OUI enforced, BIA (burned-in-address)"
+	 * vs. "locally-administered" */
+	bin_addr[0] |= 2;
+}
+
+char *
+nm_utils_hw_addr_gen_random_eth (void)
+{
+	guint8 bin_addr[ETH_ALEN];
+
+	if (nm_utils_read_urandom (bin_addr, ETH_ALEN) < 0)
+		return NULL;
+	_hw_addr_eth_complete (bin_addr);
+	return nm_utils_hwaddr_ntoa (bin_addr, ETH_ALEN);
+}
+
+static char *
+_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
+                         const char *stable_id,
+                         const guint8 *secret_key,
+                         gsize key_len,
+                         const char *ifname)
+{
+	GChecksum *sum;
+	guint32 tmp;
+	guint8 digest[32];
+	gsize len = sizeof (digest);
+	guint8 bin_addr[ETH_ALEN];
+	guint8 stable_type_uint8;
+
+	nm_assert (stable_id);
+	nm_assert (NM_IN_SET (stable_type,
+	                      NM_UTILS_STABLE_TYPE_UUID,
+	                      NM_UTILS_STABLE_TYPE_STABLE_ID));
+	nm_assert (secret_key);
+
+	sum = g_checksum_new (G_CHECKSUM_SHA256);
+	if (!sum)
+		return NULL;
+
+	key_len = MIN (key_len, G_MAXUINT32);
+
+	stable_type_uint8 = stable_type;
+	g_checksum_update (sum, (const guchar *) &stable_type_uint8, sizeof (stable_type_uint8));
+
+	tmp = htonl ((guint32) key_len);
+	g_checksum_update (sum, (const guchar *) &tmp, sizeof (tmp));
+	g_checksum_update (sum, (const guchar *) secret_key, key_len);
+	g_checksum_update (sum, (const guchar *) (ifname ?: ""), ifname ? (strlen (ifname) + 1) : 1);
+	g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+
+	g_checksum_get_digest (sum, digest, &len);
+	g_checksum_free (sum);
+
+	g_return_val_if_fail (len == 32, NULL);
+
+	memcpy (bin_addr, digest, ETH_ALEN);
+	_hw_addr_eth_complete (bin_addr);
+	return nm_utils_hwaddr_ntoa (bin_addr, ETH_ALEN);
+}
+
+char *
+nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
+                                 const char *stable_id,
+                                 const char *ifname)
+{
+	gs_free guint8 *secret_key = NULL;
+	gsize key_len = 0;
+
+	g_return_val_if_fail (stable_id, NULL);
+
+	secret_key = nm_utils_secret_key_read (&key_len, NULL);
+	if (!secret_key)
+		return NULL;
+
+	return _hw_addr_gen_stable_eth (stable_type,
+	                                stable_id,
+	                                secret_key,
+	                                key_len,
+	                                ifname);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_setpgid:
  * @unused: unused

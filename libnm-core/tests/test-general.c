@@ -2450,6 +2450,90 @@ test_setting_compare_routes (void)
 }
 
 static void
+test_setting_compare_wired_cloned_mac_address (void)
+{
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
+	gboolean success;
+	gs_free char *str1 = NULL;
+
+	old = nm_setting_wired_new ();
+	g_object_set (old,
+	              NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "stable",
+	              NULL);
+
+	g_assert_cmpstr ("stable", ==, nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) old));
+	g_object_get (old, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, &str1, NULL);
+	g_assert_cmpstr ("stable", ==, str1);
+	g_clear_pointer (&str1, g_free);
+
+	new = nm_setting_duplicate (old);
+	g_object_set (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "11:22:33:44:55:66", NULL);
+
+	g_assert_cmpstr ("11:22:33:44:55:66", ==, nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) new));
+	g_object_get (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, &str1, NULL);
+	g_assert_cmpstr ("11:22:33:44:55:66", ==, str1);
+	g_clear_pointer (&str1, g_free);
+
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (!success);
+	g_clear_object (&new);
+
+	new = nm_setting_duplicate (old);
+	g_object_set (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "stable-bia", NULL);
+
+	g_assert_cmpstr ("stable-bia", ==, nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) new));
+	g_object_get (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, &str1, NULL);
+	g_assert_cmpstr ("stable-bia", ==, str1);
+	g_clear_pointer (&str1, g_free);
+
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (!success);
+	g_clear_object (&new);
+}
+
+static void
+test_setting_compare_wireless_cloned_mac_address (void)
+{
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
+	gboolean success;
+	gs_free char *str1 = NULL;
+
+	old = nm_setting_wireless_new ();
+	g_object_set (old,
+	              NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "stable",
+	              NULL);
+
+	g_assert_cmpstr ("stable", ==, nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) old));
+	g_object_get (old, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, &str1, NULL);
+	g_assert_cmpstr ("stable", ==, str1);
+	g_clear_pointer (&str1, g_free);
+
+	new = nm_setting_duplicate (old);
+	g_object_set (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "11:22:33:44:55:66", NULL);
+
+	g_assert_cmpstr ("11:22:33:44:55:66", ==, nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) new));
+	g_object_get (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, &str1, NULL);
+	g_assert_cmpstr ("11:22:33:44:55:66", ==, str1);
+	g_clear_pointer (&str1, g_free);
+
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (!success);
+	g_clear_object (&new);
+
+	new = nm_setting_duplicate (old);
+	g_object_set (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "stable-bia", NULL);
+
+	g_assert_cmpstr ("stable-bia", ==, nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) new));
+	g_object_get (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, &str1, NULL);
+	g_assert_cmpstr ("stable-bia", ==, str1);
+	g_clear_pointer (&str1, g_free);
+
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (!success);
+	g_clear_object (&new);
+}
+
+static void
 test_setting_compare_timestamp (void)
 {
 	gs_unref_object NMSetting *old = NULL, *new = NULL;
@@ -5202,6 +5286,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
 	g_test_add_func ("/core/general/test_setting_compare_addresses", test_setting_compare_addresses);
 	g_test_add_func ("/core/general/test_setting_compare_routes", test_setting_compare_routes);
+	g_test_add_func ("/core/general/test_setting_compare_wired_cloned_mac_address", test_setting_compare_wired_cloned_mac_address);
+	g_test_add_func ("/core/general/test_setting_compare_wirless_cloned_mac_address", test_setting_compare_wireless_cloned_mac_address);
 	g_test_add_func ("/core/general/test_setting_compare_timestamp", test_setting_compare_timestamp);
 #define ADD_FUNC(name, func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func) "_" name, \

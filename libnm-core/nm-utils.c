@@ -37,6 +37,7 @@
 #include <jansson.h>
 #endif
 
+#include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
@@ -3313,14 +3314,14 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	return !memcmp (hwaddr1, hwaddr2, hwaddr1_len);
 }
 
-GVariant *
-_nm_utils_hwaddr_to_dbus (const GValue *prop_value)
+/*****************************************************************************/
+
+static GVariant *
+_nm_utils_hwaddr_to_dbus_impl (const char *str)
 {
-	const char *str;
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
 	int len;
 
-	str = g_value_get_string (prop_value);
 	if (!str)
 		return NULL;
 
@@ -3334,6 +3335,103 @@ _nm_utils_hwaddr_to_dbus (const GValue *prop_value)
 	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, buf, len, 1);
 }
 
+GVariant *
+_nm_utils_hwaddr_cloned_get (NMSetting     *setting,
+                             const char    *property)
+{
+	gs_free char *addr = NULL;
+
+	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+
+	g_object_get (setting, "cloned-mac-address", &addr, NULL);
+	return _nm_utils_hwaddr_to_dbus_impl (addr);
+}
+
+gboolean
+_nm_utils_hwaddr_cloned_set (NMSetting     *setting,
+                             GVariant      *connection_dict,
+                             const char    *property,
+                             GVariant      *value,
+                             NMSettingParseFlags parse_flags,
+                             GError       **error)
+{
+	gsize length;
+	const guint8 *array;
+	char *str;
+
+	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "cloned-mac-address", "assigned-mac-address"))
+		return TRUE;
+
+	length = 0;
+	array = g_variant_get_fixed_array (value, &length, 1);
+
+	if (!length)
+		return TRUE;
+
+	str = nm_utils_hwaddr_ntoa (array, length);
+	g_object_set (setting,
+	              "cloned-mac-address",
+	              str,
+	              NULL);
+	g_free (str);
+	return TRUE;
+}
+
+gboolean
+_nm_utils_hwaddr_cloned_not_set (NMSetting *setting,
+                                 GVariant      *connection_dict,
+                                 const char    *property,
+                                 NMSettingParseFlags parse_flags,
+                                 GError       **error)
+{
+	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+	return TRUE;
+}
+
+GVariant *
+_nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
+                                    NMConnection *connection,
+                                    const char *property)
+{
+	gs_free char *addr = NULL;
+
+	nm_assert (nm_streq0 (property, "assigned-mac-address"));
+
+	g_object_get (setting,
+	              "cloned-mac-address",
+	              &addr,
+	              NULL);
+	return addr ? g_variant_new_string (addr) : NULL;
+}
+
+gboolean
+_nm_utils_hwaddr_cloned_data_set (NMSetting *setting,
+                                  GVariant *connection_dict,
+                                  const char *property,
+                                  GVariant *value,
+                                  NMSettingParseFlags parse_flags,
+                                  GError **error)
+{
+	nm_assert (nm_streq0 (property, "assigned-mac-address"));
+
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "cloned-mac-address", "assigned-mac-address"))
+		return TRUE;
+
+	g_object_set (setting,
+	              "cloned-mac-address",
+	              g_variant_get_string (value, NULL),
+	              NULL);
+	return TRUE;
+}
+
+GVariant *
+_nm_utils_hwaddr_to_dbus (const GValue *prop_value)
+{
+	return _nm_utils_hwaddr_to_dbus_impl (g_value_get_string (prop_value));
+}
+
 void
 _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
                             GValue *prop_value)
@@ -3345,6 +3443,8 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 	str = length ? nm_utils_hwaddr_ntoa (array, length) : NULL;
 	g_value_take_string (prop_value, str);
 }
+
+/*****************************************************************************/
 
 /**
  * nm_utils_bin2hexstr:

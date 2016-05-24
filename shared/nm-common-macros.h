@@ -38,6 +38,21 @@
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS "org.freedesktop.NetworkManager.settings.modify.global-dns"
 #define NM_AUTH_PERMISSION_RELOAD                     "org.freedesktop.NetworkManager.reload"
 
+#define NM_CLONED_MAC_PRESERVE                          "preserve"
+#define NM_CLONED_MAC_PERMANENT                         "permanent"
+#define NM_CLONED_MAC_RANDOM                            "random"
+#define NM_CLONED_MAC_STABLE                            "stable"
+
+static inline gboolean
+NM_CLONED_MAC_IS_SPECIAL (const char *str)
+{
+	return NM_IN_STRSET (str,
+	                     NM_CLONED_MAC_PRESERVE,
+	                     NM_CLONED_MAC_PERMANENT,
+	                     NM_CLONED_MAC_RANDOM,
+	                     NM_CLONED_MAC_STABLE);
+}
+
 /******************************************************************************/
 
 #endif /* __NM_COMMON_MACROS_H__ */

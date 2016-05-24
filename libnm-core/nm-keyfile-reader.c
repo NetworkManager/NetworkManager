@@ -31,6 +31,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+#include "nm-common-macros.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-utils.h"
 
@@ -581,19 +582,28 @@ ip6_addr_gen_mode_parser (KeyfileReaderInfo *info, NMSetting *setting, const cha
 }
 
 static void
-mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key, gsize enforce_length)
+mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key, gsize enforce_length, gboolean cloned_mac_addr)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	char *tmp_string = NULL, *p, *mac_str;
-	gint *tmp_list;
-	GByteArray *array = NULL;
+	gs_free char *tmp_string = NULL;
+	const char *p, *mac_str;
+	gs_free guint8 *buf_arr = NULL;
+	guint buf_len;
 	gsize length;
 
-	p = tmp_string = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
+	tmp_string = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
+
+	if (   cloned_mac_addr
+	    && NM_CLONED_MAC_IS_SPECIAL (tmp_string)) {
+		mac_str = tmp_string;
+		goto out;
+	}
+
 	if (tmp_string && tmp_string[0]) {
 		/* Look for enough ':' characters to signify a MAC address */
 		guint i = 0;
 
+		p = tmp_string;
 		while (*p) {
 			if (*p == ':')
 				i++;
@@ -602,23 +612,24 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 
 		if (enforce_length == 0 || enforce_length == i+1) {
 			/* If we found enough it's probably a string-format MAC address */
-			array = g_byte_array_sized_new (i+1);
-			g_byte_array_set_size (array, i+1);
-			if (!nm_utils_hwaddr_aton (tmp_string, array->data, array->len)) {
-				g_byte_array_unref (array);
-				array = NULL;
-			}
+			buf_len = i + 1;
+			buf_arr = g_new (guint8, buf_len);
+			if (!nm_utils_hwaddr_aton (tmp_string, buf_arr, buf_len))
+				g_clear_pointer (&buf_arr, g_free);
 		}
 	}
-	g_free (tmp_string);
+	g_clear_pointer (&tmp_string, g_free);
 
-	if (array == NULL) {
+	if (!buf_arr) {
+		gs_free int *tmp_list = NULL;
+
 		/* Old format; list of ints */
 		tmp_list = nm_keyfile_plugin_kf_get_integer_list (info->keyfile, setting_name, key, &length, NULL);
 		if (length > 0 && (enforce_length == 0 || enforce_length == length)) {
 			gsize i;
 
-			array = g_byte_array_sized_new (length);
+			buf_len = length;
+			buf_arr = g_new (guint8, buf_len);
 			for (i = 0; i < length; i++) {
 				int val = tmp_list[i];
 				const guint8 v = (guint8) (val & 0xFF);
@@ -627,38 +638,42 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 					handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 					             _("ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"),
 					             val);
-					g_byte_array_free (array, TRUE);
-					g_free (tmp_list);
 					return;
 				}
-				g_byte_array_append (array, &v, 1);
+				buf_arr[i] = v;
 			}
 		}
-		g_free (tmp_list);
 	}
 
-	if (!array) {
+	if (!buf_arr) {
 		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid MAC address"));
 		return;
 	}
 
-	mac_str = nm_utils_hwaddr_ntoa (array->data, array->len);
+	tmp_string = nm_utils_hwaddr_ntoa (buf_arr, buf_len);
+	mac_str = tmp_string;
+
+out:
 	g_object_set (setting, key, mac_str, NULL);
-	g_free (mac_str);
-	g_byte_array_free (array, TRUE);
 }
 
 static void
 mac_address_parser_ETHER (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-	mac_address_parser (info, setting, key, ETH_ALEN);
+	mac_address_parser (info, setting, key, ETH_ALEN, FALSE);
+}
+
+static void
+mac_address_parser_ETHER_cloned (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+	mac_address_parser (info, setting, key, ETH_ALEN, TRUE);
 }
 
 static void
 mac_address_parser_INFINIBAND (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-	mac_address_parser (info, setting, key, INFINIBAND_ALEN);
+	mac_address_parser (info, setting, key, INFINIBAND_ALEN, FALSE);
 }
 
 static void
@@ -1209,7 +1224,7 @@ static KeyParser key_parsers[] = {
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser_ETHER },
+	  mac_address_parser_ETHER_cloned },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
 	  TRUE,
@@ -1217,7 +1232,7 @@ static KeyParser key_parsers[] = {
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser_ETHER },
+	  mac_address_parser_ETHER_cloned },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_BSSID,
 	  TRUE,

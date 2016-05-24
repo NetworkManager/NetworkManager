@@ -351,13 +351,13 @@ nmt_page_wifi_constructed (GObject *object)
 
 	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
-	widget = nmt_mac_entry_new (40, ETH_ALEN);
+	widget = nmt_mac_entry_new (40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_MAC);
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_BSSID,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, _("BSSID"), widget, NULL);
 
-	widget = nmt_mac_entry_new (40, ETH_ALEN);
+	widget = nmt_mac_entry_new (40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED);
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
