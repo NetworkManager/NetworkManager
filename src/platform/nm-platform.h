@@ -138,7 +138,7 @@ struct _NMPlatformLink {
 	/* rtnl_link_get_arptype(), ifinfomsg.ifi_type. */
 	guint32 arptype;
 
-	/* rtnl_link_get_addr() */
+	/* rtnl_link_get_addr(), IFLA_ADDRESS */
 	struct {
 		guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
 		guint8 len;
