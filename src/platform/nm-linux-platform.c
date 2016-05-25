@@ -1434,6 +1434,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	gboolean *completed_from_cache = cache ? &completed_from_cache_val : NULL;
 	const NMPObject *link_cached = NULL;
 	NMPObject *lnk_data = NULL;
+	gboolean address_complete_from_cache = TRUE;
+	gboolean lnk_data_complete_from_cache = TRUE;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
 		return NULL;
@@ -1498,6 +1500,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			memcpy (obj->link.addr.data, nla_data (tb[IFLA_ADDRESS]), l);
 			obj->link.addr.len = l;
 		}
+		address_complete_from_cache = FALSE;
 	}
 
 	if (tb[IFLA_AF_SPEC]) {
@@ -1547,28 +1550,34 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		lnk_data = _parse_lnk_vxlan (nl_info_kind, nl_info_data);
 		break;
 	default:
-		goto lnk_data_handled;
+		lnk_data_complete_from_cache = FALSE;
+		break;
 	}
 
-	/* We always try to look into the cache and reuse the object there.
-	 * We do that, because we consider the lnk object as immutable and don't
-	 * modify it after creating. Hence we can share it and reuse.
-	 *
-	 * Also, sometimes the info-data is missing for updates. In this case
-	 * we want to keep the previously received lnk_data. */
-	if (completed_from_cache) {
+	if (   completed_from_cache
+	    && (   lnk_data_complete_from_cache
+	        || address_complete_from_cache)) {
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
-		if (   link_cached
-		    && link_cached->link.type == obj->link.type
-		    && link_cached->_link.netlink.lnk
-		    && (   !lnk_data
-		        || nmp_object_equal (lnk_data, link_cached->_link.netlink.lnk))) {
-			nmp_object_unref (lnk_data);
-			lnk_data = nmp_object_ref (link_cached->_link.netlink.lnk);
+		if (link_cached) {
+			if (   lnk_data_complete_from_cache
+			    && link_cached->link.type == obj->link.type
+			    && link_cached->_link.netlink.lnk
+			    && (   !lnk_data
+			        || nmp_object_equal (lnk_data, link_cached->_link.netlink.lnk))) {
+				/* We always try to look into the cache and reuse the object there.
+				 * We do that, because we consider the lnk object as immutable and don't
+				 * modify it after creating. Hence we can share it and reuse.
+				 *
+				 * Also, sometimes the info-data is missing for updates. In this case
+				 * we want to keep the previously received lnk_data. */
+				nmp_object_unref (lnk_data);
+				lnk_data = nmp_object_ref (link_cached->_link.netlink.lnk);
+			}
+			if (address_complete_from_cache)
+				obj->link.addr = link_cached->link.addr;
 		}
 	}
 
-lnk_data_handled:
 	obj->_link.netlink.lnk = lnk_data;
 
 	obj->_link.netlink.is_in_netlink = TRUE;
