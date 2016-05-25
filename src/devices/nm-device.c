@@ -73,7 +73,7 @@ _LOG_DECLARE_SELF (NMDevice);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_DEVICE_GET_PRIVATE(o) \
+#define NM_DEVICE_GET_PRIVATE(self) \
 	({ \
 		/* preserve the const-ness of self. Unfortunately, that
 		 * way, @self cannot be a void pointer */ \
