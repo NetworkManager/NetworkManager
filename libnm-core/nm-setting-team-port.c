@@ -136,7 +136,13 @@ compare_property (NMSetting *setting,
 {
 	NMSettingClass *parent_class;
 
-	if (nm_streq0 (prop_spec->name, NM_SETTING_TEAM_PORT_CONFIG)) {
+	/* If we are trying to match a connection in order to assume it (and thus
+	 * @flags contains INFERRABLE), use the "relaxed" matching for team
+	 * configuration. Otherwise, for all other purposes (including connection
+	 * comparison before an update), resort to the default string comparison.
+	 */
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
+	    && nm_streq0 (prop_spec->name, NM_SETTING_TEAM_PORT_CONFIG)) {
 		return _nm_utils_team_config_equal (NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->config,
 		                                    NM_SETTING_TEAM_PORT_GET_PRIVATE (other)->config,
 		                                    TRUE);
