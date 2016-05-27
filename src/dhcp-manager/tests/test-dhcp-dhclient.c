@@ -334,6 +334,46 @@ test_fqdn (void)
 	             NULL);
 }
 
+static const char *fqdn_options_override_orig = \
+	"\n"
+	"send fqdn.fqdn \"foobar.com\"\n"    /* NM must ignore this ... */
+	"send fqdn.encoded off;\n"           /* ... and honor these */
+	"send fqdn.server-update off;\n";
+
+static const char *fqdn_options_override_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"send fqdn.fqdn \"example2.com\"; # added by NetworkManager\n"
+	"send fqdn.encoded on;\n"
+	"send fqdn.server-update on;\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n"
+	"# FQDN options from /path/to/dhclient.conf\n"
+	"send fqdn.encoded off;\n"
+	"send fqdn.server-update off;\n\n";
+
+static void
+test_fqdn_options_override (void)
+{
+	test_config (fqdn_options_override_orig,
+	             fqdn_options_override_expected,
+	             FALSE, NULL,
+	             "example2.com", NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
 /*******************************************/
 
 static const char *override_hostname_orig = \
@@ -804,6 +844,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/existing-hex-client-id", test_existing_hex_client_id);
 	g_test_add_func ("/dhcp/dhclient/existing-ascii-client-id", test_existing_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/fqdn", test_fqdn);
+	g_test_add_func ("/dhcp/dhclient/fqdn_options_override", test_fqdn_options_override);
 	g_test_add_func ("/dhcp/dhclient/override_hostname", test_override_hostname);
 	g_test_add_func ("/dhcp/dhclient/override_hostname6", test_override_hostname6);
 	g_test_add_func ("/dhcp/dhclient/nonfqdn_hostname6", test_nonfqdn_hostname6);
