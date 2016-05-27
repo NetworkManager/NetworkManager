@@ -36,8 +36,9 @@
 #define HOSTNAME4_TAG    "send host-name"
 #define HOSTNAME4_FORMAT HOSTNAME4_TAG " \"%s\"; # added by NetworkManager"
 
-#define FQDN_TAG    "send fqdn.fqdn"
-#define FQDN_FORMAT FQDN_TAG " \"%s\"; # added by NetworkManager"
+#define FQDN_TAG_PREFIX  "send fqdn."
+#define FQDN_TAG         FQDN_TAG_PREFIX "fqdn"
+#define FQDN_FORMAT      FQDN_TAG " \"%s\"; # added by NetworkManager"
 
 #define ALSOREQ_TAG "also request "
 
@@ -205,13 +206,14 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 GBytes **out_new_client_id)
 {
 	GString *new_contents;
-	GPtrArray *alsoreq;
+	GPtrArray *alsoreq, *fqdn_opts;
 	int i;
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 	alsoreq = g_ptr_array_sized_new (5);
+	fqdn_opts = g_ptr_array_sized_new (5);
 
 	if (orig_contents) {
 		char **lines, **line;
@@ -242,6 +244,14 @@ nm_dhcp_dhclient_create_config (const char *interface,
 					continue;
 				if (strncmp (p, FQDN_TAG, strlen (FQDN_TAG)) == 0)
 					continue;
+			}
+
+			/* To let user's FQDN options (except "fqdn.fqdn") override the
+			 * default ones set by NM, add them later
+			 */
+			if (!strncmp (p, FQDN_TAG_PREFIX, NM_STRLEN (FQDN_TAG_PREFIX))) {
+				g_ptr_array_add (fqdn_opts, g_strdup (p + NM_STRLEN (FQDN_TAG_PREFIX)));
+				continue;
 			}
 
 			/* Ignore 'script' since we pass our own */
@@ -319,6 +329,16 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_free (t);
 	}
 	g_ptr_array_free (alsoreq, TRUE);
+
+	for (i = 0; i < fqdn_opts->len; i++) {
+		char *t = g_ptr_array_index (fqdn_opts, i);
+
+		if (i == 0)
+			g_string_append_printf (new_contents, "\n# FQDN options from %s\n", orig_path);
+		g_string_append_printf (new_contents, FQDN_TAG_PREFIX "%s\n", t);
+		g_free (t);
+	}
+	g_ptr_array_free (fqdn_opts, TRUE);
 
 	g_string_append_c (new_contents, '\n');
 
