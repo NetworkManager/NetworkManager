@@ -3074,14 +3074,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	if (link->addr.len)
 		str_addr = nm_utils_hwaddr_ntoa (link->addr.data, MIN (link->addr.len, sizeof (link->addr.data)));
 
-	if (link->inet6_token.id) {
-		struct in6_addr a = IN6ADDR_ANY_INIT;
-
-		nm_utils_ipv6_addr_set_interface_identifier (&a, link->inet6_token);
-		nm_utils_inet6_ntop (&a, str_inet6_token);
-	} else
-		str_inet6_token[0] = '\0';
-
 	str_link_type = nm_link_type_to_string (link->type);
 
 	g_snprintf (buf, len,
@@ -3114,8 +3106,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->inet6_addr_gen_mode_inv ? nm_platform_link_inet6_addrgenmode2str (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv), str_addrmode, sizeof (str_addrmode)) : "",
 	            str_addr ? " addr " : "",
 	            str_addr ? str_addr : "",
-	            str_inet6_token[0] ? " inet6token " : "",
-	            str_inet6_token[0] ? str_inet6_token : "",
+	            link->inet6_token.id ? " inet6token " : "",
+	            link->inet6_token.id ? nm_utils_inet6_interface_identifier_to_token (link->inet6_token, str_inet6_token) : "",
 	            link->driver ? " driver " : "",
 	            link->driver ? link->driver : "");
 	g_string_free (str_flags, TRUE);
