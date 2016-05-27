@@ -2867,14 +2867,14 @@ nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 	return FALSE;
 }
 void
-nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,
+nm_utils_ipv6_addr_set_interface_identifier (struct in6_addr *addr,
                                             const NMUtilsIPv6IfaceId iid)
 {
 	memcpy (addr->s6_addr + 8, &iid.id_u8, 8);
 }
 
 void
-nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
+nm_utils_ipv6_interface_identifier_get_from_addr (NMUtilsIPv6IfaceId *iid,
                                                  const struct in6_addr *addr)
 {
 	memcpy (iid, addr->s6_addr + 8, 8);

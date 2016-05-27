@@ -5829,7 +5829,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		}
 		_LOGD (LOGD_IP6, "linklocal6: using EUI-64 identifier to generate IPv6LL address");
 
-		nm_utils_ipv6_addr_set_interface_identfier (&lladdr, iid);
+		nm_utils_ipv6_addr_set_interface_identifier (&lladdr, iid);
 	}
 
 	_LOGD (LOGD_IP6, "linklocal6: adding IPv6LL address %s", nm_utils_inet6_ntop (&lladdr, NULL));
