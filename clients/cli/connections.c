@@ -3947,7 +3947,6 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, OptionInfo *option, const cha
 		             NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm", NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma");
 		return FALSE;
 	}
->>>>>>> nmcli: streamline connection addition
 
 	return set_property (con, option->setting_name, option->property, value, '\0', error);
 }
@@ -4134,7 +4133,7 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 			continue;
 		if (!g_str_has_prefix (candidate->option, prefix))
 			continue;
-		g_print ("%s ", candidate->option);
+		g_print ("%s\n", candidate->option);
 	}
 }
 
@@ -4145,7 +4144,7 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 	char *str;
 
 	while ((str = generator_func (prefix, state))) {
-		g_print ("%s ", str);
+		g_print ("%s\n", str);
 		g_free (str);
 		if (state == 0)
 			state = 1;
@@ -4368,110 +4367,6 @@ add_connection_cb (GObject *client,
 	g_free (info->con_name);
 	g_free (info);
 	quit ();
-}
-
-static void
-add_new_connection (gboolean persistent,
-                    NMClient *client,
-                    NMConnection *connection,
-                    GAsyncReadyCallback callback,
-                    gpointer user_data)
-{
-	nm_client_add_connection_async (client, connection, persistent,
-	                                NULL, callback, user_data);
-}
-
-static void
-update_connection (gboolean persistent,
-                   NMRemoteConnection *connection,
-                   GAsyncReadyCallback callback,
-                   gpointer user_data)
-{
-	nm_remote_connection_commit_changes_async (connection, persistent,
-	                                           NULL, callback, user_data);
-}
-
-static char *
-gen_func_vpn_types (const char *text, int state)
-{
-	gs_strfreev char **plugin_names = NULL;
-
-	plugin_names = nm_vpn_plugin_info_list_get_service_types (nm_vpn_get_plugin_infos (), FALSE, TRUE);
-	return nmc_rl_gen_func_basic (text, state, (const char **) plugin_names);
-}
-
-static char *
-gen_func_bool_values_l10n (const char *text, int state)
-{
-	const char *words[] = { WORD_LOC_YES, WORD_LOC_NO, NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_wifi_mode (const char *text, int state)
-{
-	const char *words[] = { "infrastructure", "ap", "adhoc", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_ib_type (const char *text, int state)
-{
-	const char *words[] = { "datagram", "connected", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_bt_type (const char *text, int state)
-{
-	const char *words[] = { "panu", "dun-gsm", "dun-cdma", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_bond_mode (const char *text, int state)
-{
-	const char *words[] = { "balance-rr", "active-backup", "balance-xor", "broadcast",
-	                        "802.3ad", "balance-tlb", "balance-alb", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-static char *
-gen_func_bond_mon_mode (const char *text, int state)
-{
-	const char *words[] = { "miimon", "arp", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_adsl_proto (const char *text, int state)
-{
-	const char *words[] = { "pppoe", "pppoa", "ipoatm", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_adsl_encap (const char *text, int state)
-{
-	const char *words[] = { "vcmux", "llc", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_tun_mode (const char *text, int state)
-{
-	const char *words[] = { "tun", "tap", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_ip_tunnel_mode (const char *text, int state)
-{
-	gs_free const char **words = NULL;
-
-	words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-	                                  NM_IP_TUNNEL_MODE_UNKNOWN + 1,
-	                                  G_MAXINT);
-	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static void
