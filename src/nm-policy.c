@@ -1442,7 +1442,7 @@ vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
+	ip_iface = nm_vpn_connection_get_ip_iface (vpn, FALSE);
 
 	/* Add the VPN connection's IP configs from DNS */
 
