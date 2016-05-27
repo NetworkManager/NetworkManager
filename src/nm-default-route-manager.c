@@ -1141,7 +1141,7 @@ _ipx_get_best_config (const VTableIP *vtable,
 			if (out_ac)
 				*out_ac = NM_ACTIVE_CONNECTION (vpn);
 			if (out_ip_iface)
-				*out_ip_iface = nm_vpn_connection_get_ip_iface (vpn, FALSE);
+				*out_ip_iface = nm_vpn_connection_get_ip_iface (vpn, TRUE);
 		} else {
 			NMDevice *device = entry->source.device;
 			NMActRequest *req;
