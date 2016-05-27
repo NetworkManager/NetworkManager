@@ -193,14 +193,14 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
 	            "%s%s"     /*con-uuid*/
 	            "%s%s%s%s" /*con-id*/
 	            ",%d"      /*ifindex*/
-	            "%s%s%s%s" /*iface*/
+	            "%s%s%s" /*iface*/
 	            "]",
 	            _NMLOG_PREFIX_NAME,
 	            self,
 	            con ? "," : "--", con ? (nm_connection_get_uuid (con) ?: "??") : "",
 	            con ? "," : "", NM_PRINT_FMT_QUOTED (id, "\"", id, "\"", con ? "??" : ""),
 	            priv->ip_ifindex,
-	            priv->ip_iface ? ":" : "", NM_PRINT_FMT_QUOTED (priv->ip_iface, "(", priv->ip_iface, ")", "")
+	            NM_PRINT_FMT_QUOTED (priv->ip_iface, ":(", priv->ip_iface, ")", "")
 	            );
 
 	return buf;
@@ -910,7 +910,7 @@ print_vpn_config (NMVpnConnection *self)
 		       nm_utils_inet6_ntop (priv->ip6_external_gw, NULL));
 	}
 
-	_LOGI ("Data: Tunnel Device: %s", priv->ip_iface ? priv->ip_iface : "(none)");
+	_LOGI ("Data: Tunnel Device: %s%s%s", NM_PRINT_FMT_QUOTE_STRING (priv->ip_iface));
 
 	if (priv->ip4_config) {
 		_LOGI ("Data: IPv4 configuration:");
@@ -1219,6 +1219,8 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	}
 
 	g_clear_pointer (&priv->ip_iface, g_free);
+	priv->ip_ifindex = 0;
+
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_TUNDEV, "&s", &str)) {
 		/* Backwards compat with NM-openswan */
 		if (g_strcmp0 (str, "_none_") != 0)
@@ -1229,7 +1231,13 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 		/* Grab the interface index for address/routing operations */
 		priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
 		if (priv->ip_ifindex <= 0) {
+			nm_platform_process_events (NM_PLATFORM_GET);
+			priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
+		}
+		if (priv->ip_ifindex <= 0) {
 			_LOGE ("failed to look up VPN interface index for \"%s\"", priv->ip_iface);
+			g_clear_pointer (&priv->ip_iface, g_free);
+			priv->ip_ifindex = 0;
 			nm_vpn_connection_config_maybe_complete (self, FALSE);
 			return FALSE;
 		}
