@@ -727,16 +727,8 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 	if (device)
 		ip_ifindex = nm_device_get_ip_ifindex (device);
-	else {
-		ip_ifindex = nm_vpn_connection_get_ip_ifindex (vpn);
-
-		if (ip_ifindex <= 0) {
-			NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-
-			if (parent)
-				ip_ifindex = nm_device_get_ip_ifindex (parent);
-		}
-	}
+	else
+		ip_ifindex = nm_vpn_connection_get_ip_ifindex (vpn, TRUE);
 
 	entries = vtable->get_entries (priv);
 	entry = _entry_find_by_source (entries, source, &entry_idx);
@@ -818,7 +810,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 					}
 				}
 			}
-			if (nm_vpn_connection_get_ip_ifindex (vpn) > 0)
+			if (nm_vpn_connection_get_ip_ifindex (vpn, FALSE) > 0)
 				synced = TRUE;
 			else {
 				/* a VPN connection without tunnel device cannot have a non-synced, missing default route.
@@ -1149,7 +1141,7 @@ _ipx_get_best_config (const VTableIP *vtable,
 			if (out_ac)
 				*out_ac = NM_ACTIVE_CONNECTION (vpn);
 			if (out_ip_iface)
-				*out_ip_iface = nm_vpn_connection_get_ip_iface (vpn);
+				*out_ip_iface = nm_vpn_connection_get_ip_iface (vpn, TRUE);
 		} else {
 			NMDevice *device = entry->source.device;
 			NMActRequest *req;
