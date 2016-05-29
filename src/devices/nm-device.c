@@ -7164,6 +7164,17 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	nm_device_update_hw_address (self);
 
 	_update_ip4_address (self);
+
+	/* when the link comes up, we must restore IP configuration if necessary. */
+	if (priv->ip4_state == IP_DONE) {
+		if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+			_LOGW (LOGD_IP4, "failed applying IP4 config after bringing link up");
+	}
+	if (priv->ip6_state == IP_DONE) {
+		if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+			_LOGW (LOGD_IP6, "failed applying IP6 config after bringing link up");
+	}
+
 	return TRUE;
 }
 
