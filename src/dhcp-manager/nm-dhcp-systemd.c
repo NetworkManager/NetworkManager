@@ -578,6 +578,8 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		return FALSE;
 	}
 
+	_LOGT ("dhcp-client4: set %p", priv->client4);
+
 	r = sd_dhcp_client_attach_event (priv->client4, NULL, 0);
 	if (r < 0) {
 		_LOGW ("failed to attach event (%d)", r);
@@ -895,6 +897,8 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
+	_LOGT ("dhcp-client6: set %p", priv->client4);
+
 	if (info_only)
 	    sd_dhcp6_client_set_information_request (priv->client6, 1);
 
@@ -972,6 +976,10 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	int r = 0;
+
+	_LOGT ("dhcp-client%d: stop %p",
+	       priv->client4 ? '4' : '6',
+	       priv->client4 ? (gpointer) priv->client4 : (gpointer) priv->client6);
 
 	if (priv->client4) {
 		sd_dhcp_client_set_callback (priv->client4, NULL, NULL);
