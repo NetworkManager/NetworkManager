@@ -111,6 +111,8 @@ GPid nm_dns_plugin_child_spawn (NMDnsPlugin *self,
                                 const char *pidfile,
                                 const char *kill_match);
 
+GPid nm_dns_plugin_child_pid (NMDnsPlugin *self);
+
 gboolean nm_dns_plugin_child_kill (NMDnsPlugin *self);
 
 #endif /* __NETWORKMANAGER_DNS_PLUGIN_H__ */
