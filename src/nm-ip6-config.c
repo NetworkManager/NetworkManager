@@ -1150,7 +1150,7 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
 		nm_ip6_config_set_dns_priority (dst, src_priv->dns_priority);
-		has_relevant_changes = TRUE;
+		has_minor_changes = TRUE;
 	}
 
 #if NM_MORE_ASSERTS
@@ -1886,8 +1886,6 @@ nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only
 		s = nm_ip6_config_get_dns_option (config, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
-
-	hash_u32 (sum, (guint32) nm_ip6_config_get_dns_priority (config));
 }
 
 /**
