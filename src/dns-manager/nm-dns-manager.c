@@ -61,10 +61,6 @@
 #define DOMAIN_IS_VALID(domain) (*(domain))
 #endif
 
-G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
-
-#define NM_DNS_MANAGER_GET_PRIVATE(o) ((o)->priv)
-
 #define HASH_LEN 20
 
 #ifndef RESOLVCONF_PATH
@@ -79,7 +75,19 @@ G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 #define PLUGIN_RATELIMIT_BURST       5
 #define PLUGIN_RATELIMIT_DELAY       300
 
-NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
+enum {
+	CONFIG_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef enum {
+	SR_SUCCESS,
+	SR_NOTFOUND,
+	SR_ERROR
+} SpawnResult;
 
 /*********************************************************************************************/
 
@@ -105,7 +113,7 @@ NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
 
 /*********************************************************************************************/
 
-typedef struct _NMDnsManagerPrivate {
+typedef struct {
 	GPtrArray *configs;
 	NMDnsIPConfigData *best_conf4, *best_conf6;
 	gboolean need_sort;
@@ -130,20 +138,33 @@ typedef struct _NMDnsManagerPrivate {
 	} plugin_ratelimit;
 } NMDnsManagerPrivate;
 
-enum {
-	CONFIG_CHANGED,
-
-	LAST_SIGNAL
+struct _NMDnsManager {
+	GObject parent;
+	NMDnsManagerPrivate _priv;
 };
 
-typedef enum {
-	SR_SUCCESS,
-	SR_NOTFOUND,
-	SR_ERROR
-} SpawnResult;
+struct _NMDnsManagerClass {
+	GObjectClass parent;
+};
 
-static guint signals[LAST_SIGNAL] = { 0 };
+G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
+NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
+
+#define NM_DNS_MANAGER_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMDnsManager *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_DNS_MANAGER (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 typedef struct {
 	GPtrArray *nameservers;
@@ -1609,9 +1630,7 @@ config_changed_cb (NMConfig *config,
 static void
 nm_dns_manager_init (NMDnsManager *self)
 {
-	NMDnsManagerPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DNS_MANAGER, NMDnsManagerPrivate);
-
-	self->priv = priv;
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	_LOGT ("creating...");
 
@@ -1684,8 +1703,6 @@ static void
 nm_dns_manager_class_init (NMDnsManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMDnsManagerPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;

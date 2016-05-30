@@ -56,17 +56,8 @@ typedef struct {
 
 #define NM_DNS_MANAGER_CONFIG_CHANGED "config-changed"
 
-struct _NMDnsManagerPrivate;
-
-typedef struct {
-	GObject parent;
-	/* private */
-	struct _NMDnsManagerPrivate *priv;
-} NMDnsManager;
-
-typedef struct {
-	GObjectClass parent;
-} NMDnsManagerClass;
+typedef struct _NMDnsManager NMDnsManager;
+typedef struct _NMDnsManagerClass NMDnsManagerClass;
 
 GType nm_dns_manager_get_type (void);
 
