@@ -66,9 +66,6 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
-
-	/* Signals */
-	void (*config_changed) (NMDnsManager *mgr);
 } NMDnsManagerClass;
 
 GType nm_dns_manager_get_type (void);
