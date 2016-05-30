@@ -11693,11 +11693,11 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DRIVER_VERSION:
 		g_free (priv->driver_version);
-		priv->driver_version = g_strdup (g_value_get_string (value));
+		priv->driver_version = g_value_dup_string (value);
 		break;
 	case PROP_FIRMWARE_VERSION:
 		g_free (priv->firmware_version);
-		priv->firmware_version = g_strdup (g_value_get_string (value));
+		priv->firmware_version = g_value_dup_string (value);
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);

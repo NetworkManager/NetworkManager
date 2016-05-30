@@ -800,7 +800,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_DBUS_SERVICE_NAME:
 		/* Construct-only */
-		priv->dbus_service_name = g_strdup (g_value_get_string (value));
+		priv->dbus_service_name = g_value_dup_string (value);
 		break;
 	case PROP_STATE:
 		nm_vpn_plugin_set_state (NM_VPN_PLUGIN (object),
