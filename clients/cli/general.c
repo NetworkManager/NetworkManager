@@ -399,6 +399,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS "org.freedesktop.NetworkManager.settings.modify.global-dns"
+#define NM_AUTH_PERMISSION_RELOAD                     "org.freedesktop.NetworkManager.reload"
 
 static const char *
 permission_to_string (NMClientPermission perm)
@@ -428,6 +429,8 @@ permission_to_string (NMClientPermission perm)
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
 	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS:
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
+	case NM_CLIENT_PERMISSION_RELOAD:
+		return NM_AUTH_PERMISSION_RELOAD;
 	default:
 		return _("unknown");
 	}

@@ -4,6 +4,15 @@
     <annotation name="org.gtk.GDBus.C.Name" value="Manager"/>
 
     <!--
+        Reload:
+        @flags: optional flags to specify which parts shall be reloaded. A default of zero
+                means to reload everything.
+    -->
+    <method name="Reload">
+      <arg name="flags" type="u" direction="in"/>
+    </method>
+
+    <!--
         GetDevices:
         @devices: List of object paths of network devices known to the system. This list does not include device placeholders (see GetAllDevices()).
 
