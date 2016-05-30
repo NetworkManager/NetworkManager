@@ -530,8 +530,10 @@ child_quit (NMDnsPlugin *plugin, gint status)
 		if (err) {
 			_LOGW ("dnsmasq exited with error: %s",
 			       nm_utils_dnsmasq_status_to_string (err, NULL, 0));
-		} else
+		} else {
+			_LOGD ("dnsmasq exited normally");
 			failed = FALSE;
+		}
 	} else if (WIFSTOPPED (status))
 		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
 	else if (WIFSIGNALED (status))
