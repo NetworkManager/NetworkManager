@@ -178,6 +178,17 @@ watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 GPid
+nm_dns_plugin_child_pid (NMDnsPlugin *self)
+{
+	NMDnsPluginPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DNS_PLUGIN (self), 0);
+
+	priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
+	return priv->pid;
+}
+
+GPid
 nm_dns_plugin_child_spawn (NMDnsPlugin *self,
                            const char **argv,
                            const char *pidfile,
