@@ -1520,7 +1520,7 @@ _get_resconf_immutable (void)
 NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
 static void
-init_resolv_conf_mode (NMDnsManager *self)
+init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsManagerResolvConfManager rc_manager;
@@ -1565,13 +1565,13 @@ again:
 	}
 
 	if (nm_streq0 (mode, "dnsmasq")) {
-		if (!NM_IS_DNS_DNSMASQ (priv->plugin)) {
+		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
 			_clear_plugin (self);
 			priv->plugin = nm_dns_dnsmasq_new ();
 			plugin_changed = TRUE;
 		}
 	} else if (nm_streq0 (mode, "unbound")) {
-		if (!NM_IS_DNS_UNBOUND (priv->plugin)) {
+		if (force_reload_plugin || !NM_IS_DNS_UNBOUND (priv->plugin)) {
 			_clear_plugin (self);
 			priv->plugin = nm_dns_unbound_new ();
 			plugin_changed = TRUE;
@@ -1615,7 +1615,8 @@ config_changed_cb (NMConfig *config,
 		 * The reason is, that the configuration also depends on whether resolv.conf
 		 * is immutable, thus, without the configuration changing, we always want to
 		 * re-configure the mode. */
-		init_resolv_conf_mode (self);
+		init_resolv_conf_mode (self,
+		                       NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_SIGHUP));
 	}
 
 	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_SIGHUP |
@@ -1647,7 +1648,7 @@ nm_dns_manager_init (NMDnsManager *self)
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (config_changed_cb),
 	                  self);
-	init_resolv_conf_mode (self);
+	init_resolv_conf_mode (self, TRUE);
 }
 
 static void
