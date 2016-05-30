@@ -78,7 +78,7 @@
         terse output format which is better suited for script processing. Note that
         NetworkManager can also execute scripts, called "dispatcher scripts", in
         response to network events. See
-        <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+        <link linkend='NetworkManager'><link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link></link>
         for details about these dispatcher scripts.</para>
       </listitem>
 
@@ -371,7 +371,7 @@
           domains. Without any argument current logging level and domains are shown. In
           order to change logging state, provide <option>level</option> and, or,
           <option>domain</option> parameters. See
-          <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          <link linkend='NetworkManager.conf'><link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></link>
           for available level and domain values.</para>
         </listitem>
       </varlistentry>
@@ -2023,7 +2023,7 @@
           <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> for all NetworkManager settings and property names, and their
           descriptions; and
-          <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+          <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>
           for sample editor sessions.</para>
         </listitem>
       </varlistentry>
@@ -2161,7 +2161,7 @@
           disk when a change was made to them. However, the auto-loading feature can be
           enabled and then NetworkManager will reload connection
           files any time they change (monitor-connection-files=true in
-          <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>).
+          <link linkend='NetworkManager.conf'><link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></link>).
           </para>
         </listitem>
       </varlistentry>
@@ -2805,7 +2805,7 @@
 
     <para>This section presents various examples of <command>nmcli</command> usage. If you want even
     more, please refer to
-    <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+    <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>
     manual page.</para>
 
     <variablelist>
@@ -3074,11 +3074,11 @@
   </refsect1>
 
   <refsect1 id='see_also'><title>See Also</title>
-    <para><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+    <para><link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+    <link linkend='nm-online'><citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+    <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
     <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>.</para>
   </refsect1>
