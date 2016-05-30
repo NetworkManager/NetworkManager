@@ -254,6 +254,12 @@ nm_dns_plugin_child_kill (NMDnsPlugin *self)
 	return TRUE;
 }
 
+void
+nm_dns_plugin_stop (NMDnsPlugin *self)
+{
+	nm_dns_plugin_child_kill (self);
+}
+
 /********************************************/
 
 static void
@@ -266,7 +272,7 @@ dispose (GObject *object)
 {
 	NMDnsPlugin *self = NM_DNS_PLUGIN (object);
 
-	nm_dns_plugin_child_kill (self);
+	nm_dns_plugin_stop (self);
 
 	G_OBJECT_CLASS (nm_dns_plugin_parent_class)->dispose (object);
 }
