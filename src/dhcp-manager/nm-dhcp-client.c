@@ -834,7 +834,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_IFACE:
 		/* construct-only */
-		priv->iface = g_strdup (g_value_get_string (value));
+		priv->iface = g_value_dup_string (value);
 		break;
 	case PROP_IFINDEX:
 		/* construct-only */

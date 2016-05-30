@@ -540,7 +540,7 @@ iid_value_to_ll6_addr (GVariant *dict,
 	out_addr->s6_addr16[0] = htons (0xfe80);
 	memcpy (out_addr->s6_addr + 8, &iid, sizeof (iid));
 	if (out_iid)
-		nm_utils_ipv6_interface_identfier_get_from_addr (out_iid, out_addr);
+		nm_utils_ipv6_interface_identifier_get_from_addr (out_iid, out_addr);
 	return TRUE;
 }
 

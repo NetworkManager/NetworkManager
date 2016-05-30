@@ -24,6 +24,7 @@
 #include "nm-setting-ip6-config.h"
 
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
@@ -59,6 +60,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP6_CONFIG)
 typedef struct {
 	NMSettingIP6ConfigPrivacy ip6_privacy;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	char *token;
 } NMSettingIP6ConfigPrivate;
 
 
@@ -66,6 +68,7 @@ enum {
 	PROP_0,
 	PROP_IP6_PRIVACY,
 	PROP_ADDR_GEN_MODE,
+	PROP_TOKEN,
 
 	LAST_PROP
 };
@@ -120,6 +123,25 @@ nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->addr_gen_mode;
 }
 
+/**
+ * nm_setting_ip6_config_get_token:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:token
+ * property.
+ *
+ * Returns: A string.
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_setting_ip6_config_get_token (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->token;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -127,6 +149,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	NMSettingVerifyResult ret;
 	const char *method;
+	gboolean token_needs_normalization = FALSE;
 
 	ret = NM_SETTING_CLASS (nm_setting_ip6_config_parent_class)->verify (setting, connection, error);
 	if (ret != NM_SETTING_VERIFY_SUCCESS)
@@ -199,6 +222,44 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                      _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
 		return FALSE;
+	}
+
+	if (priv->token) {
+		if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
+			struct in6_addr i6_token;
+			char s_token[NM_UTILS_INET_ADDRSTRLEN];
+
+			if (   inet_pton (AF_INET6, priv->token, &i6_token) != 1
+			    || !_nm_utils_inet6_is_token (&i6_token)) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                      _("value is not a valid token"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
+				return FALSE;
+			}
+
+			if (g_strcmp0 (priv->token, nm_utils_inet6_ntop (&i6_token, s_token)))
+				token_needs_normalization = TRUE;
+		} else {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                      _("only makes sense with EUI64 address generation mode"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
+			return FALSE;
+		}
+	}
+
+	/* Failures from here on, are NORMALIZABLE_ERROR... */
+
+	if (token_needs_normalization) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("token is not in canonical form"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return TRUE;
@@ -388,6 +449,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_ADDR_GEN_MODE:
 		priv->addr_gen_mode = g_value_get_int (value);
 		break;
+	case PROP_TOKEN:
+		g_free (priv->token);
+		priv->token = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -407,10 +472,24 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDR_GEN_MODE:
 		g_value_set_int (value, priv->addr_gen_mode);
 		break;
+	case PROP_TOKEN:
+		g_value_set_string (value, priv->token);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingIP6Config *self = NM_SETTING_IP6_CONFIG (object);
+	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (self);
+
+	g_free (priv->token);
+
+	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
 }
 
 static void
@@ -424,6 +503,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->finalize = finalize;
 	setting_class->verify = verify;
 
 	/* Properties */
@@ -655,6 +735,30 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIP6Config:token:
+	 *
+	 * Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02
+	 * IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode.
+	 *
+	 * Since: 1.4
+	 **/
+	/* ---ifcfg-rh---
+	 * property: token
+	 * variable: IPV6_TOKEN
+	 * description: The IPv6 tokenized interface identifier token
+	 * example: IPV6_TOKEN=::53
+	 * ---end---
+	 */
+        g_object_class_install_property
+                (object_class, PROP_TOKEN,
+                 g_param_spec_string (NM_SETTING_IP6_CONFIG_TOKEN, "", "",
+                                      NULL,
+                                      G_PARAM_READWRITE |
+                                      NM_SETTING_PARAM_INFERRABLE |
+                                      G_PARAM_STATIC_STRINGS));
+
 
 	/* IP6-specific property overrides */
 

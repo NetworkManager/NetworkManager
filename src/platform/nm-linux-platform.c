@@ -798,9 +798,10 @@ _nl_nlmsg_type_to_str (guint16 type, char *buf, gsize len)
 static gboolean
 _parse_af_inet6 (NMPlatform *platform,
                  struct nlattr *attr,
-                 NMUtilsIPv6IfaceId *out_iid,
-                 guint8 *out_iid_is_valid,
-                 guint8 *out_addr_gen_mode_inv)
+                 NMUtilsIPv6IfaceId *out_token,
+                 gboolean *out_token_valid,
+                 guint8 *out_addr_gen_mode_inv,
+                 gboolean *out_addr_gen_mode_valid)
 {
 	static struct nla_policy policy[IFLA_INET6_MAX+1] = {
 		[IFLA_INET6_FLAGS]              = { .type = NLA_U32 },
@@ -814,7 +815,8 @@ _parse_af_inet6 (NMPlatform *platform,
 	struct nlattr *tb[IFLA_INET6_MAX+1];
 	int err;
 	struct in6_addr i6_token;
-	gboolean iid_is_valid = FALSE;
+	gboolean token_valid = FALSE;
+	gboolean addr_gen_mode_valid = FALSE;
 	guint8 i6_addr_gen_mode_inv = 0;
 	gboolean success = FALSE;
 
@@ -831,8 +833,7 @@ _parse_af_inet6 (NMPlatform *platform,
 
 	if (_check_addr_or_errout (tb, IFLA_INET6_TOKEN, sizeof (struct in6_addr))) {
 		nla_memcpy (&i6_token, tb[IFLA_INET6_TOKEN], sizeof (struct in6_addr));
-		if (!IN6_IS_ADDR_UNSPECIFIED (&i6_token))
-			iid_is_valid = TRUE;
+		token_valid = TRUE;
 	}
 
 	/* Hack to detect support addrgenmode of the kernel. We only parse
@@ -847,21 +848,18 @@ _parse_af_inet6 (NMPlatform *platform,
 			 * to signal "unset". */
 			goto errout;
 		}
+		addr_gen_mode_valid = TRUE;
 	}
 
 	success = TRUE;
-	if (iid_is_valid) {
-		out_iid->id_u8[7] = i6_token.s6_addr[15];
-		out_iid->id_u8[6] = i6_token.s6_addr[14];
-		out_iid->id_u8[5] = i6_token.s6_addr[13];
-		out_iid->id_u8[4] = i6_token.s6_addr[12];
-		out_iid->id_u8[3] = i6_token.s6_addr[11];
-		out_iid->id_u8[2] = i6_token.s6_addr[10];
-		out_iid->id_u8[1] = i6_token.s6_addr[9];
-		out_iid->id_u8[0] = i6_token.s6_addr[8];
-		*out_iid_is_valid = TRUE;
+	if (token_valid) {
+		*out_token_valid = token_valid;
+		nm_utils_ipv6_interface_identifier_get_from_addr (out_token, &i6_token);
 	}
-	*out_addr_gen_mode_inv = i6_addr_gen_mode_inv;
+	if (addr_gen_mode_valid) {
+		*out_addr_gen_mode_valid = addr_gen_mode_valid;
+		*out_addr_gen_mode_inv = i6_addr_gen_mode_inv;
+	}
 errout:
 	return success;
 }
@@ -1436,6 +1434,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	NMPObject *lnk_data = NULL;
 	gboolean address_complete_from_cache = TRUE;
 	gboolean lnk_data_complete_from_cache = TRUE;
+	gboolean af_inet6_token_valid = FALSE;
+	gboolean af_inet6_addr_gen_mode_valid = FALSE;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*ifi)))
 		return NULL;
@@ -1512,9 +1512,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			case AF_INET6:
 				_parse_af_inet6 (platform,
 				                 af_attr,
-				                 &obj->link.inet6_token.iid,
-				                 &obj->link.inet6_token.is_valid,
-				                 &obj->link.inet6_addr_gen_mode_inv);
+				                 &obj->link.inet6_token,
+				                 &af_inet6_token_valid,
+				                 &obj->link.inet6_addr_gen_mode_inv,
+				                 &af_inet6_addr_gen_mode_valid);
 				break;
 			}
 		}
@@ -1556,7 +1557,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	if (   completed_from_cache
 	    && (   lnk_data_complete_from_cache
-	        || address_complete_from_cache)) {
+	        || address_complete_from_cache
+	        || !af_inet6_token_valid
+	        || !af_inet6_addr_gen_mode_valid)) {
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
 		if (link_cached) {
 			if (   lnk_data_complete_from_cache
@@ -1575,6 +1578,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			}
 			if (address_complete_from_cache)
 				obj->link.addr = link_cached->link.addr;
+			if (!af_inet6_token_valid)
+				obj->link.inet6_token = link_cached->link.inet6_token;
+			if (!af_inet6_addr_gen_mode_valid)
+				obj->link.inet6_addr_gen_mode_inv = link_cached->link.inet6_addr_gen_mode_inv;
 		}
 	}
 
@@ -1947,7 +1954,8 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 
 static gboolean
 _nl_msg_new_link_set_afspec (struct nl_msg *msg,
-                             int addr_gen_mode)
+                             int addr_gen_mode,
+                             NMUtilsIPv6IfaceId *iid)
 {
 	struct nlattr *af_spec;
 	struct nlattr *af_attr;
@@ -1957,11 +1965,19 @@ _nl_msg_new_link_set_afspec (struct nl_msg *msg,
 	if (!(af_spec = nla_nest_start (msg, IFLA_AF_SPEC)))
 		goto nla_put_failure;
 
-	if (addr_gen_mode >= 0) {
+	if (addr_gen_mode >= 0 || iid) {
 		if (!(af_attr = nla_nest_start (msg, AF_INET6)))
 			goto nla_put_failure;
 
-		NLA_PUT_U8 (msg, IFLA_INET6_ADDR_GEN_MODE, addr_gen_mode);
+		if (addr_gen_mode >= 0)
+			NLA_PUT_U8 (msg, IFLA_INET6_ADDR_GEN_MODE, addr_gen_mode);
+
+		if (iid) {
+			struct in6_addr i6_token = { .s6_addr = { 0, } };
+
+			nm_utils_ipv6_addr_set_interface_identifier (&i6_token, *iid);
+			NLA_PUT (msg, IFLA_INET6_TOKEN, sizeof (struct in6_addr), &i6_token);
+		}
 
 		nla_nest_end (msg, af_attr);
 	}
@@ -4322,8 +4338,22 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	                          0,
 	                          0);
 	if (   !nlmsg
-	    || !_nl_msg_new_link_set_afspec (nlmsg,
-	                                     mode))
+	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
+		g_return_val_if_reached (FALSE);
+
+	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+}
+
+static gboolean
+link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+	_LOGD ("link: change %d: token: set IPv6 address generation token to %s",
+	       ifindex, nm_utils_inet6_interface_identifier_to_token (iid, NULL));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK, 0, ifindex, NULL, 0, 0);
+	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))
 		g_return_val_if_reached (FALSE);
 
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
@@ -6435,6 +6465,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_udev_device = link_get_udev_device;
 
 	platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
+	platform_class->link_set_token = link_set_token;
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_permanent_address = link_get_permanent_address;

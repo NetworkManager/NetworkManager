@@ -43,6 +43,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE "addr-gen-mode"
 
+#define NM_SETTING_IP6_CONFIG_TOKEN "token"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -156,6 +158,8 @@ NMSetting *nm_setting_ip6_config_new (void);
 NMSettingIP6ConfigPrivacy nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_2
 NMSettingIP6ConfigAddrGenMode nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_4
+const char *nm_setting_ip6_config_get_token (NMSettingIP6Config *setting);
 
 G_END_DECLS
 

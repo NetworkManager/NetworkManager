@@ -900,33 +900,25 @@ nm_platform_link_uses_arp (NMPlatform *self, int ifindex)
 }
 
 /**
- * nm_platform_link_get_ipv6_token:
+ * nm_platform_link_set_ipv6_token:
  * @self: platform instance
  * @ifindex: Interface index
  * @iid: Tokenized interface identifier
  *
- * Returns IPv6 tokenized interface identifier. If the platform or OS doesn't
- * support IPv6 tokenized interface identifiers, or the token is not set
- * this call will fail and return %FALSE.
+ * Sets then IPv6 tokenized interface identifier.
  *
  * Returns: %TRUE a tokenized identifier was available
  */
 gboolean
-nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid)
+nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid)
 {
-	const NMPlatformLink *pllink;
-
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (iid, FALSE);
+	g_return_val_if_fail (iid.id, FALSE);
 
-
-	pllink = nm_platform_link_get (self, ifindex);
-	if (pllink && pllink->inet6_token.is_valid) {
-		*iid = pllink->inet6_token.iid;
-		return TRUE;
-	}
+	if (klass->link_set_token)
+		return klass->link_set_token (self, ifindex, iid);
 	return FALSE;
 }
 
@@ -3067,7 +3059,7 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	GString *str_flags;
 	char str_addrmode[30];
 	gs_free char *str_addr = NULL;
-	gs_free char *str_inet6_token = NULL;
+	char str_inet6_token[NM_UTILS_INET_ADDRSTRLEN];
 	const char *str_link_type;
 
 	if (!nm_utils_to_string_buffer_init_null (link, &buf, &len))
@@ -3104,8 +3096,6 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 
 	if (link->addr.len)
 		str_addr = nm_utils_hwaddr_ntoa (link->addr.data, MIN (link->addr.len, sizeof (link->addr.data)));
-	if (link->inet6_token.is_valid)
-		str_inet6_token = nm_utils_hwaddr_ntoa (&link->inet6_token.iid, sizeof (link->inet6_token.iid));
 
 	str_link_type = nm_link_type_to_string (link->type);
 
@@ -3139,8 +3129,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->inet6_addr_gen_mode_inv ? nm_platform_link_inet6_addrgenmode2str (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv), str_addrmode, sizeof (str_addrmode)) : "",
 	            str_addr ? " addr " : "",
 	            str_addr ? str_addr : "",
-	            str_inet6_token ? " inet6token " : "",
-	            str_inet6_token ? str_inet6_token : "",
+	            link->inet6_token.id ? " inet6token " : "",
+	            link->inet6_token.id ? nm_utils_inet6_interface_identifier_to_token (link->inet6_token, str_inet6_token) : "",
 	            link->driver ? " driver " : "",
 	            link->driver ? link->driver : "");
 	g_string_free (str_flags, TRUE);
@@ -3798,13 +3788,11 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, arptype);
 	_CMP_FIELD (a, b, addr.len);
 	_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
-	_CMP_FIELD (a, b, inet6_token.is_valid);
 	_CMP_FIELD_STR_INTERNED (a, b, kind);
 	_CMP_FIELD_STR_INTERNED (a, b, driver);
 	if (a->addr.len)
 		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
-	if (a->inet6_token.is_valid)
-		_CMP_FIELD_MEMCMP (a, b, inet6_token.iid);
+	_CMP_FIELD_MEMCMP (a, b, inet6_token);
 	return 0;
 }
 

@@ -147,11 +147,8 @@ struct _NMPlatformLink {
 		guint8 len;
 	} addr;
 
-	/* rtnl_link_inet6_get_token() */
-	struct {
-		NMUtilsIPv6IfaceId iid;
-		guint8 is_valid;
-	} inet6_token;
+	/* rtnl_link_inet6_get_token(), IFLA_INET6_TOKEN */
+	NMUtilsIPv6IfaceId inet6_token;
 
 	/* The bitwise inverse of rtnl_link_inet6_get_addr_gen_mode(). It is inverse
 	 * to have a default of 0 -- meaning: unspecified. That way, a struct
@@ -523,6 +520,7 @@ typedef struct {
 	GObject *(*link_get_udev_device) (NMPlatform *self, int ifindex);
 
 	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
+	gboolean (*link_set_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId iid);
 
 	gboolean (*link_get_permanent_address) (NMPlatform *,
 	                                        int ifindex,
@@ -733,7 +731,6 @@ gboolean nm_platform_link_is_up (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
 guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
 gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
 int nm_platform_link_get_master (NMPlatform *self, int slave);
@@ -757,6 +754,7 @@ const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
 GObject *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
+gboolean nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
 
 gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
 gboolean nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);

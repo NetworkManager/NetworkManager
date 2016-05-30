@@ -296,4 +296,8 @@ typedef enum {
 NMBondOptionType
 _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
 
+/***********************************************************/
+
+gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
+
 #endif
