@@ -1666,7 +1666,7 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	if (reload_flags != NM_CONFIG_CHANGE_CAUSE_SIGHUP) {
+	if (!NM_FLAGS_ANY (reload_flags, NM_CONFIG_CHANGE_CAUSE_SIGHUP | NM_CONFIG_CHANGE_CAUSE_CONF)) {
 		/* unless SIGHUP is specified, we don't reload the configuration from disc. */
 		_set_config_data (self, NULL, reload_flags);
 		return;
@@ -1712,6 +1712,9 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 
 NM_UTILS_FLAGS2STR_DEFINE (nm_config_change_flags_to_string, NMConfigChangeFlags,
 
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_CONF, "CONF"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_DNS_RC, "DNS_RC"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_DNS_FULL, "DNS_FULL"),
 	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SIGHUP, "SIGHUP"),
 	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SIGUSR1, "SIGUSR1"),
 	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SIGUSR2, "SIGUSR2"),
@@ -1752,7 +1755,10 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags re
 			changes |= changes_diff;
 	}
 
-	if (   NM_IN_SET (reload_flags, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT, NM_CONFIG_CHANGE_CAUSE_SET_VALUES)
+	if (   NM_IN_SET (reload_flags,
+	                  NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT,
+	                  NM_CONFIG_CHANGE_CAUSE_SET_VALUES,
+	                  NM_CONFIG_CHANGE_CAUSE_CONF)
 	    && !new_data) {
 		/* no relevant changes that should be propagated. Return silently. */
 		return;

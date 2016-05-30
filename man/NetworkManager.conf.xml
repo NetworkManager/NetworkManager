@@ -78,6 +78,10 @@
     This file is not intended to be modified by the user, but it is read last and can shadow
     user configuration from <literal>NetworkManager.conf</literal>.
     </para>
+    <para>
+    Certain settings from the configuration can be reloaded at runtime either by sending SIGHUP signal or via
+    D-Bus' Reload call.
+    </para>
 
   </refsect1>
 
