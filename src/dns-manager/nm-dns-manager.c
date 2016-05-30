@@ -1493,6 +1493,7 @@ _clear_plugin (NMDnsManager *self)
 	if (priv->plugin) {
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
+		nm_dns_plugin_stop (priv->plugin);
 		g_clear_object (&priv->plugin);
 		return TRUE;
 	}

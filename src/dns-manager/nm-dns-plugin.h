@@ -90,6 +90,8 @@ gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                const NMGlobalDnsConfig *global_config,
                                const char *hostname);
 
+void nm_dns_plugin_stop (NMDnsPlugin *self);
+
 /* For subclasses/plugins */
 
 /* Spawn a child process and watch for it to quit.  'argv' is the NULL-terminated
