@@ -53,6 +53,7 @@ typedef struct {
 #define NM_AUDIT_OP_CONN_DEACTIVATE         "connection-deactivate"
 #define NM_AUDIT_OP_CONN_CLEAR_SECRETS      "connection-clear-secrets"
 
+#define NM_AUDIT_OP_RELOAD                  "reload"
 #define NM_AUDIT_OP_SLEEP_CONTROL           "sleep-control"
 #define NM_AUDIT_OP_NET_CONTROL             "networking-control"
 #define NM_AUDIT_OP_RADIO_CONTROL           "radio-control"
