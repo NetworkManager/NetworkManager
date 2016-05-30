@@ -1232,7 +1232,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
 		nm_ip4_config_set_dns_priority (dst, src_priv->dns_priority);
-		has_relevant_changes = TRUE;
+		has_minor_changes = TRUE;
 	}
 
 	/* mss */
@@ -2220,8 +2220,6 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 		s = nm_ip4_config_get_dns_option (config, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
-
-	hash_u32 (sum, (guint32) nm_ip4_config_get_dns_priority (config));
 }
 
 /**
