@@ -129,7 +129,7 @@ void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *devi
 
 NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
-void nm_config_reload (NMConfig *config, int signal);
+void nm_config_reload (NMConfig *config, NMConfigChangeFlags reload_flags);
 
 gint nm_config_parse_boolean (const char *str, gint default_value);
 

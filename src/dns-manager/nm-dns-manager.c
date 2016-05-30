@@ -1610,17 +1610,17 @@ config_changed_cb (NMConfig *config,
 
 	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
-	                           NM_CONFIG_CHANGE_SIGHUP)) {
+	                           NM_CONFIG_CHANGE_CAUSE_SIGHUP)) {
 		/* reload the resolv-conf mode also on SIGHUP (when DNS_MODE didn't change).
 		 * The reason is, that the configuration also depends on whether resolv.conf
 		 * is immutable, thus, without the configuration changing, we always want to
 		 * re-configure the mode. */
 		init_resolv_conf_mode (self,
-		                       NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_SIGHUP));
+		                       NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_CAUSE_SIGHUP));
 	}
 
-	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_SIGHUP |
-	                           NM_CONFIG_CHANGE_SIGUSR1 |
+	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_CAUSE_SIGHUP |
+	                           NM_CONFIG_CHANGE_CAUSE_SIGUSR1 |
 	                           NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
 	                           NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG)) {

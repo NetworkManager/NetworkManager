@@ -943,8 +943,8 @@ config_changed_cb (NMConfig *config,
 	 * On SIGHUP and SIGUSR1 try to re-connect to D-Bus. So in the unlikely
 	 * event that the D-Bus conneciton is broken, that allows for recovery
 	 * without need for restarting NetworkManager. */
-	if (   NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_SIGHUP)
-	    || NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_SIGUSR1)) {
+	if (NM_FLAGS_ANY (changes,   NM_CONFIG_CHANGE_CAUSE_SIGHUP
+	                           | NM_CONFIG_CHANGE_CAUSE_SIGUSR1)) {
 		if (!SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self)->dbus.connection)
 			_dbus_setup (self);
 	}
