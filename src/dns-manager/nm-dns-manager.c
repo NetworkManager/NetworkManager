@@ -1696,8 +1696,7 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	    g_signal_new (NM_DNS_MANAGER_CONFIG_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDnsManagerClass, config_changed),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 }
