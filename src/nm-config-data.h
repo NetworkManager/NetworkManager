@@ -44,7 +44,26 @@ G_BEGIN_DECLS
 #define NM_CONFIG_DATA_NO_AUTO_DEFAULT       "no-auto-default"
 #define NM_CONFIG_DATA_DNS_MODE              "dns"
 
-typedef enum { /*<flags >*/
+/* The flags for Reload. Currently these are internal defines,
+ * only their numeric value matters and must be stable as
+ * they are public API! Also, the enum must fit in uint32. */
+enum { /*< skip >*/
+	NM_MANAGER_RELOAD_FLAGS_NONE                            = 0,
+
+	/* reload the configuration from disk */
+	NM_MANAGER_RELOAD_FLAGS_CONF                            = (1LL << 0),
+
+	/* write DNS configuration to resolv.conf */
+	NM_MANAGER_RELOAD_FLAGS_DNS_RC                          = (1LL << 1),
+
+	/* restart the DNS plugin (includes DNS_RC) */
+	NM_MANAGER_RELOAD_FLAGS_DNS_FULL                        = (1LL << 2),
+
+	_NM_MANAGER_RELOAD_FLAGS_ALL,
+	NM_MANAGER_RELOAD_FLAGS_ALL = ((_NM_MANAGER_RELOAD_FLAGS_ALL - 1) << 1) - 1,
+};
+
+typedef enum { /*< flags >*/
 	NM_CONFIG_GET_VALUE_NONE                   = 0,
 
 	/* use g_key_file_get_value() instead of g_key_file_get_string(). */
@@ -73,8 +92,11 @@ typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_CAUSE_SIGUSR2             = (1L << 2),
 	NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT     = (1L << 3),
 	NM_CONFIG_CHANGE_CAUSE_SET_VALUES          = (1L << 4),
+	NM_CONFIG_CHANGE_CAUSE_CONF                = (1L << 5),
+	NM_CONFIG_CHANGE_CAUSE_DNS_RC              = (1L << 6),
+	NM_CONFIG_CHANGE_CAUSE_DNS_FULL            = (1L << 7),
 
-	NM_CONFIG_CHANGE_CAUSES                    = ((1L << 5) - 1),
+	NM_CONFIG_CHANGE_CAUSES                    = ((1L << 8) - 1),
 
 	/**************************************************************************
 	 * Following flags describe which property of the configuration changed:

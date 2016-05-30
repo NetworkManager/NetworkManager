@@ -477,6 +477,7 @@ _reload_auth_cb (NMAuthChain *chain,
 	guint32 flags;
 	NMAuthSubject *subject;
 	char s_buf[60];
+	NMConfigChangeFlags reload_type = NM_CONFIG_CHANGE_NONE;
 
 	g_assert (context);
 
@@ -496,10 +497,25 @@ _reload_auth_cb (NMAuthChain *chain,
 		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
 		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                                 "Not authorized to reload configuration");
-	} else if (flags != 0) {
-		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
-		                                 NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		                                 "Invalid flags for reload");
+	} else {
+		if (NM_FLAGS_ANY (flags, ~NM_MANAGER_RELOAD_FLAGS_ALL)) {
+			/* invalid flags */
+		} else if (flags == 0)
+			reload_type = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
+		else {
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_CONF))
+				reload_type |= NM_CONFIG_CHANGE_CAUSE_CONF;
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_DNS_RC))
+				reload_type |= NM_CONFIG_CHANGE_CAUSE_DNS_RC;
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_DNS_FULL))
+				reload_type |= NM_CONFIG_CHANGE_CAUSE_DNS_FULL;
+		}
+
+		if (reload_type == NM_CONFIG_CHANGE_NONE) {
+			ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+			                                 NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+			                                 "Invalid flags for reload");
+		}
 	}
 
 	nm_audit_log_control_op (NM_AUDIT_OP_RELOAD,
@@ -512,8 +528,7 @@ _reload_auth_cb (NMAuthChain *chain,
 		goto out;
 	}
 
-	nm_config_reload (priv->config, NM_CONFIG_CHANGE_CAUSE_SIGHUP);
-
+	nm_config_reload (priv->config, reload_type);
 	g_dbus_method_invocation_return_value (context, NULL);
 
 out:

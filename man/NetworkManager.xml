@@ -462,6 +462,11 @@
         </varlistentry>
       </variablelist>
     </para>
+    <para>
+      An alternative to a signal to reload configuration is the Reload D-Bus call.
+      It allows for more fine-grained selection of what to reload, it only returns
+      after the reload is complete, and it is guarded by PolicyKit.
+    </para>
   </refsect1>
 
   <refsect1>
