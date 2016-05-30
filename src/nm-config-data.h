@@ -64,22 +64,51 @@ typedef enum { /*<flags >*/
 typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_NONE                      = 0,
 
-	NM_CONFIG_CHANGE_SIGHUP                    = (1L << 0),
-	NM_CONFIG_CHANGE_SIGUSR1                   = (1L << 1),
-	NM_CONFIG_CHANGE_SIGUSR2                   = (1L << 2),
+	/**************************************************************************
+	 * The external cause which triggered the reload/configuration-change
+	 *************************************************************************/
 
-	NM_CONFIG_CHANGE_CONFIG_FILES              = (1L << 3),
-	NM_CONFIG_CHANGE_VALUES                    = (1L << 4),
-	NM_CONFIG_CHANGE_VALUES_USER               = (1L << 5),
-	NM_CONFIG_CHANGE_VALUES_INTERN             = (1L << 6),
-	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 7),
-	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 8),
-	NM_CONFIG_CHANGE_DNS_MODE                  = (1L << 9),
-	NM_CONFIG_CHANGE_RC_MANAGER                = (1L << 10),
-	NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG         = (1L << 11),
+	NM_CONFIG_CHANGE_CAUSE_SIGHUP              = (1L << 0),
+	NM_CONFIG_CHANGE_CAUSE_SIGUSR1             = (1L << 1),
+	NM_CONFIG_CHANGE_CAUSE_SIGUSR2             = (1L << 2),
+	NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT     = (1L << 3),
+	NM_CONFIG_CHANGE_CAUSE_SET_VALUES          = (1L << 4),
 
-	_NM_CONFIG_CHANGE_LAST,
-	NM_CONFIG_CHANGE_ALL                       = ((_NM_CONFIG_CHANGE_LAST - 1) << 1) - 1,
+	NM_CONFIG_CHANGE_CAUSES                    = ((1L << 5) - 1),
+
+	/**************************************************************************
+	 * Following flags describe which property of the configuration changed:
+	 *************************************************************************/
+
+	/* main-file or config-description changed */
+	NM_CONFIG_CHANGE_CONFIG_FILES              = (1L << 10),
+
+
+	/* any configuration on disk changed */
+	NM_CONFIG_CHANGE_VALUES                    = (1L << 11),
+
+	/* any user configuration on disk changed (NetworkManager.conf) */
+	NM_CONFIG_CHANGE_VALUES_USER               = (1L << 12),
+
+	/* any internal configuration on disk changed (NetworkManager-intern.conf) */
+	NM_CONFIG_CHANGE_VALUES_INTERN             = (1L << 13),
+
+
+	/* configuration regarding connectivity changed */
+	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 14),
+
+	/* configuration regarding no-auto-default changed */
+	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 15),
+
+	/* configuration regarding dns-mode changed */
+	NM_CONFIG_CHANGE_DNS_MODE                  = (1L << 16),
+
+	/* configuration regarding rc-manager changed */
+	NM_CONFIG_CHANGE_RC_MANAGER                = (1L << 17),
+
+	/* configuration regarding global dns-config changed */
+	NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG         = (1L << 18),
+
 } NMConfigChangeFlags;
 
 struct _NMConfigData {

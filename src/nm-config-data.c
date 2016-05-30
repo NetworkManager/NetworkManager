@@ -1201,6 +1201,8 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	if (!global_dns_equal (priv_old->global_dns, priv_new->global_dns))
 		changes |= NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG;
 
+	nm_assert (!NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_CAUSES));
+
 	return changes;
 }
 
