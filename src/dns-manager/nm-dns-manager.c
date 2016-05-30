@@ -1497,6 +1497,8 @@ _clear_plugin (NMDnsManager *self)
 		g_clear_object (&priv->plugin);
 		return TRUE;
 	}
+	priv->plugin_ratelimit.ts = 0;
+	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 	return FALSE;
 }
 
@@ -1685,6 +1687,8 @@ dispose (GObject *object)
 		g_ptr_array_free (priv->configs, TRUE);
 		priv->configs = NULL;
 	}
+
+	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
 }
