@@ -343,7 +343,7 @@ test_config_no_auto_default (void)
 	g_assert (!nm_config_get_no_auto_default_for_device (config, dev3));
 	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update * (NO_AUTO_DEFAULT,no-auto-default)*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal NO_AUTO_DEFAULT,no-auto-default *");
 	nm_config_set_no_auto_default_for_device (config, dev3);
 	g_test_assert_expected_messages ();
 
@@ -556,7 +556,7 @@ _set_values_user (NMConfig *config,
 	config_data_before = g_object_ref (nm_config_get_data (config));
 
 	if (expected_changes != NM_CONFIG_CHANGE_NONE)
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update *");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal *");
 	else
 		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGHUP (no changes from disk)*");
 
@@ -600,7 +600,7 @@ _set_values_intern (NMConfig *config,
 	                  &config_changed_data);
 
 	if (expected_changes != NM_CONFIG_CHANGE_NONE)
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update *");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal *");
 
 	nm_config_set_values (config, keyfile_intern, TRUE, FALSE);
 
