@@ -1765,8 +1765,9 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags re
 	}
 
 	if (new_data) {
-		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
-		             nm_config_change_flags_to_string (changes, NULL, 0));
+		nm_log_info (LOGD_CORE, "config: signal %s (%s)",
+		             nm_config_change_flags_to_string (changes, NULL, 0),
+		             nm_config_data_get_config_description (new_data));
 		nm_config_data_log (new_data, "CONFIG: ", "  ", NULL);
 		priv->config_data = new_data;
 	} else if (had_new_data)
