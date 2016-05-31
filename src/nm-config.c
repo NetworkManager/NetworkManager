@@ -682,7 +682,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 	/* the config-group is internal to every configuration snippets. It doesn't make sense
 	 * to merge the into the global configuration, and it doesn't make sense to preserve the
 	 * group beyond this point. */
-	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
+	g_key_file_remove_group (kf, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
 
 	/* Override the current settings with the new ones */
 	groups = g_key_file_get_groups (kf, &ngroups);
