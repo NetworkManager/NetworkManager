@@ -915,6 +915,7 @@ block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
 			                                                       NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		}
 	}
+	g_slist_free (connections);
 }
 
 static void
