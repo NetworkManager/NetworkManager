@@ -42,5 +42,10 @@ yum install \
     rpm-build \
     perl-YAML-LibYAM \
     perl-YAML \
+    audit-libs-devel \
+    bluez-libs-devel \
+    dbus-python \
+    libselinux-devel \
+    pygobject3-base \
     jansson-devel \
 
