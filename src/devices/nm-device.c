@@ -4308,9 +4308,9 @@ ipv4ll_start (NMDevice *self, NMDeviceStateReason *reason)
 		goto fail;
 	}
 
-	r = sd_ipv4ll_set_index (priv->ipv4ll, ifindex);
+	r = sd_ipv4ll_set_ifindex (priv->ipv4ll, ifindex);
 	if (r < 0) {
-		_LOGE (LOGD_AUTOIP4, "IPv4LL: set_index() failed with error %d", r);
+		_LOGE (LOGD_AUTOIP4, "IPv4LL: set_ifindex() failed with error %d", r);
 		goto fail;
 	}
 

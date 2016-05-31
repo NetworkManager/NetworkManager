@@ -604,9 +604,9 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		}
 	}
 
-	r = sd_dhcp_client_set_index (priv->client4, nm_dhcp_client_get_ifindex (client));
+	r = sd_dhcp_client_set_ifindex (priv->client4, nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
-		_LOGW ("failed to set ifindex (%d)", r);
+		_LOGW ("failed to set ififindex (%d)", r);
 		goto error;
 	}
 
@@ -932,7 +932,7 @@ ip6_start (NMDhcpClient *client,
 		}
 	}
 
-	r = sd_dhcp6_client_set_index (priv->client6, nm_dhcp_client_get_ifindex (client));
+	r = sd_dhcp6_client_set_ifindex (priv->client6, nm_dhcp_client_get_ifindex (client));
 	if (r < 0) {
 		_LOGW ("failed to set ifindex (%d)", r);
 		goto error;
