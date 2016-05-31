@@ -3247,7 +3247,7 @@ validate_activation_request (NMManager *self,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
 		                     "Sharing IPv6 connections is not supported yet.");
-		return NULL;
+		goto error;
 	}
 
 	/* Check whether it's a VPN or not */
