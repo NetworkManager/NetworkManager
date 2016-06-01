@@ -22,11 +22,7 @@
 #ifndef __NETWORKMANAGER_CONFIG_H__
 #define __NETWORKMANAGER_CONFIG_H__
 
-
-#include "nm-default.h"
 #include "nm-config-data.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_CONFIG            (nm_config_get_type ())
 #define NM_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONFIG, NMConfig))
@@ -185,8 +181,6 @@ gboolean nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns
 /* internal defines ... */
 extern guint _nm_config_match_nm_version;
 extern char *_nm_config_match_env;
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_CONFIG_H__ */
 
