@@ -213,6 +213,7 @@ init_dbus (NMObject *object)
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS "org.freedesktop.NetworkManager.settings.modify.global-dns"
 
 static NMClientPermission
 nm_permission_to_client (const char *nm)
@@ -239,6 +240,8 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME))
 		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS))
+		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
 
 	return NM_CLIENT_PERMISSION_NONE;
 }
