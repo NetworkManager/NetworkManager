@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "nm-common-macros.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"

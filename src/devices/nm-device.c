@@ -34,7 +34,7 @@
 #include <netlink/route/addr.h>
 #include <linux/if_addr.h>
 
-#include "nm-device.h"
+#include "nm-common-macros.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"

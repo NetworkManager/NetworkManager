@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "nm-manager.h"
+#include "nm-common-macros.h"
 #include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"

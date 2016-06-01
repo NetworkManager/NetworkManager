@@ -21,6 +21,8 @@
 #include "nm-default.h"
 
 #include "nm-active-connection.h"
+
+#include "nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-device.h"
 #include "nm-settings-connection.h"
