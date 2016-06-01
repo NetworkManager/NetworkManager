@@ -21,10 +21,12 @@
 
 #include "nm-default.h"
 
+#include "nm-settings-connection.h"
+
 #include <string.h>
 
+#include "nm-common-macros.h"
 #include "nm-dbus-interface.h"
-#include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"

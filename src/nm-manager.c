@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "nm-common-macros.h"
 #include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
