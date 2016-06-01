@@ -783,7 +783,10 @@ class NetworkManager(ExportedObj):
                  "org.freedesktop.NetworkManager.wifi.share.open":          "yes",
                  "org.freedesktop.NetworkManager.settings.modify.own":      "yes",
                  "org.freedesktop.NetworkManager.settings.modify.system":   "yes",
-                 "org.freedesktop.NetworkManager.settings.modify.hostname": "yes" }
+                 "org.freedesktop.NetworkManager.settings.modify.hostname": "yes",
+                 "org.freedesktop.NetworkManager.settings.modify.global-dns": "no",
+                 "org.freedesktop.NetworkManager.reload":                   "no",
+                 }
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='ss', out_signature='')
     def SetLogging(self, level, domains):

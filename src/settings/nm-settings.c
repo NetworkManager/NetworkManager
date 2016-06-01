@@ -38,6 +38,7 @@
 #include <selinux/selinux.h>
 #endif
 
+#include "nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"

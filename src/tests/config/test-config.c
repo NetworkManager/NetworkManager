@@ -343,7 +343,7 @@ test_config_no_auto_default (void)
 	g_assert (!nm_config_get_no_auto_default_for_device (config, dev3));
 	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update * (no-auto-default)*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal NO_AUTO_DEFAULT,no-auto-default *");
 	nm_config_set_no_auto_default_for_device (config, dev3);
 	g_test_assert_expected_messages ();
 
@@ -511,9 +511,9 @@ _set_values_config_changed_cb (NMConfig *config,
 	g_assert (config_changed_data);
 	g_assert (config_changed_data->changes == NM_CONFIG_CHANGE_NONE);
 
-	if (changes == NM_CONFIG_CHANGE_SIGHUP)
+	if (changes == NM_CONFIG_CHANGE_CAUSE_SIGHUP)
 		return;
-	changes &= ~NM_CONFIG_CHANGE_SIGHUP;
+	changes &= ~NM_CONFIG_CHANGE_CAUSE_SIGHUP;
 
 	config_changed_data->changes = changes;
 
@@ -556,11 +556,11 @@ _set_values_user (NMConfig *config,
 	config_data_before = g_object_ref (nm_config_get_data (config));
 
 	if (expected_changes != NM_CONFIG_CHANGE_NONE)
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update *");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal *");
 	else
 		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGHUP (no changes from disk)*");
 
-	nm_config_reload (config, SIGHUP);
+	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGHUP);
 
 	g_test_assert_expected_messages ();
 
@@ -600,7 +600,7 @@ _set_values_intern (NMConfig *config,
 	                  &config_changed_data);
 
 	if (expected_changes != NM_CONFIG_CHANGE_NONE)
-		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: update *");
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal *");
 
 	nm_config_set_values (config, keyfile_intern, TRUE, FALSE);
 
@@ -649,14 +649,14 @@ static void
 _set_values_intern_internal_set (NMConfig *config, gboolean set_user, GKeyFile *keyfile, NMConfigChangeFlags *out_expected_changes)
 {
 	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN"section1", "key", "internal-section");
-	*out_expected_changes = NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
+	*out_expected_changes = NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
 }
 
 static void
 _set_values_intern_internal_check (NMConfig *config, NMConfigData *config_data, gboolean is_change_event, NMConfigChangeFlags changes, NMConfigData *old_data)
 {
 	if (is_change_event)
-		g_assert (changes == (NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN));
+		g_assert (changes == (NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN));
 	assert_config_value (config_data, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN"section1", "key", "internal-section");
 }
 
@@ -690,14 +690,14 @@ _set_values_intern_atomic_section_1_set (NMConfig *config, gboolean set_user, GK
 	g_key_file_set_string (keyfile, "atomic-prefix-1.section-a", "key3", "intern-value3");
 	g_key_file_set_string (keyfile, "non-atomic-prefix-1.section-a", "nap1-key1", "intern-value1");
 	g_key_file_set_string (keyfile, "non-atomic-prefix-1.section-a", "nap1-key3", "intern-value3");
-	*out_expected_changes = NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
+	*out_expected_changes = NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
 }
 
 static void
 _set_values_intern_atomic_section_1_check (NMConfig *config, NMConfigData *config_data, gboolean is_change_event, NMConfigChangeFlags changes, NMConfigData *old_data)
 {
 	if (is_change_event)
-		g_assert (changes == (NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN));
+		g_assert (changes == (NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN));
 	assert_config_value (config_data, "atomic-prefix-1.section-a", "key1", "intern-value1");
 	assert_config_value (config_data, "atomic-prefix-1.section-a", "key2", NULL);
 	assert_config_value (config_data, "atomic-prefix-1.section-a", "key3", "intern-value3");
@@ -744,14 +744,14 @@ _set_values_intern_atomic_section_2_set (NMConfig *config, gboolean set_user, GK
 	g_key_file_set_string (keyfile, "non-atomic-prefix-1.section-a", "nap1-key3", "intern-value3");
 	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN"with-whitespace", "key1", " b c\\,  d  ");
 	g_key_file_set_value  (keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN"with-whitespace", "key2", " b c\\,  d  ");
-	*out_expected_changes = NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
+	*out_expected_changes = NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
 }
 
 static void
 _set_values_intern_atomic_section_2_check (NMConfig *config, NMConfigData *config_data, gboolean is_change_event, NMConfigChangeFlags changes, NMConfigData *old_data)
 {
 	if (is_change_event)
-		g_assert (changes == (NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN));
+		g_assert (changes == (NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN));
 	g_assert (!nm_config_data_has_group (config_data, "atomic-prefix-1.section-a"));
 	assert_config_value (config_data, "atomic-prefix-1.section-b", "key1", "user-value1");
 	assert_config_value (config_data, "non-atomic-prefix-1.section-a", "nap1-key1", NULL);
@@ -862,17 +862,17 @@ test_config_signal (void)
 	                  G_CALLBACK (_test_signal_config_changed_cb),
 	                  &expected);
 
-	expected = NM_CONFIG_CHANGE_SIGUSR1;
+	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR1;
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGUSR1");
-	nm_config_reload (config, SIGUSR1);
+	nm_config_reload (config, expected);
 
-	expected = NM_CONFIG_CHANGE_SIGUSR2;
+	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGUSR2");
-	nm_config_reload (config, SIGUSR2);
+	nm_config_reload (config, expected);
 
-	expected = NM_CONFIG_CHANGE_SIGHUP;
+	expected = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGHUP (no changes from disk)*");
-	nm_config_reload (config, SIGHUP);
+	nm_config_reload (config, expected);
 
 
 	/* test with subscribing two signals...
@@ -883,9 +883,9 @@ test_config_signal (void)
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (_test_signal_config_changed_cb2),
 	                  &expected);
-	expected = NM_CONFIG_CHANGE_SIGUSR2;
+	expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal SIGUSR2");
-	nm_config_reload (config, SIGUSR2);
+	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2);
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb2, &expected);
 
 

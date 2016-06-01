@@ -20,11 +20,13 @@
 
 #include "nm-default.h"
 
+#include "nm-agent-manager.h"
+
 #include <string.h>
 #include <pwd.h>
 
+#include "nm-common-macros.h"
 #include "nm-dbus-interface.h"
-#include "nm-agent-manager.h"
 #include "nm-secret-agent.h"
 #include "nm-auth-utils.h"
 #include "nm-setting-vpn.h"

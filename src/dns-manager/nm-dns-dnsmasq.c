@@ -431,11 +431,16 @@ start_dnsmasq (NMDnsDnsmasq *self)
 	NMBusManager *dbus_mgr;
 	GDBusConnection *connection;
 
-
-	if (   priv->running
-	    || priv->dnsmasq
-	    || priv->dnsmasq_cancellable)
+	if (priv->running) {
+		/* the dnsmasq process is running. Nothing to do. */
 		return;
+	}
+
+	if (nm_dns_plugin_child_pid ((NMDnsPlugin *) self) > 0) {
+		/* if we already have a child process spawned, don't do
+		 * it again. */
+		return;
+	}
 
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, NULL);
 	if (!dm_binary) {
@@ -466,6 +471,13 @@ start_dnsmasq (NMDnsDnsmasq *self)
 	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
 	if (!pid)
 		return;
+
+	if (   priv->dnsmasq
+	    || priv->dnsmasq_cancellable) {
+		/* we already have a proxy or are about to create it.
+		 * We are done. */
+		return;
+	}
 
 	dbus_mgr = nm_bus_manager_get ();
 	g_return_if_fail (dbus_mgr);
@@ -522,6 +534,7 @@ static void
 child_quit (NMDnsPlugin *plugin, gint status)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 	gboolean failed = TRUE;
 	int err;
 
@@ -530,14 +543,18 @@ child_quit (NMDnsPlugin *plugin, gint status)
 		if (err) {
 			_LOGW ("dnsmasq exited with error: %s",
 			       nm_utils_dnsmasq_status_to_string (err, NULL, 0));
-		} else
+		} else {
+			_LOGD ("dnsmasq exited normally");
 			failed = FALSE;
+		}
 	} else if (WIFSTOPPED (status))
 		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
 	else if (WIFSIGNALED (status))
 		_LOGW ("dnsmasq died with signal %d", WTERMSIG (status));
 	else
 		_LOGW ("dnsmasq died from an unknown cause");
+
+	priv->running = FALSE;
 
 	if (failed)
 		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);

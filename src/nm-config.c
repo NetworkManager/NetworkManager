@@ -21,10 +21,11 @@
 
 #include "nm-default.h"
 
+#include "nm-config.h"
+
 #include <string.h>
 #include <stdio.h>
 
-#include "nm-config.h"
 #include "nm-utils.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
@@ -141,7 +142,7 @@ G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
 
 /************************************************************************/
 
-static void _set_config_data (NMConfig *self, NMConfigData *new_data, int signal);
+static void _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags reload_flags);
 
 /************************************************************************/
 
@@ -425,7 +426,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	/* unref no_auto_default_set here. Note that _set_config_data() probably invalidates the content of the array. */
 	g_ptr_array_unref (no_auto_default_new);
 
-	_set_config_data (self, new_data, 0);
+	_set_config_data (self, new_data, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT);
 }
 
 /************************************************************************/
@@ -682,7 +683,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 	/* the config-group is internal to every configuration snippets. It doesn't make sense
 	 * to merge the into the global configuration, and it doesn't make sense to preserve the
 	 * group beyond this point. */
-	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
+	g_key_file_remove_group (kf, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
 
 	/* Override the current settings with the new ones */
 	groups = g_key_file_get_groups (kf, &ngroups);
@@ -1674,7 +1675,7 @@ nm_config_set_values (NMConfig *self,
 			nm_log_dbg (LOGD_CORE, "don't persistate internal configuration (no file set, use --intern-config?)");
 	}
 	if (new_data)
-		_set_config_data (self, new_data, 0);
+		_set_config_data (self, new_data, NM_CONFIG_CHANGE_CAUSE_SET_VALUES);
 
 	g_key_file_unref (keyfile_new);
 }
@@ -1865,7 +1866,7 @@ _nm_config_state_set (NMConfig *self,
 /*****************************************************************************/
 
 void
-nm_config_reload (NMConfig *self, int signal)
+nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 {
 	NMConfigPrivate *priv;
 	GError *error = NULL;
@@ -1877,11 +1878,16 @@ nm_config_reload (NMConfig *self, int signal)
 	gboolean intern_config_needs_rewrite;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
+	g_return_if_fail (   reload_flags
+	                  && !NM_FLAGS_ANY (reload_flags, ~NM_CONFIG_CHANGE_CAUSES)
+	                  && !NM_FLAGS_ANY (reload_flags,   NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT
+	                                                  | NM_CONFIG_CHANGE_CAUSE_SET_VALUES));
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	if (signal != SIGHUP) {
-		_set_config_data (self, NULL, signal);
+	if (!NM_FLAGS_ANY (reload_flags, NM_CONFIG_CHANGE_CAUSE_SIGHUP | NM_CONFIG_CHANGE_CAUSE_CONF)) {
+		/* unless SIGHUP is specified, we don't reload the configuration from disc. */
+		_set_config_data (self, NULL, reload_flags);
 		return;
 	}
 
@@ -1898,7 +1904,7 @@ nm_config_reload (NMConfig *self, int signal)
 	if (!keyfile) {
 		nm_log_err (LOGD_CORE, "Failed to reload the configuration: %s", error->message);
 		g_clear_error (&error);
-		_set_config_data (self, NULL, signal);
+		_set_config_data (self, NULL, reload_flags);
 		return;
 	}
 
@@ -1920,13 +1926,20 @@ nm_config_reload (NMConfig *self, int signal)
 	if (keyfile_intern)
 		g_key_file_unref (keyfile_intern);
 
-	_set_config_data (self, new_data, signal);
+	_set_config_data (self, new_data, reload_flags);
 }
 
 NM_UTILS_FLAGS2STR_DEFINE (nm_config_change_flags_to_string, NMConfigChangeFlags,
-	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_SIGHUP, "SIGHUP"),
-	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_SIGUSR1, "SIGUSR1"),
-	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_SIGUSR2, "SIGUSR2"),
+
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_CONF, "CONF"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_DNS_RC, "DNS_RC"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_DNS_FULL, "DNS_FULL"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SIGHUP, "SIGHUP"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SIGUSR1, "SIGUSR1"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SIGUSR2, "SIGUSR2"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT, "NO_AUTO_DEFAULT"),
+	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CAUSE_SET_VALUES, "SET_VALUES"),
+
 	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_CONFIG_FILES, "config-files"),
 	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_VALUES, "values"),
 	NM_UTILS_FLAGS2STR (NM_CONFIG_CHANGE_VALUES_USER, "values-user"),
@@ -1939,27 +1952,19 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_config_change_flags_to_string, NMConfigChangeFlags
 );
 
 static void
-_set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
+_set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags reload_flags)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	NMConfigData *old_data = priv->config_data;
 	NMConfigChangeFlags changes, changes_diff;
 	gboolean had_new_data = !!new_data;
 
-	switch (signal) {
-	case SIGHUP:
-		changes = NM_CONFIG_CHANGE_SIGHUP;
-		break;
-	case SIGUSR1:
-		changes = NM_CONFIG_CHANGE_SIGUSR1;
-		break;
-	case SIGUSR2:
-		changes = NM_CONFIG_CHANGE_SIGUSR2;
-		break;
-	default:
-		changes = NM_CONFIG_CHANGE_NONE;
-		break;
-	}
+	nm_assert (reload_flags);
+	nm_assert (!NM_FLAGS_ANY (reload_flags, ~NM_CONFIG_CHANGE_CAUSES));
+	nm_assert (   NM_IN_SET (reload_flags, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT, NM_CONFIG_CHANGE_CAUSE_SET_VALUES)
+	           || !NM_FLAGS_ANY (reload_flags, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT | NM_CONFIG_CHANGE_CAUSE_SET_VALUES));
+
+	changes = reload_flags;
 
 	if (new_data) {
 		changes_diff = nm_config_data_diff (old_data, new_data);
@@ -1969,12 +1974,19 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 			changes |= changes_diff;
 	}
 
-	if (changes == NM_CONFIG_CHANGE_NONE)
+	if (   NM_IN_SET (reload_flags,
+	                  NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT,
+	                  NM_CONFIG_CHANGE_CAUSE_SET_VALUES,
+	                  NM_CONFIG_CHANGE_CAUSE_CONF)
+	    && !new_data) {
+		/* no relevant changes that should be propagated. Return silently. */
 		return;
+	}
 
 	if (new_data) {
-		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
-		             nm_config_change_flags_to_string (changes, NULL, 0));
+		nm_log_info (LOGD_CORE, "config: signal %s (%s)",
+		             nm_config_change_flags_to_string (changes, NULL, 0),
+		             nm_config_data_get_config_description (new_data));
 		nm_config_data_log (new_data, "CONFIG: ", "  ", NULL);
 		priv->config_data = new_data;
 	} else if (had_new_data)

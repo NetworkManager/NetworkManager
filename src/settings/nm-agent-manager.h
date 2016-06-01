@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_AGENT_MANAGER_H__
 #define __NETWORKMANAGER_AGENT_MANAGER_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 #include "nm-exported-object.h"
 #include "nm-secret-agent.h"

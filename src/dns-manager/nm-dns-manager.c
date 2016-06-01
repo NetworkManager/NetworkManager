@@ -61,10 +61,6 @@
 #define DOMAIN_IS_VALID(domain) (*(domain))
 #endif
 
-G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
-
-#define NM_DNS_MANAGER_GET_PRIVATE(o) ((o)->priv)
-
 #define HASH_LEN 20
 
 #ifndef RESOLVCONF_PATH
@@ -79,7 +75,19 @@ G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 #define PLUGIN_RATELIMIT_BURST       5
 #define PLUGIN_RATELIMIT_DELAY       300
 
-NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
+enum {
+	CONFIG_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef enum {
+	SR_SUCCESS,
+	SR_NOTFOUND,
+	SR_ERROR
+} SpawnResult;
 
 /*********************************************************************************************/
 
@@ -105,7 +113,7 @@ NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
 
 /*********************************************************************************************/
 
-typedef struct _NMDnsManagerPrivate {
+typedef struct {
 	GPtrArray *configs;
 	NMDnsIPConfigData *best_conf4, *best_conf6;
 	gboolean need_sort;
@@ -130,20 +138,33 @@ typedef struct _NMDnsManagerPrivate {
 	} plugin_ratelimit;
 } NMDnsManagerPrivate;
 
-enum {
-	CONFIG_CHANGED,
-
-	LAST_SIGNAL
+struct _NMDnsManager {
+	GObject parent;
+	NMDnsManagerPrivate _priv;
 };
 
-typedef enum {
-	SR_SUCCESS,
-	SR_NOTFOUND,
-	SR_ERROR
-} SpawnResult;
+struct _NMDnsManagerClass {
+	GObjectClass parent;
+};
 
-static guint signals[LAST_SIGNAL] = { 0 };
+G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
+NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
+
+#define NM_DNS_MANAGER_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMDnsManager *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_DNS_MANAGER (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 typedef struct {
 	GPtrArray *nameservers;
@@ -1472,9 +1493,12 @@ _clear_plugin (NMDnsManager *self)
 	if (priv->plugin) {
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
+		nm_dns_plugin_stop (priv->plugin);
 		g_clear_object (&priv->plugin);
 		return TRUE;
 	}
+	priv->plugin_ratelimit.ts = 0;
+	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 	return FALSE;
 }
 
@@ -1496,7 +1520,7 @@ _get_resconf_immutable (void)
 NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
 static void
-init_resolv_conf_mode (NMDnsManager *self)
+init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsManagerResolvConfManager rc_manager;
@@ -1541,13 +1565,13 @@ again:
 	}
 
 	if (nm_streq0 (mode, "dnsmasq")) {
-		if (!NM_IS_DNS_DNSMASQ (priv->plugin)) {
+		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
 			_clear_plugin (self);
 			priv->plugin = nm_dns_dnsmasq_new ();
 			plugin_changed = TRUE;
 		}
 	} else if (nm_streq0 (mode, "unbound")) {
-		if (!NM_IS_DNS_UNBOUND (priv->plugin)) {
+		if (force_reload_plugin || !NM_IS_DNS_UNBOUND (priv->plugin)) {
 			_clear_plugin (self);
 			priv->plugin = nm_dns_unbound_new ();
 			plugin_changed = TRUE;
@@ -1586,16 +1610,21 @@ config_changed_cb (NMConfig *config,
 
 	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
-	                           NM_CONFIG_CHANGE_SIGHUP)) {
+	                           NM_CONFIG_CHANGE_CAUSE_SIGHUP |
+	                           NM_CONFIG_CHANGE_CAUSE_DNS_FULL)) {
 		/* reload the resolv-conf mode also on SIGHUP (when DNS_MODE didn't change).
 		 * The reason is, that the configuration also depends on whether resolv.conf
 		 * is immutable, thus, without the configuration changing, we always want to
 		 * re-configure the mode. */
-		init_resolv_conf_mode (self);
+		init_resolv_conf_mode (self,
+		                       NM_FLAGS_ANY (changes,   NM_CONFIG_CHANGE_CAUSE_SIGHUP
+		                                              | NM_CONFIG_CHANGE_CAUSE_DNS_FULL));
 	}
 
-	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_SIGHUP |
-	                           NM_CONFIG_CHANGE_SIGUSR1 |
+	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_CAUSE_SIGHUP |
+	                           NM_CONFIG_CHANGE_CAUSE_SIGUSR1 |
+	                           NM_CONFIG_CHANGE_CAUSE_DNS_RC |
+	                           NM_CONFIG_CHANGE_CAUSE_DNS_FULL |
 	                           NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
 	                           NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG)) {
@@ -1609,9 +1638,7 @@ config_changed_cb (NMConfig *config,
 static void
 nm_dns_manager_init (NMDnsManager *self)
 {
-	NMDnsManagerPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DNS_MANAGER, NMDnsManagerPrivate);
-
-	self->priv = priv;
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	_LOGT ("creating...");
 
@@ -1625,7 +1652,7 @@ nm_dns_manager_init (NMDnsManager *self)
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (config_changed_cb),
 	                  self);
-	init_resolv_conf_mode (self);
+	init_resolv_conf_mode (self, TRUE);
 }
 
 static void
@@ -1666,6 +1693,8 @@ dispose (GObject *object)
 		priv->configs = NULL;
 	}
 
+	nm_clear_g_source (&priv->plugin_ratelimit.timer);
+
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
 }
 
@@ -1685,8 +1714,6 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMDnsManagerPrivate));
-
 	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
@@ -1696,8 +1723,7 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	    g_signal_new (NM_DNS_MANAGER_CONFIG_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDnsManagerClass, config_changed),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 }

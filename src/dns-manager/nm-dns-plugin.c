@@ -178,6 +178,17 @@ watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 GPid
+nm_dns_plugin_child_pid (NMDnsPlugin *self)
+{
+	NMDnsPluginPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DNS_PLUGIN (self), 0);
+
+	priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
+	return priv->pid;
+}
+
+GPid
 nm_dns_plugin_child_spawn (NMDnsPlugin *self,
                            const char **argv,
                            const char *pidfile,
@@ -243,6 +254,12 @@ nm_dns_plugin_child_kill (NMDnsPlugin *self)
 	return TRUE;
 }
 
+void
+nm_dns_plugin_stop (NMDnsPlugin *self)
+{
+	nm_dns_plugin_child_kill (self);
+}
+
 /********************************************/
 
 static void
@@ -255,7 +272,7 @@ dispose (GObject *object)
 {
 	NMDnsPlugin *self = NM_DNS_PLUGIN (object);
 
-	nm_dns_plugin_child_kill (self);
+	nm_dns_plugin_stop (self);
 
 	G_OBJECT_CLASS (nm_dns_plugin_parent_class)->dispose (object);
 }

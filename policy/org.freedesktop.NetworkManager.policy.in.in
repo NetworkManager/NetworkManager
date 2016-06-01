@@ -18,6 +18,16 @@
     </defaults>
   </action>
 
+  <action id="org.freedesktop.NetworkManager.reload">
+    <_description>Reload NetworkManager configuration</_description>
+    <_message>System policy prevents reloading NetworkManager</_message>
+    <defaults>
+      <allow_any>auth_admin_keep</allow_any>
+      <allow_inactive>auth_admin_keep</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
   <action id="org.freedesktop.NetworkManager.sleep-wake">
     <_description>Put NetworkManager to sleep or wake it up (should only be used by system power management)</_description>
     <_message>System policy prevents putting NetworkManager to sleep or waking it up</_message>

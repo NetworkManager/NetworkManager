@@ -23,6 +23,7 @@
 
 #include "NetworkManagerUtils.h"
 
+#include "nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"

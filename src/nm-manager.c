@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "nm-common-macros.h"
 #include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
@@ -462,6 +463,104 @@ _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeF
 
 	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG))
 		_notify (self, PROP_GLOBAL_DNS_CONFIGURATION);
+}
+
+static void
+_reload_auth_cb (NMAuthChain *chain,
+                 GError *error,
+                 GDBusMethodInvocation *context,
+                 gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	guint32 flags;
+	NMAuthSubject *subject;
+	char s_buf[60];
+	NMConfigChangeFlags reload_type = NM_CONFIG_CHANGE_NONE;
+
+	g_assert (context);
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	flags = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "flags"));
+
+	subject = nm_auth_chain_get_subject (chain);
+
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_RELOAD);
+	if (error) {
+		_LOGD (LOGD_CORE, "Reload request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Reload request failed: %s",
+		                         error->message);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                 "Not authorized to reload configuration");
+	} else {
+		if (NM_FLAGS_ANY (flags, ~NM_MANAGER_RELOAD_FLAGS_ALL)) {
+			/* invalid flags */
+		} else if (flags == 0)
+			reload_type = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
+		else {
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_CONF))
+				reload_type |= NM_CONFIG_CHANGE_CAUSE_CONF;
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_DNS_RC))
+				reload_type |= NM_CONFIG_CHANGE_CAUSE_DNS_RC;
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_DNS_FULL))
+				reload_type |= NM_CONFIG_CHANGE_CAUSE_DNS_FULL;
+		}
+
+		if (reload_type == NM_CONFIG_CHANGE_NONE) {
+			ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+			                                 NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+			                                 "Invalid flags for reload");
+		}
+	}
+
+	nm_audit_log_control_op (NM_AUDIT_OP_RELOAD,
+	                         nm_sprintf_buf (s_buf, "%u", flags),
+	                         ret_error == NULL, subject,
+	                         ret_error ? ret_error->message : NULL);
+
+	if (ret_error) {
+		g_dbus_method_invocation_take_error (context, ret_error);
+		goto out;
+	}
+
+	nm_config_reload (priv->config, reload_type);
+	g_dbus_method_invocation_return_value (context, NULL);
+
+out:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_reload (NMManager *self,
+                     GDBusMethodInvocation *context,
+                     guint32 flags)
+{
+	NMManagerPrivate *priv;
+	NMAuthChain *chain;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	chain = nm_auth_chain_new_context (context, _reload_auth_cb, self);
+	if (!chain) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Unable to authenticate request");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_set_data (chain, "flags", GUINT_TO_POINTER (flags), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, TRUE);
 }
 
 /************************************************************************/
@@ -4312,6 +4411,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN);
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_RELOAD);
 
 		g_dbus_method_invocation_return_value (context,
 		                                       g_variant_new ("(a{ss})", &results));
@@ -4349,6 +4449,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, FALSE);
 }
 
 static void
@@ -5818,6 +5919,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
 	                                        NMDBUS_TYPE_MANAGER_SKELETON,
+	                                        "Reload", impl_manager_reload,
 	                                        "GetDevices", impl_manager_get_devices,
 	                                        "GetAllDevices", impl_manager_get_all_devices,
 	                                        "GetDeviceByIpIface", impl_manager_get_device_by_ip_iface,

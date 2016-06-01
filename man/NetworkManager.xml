@@ -428,23 +428,44 @@
           The signal causes a reload of NetworkManager's configuration.
           Note that not all configuration parameters can be changed at
           runtime and therefore some changes may be applied only after
-          the next restart of the daemon. The signal also forces a
-          rewrite of DNS configuration.
+          the next restart of the daemon.
+          A SIGHUP also involves further reloading actions, like doing
+          a DNS update and restarting the DNS plugin. The latter can be
+          useful for example when using the dnsmasq plugin and changing
+          its configuration in /etc/NetworkManager/dnsmasq.d. However,
+          it also means this will shortly interrupt name resolution.
+          In the future, there may be further actions added.
+          A SIGHUP means to update NetworkManager configuration and reload
+          everything that is supported. Note that this does not reload
+          connections from disk. For that there is a D-Bus API and
+          nmcli's reload action
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>SIGUSR1</varname></term>
           <listitem><para>
-            The signal forces a rewrite of DNS configuration.
+            The signal forces a rewrite of DNS configuration. Contrary to
+            SIGHUP, this does not restart the DNS plugin and will not interrupt
+            name resolution.
+            In the future, further actions may be added. A SIGUSR1
+            means to write out data like resolv.conf, or refresh a cache.
+            It is a subset of what is done for SIGHUP without reloading
+            configuration from disk.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>SIGUSR2</varname></term>
           <listitem><para>
-            The signal has no effect at the moment.
+            The signal has no effect at the moment but is reserved for future
+            use.
           </para></listitem>
         </varlistentry>
       </variablelist>
+    </para>
+    <para>
+      An alternative to a signal to reload configuration is the Reload D-Bus call.
+      It allows for more fine-grained selection of what to reload, it only returns
+      after the reload is complete, and it is guarded by PolicyKit.
     </para>
   </refsect1>
 
