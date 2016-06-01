@@ -21,11 +21,6 @@
 #ifndef NM_CONFIG_DATA_H
 #define NM_CONFIG_DATA_H
 
-
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 #define NM_TYPE_CONFIG_DATA            (nm_config_data_get_type ())
 #define NM_CONFIG_DATA(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONFIG_DATA, NMConfigData))
 #define NM_CONFIG_DATA_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_CONFIG_DATA, NMConfigDataClass))
@@ -214,8 +209,6 @@ void nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns_config, GValue *
 GKeyFile *_nm_config_data_get_keyfile (const NMConfigData *self);
 GKeyFile *_nm_config_data_get_keyfile_user (const NMConfigData *self);
 GKeyFile *_nm_config_data_get_keyfile_intern (const NMConfigData *self);
-
-G_END_DECLS
 
 #endif /* NM_CONFIG_DATA_H */
 

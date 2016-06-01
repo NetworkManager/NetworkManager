@@ -21,10 +21,11 @@
 
 #include "nm-default.h"
 
+#include "nm-config.h"
+
 #include <string.h>
 #include <stdio.h>
 
-#include "nm-config.h"
 #include "nm-utils.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
