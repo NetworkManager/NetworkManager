@@ -205,7 +205,7 @@ This package contains NetworkManager support for ADSL devices.
 Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Requires: NetworkManager-wwan
+Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
 Requires: bluez >= 4.101-5
 Obsoletes: NetworkManager < %{obsoletes_nmver}
 Obsoletes: NetworkManager-bt
