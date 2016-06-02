@@ -54,7 +54,7 @@
 #endif
 
 G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
-int _nm_utils_testing = 0;
+static int _nm_utils_testing = 0;
 
 gboolean
 nm_utils_get_testing_initialized ()
