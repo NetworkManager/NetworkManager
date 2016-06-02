@@ -4437,7 +4437,7 @@ test_nm_utils_dns_option_find_idx (void)
 static void
 _json_config_check_valid (const char *conf, gboolean expected)
 {
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean res;
 
 	res = _nm_utils_check_valid_json (conf, &error);
