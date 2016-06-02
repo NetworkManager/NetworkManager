@@ -8,6 +8,7 @@ Before=network.target
 [Service]
 Type=oneshot
 ExecStart=@bindir@/nm-online -s -q --timeout=30
+RemainAfterExit=yes
 
 [Install]
 WantedBy=network.target
