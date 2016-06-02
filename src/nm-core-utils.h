@@ -404,6 +404,6 @@ gboolean nm_utils_lifetime_get (guint32 timestamp,
 
 gboolean nm_utils_ip4_address_is_link_local (in_addr_t addr);
 
-const char *nm_utils_dnsmasq_status_to_string (int status, char *dest, guint size);
+const char *nm_utils_dnsmasq_status_to_string (int status, char *dest, gsize size);
 
 #endif /* __NM_CORE_UTILS_H__ */

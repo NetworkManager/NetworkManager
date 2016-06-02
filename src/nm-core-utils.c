@@ -3242,12 +3242,11 @@ nm_utils_lifetime_get (guint32 timestamp,
 }
 
 const char *
-nm_utils_dnsmasq_status_to_string (int status, char *dest, guint size)
+nm_utils_dnsmasq_status_to_string (int status, char *dest, gsize size)
 {
-	static char buffer[128];
-	char *msg, *ret;
-	gs_free char *msg_free = NULL;
-	int len;
+	const char *msg;
+
+	nm_utils_to_string_buffer_init (&dest, &size);
 
 	if (status == 0)
 		msg = "Success";
@@ -3261,20 +3260,13 @@ nm_utils_dnsmasq_status_to_string (int status, char *dest, guint size)
 		msg = "Memory allocation failure";
 	else if (status == 5)
 		msg = "Other problem";
-	else if (status >= 11)
-		msg = msg_free = g_strdup_printf ("Lease script failed with error %d", status - 10);
+	else if (status >= 11) {
+		g_snprintf (dest, size, "Lease script failed with error %d", status - 10);
+		return dest;
+	}
 	else
 		msg = "Unknown problem";
 
-	if (dest) {
-		ret = dest;
-		len = size;
-	} else {
-		ret = buffer;
-		len = sizeof (buffer);
-	}
-
-	g_snprintf (ret, len, "%s (%d)", msg, status);
-
-	return ret;
+	g_snprintf (dest, size, "%s (%d)", msg, status);
+	return dest;
 }
