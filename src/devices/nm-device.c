@@ -1130,7 +1130,11 @@ nm_device_get_settings_connection (NMDevice *self)
 NMConnection *
 nm_device_get_applied_connection (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	return priv->act_request ? nm_act_request_get_applied_connection (priv->act_request) : NULL;
 }
@@ -1147,23 +1151,12 @@ nm_device_has_unmodified_applied_connection (NMDevice *self, NMSettingCompareFla
 }
 
 NMSetting *
-nm_device_get_applied_setting (NMDevice *device, GType setting_type)
+nm_device_get_applied_setting (NMDevice *self, GType setting_type)
 {
-	NMActRequest *req;
-	NMSetting *setting = NULL;
+	NMConnection *connection;
 
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	req = nm_device_get_act_request (device);
-	if (req) {
-		NMConnection *connection;
-
-		connection = nm_act_request_get_applied_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
+	connection = nm_device_get_applied_connection (self);
+	return connection ? nm_connection_get_setting (connection, setting_type) : NULL;
 }
 
 RfKillType
