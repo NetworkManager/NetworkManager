@@ -1255,19 +1255,18 @@ write_wired_for_virtual (NMConnection *connection, shvarFile *ifcfg)
 		has_wired = TRUE;
 
 		device_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (device_mac)
-			svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
+		svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		if (cloned_mac)
-			svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
+		svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 		mtu = nm_setting_wired_get_mtu (s_wired);
 		if (mtu) {
 			tmp = g_strdup_printf ("%u", mtu);
 			svSetValue (ifcfg, "MTU", tmp, FALSE);
 			g_free (tmp);
-		}
+		} else
+			svSetValue (ifcfg, "MTU", NULL, FALSE);
 	}
 	return has_wired;
 }
