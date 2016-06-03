@@ -68,7 +68,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wstrict-prototypes \
 		      -fno-strict-aliasing -Wno-unused-but-set-variable \
 		      -Wundef -Wimplicit-function-declaration \
-		      -Wpointer-arith -Winit-self \
+		      -Wpointer-arith -Winit-self -Wformat-nonliteral \
 		      -Wmissing-include-dirs -Wno-pragmas; do
 		dnl GCC 4.4 does not warn when checking for -Wno-* flags (https://gcc.gnu.org/wiki/FAQ#wnowarning)
                 _NM_COMPILER_FLAG([$(printf '%s' "$option" | sed 's/^-Wno-/-W/')], [],
