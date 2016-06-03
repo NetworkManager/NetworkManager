@@ -93,6 +93,8 @@ NM_AVAILABLE_IN_1_4
 gboolean nm_vpn_plugin_info_supports_hints     (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2
 gboolean nm_vpn_plugin_info_supports_multiple  (NMVpnPluginInfo *self);
+NM_AVAILABLE_IN_1_4
+const char *const*nm_vpn_plugin_info_get_aliases (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2
 const char *nm_vpn_plugin_info_lookup_property (NMVpnPluginInfo *self, const char *group, const char *key);
 

@@ -600,8 +600,6 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 	for (iter = list; iter; iter = iter->next) {
 		char **aliases = (NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data))->aliases;
 
-		if (!aliases)
-			continue;
 		if (_nm_utils_strv_find_first (aliases, -1, service) >= 0)
 			return iter->data;
 	}
@@ -766,6 +764,32 @@ nm_vpn_plugin_info_supports_multiple (NMVpnPluginInfo *self)
 	return _nm_utils_ascii_str_to_bool (s, FALSE);
 }
 
+
+/**
+ * nm_vpn_plugin_info_get_aliases:
+ * @self: plugin info instance
+ *
+ * Returns: (array zero-terminated=1) (element-type utf8) (transfer none):
+ *   the aliases from the name-file.
+ *
+ * Since: 1.4
+ */
+const char *const*
+nm_vpn_plugin_info_get_aliases (NMVpnPluginInfo *self)
+{
+	NMVpnPluginInfoPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
+
+	priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (self);
+	if (priv->aliases)
+		return (const char *const*) priv->aliases;
+
+	/* For convenience, we always want to return non-NULL, even for empty
+	 * aliases. Hack around that, by making a NULL terminated array using
+	 * the NULL of priv->aliases. */
+	return (const char *const*) &priv->aliases;
+}
 
 /**
  * nm_vpn_plugin_info_lookup_property:
@@ -1003,6 +1027,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	}
 
 	priv->aliases = g_key_file_get_string_list (priv->keyfile, NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION, "aliases", NULL, NULL);
+	if (priv->aliases && !priv->aliases[0])
+		g_clear_pointer (&priv->aliases, g_free);
 
 	priv->keys = g_hash_table_new_full (_nm_utils_strstrdictkey_hash,
 	                                    _nm_utils_strstrdictkey_equal,
