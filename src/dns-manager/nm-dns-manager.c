@@ -1508,19 +1508,53 @@ _clear_plugin (NMDnsManager *self)
 	return FALSE;
 }
 
-static bool
-_get_resconf_immutable (void)
+static NMDnsManagerResolvConfManager
+_check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 {
+	struct stat st;
 	int fd, flags;
 	bool immutable = FALSE;
 
-	fd = open (_PATH_RESCONF, O_RDONLY);
-	if (fd != -1) {
-		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
-			immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
-		close (fd);
+	switch (rc_manager) {
+	case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN:
+	case NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE:
+		nm_assert_not_reached ();
+		/* fall-through */
+	case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
+	default:
+
+		if (lstat (_PATH_RESCONF, &st) != 0)
+			return rc_manager;
+
+		if (S_ISLNK (st.st_mode)) {
+			/* only regular files and directories can have extended file attributes. */
+			switch (rc_manager) {
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
+				/* we don't care whether the link-target is immutable.
+				 * If the symlink points to another file, rc-manager=symlink anyway backs off.
+				 * Otherwise, we would only check whether our internal resolv.conf is immutable. */
+				return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE:
+				nm_assert_not_reached ();
+				/* fall-through */
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
+				break;
+			}
+		}
+
+		fd = open (_PATH_RESCONF, O_RDONLY);
+		if (fd != -1) {
+			if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
+				immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
+			close (fd);
+		}
+		return immutable ? NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE : rc_manager;
 	}
-	return immutable;
 }
 
 NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
@@ -1537,8 +1571,6 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 
 	if (nm_streq0 (mode, "none"))
 		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
-	else if (_get_resconf_immutable ())
-		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE;
 	else {
 		const char *man;
 
@@ -1569,6 +1601,8 @@ again:
 			goto again;
 		}
 	}
+
+	rc_manager = _check_resconf_immutable (rc_manager);
 
 	if (nm_streq0 (mode, "dnsmasq")) {
 		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
