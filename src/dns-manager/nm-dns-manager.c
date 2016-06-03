@@ -1617,8 +1617,9 @@ again:
 			plugin_changed = TRUE;
 		}
 	} else {
-		if (!NM_IN_STRSET (mode, NULL, "none", "default")) {
-			_LOGW ("init: unknown dns mode '%s'", mode);
+		if (!NM_IN_STRSET (mode, "none", "default")) {
+			if (mode)
+				_LOGW ("init: unknown dns mode '%s'", mode);
 			mode = "default";
 		}
 		if (_clear_plugin (self))
