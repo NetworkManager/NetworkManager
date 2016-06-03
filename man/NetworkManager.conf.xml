@@ -324,7 +324,9 @@ no-auto-default=*
         <filename>/etc/resolv.conf</filename> to its private
         resolv.conf file in the runtime state directory.</para>
         <para><literal>file</literal>: NetworkManager will write
-        <filename>/etc/resolv.conf</filename> as file.</para>
+        <filename>/etc/resolv.conf</filename> as file. If it finds
+        a symlink, it will follow the symlink and update the target
+        instead.</para>
         <para><literal>resolvconf</literal>: NetworkManager will run
         resolvconf to update the DNS configuration.</para>
         <para><literal>netconfig</literal>: NetworkManager will run

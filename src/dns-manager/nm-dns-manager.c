@@ -674,6 +674,8 @@ update_resolv_conf (NMDnsManager *self,
 	gs_free char *content = NULL;
 	SpawnResult write_file_result = SR_SUCCESS;
 	int errsv;
+	const char *rc_path = _PATH_RESCONF;
+	nm_auto_free char *rc_path_real = NULL;
 
 	/* If we are not managing /etc/resolv.conf and it points to
 	 * MY_RESOLV_CONF, don't write the private DNS configuration to
@@ -697,18 +699,22 @@ update_resolv_conf (NMDnsManager *self,
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
 		GError *local = NULL;
 
+		rc_path_real = realpath (rc_path, NULL);
+		if (rc_path_real)
+			rc_path = rc_path_real;
+
 		/* we first write to /etc/resolv.conf directly. If that fails,
 		 * we still continue to write to runstatedir but remember the
 		 * error. */
-		if (!g_file_set_contents (_PATH_RESCONF, content, -1, &local)) {
+		if (!g_file_set_contents (rc_path, content, -1, &local)) {
 			_LOGT ("update-resolv-conf: write to %s failed (rc-manager=%s, %s)",
-			       _PATH_RESCONF, _rc_manager_to_string (rc_manager), local->message);
+			       rc_path, _rc_manager_to_string (rc_manager), local->message);
 			write_file_result = SR_ERROR;
 			g_propagate_error (error, local);
 			error = NULL;
 		} else {
 			_LOGT ("update-resolv-conf: write to %s succeeded (rc-manager=%s)",
-			       _PATH_RESCONF, _rc_manager_to_string (rc_manager));
+			       rc_path, _rc_manager_to_string (rc_manager));
 		}
 	}
 
@@ -766,7 +772,7 @@ update_resolv_conf (NMDnsManager *self,
 
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
 		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=%s)",
-		       _PATH_RESCONF, _rc_manager_to_string (rc_manager));
+		       rc_path, _rc_manager_to_string (rc_manager));
 		return write_file_result;
 	}
 
