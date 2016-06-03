@@ -2847,34 +2847,28 @@ nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 			key_len = 0;
 		}
 	} else {
-		int urandom = open ("/dev/urandom", O_RDONLY);
+		int r;
 		mode_t key_mask;
-
-		if (urandom == -1) {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			             "Can't open /dev/urandom: %s", strerror (errno));
-			key_len = 0;
-			goto out;
-		}
 
 		/* RFC7217 mandates the key SHOULD be at least 128 bits.
 		 * Let's use twice as much. */
 		key_len = 32;
 		secret_key = g_malloc (key_len);
 
+		r = nm_utils_read_urandom (secret_key, key_len);
+		if (r < 0) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			             "Can't read /dev/urandom: %s", strerror (-r));
+			key_len = 0;
+			goto out;
+		}
+
 		key_mask = umask (0077);
-		if (read (urandom, secret_key, key_len) == key_len) {
-			if (!g_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, error)) {
-				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
-				key_len = 0;
-			}
-		} else {
-			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			                     "Could not obtain a secret");
+		if (!g_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, error)) {
+			g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
 			key_len = 0;
 		}
 		umask (key_mask);
-		close (urandom);
 	}
 
 out:
