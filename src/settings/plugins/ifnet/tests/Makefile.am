@@ -34,7 +34,7 @@ test_ifnet_LDFLAGS = \
 
 test_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
 
-#@VALGRIND_RULES@
+@VALGRIND_RULES@
 TESTS = test-ifnet
 
 endif

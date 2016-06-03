@@ -66,7 +66,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wfloat-equal -Wno-unused-parameter -Wno-sign-compare \
 		      -Wno-duplicate-decl-specifier \
 		      -Wstrict-prototypes \
-		      -fno-strict-aliasing -Wno-unused-but-set-variable \
+		      -Wno-unused-but-set-variable \
 		      -Wundef -Wimplicit-function-declaration \
 		      -Wpointer-arith -Winit-self -Wformat-nonliteral \
 		      -Wmissing-include-dirs -Wno-pragmas; do

@@ -679,7 +679,7 @@ make_ip4_setting (NMConnection *connection,
 	/* DNS searches */
 	value = ifnet_get_data (conn_name, "dns_search");
 	if (value) {
-		char *stripped = g_strdup (value);
+		gs_free char *stripped = g_strdup (value);
 		char **searches = NULL;
 
 		strip_string (stripped, '"');

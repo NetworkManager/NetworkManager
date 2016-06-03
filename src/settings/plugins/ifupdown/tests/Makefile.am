@@ -23,8 +23,7 @@ test_ifupdown_SOURCES = \
 test_ifupdown_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-# TODO: enable valgrind for ifupdown. Currently it fails.
-#@VALGRIND_RULES@
+@VALGRIND_RULES@
 TESTS = test-ifupdown
 
 endif

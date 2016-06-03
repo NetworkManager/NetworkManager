@@ -2392,6 +2392,13 @@ test_connection_normalize_virtual_iface_name (void)
 	g_object_unref (con);
 }
 
+#if defined (__SANITIZE_ADDRESS__)
+static void
+test_libnm_linking (void)
+{
+	g_test_skip ("Skipping test since address sanitizer is enabled");
+}
+#else /* __SANITIZE_ADDRESS__ */
 static void
 _test_libnm_linking_setup_child_process (gpointer user_data)
 {
@@ -2431,6 +2438,7 @@ test_libnm_linking (void)
 	g_free (out);
 	g_free (err);
 }
+#endif /* __SANITIZE_ADDRESS__ */
 
 /******************************************************************************/
 
