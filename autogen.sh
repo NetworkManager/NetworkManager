@@ -22,9 +22,9 @@ PKG_NAME=NetworkManager
 
 cd $srcdir
 
-gtkdocize
+gtkdocize --srcdir $srcdir
 autopoint --force
-AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
+AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose -I$srcdir/m4/
 
 cd $olddir
 if test -z "$NOCONFIGURE"; then
