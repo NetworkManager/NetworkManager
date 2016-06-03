@@ -21,8 +21,10 @@
 #define __NETWORKMANAGER_DNS_UTILS_H__
 
 #include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 
 char **nm_dns_utils_get_ip4_rdns_domains (NMIP4Config *ip4);
+char **nm_dns_utils_get_ip6_rdns_domains (NMIP6Config *ip6);
 
 #endif  /* NM_DNS_UTILS_H */
 

@@ -219,6 +219,8 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
 	nnameservers = nm_ip6_config_get_num_nameservers (ip6);
 
 	if (split) {
+		char **domains, **iter;
+
 		if (nnameservers == 0)
 			return FALSE;
 
@@ -246,6 +248,16 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
 					                        nm_ip6_config_get_domain (ip6, i));
 					added = TRUE;
 				}
+			}
+
+			/* Ensure reverse-DNS works by directing queries for ip6.arpa
+			 * domains to the split domain's nameserver.
+			 */
+			domains = nm_dns_utils_get_ip6_rdns_domains (ip6);
+			if (domains) {
+				for (iter = domains; iter && *iter; iter++)
+					add_dnsmasq_nameserver (self, servers, buf, *iter);
+				g_strfreev (domains);
 			}
 
 			g_free (buf);
