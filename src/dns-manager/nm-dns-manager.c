@@ -701,14 +701,14 @@ update_resolv_conf (NMDnsManager *self,
 		 * we still continue to write to runstatedir but remember the
 		 * error. */
 		if (!g_file_set_contents (_PATH_RESCONF, content, -1, &local)) {
-			_LOGT ("update-resolv-conf: write to %s failed (rc-managed=file, %s)",
-			       _PATH_RESCONF, local->message);
+			_LOGT ("update-resolv-conf: write to %s failed (rc-manager=%s, %s)",
+			       _PATH_RESCONF, _rc_manager_to_string (rc_manager), local->message);
 			write_file_result = SR_ERROR;
 			g_propagate_error (error, local);
 			error = NULL;
 		} else {
-			_LOGT ("update-resolv-conf: write to %s succeeded (rc-managed=file)",
-			       _PATH_RESCONF);
+			_LOGT ("update-resolv-conf: write to %s succeeded (rc-manager=%s)",
+			       _PATH_RESCONF, _rc_manager_to_string (rc_manager));
 		}
 	}
 
@@ -765,8 +765,8 @@ update_resolv_conf (NMDnsManager *self,
 	}
 
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
-		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=file)",
-		       MY_RESOLV_CONF);
+		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=%s)",
+		       _PATH_RESCONF, _rc_manager_to_string (rc_manager));
 		return write_file_result;
 	}
 
