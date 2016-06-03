@@ -29,10 +29,11 @@
 #include <linux/if.h>
 
 #include "nm-dns-dnsmasq.h"
+#include "nm-core-internal.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-dns-utils.h"
 #include "nm-bus-manager.h"
 #include "NetworkManagerUtils.h"
 
@@ -69,6 +70,70 @@ typedef struct {
     } G_STMT_END
 
 /*****************************************************************************/
+
+static char **
+get_ip4_rdns_domains (NMIP4Config *ip4)
+{
+	char **strv;
+	GPtrArray *domains = NULL;
+	int i;
+
+	g_return_val_if_fail (ip4 != NULL, NULL);
+
+	domains = g_ptr_array_sized_new (5);
+
+	for (i = 0; i < nm_ip4_config_get_num_addresses (ip4); i++) {
+		const NMPlatformIP4Address *address = nm_ip4_config_get_address (ip4, i);
+
+		nm_utils_get_reverse_dns_domains_ip4 (address->address, address->plen, domains);
+	}
+
+	for (i = 0; i < nm_ip4_config_get_num_routes (ip4); i++) {
+		const NMPlatformIP4Route *route = nm_ip4_config_get_route (ip4, i);
+
+		nm_utils_get_reverse_dns_domains_ip4 (route->network, route->plen, domains);
+	}
+
+	/* Terminating NULL so we can use g_strfreev() to free it */
+	g_ptr_array_add (domains, NULL);
+
+	/* Free the array and return NULL if the only element was the ending NULL */
+	strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
+
+	return _nm_utils_strv_cleanup (strv, FALSE, FALSE, TRUE);
+}
+
+static char **
+get_ip6_rdns_domains (NMIP6Config *ip6)
+{
+	char **strv;
+	GPtrArray *domains = NULL;
+	int i;
+
+	g_return_val_if_fail (ip6 != NULL, NULL);
+
+	domains = g_ptr_array_sized_new (5);
+
+	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6); i++) {
+		const NMPlatformIP6Address *address = nm_ip6_config_get_address (ip6, i);
+
+		nm_utils_get_reverse_dns_domains_ip6 (&address->address, address->plen, domains);
+	}
+
+	for (i = 0; i < nm_ip6_config_get_num_routes (ip6); i++) {
+		const NMPlatformIP6Route *route = nm_ip6_config_get_route (ip6, i);
+
+		nm_utils_get_reverse_dns_domains_ip6 (&route->network, route->plen, domains);
+	}
+
+	/* Terminating NULL so we can use g_strfreev() to free it */
+	g_ptr_array_add (domains, NULL);
+
+	/* Free the array and return NULL if the only element was the ending NULL */
+	strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
+
+	return _nm_utils_strv_cleanup (strv, FALSE, FALSE, TRUE);
+}
 
 static void
 add_dnsmasq_nameserver (NMDnsDnsmasq *self,
@@ -139,7 +204,7 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
 			/* Ensure reverse-DNS works by directing queries for in-addr.arpa
 			 * domains to the split domain's nameserver.
 			 */
-			domains = nm_dns_utils_get_ip4_rdns_domains (ip4);
+			domains = get_ip4_rdns_domains (ip4);
 			if (domains) {
 				for (iter = domains; iter && *iter; iter++)
 					add_dnsmasq_nameserver (self, servers, buf, *iter);
@@ -253,7 +318,7 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
 			/* Ensure reverse-DNS works by directing queries for ip6.arpa
 			 * domains to the split domain's nameserver.
 			 */
-			domains = nm_dns_utils_get_ip6_rdns_domains (ip6);
+			domains = get_ip6_rdns_domains (ip6);
 			if (domains) {
 				for (iter = domains; iter && *iter; iter++)
 					add_dnsmasq_nameserver (self, servers, buf, *iter);
