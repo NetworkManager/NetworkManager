@@ -242,8 +242,8 @@ typedef struct _NMDevicePrivate {
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
-	char *        perm_hw_addr;
-	char *        initial_hw_addr;
+	char *        hw_addr_perm;
+	char *        hw_addr_initial;
 	char *        physical_port_id;
 	guint         dev_id;
 
@@ -2355,8 +2355,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		_notify (self, PROP_PHYSICAL_PORT_ID);
 	}
 
-	g_clear_pointer (&priv->perm_hw_addr, g_free);
-	g_clear_pointer (&priv->initial_hw_addr, g_free);
+	g_clear_pointer (&priv->hw_addr_perm, g_free);
+	g_clear_pointer (&priv->hw_addr_initial, g_free);
 
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
@@ -11397,7 +11397,7 @@ nm_device_update_hw_address (NMDevice *self)
 			_LOGD (LOGD_HW | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
 			_notify (self, PROP_HW_ADDRESS);
 
-			if (!priv->initial_hw_addr) {
+			if (!priv->hw_addr_initial) {
 				/* when we get a hw_addr the first time, always update our inital
 				 * hw-address as well. */
 				nm_device_update_initial_hw_address (self);
@@ -11421,11 +11421,11 @@ nm_device_update_initial_hw_address (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (   priv->hw_addr
-	    && !nm_streq0 (priv->initial_hw_addr, priv->hw_addr)) {
-		g_free (priv->initial_hw_addr);
-		priv->initial_hw_addr = g_strdup (priv->hw_addr);
+	    && !nm_streq0 (priv->hw_addr_initial, priv->hw_addr)) {
+		g_free (priv->hw_addr_initial);
+		priv->hw_addr_initial = g_strdup (priv->hw_addr);
 		_LOGD (LOGD_DEVICE, "hw-addr: update initial MAC address %s",
-		       priv->initial_hw_addr);
+		       priv->hw_addr_initial);
 	}
 }
 
@@ -11443,16 +11443,16 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 			success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len);
 
 			if (success_read && len == priv->hw_addr_len) {
-				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+				priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
 				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
-				       priv->perm_hw_addr);
+				       priv->hw_addr_perm);
 			} else {
 				/* Fall back to current address */
 				_LOGD (LOGD_HW | LOGD_ETHER, "%s",
 				       success_read
 				           ? "unable to read permanent MAC address"
 				           : "read HW addr length of permanent MAC address differs");
-				priv->perm_hw_addr = g_strdup (priv->hw_addr);
+				priv->hw_addr_perm = g_strdup (priv->hw_addr);
 			}
 		}
 	}
@@ -11529,7 +11529,7 @@ nm_device_hw_addr_set (NMDevice *self, const char *addr)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (!addr) {
-		addr = priv->perm_hw_addr;
+		addr = priv->hw_addr_perm;
 		if (!addr)
 			return FALSE;
 	}
@@ -11546,7 +11546,7 @@ nm_device_hw_addr_reset (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	addr = priv->initial_hw_addr;
+	addr = priv->hw_addr_initial;
 	if (!addr)
 		return FALSE;
 	return _hw_addr_set (self, addr, "reset");
@@ -11557,7 +11557,7 @@ nm_device_get_permanent_hw_address (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (self)->perm_hw_addr;
+	return NM_DEVICE_GET_PRIVATE (self)->hw_addr_perm;
 }
 
 const char *
@@ -11565,7 +11565,7 @@ nm_device_get_initial_hw_address (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (self)->initial_hw_addr;
+	return NM_DEVICE_GET_PRIVATE (self)->hw_addr_initial;
 }
 
 /**
@@ -11844,8 +11844,8 @@ finalize (GObject *object)
 	_LOGD (LOGD_DEVICE, "finalize(): %s", G_OBJECT_TYPE_NAME (self));
 
 	g_free (priv->hw_addr);
-	g_free (priv->perm_hw_addr);
-	g_free (priv->initial_hw_addr);
+	g_free (priv->hw_addr_perm);
+	g_free (priv->hw_addr_initial);
 	g_slist_free_full (priv->pending_actions, g_free);
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
