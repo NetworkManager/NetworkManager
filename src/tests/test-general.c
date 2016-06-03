@@ -1363,6 +1363,72 @@ test_duplicate_decl_specifier (void)
 
 /*****************************************************************************/
 
+static void
+test_reverse_dns_ip4 (void)
+{
+	guint32 addr;
+	GPtrArray *domains = g_ptr_array_new_full (8, g_free);
+
+	inet_pton (AF_INET, "7.2.3.0", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 27, domains);
+	g_assert_cmpuint (domains->len, ==, 32);
+	g_assert_cmpstr (domains->pdata[0], ==, "0.3.2.7.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[31], ==, "31.3.2.7.in-addr.arpa");
+
+	g_ptr_array_set_size (domains, 0);
+
+	inet_pton (AF_INET, "10.155.16.0", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 22, domains);
+	g_assert_cmpuint (domains->len, ==, 4);
+	g_assert_cmpstr (domains->pdata[0], ==, "16.155.10.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[1], ==, "17.155.10.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[2], ==, "18.155.10.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[3], ==, "19.155.10.in-addr.arpa");
+
+	g_ptr_array_set_size (domains, 0);
+
+	inet_pton (AF_INET, "4.5.6.7", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 32, domains);
+	g_assert_cmpuint (domains->len, ==, 1);
+	g_assert_cmpstr (domains->pdata[0], ==, "7.6.5.4.in-addr.arpa");
+
+	g_ptr_array_set_size (domains, 0);
+
+	inet_pton (AF_INET, "4.5.6.7", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 8, domains);
+	g_assert_cmpuint (domains->len, ==, 1);
+	g_assert_cmpstr (domains->pdata[0], ==, "4.in-addr.arpa");
+
+	g_ptr_array_set_size (domains, 0);
+
+	inet_pton (AF_INET, "4.180.6.7", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 9, domains);
+	g_assert_cmpuint (domains->len, ==, 128);
+	g_assert_cmpstr (domains->pdata[0], ==, "128.4.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[1], ==, "129.4.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[127], ==, "255.4.in-addr.arpa");
+
+	g_ptr_array_set_size (domains, 0);
+
+	inet_pton (AF_INET, "172.16.0.0", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 12, domains);
+	g_assert_cmpuint (domains->len, ==, 16);
+	g_assert_cmpstr (domains->pdata[0],  ==, "16.172.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[1],  ==, "17.172.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[14], ==, "30.172.in-addr.arpa");
+	g_assert_cmpstr (domains->pdata[15], ==, "31.172.in-addr.arpa");
+
+	g_ptr_array_set_size (domains, 0);
+
+	inet_pton (AF_INET, "1.2.3.4", &addr);
+	nm_utils_get_reverse_dns_domains_ip4 (addr, 0, domains);
+	g_assert_cmpuint (domains->len, ==, 0);
+
+	g_ptr_array_unref (domains);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1396,6 +1462,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 	g_test_add_func ("/general/nm_match_spec_match_config", test_nm_match_spec_match_config);
 	g_test_add_func ("/general/duplicate_decl_specifier", test_duplicate_decl_specifier);
+
+	g_test_add_func ("/general/reverse_dns/ip4", test_reverse_dns_ip4);
 
 	return g_test_run ();
 }
