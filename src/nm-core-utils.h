@@ -310,6 +310,12 @@ const char *nm_utils_ip4_property_path (const char *ifname, const char *property
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
+int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
+ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
+int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
+
+int nm_utils_read_urandom (void *p, size_t n);
+
 char *nm_utils_machine_id_read (void);
 gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
 
