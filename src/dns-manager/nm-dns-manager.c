@@ -674,6 +674,8 @@ update_resolv_conf (NMDnsManager *self,
 	gs_free char *content = NULL;
 	SpawnResult write_file_result = SR_SUCCESS;
 	int errsv;
+	const char *rc_path = _PATH_RESCONF;
+	nm_auto_free char *rc_path_real = NULL;
 
 	/* If we are not managing /etc/resolv.conf and it points to
 	 * MY_RESOLV_CONF, don't write the private DNS configuration to
@@ -697,18 +699,22 @@ update_resolv_conf (NMDnsManager *self,
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
 		GError *local = NULL;
 
+		rc_path_real = realpath (rc_path, NULL);
+		if (rc_path_real)
+			rc_path = rc_path_real;
+
 		/* we first write to /etc/resolv.conf directly. If that fails,
 		 * we still continue to write to runstatedir but remember the
 		 * error. */
-		if (!g_file_set_contents (_PATH_RESCONF, content, -1, &local)) {
-			_LOGT ("update-resolv-conf: write to %s failed (rc-managed=file, %s)",
-			       _PATH_RESCONF, local->message);
+		if (!g_file_set_contents (rc_path, content, -1, &local)) {
+			_LOGT ("update-resolv-conf: write to %s failed (rc-manager=%s, %s)",
+			       rc_path, _rc_manager_to_string (rc_manager), local->message);
 			write_file_result = SR_ERROR;
 			g_propagate_error (error, local);
 			error = NULL;
 		} else {
-			_LOGT ("update-resolv-conf: write to %s succeeded (rc-managed=file)",
-			       _PATH_RESCONF);
+			_LOGT ("update-resolv-conf: write to %s succeeded (rc-manager=%s)",
+			       rc_path, _rc_manager_to_string (rc_manager));
 		}
 	}
 
@@ -765,8 +771,8 @@ update_resolv_conf (NMDnsManager *self,
 	}
 
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
-		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=file)",
-		       MY_RESOLV_CONF);
+		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=%s)",
+		       rc_path, _rc_manager_to_string (rc_manager));
 		return write_file_result;
 	}
 
@@ -1502,19 +1508,53 @@ _clear_plugin (NMDnsManager *self)
 	return FALSE;
 }
 
-static bool
-_get_resconf_immutable (void)
+static NMDnsManagerResolvConfManager
+_check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 {
+	struct stat st;
 	int fd, flags;
 	bool immutable = FALSE;
 
-	fd = open (_PATH_RESCONF, O_RDONLY);
-	if (fd != -1) {
-		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
-			immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
-		close (fd);
+	switch (rc_manager) {
+	case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN:
+	case NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE:
+		nm_assert_not_reached ();
+		/* fall-through */
+	case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
+		return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
+	default:
+
+		if (lstat (_PATH_RESCONF, &st) != 0)
+			return rc_manager;
+
+		if (S_ISLNK (st.st_mode)) {
+			/* only regular files and directories can have extended file attributes. */
+			switch (rc_manager) {
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
+				/* we don't care whether the link-target is immutable.
+				 * If the symlink points to another file, rc-manager=symlink anyway backs off.
+				 * Otherwise, we would only check whether our internal resolv.conf is immutable. */
+				return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE:
+				nm_assert_not_reached ();
+				/* fall-through */
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
+				break;
+			}
+		}
+
+		fd = open (_PATH_RESCONF, O_RDONLY);
+		if (fd != -1) {
+			if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
+				immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);
+			close (fd);
+		}
+		return immutable ? NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE : rc_manager;
 	}
-	return immutable;
 }
 
 NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
@@ -1531,8 +1571,6 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 
 	if (nm_streq0 (mode, "none"))
 		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
-	else if (_get_resconf_immutable ())
-		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE;
 	else {
 		const char *man;
 
@@ -1564,6 +1602,8 @@ again:
 		}
 	}
 
+	rc_manager = _check_resconf_immutable (rc_manager);
+
 	if (nm_streq0 (mode, "dnsmasq")) {
 		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
 			_clear_plugin (self);
@@ -1577,8 +1617,9 @@ again:
 			plugin_changed = TRUE;
 		}
 	} else {
-		if (!NM_IN_STRSET (mode, NULL, "none", "default")) {
-			_LOGW ("init: unknown dns mode '%s'", mode);
+		if (!NM_IN_STRSET (mode, "none", "default")) {
+			if (mode)
+				_LOGW ("init: unknown dns mode '%s'", mode);
 			mode = "default";
 		}
 		if (_clear_plugin (self))
