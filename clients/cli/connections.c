@@ -53,6 +53,8 @@
 #define PROMPT_IP_TUNNEL_MODE _("Tunnel mode: ")
 #define PROMPT_MACVLAN_MODE _("MACVLAN mode: ")
 
+#define BASE_PROMPT "nmcli> "
+
 /* Available fields for 'connection show' */
 static NmcOutputField nmc_fields_con_show[] = {
 	{"NAME",                 N_("NAME")},                  /* 0 */
@@ -9006,7 +9008,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	gboolean cmd_loop = TRUE;
 	char *cmd_arg = NULL;
 	char *cmd_arg_s, *cmd_arg_p, *cmd_arg_v;
-	const char *BASE_PROMPT = "nmcli> ";
 	const NameItem *valid_settings_main = NULL;
 	const NameItem *valid_settings_slave = NULL;
 	char *valid_settings_str = NULL;

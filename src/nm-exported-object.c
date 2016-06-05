@@ -571,7 +571,9 @@ _create_export_path (NMExportedObjectClass *klass)
 			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
 		}
 
+		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
 		return g_strdup_printf (class_export_path, (*counter)++);
+		NM_PRAGMA_WARNING_REENABLE
 	}
 
 	return g_strdup (class_export_path);

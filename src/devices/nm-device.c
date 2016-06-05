@@ -6931,19 +6931,12 @@ share_init (void)
 	return TRUE;
 }
 
-static void
-add_share_rule (NMActRequest *req, const char *table, const char *fmt, ...)
-{
-	va_list args;
-	char *cmd;
-
-	va_start (args, fmt);
-	cmd = g_strdup_vprintf (fmt, args);
-	va_end (args);
-
-	nm_act_request_add_share_rule (req, table, cmd);
-	g_free (cmd);
-}
+#define add_share_rule(req, table, ...) \
+	G_STMT_START { \
+		char *_cmd = g_strdup_printf (__VA_ARGS__); \
+		nm_act_request_add_share_rule (req, table, _cmd); \
+		g_free (_cmd); \
+	} G_STMT_END
 
 static gboolean
 start_sharing (NMDevice *self, NMIP4Config *config)

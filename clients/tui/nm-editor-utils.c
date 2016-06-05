@@ -252,6 +252,16 @@ nm_editor_utils_get_connection_type_list (void)
 	return list;
 }
 
+static void
+_assert_format_int (const char *format)
+{
+	g_assert (format);
+	format = strchr (format, '%');
+	g_assert (format);
+	g_assert (!strchr (format, '%'));
+	g_assert (format[1] == 'd');
+}
+
 static char *
 get_available_connection_name (const char *format,
                                NMClient   *client)
@@ -260,6 +270,10 @@ get_available_connection_name (const char *format,
 	GSList *names = NULL, *iter;
 	char *cname = NULL;
 	int i = 0;
+
+#if NM_MORE_ASSERTS
+	_assert_format_int (format);
+#endif
 
 	conns = nm_client_get_connections (client);
 	for (i = 0; i < conns->len; i++) {
@@ -275,7 +289,9 @@ get_available_connection_name (const char *format,
 		char *temp;
 		gboolean found = FALSE;
 
+		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
 		temp = g_strdup_printf (format, i);
+		NM_PRAGMA_WARNING_REENABLE
 		for (iter = names; iter; iter = g_slist_next (iter)) {
 			if (!strcmp (iter->data, temp)) {
 				found = TRUE;

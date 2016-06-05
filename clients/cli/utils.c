@@ -1005,7 +1005,7 @@ colorize_string (NmCli *nmc,
 
 	if (   use_colors (nmc)
 	    && (color != NMC_TERM_COLOR_NORMAL || color_fmt != NMC_TERM_FORMAT_NORMAL)) {
-		out = nmc_colorize (nmc, color, color_fmt, str);
+		out = nmc_colorize (nmc, color, color_fmt, "%s", str);
 		*dealloc = TRUE;
 	} else {
 		out = (char *) str;

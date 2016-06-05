@@ -242,6 +242,7 @@ nm_main_utils_early_setup (const char *progname,
 	textdomain (GETTEXT_PACKAGE);
 
 	for (i = 0; options[i].long_name; i++) {
+		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
 		if (!strcmp (options[i].long_name, "log-level")) {
 			opt_fmt_log_level = options[i].description;
 			opt_loc_log_level = &options[i].description;
@@ -251,6 +252,7 @@ nm_main_utils_early_setup (const char *progname,
 			opt_loc_log_domains = &options[i].description;
 			options[i].description = g_strdup_printf (options[i].description, nm_logging_all_domains_to_string ());
 		}
+		NM_PRAGMA_WARNING_REENABLE
 	}
 
 	/* Parse options */

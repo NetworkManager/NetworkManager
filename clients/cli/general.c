@@ -893,20 +893,13 @@ static void
 networkmanager_running (NMClient *client, GParamSpec *param, NmCli *nmc)
 {
 	gboolean running;
-	NmcTermColor color;
-	const char *message;
 	char *str;
 
 	running = nm_client_get_nm_running (client);
-	if (running) {
-		color = NMC_TERM_COLOR_GREEN;
-		message = _("NetworkManager has started");
-	} else {
-		color = NMC_TERM_COLOR_RED;
-		message = _("NetworkManager has stopped");
-	}
-
-	str = nmc_colorize (nmc, color, NMC_TERM_FORMAT_NORMAL, message);
+	str = nmc_colorize (nmc,
+	                    running ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED,
+	                    NMC_TERM_FORMAT_NORMAL,
+	                    running ? _("NetworkManager has started") : _("NetworkManager has stopped"));
 	g_print ("%s\n", str);
 	g_free (str);
 }
