@@ -74,7 +74,7 @@ void nmc_terminal_show_progress (const char *str);
 const char *nmc_term_color_sequence (NmcTermColor color);
 const char *nmc_term_format_sequence (NmcTermFormat format);
 NmcTermColor nmc_term_color_parse_string (const char *str, GError **error);
-char *nmc_colorize (NmCli *nmc, NmcTermColor color, NmcTermFormat format, const char * fmt, ...)  __attribute__((__format__ (__printf__, 4, 5)));
+char *nmc_colorize (NmCli *nmc, NmcTermColor color, NmcTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);
 char *nmc_get_user_input (const char *ask_str);

@@ -478,7 +478,7 @@ nm_logging_get_level (NMLogDomain domain)
 }
 
 #if SYSTEMD_JOURNAL
-__attribute__((__format__ (__printf__, 4, 5)))
+_nm_printf (4, 5)
 static void
 _iovec_set_format (struct iovec *iov, gboolean *iov_free, int i, const char *format, ...)
 {

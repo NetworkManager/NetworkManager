@@ -158,7 +158,7 @@ void _nm_log_impl (const char *file,
                    NMLogDomain domain,
                    int error,
                    const char *fmt,
-                   ...) __attribute__((__format__ (__printf__, 7, 8)));
+                   ...) _nm_printf (7, 8);
 
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);

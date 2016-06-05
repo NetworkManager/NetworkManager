@@ -84,7 +84,7 @@ void link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, N
 
 /*****************************************************************************/
 
-int nmtstp_run_command (const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
+int nmtstp_run_command (const char *format, ...) _nm_printf (1, 2);
 #define nmtstp_run_command_check(...) do { g_assert_cmpint (nmtstp_run_command (__VA_ARGS__), ==, 0); } while (0)
 
 /*****************************************************************************/
