@@ -778,10 +778,31 @@ test_software_detect (gconstpointer user_data)
 	}
 	case NM_LINK_TYPE_MACVLAN: {
 		NMPlatformLnkMacvlan lnk_macvlan = { };
+		const NMPlatformLink *dummy;
+		char buf[256];
+		int i;
 
 		lnk_macvlan.mode = MACVLAN_MODE_BRIDGE;
 		lnk_macvlan.no_promisc = FALSE;
 		lnk_macvlan.tap = FALSE;
+
+		/* Since in old kernel versions sysfs files for macvtaps are not
+		 * namespaced, the creation can fail if a macvtap in another namespace
+		 * has the same index. Try to detect this situation and skip already
+		 * used indexes.
+		 * http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=17af2bce88d31e65ed73d638bb752d2e13c66ced
+		 */
+		for (i = ifindex_parent + 1; i < ifindex_parent + 100; i++) {
+			snprintf (buf, sizeof (buf), "/sys/class/macvtap/tap%d", i);
+			if (!g_file_test (buf, G_FILE_TEST_IS_SYMLINK))
+				break;
+
+			_LOGD ("skipping ifindex %d as already used by a macvtap", i);
+
+			dummy = nmtstp_link_dummy_add (NM_PLATFORM_GET, FALSE, "dummy-tmp");
+			g_assert_cmpint (dummy->ifindex, ==, i);
+			nmtstp_link_del (NM_PLATFORM_GET, FALSE, dummy->ifindex, NULL);
+		}
 
 		if (!nmtstp_link_macvlan_add (NULL, ext, DEVICE_NAME, ifindex_parent, &lnk_macvlan))
 			g_error ("Failed adding MACVLAN interface");
