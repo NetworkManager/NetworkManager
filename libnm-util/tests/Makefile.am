@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DBUILD_DIR=\"$(abs_builddir)\" \
-	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-core/tests/certs/\"
+	-DTEST_CERT_DIR=\"$(abs_top_srcdir)/libnm-core/tests/certs\"
 
 @VALGRIND_RULES@
 TESTS = \

@@ -9,7 +9,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/supplicant-manager \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	-DTEST_CERT_DIR=\"$(srcdir)/certs/\" \
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/certs\" \
 	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = test-supplicant-config
