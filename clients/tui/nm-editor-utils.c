@@ -258,6 +258,7 @@ _assert_format_int (const char *format)
 	g_assert (format);
 	format = strchr (format, '%');
 	g_assert (format);
+	format++;
 	g_assert (!strchr (format, '%'));
 	g_assert (format[1] == 'd');
 	return TRUE;
