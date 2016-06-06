@@ -10790,7 +10790,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
 
 	/* Export VPN configuration */
-	plugin = nm_vpn_lookup_plugin (type, NULL, &error);
+	plugin = nm_vpn_lookup_plugin (NULL, type, &error);
 	if (!plugin) {
 		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 		                 error->message);
