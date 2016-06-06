@@ -28,7 +28,7 @@ struct {
 	const char *ui_name;
 } typedef VpnPasswordName;
 
-GSList *nm_vpn_get_plugins (void);
+GSList *nm_vpn_get_plugin_infos (void);
 
 const char **nm_vpn_get_plugin_names (gboolean only_available_plugins);
 

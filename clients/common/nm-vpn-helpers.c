@@ -45,7 +45,7 @@ nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
 	if (G_UNLIKELY (!plugins_loaded))
-		nm_vpn_get_plugins ();
+		nm_vpn_get_plugin_infos ();
 
 	if (service)
 		plugin_info = nm_vpn_plugin_info_list_find_by_service (plugins, service);
@@ -86,7 +86,7 @@ nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
 }
 
 GSList *
-nm_vpn_get_plugins (void)
+nm_vpn_get_plugin_infos (void)
 {
 	if (G_LIKELY (plugins_loaded))
 		return plugins;
@@ -115,7 +115,7 @@ nm_vpn_get_plugin_names (gboolean only_available_plugins)
 	};
 	guint i, j, k;
 
-	p = nm_vpn_get_plugins ();
+	p = nm_vpn_get_plugin_infos ();
 	list = g_new0 (const char *, g_slist_length (p) + G_N_ELEMENTS (known_names) + 1);
 
 	i = 0;
@@ -146,7 +146,7 @@ nm_vpn_get_service_for_name (const char *name)
 
 	g_return_val_if_fail (name, NULL);
 
-	plugin_info = nm_vpn_plugin_info_list_find_by_name (nm_vpn_get_plugins (), name);
+	plugin_info = nm_vpn_plugin_info_list_find_by_name (nm_vpn_get_plugin_infos (), name);
 	if (plugin_info) {
 		/* this only means we have a .name file (NMVpnPluginInfo). Possibly the
 		 * NMVpnEditorPlugin is not loadable. */
