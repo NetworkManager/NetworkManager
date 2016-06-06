@@ -252,7 +252,7 @@ nm_editor_utils_get_connection_type_list (void)
 	return list;
 }
 
-static void
+static gboolean
 _assert_format_int (const char *format)
 {
 	g_assert (format);
@@ -260,6 +260,7 @@ _assert_format_int (const char *format)
 	g_assert (format);
 	g_assert (!strchr (format, '%'));
 	g_assert (format[1] == 'd');
+	return TRUE;
 }
 
 static char *
@@ -271,9 +272,7 @@ get_available_connection_name (const char *format,
 	char *cname = NULL;
 	int i = 0;
 
-#if NM_MORE_ASSERTS
-	_assert_format_int (format);
-#endif
+	nm_assert (_assert_format_int (format));
 
 	conns = nm_client_get_connections (client);
 	for (i = 0; i < conns->len; i++) {
