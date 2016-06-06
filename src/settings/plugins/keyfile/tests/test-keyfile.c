@@ -1546,7 +1546,7 @@ test_read_wired_8021x_tls_blob_connection (void)
 
 	/* Make sure it's not a path, since it's a blob */
 	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL,
-	                       "*assertion*scheme == NM_SETTING_802_1X_CK_SCHEME_PATH*");
+	                       NMTST_G_RETURN_MSG (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH));
 	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
 	g_test_assert_expected_messages ();
 	g_assert (tmp == NULL);

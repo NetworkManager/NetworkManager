@@ -103,6 +103,11 @@
 
 /*******************************************************************************/
 
+#define NMTST_G_RETURN_MSG_S(expr) "*: assertion '"expr"' failed"
+#define NMTST_G_RETURN_MSG(expr)   NMTST_G_RETURN_MSG_S(#expr)
+
+/*******************************************************************************/
+
 /* general purpose functions that have no dependency on other nmtst functions */
 
 #define nmtst_assert_error(error, expect_error_domain, expect_error_code, expect_error_pattern) \
