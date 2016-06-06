@@ -67,6 +67,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wno-duplicate-decl-specifier \
 		      -Wstrict-prototypes \
 		      -Wno-unused-but-set-variable \
+		      -Wno-format-y2k \
 		      -Wundef -Wimplicit-function-declaration \
 		      -Wpointer-arith -Winit-self -Wformat-nonliteral \
 		      -Wmissing-include-dirs -Wno-pragmas; do
