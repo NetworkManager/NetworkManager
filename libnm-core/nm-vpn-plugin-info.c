@@ -573,10 +573,24 @@ nm_vpn_plugin_info_list_find_by_filename (GSList *list, const char *filename)
 	return NULL;
 }
 
+static NMVpnPluginInfo *
+_list_find_by_service (GSList *list, const char *service)
+{
+	for (; list; list = list->next) {
+		NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (list->data);
+
+		if (   nm_streq (priv->service, service)
+		    || _nm_utils_strv_find_first (priv->aliases, -1, service) >= 0)
+			return list->data;
+	}
+	return NULL;
+}
+
 /**
  * nm_vpn_plugin_info_list_find_by_service:
  * @list: (element-type NMVpnPluginInfo): list of plugins
- * @service: service to search
+ * @service: service to search. This can be the main service-type
+ *   or one of the provided aliases.
  *
  * Returns: (transfer none): the first plugin with a matching @service (or %NULL).
  *
@@ -585,25 +599,9 @@ nm_vpn_plugin_info_list_find_by_filename (GSList *list, const char *filename)
 NMVpnPluginInfo *
 nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 {
-	GSList *iter;
-
 	if (!service)
 		g_return_val_if_reached (NULL);
-
-	/* First, consider the primary service name. */
-	for (iter = list; iter; iter = iter->next) {
-		if (strcmp (nm_vpn_plugin_info_get_service (iter->data), service) == 0)
-			return iter->data;
-	}
-
-	/* Then look into the aliases. */
-	for (iter = list; iter; iter = iter->next) {
-		char **aliases = (NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data))->aliases;
-
-		if (_nm_utils_strv_find_first (aliases, -1, service) >= 0)
-			return iter->data;
-	}
-	return NULL;
+	return _list_find_by_service (list, service);
 }
 
 /*********************************************************************/
