@@ -1072,6 +1072,8 @@ global:
 	nm_vpn_plugin_info_get_aliases;
 	nm_vpn_plugin_info_get_auth_dialog;
 	nm_vpn_plugin_info_get_service;
+	nm_vpn_plugin_info_list_get_service_types;
+	nm_vpn_plugin_info_list_find_service_type;
 	nm_vpn_plugin_info_new_search_file;
 	nm_vpn_plugin_info_supports_hints;
 } libnm_1_2_0;

@@ -491,7 +491,7 @@ nm_vpn_plugin_info_list_add (GSList **list, NMVpnPluginInfo *plugin_info, GError
 		}
 
 		/* the plugin must have unique values for certain properties. E.g. two different
-		 * plugins cannot share the same service name. */
+		 * plugins cannot share the same service type. */
 		if (!_check_no_conflict (plugin_info, iter->data, error))
 			return FALSE;
 	}
@@ -602,6 +602,177 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 	if (!service)
 		g_return_val_if_reached (NULL);
 	return _list_find_by_service (list, service);
+}
+
+/* known_names are well known short names for the service-type. They all implicitly
+ * have a prefix "org.freedesktop.NetworkManager." + known_name. */
+static const char *known_names[] = {
+	"openvpn",
+	"vpnc",
+	"pptp",
+	"openconnect",
+	"openswan",
+	"libreswan",
+	"strongswan",
+	"ssh",
+	"l2tp",
+	"iodine",
+	"fortisslvpn",
+};
+
+/**
+ * nm_vpn_plugin_info_list_find_service_type:
+ * @list: a possibly empty #GSList of #NMVpnPluginInfo instances
+ * @name: a name to lookup the service-type.
+ *
+ * A VPN plugin provides one or several service-types, like org.freedesktop.NetworkManager.libreswan
+ * Certain plugins provide more then one service type, via aliases (org.freedesktop.NetworkManager.openswan).
+ * This function looks up a service-type (or an alias) based on a name.
+ *
+ * Preferably, the name can be a full service-type/alias of an installed
+ * plugin. Otherwise, it can be the name of a VPN plugin (in which case, the
+ * primary, non-aliased service-type is returned). Otherwise, it can be
+ * one of several well known short-names (which is a hard-coded list of
+ * types in libnm). On success, this returns a full qualified service-type
+ * (or an alias). It doesn't say, that such an plugin is actually available,
+ * but it could be retrieved via nm_vpn_plugin_info_list_find_by_service().
+ *
+ * Returns: (transfer-full): the resolved service-type or %NULL on failure.
+ *
+ * Since: 1.4
+ */
+char *
+nm_vpn_plugin_info_list_find_service_type (GSList *list, const char *name)
+{
+	GSList *iter;
+	char *n;
+
+	if (!name)
+		g_return_val_if_reached (NULL);
+	if (!*name)
+		return NULL;
+
+	/* First, try to interpret @name as a full service-type (or alias). */
+	if (_list_find_by_service (list, name))
+		return g_strdup (name);
+
+	/* try to interpret @name as plugin name, in which case we return
+	 * the main service-type (not an alias). */
+	for (iter = list; iter; iter = iter->next) {
+		NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data);
+
+		if (nm_streq (priv->name, name))
+			return g_strdup (priv->service);
+	}
+
+	/* check the hard-coded list of short-names. They all have have the same
+	 * well-known prefix org.freedesktop.NetworkManager and the name. */
+	if (_nm_utils_strv_find_first ((char **) known_names, G_N_ELEMENTS (known_names), name) >= 0)
+		return g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);
+
+	/* try, if there exists a plugin with @name under org.freedesktop.NetworkManager.
+	 * Allow this to be a valid abbreviation. */
+	n = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);
+	if (_list_find_by_service (list, n))
+		return n;
+	g_free (n);
+
+	/* currently, VPN plugins have no way to define a short-name for their
+	 * alias name, unless the alias name is prefixed by org.freedesktop.NetworkManager. */
+
+	return NULL;
+}
+
+static const char *
+_service_type_get_default_abbreviation (const char *service_type)
+{
+	if (!g_str_has_prefix (service_type, NM_DBUS_INTERFACE))
+		return NULL;
+	service_type += NM_STRLEN (NM_DBUS_INTERFACE);
+	if (service_type[0] != '.')
+		return NULL;
+	service_type++;
+	if (!service_type[0])
+		return NULL;
+	return service_type;
+}
+
+/**
+ * nm_vpn_plugin_info_list_get_service_types:
+ * @list: a possibly empty #GSList of #NMVpnPluginInfo
+ * @only_existing: only include results that are actually in @list.
+ *   Otherwise, the result is extended with a hard-code list or
+ *   well-known plugins
+ * @with_abbreviations: if %FALSE, only full service types are returned.
+ *   Otherwise, this also includes abbreviated names that can be used
+ *   with nm_vpn_plugin_info_list_find_service_type().
+ *
+ * Returns: (transfer-full): a %NULL terminated strv list of strings.
+ *   The list itself and the values must be freed with g_strfreev().
+ *
+ * Since: 1.4
+ */
+char **
+nm_vpn_plugin_info_list_get_service_types (GSList *list,
+                                           gboolean only_existing,
+                                           gboolean with_abbreviations)
+{
+	GSList *iter;
+	GPtrArray *l;
+	guint i, j;
+	const char *n;
+
+	l = g_ptr_array_sized_new (20);
+
+	for (iter = list; iter; iter = iter->next) {
+		NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data);
+
+		g_ptr_array_add (l, g_strdup (priv->service));
+		if (priv->aliases) {
+			for (i = 0; priv->aliases[i]; i++)
+				g_ptr_array_add (l, g_strdup (priv->aliases[i]));
+		}
+
+		if (with_abbreviations) {
+			g_ptr_array_add (l, g_strdup (priv->name));
+			n = _service_type_get_default_abbreviation (priv->service);
+			if (n)
+				g_ptr_array_add (l, g_strdup (n));
+			for (i = 0; priv->aliases[i]; i++) {
+				n = _service_type_get_default_abbreviation (priv->aliases[i]);
+				if (n)
+					g_ptr_array_add (l, g_strdup (n));
+			}
+		}
+	}
+
+	if (!only_existing) {
+		for (i = 0; i < G_N_ELEMENTS (known_names); i++) {
+			g_ptr_array_add (l, g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, known_names[i]));
+			if (with_abbreviations)
+				g_ptr_array_add (l, g_strdup (known_names[i]));
+		}
+	}
+
+	if (l->len <= 0) {
+		g_ptr_array_free (l, TRUE);
+		return g_new0 (char *, 1);
+	}
+
+	/* sort the result and remove duplicates. */
+	g_ptr_array_sort (l, nm_strcmp_p);
+	for (i = 1, j = 1; i < l->len; i++) {
+		if (nm_streq (l->pdata[j-1], l->pdata[i]))
+			g_free (l->pdata[i]);
+		else
+			l->pdata[j++] = l->pdata[i];
+	}
+
+	if (j == l->len)
+		g_ptr_array_add (l, NULL);
+	else
+		l->pdata[j] = NULL;
+	return (char **) g_ptr_array_free (l, FALSE);
 }
 
 /*********************************************************************/
