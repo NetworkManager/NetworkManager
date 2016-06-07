@@ -95,12 +95,6 @@ nm_vpn_get_plugins (void)
 	return plugins;
 }
 
-static int
-_strcmp_data (gconstpointer a, gconstpointer b, gpointer unused)
-{
-	return strcmp (a, b);
-}
-
 const char **
 nm_vpn_get_plugin_names (gboolean only_available_plugins)
 {
@@ -132,7 +126,7 @@ nm_vpn_get_plugin_names (gboolean only_available_plugins)
 			list[i++] = known_names[j];
 	}
 
-	g_qsort_with_data (list, i, sizeof (gpointer), _strcmp_data, NULL);
+	g_qsort_with_data (list, i, sizeof (gpointer), nm_strcmp_p_with_data, NULL);
 
 	/* remove duplicates */
 	for (k = 0, j = 1; j < i; j++) {
