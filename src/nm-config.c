@@ -880,15 +880,6 @@ read_base_config (GKeyFile *keyfile,
 	return TRUE;
 }
 
-static int
-sort_asciibetically (gconstpointer a, gconstpointer b)
-{
-	const char *s1 = *(const char **)a;
-	const char *s2 = *(const char **)b;
-
-	return strcmp (s1, s2);
-}
-
 static GPtrArray *
 _get_config_dir_files (const char *config_dir)
 {
@@ -917,7 +908,7 @@ _get_config_dir_files (const char *config_dir)
 	}
 	g_object_unref (dir);
 
-	g_ptr_array_sort (confs, sort_asciibetically);
+	g_ptr_array_sort (confs, nm_strcmp_p);
 	return confs;
 }
 
