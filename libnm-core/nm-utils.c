@@ -3316,17 +3316,20 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 GVariant *
 _nm_utils_hwaddr_to_dbus (const GValue *prop_value)
 {
-	const char *str = g_value_get_string (prop_value);
+	const char *str;
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
 	int len;
 
-	if (str) {
-		len = hwaddr_binary_len (str);
-		g_return_val_if_fail (len > 0 && len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
-		if (!nm_utils_hwaddr_aton (str, buf, len))
-			len = 0;
-	} else
-		len = 0;
+	str = g_value_get_string (prop_value);
+	if (!str)
+		return NULL;
+
+	len = _nm_utils_hwaddr_length (str);
+	if (len == 0)
+		return NULL;
+
+	if (!nm_utils_hwaddr_aton (str, buf, len))
+		return NULL;
 
 	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, buf, len, 1);
 }
