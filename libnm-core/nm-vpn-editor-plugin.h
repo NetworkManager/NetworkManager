@@ -34,6 +34,8 @@
 
 G_BEGIN_DECLS
 
+struct _NMVpnPluginInfo;
+
 typedef struct _NMVpnEditorPlugin NMVpnEditorPlugin;
 typedef struct _NMVpnEditor NMVpnEditor;
 
@@ -119,6 +121,9 @@ typedef struct {
 	                            GError **error);
 
 	char * (*get_suggested_filename) (NMVpnEditorPlugin *plugin, NMConnection *connection);
+
+	void (*notify_plugin_info_set) (NMVpnEditorPlugin *plugin,
+	                                struct _NMVpnPluginInfo *plugin_info);
 } NMVpnEditorPluginInterface;
 
 GType nm_vpn_editor_plugin_get_type (void);
@@ -151,6 +156,13 @@ NM_AVAILABLE_IN_1_4
 NMVpnEditorPlugin *nm_vpn_editor_plugin_load (const char *plugin_name,
                                               const char *check_service,
                                               GError **error);
+
+NM_AVAILABLE_IN_1_4
+struct _NMVpnPluginInfo *nm_vpn_editor_plugin_get_plugin_info (NMVpnEditorPlugin *plugin);
+NM_AVAILABLE_IN_1_4
+void             nm_vpn_editor_plugin_set_plugin_info (NMVpnEditorPlugin *plugin, struct _NMVpnPluginInfo *plugin_info);
+
+#include "nm-vpn-plugin-info.h"
 
 G_END_DECLS
 

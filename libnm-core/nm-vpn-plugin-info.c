@@ -1089,6 +1089,8 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 	                                                           NULL,
 	                                                           NULL,
 	                                                           error);
+	if (priv->editor_plugin)
+		nm_vpn_editor_plugin_set_plugin_info (priv->editor_plugin, self);
 	return priv->editor_plugin;
 }
 

@@ -44,10 +44,12 @@ G_BEGIN_DECLS
 #define NM_VPN_PLUGIN_INFO_KF_GROUP_LIBNM        "libnm"
 #define NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME        "GNOME"
 
+struct _NMVpnPluginInfo;
+
 /**
  * NMVpnPluginInfo:
  */
-typedef struct {
+typedef struct _NMVpnPluginInfo {
 	NM_AVAILABLE_IN_1_2
 	GObject parent;
 } NMVpnPluginInfo;
