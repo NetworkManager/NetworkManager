@@ -92,6 +92,11 @@
 
 #include "nm-default.h"
 
+#if NM_ASSERT_NO_MSG
+#undef g_return_if_fail_warning
+#undef g_assertion_message_expr
+#endif
+
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -100,6 +105,11 @@
 #include <errno.h>
 
 #include "nm-utils.h"
+
+/*******************************************************************************/
+
+#define NMTST_G_RETURN_MSG_S(expr) "*: assertion '"NM_ASSERT_G_RETURN_EXPR(expr)"' failed"
+#define NMTST_G_RETURN_MSG(expr)   NMTST_G_RETURN_MSG_S(#expr)
 
 /*******************************************************************************/
 
