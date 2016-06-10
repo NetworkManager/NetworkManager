@@ -362,6 +362,9 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	r = request_new (self, "GetSecrets", path, setting_name, callback, callback_data);
 	r->is_get_secrets = TRUE;
 	g_hash_table_add (priv->requests, r);
+
+	/* Increase the timeout only for this call */
+	g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (priv->proxy), 120000);
 	nmdbus_secret_agent_call_get_secrets (priv->proxy,
 	                                      dict,
 	                                      path,
@@ -370,6 +373,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	                                      flags,
 	                                      r->cancellable,
 	                                      get_callback, r);
+	g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (priv->proxy), -1);
 
 	return r;
 }
