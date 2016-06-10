@@ -300,6 +300,52 @@ nm_ip_address_unref (NMIPAddress *address)
 }
 
 /**
+ * _nm_ip_address_equal:
+ * @address: the #NMIPAddress
+ * @other: the #NMIPAddress to compare @address to.
+ * @consider_attributes: whether to check for equality of attributes too.
+ *
+ * Determines if two #NMIPAddress objects are equal.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ **/
+static gboolean
+_nm_ip_address_equal (NMIPAddress *address, NMIPAddress *other, gboolean consider_attributes)
+{
+	g_return_val_if_fail (address != NULL, FALSE);
+	g_return_val_if_fail (address->refcount > 0, FALSE);
+
+	g_return_val_if_fail (other != NULL, FALSE);
+	g_return_val_if_fail (other->refcount > 0, FALSE);
+
+	if (   address->family != other->family
+	    || address->prefix != other->prefix
+	    || strcmp (address->address, other->address) != 0)
+		return FALSE;
+	if (consider_attributes) {
+		GHashTableIter iter;
+		const char *key;
+		GVariant *value, *value2;
+		guint n;
+
+		n = address->attributes ? g_hash_table_size (address->attributes) : 0;
+		if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
+			return FALSE;
+		if (n) {
+			g_hash_table_iter_init (&iter, address->attributes);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+				value2 = g_hash_table_lookup (other->attributes, key);
+				if (!value2)
+					return FALSE;
+				if (!g_variant_equal (value, value2))
+					return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+/**
  * nm_ip_address_equal:
  * @address: the #NMIPAddress
  * @other: the #NMIPAddress to compare @address to.
@@ -312,17 +358,7 @@ nm_ip_address_unref (NMIPAddress *address)
 gboolean
 nm_ip_address_equal (NMIPAddress *address, NMIPAddress *other)
 {
-	g_return_val_if_fail (address != NULL, FALSE);
-	g_return_val_if_fail (address->refcount > 0, FALSE);
-
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
-
-	if (   address->family != other->family
-	    || address->prefix != other->prefix
-	    || strcmp (address->address, other->address) != 0)
-		return FALSE;
-	return TRUE;
+	return _nm_ip_address_equal (address, other, FALSE);
 }
 
 /**
@@ -717,17 +753,18 @@ nm_ip_route_unref (NMIPRoute *route)
 }
 
 /**
- * nm_ip_route_equal:
+ * _nm_ip_route_equal:
  * @route: the #NMIPRoute
  * @other: the #NMIPRoute to compare @route to.
+ * @consider_attributes: whether to compare attributes too
  *
  * Determines if two #NMIPRoute objects contain the same destination, prefix,
- * next hop, and metric. (Attributes are not compared.)
+ * next hop, and metric.
  *
  * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
  **/
-gboolean
-nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other)
+static gboolean
+_nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other, gboolean consider_attributes)
 {
 	g_return_val_if_fail (route != NULL, FALSE);
 	g_return_val_if_fail (route->refcount > 0, FALSE);
@@ -740,7 +777,43 @@ nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other)
 	    || strcmp (route->dest, other->dest) != 0
 	    || g_strcmp0 (route->next_hop, other->next_hop) != 0)
 		return FALSE;
+	if (consider_attributes) {
+		GHashTableIter iter;
+		const char *key;
+		GVariant *value, *value2;
+		guint n;
+
+		n = route->attributes ? g_hash_table_size (route->attributes) : 0;
+		if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
+			return FALSE;
+		if (n) {
+			g_hash_table_iter_init (&iter, route->attributes);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+				value2 = g_hash_table_lookup (other->attributes, key);
+				if (!value2)
+					return FALSE;
+				if (!g_variant_equal (value, value2))
+					return FALSE;
+			}
+		}
+	}
 	return TRUE;
+}
+
+/**
+ * nm_ip_route_equal:
+ * @route: the #NMIPRoute
+ * @other: the #NMIPRoute to compare @route to.
+ *
+ * Determines if two #NMIPRoute objects contain the same destination, prefix,
+ * next hop, and metric. (Attributes are not compared.)
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ **/
+gboolean
+nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other)
+{
+	return _nm_ip_route_equal (route, other, FALSE);
 }
 
 /**
@@ -2306,6 +2379,48 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	NMSettingIPConfigPrivate *a_priv, *b_priv;
+	NMSettingClass *parent_class;
+	guint i;
+
+	if (nm_streq (prop_spec->name, NM_SETTING_IP_CONFIG_ADDRESSES)) {
+		a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+
+		if (a_priv->addresses->len != b_priv->addresses->len)
+			return FALSE;
+		for (i = 0; i < a_priv->addresses->len; i++) {
+			if (!_nm_ip_address_equal (a_priv->addresses->pdata[i], b_priv->addresses->pdata[i], TRUE))
+				return FALSE;
+		}
+		return TRUE;
+	}
+
+	if (nm_streq (prop_spec->name, NM_SETTING_IP_CONFIG_ROUTES)) {
+		a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (other);
+
+		if (a_priv->routes->len != b_priv->routes->len)
+			return FALSE;
+		for (i = 0; i < a_priv->routes->len; i++) {
+			if (!_nm_ip_route_equal (a_priv->routes->pdata[i], b_priv->routes->pdata[i], TRUE))
+				return FALSE;
+		}
+		return TRUE;
+	}
+
+	/* Otherwise chain up to parent to handle generic compare */
+	parent_class = NM_SETTING_CLASS (nm_setting_ip_config_parent_class);
+	return parent_class->compare_property (setting, other, prop_spec, flags);
+}
+
+/*****************************************************************************/
 
 static void
 nm_setting_ip_config_init (NMSettingIPConfig *setting)
@@ -2536,6 +2651,7 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->compare_property = compare_property;
 
 	/* Properties */
 
