@@ -1059,6 +1059,10 @@ global:
 	nm_vpn_service_plugin_set_login_banner;
 } libnm_1_0_0;
 
+libnm_1_2_4 {
+	#nm_setting_ip_config_get_dns_priority@libnm_1_2_4;
+} libnm_1_2_0;
+
 libnm_1_4_0 {
 global:
 	nm_device_team_get_config;
