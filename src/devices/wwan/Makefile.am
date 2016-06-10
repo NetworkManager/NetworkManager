@@ -16,6 +16,7 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager-wwan"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
+	$(LIBSYSTEMD_CFLAGS) \
 	$(MM_GLIB_CFLAGS)
 
 BUILT_SOURCES = $(null)
@@ -49,6 +50,7 @@ libnm_wwan_la_LDFLAGS = \
 libnm_wwan_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
+	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
 
 ###########################################################

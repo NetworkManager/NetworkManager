@@ -375,6 +375,10 @@ elif test "$hostname_persist" = slackware; then
 	AC_DEFINE(HOSTNAME_PERSIST_SLACKWARE, 1, [Enable Slackware hostname persist method])
 fi
 
+PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd >= 209],
+    [AC_DEFINE([HAVE_LIBSYSTEMD], 1, [Define to 1 if libsystemd is available])],
+    [AC_DEFINE([HAVE_LIBSYSTEMD], 0, [Define to 1 if libsystemd is available])])
+
 AC_ARG_WITH(systemd-journal, AS_HELP_STRING([--with-systemd-journal=yes|no], [Use systemd journal for logging]))
 have_systemd_journal=no
 if test "$with_systemd_journal" != "no"; then

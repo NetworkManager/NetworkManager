@@ -31,6 +31,12 @@
 #include "nm-modem.h"
 #include "nm-modem-broadband.h"
 
+#if HAVE_LIBSYSTEMD
+#include <systemd/sd-daemon.h>
+#else
+#define sd_booted() FALSE
+#endif
+
 #define MODEM_POKE_INTERVAL 120
 
 G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
@@ -199,10 +205,9 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 	if (!name_owner) {
 		nm_log_info (LOGD_MB, "ModemManager disappeared from bus");
 
-#if !HAVE_SYSTEMD
 		/* If not managed by systemd, schedule relaunch */
-		schedule_modem_manager_relaunch (self, 0);
-#endif
+		if (!sd_booted ())
+			schedule_modem_manager_relaunch (self, 0);
 
 		return;
 	}
@@ -222,8 +227,6 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 	 * modem_manager_available (self);
 	 */
 }
-
-#if !HAVE_SYSTEMD
 
 static void
 modem_manager_poke_cb (GDBusConnection *connection,
@@ -273,8 +276,6 @@ modem_manager_poke (NMModemManager *self)
 	                        g_object_ref (self)); /* user_data */
 }
 
-#endif /* HAVE_SYSTEMD */
-
 static void
 modem_manager_check_name_owner (NMModemManager *self)
 {
@@ -288,10 +289,9 @@ modem_manager_check_name_owner (NMModemManager *self)
 		return;
 	}
 
-#if !HAVE_SYSTEMD
 	/* If the lifecycle is not managed by systemd, poke */
-	modem_manager_poke (self);
-#endif
+	if (!sd_booted ())
+		modem_manager_poke (self);
 }
 
 static void
