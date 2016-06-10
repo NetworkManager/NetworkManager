@@ -2558,7 +2558,13 @@ _get_property_path (const char *ifname,
 	                  ipv6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
 	                  ifname,
 	                  property);
-	g_assert (len < sizeof (path) - 1);
+
+	/* Ubuntu: don't assert, but log about the inconsistent size. */
+	if (len > sizeof (path) - 1)
+		nm_log_warn (LOGD_CORE,
+					 "IPv6 property path is too long: '"
+					 IPV6_PROPERTY_DIR "%s/%s'",
+					 ifname, property);
 
 	return path;
 }
@@ -2622,9 +2628,15 @@ NM_ASSERT_VALID_PATH_COMPONENT (const char *name)
 
 	nm_log_err (LOGD_CORE, "Failed asserting path component: %s%s%s",
 	            NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "(null)"));
-	g_error ("FATAL: Failed asserting path component: %s%s%s",
-	         NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "(null)"));
-	g_assert_not_reached ();
+
+	/* Ubuntu: Don't outright fail, just return the name again. It's
+	 * logged as being invalid, which is enough.
+	 * There is a use of slashes in paths for oFono modems, which are
+	 * actually valid paths to refer to an oFono modem, just don't map to
+	 * anything on the filesystem. The following calls to sysctl paths can
+	 * (and will) fail, but that's fine.
+	 */
+	return name;
 }
 
 gboolean

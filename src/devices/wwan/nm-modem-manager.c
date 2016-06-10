@@ -17,7 +17,7 @@
  *
  * Copyright (C) 2009 - 2014 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
- * Copyright (C) 2009 Canonical Ltd.
+ * Copyright (C) 2009 - 2013 Canonical Ltd.
  */
 
 #include "nm-default.h"
@@ -37,6 +37,10 @@
 #define sd_booted() FALSE
 #endif
 
+#if WITH_OFONO
+#include "nm-modem-ofono.h"
+#endif
+
 #define MODEM_POKE_INTERVAL 120
 
 G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
@@ -48,6 +52,12 @@ struct _NMModemManagerPrivate {
 	gulong mm_name_owner_changed_id;
 	gulong mm_object_added_id;
 	gulong mm_object_removed_id;
+
+#if WITH_OFONO
+	GDBusProxy *ofono_proxy;
+
+	guint ofono_name_owner_changed_id;
+#endif
 
 	/* Common */
 	GHashTable *modems;
@@ -206,6 +216,178 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 	 * modem_manager_available (self);
 	 */
 }
+#if WITH_OFONO
+static void
+ofono_clear_signals (NMModemManager *self)
+{
+	if (!self->priv->ofono_proxy)
+		return;
+
+	if (self->priv->ofono_name_owner_changed_id) {
+		if (g_signal_handler_is_connected (self->priv->ofono_proxy,
+										   self->priv->ofono_name_owner_changed_id))
+			g_signal_handler_disconnect (self->priv->ofono_proxy,
+										 self->priv->ofono_name_owner_changed_id);
+		self->priv->ofono_name_owner_changed_id = 0;
+	}
+}
+
+static void
+ofono_create_modem (NMModemManager *self, const char *path)
+{
+	NMModem *modem = NULL;
+
+	if (g_hash_table_lookup (self->priv->modems, path)) {
+		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
+		return;
+	}
+
+	/* Create modem instance */
+	modem = nm_modem_ofono_new (path);
+	if (modem)
+		handle_new_modem (self, modem);
+	else
+		nm_log_warn (LOGD_MB, "Failed to create oFono modem for %s", path);
+}
+
+static void
+ofono_signal_cb (GDBusProxy *proxy,
+				 gchar *sender_name,
+				 gchar *signal_name,
+				 GVariant *parameters,
+				 gpointer user_data)
+{
+	NMModemManager *self = NM_MODEM_MANAGER (user_data);
+	gchar *object_path;
+	NMModem *modem;
+
+	if (g_strcmp0 (signal_name, "ModemAdded") == 0) {
+		g_variant_get (parameters, "(oa{sv})", &object_path, NULL);
+		nm_log_info (LOGD_MB, "oFono modem appeared: %s", object_path);
+
+		ofono_create_modem (NM_MODEM_MANAGER (user_data), object_path);
+		g_free (object_path);
+	} else if (g_strcmp0 (signal_name, "ModemRemoved") == 0) {
+		g_variant_get (parameters, "(o)", &object_path);
+		nm_log_info (LOGD_MB, "oFono modem removed: %s", object_path);
+
+		modem = (NMModem *) g_hash_table_lookup (self->priv->modems, object_path);
+		if (modem) {
+			nm_modem_emit_removed (modem);
+			g_hash_table_remove (self->priv->modems, object_path);
+		} else {
+			nm_log_warn (LOGD_MB, "could not remove modem %s, not found in table",
+						 object_path);
+		}
+		g_free (object_path);
+	}
+}
+
+#define OFONO_DBUS_MODEM_ENTRY (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_OBJECT_PATH, DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID))
+#define OFONO_DBUS_MODEM_ENTRIES (dbus_g_type_get_collection ("GPtrArray", OFONO_DBUS_MODEM_ENTRY))
+
+static void
+ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
+{
+	NMModemManager *manager = NM_MODEM_MANAGER (user_data);
+	GError *error = NULL;
+	GVariant *results;
+	GVariantIter *iter;
+	const char *path;
+
+	results = g_dbus_proxy_call_finish (proxy, res, &error);
+	if (results) {
+		g_variant_get (results, "(a(oa{sv}))", &iter);
+		while (g_variant_iter_loop (iter, "(&oa{sv})", &path, NULL)) {
+			ofono_create_modem (manager, path);
+		}
+		g_variant_iter_free (iter);
+		g_variant_unref (results);
+	}
+
+	if (error)
+		nm_log_warn (LOGD_MB, "failed to enumerate oFono devices: %s",
+					 error->message ? error->message : "(unknown)");
+}
+
+static void ofono_appeared (NMModemManager *self);
+
+
+static void
+ofono_check_name_owner (NMModemManager *self)
+{
+	gchar *name_owner;
+
+	name_owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (self->priv->ofono_proxy));
+	if (name_owner) {
+		/* Available! */
+		ofono_appeared (self);
+		goto free;
+	}
+
+	nm_log_info (LOGD_MB, "oFono disappeared from bus");
+
+	ofono_clear_signals (self);
+	g_clear_object (&self->priv->ofono_proxy);
+	ensure_client (self);
+
+free:
+	g_free (name_owner);
+	return;
+}
+
+static void
+ofono_name_owner_changed (GDBusProxy *ofono_proxy,
+						  GParamSpec *pspec,
+						  NMModemManager *self)
+{
+	ofono_check_name_owner (self);
+}
+
+static void
+ofono_appeared (NMModemManager *self)
+{
+	nm_log_info (LOGD_MB, "ofono is now available");
+
+	self->priv->ofono_name_owner_changed_id =
+		g_signal_connect (self->priv->ofono_proxy,
+						  "notify::name-owner",
+						  G_CALLBACK (ofono_name_owner_changed),
+						  self);
+	g_dbus_proxy_call (self->priv->ofono_proxy,
+					   "GetModems",
+					   NULL,
+					   G_DBUS_CALL_FLAGS_NONE,
+					   -1,
+					   NULL,
+					   (GAsyncReadyCallback) ofono_enumerate_devices_done,
+					   g_object_ref (self));
+
+	g_signal_connect (self->priv->ofono_proxy,
+					  "g-signal",
+					  G_CALLBACK (ofono_signal_cb),
+					  self);
+}
+
+static void
+ofono_proxy_new_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+	NMModemManager *self = NM_MODEM_MANAGER (user_data);
+	GError *error = NULL;
+
+	self->priv->ofono_proxy = g_dbus_proxy_new_finish (res, &error);
+
+	if (error) {
+		//FIXME: do stuff if there's an error.
+		return;
+	}
+
+	ofono_appeared (self);
+
+	/* Balance refcount */
+	g_object_unref (self);
+}
+#endif
 
 static void
 modem_manager_poke_cb (GDBusConnection *connection,
@@ -217,19 +399,18 @@ modem_manager_poke_cb (GDBusConnection *connection,
 
 	result = g_dbus_connection_call_finish (connection, res, &error);
 	if (error) {
-		/* Ignore common errors when MM is not installed and such */
-		if (   !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
-		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_EXEC_FAILED)
-		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FORK_FAILED)
-		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FAILED)
-		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_TIMEOUT)
-		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
-			nm_log_dbg (LOGD_MB, "error poking ModemManager: %s", error->message);
-		}
-		g_error_free (error);
+		nm_log_warn (LOGD_MB, "error poking ModemManager: %s",
+					error ? error->message : "");
 
-		/* Setup timeout to relaunch */
-		schedule_modem_manager_relaunch (self, MODEM_POKE_INTERVAL);
+		/* Don't reschedule poke is MM service doesn't exist. */
+		if (!g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
+			&& !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
+
+			/* Setup timeout to relaunch */
+			schedule_modem_manager_relaunch (self, MODEM_POKE_INTERVAL);
+		}
+
+		g_error_free (error);
 	} else
 		g_variant_unref (result);
 
@@ -321,22 +502,44 @@ manager_new_ready (GObject *source,
 static void
 ensure_client (NMModemManager *self)
 {
-	g_assert (self->priv->dbus_connection);
+	NMModemManagerPrivate *priv = self->priv;
+	gboolean created = FALSE;
+
+	g_assert (priv->dbus_connection);
 
 	/* Create the GDBusObjectManagerClient. We do not request to autostart, as
 	 * we don't really want the MMManager creation to fail. We can always poke
 	 * later on if we want to request the autostart */
-	if (!self->priv->modem_manager) {
-		mm_manager_new (self->priv->dbus_connection,
+	if (!priv->modem_manager) {
+		mm_manager_new (priv->dbus_connection,
 		                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
 		                NULL,
 		                (GAsyncReadyCallback)manager_new_ready,
 		                g_object_ref (self));
-		return;
+		created = TRUE;
 	}
+
+#if WITH_OFONO
+	if (!priv->ofono_proxy) {
+		g_dbus_proxy_new (priv->dbus_connection,
+						  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+						  NULL,
+						  OFONO_DBUS_SERVICE,
+						  OFONO_DBUS_PATH,
+						  OFONO_DBUS_INTERFACE,
+						  NULL,
+						  (GAsyncReadyCallback) ofono_proxy_new_cb,
+						  g_object_ref (self));
+		created = TRUE;
+	}
+#endif /* WITH_OFONO */
+
+	if (created)
+		return;
 
 	/* If already available, recheck name owner! */
 	modem_manager_check_name_owner (self);
+	ofono_check_name_owner (self);
 }
 
 static void
@@ -414,6 +617,12 @@ dispose (GObject *object)
 	nm_clear_g_source (&self->priv->mm_launch_id);
 
 	clear_modem_manager (self);
+
+#if WITH_OFONO
+	ofono_clear_signals (self);
+	g_clear_object (&self->priv->ofono_proxy);
+#endif
+
 	g_clear_object (&self->priv->dbus_connection);
 
 	if (self->priv->modems) {

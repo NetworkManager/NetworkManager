@@ -202,7 +202,9 @@ nm_modem_set_mm_enabled (NMModem *self,
 		return;
 	}
 
-	NM_MODEM_GET_CLASS (self)->set_mm_enabled (self, enabled);
+	/* Not all modem classes support set_mm_enabled */
+	if (NM_MODEM_GET_CLASS (self)->set_mm_enabled)
+		NM_MODEM_GET_CLASS (self)->set_mm_enabled (self, enabled);
 
 	/* Pre-empt the state change signal */
 	nm_modem_set_state (self,
@@ -573,6 +575,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	const char *method;
 	NMActStageReturn ret;
 
+	nm_log_dbg (LOGD_MB, "ip4_config_start");
+
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_DEVICE_CLASS (device_class), NM_ACT_STAGE_RETURN_FAILURE);
@@ -602,9 +606,11 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		ret = ppp_stage3_ip_config_start (self, req, reason);
 		break;
 	case NM_MODEM_IP_METHOD_STATIC:
+		nm_log_dbg (LOGD_MB, "MODEM_IP_METHOD_STATIC");
 		ret = NM_MODEM_GET_CLASS (self)->static_stage3_ip4_config_start (self, req, reason);
 		break;
 	case NM_MODEM_IP_METHOD_AUTO:
+		nm_log_dbg (LOGD_MB, "MODEM_IP_METHOD_AUTO");
 		ret = device_class->act_stage3_ip4_config_start (device, NULL, reason);
 		break;
 	default:

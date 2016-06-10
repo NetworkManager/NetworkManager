@@ -112,6 +112,7 @@ modem_prepare_result (NMModem *modem,
 	if (success)
 		nm_device_activate_schedule_stage2_device_config (device);
 	else {
+
 		if (reason == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
 			/* If the connect failed because the SIM PIN was wrong don't allow
 			 * the device to be auto-activated anymore, which would risk locking
@@ -562,6 +563,7 @@ get_ip_iface_identifier (NMDevice *device, NMUtilsIPv6IfaceId *out_iid)
 
 	g_return_val_if_fail (priv->modem, FALSE);
 	success = nm_modem_get_iid (priv->modem, out_iid);
+
 	if (!success)
 		success = NM_DEVICE_CLASS (nm_device_modem_parent_class)->get_ip_iface_identifier (device, out_iid);
 	return success;
