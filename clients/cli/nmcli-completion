@@ -231,14 +231,14 @@ _nmcli_compl_OPTIONS()
             mode)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "tabular multiline"
-                   return 0
+                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
                 ;;
             colors)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no auto"
-                   return 0
+                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
                 ;;
@@ -249,21 +249,21 @@ _nmcli_compl_OPTIONS()
                         connection 802-3-ethernet 802-1x 802-11-wireless 802-11-wireless-security ipv4 ipv6 serial ppp pppoe gsm cdma bluetooth 802-11-olpc-mesh vpn wimax infiniband bond vlan adsl bridge bridge-port team team-port dcb tun ip-tunnel macvlan vxlan
                         GENERAL IP4 DHCP4 IP6 DHCP6 VPN
                         profile active"
-                   return 0
+                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
                 ;;
             escape)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "no yes"
-                   return 0
+                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
                 ;;
             wait)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list ""
-                   return 0
+                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
                 ;;
@@ -802,22 +802,18 @@ _nmcli()
         cur=''
     fi
 
-    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP OPTIONS_SEP OPTIONS_REPEATABLE
-    local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME HELP_ONLY_AS_FIRST
-    local COMMAND_CONNECTION_ACTIVE=""
+    local OPTIONS OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS_IP OPTIONS_NEXT_GROUP \
+          OPTIONS_SEP OPTIONS_REPEATABLE OPTIONS_MANDATORY OPTIONS_MANDATORY_IFNAME \
+          COMMAND_ARGS_WAIT_OPTIONS COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID \
+          COMMAND_CONNECTION_ACTIVE="" HELP_ONLY_AS_FIRST="" \
+          LONG_OPTIONS=(terse pretty mode fields colors escape ask show-secrets wait version help)
 
-    HELP_ONLY_AS_FIRST=
-    local LONG_OPTIONS=(terse pretty mode fields colors escape ask show-secrets wait version help)
     _nmcli_compl_OPTIONS
     i=$?
 
-    if [[ "$HELP_ONLY_AS_FIRST" == '0' ]]; then
-        # got a --help. No more completion.
-        return 0
-    fi
-
     case $i in
         0)
+            # We have just completed an option or got an --help: terminate.
             return 0
             ;;
         1)
