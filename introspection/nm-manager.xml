@@ -4,6 +4,34 @@
     <annotation name="org.gtk.GDBus.C.Name" value="Manager"/>
 
     <!--
+        Reload:
+        @flags: optional flags to specify which parts shall be reloaded.
+
+        Reload NetworkManager's configuration and perform certain updates, like flushing a cache or
+        rewriting external state to disk. This is similar to sending SIGHUP to NetworkManager but it
+        allows for more fine-grained control over what to reload (see @flags). It also allows
+        non-root access via PolicyKit and contrary to signals it is synchronous.
+
+        No flags (0x00) means to reload everything that is supported which is identical to
+        sending a SIGHUP.
+        (0x01) means to reload the NetworkManager.conf configuration from disk. Note that this
+        does not include connections, which can be reloaded via Setting's ReloadConnections.
+        (0x02) means to update DNS configuration, which usually involves writing /etc/resolv.conf
+        anew.
+        (0x04) means to restart the DNS plugin. This is for example useful when using
+        dnsmasq plugin, which uses additional configuration in /etc/NetworkManager/dnsmasq.d.
+        If you edit those files, you can restart the DNS plugin. This action shortly interrupts
+        rename resolution.
+        Note that flags may affect each other. For example, restarting the DNS plugin (0x04)
+        implicitly updates DNS too (0x02). Or when reloading the configuration (0x01), changes
+        to DNS setting also cause a DNS update (0x02). However, (0x01) does not involve restarting
+        the DNS plugin (0x02), unless an entirely different plugin is selected.
+    -->
+    <method name="Reload">
+      <arg name="flags" type="u" direction="in"/>
+    </method>
+
+    <!--
         GetDevices:
         @devices: List of object paths of network devices known to the system. This list does not include device placeholders (see GetAllDevices()).
 

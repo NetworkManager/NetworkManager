@@ -188,14 +188,31 @@ _init_nm_debug (const char *debug)
 void
 nm_main_config_reload (int signal)
 {
+	NMConfigChangeFlags reload_flags;
+
+	switch (signal) {
+	case SIGHUP:
+		reload_flags = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
+		break;
+	case SIGUSR1:
+		reload_flags = NM_CONFIG_CHANGE_CAUSE_SIGUSR1;
+		break;
+	case SIGUSR2:
+		reload_flags = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
+		break;
+	default:
+		g_return_if_reached ();
+	}
+
 	nm_log_info (LOGD_CORE, "reload configuration (signal %s)...", strsignal (signal));
+
 	/* The signal handler thread is only installed after
 	 * creating NMConfig instance, and on shut down we
 	 * no longer run the mainloop (to reach this point).
 	 *
 	 * Hence, a NMConfig singleton instance must always be
 	 * available. */
-	nm_config_reload (nm_config_get (), signal);
+	nm_config_reload (nm_config_get (), reload_flags);
 }
 
 static void

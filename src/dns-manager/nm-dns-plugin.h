@@ -20,6 +20,7 @@
 #define __NETWORKMANAGER_DNS_PLUGIN_H__
 
 #include "nm-default.h"
+#include "nm-dns-manager.h"
 
 #include "nm-config-data.h"
 
@@ -33,8 +34,6 @@
 #define NM_DNS_PLUGIN_FAILED "failed"
 #define NM_DNS_PLUGIN_CHILD_QUIT "child-quit"
 
-#define IP_CONFIG_IFACE_TAG "dns-manager-iface"
-
 typedef struct {
 	GObject parent;
 } NMDnsPlugin;
@@ -44,18 +43,13 @@ typedef struct {
 
 	/* Methods */
 
-	/* Called when DNS information is changed.  'vpn_configs' is a list of
-	 * NMIP4Config or NMIP6Config objects from VPN connections, while
-	 * 'dev_configs' is a list of NMPI4Config or NMIP6Config objects from
-	 * active devices.  'other_configs' represent other IP configuration that
-	 * may be in-use.  'global_config' is the optional global DNS
-	 * configuration.  Configs of the same IP version are sorted in priority
-	 * order.
+	/* Called when DNS information is changed.  'configs' is an array
+	 * of pointers to NMDnsIPConfigData sorted by priority.
+	 * 'global_config' is the optional global DNS
+	 * configuration.
 	 */
 	gboolean (*update) (NMDnsPlugin *self,
-	                    const GSList *vpn_configs,
-	                    const GSList *dev_configs,
-	                    const GSList *other_configs,
+	                    const NMDnsIPConfigData **configs,
 	                    const NMGlobalDnsConfig *global_config,
 	                    const char *hostname);
 
@@ -92,11 +86,11 @@ gboolean nm_dns_plugin_is_caching (NMDnsPlugin *self);
 const char *nm_dns_plugin_get_name (NMDnsPlugin *self);
 
 gboolean nm_dns_plugin_update (NMDnsPlugin *self,
-                               const GSList *vpn_configs,
-                               const GSList *dev_configs,
-                               const GSList *other_configs,
+                               const NMDnsIPConfigData **configs,
                                const NMGlobalDnsConfig *global_config,
                                const char *hostname);
+
+void nm_dns_plugin_stop (NMDnsPlugin *self);
 
 /* For subclasses/plugins */
 

@@ -305,8 +305,6 @@ libNetworkManager_la_SOURCES = \
 	dns-manager/nm-dns-manager.h \
 	dns-manager/nm-dns-plugin.c \
 	dns-manager/nm-dns-plugin.h \
-	dns-manager/nm-dns-utils.c \
-	dns-manager/nm-dns-utils.h \
 	\
 	dnsmasq-manager/nm-dnsmasq-manager.c \
 	dnsmasq-manager/nm-dnsmasq-manager.h \

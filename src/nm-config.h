@@ -22,11 +22,7 @@
 #ifndef __NETWORKMANAGER_CONFIG_H__
 #define __NETWORKMANAGER_CONFIG_H__
 
-
-#include "nm-default.h"
 #include "nm-config-data.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_CONFIG            (nm_config_get_type ())
 #define NM_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONFIG, NMConfig))
@@ -129,7 +125,7 @@ void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *devi
 
 NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
-void nm_config_reload (NMConfig *config, int signal);
+void nm_config_reload (NMConfig *config, NMConfigChangeFlags reload_flags);
 
 gint nm_config_parse_boolean (const char *str, gint default_value);
 
@@ -158,8 +154,6 @@ gboolean nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns
 /* internal defines ... */
 extern guint _nm_config_match_nm_version;
 extern char *_nm_config_match_env;
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_CONFIG_H__ */
 

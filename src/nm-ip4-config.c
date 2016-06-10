@@ -58,6 +58,7 @@ typedef struct _NMIP4ConfigPrivate {
 	int ifindex;
 	gint64 route_metric;
 	gboolean metered;
+	gint dns_priority;
 } NMIP4ConfigPrivate;
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
@@ -76,6 +77,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMIP4Config,
 	PROP_SEARCHES,
 	PROP_DNS_OPTIONS,
 	PROP_WINS_SERVERS,
+	PROP_DNS_PRIORITY,
 );
 
 NMIP4Config *
@@ -427,7 +429,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 {
 	NMIP4ConfigPrivate *priv;
 	guint naddresses, nroutes, nnameservers, nsearches;
-	int i;
+	int i, priority;
 
 	if (!setting)
 		return;
@@ -525,6 +527,10 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 		nm_ip4_config_add_dns_option (config, nm_setting_ip_config_get_dns_option (setting, i));
 		i++;
 	}
+
+	priority = nm_setting_ip_config_get_dns_priority (setting);
+	if (priority)
+		nm_ip4_config_set_dns_priority (config, priority);
 
 	g_object_thaw_notify (G_OBJECT (config));
 }
@@ -635,6 +641,11 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		nm_setting_ip_config_add_dns_option (s_ip4, option);
 	}
 
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_DNS_PRIORITY,
+	              nm_ip4_config_get_dns_priority (config),
+	              NULL);
+
 	return NM_SETTING (s_ip4);
 }
 
@@ -724,6 +735,10 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFl
 	/* metered flag */
 	nm_ip4_config_set_metered (dst, nm_ip4_config_get_metered (dst) ||
 	                                nm_ip4_config_get_metered (src));
+
+	/* DNS priority */
+	if (nm_ip4_config_get_dns_priority (src))
+		nm_ip4_config_set_dns_priority (dst, nm_ip4_config_get_dns_priority (src));
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -947,6 +962,10 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 		if (idx >= 0)
 			nm_ip4_config_del_wins (dst, idx);
 	}
+
+	/* DNS priority */
+	if (nm_ip4_config_get_dns_priority (src) == nm_ip4_config_get_dns_priority (dst))
+		nm_ip4_config_set_dns_priority (dst, 0);
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -1188,6 +1207,12 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_relevant_changes = TRUE;
 	}
 
+	/* DNS priority */
+	if (src_priv->dns_priority != dst_priv->dns_priority) {
+		nm_ip4_config_set_dns_priority (dst, src_priv->dns_priority);
+		has_minor_changes = TRUE;
+	}
+
 	/* mss */
 	if (src_priv->mss != dst_priv->mss) {
 		nm_ip4_config_set_mss (dst, src_priv->mss);
@@ -1311,6 +1336,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	for (i = 0; i < nm_ip4_config_get_num_dns_options (config); i++)
 		g_message (" dnsopt: %s", nm_ip4_config_get_dns_option (config, i));
 
+	g_message (" dnspri: %d", nm_ip4_config_get_dns_priority (config));
 
 	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip4_config_get_mss (config));
 	g_message ("    mtu: %"G_GUINT32_FORMAT, nm_ip4_config_get_mtu (config));
@@ -1901,6 +1927,27 @@ nm_ip4_config_get_dns_option (const NMIP4Config *config, guint i)
 /******************************************************************/
 
 void
+nm_ip4_config_set_dns_priority (NMIP4Config *config, gint priority)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	if (priority != priv->dns_priority) {
+		priv->dns_priority = priority;
+		_notify (config, PROP_DNS_PRIORITY);
+	}
+}
+
+gint
+nm_ip4_config_get_dns_priority (const NMIP4Config *config)
+{
+	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return priv->dns_priority;
+}
+
+/******************************************************************/
+
+void
 nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -2151,7 +2198,6 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 		s = nm_ip4_config_get_dns_option (config, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
-
 }
 
 /**
@@ -2386,6 +2432,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DNS_OPTIONS:
 		nm_utils_g_value_set_strv (value, priv->dns_options);
 		break;
+	case PROP_DNS_PRIORITY:
+		g_value_set_int (value, priv->dns_priority);
+		break;
 	case PROP_WINS_SERVERS:
 		g_value_take_variant (value,
 		                      g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
@@ -2488,7 +2537,11 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS);
-
+	obj_properties[PROP_DNS_PRIORITY] =
+		 g_param_spec_int (NM_IP4_CONFIG_DNS_PRIORITY, "", "",
+		                   G_MININT32, G_MAXINT32, 0,
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_WINS_SERVERS] =
 		g_param_spec_variant (NM_IP4_CONFIG_WINS_SERVERS, "", "",
 		                      G_VARIANT_TYPE ("au"),

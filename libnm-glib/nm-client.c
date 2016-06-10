@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "nm-utils.h"
+#include "nm-common-macros.h"
 
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -208,18 +209,6 @@ register_properties (NMClient *client)
 	                                property_info);
 }
 
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX       "org.freedesktop.NetworkManager.enable-disable-wimax"
-#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
-#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
-#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
-#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
-#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
-#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
-#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
-
 static NMClientPermission
 nm_permission_to_client (const char *nm)
 {
@@ -245,6 +234,10 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME))
 		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS))
+		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_RELOAD))
+		return NM_CLIENT_PERMISSION_RELOAD;
 
 	return NM_CLIENT_PERMISSION_NONE;
 }

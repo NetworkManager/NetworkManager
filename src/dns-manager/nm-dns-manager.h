@@ -28,13 +28,24 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 
+G_BEGIN_DECLS
+
 typedef enum {
 	NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
 	NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
 	NM_DNS_IP_CONFIG_TYPE_VPN
 } NMDnsIPConfigType;
 
-G_BEGIN_DECLS
+enum {
+	NM_DNS_PRIORITY_DEFAULT_NORMAL  = 100,
+	NM_DNS_PRIORITY_DEFAULT_VPN     = 50,
+};
+
+typedef struct {
+	gpointer config;
+	NMDnsIPConfigType type;
+	char *iface;
+} NMDnsIPConfigData;
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
 #define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))
@@ -45,16 +56,8 @@ G_BEGIN_DECLS
 
 #define NM_DNS_MANAGER_CONFIG_CHANGED "config-changed"
 
-typedef struct {
-	GObject parent;
-} NMDnsManager;
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Signals */
-	void (*config_changed) (NMDnsManager *mgr);
-} NMDnsManagerClass;
+typedef struct _NMDnsManager NMDnsManager;
+typedef struct _NMDnsManagerClass NMDnsManagerClass;
 
 GType nm_dns_manager_get_type (void);
 
@@ -84,32 +87,17 @@ void nm_dns_manager_set_hostname         (NMDnsManager *self,
                                           const char *hostname);
 
 /**
- * NMDnsManagerResolvConfMode:
- * @NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED: NM is not managing resolv.conf
- * @NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT: NM is managing resolv.conf by
- *   adding and removing "nameserver" lines corresponding to the currently
- *   active connections
- * @NM_DNS_MANAGER_RESOLV_CONF_PROXY: NM is managing resolv.conf by
- *   pointing it to some other service (eg, dnsmasq) that knows the
- *   nameservers corresponding to the currently active connections.
- *
- * NMDnsManager's behavior toward /etc/resolv.conf.
- */
-typedef enum {
-	NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED,
-	NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT,
-	NM_DNS_MANAGER_RESOLV_CONF_PROXY
-} NMDnsManagerResolvConfMode;
-
-/**
  * NMDnsManagerResolvConfManager
- * @_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY: dummy-manager
- *   to not write resolv.conf at all, only the internal file in
- *   NM's run state directory.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE: NM writes resolv.conf
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN: unspecified rc-manager.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED: do not touch /etc/resolv.conf
+ *   (but still write the internal copy -- unless it is symlinked by
+ *   /etc/resolv.conf)
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE: similar to "unmanaged",
+ *   but indicates that resolv.conf cannot be modified.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK: NM writes resolv.conf
  *   by symlinking it to the run state directory.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like NONE, but instead of symlinking
- *   resolv.conf, write it as a file.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like SYMLINK, but instead of
+ *   symlinking /etc/resolv.conf, write it as a file.
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF: NM is managing resolv.conf
      through resolvconf
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG: NM is managing resolv.conf
@@ -118,14 +106,16 @@ typedef enum {
  * NMDnsManager's management of resolv.conf
  */
 typedef enum {
-	_NM_DNS_MANAGER_RESOLV_CONF_MAN_INTERNAL_ONLY,
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,
 } NMDnsManagerResolvConfManager;
 
-NMDnsManagerResolvConfMode nm_dns_manager_get_resolv_conf_mode (NMDnsManager *self);
+gboolean nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self);
 
 G_END_DECLS
 

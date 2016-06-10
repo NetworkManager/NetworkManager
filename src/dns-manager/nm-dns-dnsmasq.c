@@ -26,12 +26,14 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <linux/if.h>
 
 #include "nm-dns-dnsmasq.h"
+#include "nm-core-internal.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-dns-utils.h"
 #include "nm-bus-manager.h"
 #include "NetworkManagerUtils.h"
 
@@ -69,6 +71,70 @@ typedef struct {
 
 /*****************************************************************************/
 
+static char **
+get_ip4_rdns_domains (NMIP4Config *ip4)
+{
+	char **strv;
+	GPtrArray *domains = NULL;
+	int i;
+
+	g_return_val_if_fail (ip4 != NULL, NULL);
+
+	domains = g_ptr_array_sized_new (5);
+
+	for (i = 0; i < nm_ip4_config_get_num_addresses (ip4); i++) {
+		const NMPlatformIP4Address *address = nm_ip4_config_get_address (ip4, i);
+
+		nm_utils_get_reverse_dns_domains_ip4 (address->address, address->plen, domains);
+	}
+
+	for (i = 0; i < nm_ip4_config_get_num_routes (ip4); i++) {
+		const NMPlatformIP4Route *route = nm_ip4_config_get_route (ip4, i);
+
+		nm_utils_get_reverse_dns_domains_ip4 (route->network, route->plen, domains);
+	}
+
+	/* Terminating NULL so we can use g_strfreev() to free it */
+	g_ptr_array_add (domains, NULL);
+
+	/* Free the array and return NULL if the only element was the ending NULL */
+	strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
+
+	return _nm_utils_strv_cleanup (strv, FALSE, FALSE, TRUE);
+}
+
+static char **
+get_ip6_rdns_domains (NMIP6Config *ip6)
+{
+	char **strv;
+	GPtrArray *domains = NULL;
+	int i;
+
+	g_return_val_if_fail (ip6 != NULL, NULL);
+
+	domains = g_ptr_array_sized_new (5);
+
+	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6); i++) {
+		const NMPlatformIP6Address *address = nm_ip6_config_get_address (ip6, i);
+
+		nm_utils_get_reverse_dns_domains_ip6 (&address->address, address->plen, domains);
+	}
+
+	for (i = 0; i < nm_ip6_config_get_num_routes (ip6); i++) {
+		const NMPlatformIP6Route *route = nm_ip6_config_get_route (ip6, i);
+
+		nm_utils_get_reverse_dns_domains_ip6 (&route->network, route->plen, domains);
+	}
+
+	/* Terminating NULL so we can use g_strfreev() to free it */
+	g_ptr_array_add (domains, NULL);
+
+	/* Free the array and return NULL if the only element was the ending NULL */
+	strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
+
+	return _nm_utils_strv_cleanup (strv, FALSE, FALSE, TRUE);
+}
+
 static void
 add_dnsmasq_nameserver (NMDnsDnsmasq *self,
                         GVariantBuilder *servers,
@@ -90,13 +156,16 @@ add_dnsmasq_nameserver (NMDnsDnsmasq *self,
 }
 
 static gboolean
-add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, gboolean split)
+add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
+                const char *iface, gboolean split)
 {
-	char buf[INET_ADDRSTRLEN];
+	char buf[INET_ADDRSTRLEN + 1 + IFNAMSIZ];
+	char buf2[INET_ADDRSTRLEN];
 	in_addr_t addr;
 	int nnameservers, i_nameserver, n, i;
 	gboolean added = FALSE;
 
+	g_return_val_if_fail (iface, FALSE);
 	nnameservers = nm_ip4_config_get_num_nameservers (ip4);
 
 	if (split) {
@@ -107,7 +176,8 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 
 		for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i_nameserver);
-			nm_utils_inet4_ntop (addr, buf);
+			g_snprintf (buf, sizeof (buf), "%s@%s",
+			            nm_utils_inet4_ntop (addr, buf2), iface);
 
 			/* searches are preferred over domains */
 			n = nm_ip4_config_get_num_searches (ip4);
@@ -134,7 +204,7 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 			/* Ensure reverse-DNS works by directing queries for in-addr.arpa
 			 * domains to the split domain's nameserver.
 			 */
-			domains = nm_dns_utils_get_ip4_rdns_domains (ip4);
+			domains = get_ip4_rdns_domains (ip4);
 			if (domains) {
 				for (iter = domains; iter && *iter; iter++)
 					add_dnsmasq_nameserver (self, servers, buf, *iter);
@@ -147,8 +217,9 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i);
-			add_dnsmasq_nameserver (self, servers,
-			                        nm_utils_inet4_ntop (addr, NULL), NULL);
+			g_snprintf (buf, sizeof (buf), "%s@%s",
+			            nm_utils_inet4_ntop (addr, buf2), iface);
+			add_dnsmasq_nameserver (self, servers, buf, NULL);
 		}
 	}
 
@@ -158,23 +229,22 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4, 
 static char *
 ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
 {
-	char *buf;
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
 
-	if (IN6_IS_ADDR_V4MAPPED (addr)) {
-		buf = g_malloc (INET_ADDRSTRLEN);
+	if (IN6_IS_ADDR_V4MAPPED (addr))
 		nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
-	} else if (!iface || !iface[0] || !IN6_IS_ADDR_LINKLOCAL (addr)) {
-		buf = g_malloc (INET6_ADDRSTRLEN);
+	else
 		nm_utils_inet6_ntop (addr, buf);
-	} else {
-		/* Need to scope the address with %<zone-id>. Before dnsmasq 2.58,
-		 * only '@' was supported as delimiter. Since 2.58, '@' and '%'
-		 * are supported. Due to a bug, since 2.73 only '%' works properly
-		 * as "server" address.
-		 */
-		buf = g_strconcat (nm_utils_inet6_ntop (addr, NULL), "%", iface, NULL);
-	}
-	return buf;
+
+	/* Need to scope link-local addresses with %<zone-id>. Before dnsmasq 2.58,
+	 * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
+	 * supported. Due to a bug, since 2.73 only '%' works properly as "server"
+	 * address.
+	 */
+	return g_strdup_printf ("%s%c%s",
+	                        buf,
+	                        IN6_IS_ADDR_LINKLOCAL (addr) ? '%' : '@',
+	                        iface);
 }
 
 static void
@@ -202,20 +272,20 @@ add_global_config (NMDnsDnsmasq *self, GVariantBuilder *dnsmasq_servers, const N
 }
 
 static gboolean
-add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6, gboolean split)
+add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
+                const char *iface, gboolean split)
 {
 	const struct in6_addr *addr;
 	char *buf = NULL;
 	int nnameservers, i_nameserver, n, i;
 	gboolean added = FALSE;
-	const char *iface;
 
+	g_return_val_if_fail (iface, FALSE);
 	nnameservers = nm_ip6_config_get_num_nameservers (ip6);
 
-	iface = g_object_get_data (G_OBJECT (ip6), IP_CONFIG_IFACE_TAG);
-	g_assert (iface);
-
 	if (split) {
+		char **domains, **iter;
+
 		if (nnameservers == 0)
 			return FALSE;
 
@@ -245,11 +315,21 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6, 
 				}
 			}
 
+			/* Ensure reverse-DNS works by directing queries for ip6.arpa
+			 * domains to the split domain's nameserver.
+			 */
+			domains = get_ip6_rdns_domains (ip6);
+			if (domains) {
+				for (iter = domains; iter && *iter; iter++)
+					add_dnsmasq_nameserver (self, servers, buf, *iter);
+				g_strfreev (domains);
+			}
+
 			g_free (buf);
 		}
 	}
 
-	/* If no searches or domains, just add the namservers */
+	/* If no searches or domains, just add the nameservers */
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
 			addr = nm_ip6_config_get_nameserver (ip6, i);
@@ -262,6 +342,25 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6, 
 	}
 
 	return TRUE;
+}
+
+static gboolean
+add_ip_config_data (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfigData *data)
+{
+	if (NM_IS_IP4_CONFIG (data->config)) {
+		return add_ip4_config (self,
+		                       servers,
+		                       (NMIP4Config *) data->config,
+		                       data->iface,
+		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
+	} else if (NM_IS_IP6_CONFIG (data->config)) {
+		return add_ip6_config (self,
+		                       servers,
+		                       (NMIP6Config *) data->config,
+		                       data->iface,
+		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
+	} else
+		g_return_val_if_reached (FALSE);
 }
 
 static void
@@ -477,15 +576,12 @@ start_dnsmasq (NMDnsDnsmasq *self)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const GSList *vpn_configs,
-        const GSList *dev_configs,
-        const GSList *other_configs,
+        const NMDnsIPConfigData **configs,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
-	const GSList *iter;
 	GVariantBuilder servers;
 
 	start_dnsmasq (self);
@@ -495,28 +591,9 @@ update (NMDnsPlugin *plugin,
 	if (global_config)
 		add_global_config (self, &servers, global_config);
 	else {
-		/* Use split DNS for VPN configs */
-		for (iter = vpn_configs; iter; iter = g_slist_next (iter)) {
-			if (NM_IS_IP4_CONFIG (iter->data))
-				add_ip4_config (self, &servers, iter->data, TRUE);
-			else if (NM_IS_IP6_CONFIG (iter->data))
-				add_ip6_config (self, &servers, iter->data, TRUE);
-		}
-
-		/* Now add interface configs without split DNS */
-		for (iter = dev_configs; iter; iter = g_slist_next (iter)) {
-			if (NM_IS_IP4_CONFIG (iter->data))
-				add_ip4_config (self, &servers, iter->data, FALSE);
-			else if (NM_IS_IP6_CONFIG (iter->data))
-				add_ip6_config (self, &servers, iter->data, FALSE);
-		}
-
-		/* And any other random configs */
-		for (iter = other_configs; iter; iter = g_slist_next (iter)) {
-			if (NM_IS_IP4_CONFIG (iter->data))
-				add_ip4_config (self, &servers, iter->data, FALSE);
-			else if (NM_IS_IP6_CONFIG (iter->data))
-				add_ip6_config (self, &servers, iter->data, FALSE);
+		while (*configs) {
+			add_ip_config_data (self, &servers, *configs);
+			configs++;
 		}
 	}
 

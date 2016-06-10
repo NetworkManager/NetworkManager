@@ -50,6 +50,7 @@ typedef struct _NMIP6ConfigPrivate {
 	guint32 mss;
 	int ifindex;
 	gint64 route_metric;
+	gint dns_priority;
 } NMIP6ConfigPrivate;
 
 
@@ -64,6 +65,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
 	PROP_DOMAINS,
 	PROP_SEARCHES,
 	PROP_DNS_OPTIONS,
+	PROP_DNS_PRIORITY,
 );
 
 NMIP6Config *
@@ -414,7 +416,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 	NMIP6ConfigPrivate *priv;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *gateway_str;
-	int i;
+	int i, priority;
 
 	if (!setting)
 		return;
@@ -507,6 +509,10 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 		nm_ip6_config_add_dns_option (config, nm_setting_ip_config_get_dns_option (setting, i));
 		i++;
 	}
+
+	priority = nm_setting_ip_config_get_dns_priority (setting);
+	if (priority)
+		nm_ip6_config_set_dns_priority (config, priority);
 
 	g_object_thaw_notify (G_OBJECT (config));
 }
@@ -624,6 +630,10 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		nm_setting_ip_config_add_dns_option (s_ip6, option);
 	}
 
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_DNS_PRIORITY,
+	              nm_ip6_config_get_dns_priority (config),
+	              NULL);
 
 	return NM_SETTING (s_ip6);
 }
@@ -689,6 +699,10 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 
 	if (nm_ip6_config_get_mss (src))
 		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
+
+	/* DNS priority */
+	if (nm_ip6_config_get_dns_priority (src))
+		nm_ip6_config_set_dns_priority (dst, nm_ip6_config_get_dns_priority (src));
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -882,6 +896,10 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 
 	if (nm_ip6_config_get_mss (src) == nm_ip6_config_get_mss (dst))
 		nm_ip6_config_set_mss (dst, 0);
+
+	/* DNS priority */
+	if (nm_ip6_config_get_dns_priority (src) == nm_ip6_config_get_dns_priority (dst))
+		nm_ip6_config_set_dns_priority (dst, 0);
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -1129,6 +1147,12 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 	}
 
+	/* DNS priority */
+	if (src_priv->dns_priority != dst_priv->dns_priority) {
+		nm_ip6_config_set_dns_priority (dst, src_priv->dns_priority);
+		has_minor_changes = TRUE;
+	}
+
 #if NM_MORE_ASSERTS
 	/* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
 	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
@@ -1188,6 +1212,8 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 	/* dns options */
 	for (i = 0; i < nm_ip6_config_get_num_dns_options (config); i++)
 		g_message (" dnsopt: %s", nm_ip6_config_get_dns_option (config, i));
+
+	g_message (" dnspri: %d", nm_ip6_config_get_dns_priority (config));
 
 	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip6_config_get_mss (config));
 	g_message (" n-dflt: %d", nm_ip6_config_get_never_default (config));
@@ -1761,6 +1787,27 @@ nm_ip6_config_get_dns_option (const NMIP6Config *config, guint i)
 /******************************************************************/
 
 void
+nm_ip6_config_set_dns_priority (NMIP6Config *config, gint priority)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	if (priority != priv->dns_priority) {
+		priv->dns_priority = priority;
+		_notify (config, PROP_DNS_PRIORITY);
+	}
+}
+
+gint
+nm_ip6_config_get_dns_priority (const NMIP6Config *config)
+{
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	return priv->dns_priority;
+}
+
+/******************************************************************/
+
+void
 nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -1839,7 +1886,6 @@ nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only
 		s = nm_ip6_config_get_dns_option (config, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
-
 }
 
 /**
@@ -2079,6 +2125,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DNS_OPTIONS:
 		nm_utils_g_value_set_strv (value, priv->dns_options);
 		break;
+	case PROP_DNS_PRIORITY:
+		g_value_set_int (value, priv->dns_priority);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2176,6 +2225,11 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 		                    G_TYPE_STRV,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DNS_PRIORITY] =
+		g_param_spec_int (NM_IP6_CONFIG_DNS_PRIORITY, "", "",
+		                  G_MININT32, G_MAXINT32, 0,
+		                  G_PARAM_READABLE |
+		                  G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

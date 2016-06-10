@@ -185,6 +185,7 @@ GQuark nm_device_error_quark (void);
  *   enabled/disabled.
  * @NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL: Unknown log level in SetLogging
  * @NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN: Unknown log domain in SetLogging
+ * @NM_MANAGER_ERROR_INVALID_ARGUMENTS: Invalid arguments for D-Bus request
  *
  * Errors related to the main "network management" interface of NetworkManager.
  * These may be returned from #NMClient methods that invoke D-Bus operations on
@@ -204,6 +205,7 @@ typedef enum {
 	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
 	NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,           /*< nick=UnknownLogLevel >*/
 	NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,          /*< nick=UnknownLogDomain >*/
+	NM_MANAGER_ERROR_INVALID_ARGUMENTS,           /*< nick=InvalidArguments >*/
 } NMManagerError;
 
 GQuark nm_manager_error_quark (void);

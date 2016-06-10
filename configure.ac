@@ -763,6 +763,11 @@ fi
 # resolvconf and netconfig support
 AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
 AC_ARG_WITH(netconfig, AS_HELP_STRING([--with-netconfig=yes|no], [Enable SUSE netconfig support]))
+AC_ARG_WITH(config-dns-rc-manager-default, AS_HELP_STRING([--with-config-dns-rc-manager-default=symlink|file|netconfig|resolvconf], [Configure default value for main.rc-manager setting]), [config_dns_rc_manager_default=$withval])
+if test "$config_dns_rc_manager_default" != symlink -a "$config_dns_rc_manager_default" != file -a "$config_dns_rc_manager_default" != netconfig -a "$config_dns_rc_manager_default" != resolvconf; then
+	AC_MSG_WARN([Unknown --with-config-dns-rc-manager-default=$config_dns_rc_manager_default setting.])
+	config_dns_rc_manager_default=
+fi
 # Use netconfig by default on SUSE
 AS_IF([test -z "$with_netconfig"], AC_CHECK_FILE(/etc/SuSE-release, with_netconfig=yes))
 # Otherwise default to "no"
@@ -772,9 +777,16 @@ AS_IF([test -z "$with_netconfig"], with_netconfig=no)
 if test "$with_resolvconf" = "yes"; then
 	AC_PATH_PROGS(with_resolvconf, resolvconf, no, /sbin:/usr/sbin:/usr/local/sbin)
 fi
+if test "$with_resolvconf" != "no"; then
+	AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=resolvconf)
+fi
 if test "$with_netconfig" = "yes"; then
 	AC_PATH_PROGS(with_netconfig, netconfig, no, /sbin:/usr/sbin:/usr/local/sbin)
 fi
+if test "$with_netconfig" != "no"; then
+	AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=netconfig)
+fi
+AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=symlink)
 # Define resolvconf and netconfig paths
 if test "$with_resolvconf" != "no"; then
 	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf])
@@ -782,6 +794,8 @@ fi
 if test "$with_netconfig" != "no"; then
 	AC_DEFINE_UNQUOTED(NETCONFIG_PATH, "$with_netconfig", [Path to netconfig])
 fi
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_DNS_RC_MANAGER, "$config_dns_rc_manager_default", [Default value for main.rc-manager setting (--with-config-dns-rc-manager-default)])
+AC_SUBST(NM_CONFIG_DEFAULT_DNS_RC_MANAGER, $config_dns_rc_manager_default)
 
 # iptables path
 AC_ARG_WITH(iptables, AS_HELP_STRING([--with-iptables=/path/to/iptables], [path to iptables]))
@@ -1164,6 +1178,7 @@ echo
 echo "Handlers for /etc/resolv.conf:"
 echo "  resolvconf: ${with_resolvconf}"
 echo "  netconfig: ${with_netconfig}"
+echo "  config-dns-rc-manager-default: ${config_dns_rc_manager_default}"
 echo
 
 echo "DHCP clients:"

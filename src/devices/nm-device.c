@@ -34,7 +34,7 @@
 #include <netlink/route/addr.h>
 #include <linux/if_addr.h>
 
-#include "nm-device.h"
+#include "nm-common-macros.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
@@ -521,6 +521,34 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 
 #define reason_to_string(reason) \
 	NM_UTILS_LOOKUP_STR (_reason_to_string, reason)
+
+/***********************************************************/
+
+static void
+init_ip4_config_dns_priority (NMDevice *self, NMIP4Config *config)
+{
+	gs_free char *value = NULL;
+	gint priority;
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "ipv4.dns-priority",
+	                                               self);
+	priority = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT, G_MAXINT, 0);
+	nm_ip4_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
+}
+
+static void
+init_ip6_config_dns_priority (NMDevice *self, NMIP6Config *config)
+{
+	gs_free char *value = NULL;
+	gint priority;
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "ipv6.dns-priority",
+	                                               self);
+	priority = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT, G_MAXINT, 0);
+	nm_ip6_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
+}
 
 /***********************************************************/
 
@@ -4368,6 +4396,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
+	init_ip4_config_dns_priority (self, composite);
 
 	if (commit)
 		ensure_con_ip4_config (self);
@@ -5094,9 +5123,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+	init_ip6_config_dns_priority (self, composite);
 
 	if (commit)
 		ensure_con_ip6_config (self);
+
 	g_assert (composite);
 
 	/* Merge all the IP configs into the composite config */
@@ -8858,7 +8889,6 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
-	NMDnsManagerResolvConfMode resolv_conf_mode;
 
 	/* If a commit is scheduled, this function would potentially interfere with
 	 * it changing IP configurations before they are applied. Postpone the
@@ -8877,8 +8907,8 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	if (!ifindex)
 		return;
 
-	resolv_conf_mode = nm_dns_manager_get_resolv_conf_mode (nm_dns_manager_get ());
-	capture_resolv_conf = initial && (resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT);
+	capture_resolv_conf =    initial
+	                      && nm_dns_manager_get_resolv_conf_explicit (nm_dns_manager_get ());
 
 	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
@@ -8949,7 +8979,6 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
-	NMDnsManagerResolvConfMode resolv_conf_mode;
 
 	/* If a commit is scheduled, this function would potentially interfere with
 	 * it changing IP configurations before they are applied. Postpone the
@@ -8968,8 +8997,8 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	if (!ifindex)
 		return;
 
-	resolv_conf_mode = nm_dns_manager_get_resolv_conf_mode (nm_dns_manager_get ());
-	capture_resolv_conf = initial && (resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT);
+	capture_resolv_conf =    initial
+	                      && nm_dns_manager_get_resolv_conf_explicit (nm_dns_manager_get ());
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);

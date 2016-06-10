@@ -55,6 +55,7 @@ typedef struct {
 #define NM_IP4_CONFIG_DOMAINS "domains"
 #define NM_IP4_CONFIG_SEARCHES "searches"
 #define NM_IP4_CONFIG_DNS_OPTIONS "dns-options"
+#define NM_IP4_CONFIG_DNS_PRIORITY "dns-priority"
 #define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
 
 /* deprecated */
@@ -136,6 +137,10 @@ void nm_ip4_config_add_dns_option (NMIP4Config *config, const char *option);
 void nm_ip4_config_del_dns_option (NMIP4Config *config, guint i);
 guint32 nm_ip4_config_get_num_dns_options (const NMIP4Config *config);
 const char * nm_ip4_config_get_dns_option (const NMIP4Config *config, guint i);
+
+/* DNS priority */
+void nm_ip4_config_set_dns_priority (NMIP4Config *config, gint priority);
+gint nm_ip4_config_get_dns_priority (const NMIP4Config *config);
 
 /* MSS */
 void nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss);

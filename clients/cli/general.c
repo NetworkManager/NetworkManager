@@ -25,6 +25,7 @@
 #include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"
+#include "nm-common-macros.h"
 
 #include "devices.h"
 #include "connections.h"
@@ -387,18 +388,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	return TRUE;
 }
 
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX       "org.freedesktop.NetworkManager.enable-disable-wimax"
-#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
-#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
-#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
-#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
-#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
-#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
-#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
-
 static const char *
 permission_to_string (NMClientPermission perm)
 {
@@ -425,6 +414,10 @@ permission_to_string (NMClientPermission perm)
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
 	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME:
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
+	case NM_CLIENT_PERMISSION_RELOAD:
+		return NM_AUTH_PERMISSION_RELOAD;
 	default:
 		return _("unknown");
 	}
@@ -433,7 +426,6 @@ permission_to_string (NMClientPermission perm)
 static const char *
 permission_result_to_string (NMClientPermissionResult perm_result)
 {
-	
 	switch (perm_result) {
 	case NM_CLIENT_PERMISSION_RESULT_YES:
 		return _("yes");

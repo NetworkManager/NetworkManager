@@ -78,6 +78,10 @@
     This file is not intended to be modified by the user, but it is read last and can shadow
     user configuration from <literal>NetworkManager.conf</literal>.
     </para>
+    <para>
+    Certain settings from the configuration can be reloaded at runtime either by sending SIGHUP signal or via
+    D-Bus' Reload call.
+    </para>
 
   </refsect1>
 
@@ -303,7 +307,8 @@ no-auto-default=*
         configuration with DNSSEC support. The /etc/resolv.conf
         will be managed by dnssec-trigger daemon.</para>
         <para><literal>none</literal>: NetworkManager will not
-        modify resolv.conf.</para>
+        modify resolv.conf. This implies <varname>rc-manager</varname>
+        <literal>unmanaged</literal></para>
         </listitem>
       </varlistentry>
 
@@ -311,17 +316,25 @@ no-auto-default=*
         <term><varname>rc-manager</varname></term>
         <listitem><para>Set the <filename>resolv.conf</filename>
         management mode. The default value depends on how NetworkManager
-        was built. Regardless of this setting, NetworkManager will
+        was built, whereas this version of NetworkManager was build with
+        a default of "<literal>&NM_CONFIG_DEFAULT_DNS_RC_MANAGER;</literal>".
+        Regardless of this setting, NetworkManager will
         always write resolv.conf to its runtime state directory.</para>
-        <para><literal>none</literal>: NetworkManager will symlink
+        <para><literal>symlink</literal>: NetworkManager will symlink
         <filename>/etc/resolv.conf</filename> to its private
         resolv.conf file in the runtime state directory.</para>
         <para><literal>file</literal>: NetworkManager will write
-        <filename>/etc/resolv.conf</filename> as file.</para>
+        <filename>/etc/resolv.conf</filename> as file. If it finds
+        a symlink, it will follow the symlink and update the target
+        instead.</para>
         <para><literal>resolvconf</literal>: NetworkManager will run
         resolvconf to update the DNS configuration.</para>
         <para><literal>netconfig</literal>: NetworkManager will run
         netconfig to update the DNS configuration.</para>
+        <para><literal>unmanaged</literal>: don't touch
+        <filename>resolv.conf</filename>.</para>
+        <para><literal>none</literal>: deprecated alias for
+        <literal>symlink</literal>.</para>
         </listitem>
       </varlistentry>
 
