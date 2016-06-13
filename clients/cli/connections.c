@@ -2900,6 +2900,38 @@ get_valid_settings_array (const char *con_type)
 	return NULL;
 }
 
+static char *
+get_valid_autocompletion_string (const NameItem *array, const NameItem *array_slv)
+{
+	const NameItem *iter = array;
+	const NmcOutputField *field_iter;
+	GString *str;
+	int i;
+
+	str = g_string_sized_new (1024);
+
+	for (i = 0; i < 2; i++, iter = array_slv) {
+		while (iter && iter->name) {
+			int j = 0;
+
+			while ((nmc_fields_settings_names[j].name) &&
+			        g_strcmp0 (iter->name, nmc_fields_settings_names[j].name))
+				j++;
+
+			field_iter = nmc_fields_settings_names[j].group;
+			j = 0;
+			while (field_iter[j].name) {
+				g_string_append_printf (str, "%s.%s ", iter->name, field_iter[j].name);
+				if (iter->alias)
+					g_string_append_printf (str, "%s.%s ", iter->alias, field_iter[j].name);
+				j++;
+			}
+			iter++;
+		}
+	}
+	return g_string_free (str, FALSE);
+}
+
 /*
  * Check if 'val' is valid string in either array->name or array->alias for
  * both array parameters (array & array_slv).
@@ -10166,6 +10198,30 @@ do_connection_modify (NmCli *nmc,
 	if (!rc) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto finish;
+	}
+
+	/* Query comes from shell autocomplete function */
+	if (nmc->complete) {
+		NMSettingConnection *s_con;
+		const NameItem *valid_settings_main = NULL;
+		const NameItem *valid_settings_slave = NULL;
+		const char *connection_type = NULL;
+		const char *slave_type = NULL;
+		gs_free char *slv_type = NULL;
+		gs_free char *word_list = NULL;
+
+		connection_type = nm_connection_get_connection_type (connection);
+		s_con = nm_connection_get_setting_connection (connection);
+		if (s_con)
+			slave_type = nm_setting_connection_get_slave_type (s_con);
+		slv_type = g_strdup_printf ("%s-slave", slave_type ? slave_type : "no");
+		valid_settings_main = get_valid_settings_array (connection_type);
+		valid_settings_slave = get_valid_settings_array (slv_type);
+
+		word_list = get_valid_autocompletion_string (valid_settings_main, valid_settings_slave);
+		if (word_list)
+			g_print ("%s", word_list);
 		goto finish;
 	}
 

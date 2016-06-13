@@ -256,6 +256,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			/* ignore for backward compatibility */
 		} else if (matches (opt, "-ask") == 0) {
 			nmc->ask = TRUE;
+		} else if (matches (opt, "-complete") == 0) {
+			nmc->complete = TRUE;
 		} else if (matches (opt, "-show-secrets") == 0) {
 			nmc->show_secrets = TRUE;
 		} else if (matches (opt, "-wait") == 0) {
@@ -627,6 +629,9 @@ main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);  /* create main loop */
 	g_main_loop_run (loop);                /* run main loop */
+
+	if (nm_cli.complete)
+		nm_cli.return_value = NMC_RESULT_SUCCESS;
 
 	/* Print result descripting text */
 	if (nm_cli.return_value != NMC_RESULT_SUCCESS) {
