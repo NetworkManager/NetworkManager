@@ -898,7 +898,7 @@ context_property_changed (GDBusProxy *proxy,
 
 		if (ip_string_to_network_address (addr_s, &address_network)) {
 			addr.address = address_network;
-			addr.source = NM_IP_CONFIG_SOURCE_WWAN;
+			addr.addr_source = NM_IP_CONFIG_SOURCE_WWAN;
 		} else {
 			nm_log_warn (LOGD_MB, "ofono: (%s): can't convert 'Address' %s to addr",
 			             nm_modem_get_uid (NM_MODEM (self)), s);
