@@ -358,6 +358,7 @@ handle_sim_property (GDBusProxy *proxy,
 	}
 }
 
+static void
 sim_property_changed (GDBusProxy *proxy,
                       const char *property,
                       GVariant *v,
