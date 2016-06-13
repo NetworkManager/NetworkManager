@@ -433,16 +433,13 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 		update_modem_state (self);
 	} else if (found && !priv->sim_proxy) {
 		GError *error = NULL;
-		GDBusProxyFlags flags;
 
 		nm_log_info (LOGD_MB, "(%s): found new SimManager interface",
 		             nm_modem_get_path (NM_MODEM (self)));
 
-		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES;
-		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START;
-
 		priv->sim_proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
-		                                         flags,
+		                                         G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+		                                         | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 		                                         NULL, /* GDBusInterfaceInfo */
 		                                         OFONO_DBUS_SERVICE,
 		                                         nm_modem_get_path (NM_MODEM (self)),
@@ -583,16 +580,13 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 		update_modem_state (self);
 	} else if (found && !priv->connman_proxy) {
 		GError *error = NULL;
-		GDBusProxyFlags flags;
 
 		nm_log_info (LOGD_MB, "(%s): found new ConnectionManager interface",
 		             nm_modem_get_path (NM_MODEM (self)));
 
-		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES;
-		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START;
-
 		priv->connman_proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
-		                                             flags,
+		                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+		                                             | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 		                                             NULL, /* GDBusInterfaceInfo */
 		                                             OFONO_DBUS_SERVICE,
 		                                             nm_modem_get_path (NM_MODEM (self)),
@@ -664,18 +658,12 @@ handle_modem_property (GDBusProxy *proxy,
 
 		array = g_variant_get_strv (v, NULL);
 		if (array) {
-
-			iter = array;
-			while (*iter) {
-
+			for (iter = array; *iter; iter++) {
 				if (g_strcmp0 (OFONO_DBUS_INTERFACE_SIM_MANAGER, *iter) == 0)
 					found_sim = TRUE;
 				else if (g_strcmp0 (OFONO_DBUS_INTERFACE_CONNECTION_MANAGER, *iter) == 0)
 					found_connman = TRUE;
-
-				*iter++;
 			}
-
 			g_free (array);
 		}
 
@@ -809,7 +797,6 @@ context_property_changed (GDBusProxy *proxy,
 	NMPlatformIP4Address addr;
 	gboolean ret = FALSE;
 	GVariant *v_dict;
-	GVariantIter i;
 	const gchar *s, *addr_s;
 	const gchar **array, **iter;
 	guint32 address_network, gateway_network;
@@ -945,30 +932,27 @@ context_property_changed (GDBusProxy *proxy,
 	}
 
 	if (g_variant_lookup (v_dict, "DomainNameServers", "^a&s", &array)) {
-		iter = array;
+		if (array) {
+			for (iter = array; *iter; iter++) {
+				if (ip_string_to_network_address (*iter, &address_network) && address_network > 0) {
+					nm_log_info (LOGD_MB, "ofono: (%s): DNS: %s",
+					             nm_modem_get_uid (NM_MODEM (self)), *iter);
 
-		while (*iter) {
-			if (ip_string_to_network_address (*iter, &address_network) && address_network > 0) {
-				nm_log_info (LOGD_MB, "ofono: (%s): DNS: %s",
-				             nm_modem_get_uid (NM_MODEM (self)), *iter);
-
-				nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
-			} else {
-				nm_log_warn (LOGD_MB, "ofono: (%s): invalid NameServer: %s",
-				             nm_modem_get_uid (NM_MODEM (self)), *iter);
+					nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
+				} else {
+					nm_log_warn (LOGD_MB, "ofono: (%s): invalid NameServer: %s",
+					             nm_modem_get_uid (NM_MODEM (self)), *iter);
+				}
 			}
 
-			*iter++;
-		}
-
-		if (iter == array) {
-			nm_log_warn (LOGD_MB, "ofono: (%s): Settings: 'DomainNameServers': none specified",
-			             nm_modem_get_uid (NM_MODEM (self)));
+			if (iter == array) {
+				nm_log_warn (LOGD_MB, "ofono: (%s): Settings: 'DomainNameServers': none specified",
+				             nm_modem_get_uid (NM_MODEM (self)));
+				g_free (array);
+				goto out;
+			}
 			g_free (array);
-			goto out;
 		}
-
-		g_free (array);
 	} else {
 		nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'DomainNameServers' missing",
 		             nm_modem_get_uid (NM_MODEM (self)));
@@ -1103,8 +1087,7 @@ do_context_activate (NMModemOfono *self)
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	GValue value = G_VALUE_INIT;
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_MODEM_OFONO (self), FALSE);
+	g_return_if_fail (NM_IS_MODEM_OFONO (self));
 
 	nm_log_dbg (LOGD_MB, "in %s", __func__);
 

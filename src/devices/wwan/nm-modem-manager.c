@@ -307,7 +307,7 @@ ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer use
 
 	if (error) {
 		nm_log_warn (LOGD_MB, "failed to enumerate oFono devices: %s",
-		             error->message ? error->message : "(unknown)");
+		             error->message);
 	}
 }
 
