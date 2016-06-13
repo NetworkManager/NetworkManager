@@ -180,6 +180,53 @@ nm_vpn_editor_plugin_set_plugin_info (NMVpnEditorPlugin *plugin, NMVpnPluginInfo
 
 /*********************************************************************/
 
+/**
+ * nm_vpn_editor_plugin_get_vt:
+ * @plugin: the #NMVpnEditorPlugin
+ * @vt: (out): buffer to be filled with the VT table of the plugin
+ * @vt_size: the size of the buffer. Can be 0 to only query the
+ *   size of plugin's VT.
+ *
+ * Returns an opaque VT function table for the plugin to extend
+ * functionality. The actual meaning of NMVpnEditorPluginVT is not
+ * defined in public API of libnm, instead it must be agreed by
+ * both the plugin and the caller. See the header-only file
+ * 'nm-vpn-editor-plugin-call.h' which defines the meaning.
+ *
+ * Returns: the actual size of the @plugin's virtual function table.
+ *
+ * Since: 1.4
+ **/
+gsize
+nm_vpn_editor_plugin_get_vt (NMVpnEditorPlugin *plugin,
+                             NMVpnEditorPluginVT *vt,
+                             gsize vt_size)
+{
+	const NMVpnEditorPluginVT *p_vt = NULL;
+	gsize p_vt_size = 0;
+	NMVpnEditorPluginInterface *interface;
+
+	g_return_val_if_fail (NM_IS_VPN_EDITOR_PLUGIN (plugin), 0);
+
+	if (vt_size) {
+		g_return_val_if_fail (vt, 0);
+		memset (vt, 0, vt_size);
+	}
+
+	interface = NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin);
+	if (interface->get_vt) {
+		p_vt = interface->get_vt (plugin, &p_vt_size);
+		if (!p_vt)
+			p_vt_size = 0;
+		g_return_val_if_fail (p_vt_size, 0);
+		memcpy (vt, p_vt, MIN (vt_size, p_vt_size));
+	}
+
+	return p_vt_size;
+}
+
+/*********************************************************************/
+
 static NMVpnEditorPlugin *
 _nm_vpn_editor_plugin_load (const char *plugin_name,
                             gboolean do_file_checks,

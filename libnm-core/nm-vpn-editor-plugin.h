@@ -82,6 +82,8 @@ typedef enum /*< flags >*/ {
 /* D-Bus service name of the plugin's VPN service */
 #define NM_VPN_EDITOR_PLUGIN_SERVICE "service"
 
+typedef struct _NMVpnEditorPluginVT NMVpnEditorPluginVT;
+
 /**
  * NMVpnEditorPluginInterface:
  * @g_iface: the parent interface
@@ -99,6 +101,8 @@ typedef enum /*< flags >*/ {
  * @get_suggested_filename: For a given connection, return a suggested file
  *   name.  Returned value will be %NULL or a suggested file name to be freed by
  *   the caller.
+ * @get_vt: return a virtual function table to implement further functions in
+ *   the plugin, without requiring to update libnm. Used by nm_vpn_editor_plugin_get_vt().
  *
  * Interface for VPN editor plugins.
  */
@@ -124,6 +128,9 @@ typedef struct {
 
 	void (*notify_plugin_info_set) (NMVpnEditorPlugin *plugin,
 	                                struct _NMVpnPluginInfo *plugin_info);
+
+	const NMVpnEditorPluginVT *(*get_vt) (NMVpnEditorPlugin *plugin,
+	                                      gsize *out_vt_size);
 } NMVpnEditorPluginInterface;
 
 GType nm_vpn_editor_plugin_get_type (void);
@@ -133,6 +140,11 @@ NMVpnEditor *nm_vpn_editor_plugin_get_editor (NMVpnEditorPlugin *plugin,
                                               GError **error);
 
 NMVpnEditorPluginCapability nm_vpn_editor_plugin_get_capabilities (NMVpnEditorPlugin *plugin);
+
+NM_AVAILABLE_IN_1_4
+gsize nm_vpn_editor_plugin_get_vt (NMVpnEditorPlugin *plugin,
+                                   NMVpnEditorPluginVT *vt,
+                                   gsize vt_size);
 
 NMConnection *nm_vpn_editor_plugin_import                 (NMVpnEditorPlugin *plugin,
                                                            const char *path,
