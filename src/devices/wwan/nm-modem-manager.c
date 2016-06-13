@@ -523,7 +523,7 @@ ensure_client (NMModemManager *self)
 #if WITH_OFONO
 	if (!priv->ofono_proxy) {
 		g_dbus_proxy_new (priv->dbus_connection,
-		                  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+		                  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 		                  NULL,
 		                  OFONO_DBUS_SERVICE,
 		                  OFONO_DBUS_PATH,

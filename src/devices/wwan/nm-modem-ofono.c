@@ -1125,7 +1125,7 @@ do_context_activate (NMModemOfono *self)
 		g_clear_object (&priv->context_proxy);
 
 	g_dbus_proxy_new (priv->dbus_connection,
-	                  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                  NULL,
 	                  OFONO_DBUS_SERVICE,
 	                  priv->context_path,
@@ -1261,7 +1261,7 @@ bus_connected (NMModemOfono *self)
 	nm_log_dbg (LOGD_MB, "in %s", __func__);
 
 	g_dbus_proxy_new (priv->dbus_connection,
-	                  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                  NULL,
 	                  OFONO_DBUS_SERVICE,
 	                  nm_modem_get_path (NM_MODEM (self)),
