@@ -2560,11 +2560,12 @@ _get_property_path (const char *ifname,
 	                  property);
 
 	/* Ubuntu: don't assert, but log about the inconsistent size. */
-	if (len > sizeof (path) - 1)
-		nm_log_warn (LOGD_CORE,
-					 "IPv6 property path is too long: '"
-					 IPV6_PROPERTY_DIR "%s/%s'",
-					 ifname, property);
+	if (len > sizeof (path) - 1) {
+	    nm_log_warn (LOGD_CORE,
+	                 "IPv6 property path is too long: '"
+	                 IPV6_PROPERTY_DIR "%s/%s'",
+	                 ifname, property);
+	}
 
 	return path;
 }

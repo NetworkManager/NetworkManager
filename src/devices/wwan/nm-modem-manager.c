@@ -225,9 +225,10 @@ ofono_clear_signals (NMModemManager *self)
 
 	if (self->priv->ofono_name_owner_changed_id) {
 		if (g_signal_handler_is_connected (self->priv->ofono_proxy,
-										   self->priv->ofono_name_owner_changed_id))
+		                                   self->priv->ofono_name_owner_changed_id)) {
 			g_signal_handler_disconnect (self->priv->ofono_proxy,
-										 self->priv->ofono_name_owner_changed_id);
+			                             self->priv->ofono_name_owner_changed_id);
+		}
 		self->priv->ofono_name_owner_changed_id = 0;
 	}
 }
@@ -252,10 +253,10 @@ ofono_create_modem (NMModemManager *self, const char *path)
 
 static void
 ofono_signal_cb (GDBusProxy *proxy,
-				 gchar *sender_name,
-				 gchar *signal_name,
-				 GVariant *parameters,
-				 gpointer user_data)
+                 gchar *sender_name,
+                 gchar *signal_name,
+                 GVariant *parameters,
+                 gpointer user_data)
 {
 	NMModemManager *self = NM_MODEM_MANAGER (user_data);
 	gchar *object_path;
@@ -277,7 +278,7 @@ ofono_signal_cb (GDBusProxy *proxy,
 			g_hash_table_remove (self->priv->modems, object_path);
 		} else {
 			nm_log_warn (LOGD_MB, "could not remove modem %s, not found in table",
-						 object_path);
+			             object_path);
 		}
 		g_free (object_path);
 	}
@@ -298,16 +299,16 @@ ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer use
 	results = g_dbus_proxy_call_finish (proxy, res, &error);
 	if (results) {
 		g_variant_get (results, "(a(oa{sv}))", &iter);
-		while (g_variant_iter_loop (iter, "(&oa{sv})", &path, NULL)) {
+		while (g_variant_iter_loop (iter, "(&oa{sv})", &path, NULL))
 			ofono_create_modem (manager, path);
-		}
 		g_variant_iter_free (iter);
 		g_variant_unref (results);
 	}
 
-	if (error)
+	if (error) {
 		nm_log_warn (LOGD_MB, "failed to enumerate oFono devices: %s",
-					 error->message ? error->message : "(unknown)");
+		             error->message ? error->message : "(unknown)");
+	}
 }
 
 static void ofono_appeared (NMModemManager *self);
@@ -338,8 +339,8 @@ free:
 
 static void
 ofono_name_owner_changed (GDBusProxy *ofono_proxy,
-						  GParamSpec *pspec,
-						  NMModemManager *self)
+                          GParamSpec *pspec,
+                          NMModemManager *self)
 {
 	ofono_check_name_owner (self);
 }
@@ -350,23 +351,23 @@ ofono_appeared (NMModemManager *self)
 	nm_log_info (LOGD_MB, "ofono is now available");
 
 	self->priv->ofono_name_owner_changed_id =
-		g_signal_connect (self->priv->ofono_proxy,
-						  "notify::name-owner",
-						  G_CALLBACK (ofono_name_owner_changed),
-						  self);
+	    g_signal_connect (self->priv->ofono_proxy,
+	                      "notify::name-owner",
+	                      G_CALLBACK (ofono_name_owner_changed),
+	                      self);
 	g_dbus_proxy_call (self->priv->ofono_proxy,
-					   "GetModems",
-					   NULL,
-					   G_DBUS_CALL_FLAGS_NONE,
-					   -1,
-					   NULL,
-					   (GAsyncReadyCallback) ofono_enumerate_devices_done,
-					   g_object_ref (self));
+	                   "GetModems",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   NULL,
+	                   (GAsyncReadyCallback) ofono_enumerate_devices_done,
+	                   g_object_ref (self));
 
 	g_signal_connect (self->priv->ofono_proxy,
-					  "g-signal",
-					  G_CALLBACK (ofono_signal_cb),
-					  self);
+	                  "g-signal",
+	                  G_CALLBACK (ofono_signal_cb),
+	                  self);
 }
 
 static void
@@ -522,14 +523,14 @@ ensure_client (NMModemManager *self)
 #if WITH_OFONO
 	if (!priv->ofono_proxy) {
 		g_dbus_proxy_new (priv->dbus_connection,
-						  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-						  NULL,
-						  OFONO_DBUS_SERVICE,
-						  OFONO_DBUS_PATH,
-						  OFONO_DBUS_INTERFACE,
-						  NULL,
-						  (GAsyncReadyCallback) ofono_proxy_new_cb,
-						  g_object_ref (self));
+		                  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+		                  NULL,
+		                  OFONO_DBUS_SERVICE,
+		                  OFONO_DBUS_PATH,
+		                  OFONO_DBUS_INTERFACE,
+		                  NULL,
+		                  (GAsyncReadyCallback) ofono_proxy_new_cb,
+		                  g_object_ref (self));
 		created = TRUE;
 	}
 #endif /* WITH_OFONO */

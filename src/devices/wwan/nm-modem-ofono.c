@@ -194,15 +194,15 @@ disconnect_done (GDBusProxy *proxy,
 	g_dbus_proxy_call_finish (proxy, result, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 		nm_log_dbg (LOGD_MB, "(%s): disconnect cancelled",
-					nm_modem_get_uid (NM_MODEM (self)));
+		            nm_modem_get_uid (NM_MODEM (self)));
 		return;
 	}
 
 	if (error) {
 		if (ctx->warn)
 			nm_log_warn (LOGD_MB, "(%s) failed to disconnect modem: %s",
-						nm_modem_get_uid (NM_MODEM (self)),
-						error && error->message ? error->message : "(unknown)");
+			              nm_modem_get_uid (NM_MODEM (self)),
+			              error && error->message ? error->message : "(unknown)");
 
 		g_clear_error (&error);
 	}
@@ -237,30 +237,31 @@ disconnect (NMModem *self,
 	ctx->self = g_object_ref (self);
 	ctx->warn = warn;
 
-	if (callback)
+	if (callback) {
 		ctx->result = g_simple_async_result_new (G_OBJECT (self),
-												 callback,
-												 user_data,
-												 disconnect);
+		                                         callback,
+		                                         user_data,
+		                                         disconnect);
+	}
 	/* Setup cancellable */
 	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 	if (disconnect_context_complete_if_cancelled (ctx))
 		return;
 
 	nm_modem_set_state (NM_MODEM (self),
-						NM_MODEM_STATE_DISCONNECTING,
-						nm_modem_state_to_string (NM_MODEM_STATE_DISCONNECTING));
+	                    NM_MODEM_STATE_DISCONNECTING,
+	                    nm_modem_state_to_string (NM_MODEM_STATE_DISCONNECTING));
 
 	g_dbus_proxy_call (priv->context_proxy,
-					   "SetProperty",
-					   g_variant_new ("(sv)",
-								      "Active",
-								      g_variant_new ("b", warn)),
-				       G_DBUS_CALL_FLAGS_NONE,
-				       20000,
-				       NULL,
-				       (GAsyncReadyCallback) disconnect_done,
-					   ctx);
+	                   "SetProperty",
+	                   g_variant_new ("(sv)",
+	                                  "Active",
+	                                  g_variant_new ("b", warn)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   20000,
+	                   NULL,
+	                   (GAsyncReadyCallback) disconnect_done,
+	                   ctx);
 }
 
 static void
@@ -280,7 +281,7 @@ deactivate_cleanup (NMModem *_self, NMDevice *device)
 
 static gboolean
 check_connection_compatible (NMModem *modem,
-							NMConnection *connection)
+                             NMConnection *connection)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -301,7 +302,7 @@ check_connection_compatible (NMModem *modem,
 
 	if (!priv->imsi) {
 		nm_log_warn (LOGD_MB, "ofono (%s): check_connection %s failed: no IMSI",
-					 nm_modem_get_uid (NM_MODEM (self)), id);
+		             nm_modem_get_uid (NM_MODEM (self)), id);
 		return FALSE;
 	}
 
@@ -358,9 +359,9 @@ handle_sim_property (GDBusProxy *proxy,
 }
 
 sim_property_changed (GDBusProxy *proxy,
-					  const char *property,
-					  GVariant *v,
-					  gpointer user_data)
+                      const char *property,
+                      GVariant *v,
+                      gpointer user_data)
 {
 	GVariant *v_child = g_variant_get_child_value (v, 0);
 
@@ -380,13 +381,13 @@ sim_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	nm_log_dbg (LOGD_MB, "%s", __func__);
 
 	v_properties = _nm_dbus_proxy_call_finish (proxy,
-											   result,
-											   G_VARIANT_TYPE ("(a{sv})"),
-											   &error);
+	                                           result,
+	                                           G_VARIANT_TYPE ("(a{sv})"),
+	                                           &error);
 	if (!v_properties) {
 		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_MB, "(%s) error getting sim properties: %s",
-					 nm_modem_get_uid (NM_MODEM (self)),
+		             nm_modem_get_uid (NM_MODEM (self)),
 		             error->message);
 		g_error_free (error);
 		return;
@@ -397,7 +398,7 @@ sim_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	v_dict = g_variant_get_child_value (v_properties, 0);
 	if (!v_dict) {
 		nm_log_warn (LOGD_MB, "(%s) error getting sim properties: no v_dict",
-					 nm_modem_get_uid (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 		return;
 	}
 
@@ -431,7 +432,7 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 
 	if (!found && priv->sim_proxy) {
 		nm_log_info (LOGD_MB, "(%s): SimManager interface disappeared",
-					 nm_modem_get_path (NM_MODEM (self)));
+		             nm_modem_get_path (NM_MODEM (self)));
 
 		g_signal_handlers_disconnect_by_data (priv->sim_proxy, NM_MODEM_OFONO (self));
 		g_clear_object (&priv->sim_proxy);
@@ -445,23 +446,23 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 		GDBusProxyFlags flags;
 
 		nm_log_info (LOGD_MB, "(%s): found new SimManager interface",
-					 nm_modem_get_path (NM_MODEM (self)));
+		             nm_modem_get_path (NM_MODEM (self)));
 
 		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES;
 		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START;
 
 		priv->sim_proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
-												 flags,
-												 NULL, /* GDBusInterfaceInfo */
-												 OFONO_DBUS_SERVICE,
-												 nm_modem_get_path (NM_MODEM (self)),
-												 OFONO_DBUS_INTERFACE_SIM_MANAGER,
-												 NULL, /* GCancellable */
-												 &error);
+		                                         flags,
+		                                         NULL, /* GDBusInterfaceInfo */
+		                                         OFONO_DBUS_SERVICE,
+		                                         nm_modem_get_path (NM_MODEM (self)),
+		                                         OFONO_DBUS_INTERFACE_SIM_MANAGER,
+		                                         NULL, /* GCancellable */
+		                                         &error);
 		if (priv->sim_proxy == NULL) {
 			nm_log_warn (LOGD_MB, "(%s) failed to create SimManager proxy: %s",
-						 nm_modem_get_uid (NM_MODEM (self)),
-						 error && error->message ? error->message : "(unknown)");
+			             nm_modem_get_uid (NM_MODEM (self)),
+			             error && error->message ? error->message : "(unknown)");
 
 			g_error_free (error);
 			return;
@@ -469,27 +470,27 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 
 		/* Watch for custom ofono PropertyChanged signals */
 		_nm_dbus_signal_connect (priv->sim_proxy,
-								 "PropertyChanged",
-								 G_VARIANT_TYPE ("(sv)"),
-								 G_CALLBACK (sim_property_changed),
-								 self);
+		                         "PropertyChanged",
+		                         G_VARIANT_TYPE ("(sv)"),
+		                         G_CALLBACK (sim_property_changed),
+		                         self);
 
 		g_dbus_proxy_call (priv->sim_proxy,
-						   "GetProperties",
-						   NULL,
-						   G_DBUS_CALL_FLAGS_NONE,
-						   20000,
-						   NULL,
-						   (GAsyncReadyCallback) sim_get_properties_done,
-						   g_object_ref (self));
+		                   "GetProperties",
+		                   NULL,
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   20000,
+		                   NULL,
+		                   (GAsyncReadyCallback) sim_get_properties_done,
+		                   g_object_ref (self));
 	}
 }
 
 static void
 handle_connman_property (GDBusProxy *proxy,
-					     const char *property,
-						 GVariant *v,
-						 gpointer user_data)
+                         const char *property,
+                         GVariant *v,
+                         gpointer user_data)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -498,15 +499,15 @@ handle_connman_property (GDBusProxy *proxy,
 		gboolean attached = g_variant_get_boolean (v);
 
 		nm_log_dbg (LOGD_MB, "(%s): Attached: %s",
-					nm_modem_get_uid (NM_MODEM (self)), attached ? "True" : "False");
+		            nm_modem_get_uid (NM_MODEM (self)), attached ? "True" : "False");
 
 		if (priv->gprs_attached != attached) {
 			priv->gprs_attached = attached;
 
 			nm_log_info (LOGD_MB, "(%s): %s: new value for 'Attached': %s",
-						nm_modem_get_path (NM_MODEM (self)),
-						__func__,
-						attached ? "true" : "false");
+			             nm_modem_get_path (NM_MODEM (self)),
+			             __func__,
+			             attached ? "true" : "false");
 
 			update_modem_state (self);
 		}
@@ -515,9 +516,9 @@ handle_connman_property (GDBusProxy *proxy,
 
 static void
 connman_property_changed (GDBusProxy *proxy,
-						const char *property,
-						GVariant *v,
-						gpointer user_data)
+                        const char *property,
+                        GVariant *v,
+                        gpointer user_data)
 {
 	GVariant *v_child = g_variant_get_child_value (v, 0);
 
@@ -537,13 +538,13 @@ connman_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer u
 	nm_log_dbg (LOGD_MB, "%s", __func__);
 
 	v_properties = _nm_dbus_proxy_call_finish (proxy,
-											   result,
-											   G_VARIANT_TYPE ("(a{sv})"),
-											   &error);
+		                                       result,
+		                                       G_VARIANT_TYPE ("(a{sv})"),
+		                                       &error);
 	if (!v_properties) {
 		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_MB, "(%s) error getting connman properties: %s",
-					 nm_modem_get_uid (NM_MODEM (self)),
+		             nm_modem_get_uid (NM_MODEM (self)),
 		             error->message);
 		g_error_free (error);
 		return;
@@ -579,7 +580,7 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 
 	if (!found && priv->connman_proxy) {
 		nm_log_info (LOGD_MB, "(%s): ConnectionManager interface disappeared",
-					 nm_modem_get_path (NM_MODEM (self)));
+		             nm_modem_get_path (NM_MODEM (self)));
 
 		g_signal_handlers_disconnect_by_data (priv->connman_proxy, NM_MODEM_OFONO (self));
 		g_clear_object (&priv->connman_proxy);
@@ -595,23 +596,23 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 		GDBusProxyFlags flags;
 
 		nm_log_info (LOGD_MB, "(%s): found new ConnectionManager interface",
-					 nm_modem_get_path (NM_MODEM (self)));
+		             nm_modem_get_path (NM_MODEM (self)));
 
 		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES;
 		flags |= G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START;
 
 		priv->connman_proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
-													flags,
-													NULL, /* GDBusInterfaceInfo */
-													OFONO_DBUS_SERVICE,
-													nm_modem_get_path (NM_MODEM (self)),
-													OFONO_DBUS_INTERFACE_CONNECTION_MANAGER,
-													NULL, /* GCancellable */
-													&error);
+		                                             flags,
+		                                             NULL, /* GDBusInterfaceInfo */
+		                                             OFONO_DBUS_SERVICE,
+		                                             nm_modem_get_path (NM_MODEM (self)),
+		                                             OFONO_DBUS_INTERFACE_CONNECTION_MANAGER,
+		                                             NULL, /* GCancellable */
+		                                             &error);
 		if (priv->connman_proxy == NULL) {
 			nm_log_warn (LOGD_MB, "(%s) failed to create ConnectionManager proxy: %s",
-						 nm_modem_get_uid (NM_MODEM (self)),
-						 error && error->message ? error->message : "(unknown)");
+			             nm_modem_get_uid (NM_MODEM (self)),
+			             error && error->message ? error->message : "(unknown)");
 
 			g_error_free (error);
 			return;
@@ -619,19 +620,19 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 
 		/* Watch for custom ofono PropertyChanged signals */
 		_nm_dbus_signal_connect (priv->connman_proxy,
-								 "PropertyChanged",
-								 G_VARIANT_TYPE ("(sv)"),
-								 G_CALLBACK (connman_property_changed),
-								 self);
+		                         "PropertyChanged",
+		                         G_VARIANT_TYPE ("(sv)"),
+		                         G_CALLBACK (connman_property_changed),
+		                         self);
 
 		g_dbus_proxy_call (priv->connman_proxy,
-						   "GetProperties",
-						   NULL,
-						   G_DBUS_CALL_FLAGS_NONE,
-						   20000,
-						   NULL,
-						   (GAsyncReadyCallback) connman_get_properties_done,
-						   g_object_ref (self));
+		                   "GetProperties",
+		                   NULL,
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   20000,
+		                   NULL,
+		                   (GAsyncReadyCallback) connman_get_properties_done,
+		                   g_object_ref (self));
 
 		/* NM 0.9.10x version registers for "ContextAdded/Removed", but
 		 * did nothing but log a message.  Removed for 1.2
@@ -652,14 +653,14 @@ handle_modem_property (GDBusProxy *proxy,
 		gboolean online = g_variant_get_boolean (v);
 
 		nm_log_dbg (LOGD_MB, "(%s): Online: %s",
-					nm_modem_get_uid (NM_MODEM (self)), online ? "True" : "False");
+		            nm_modem_get_uid (NM_MODEM (self)), online ? "True" : "False");
 
 		if (online != priv->modem_online) {
 			priv->modem_online = online;
 
 			nm_log_info (LOGD_MB, "(%s) modem is now %s",
-						nm_modem_get_path (NM_MODEM (self)),
-						online ? "Online" : "Offline");
+			             nm_modem_get_path (NM_MODEM (self)),
+			             online ? "Online" : "Offline");
 
 			update_modem_state (self);
 		}
@@ -695,9 +696,9 @@ handle_modem_property (GDBusProxy *proxy,
 
 static void
 modem_property_changed (GDBusProxy *proxy,
-						const char *property,
-						GVariant *v,
-						gpointer user_data)
+                        const char *property,
+                        GVariant *v,
+                        gpointer user_data)
 {
 	GVariant *v_child = g_variant_get_child_value (v, 0);
 
@@ -717,13 +718,13 @@ modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer use
 	nm_log_dbg (LOGD_MB, "in %s", __func__);
 
 	v_properties = _nm_dbus_proxy_call_finish (proxy,
-											   result,
-											   G_VARIANT_TYPE ("(a{sv})"),
-											   &error);
+	                                           result,
+	                                           G_VARIANT_TYPE ("(a{sv})"),
+	                                           &error);
 	if (!v_properties) {
 		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_MB, "(%s) error getting modem properties: %s",
-					 nm_modem_get_uid (NM_MODEM (self)),
+		             nm_modem_get_uid (NM_MODEM (self)),
 		             error->message);
 		g_error_free (error);
 		return;
@@ -732,7 +733,7 @@ modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer use
 	v_dict = g_variant_get_child_value (v_properties, 0);
 	if (!v_dict) {
 		nm_log_warn (LOGD_MB, "(%s) error getting modem properties: no v_dict",
-					 nm_modem_get_uid (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 		return;
 	}
 
@@ -808,9 +809,9 @@ stage1_prepare_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 
 static void
 context_property_changed (GDBusProxy *proxy,
-						  const char *property,
-						  GVariant *v,
-						  gpointer user_data)
+                          const char *property,
+                          GVariant *v,
+                          gpointer user_data)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -838,7 +839,7 @@ context_property_changed (GDBusProxy *proxy,
 	v_dict = g_variant_get_child_value (v, 0);
 	if (!v_dict) {
 		nm_log_warn (LOGD_MB, "ofono: (%s): error getting IPv4 Settings",
-					 nm_modem_get_uid (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 		goto out;
 	}
 
@@ -850,18 +851,18 @@ context_property_changed (GDBusProxy *proxy,
 
 		if (s && strlen (s)) {
 			g_object_set (self,
-						  NM_MODEM_DATA_PORT, g_strdup (s),
-						  NM_MODEM_IP4_METHOD, NM_MODEM_IP_METHOD_STATIC,
-						  NULL);
+			              NM_MODEM_DATA_PORT, g_strdup (s),
+			              NM_MODEM_IP4_METHOD, NM_MODEM_IP_METHOD_STATIC,
+			              NULL);
 		} else {
 			nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'Interface'; empty",
-						nm_modem_get_uid (NM_MODEM (self)));
+			             nm_modem_get_uid (NM_MODEM (self)));
 			goto out;
 		}
 
 	} else {
 		nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'Interface' missing",
-					 nm_modem_get_uid (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 		goto out;
 	}
 
@@ -899,13 +900,13 @@ context_property_changed (GDBusProxy *proxy,
 			addr.source = NM_IP_CONFIG_SOURCE_WWAN;
 		} else {
 			nm_log_warn (LOGD_MB, "ofono: (%s): can't convert 'Address' %s to addr",
-						 nm_modem_get_uid (NM_MODEM (self)), s);
+			             nm_modem_get_uid (NM_MODEM (self)), s);
 			goto out;
 		}
 
 	} else {
 		nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'Address' missing",
-					nm_modem_get_uid (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 		goto out;
 	}
 
@@ -919,13 +920,13 @@ context_property_changed (GDBusProxy *proxy,
 				addr.plen = prefix;
 		} else {
 			nm_log_warn (LOGD_MB, "ofono: (%s): invalid 'Netmask': %s",
-						nm_modem_get_uid (NM_MODEM (self)), s);
+			             nm_modem_get_uid (NM_MODEM (self)), s);
 			goto out;
 		}
 
 	} else {
 		nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'Netmask' missing",
-					nm_modem_get_uid (NM_MODEM (self)));
+		            nm_modem_get_uid (NM_MODEM (self)));
 		goto out;
 	}
 
@@ -942,14 +943,14 @@ context_property_changed (GDBusProxy *proxy,
 			nm_ip4_config_set_gateway (priv->ip4_config, gateway_network);
 		} else {
 			nm_log_warn (LOGD_MB, "ofono: (%s): invalid 'Gateway': %s",
-						nm_modem_get_uid (NM_MODEM (self)), s);
+			             nm_modem_get_uid (NM_MODEM (self)), s);
 			goto out;
 		}
 
 		nm_ip4_config_set_gateway (priv->ip4_config, gateway_network);
 	} else {
 		nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'Gateway' missing",
-					nm_modem_get_uid (NM_MODEM (self)));
+		            nm_modem_get_uid (NM_MODEM (self)));
 		goto out;
 	}
 
@@ -959,12 +960,12 @@ context_property_changed (GDBusProxy *proxy,
 		while (*iter) {
 			if (ip_string_to_network_address (*iter, &address_network) && address_network > 0) {
 				nm_log_info (LOGD_MB, "ofono: (%s): DNS: %s",
-							nm_modem_get_uid (NM_MODEM (self)), *iter);
+				             nm_modem_get_uid (NM_MODEM (self)), *iter);
 
 				nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
 			} else {
 				nm_log_warn (LOGD_MB, "ofono: (%s): invalid NameServer: %s",
-							nm_modem_get_uid (NM_MODEM (self)), *iter);
+				             nm_modem_get_uid (NM_MODEM (self)), *iter);
 			}
 
 			*iter++;
@@ -972,7 +973,7 @@ context_property_changed (GDBusProxy *proxy,
 
 		if (iter == array) {
 			nm_log_warn (LOGD_MB, "ofono: (%s): Settings: 'DomainNameServers': none specified",
-						 nm_modem_get_uid (NM_MODEM (self)));
+			             nm_modem_get_uid (NM_MODEM (self)));
 			g_free (array);
 			goto out;
 		}
@@ -980,13 +981,13 @@ context_property_changed (GDBusProxy *proxy,
 		g_free (array);
 	} else {
 		nm_log_warn (LOGD_MB, "ofono: (%s): Settings 'DomainNameServers' missing",
-					 nm_modem_get_uid (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 		goto out;
 	}
 
 	if (g_variant_lookup (v_dict, "MessageProxy", "&s", &s)) {
 		nm_log_info (LOGD_MB, "ofono: (%s): MessageProxy: %s",
-					 nm_modem_get_uid (NM_MODEM (self)), s);
+		             nm_modem_get_uid (NM_MODEM (self)), s);
 
 		if (s && ip_string_to_network_address (s, &address_network)) {
 			NMPlatformIP4Route mms_route;
@@ -1000,7 +1001,7 @@ context_property_changed (GDBusProxy *proxy,
 			nm_ip4_config_add_route (priv->ip4_config, &mms_route);
 		} else {
 			nm_log_warn (LOGD_MB, "ofono: (%s): invalid MessageProxy: %s",
-						nm_modem_get_uid (NM_MODEM (self)), s);
+			             nm_modem_get_uid (NM_MODEM (self)), s);
 		}
 	}
 
@@ -1009,7 +1010,7 @@ context_property_changed (GDBusProxy *proxy,
 out:
 	if (nm_modem_get_state (NM_MODEM (self)) != NM_MODEM_STATE_CONNECTED) {
 		nm_log_info (LOGD_MB, "ofono: (%s): emitting PREPARE_RESULT: %s",
-					 nm_modem_get_uid (NM_MODEM (self)), ret ? "TRUE" : "FALSE");
+		             nm_modem_get_uid (NM_MODEM (self)), ret ? "TRUE" : "FALSE");
 
 		if (!ret)
 			reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
@@ -1033,11 +1034,11 @@ static_stage3_ip4_config_start (NMModem *_self,
 	GError *error = NULL;
 
 	nm_log_dbg (LOGD_MB, "(%s): stage_3_ip4_config_start",
-					nm_modem_get_uid (NM_MODEM (self)));
+	            nm_modem_get_uid (NM_MODEM (self)));
 
 	if (priv->ip4_config) {
 		nm_log_dbg (LOGD_MB, "(%s): IP4 config is done; setting modem_state -> CONNECTED",
-					nm_modem_get_uid (NM_MODEM (self)));
+		            nm_modem_get_uid (NM_MODEM (self)));
 
 		g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, priv->ip4_config, error);
 
@@ -1066,8 +1067,8 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	/* TODO: add path to log msg? */
 	if (error) {
 		nm_log_err (LOGD_MB, "(%s) failed to create ofono ConnectionContext DBus proxy: %s",
-					nm_modem_get_uid (NM_MODEM (self)),
-					error->message ? error->message : "(unknown)");
+		            nm_modem_get_uid (NM_MODEM (self)),
+		            error->message ? error->message : "(unknown)");
 
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE,
 		                       NM_DEVICE_STATE_REASON_MODEM_BUSY);
@@ -1089,21 +1090,21 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 
 	/* Watch for custom ofono PropertyChanged signals */
 	_nm_dbus_signal_connect (priv->context_proxy,
-							 "PropertyChanged",
-							 G_VARIANT_TYPE ("(sv)"),
-							 G_CALLBACK (context_property_changed),
-							 self);
+	                         "PropertyChanged",
+	                         G_VARIANT_TYPE ("(sv)"),
+	                         G_CALLBACK (context_property_changed),
+	                         self);
 
 	g_dbus_proxy_call (priv->context_proxy,
-					   "SetProperty",
-					   g_variant_new ("(sv)",
-								      "Active",
-								      g_variant_new ("b", TRUE)),
-					   G_DBUS_CALL_FLAGS_NONE,
-				       20000,
-				       NULL,
-				       (GAsyncReadyCallback) stage1_prepare_done,
-					   g_object_ref (self));
+	                   "SetProperty",
+	                   g_variant_new ("(sv)",
+	                                  "Active",
+	                                   g_variant_new ("b", TRUE)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   20000,
+	                   NULL,
+	                   (GAsyncReadyCallback) stage1_prepare_done,
+	                   g_object_ref (self));
 }
 
 static void
@@ -1124,14 +1125,14 @@ do_context_activate (NMModemOfono *self)
 		g_clear_object (&priv->context_proxy);
 
 	g_dbus_proxy_new (priv->dbus_connection,
-					  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-					  NULL,
-					  OFONO_DBUS_SERVICE,
-					  priv->context_path,
-					  OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT,
-					  NULL,
-					  (GAsyncReadyCallback) context_proxy_new_cb,
-					  g_object_ref (self));
+	                  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                  NULL,
+	                  OFONO_DBUS_SERVICE,
+	                  priv->context_path,
+	                  OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT,
+	                  NULL,
+	                  (GAsyncReadyCallback) context_proxy_new_cb,
+	                  g_object_ref (self));
 }
 
 static GHashTable *
@@ -1163,8 +1164,8 @@ create_connect_properties (NMConnection *connection)
 
 static NMActStageReturn
 act_stage1_prepare (NMModem *modem,
-					NMConnection *connection,
-					NMDeviceStateReason *reason)
+                    NMConnection *connection,
+                    NMDeviceStateReason *reason)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -1227,8 +1228,8 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	if (error) {
 		nm_log_err (LOGD_MB, "(%s) failed to create ofono modem DBus proxy: %s",
-					nm_modem_get_uid (NM_MODEM (self)),
-					error->message ? error->message : "(unknown)");
+		            nm_modem_get_uid (NM_MODEM (self)),
+		            error->message ? error->message : "(unknown)");
 
 		return;
 	}
@@ -1263,7 +1264,7 @@ bus_connected (NMModemOfono *self)
 	                  G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
 	                  NULL,
 	                  OFONO_DBUS_SERVICE,
-					  nm_modem_get_path (NM_MODEM (self)),
+	                  nm_modem_get_path (NM_MODEM (self)),
 	                  OFONO_DBUS_INTERFACE_MODEM,
 	                  NULL,
 	                  (GAsyncReadyCallback) modem_proxy_new_cb,
