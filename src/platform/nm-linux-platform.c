@@ -360,7 +360,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
 	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
 	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
-	{ NM_LINK_TYPE_WWAN_ETHERNET, "wwan",        NULL,          "wwan" },
+	{ NM_LINK_TYPE_WWAN_NET,      "wwan",        NULL,          "wwan" },
 	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
 
 	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },

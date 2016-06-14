@@ -115,7 +115,7 @@ typedef enum {
 	NM_LINK_TYPE_INFINIBAND,
 	NM_LINK_TYPE_OLPC_MESH,
 	NM_LINK_TYPE_WIFI,
-	NM_LINK_TYPE_WWAN_ETHERNET,   /* WWAN pseudo-ethernet */
+	NM_LINK_TYPE_WWAN_NET,   /* WWAN kernel netdevice */
 	NM_LINK_TYPE_WIMAX,
 
 	/* Software types */

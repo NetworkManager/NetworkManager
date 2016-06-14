@@ -2147,7 +2147,7 @@ platform_link_added (NMManager *self,
 
 	if (device == NULL) {
 		switch (plink->type) {
-		case NM_LINK_TYPE_WWAN_ETHERNET:
+		case NM_LINK_TYPE_WWAN_NET:
 		case NM_LINK_TYPE_BNEP:
 		case NM_LINK_TYPE_OLPC_MESH:
 		case NM_LINK_TYPE_TEAM:

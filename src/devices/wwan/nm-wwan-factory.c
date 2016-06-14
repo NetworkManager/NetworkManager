@@ -90,7 +90,7 @@ modem_added_cb (NMModemManager *manager,
 
 
 NM_DEVICE_FACTORY_DECLARE_TYPES (
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_WWAN_ETHERNET)
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_WWAN_NET)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME)
 )
 
@@ -102,7 +102,7 @@ create_device (NMDeviceFactory *factory,
                gboolean *out_ignore)
 {
 	g_return_val_if_fail (plink, NULL);
-	g_return_val_if_fail (plink->type == NM_LINK_TYPE_WWAN_ETHERNET, NULL);
+	g_return_val_if_fail (plink->type == NM_LINK_TYPE_WWAN_NET, NULL);
 	*out_ignore = TRUE;
 	return NULL;
 }
