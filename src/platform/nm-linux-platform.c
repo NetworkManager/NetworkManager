@@ -728,6 +728,15 @@ _linktype_get_type (NMPlatform *platform,
 			return NM_LINK_TYPE_WIFI;
 
 		if (arptype == ARPHRD_ETHER) {
+			/* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
+			 * modem interface, ccmni is MediaTek's.  FIXME: these drivers should
+			 * really set devtype=WWAN.
+			 */
+			if (g_str_has_prefix (ifname, "rmnet") ||
+			    g_str_has_prefix (ifname, "rev_rmnet") ||
+			    g_str_has_prefix (ifname, "ccmni"))
+				return NM_LINK_TYPE_WWAN_NET;
+
 			/* Standard wired ethernet interfaces don't report an rtnl_link_type, so
 			 * only allow fallback to Ethernet if no type is given.  This should
 			 * prevent future virtual network drivers from being treated as Ethernet
