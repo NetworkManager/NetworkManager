@@ -2901,7 +2901,7 @@ get_valid_settings_array (const char *con_type)
 }
 
 static char *
-get_valid_autocompletion_string (const NameItem *array, const NameItem *array_slv)
+get_valid_autocompletion_string (const NameItem *array, const NameItem *array_slv, char modifier, const char *prefix)
 {
 	const NameItem *iter = array;
 	const NmcOutputField *field_iter;
@@ -2921,9 +2921,26 @@ get_valid_autocompletion_string (const NameItem *array, const NameItem *array_sl
 			field_iter = nmc_fields_settings_names[j].group;
 			j = 0;
 			while (field_iter[j].name) {
-				g_string_append_printf (str, "%s.%s ", iter->name, field_iter[j].name);
-				if (iter->alias)
-					g_string_append_printf (str, "%s.%s ", iter->alias, field_iter[j].name);
+				gchar *new;
+
+				new  = g_strdup_printf ("%s.%s ", iter->name, field_iter[j].name);
+				if (g_str_has_prefix (new, prefix)) {
+					if (modifier)
+						g_string_append_c (str, modifier);
+					g_string_append (str, new);
+				}
+				g_free (new);
+
+				if (iter->alias) {
+					new  = g_strdup_printf ("%s.%s ", iter->alias, field_iter[j].name);
+					if (g_str_has_prefix (new, prefix)) {
+						if (modifier)
+							g_string_append_c (str, modifier);
+						g_string_append (str, new);
+					}
+					g_free (new);
+				}
+
 				j++;
 			}
 			iter++;
@@ -10215,7 +10232,7 @@ do_connection_modify (NmCli *nmc,
 		valid_settings_main = get_valid_settings_array (connection_type);
 		valid_settings_slave = get_valid_settings_array (slv_type);
 
-		word_list = get_valid_autocompletion_string (valid_settings_main, valid_settings_slave);
+		word_list = get_valid_autocompletion_string (valid_settings_main, valid_settings_slave, '\0', "");
 		if (word_list)
 			g_print ("%s", word_list);
 		goto finish;
