@@ -147,10 +147,15 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	if (nm_device_is_real (device)) {
 		const char *mac;
+		const char *hw_addr;
 
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-		if (mac && !nm_utils_hwaddr_matches (mac, -1, nm_device_get_hw_address (device), -1))
-			return FALSE;
+		if (mac) {
+			hw_addr = nm_device_get_permanent_hw_address (device, TRUE);
+			if (   !hw_addr
+			    || !nm_utils_hwaddr_matches (mac, -1, hw_addr, -1))
+				return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -183,7 +188,7 @@ complete_connection (NMDevice *device,
 	}
 
 	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	hw_address = nm_device_get_hw_address (device);
+	hw_address = nm_device_get_permanent_hw_address (device, TRUE);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, hw_address, -1)) {
@@ -209,7 +214,7 @@ static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
-	const char *mac = nm_device_get_hw_address (device);
+	const char *mac = nm_device_get_permanent_hw_address (device, TRUE);
 	const char *transport_mode = "datagram";
 	int ifindex;
 
