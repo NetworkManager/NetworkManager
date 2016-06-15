@@ -11632,9 +11632,9 @@ nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 static NMMatchSpecMatchType
 spec_match_list (NMDevice *self, const GSList *specs)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMMatchSpecMatchType matched = NM_MATCH_SPEC_NO_MATCH, m;
 	const GSList *iter;
+	const char *hw_addr_perm;
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
 		if (!strcmp ((const char *) iter->data, "*")) {
@@ -11642,8 +11642,10 @@ spec_match_list (NMDevice *self, const GSList *specs)
 			break;
 		}
 	}
-	if (priv->hw_addr_len && priv->hw_addr) {
-		m = nm_match_spec_hwaddr (specs, priv->hw_addr);
+
+	hw_addr_perm = nm_device_get_permanent_hw_address (self, FALSE);
+	if (hw_addr_perm) {
+		m = nm_match_spec_hwaddr (specs, hw_addr_perm);
 		matched = MAX (matched, m);
 	}
 	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
@@ -11717,7 +11719,6 @@ constructor (GType type,
 	NMDevice *self;
 	NMDevicePrivate *priv;
 	const NMPlatformLink *pllink;
-	guint count;
 
 	klass = G_OBJECT_CLASS (nm_device_parent_class);
 	object = klass->constructor (type, n_construct_params, construct_params);
@@ -11737,15 +11738,15 @@ constructor (GType type,
 		}
 	}
 
-	if (priv->hw_addr) {
-		count = _nm_utils_hwaddr_length (priv->hw_addr);
-		if (count <= 0) {
-			_LOGW (LOGD_DEVICE, "hw-addr: could not parse hw-address '%s'", priv->hw_addr);
-			g_clear_pointer (&priv->hw_addr, g_free);
-		} else {
-			priv->hw_addr_len = count;
-			_LOGT (LOGD_DEVICE, "hw-addr: set current hw-address '%s'", priv->hw_addr);
+	if (priv->hw_addr_perm) {
+		priv->hw_addr_len = _nm_utils_hwaddr_length (priv->hw_addr_perm);
+		if (!priv->hw_addr_len) {
+			g_clear_pointer (&priv->hw_addr_perm, g_free);
+			g_return_val_if_reached (object);
 		}
+
+		priv->hw_addr = g_strdup (priv->hw_addr_perm);
+		_LOGT (LOGD_DEVICE, "hw-addr: has permanent hw-address '%s'", priv->hw_addr_perm);
 	}
 
 	return object;
@@ -11982,9 +11983,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IS_MASTER:
 		priv->is_master = g_value_get_boolean (value);
 		break;
-	case PROP_HW_ADDRESS:
+	case PROP_PERM_HW_ADDRESS:
 		/* construct only */
-		priv->hw_addr = g_value_dup_string (value);
+		priv->hw_addr_perm = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -12354,12 +12355,12 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_HW_ADDRESS] =
 	    g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_PERM_HW_ADDRESS] =
 	    g_param_spec_string (NM_DEVICE_PERM_HW_ADDRESS, "", "",
 	                         NULL,
-	                         G_PARAM_READABLE |
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_HAS_PENDING_ACTION] =
 	    g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION, "", "",
