@@ -39,3 +39,27 @@ test_secret_agent_SOURCES = \
 	$(top_builddir)/shared/nm-test-libnm-utils.h \
 	test-secret-agent.c
 endif
+
+###############################################################################
+
+noinst_LTLIBRARIES = \
+    libnm-vpn-plugin-utils-test.la
+
+libnm_vpn_plugin_utils_test_la_SOURCES = \
+     $(top_srcdir)/shared/nm-utils/nm-vpn-plugin-utils.c \
+     $(top_srcdir)/shared/nm-utils/nm-vpn-plugin-utils.h \
+     $(NULL)
+
+libnm_vpn_plugin_utils_test_la_CFLAGS = \
+    $(GLIB_CFLAGS) \
+    -I$(top_srcdir)/shared \
+    -I$(top_srcdir)/libnm-core \
+    -I$(top_srcdir)/libnm \
+    $(NULL)
+
+libnm_vpn_plugin_utils_test_la_LIBADD = \
+    $(GLIB_LIBS) \
+    $(NULL)
+
+###############################################################################
+
