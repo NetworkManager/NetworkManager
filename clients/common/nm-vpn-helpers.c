@@ -19,8 +19,6 @@
 /**
  * SECTION:nm-vpn-helpers
  * @short_description: VPN-related utilities
- *
- * Some functions should probably eventually move into libnm.
  */
 
 #include "nm-default.h"
@@ -31,30 +29,23 @@
 
 #include "nm-utils.h"
 
-static gboolean plugins_loaded;
-static GSList *plugins = NULL;
+/*****************************************************************************/
 
 NMVpnEditorPlugin *
-nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
+nm_vpn_get_editor_plugin (const char *service_type, GError **error)
 {
 	NMVpnEditorPlugin *plugin = NULL;
 	NMVpnPluginInfo *plugin_info;
 	gs_free_error GError *local = NULL;
 
-	g_return_val_if_fail (!service ^ !name, NULL);
+	g_return_val_if_fail (service_type, NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
-	if (G_UNLIKELY (!plugins_loaded))
-		nm_vpn_get_plugins ();
-
-	if (service)
-		plugin_info = nm_vpn_plugin_info_list_find_by_service (plugins, service);
-	else
-		plugin_info = nm_vpn_plugin_info_list_find_by_name (plugins, name);
+	plugin_info = nm_vpn_plugin_info_list_find_by_service (nm_vpn_get_plugin_infos (), service_type);
 
 	if (!plugin_info) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
-		             _("unknown VPN plugin \"%s\""), service ?: name);
+		             _("unknown VPN plugin \"%s\""), service_type);
 		return NULL;
 	}
 	plugin = nm_vpn_plugin_info_get_editor_plugin (plugin_info);
@@ -86,85 +77,16 @@ nm_vpn_lookup_plugin (const char *name, const char *service, GError **error)
 }
 
 GSList *
-nm_vpn_get_plugins (void)
+nm_vpn_get_plugin_infos (void)
 {
+	static bool plugins_loaded;
+	static GSList *plugins = NULL;
+
 	if (G_LIKELY (plugins_loaded))
 		return plugins;
 	plugins_loaded = TRUE;
 	plugins = nm_vpn_plugin_info_list_load ();
 	return plugins;
-}
-
-static int
-_strcmp_data (gconstpointer a, gconstpointer b, gpointer unused)
-{
-	return strcmp (a, b);
-}
-
-const char **
-nm_vpn_get_plugin_names (gboolean only_available_plugins)
-{
-	GSList *p;
-	const char **list;
-	const char *known_names[] = {
-		"openvpn",
-		"vpnc",
-		"pptp",
-		"openconnect",
-		"openswan",
-		"libreswan",
-		"strongswan",
-		"ssh",
-		"l2tp",
-		"iodine",
-		"fortisslvpn",
-	};
-	guint i, j, k;
-
-	p = nm_vpn_get_plugins ();
-	list = g_new0 (const char *, g_slist_length (p) + G_N_ELEMENTS (known_names) + 1);
-
-	i = 0;
-	for (i = 0; p; p = p->next)
-		list[i++] = nm_vpn_plugin_info_get_name (p->data);
-	if (!only_available_plugins) {
-		for (j = 0; j < G_N_ELEMENTS (known_names); j++)
-			list[i++] = known_names[j];
-	}
-
-	g_qsort_with_data (list, i, sizeof (gpointer), _strcmp_data, NULL);
-
-	/* remove duplicates */
-	for (k = 0, j = 1; j < i; j++) {
-		if (nm_streq (list[k], list[j]))
-			continue;
-		list[k++] = list[j];
-	}
-	list[k++] = NULL;
-
-	return list;
-}
-
-const char *
-nm_vpn_get_service_for_name (const char *name)
-{
-	NMVpnPluginInfo *plugin_info;
-
-	g_return_val_if_fail (name, NULL);
-
-	plugin_info = nm_vpn_plugin_info_list_find_by_name (nm_vpn_get_plugins (), name);
-	if (plugin_info) {
-		/* this only means we have a .name file (NMVpnPluginInfo). Possibly the
-		 * NMVpnEditorPlugin is not loadable. */
-		return nm_vpn_plugin_info_get_service (plugin_info);
-	}
-	return NULL;
-}
-
-char *
-nm_vpn_get_service_for_name_default (const char *name)
-{
-	return g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);
 }
 
 gboolean
@@ -182,7 +104,7 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 	if (!service_type)
 		return FALSE;
 
-	plugin = nm_vpn_lookup_plugin (NULL, service_type, NULL);
+	plugin = nm_vpn_get_editor_plugin (service_type, NULL);
 	if (!plugin)
 		return FALSE;
 

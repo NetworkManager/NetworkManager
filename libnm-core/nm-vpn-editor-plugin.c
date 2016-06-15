@@ -74,6 +74,159 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 
 /*********************************************************************/
 
+typedef struct {
+	NMVpnPluginInfo *plugin_info;
+} NMVpnEditorPluginPrivate;
+
+static void
+_private_destroy (gpointer data)
+{
+	NMVpnEditorPluginPrivate *priv = data;
+
+	if (priv->plugin_info)
+		g_object_remove_weak_pointer ((GObject *) priv->plugin_info, (gpointer *) &priv->plugin_info);
+
+	g_slice_free (NMVpnEditorPluginPrivate, priv);
+}
+
+static NMVpnEditorPluginPrivate *
+_private_get (NMVpnEditorPlugin *plugin, gboolean create)
+{
+	static GQuark quark = 0;
+	NMVpnEditorPluginPrivate *priv;
+
+	nm_assert (NM_IS_VPN_EDITOR_PLUGIN (plugin));
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_string ("nm-vpn-editor-plugin-private");
+
+	priv = g_object_get_qdata ((GObject *) plugin, quark);
+	if (G_LIKELY (priv))
+		return priv;
+	if (!create)
+		return NULL;
+	priv = g_slice_new0 (NMVpnEditorPluginPrivate);
+	g_object_set_qdata_full ((GObject *) plugin, quark, priv, _private_destroy);
+	return priv;
+}
+
+#define NM_VPN_EDITOR_PLUGIN_GET_PRIVATE(plugin)     _private_get (plugin, TRUE)
+#define NM_VPN_EDITOR_PLUGIN_TRY_GET_PRIVATE(plugin) _private_get (plugin, FALSE)
+
+/*********************************************************************/
+
+/**
+ * nm_vpn_editor_plugin_get_plugin_info:
+ * @plugin: the #NMVpnEditorPlugin instance
+ *
+ * Returns: (transfer-none): if set, return the #NMVpnPluginInfo instance.
+ *
+ * Since: 1.4
+ */
+NMVpnPluginInfo *
+nm_vpn_editor_plugin_get_plugin_info (NMVpnEditorPlugin *plugin)
+{
+	NMVpnEditorPluginPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_VPN_EDITOR_PLUGIN (plugin), NULL);
+
+	priv = NM_VPN_EDITOR_PLUGIN_TRY_GET_PRIVATE (plugin);
+	return priv ? priv->plugin_info : NULL;
+}
+
+/**
+ * nm_vpn_editor_plugin_set_plugin_info:
+ * @plugin: the #NMVpnEditorPlugin instance
+ * @plugin_info: (allow-none): a #NMVpnPluginInfo instance or %NULL
+ *
+ * Returns: (transfer-none): set or clear the plugin-info instance.
+ *   This takes a weak reference on @plugin_info, to avoid circular
+ *   reference as the plugin-info might also reference the editor-plugin.
+ *
+ * Since: 1.4
+ */
+void
+nm_vpn_editor_plugin_set_plugin_info (NMVpnEditorPlugin *plugin, NMVpnPluginInfo *plugin_info)
+{
+	NMVpnEditorPluginInterface *interface;
+	NMVpnEditorPluginPrivate *priv;
+
+	g_return_if_fail (NM_IS_VPN_EDITOR_PLUGIN (plugin));
+
+	if (!plugin_info) {
+		priv = NM_VPN_EDITOR_PLUGIN_TRY_GET_PRIVATE (plugin);
+		if (!priv)
+			return;
+	} else {
+		g_return_if_fail (NM_IS_VPN_PLUGIN_INFO (plugin_info));
+		priv = NM_VPN_EDITOR_PLUGIN_GET_PRIVATE (plugin);
+	}
+
+	if (priv->plugin_info == plugin_info)
+		return;
+	if (priv->plugin_info)
+		g_object_remove_weak_pointer ((GObject *) priv->plugin_info, (gpointer *) &priv->plugin_info);
+	priv->plugin_info = plugin_info;
+	if (priv->plugin_info)
+		g_object_add_weak_pointer ((GObject *) priv->plugin_info, (gpointer *) &priv->plugin_info);
+
+	if (plugin_info) {
+		interface = NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin);
+		if (interface->notify_plugin_info_set)
+			interface->notify_plugin_info_set (plugin, plugin_info);
+	}
+
+}
+
+/*********************************************************************/
+
+/**
+ * nm_vpn_editor_plugin_get_vt:
+ * @plugin: the #NMVpnEditorPlugin
+ * @vt: (out): buffer to be filled with the VT table of the plugin
+ * @vt_size: the size of the buffer. Can be 0 to only query the
+ *   size of plugin's VT.
+ *
+ * Returns an opaque VT function table for the plugin to extend
+ * functionality. The actual meaning of NMVpnEditorPluginVT is not
+ * defined in public API of libnm, instead it must be agreed by
+ * both the plugin and the caller. See the header-only file
+ * 'nm-vpn-editor-plugin-call.h' which defines the meaning.
+ *
+ * Returns: the actual size of the @plugin's virtual function table.
+ *
+ * Since: 1.4
+ **/
+gsize
+nm_vpn_editor_plugin_get_vt (NMVpnEditorPlugin *plugin,
+                             NMVpnEditorPluginVT *vt,
+                             gsize vt_size)
+{
+	const NMVpnEditorPluginVT *p_vt = NULL;
+	gsize p_vt_size = 0;
+	NMVpnEditorPluginInterface *interface;
+
+	g_return_val_if_fail (NM_IS_VPN_EDITOR_PLUGIN (plugin), 0);
+
+	if (vt_size) {
+		g_return_val_if_fail (vt, 0);
+		memset (vt, 0, vt_size);
+	}
+
+	interface = NM_VPN_EDITOR_PLUGIN_GET_INTERFACE (plugin);
+	if (interface->get_vt) {
+		p_vt = interface->get_vt (plugin, &p_vt_size);
+		if (!p_vt)
+			p_vt_size = 0;
+		g_return_val_if_fail (p_vt_size, 0);
+		memcpy (vt, p_vt, MIN (vt_size, p_vt_size));
+	}
+
+	return p_vt_size;
+}
+
+/*********************************************************************/
+
 static NMVpnEditorPlugin *
 _nm_vpn_editor_plugin_load (const char *plugin_name,
                             gboolean do_file_checks,

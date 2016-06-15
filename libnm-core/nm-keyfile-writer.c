@@ -233,12 +233,6 @@ route_writer (KeyfileWriterInfo *info,
 		write_ip_values (info->keyfile, setting_name, array, NULL, TRUE);
 }
 
-static int
-sort_hash_keys (gconstpointer a, gconstpointer b, gpointer user_data)
-{
-	return g_strcmp0 (*((const char **) a), *((const char **) b));
-}
-
 static void
 write_hash_of_string (GKeyFile *file,
                       NMSetting *setting,
@@ -262,7 +256,7 @@ write_hash_of_string (GKeyFile *file,
 	if (!keys)
 		return;
 
-	g_qsort_with_data (keys, l, sizeof (const char *), sort_hash_keys, NULL);
+	g_qsort_with_data (keys, l, sizeof (const char *), nm_strcmp_p_with_data, NULL);
 
 	for (i = 0; keys[i]; i++) {
 		const char *property, *data;

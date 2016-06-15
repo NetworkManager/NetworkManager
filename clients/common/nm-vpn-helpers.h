@@ -28,14 +28,9 @@ struct {
 	const char *ui_name;
 } typedef VpnPasswordName;
 
-GSList *nm_vpn_get_plugins (void);
+GSList *nm_vpn_get_plugin_infos (void);
 
-const char **nm_vpn_get_plugin_names (gboolean only_available_plugins);
-
-const char *nm_vpn_get_service_for_name (const char *name);
-char *      nm_vpn_get_service_for_name_default (const char *name);
-
-NMVpnEditorPlugin *nm_vpn_lookup_plugin (const char *name, const char *service, GError **error);
+NMVpnEditorPlugin *nm_vpn_get_editor_plugin (const char *service_type, GError **error);
 
 gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
 

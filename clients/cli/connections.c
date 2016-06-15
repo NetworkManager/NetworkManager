@@ -5886,16 +5886,13 @@ cleanup_bridge_slave:
 		/* Build up the settings required for 'vpn' */
 		gboolean success = FALSE;
 		const char *vpn_type = NULL;
-		char *vpn_type_ask = NULL;
+		gs_free char *vpn_type_ask = NULL;
 		const char *user_c = NULL;
 		char *user = NULL;
-		const char *st;
 		gs_free char *service_type_free = NULL;
-		const char *service_type = NULL;
 		nmc_arg_t exp_args[] = { {"vpn-type", TRUE, &vpn_type, !ask},
 		                         {"user",     TRUE, &user_c,   FALSE},
 		                         {NULL} };
-		gs_free const char **plugin_names = NULL;
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
@@ -5910,15 +5907,11 @@ cleanup_bridge_slave:
 		if (vpn_type_ask)
 			vpn_type = g_strstrip (vpn_type_ask);
 
-		plugin_names = nm_vpn_get_plugin_names (FALSE);
-		if (!(st = nmc_string_is_valid (vpn_type, plugin_names, NULL))) {
+		service_type_free = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), vpn_type);
+		if (!service_type_free)
 			g_print (_("Warning: 'vpn-type': %s not known.\n"), vpn_type);
-			st = vpn_type;
-		}
-
-		service_type = nm_vpn_get_service_for_name (st);
-		if (!service_type)
-			service_type = service_type_free = nm_vpn_get_service_for_name_default (st);
+		else
+			vpn_type = service_type_free;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		user = g_strdup (user_c);
@@ -5929,12 +5922,11 @@ cleanup_bridge_slave:
 		s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
-		g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, service_type, NULL);
+		g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, vpn_type, NULL);
 		g_object_set (s_vpn, NM_SETTING_VPN_USER_NAME, user, NULL);
 
 		success = TRUE;
 cleanup_vpn:
-		g_free (vpn_type_ask);
 		g_free (user);
 		if (!success)
 			return FALSE;
@@ -6702,10 +6694,10 @@ update_connection (gboolean persistent,
 static char *
 gen_func_vpn_types (const char *text, int state)
 {
-	gs_free const char **plugin_names = NULL;
+	gs_strfreev char **plugin_names = NULL;
 
-	plugin_names = nm_vpn_get_plugin_names (FALSE);
-	return nmc_rl_gen_func_basic (text, state, plugin_names);
+	plugin_names = nm_vpn_plugin_info_list_get_service_types (nm_vpn_get_plugin_infos (), FALSE, TRUE);
+	return nmc_rl_gen_func_basic (text, state, (const char **) plugin_names);
 }
 
 static char *
@@ -10625,6 +10617,7 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	AddConnectionInfo *info;
 	NMConnection *connection = NULL;
 	NMVpnEditorPlugin *plugin;
+	gs_free char *service_type = NULL;
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -10682,8 +10675,15 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 		goto finish;
 	}
 
+	service_type = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), type);
+	if (!service_type) {
+		g_string_printf (nmc->return_text, _("Error: failed to find VPN plugin for %s."), type);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto finish;
+	}
+
 	/* Import VPN configuration */
-	plugin = nm_vpn_lookup_plugin (type, NULL, &error);
+	plugin = nm_vpn_get_editor_plugin (service_type, &error);
 	if (!plugin) {
 		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 		                 error->message);
@@ -10790,7 +10790,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
 
 	/* Export VPN configuration */
-	plugin = nm_vpn_lookup_plugin (type, NULL, &error);
+	plugin = nm_vpn_get_editor_plugin (type, &error);
 	if (!plugin) {
 		g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 		                 error->message);
