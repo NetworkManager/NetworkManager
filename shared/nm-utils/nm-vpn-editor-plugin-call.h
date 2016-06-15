@@ -32,7 +32,6 @@
 #include <NetworkManager.h>
 
 /* we make use of other internal header files, you need those too. */
-#include "gsystem-local-alloc.h"
 #include "nm-macros-internal.h"
 
 /*****************************************************************************/
