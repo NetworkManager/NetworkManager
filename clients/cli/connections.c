@@ -4833,11 +4833,9 @@ complete_slave (NMSettingConnection *s_con,
 }
 
 static gboolean
-complete_connection_by_type (NMConnection *connection,
+complete_connection_by_type (NmCli *nmc,
+                             NMConnection *connection,
                              const char *con_type,
-                             const GPtrArray *all_connections,
-                             gboolean ask,
-                             gboolean show_secrets,
                              int argc,
                              char **argv,
                              GError **error)
@@ -4893,7 +4891,7 @@ complete_connection_by_type (NMConnection *connection,
 		mtu = g_strdup (mtu_c);
 		mac = g_strdup (mac_c);
 		cloned_mac = g_strdup (cloned_mac_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_ethernet (TRUE, &mtu, &mac, &cloned_mac);
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
@@ -4953,7 +4951,7 @@ cleanup_wired:
 		mode = g_strdup (mode_c);
 		parent = g_strdup (parent_c);
 		p_key = g_strdup (p_key_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_infiniband (&mtu, &mac, &mode, &parent, &p_key);
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
@@ -5013,7 +5011,7 @@ cleanup_ib:
 		char *cloned_mac = NULL;
 		const char *mode_c = NULL;
 		char *mode = NULL;
-		nmc_arg_t exp_args[] = { {"ssid",       TRUE, &ssid,         !ask},
+		nmc_arg_t exp_args[] = { {"ssid",       TRUE, &ssid,         !nmc->ask},
 		                         {"mtu",        TRUE, &mtu_c,        FALSE},
 		                         {"mac",        TRUE, &mac_c,        FALSE},
 		                         {"cloned-mac", TRUE, &cloned_mac_c, FALSE},
@@ -5023,7 +5021,7 @@ cleanup_ib:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!ssid && ask)
+		if (!ssid && nmc->ask)
 			ssid = ssid_ask = nmc_readline (_("SSID: "));
 		if (!ssid) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5036,7 +5034,7 @@ cleanup_ib:
 		mac = g_strdup (mac_c);
 		cloned_mac = g_strdup (cloned_mac_c);
 		mode = g_strdup (mode_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_wifi (&mtu, &mac, &cloned_mac, &mode);
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
@@ -5083,14 +5081,14 @@ cleanup_wifi:
 		char *nsp_name_ask = NULL;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		nmc_arg_t exp_args[] = { {"nsp", TRUE, &nsp_name, !ask},
+		nmc_arg_t exp_args[] = { {"nsp", TRUE, &nsp_name, !nmc->ask},
 		                         {"mac", TRUE, &mac_c,    FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!nsp_name && ask)
+		if (!nsp_name && nmc->ask)
 			nsp_name = nsp_name_ask = nmc_readline (_("WiMAX NSP name: "));
 		if (!nsp_name) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5100,7 +5098,7 @@ cleanup_wifi:
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		mac = g_strdup (mac_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_wimax (&mac);
 
 		if (!check_mac (mac, ARPHRD_ETHER, "mac", error))
@@ -5135,7 +5133,7 @@ cleanup_wimax:
 		guint32 mtu_int = 0;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		nmc_arg_t exp_args[] = { {"username", TRUE, &username,   !ask},
+		nmc_arg_t exp_args[] = { {"username", TRUE, &username,   !nmc->ask},
 		                         {"password", TRUE, &password_c, FALSE},
 		                         {"service",  TRUE, &service_c,  FALSE},
 		                         {"mtu",      TRUE, &mtu_c,      FALSE},
@@ -5145,7 +5143,7 @@ cleanup_wimax:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!username && ask)
+		if (!username && nmc->ask)
 			username = username_ask = nmc_readline (_("PPPoE username: "));
 		if (!username) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5158,8 +5156,8 @@ cleanup_wimax:
 		service = g_strdup (service_c);
 		mtu = g_strdup (mtu_c);
 		mac = g_strdup (mac_c);
-		if (ask)
-			do_questionnaire_pppoe (show_secrets, &password, &service, &mtu, &mac);
+		if (nmc->ask)
+			do_questionnaire_pppoe (nmc->show_secrets, &password, &service, &mtu, &mac);
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_pppoe;
@@ -5209,7 +5207,7 @@ cleanup_pppoe:
 		is_gsm = !strcmp (con_type, NM_SETTING_GSM_SETTING_NAME);
 
 		if (is_gsm)
-			gsm_args[i++] = (nmc_arg_t) {"apn", TRUE, &apn, !ask};
+			gsm_args[i++] = (nmc_arg_t) {"apn", TRUE, &apn, !nmc->ask};
 		gsm_args[i++] = (nmc_arg_t) {"user",     TRUE, &user_c,     FALSE};
 		gsm_args[i++] = (nmc_arg_t) {"password", TRUE, &password_c, FALSE};
 		gsm_args[i++] = (nmc_arg_t) {NULL};
@@ -5217,7 +5215,7 @@ cleanup_pppoe:
 		if (!nmc_parse_args (gsm_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!apn && ask && is_gsm)
+		if (!apn && nmc->ask && is_gsm)
 			apn = apn_ask = nmc_readline (_("APN: "));
 		if (!apn && is_gsm) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5228,8 +5226,8 @@ cleanup_pppoe:
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		user = g_strdup (user_c);
 		password = g_strdup (password_c);
-		if (ask)
-			do_questionnaire_mobile (show_secrets, &user, &password);
+		if (nmc->ask)
+			do_questionnaire_mobile (nmc->show_secrets, &user, &password);
 
 		if (is_gsm) {
 			g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME, NULL);
@@ -5271,14 +5269,14 @@ cleanup_mobile:
 		char *addr_ask = NULL;
 		const char *bt_type_c = NULL;
 		char *bt_type = NULL;
-		nmc_arg_t exp_args[] = { {"addr",    TRUE, &addr,      !ask},
+		nmc_arg_t exp_args[] = { {"addr",    TRUE, &addr,      !nmc->ask},
 		                         {"bt-type", TRUE, &bt_type_c, FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!addr && ask)
+		if (!addr && nmc->ask)
 			addr = addr_ask = nmc_readline (_("Bluetooth device address: "));
 		if (!addr) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5290,7 +5288,7 @@ cleanup_mobile:
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		bt_type = g_strdup (bt_type_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_bluetooth (&bt_type);
 
 		/* Default to 'panu' if bt-type is not provided. */
@@ -5355,8 +5353,8 @@ cleanup_bt:
 		char *mtu = NULL;
 		guint32 mtu_int;
 		gboolean valid_mac = FALSE;
-		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,    !ask},
-		                         {"id",      TRUE, &vlan_id,   !ask},
+		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,    !nmc->ask},
+		                         {"id",      TRUE, &vlan_id,   !nmc->ask},
 		                         {"flags",   TRUE, &flags_c,   FALSE},
 		                         {"ingress", TRUE, &ingress_c, FALSE},
 		                         {"egress",  TRUE, &egress_c,  FALSE},
@@ -5366,14 +5364,14 @@ cleanup_bt:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!parent && ask)
+		if (!parent && nmc->ask)
 			parent = parent_ask = nmc_readline (_("VLAN parent device or connection UUID: "));
 		if (!parent) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'dev' is required."));
 			return FALSE;
 		}
-		if (!vlan_id && ask)
+		if (!vlan_id && nmc->ask)
 			vlan_id = vlan_id_ask = nmc_readline (_("VLAN ID <0-4094>: "));
 		if (!vlan_id) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5403,7 +5401,7 @@ cleanup_bt:
 		flags = g_strdup (flags_c);
 		ingress = g_strdup (ingress_c);
 		egress = g_strdup (egress_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_vlan (&mtu, &flags, &ingress, &egress);
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
@@ -5498,7 +5496,7 @@ cleanup_vlan:
 		bond_arpinterval = g_strdup (bond_arpinterval_c);
 		bond_arpiptarget = g_strdup (bond_arpiptarget_c);
 		bond_lacp_rate = g_strdup (bond_lacp_rate_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_bond (&bond_mode, &bond_primary, &bond_miimon,
 			                       &bond_downdelay, &bond_updelay,
 			                       &bond_arpinterval, &bond_arpiptarget,
@@ -5507,7 +5505,7 @@ cleanup_vlan:
 		/* Generate ifname if connection doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
 		if (!ifname) {
-			char *bond_ifname = unique_master_iface_ifname (all_connections, "nm-bond");
+			char *bond_ifname = unique_master_iface_ifname (nmc->connections, "nm-bond");
 
 			g_object_set (s_con,
 			              NM_SETTING_CONNECTION_INTERFACE_NAME, bond_ifname,
@@ -5580,7 +5578,7 @@ cleanup_bond:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!complete_slave (s_con, all_connections, NM_SETTING_BOND_SETTING_NAME, master, type, ask, error))
+		if (!complete_slave (s_con, nmc->connections, NM_SETTING_BOND_SETTING_NAME, master, type, nmc->ask, error))
 			return FALSE;
 
 		/* Change properties in 'connection' setting */
@@ -5605,13 +5603,13 @@ cleanup_bond:
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		config = g_strdup (config_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_team (&config);
 
 		/* Generate ifname if conneciton doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
 		if (!ifname) {
-			char *team_ifname = unique_master_iface_ifname (all_connections, "nm-team");
+			char *team_ifname = unique_master_iface_ifname (nmc->connections, "nm-team");
 
 			g_object_set (s_con,
 			              NM_SETTING_CONNECTION_INTERFACE_NAME, team_ifname,
@@ -5658,12 +5656,12 @@ cleanup_team:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!complete_slave (s_con, all_connections, NM_SETTING_TEAM_SETTING_NAME, master, type, ask, error))
+		if (!complete_slave (s_con, nmc->connections, NM_SETTING_TEAM_SETTING_NAME, master, type, nmc->ask, error))
 			return FALSE;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		config = g_strdup (config_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_team_slave (&config);
 
 		/* Add 'team-port' setting */
@@ -5738,14 +5736,14 @@ cleanup_team_slave:
 		ageing_time = g_strdup (ageing_time_c);
 		mcast_snoop = g_strdup (mcast_snoop_c);
 		mac = g_strdup (mac_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_bridge (&stp, &priority, &fwd_delay, &hello_time,
 			                         &max_age, &ageing_time, &mcast_snoop, &mac);
 
 		/* Generate ifname if conneciton doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
 		if (!ifname) {
-			char *bridge_ifname = unique_master_iface_ifname (all_connections, "nm-bridge");
+			char *bridge_ifname = unique_master_iface_ifname (nmc->connections, "nm-bridge");
 
 			g_object_set (s_con,
 			              NM_SETTING_CONNECTION_INTERFACE_NAME, bridge_ifname,
@@ -5858,7 +5856,7 @@ cleanup_bridge:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!complete_slave (s_con, all_connections, NM_SETTING_BRIDGE_SETTING_NAME, master, type, ask, error))
+		if (!complete_slave (s_con, nmc->connections, NM_SETTING_BRIDGE_SETTING_NAME, master, type, nmc->ask, error))
 			return FALSE;
 
 		/* Add 'bridge-port' setting */
@@ -5870,7 +5868,7 @@ cleanup_bridge:
 		priority = g_strdup (priority_c);
 		path_cost = g_strdup (path_cost_c);
 		hairpin = g_strdup (hairpin_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_bridge_slave (&priority, &path_cost, &hairpin);
 
 		if (priority)
@@ -5922,14 +5920,14 @@ cleanup_bridge_slave:
 		const char *user_c = NULL;
 		char *user = NULL;
 		gs_free char *service_type_free = NULL;
-		nmc_arg_t exp_args[] = { {"vpn-type", TRUE, &vpn_type, !ask},
+		nmc_arg_t exp_args[] = { {"vpn-type", TRUE, &vpn_type, !nmc->ask},
 		                         {"user",     TRUE, &user_c,   FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!vpn_type && ask)
+		if (!vpn_type && nmc->ask)
 			vpn_type = vpn_type_ask = nmc_readline (PROMPT_VPN_TYPE);
 		if (!vpn_type) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5947,7 +5945,7 @@ cleanup_bridge_slave:
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		user = g_strdup (user_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_vpn (&user);
 
 		/* Add 'vpn' setting */
@@ -5974,7 +5972,7 @@ cleanup_vpn:
 		unsigned long chan;
 		const char *dhcp_anycast_c = NULL;
 		char *dhcp_anycast = NULL;
-		nmc_arg_t exp_args[] = { {"ssid",         TRUE, &ssid,           !ask},
+		nmc_arg_t exp_args[] = { {"ssid",         TRUE, &ssid,           !nmc->ask},
 		                         {"channel",      TRUE, &channel_c,      FALSE},
 		                         {"dhcp-anycast", TRUE, &dhcp_anycast_c, FALSE},
 		                         {NULL} };
@@ -5982,7 +5980,7 @@ cleanup_vpn:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!ssid && ask)
+		if (!ssid && nmc->ask)
 			ssid = ssid_ask = nmc_readline (_("SSID: "));
 		if (!ssid) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -5993,7 +5991,7 @@ cleanup_vpn:
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		channel = g_strdup (channel_c);
 		dhcp_anycast = g_strdup (dhcp_anycast_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_olpc (&channel, &dhcp_anycast);
 
 		if (channel) {
@@ -6040,8 +6038,8 @@ cleanup_olpc:
 		char *password = NULL;
 		const char *encapsulation_c = NULL;
 		char *encapsulation = NULL;
-		nmc_arg_t exp_args[] = { {"username",      TRUE, &username,        !ask},
-		                         {"protocol",      TRUE, &protocol_c,      !ask},
+		nmc_arg_t exp_args[] = { {"username",      TRUE, &username,        !nmc->ask},
+		                         {"protocol",      TRUE, &protocol_c,      !nmc->ask},
 		                         {"password",      TRUE, &password_c,      FALSE},
 		                         {"encapsulation", TRUE, &encapsulation_c, FALSE},
 		                         {NULL} };
@@ -6049,7 +6047,7 @@ cleanup_olpc:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!username && ask)
+		if (!username && nmc->ask)
 			username = username_ask = nmc_readline (_("Username: "));
 		if (!username) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6058,7 +6056,7 @@ cleanup_olpc:
 		}
 
 #define PROMPT_ADSL_PROTO "(" NM_SETTING_ADSL_PROTOCOL_PPPOA "/" NM_SETTING_ADSL_PROTOCOL_PPPOE "/" NM_SETTING_ADSL_PROTOCOL_IPOATM "): "
-		if (!protocol_c && ask)
+		if (!protocol_c && nmc->ask)
 			protocol_c = protocol_ask = nmc_readline (_("Protocol %s"), PROMPT_ADSL_PROTO);
 		if (!protocol_c) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6072,8 +6070,8 @@ cleanup_olpc:
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		password = g_strdup (password_c);
 		encapsulation = g_strdup (encapsulation_c);
-		if (ask)
-			do_questionnaire_adsl (show_secrets, &password, &encapsulation);
+		if (nmc->ask)
+			do_questionnaire_adsl (nmc->show_secrets, &password, &encapsulation);
 
 		if (!check_adsl_encapsulation (&encapsulation, error))
 			goto cleanup_adsl;
@@ -6112,15 +6110,15 @@ cleanup_adsl:
 		NMSettingMacvlanMode mode_enum;
 		gboolean valid_mac = FALSE;
 		gboolean tap_bool = FALSE;
-		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,    !ask},
-		                         {"mode",    TRUE, &mode,      !ask},
+		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,    !nmc->ask},
+		                         {"mode",    TRUE, &mode,      !nmc->ask},
 		                         {"tap",     TRUE, &tap_c,     FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!parent && ask)
+		if (!parent && nmc->ask)
 			parent = parent_ask = nmc_readline (_("MACVLAN parent device or connection UUID: "));
 		if (!parent) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6137,7 +6135,7 @@ cleanup_adsl:
 			goto cleanup_macvlan;
 		}
 
-		if (!mode && ask)
+		if (!mode && nmc->ask)
 			mode = mode_ask = nmc_readline (PROMPT_MACVLAN_MODE);
 		if (!mode) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6153,7 +6151,7 @@ cleanup_adsl:
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		tap = g_strdup (tap_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_macvlan (&tap);
 
 		if (tap) {
@@ -6203,7 +6201,7 @@ cleanup_macvlan:
 		const char *pi_c = NULL, *vnet_hdr_c = NULL, *multi_queue_c = NULL;
 		char *pi = NULL, *vnet_hdr = NULL, *multi_queue = NULL;
 		gboolean pi_bool, vnet_hdr_bool, multi_queue_bool;
-		nmc_arg_t exp_args[] = { {"mode",        TRUE,  &mode_c,        !ask},
+		nmc_arg_t exp_args[] = { {"mode",        TRUE,  &mode_c,        !nmc->ask},
 		                         {"owner",       TRUE,  &owner_c,       FALSE},
 		                         {"group",       TRUE,  &group_c,       FALSE},
 		                         {"pi",          TRUE,  &pi_c,          FALSE},
@@ -6214,7 +6212,7 @@ cleanup_macvlan:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!mode_c && ask) {
+		if (!mode_c && nmc->ask) {
 			mode_ask = nmc_readline (_("Mode %s"), PROMPT_TUN_MODE);
 			mode_ask = mode_ask ? mode_ask : g_strdup ("tun");
 			mode_c = mode_ask;
@@ -6238,7 +6236,7 @@ cleanup_macvlan:
 		pi = g_strdup (pi_c);
 		vnet_hdr = g_strdup (vnet_hdr_c);
 		multi_queue = g_strdup (multi_queue_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_tun (&owner, &group, &pi, &vnet_hdr, &multi_queue);
 
 		if (pi) {
@@ -6310,16 +6308,16 @@ cleanup_tun:
 		char *parent = NULL;
 		gboolean success = FALSE;
 		NMIPTunnelMode mode_enum;
-		nmc_arg_t exp_args[] = { {"mode",    TRUE, &mode_c,     !ask},
+		nmc_arg_t exp_args[] = { {"mode",    TRUE, &mode_c,     !nmc->ask},
 		                         {"local",   TRUE, &local_c,    FALSE},
-		                         {"remote",  TRUE, &remote_c,   !ask},
+		                         {"remote",  TRUE, &remote_c,   !nmc->ask},
 		                         {"dev",     TRUE, &parent_c,   FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!mode_c && ask)
+		if (!mode_c && nmc->ask)
 			mode_c = mode_ask = nmc_readline (PROMPT_IP_TUNNEL_MODE);
 		if (!mode_c) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6342,7 +6340,7 @@ cleanup_tun:
 			goto cleanup_tunnel;
 		}
 
-		if (!remote_c && ask)
+		if (!remote_c && nmc->ask)
 			remote_c = remote_ask = nmc_readline (_("Remote endpoint: "));
 		if (!remote_c) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6360,7 +6358,7 @@ cleanup_tun:
 
 		local = g_strdup (local_c);
 		parent = g_strdup (parent_c);
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_ip_tunnel (&local, &parent);
 
 		if (   local
@@ -6424,8 +6422,8 @@ cleanup_tunnel:
 		unsigned long int vni;
 		unsigned long sport_min = G_MAXULONG, sport_max = G_MAXULONG;
 		unsigned long dport = G_MAXULONG;
-		nmc_arg_t exp_args[] = { {"id",               TRUE, &id,             !ask},
-		                         {"remote",           TRUE, &remote,         !ask},
+		nmc_arg_t exp_args[] = { {"id",               TRUE, &id,             !nmc->ask},
+		                         {"remote",           TRUE, &remote,         !nmc->ask},
 		                         {"dev",              TRUE, &parent_c,        FALSE},
 		                         {"local",            TRUE, &local_c,         FALSE},
 		                         {"source-port-min",  TRUE, &src_port_min_c,  FALSE},
@@ -6436,7 +6434,7 @@ cleanup_tunnel:
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
 
-		if (!id && ask)
+		if (!id && nmc->ask)
 			id = id_ask = nmc_readline (_("VXLAN ID: "));
 		if (!id) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6444,7 +6442,7 @@ cleanup_tunnel:
 			goto cleanup_vxlan;
 		}
 
-		if (!remote && ask)
+		if (!remote && nmc->ask)
 			remote = remote_ask = nmc_readline (_("Remote: "));
 		if (!remote) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -6464,7 +6462,7 @@ cleanup_tunnel:
 		src_port_max = g_strdup (src_port_max_c);
 		dst_port = g_strdup (dst_port_c);
 
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_vxlan (&parent, &local, &src_port_min, &src_port_max, &dst_port);
 
 		if (parent) {
@@ -6649,7 +6647,7 @@ cleanup_vxlan:
 		}
 
 		/* Ask for addresses if '--ask' is specified. */
-		if (ask)
+		if (nmc->ask)
 			do_questionnaire_ip (connection);
 	}
 
@@ -7073,11 +7071,9 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	g_free (default_name);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	if (!complete_connection_by_type (connection,
+	if (!complete_connection_by_type (nmc,
+	                                  connection,
 	                                  setting_name,
-	                                  nmc->connections,
-	                                  nmc->ask,
-	                                  nmc->show_secrets,
 	                                  argc,
 	                                  argv,
 	                                  &error)) {
