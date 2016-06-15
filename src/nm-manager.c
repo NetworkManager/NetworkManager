@@ -595,7 +595,7 @@ nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
 }
 
 static NMDevice *
-find_device_by_hw_addr (NMManager *manager, const char *hwaddr)
+find_device_by_permanent_hw_addr (NMManager *manager, const char *hwaddr)
 {
 	GSList *iter;
 	const char *device_addr;
@@ -604,7 +604,7 @@ find_device_by_hw_addr (NMManager *manager, const char *hwaddr)
 
 	if (nm_utils_hwaddr_valid (hwaddr, -1)) {
 		for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-			device_addr = nm_device_get_hw_address (NM_DEVICE (iter->data));
+			device_addr = nm_device_get_permanent_hw_address (NM_DEVICE (iter->data), FALSE);
 			if (device_addr && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
 				return NM_DEVICE (iter->data);
 		}
@@ -1054,7 +1054,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 		return parent;
 
 	/* Maybe a hardware address */
-	parent = find_device_by_hw_addr (self, parent_name);
+	parent = find_device_by_permanent_hw_addr (self, parent_name);
 	if (parent)
 		return parent;
 

@@ -378,21 +378,25 @@ match_parent (NMDeviceVlan *self, const char *parent)
 static gboolean
 match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
 {
-	  NMSettingWired *s_wired;
-	  const char *setting_mac;
-	  const char *device_mac;
+	NMDeviceVlanPrivate *priv;
+	NMSettingWired *s_wired;
+	const char *setting_mac;
+	const char *parent_mac;
 
-	  s_wired = nm_connection_get_setting_wired (connection);
-	  if (!s_wired)
-		  return !fail_if_no_hwaddr;
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (!s_wired)
+		return !fail_if_no_hwaddr;
 
-	  setting_mac = nm_setting_wired_get_mac_address (s_wired);
-	  if (!setting_mac)
-		  return !fail_if_no_hwaddr;
+	setting_mac = nm_setting_wired_get_mac_address (s_wired);
+	if (!setting_mac)
+		return !fail_if_no_hwaddr;
 
-	  device_mac = nm_device_get_hw_address (device);
+	priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
+	if (!priv->parent)
+		return !fail_if_no_hwaddr;
 
-	  return nm_utils_hwaddr_matches (setting_mac, -1, device_mac, -1);
+	parent_mac = nm_device_get_permanent_hw_address (priv->parent, FALSE);
+	return parent_mac && nm_utils_hwaddr_matches (setting_mac, -1, parent_mac, -1);
 }
 
 static gboolean
