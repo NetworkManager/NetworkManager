@@ -24,6 +24,8 @@
 
 #include <stdlib.h>
 
+#include "nm-glib.h"
+
 /********************************************************/
 
 #define _nm_packed __attribute__ ((packed))
