@@ -28,7 +28,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 
 #define TEST_WIRED_TLS_CA_CERT     TEST_CERT_DIR"/test-ca-cert.pem"

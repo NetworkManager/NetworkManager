@@ -47,7 +47,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)

@@ -62,7 +62,7 @@
 
 #include "test-general-enums.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 /* When passing a "bool" typed argument to a variadic function that
  * expects a gboolean, the compiler will promote the integer type

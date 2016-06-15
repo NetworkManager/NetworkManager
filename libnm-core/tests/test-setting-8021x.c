@@ -27,7 +27,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-8021x.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 static void
 compare_blob_data (const char *test,
