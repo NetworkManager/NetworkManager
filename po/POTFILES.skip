@@ -7,5 +7,6 @@ vpn-daemons/pptp
 vpn-daemons/vpnc
 contrib/fedora/rpm/
 shared/nm-utils/nm-vpn-editor-plugin-call.h
+shared/nm-utils/nm-vpn-plugin-utils.c
 # https://bugs.launchpad.net/intltool/+bug/1117944
 sub/policy/org.freedesktop.NetworkManager.policy.in

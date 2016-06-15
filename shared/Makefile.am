@@ -6,6 +6,8 @@ EXTRA_DIST = \
      nm-utils/nm-shared-utils.h \
      nm-utils/nm-test-utils.h \
      nm-utils/nm-vpn-editor-plugin-call.h \
+     nm-utils/nm-vpn-plugin-utils.c \
+     nm-utils/nm-vpn-plugin-utils.h \
      nm-common-macros.h \
      nm-dbus-compat.h \
      nm-default.h \
