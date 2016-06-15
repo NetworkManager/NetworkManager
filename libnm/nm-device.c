@@ -1722,12 +1722,22 @@ get_description (NMDevice *device)
 	char *pdown;
 	char *vdown;
 	GString *str;
+	GParamSpec *name_prop;
 
 	dev_product = nm_device_get_product (device);
 	priv->short_product = fixup_desc_string (dev_product);
 
 	dev_vendor = nm_device_get_vendor (device);
 	priv->short_vendor = fixup_desc_string (dev_vendor);
+
+	/* Grab device's preferred name, if any */
+	name_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (device)), "name");
+	if (name_prop) {
+		g_object_get (device, "name", &priv->description, NULL);
+		if (priv->description && priv->description[0])
+			return;
+		g_clear_pointer (&priv->description, g_free);
+	}
 
 	if (!dev_product || !dev_vendor) {
 		priv->description = g_strdup (nm_device_get_iface (device));
