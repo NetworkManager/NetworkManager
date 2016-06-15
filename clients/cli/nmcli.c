@@ -154,7 +154,18 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		base = argv[0];
 	else
 		base++;
-
+	if (argc > 1 && nm_streq (argv[1], "--complete-args")) {
+		/* We (currently?) support --complete-args for "connection" command only:
+		 * ignore any other command when this option is enabled as means we are in
+		 * autocompletion mode (so we should just quit and don't print anything).
+		 * This would help us to ensure shell autocompletion after NM package downgrade
+		 * if we ever will enable --complete-args for other commands */
+		if ((argc == 2) || !nm_streq0 (argv[2], "connection"))
+			return nmc->return_value;
+		nmc->complete = TRUE;
+		argv[1] = argv[0];
+		argc--; argv++;
+	}
 	/* parse options */
 	while (argc > 1) {
 		char *opt = argv[1];
@@ -256,8 +267,6 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			/* ignore for backward compatibility */
 		} else if (matches (opt, "-ask") == 0) {
 			nmc->ask = TRUE;
-		} else if (matches (opt, "-complete") == 0) {
-			nmc->complete = TRUE;
 		} else if (matches (opt, "-show-secrets") == 0) {
 			nmc->show_secrets = TRUE;
 		} else if (matches (opt, "-wait") == 0) {
@@ -547,6 +556,7 @@ nmc_init (NmCli *nmc)
 	nmc->output_data = g_ptr_array_new_full (20, g_free);
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->ask = FALSE;
+	nmc->complete = FALSE;
 	nmc->show_secrets = FALSE;
 	nmc->use_colors = NMC_USE_COLOR_AUTO;
 	nmc->in_editor = FALSE;
@@ -629,9 +639,6 @@ main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);  /* create main loop */
 	g_main_loop_run (loop);                /* run main loop */
-
-	if (nm_cli.complete)
-		nm_cli.return_value = NMC_RESULT_SUCCESS;
 
 	/* Print result descripting text */
 	if (nm_cli.return_value != NMC_RESULT_SUCCESS) {

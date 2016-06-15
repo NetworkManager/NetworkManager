@@ -761,26 +761,14 @@ _nmcli_compl_COMMAND_nl() {
 
 _nmcli_compl_PROPERTIES()
 {
-    while [[ "${#words[@]}" -gt 0 ]]; do
-        if [[ ${#words[@]} -le 1 ]]; then
-            local PREFIX="" item list=""
-
-            if [[ "${words[0]:0:1}" == [+-] ]]; then
-                PREFIX="${words[0]:0:1}"
-            fi
-            item="$(nmcli c modify --complete "$@" 2>/dev/null)"
-            ### add prefix to each element
-            for item in $item; do
-                list="${list}${PREFIX}${item} "
-            done
-            _nmcli_list "$list"
-            return 0
-        elif [[ ${#words[@]} -le 2 ]]; then
+    while [[ ${#words[@]} -gt 0 ]]; do
+        if [[ ${#words[@]} -eq 1 ]]; then
+            _nmcli_list_nl "$(nmcli --complete-args connection modify "$@" "${words[@]}" 2>/dev/null)"
             return 0
         fi
         _nmcli_array_delete_at words 0 1
     done
-    _nmcli_list "$(nmcli c modify --complete "$@" 2>/dev/null)"
+    return 0
 }
 
 _nmcli()
