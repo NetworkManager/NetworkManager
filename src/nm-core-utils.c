@@ -1271,8 +1271,10 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
 	const GSList *iter;
 	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
+	guint hwaddr_len = 0;
+	guint8 hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
 
-	g_return_val_if_fail (hwaddr != NULL, NM_MATCH_SPEC_NO_MATCH);
+	nm_assert (nm_utils_hwaddr_valid (hwaddr, -1));
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
 		const char *spec_str = iter->data;
@@ -1293,7 +1295,15 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 		else if (except)
 			continue;
 
-		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1)) {
+		if (G_UNLIKELY (hwaddr_len == 0)) {
+			hwaddr_len = _nm_utils_hwaddr_length (hwaddr);
+			if (!hwaddr_len)
+				g_return_val_if_reached (NM_MATCH_SPEC_NO_MATCH);
+			if (!nm_utils_hwaddr_aton (hwaddr, hwaddr_bin, hwaddr_len))
+				nm_assert_not_reached ();
+		}
+
+		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len)) {
 			if (except)
 				return NM_MATCH_SPEC_NEG_MATCH;
 			match = NM_MATCH_SPEC_MATCH;
