@@ -92,7 +92,7 @@
 
 #include "nm-default.h"
 
-#if NM_ASSERT_NO_MSG
+#if defined(NM_ASSERT_NO_MSG) && NM_ASSERT_NO_MSG
 #undef g_return_if_fail_warning
 #undef g_assertion_message_expr
 #endif
