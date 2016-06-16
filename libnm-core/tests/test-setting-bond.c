@@ -26,7 +26,7 @@
 #include "nm-setting-connection.h"
 #include "nm-errors.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 static void
 create_bond_connection (NMConnection **con, NMSettingBond **s_bond)

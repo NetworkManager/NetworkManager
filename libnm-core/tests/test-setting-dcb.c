@@ -28,7 +28,7 @@
 #include "nm-connection.h"
 #include "nm-errors.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 #define DCB_FLAGS_ALL (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \

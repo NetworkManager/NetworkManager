@@ -28,7 +28,7 @@
 #include "nm-dispatcher-utils.h"
 #include "nm-dispatcher-api.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 /*******************************************/
 

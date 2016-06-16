@@ -33,7 +33,7 @@
 #include "nm-errors.h"
 #include "nm-core-internal.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 #if 0
 static const char *pem_rsa_key_begin = "-----BEGIN RSA PRIVATE KEY-----";

@@ -26,7 +26,7 @@
 
 #define _NMTST_INSIDE_CORE 1
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 /*****************************************************************************/
 

@@ -1312,5 +1312,5 @@ nm_vpn_service_plugin_initable_iface_init (GInitableIface *iface)
 /* this header is intended to be copied to users of nm_vpn_editor_plugin_call(),
  * to simplify invocation of generic functions. Include it here, to complile
  * the code. */
-#include "nm-vpn-editor-plugin-call.h"
+#include "nm-utils/nm-vpn-editor-plugin-call.h"
 

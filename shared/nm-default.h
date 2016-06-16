@@ -98,11 +98,9 @@ _nm_g_return_if_fail_warning (const char *log_domain,
 
 /*****************************************************************************/
 
-#include "nm-glib.h"
+#include "nm-utils/nm-macros-internal.h"
 #include "nm-version.h"
-#include "gsystem-local-alloc.h"
-#include "nm-macros-internal.h"
-#include "nm-shared-utils.h"
+#include "nm-utils/nm-shared-utils.h"
 
 /*****************************************************************************/
 

@@ -38,7 +38,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 static void
 test_defaults (GType type, const char *name)

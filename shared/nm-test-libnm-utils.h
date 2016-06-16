@@ -20,7 +20,7 @@
 
 #include "NetworkManager.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 /*****************************************************************************/
 
