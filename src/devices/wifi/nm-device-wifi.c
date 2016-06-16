@@ -1951,6 +1951,11 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		else
 			_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
 		break;
+	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
+		priv->requested_scan = FALSE;
+		nm_clear_g_source (&priv->pending_scan_id);
+		request_wireless_scan (self, NULL);
+		break;
 	default:
 		break;
 	}
