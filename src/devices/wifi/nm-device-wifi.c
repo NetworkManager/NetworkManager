@@ -247,6 +247,11 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
+	if (priv->requested_scan) {
+		priv->requested_scan = FALSE;
+		nm_device_remove_pending_action (NM_DEVICE (self), "scan", TRUE);
+	}
+
 	nm_clear_g_source (&priv->pending_scan_id);
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
