@@ -108,7 +108,10 @@ typedef struct {
 } LogLevelDesc;
 
 NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
-	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
+	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
+	 *
+	 * Note: LOGD_VPN_PLUGIN is special and must be disabled for
+	 * DEBUG and TRACE levels. */
 	[LOGL_INFO] = LOGD_DEFAULT,
 	[LOGL_WARN] = LOGD_DEFAULT,
 	[LOGL_ERR]  = LOGD_DEFAULT,
@@ -263,6 +266,11 @@ nm_logging_setup (const char  *level,
 		NMLogDomain bits;
 		char *p;
 
+		/* LOGD_VPN_PLUGIN is protected, that is, when setting ALL or DEFAULT,
+		 * it does not enable the verbose levels DEBUG and TRACE, because that
+		 * may expose sensitive data. */
+		NMLogDomain protect = LOGD_NONE;
+
 		if (!strlen (*iter))
 			continue;
 
@@ -279,11 +287,13 @@ nm_logging_setup (const char  *level,
 		bits = 0;
 
 		/* Check for combined domains */
-		if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING))
+		if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING)) {
 			bits = LOGD_ALL;
-		else if (!g_ascii_strcasecmp (*iter, LOGD_DEFAULT_STRING))
+			protect = LOGD_VPN_PLUGIN;
+		} else if (!g_ascii_strcasecmp (*iter, LOGD_DEFAULT_STRING)) {
 			bits = LOGD_DEFAULT;
-		else if (!g_ascii_strcasecmp (*iter, LOGD_DHCP_STRING))
+			protect = LOGD_VPN_PLUGIN;
+		} else if (!g_ascii_strcasecmp (*iter, LOGD_DHCP_STRING))
 			bits = LOGD_DHCP;
 		else if (!g_ascii_strcasecmp (*iter, LOGD_IP_STRING))
 			bits = LOGD_IP;
@@ -325,8 +335,12 @@ nm_logging_setup (const char  *level,
 			for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
 				if (i < domain_log_level)
 					new_logging[i] &= ~bits;
-				else
+				else {
 					new_logging[i] |= bits;
+					if (   protect
+					    && i < LOGL_INFO)
+						new_logging[i] &= ~protect;
+				}
 			}
 		}
 	}

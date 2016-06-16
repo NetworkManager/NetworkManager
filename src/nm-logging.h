@@ -68,9 +68,7 @@ typedef enum  { /*< skip >*/
 	LOGD_VPN_PLUGIN = (1LL << 36),
 
 	__LOGD_MAX,
-	LOGD_ALL       = (((__LOGD_MAX - 1LL) << 1) - 1LL) & ~(
-	                                                       LOGD_VPN_PLUGIN | /*not even part of ALL, because it might expose sensitive information. */
-	                                                       0),
+	LOGD_ALL       = (((__LOGD_MAX - 1LL) << 1) - 1LL),
 	LOGD_DEFAULT   = LOGD_ALL & ~(
 	                              LOGD_DBUS_PROPS |
 	                              LOGD_WIFI_SCAN |
