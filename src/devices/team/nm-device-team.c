@@ -318,10 +318,18 @@ teamd_dbus_appeared (GDBusConnection *connection,
 		                                   2000,
 		                                   NULL,
 		                                   NULL);
-		g_variant_get (ret, "(u)", &pid);
 
-		if (pid != priv->teamd_pid)
-			teamd_cleanup (device, FALSE);
+		if (ret) {
+			g_variant_get (ret, "(u)", &pid);
+			if (pid != priv->teamd_pid)
+				teamd_cleanup (device, FALSE);
+		} else {
+			_LOGW (LOGD_TEAM, "failed to determine D-Bus name owner");
+			/* If we can't determine the bus name owner, don't kill our
+			 * teamd instance. Hopefully another existing teamd just died and
+			 * our instance will be able to grab the bus name.
+			 */
+		}
 	}
 
 	/* Grab a teamd control handle even if we aren't going to use it
