@@ -305,7 +305,6 @@ ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer use
 
 static void ofono_appeared (NMModemManager *self);
 
-
 static void
 ofono_check_name_owner (NMModemManager *self)
 {
@@ -364,13 +363,12 @@ ofono_proxy_new_cb (GObject *source_object, GAsyncResult *res, gpointer user_dat
 	gs_free_error GError *error = NULL;
 
 	self->priv->ofono_proxy = g_dbus_proxy_new_finish (res, &error);
-
 	if (error) {
 		//FIXME: do stuff if there's an error.
 		return;
 	}
 
-	ofono_appeared (self);
+	ofono_check_name_owner (self);
 }
 #endif
 

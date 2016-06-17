@@ -175,8 +175,6 @@ disconnect_done (GDBusProxy *proxy,
 	NMModemOfono *self = ctx->self;
 	GError *error = NULL;
 
-
-
 	g_dbus_proxy_call_finish (proxy, result, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 		nm_log_dbg (LOGD_MB, "(%s): disconnect cancelled",
