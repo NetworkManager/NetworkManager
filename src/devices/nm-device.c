@@ -11406,11 +11406,12 @@ nm_device_update_hw_address (NMDevice *self)
 	} else {
 		/* Invalid or no hardware address */
 		if (priv->hw_addr_len != 0) {
-			g_clear_pointer (&priv->hw_addr, g_free);
-			priv->hw_addr_len = 0;
 			_LOGD (LOGD_HW | LOGD_DEVICE,
-			       "hw-addr: previous hardware address is no longer valid");
-			_notify (self, PROP_HW_ADDRESS);
+			       "hw-addr: failed reading current MAC address (stay with %s)",
+			       priv->hw_addr);
+		} else {
+			_LOGD (LOGD_HW | LOGD_DEVICE,
+			       "hw-addr: failed reading current MAC address");
 		}
 	}
 }
