@@ -359,7 +359,7 @@ sim_property_changed (GDBusProxy *proxy,
 static void
 sim_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (user_data);
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	GError *error = NULL;
 	GVariant *v_properties, *v_dict, *v;
 	GVariantIter i;
@@ -513,7 +513,7 @@ connman_property_changed (GDBusProxy *proxy,
 static void
 connman_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (user_data);
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	GError *error = NULL;
 	GVariant *v_properties, *v_dict, *v;
 	GVariantIter i;
@@ -684,7 +684,7 @@ modem_property_changed (GDBusProxy *proxy,
 static void
 modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (user_data);
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	GError *error = NULL;
 	GVariant *v_properties, *v_dict, *v;
 	GVariantIter i;
@@ -758,7 +758,7 @@ nm_modem_ofono_new (const char *path)
 static void
 stage1_prepare_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (user_data);
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	GError *error = NULL;
 
@@ -1034,7 +1034,7 @@ static_stage3_ip4_config_start (NMModem *_self,
 static void
 context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (user_data);
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	GError *error = NULL;
 
@@ -1195,7 +1195,7 @@ act_stage1_prepare (NMModem *modem,
 static void
 modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (user_data);
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	GError *error = NULL;
 
@@ -1226,8 +1226,6 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 				       NULL,
 				       (GAsyncReadyCallback) modem_get_properties_done,
 					   g_object_ref (self));
-
-	g_object_unref (self);
 }
 
 static void
@@ -1251,9 +1249,9 @@ bus_connected (NMModemOfono *self)
 static void
 bus_get_ready (GObject *source,
                GAsyncResult *result,
-               NMModemOfono *self)
+               gpointer user_data)
 {
-	/* Note we always get an extra reference to self here */
+	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	GError *error = NULL;
 
@@ -1269,9 +1267,6 @@ bus_get_ready (GObject *source,
 		/* Got the bus, ensure client */
 		bus_connected (self);
 	}
-
-	/* Balance refcount */
-	g_object_unref (self);
 }
 
 static gboolean
