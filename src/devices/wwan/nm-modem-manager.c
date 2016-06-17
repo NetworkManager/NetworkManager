@@ -279,9 +279,6 @@ ofono_signal_cb (GDBusProxy *proxy,
 	}
 }
 
-#define OFONO_DBUS_MODEM_ENTRY (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_OBJECT_PATH, DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID))
-#define OFONO_DBUS_MODEM_ENTRIES (dbus_g_type_get_collection ("GPtrArray", OFONO_DBUS_MODEM_ENTRY))
-
 static void
 ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
