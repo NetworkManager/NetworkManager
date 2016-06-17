@@ -735,11 +735,11 @@ fi
 AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
 
 # OFONO
-AC_ARG_WITH(ofono, AS_HELP_STRING([--with-ofono], [Enable oFono support]),,[with_ofono=yes])
+AC_ARG_WITH(ofono, AS_HELP_STRING([--with-ofono], [Enable oFono support (experimental)]),,[with_ofono=no])
 if (test "${with_ofono}" = "yes"); then
-	AC_DEFINE(WITH_OFONO, 1, [Define if you have oFono support])
+	AC_DEFINE(WITH_OFONO, 1, [Define if you have oFono support (experimental)])
 else
-	AC_DEFINE(WITH_OFONO, 0, [Define if you have oFono support])
+	AC_DEFINE(WITH_OFONO, 0, [Define if you have oFono support (experimental)])
 fi
 AM_CONDITIONAL(WITH_OFONO, test "${with_ofono}" = "yes")
 
