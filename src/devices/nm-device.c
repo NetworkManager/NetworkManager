@@ -3361,11 +3361,11 @@ nm_device_can_assume_active_connection (NMDevice *self)
 		return FALSE;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (!_nm_utils_string_in_list (method, assumable_ip6_methods))
+	if (!g_strv_contains (assumable_ip6_methods, method))
 		return FALSE;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!_nm_utils_string_in_list (method, assumable_ip4_methods))
+	if (!g_strv_contains (assumable_ip4_methods, method))
 		return FALSE;
 
 	return TRUE;
@@ -5021,7 +5021,7 @@ connection_ip4_method_requires_carrier (NMConnection *connection,
 
 	if (out_ip4_enabled)
 		*out_ip4_enabled = !!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
-	return _nm_utils_string_in_list (method, ip4_carrier_methods);
+	return g_strv_contains (ip4_carrier_methods, method);
 }
 
 static gboolean
@@ -5038,7 +5038,7 @@ connection_ip6_method_requires_carrier (NMConnection *connection,
 
 	if (out_ip6_enabled)
 		*out_ip6_enabled = !!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
-	return _nm_utils_string_in_list (method, ip6_carrier_methods);
+	return g_strv_contains (ip6_carrier_methods, method);
 }
 
 static gboolean

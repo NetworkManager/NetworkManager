@@ -863,7 +863,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!_nm_utils_string_in_list (priv->key_mgmt, valid_key_mgmt)) {
+	if (!g_strv_contains (valid_key_mgmt, priv->key_mgmt)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -936,7 +936,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->auth_alg && !_nm_utils_string_in_list (priv->auth_alg, valid_auth_algs)) {
+	if (priv->auth_alg && !g_strv_contains (valid_auth_algs, priv->auth_alg)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -958,7 +958,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		const char *wpa_none[] = { "wpa-none", NULL };
 
 		/* For ad-hoc connections, pairwise must be "none" */
-		if (_nm_utils_string_in_list (priv->key_mgmt, wpa_none)) {
+		if (g_strv_contains (wpa_none, priv->key_mgmt)) {
 			GSList *iter;
 			gboolean found = FALSE;
 

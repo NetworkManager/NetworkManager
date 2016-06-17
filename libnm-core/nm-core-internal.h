@@ -145,9 +145,6 @@ gssize _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer 
 
 gssize _nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 
-gboolean    _nm_utils_string_in_list   (const char *str,
-                                        const char **valid_strings);
-
 gssize      _nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
 char **_nm_utils_strv_cleanup (char **strv,

@@ -534,7 +534,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
-	if (!_nm_utils_string_in_list (value, valid_modes)) {
+	if (!g_strv_contains (valid_modes, value)) {
 		g_set_error (error,
 		             NM_SETTING_BOND_ERROR,
 		             NM_SETTING_BOND_ERROR_INVALID_OPTION,
