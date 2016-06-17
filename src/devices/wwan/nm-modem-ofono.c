@@ -70,17 +70,6 @@ typedef struct {
 
 } NMModemOfonoPrivate;
 
-#define NM_OFONO_ERROR (nm_ofono_error_quark ())
-
-static GQuark
-nm_ofono_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-ofono-error");
-	return quark;
-}
-
 static gboolean
 ip_string_to_network_address (const gchar *str,
                               guint32 *out)
