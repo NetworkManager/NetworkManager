@@ -46,8 +46,6 @@ G_DEFINE_TYPE (NMModemOfono, nm_modem_ofono, NM_TYPE_MODEM)
 #define VARIANT_IS_OF_TYPE_DICTIONARY(v)   ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_DICTIONARY) ))
 
 typedef struct {
-	GDBusConnection *dbus_connection;
-
 	GHashTable *connect_properties;
 
 	GDBusProxy *modem_proxy;
@@ -432,15 +430,15 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 		nm_log_info (LOGD_MB, "(%s): found new SimManager interface",
 		             nm_modem_get_path (NM_MODEM (self)));
 
-		priv->sim_proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
-		                                         G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-		                                         | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-		                                         NULL, /* GDBusInterfaceInfo */
-		                                         OFONO_DBUS_SERVICE,
-		                                         nm_modem_get_path (NM_MODEM (self)),
-		                                         OFONO_DBUS_INTERFACE_SIM_MANAGER,
-		                                         NULL, /* GCancellable */
-		                                         &error);
+		priv->sim_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+		                                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+		                                                 | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+		                                                 NULL, /* GDBusInterfaceInfo */
+		                                                 OFONO_DBUS_SERVICE,
+		                                                 nm_modem_get_path (NM_MODEM (self)),
+		                                                 OFONO_DBUS_INTERFACE_SIM_MANAGER,
+		                                                 NULL, /* GCancellable */
+		                                                 &error);
 		if (priv->sim_proxy == NULL) {
 			nm_log_warn (LOGD_MB, "(%s) failed to create SimManager proxy: %s",
 			             nm_modem_get_uid (NM_MODEM (self)),
@@ -579,15 +577,15 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 		nm_log_info (LOGD_MB, "(%s): found new ConnectionManager interface",
 		             nm_modem_get_path (NM_MODEM (self)));
 
-		priv->connman_proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
-		                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-		                                             | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-		                                             NULL, /* GDBusInterfaceInfo */
-		                                             OFONO_DBUS_SERVICE,
-		                                             nm_modem_get_path (NM_MODEM (self)),
-		                                             OFONO_DBUS_INTERFACE_CONNECTION_MANAGER,
-		                                             NULL, /* GCancellable */
-		                                             &error);
+		priv->connman_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+		                                                     G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+		                                                     | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+		                                                     NULL, /* GDBusInterfaceInfo */
+		                                                     OFONO_DBUS_SERVICE,
+		                                                     nm_modem_get_path (NM_MODEM (self)),
+		                                                     OFONO_DBUS_INTERFACE_CONNECTION_MANAGER,
+		                                                     NULL, /* GCancellable */
+		                                                     &error);
 		if (priv->connman_proxy == NULL) {
 			nm_log_warn (LOGD_MB, "(%s) failed to create ConnectionManager proxy: %s",
 			             nm_modem_get_uid (NM_MODEM (self)),
@@ -1038,9 +1036,7 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 
 	nm_log_dbg (LOGD_MB, "%s:", __func__);
 
-	priv->context_proxy = g_dbus_proxy_new_finish (result, &error);
-
-	/* TODO: add path to log msg? */
+	priv->context_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (error) {
 		nm_log_err (LOGD_MB, "(%s) failed to create ofono ConnectionContext DBus proxy: %s",
 		            nm_modem_get_uid (NM_MODEM (self)),
@@ -1099,15 +1095,15 @@ do_context_activate (NMModemOfono *self)
 	if (priv->context_proxy)
 		g_clear_object (&priv->context_proxy);
 
-	g_dbus_proxy_new (priv->dbus_connection,
-	                  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                  NULL,
-	                  OFONO_DBUS_SERVICE,
-	                  priv->context_path,
-	                  OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT,
-	                  NULL,
-	                  (GAsyncReadyCallback) context_proxy_new_cb,
-	                  g_object_ref (self));
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                          NULL,
+	                          OFONO_DBUS_SERVICE,
+	                          priv->context_path,
+	                          OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT,
+	                          NULL,
+	                          (GAsyncReadyCallback) context_proxy_new_cb,
+	                          g_object_ref (self));
 }
 
 static GHashTable *
@@ -1199,8 +1195,7 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	nm_log_dbg (LOGD_MB, "in %s", __func__);
 
-	priv->modem_proxy = g_dbus_proxy_new_finish (result, &error);
-
+	priv->modem_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (error) {
 		nm_log_err (LOGD_MB, "(%s) failed to create ofono modem DBus proxy: %s",
 		            nm_modem_get_uid (NM_MODEM (self)),
@@ -1227,104 +1222,26 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 }
 
 static void
-bus_connected (NMModemOfono *self)
-{
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-
-	nm_log_dbg (LOGD_MB, "in %s", __func__);
-
-	g_dbus_proxy_new (priv->dbus_connection,
-	                  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                  NULL,
-	                  OFONO_DBUS_SERVICE,
-	                  nm_modem_get_path (NM_MODEM (self)),
-	                  OFONO_DBUS_INTERFACE_MODEM,
-	                  NULL,
-	                  (GAsyncReadyCallback) modem_proxy_new_cb,
-	                  g_object_ref (self));
-}
-
-static void
-bus_get_ready (GObject *source,
-               GAsyncResult *result,
-               gpointer user_data)
-{
-	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	nm_log_dbg (LOGD_MB, "in %s", __func__);
-
-	priv->dbus_connection = g_bus_get_finish (result, &error);
-	if (!priv->dbus_connection) {
-		nm_log_warn (LOGD_CORE, "error getting bus connection: %s", error->message);
-		g_error_free (error);
-
-		/* FIXME (awe): what do do if bus connection fails??? */
-	} else {
-		/* Got the bus, ensure client */
-		bus_connected (self);
-	}
-}
-
-static gboolean
-ensure_bus (NMModemOfono *self)
-{
-	/* FIXME: not sure how dbus_connection could ever be set here? */
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-
-	nm_log_dbg (LOGD_MB, "in %s", __func__);
-
-	if (!priv->dbus_connection)
-		g_bus_get (G_BUS_TYPE_SYSTEM,
-		           NULL,
-		           (GAsyncReadyCallback) bus_get_ready,
-		           g_object_ref (self));
-	else
-		bus_connected (self);
-
-	return FALSE;
-}
-
-static void
 nm_modem_ofono_init (NMModemOfono *self)
 {
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-
-	nm_log_dbg (LOGD_MB, "in %s", __func__);
-
-	priv->dbus_connection = NULL;
-
-	priv->modem_proxy = NULL;
-	priv->connman_proxy = NULL;
-	priv->context_proxy = NULL;
-	priv->sim_proxy = NULL;
-
-	priv->modem_online = FALSE;
-	priv->gprs_attached = FALSE;
-
-	priv->ip4_config = NULL;
-
-	ensure_bus (self);
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-	NMModemOfonoPrivate *priv;
+	NMModemOfono *self = NM_MODEM_OFONO (object);
 
 	nm_log_dbg (LOGD_MB, "in %s", __func__);
 
-	object = G_OBJECT_CLASS (nm_modem_ofono_parent_class)->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
-
-	priv = NM_MODEM_OFONO_GET_PRIVATE (object);
-
-	return object;
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                          NULL,
+	                          OFONO_DBUS_SERVICE,
+	                          nm_modem_get_path (NM_MODEM (self)),
+	                          OFONO_DBUS_INTERFACE_MODEM,
+	                          NULL,
+	                          (GAsyncReadyCallback) modem_proxy_new_cb,
+	                          g_object_ref (self));
 }
 
 static void
@@ -1358,8 +1275,6 @@ dispose (GObject *object)
 		g_clear_object (&priv->sim_proxy);
 	}
 
-	g_clear_object (&priv->dbus_connection);
-
 	if (priv->imsi) {
 		g_free (priv->imsi);
 		priv->imsi = NULL;
@@ -1379,7 +1294,7 @@ nm_modem_ofono_class_init (NMModemOfonoClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMModemOfonoPrivate));
 
 	/* Virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
 	modem_class->get_capabilities = get_capabilities;
