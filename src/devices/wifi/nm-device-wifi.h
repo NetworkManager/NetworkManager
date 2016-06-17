@@ -36,7 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIFI_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_WIFI))
 #define NM_DEVICE_WIFI_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_WIFI, NMDeviceWifiClass))
 
-#define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_WIFI_MODE                "mode"
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
 #define NM_DEVICE_WIFI_ACCESS_POINTS       "access-points"

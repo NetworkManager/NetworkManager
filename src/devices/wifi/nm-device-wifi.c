@@ -71,7 +71,6 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
-	PROP_PERM_HW_ADDRESS,
 	PROP_MODE,
 	PROP_BITRATE,
 	PROP_ACCESS_POINTS,
@@ -401,14 +400,6 @@ periodic_update_cb (gpointer user_data)
 {
 	periodic_update (NM_DEVICE_WIFI (user_data));
 	return TRUE;
-}
-
-static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->realize_start_notify (device, plink);
-
-	g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS);
 }
 
 static gboolean
@@ -2980,9 +2971,6 @@ get_property (GObject *object, guint prop_id,
 	GPtrArray *array;
 
 	switch (prop_id) {
-	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, nm_device_get_permanent_hw_address ((NMDevice *) device, FALSE));
-		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);
 		break;
@@ -3047,7 +3035,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->bring_up = bring_up;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
@@ -3070,13 +3057,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	klass->scanning_allowed = scanning_allowed;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
 	g_object_class_install_property
 		(object_class, PROP_MODE,
 		 g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",

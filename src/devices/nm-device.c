@@ -132,6 +132,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_IS_MASTER,
 	PROP_MASTER,
 	PROP_HW_ADDRESS,
+	PROP_PERM_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
 	PROP_METERED,
 	PROP_LLDP_NEIGHBORS,
@@ -2357,6 +2358,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	}
 
 	g_clear_pointer (&priv->hw_addr_perm, g_free);
+	_notify (self, PROP_PERM_HW_ADDRESS);
 	g_clear_pointer (&priv->hw_addr_initial, g_free);
 
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
@@ -11467,13 +11469,13 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 		       priv->hw_addr);
 		priv->hw_addr_perm_fake = TRUE;
 		priv->hw_addr_perm = g_strdup (priv->hw_addr);
-		return;
+	} else {
+		priv->hw_addr_perm_fake = FALSE;
+		priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
+		_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
+		       priv->hw_addr_perm);
 	}
-
-	priv->hw_addr_perm_fake = FALSE;
-	priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
-	_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
-	       priv->hw_addr_perm);
+	_notify (self, PROP_PERM_HW_ADDRESS);
 }
 
 static gboolean
@@ -12104,6 +12106,10 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
 		break;
+	case PROP_PERM_HW_ADDRESS:
+		/* this property is exposed on D-Bus for NMDeviceEthernet and NMDeviceWifi. */
+		g_value_set_string (value, nm_device_get_permanent_hw_address (self, FALSE));
+		break;
 	case PROP_HAS_PENDING_ACTION:
 		g_value_set_boolean (value, nm_device_has_pending_action (self));
 		break;
@@ -12348,6 +12354,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	    g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PERM_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_PERM_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_HAS_PENDING_ACTION] =
 	    g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION, "", "",

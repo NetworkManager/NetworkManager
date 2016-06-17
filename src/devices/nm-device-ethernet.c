@@ -120,7 +120,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_S390_SUBCHANNELS,
 
@@ -305,14 +304,6 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-}
-
-static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->realize_start_notify (device, plink);
-
-	g_object_notify (G_OBJECT (device), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
 }
 
 static NMDeviceCapabilities
@@ -1635,9 +1626,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, nm_device_get_permanent_hw_address ((NMDevice *) object, FALSE));
-		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);
 		break;
@@ -1679,7 +1667,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->new_default_connection = new_default_connection;
@@ -1698,13 +1685,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->state_changed = device_state_changed;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
 		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",
