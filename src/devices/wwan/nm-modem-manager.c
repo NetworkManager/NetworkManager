@@ -291,7 +291,7 @@ static void
 ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
 	NMModemManager *manager = NM_MODEM_MANAGER (user_data);
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	GVariant *results;
 	GVariantIter *iter;
 	const char *path;
@@ -317,13 +317,13 @@ static void ofono_appeared (NMModemManager *self);
 static void
 ofono_check_name_owner (NMModemManager *self)
 {
-	gchar *name_owner;
+	gs_free char *name_owner = NULL;
 
 	name_owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (self->priv->ofono_proxy));
 	if (name_owner) {
 		/* Available! */
 		ofono_appeared (self);
-		goto free;
+		return;
 	}
 
 	nm_log_info (LOGD_MB, "oFono disappeared from bus");
@@ -331,10 +331,6 @@ ofono_check_name_owner (NMModemManager *self)
 	ofono_clear_signals (self);
 	g_clear_object (&self->priv->ofono_proxy);
 	ensure_client (self);
-
-free:
-	g_free (name_owner);
-	return;
 }
 
 static void
@@ -373,8 +369,8 @@ ofono_appeared (NMModemManager *self)
 static void
 ofono_proxy_new_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-	NMModemManager *self = NM_MODEM_MANAGER (user_data);
-	GError *error = NULL;
+	gs_unref_object NMModemManager *self = NM_MODEM_MANAGER (user_data);
+	gs_free_error GError *error = NULL;
 
 	self->priv->ofono_proxy = g_dbus_proxy_new_finish (res, &error);
 
@@ -384,9 +380,6 @@ ofono_proxy_new_cb (GObject *source_object, GAsyncResult *res, gpointer user_dat
 	}
 
 	ofono_appeared (self);
-
-	/* Balance refcount */
-	g_object_unref (self);
 }
 #endif
 
