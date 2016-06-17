@@ -540,7 +540,9 @@ ensure_client (NMModemManager *self)
 
 	/* If already available, recheck name owner! */
 	modem_manager_check_name_owner (self);
+#if WITH_OFONO
 	ofono_check_name_owner (self);
+#endif
 }
 
 static void
