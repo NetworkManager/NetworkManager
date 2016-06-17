@@ -56,7 +56,7 @@ struct _NMModemManagerPrivate {
 #if WITH_OFONO
 	GDBusProxy *ofono_proxy;
 
-	guint ofono_name_owner_changed_id;
+	gulong ofono_name_owner_changed_id;
 #endif
 
 	/* Common */
@@ -216,21 +216,16 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 	 * modem_manager_available (self);
 	 */
 }
+
 #if WITH_OFONO
 static void
-ofono_clear_signals (NMModemManager *self)
+clear_ofono_proxy (NMModemManager *self)
 {
 	if (!self->priv->ofono_proxy)
 		return;
 
-	if (self->priv->ofono_name_owner_changed_id) {
-		if (g_signal_handler_is_connected (self->priv->ofono_proxy,
-		                                   self->priv->ofono_name_owner_changed_id)) {
-			g_signal_handler_disconnect (self->priv->ofono_proxy,
-			                             self->priv->ofono_name_owner_changed_id);
-		}
-		self->priv->ofono_name_owner_changed_id = 0;
-	}
+	nm_clear_g_signal_handler (self->priv->ofono_proxy, &self->priv->ofono_name_owner_changed_id);
+	g_clear_object (&self->priv->ofono_proxy);
 }
 
 static void
@@ -328,8 +323,7 @@ ofono_check_name_owner (NMModemManager *self)
 
 	nm_log_info (LOGD_MB, "oFono disappeared from bus");
 
-	ofono_clear_signals (self);
-	g_clear_object (&self->priv->ofono_proxy);
+	clear_ofono_proxy (self);
 	ensure_client (self);
 }
 
@@ -615,8 +609,7 @@ dispose (GObject *object)
 	clear_modem_manager (self);
 
 #if WITH_OFONO
-	ofono_clear_signals (self);
-	g_clear_object (&self->priv->ofono_proxy);
+	clear_ofono_proxy (self);
 #endif
 
 	g_clear_object (&self->priv->dbus_connection);
