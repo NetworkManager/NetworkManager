@@ -45,9 +45,9 @@ struct _NMModemManagerPrivate {
 	GDBusConnection *dbus_connection;
 	MMManager *modem_manager;
 	guint mm_launch_id;
-	guint mm_name_owner_changed_id;
-	guint mm_object_added_id;
-	guint mm_object_removed_id;
+	gulong mm_name_owner_changed_id;
+	gulong mm_object_added_id;
+	gulong mm_object_removed_id;
 
 	/* Common */
 	GHashTable *modems;
@@ -85,34 +85,14 @@ remove_one_modem (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-modem_manager_clear_signals (NMModemManager *self)
+clear_modem_manager (NMModemManager *self)
 {
 	if (!self->priv->modem_manager)
 		return;
-
-	if (self->priv->mm_name_owner_changed_id) {
-		if (g_signal_handler_is_connected (self->priv->modem_manager,
-		                                   self->priv->mm_name_owner_changed_id))
-			g_signal_handler_disconnect (self->priv->modem_manager,
-			                             self->priv->mm_name_owner_changed_id);
-		self->priv->mm_name_owner_changed_id = 0;
-	}
-
-	if (self->priv->mm_object_added_id) {
-		if (g_signal_handler_is_connected (self->priv->modem_manager,
-		                                   self->priv->mm_object_added_id))
-			g_signal_handler_disconnect (self->priv->modem_manager,
-			                             self->priv->mm_object_added_id);
-		self->priv->mm_object_added_id = 0;
-	}
-
-	if (self->priv->mm_object_removed_id) {
-		if (g_signal_handler_is_connected (self->priv->modem_manager,
-		                                   self->priv->mm_object_removed_id))
-			g_signal_handler_disconnect (self->priv->modem_manager,
-			                             self->priv->mm_object_removed_id);
-		self->priv->mm_object_removed_id = 0;
-	}
+	nm_clear_g_signal_handler (self->priv->modem_manager, &self->priv->mm_name_owner_changed_id);
+	nm_clear_g_signal_handler (self->priv->modem_manager, &self->priv->mm_object_added_id);
+	nm_clear_g_signal_handler (self->priv->modem_manager, &self->priv->mm_object_removed_id);
+	g_clear_object (&self->priv->modem_manager);
 }
 
 static void
@@ -219,8 +199,7 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 	 * nor 'object-removed' if it was created while there was no ModemManager in
 	 * the bus. This hack avoids this issue until we get a GIO with the fix
 	 * included... */
-	modem_manager_clear_signals (self);
-	g_clear_object (&self->priv->modem_manager);
+	clear_modem_manager (self);
 	ensure_client (self);
 
 	/* Whenever GDBusObjectManagerClient is fixed, we can just do the following:
@@ -303,7 +282,8 @@ manager_new_ready (GObject *source,
 
 	GError *error = NULL;
 
-	g_assert (!self->priv->modem_manager);
+	g_return_if_fail (!self->priv->modem_manager);
+
 	self->priv->modem_manager = mm_manager_new_finish (res, &error);
 	if (!self->priv->modem_manager) {
 		/* We're not really supposed to get any error here. If we do get one,
@@ -316,20 +296,20 @@ manager_new_ready (GObject *source,
 	} else {
 		/* Setup signals in the GDBusObjectManagerClient */
 		self->priv->mm_name_owner_changed_id =
-			g_signal_connect (self->priv->modem_manager,
-			                  "notify::name-owner",
-			                  G_CALLBACK (modem_manager_name_owner_changed),
-			                  self);
+		    g_signal_connect (self->priv->modem_manager,
+		                      "notify::name-owner",
+		                      G_CALLBACK (modem_manager_name_owner_changed),
+		                      self);
 		self->priv->mm_object_added_id =
-			g_signal_connect (self->priv->modem_manager,
-			                  "object-added",
-			                  G_CALLBACK (modem_object_added),
-			                  self);
+		    g_signal_connect (self->priv->modem_manager,
+		                      "object-added",
+		                      G_CALLBACK (modem_object_added),
+		                      self);
 		self->priv->mm_object_removed_id =
-			g_signal_connect (self->priv->modem_manager,
-			                  "object-removed",
-			                  G_CALLBACK (modem_object_removed),
-			                  self);
+		    g_signal_connect (self->priv->modem_manager,
+		                      "object-removed",
+		                      G_CALLBACK (modem_object_removed),
+		                      self);
 
 		modem_manager_check_name_owner (self);
 	}
@@ -433,8 +413,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&self->priv->mm_launch_id);
 
-	modem_manager_clear_signals (self);
-	g_clear_object (&self->priv->modem_manager);
+	clear_modem_manager (self);
 	g_clear_object (&self->priv->dbus_connection);
 
 	if (self->priv->modems) {
