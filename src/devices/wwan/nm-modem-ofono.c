@@ -1057,8 +1057,7 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	 * clear it so that we can gate getting the IP config from oFono
 	 * on whether or not we have already received them
 	 */
-	if (priv->ip4_config)
-		g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->ip4_config);
 
 	/* Watch for custom ofono PropertyChanged signals */
 	_nm_dbus_signal_connect (priv->context_proxy,
@@ -1092,8 +1091,7 @@ do_context_activate (NMModemOfono *self)
 	g_value_init (&value, G_TYPE_BOOLEAN);
 	g_value_set_boolean (&value, TRUE);
 
-	if (priv->context_proxy)
-		g_clear_object (&priv->context_proxy);
+	g_clear_object (&priv->context_proxy);
 
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
@@ -1151,9 +1149,7 @@ act_stage1_prepare (NMModem *modem,
 
 	nm_log_dbg (LOGD_MB, " trying %s %s", id[1], id[2]);
 
-	if (priv->context_path)
-		g_free (priv->context_path);
-
+	g_free (priv->context_path);
 	priv->context_path = g_strdup_printf ("%s/%s",
 										  nm_modem_get_path (modem),
 										  id[2]);
@@ -1257,28 +1253,23 @@ dispose (GObject *object)
 		priv->connect_properties = NULL;
 	}
 
-	if (priv->ip4_config)
-		g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->ip4_config);
 
 	if (priv->modem_proxy) {
 		g_signal_handlers_disconnect_by_data (priv->modem_proxy, NM_MODEM_OFONO (self));
 		g_clear_object (&priv->modem_proxy);
 	}
 
-	if (priv->connman_proxy)
-		g_clear_object (&priv->connman_proxy);
-	if (priv->context_proxy)
-		g_clear_object (&priv->context_proxy);
+	g_clear_object (&priv->connman_proxy);
+	g_clear_object (&priv->context_proxy);
 
 	if (priv->sim_proxy) {
 		g_signal_handlers_disconnect_by_data (priv->sim_proxy, NM_MODEM_OFONO (self));
 		g_clear_object (&priv->sim_proxy);
 	}
 
-	if (priv->imsi) {
-		g_free (priv->imsi);
-		priv->imsi = NULL;
-	}
+	g_free (priv->imsi);
+	priv->imsi = NULL;
 
 	G_OBJECT_CLASS (nm_modem_ofono_parent_class)->dispose (object);
 }
