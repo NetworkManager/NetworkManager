@@ -734,14 +734,21 @@ modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer use
 NMModem *
 nm_modem_ofono_new (const char *path)
 {
+	gs_free char *basename = NULL;
+
 	g_return_val_if_fail (path != NULL, NULL);
 
 	nm_log_dbg (LOGD_MB, "in %s: path %s", __func__, path);
 
+	/* Use short modem name (not its object path) as the NM device name (which
+	 * comes from NM_MODEM_UID)and the device ID.
+	 */
+	basename = g_path_get_basename (path);
+
 	return (NMModem *) g_object_new (NM_TYPE_MODEM_OFONO,
 	                                 NM_MODEM_PATH, path,
-	                                 NM_MODEM_UID, (path + 1),
-	                                 NM_MODEM_DEVICE_ID, (path + 1),
+	                                 NM_MODEM_UID, basename,
+	                                 NM_MODEM_DEVICE_ID, basename,
 	                                 NM_MODEM_CONTROL_PORT, "ofono", /* mandatory */
 	                                 NM_MODEM_DRIVER, "ofono",
 	                                 NM_MODEM_STATE, NM_MODEM_STATE_INITIALIZING,
