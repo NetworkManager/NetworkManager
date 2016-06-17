@@ -313,14 +313,14 @@ _g_key_file_save_to_file (GKeyFile     *key_file,
 
 #if GLIB_CHECK_VERSION (2, 36, 0)
 #define g_credentials_get_unix_pid(creds, error) \
-	G_GNUC_EXTENSION ({ \
+	({ \
 		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
 			(g_credentials_get_unix_pid) ((creds), (error)); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
 	})
 #else
 #define g_credentials_get_unix_pid(creds, error) \
-	G_GNUC_EXTENSION ({ \
+	({ \
 		struct ucred *native_creds; \
 		 \
 		native_creds = g_credentials_get_native ((creds), G_CREDENTIALS_TYPE_LINUX_UCRED); \
@@ -357,12 +357,12 @@ _nm_g_hash_table_get_keys_as_array (GHashTable *hash_table,
 #endif
 #if !GLIB_CHECK_VERSION(2, 40, 0)
 #define g_hash_table_get_keys_as_array(hash_table, length) \
-	G_GNUC_EXTENSION ({ \
+	({ \
 		_nm_g_hash_table_get_keys_as_array (hash_table, length); \
 	})
 #else
 #define g_hash_table_get_keys_as_array(hash_table, length) \
-	G_GNUC_EXTENSION ({ \
+	({ \
 		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
 			(g_hash_table_get_keys_as_array) ((hash_table), (length)); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
@@ -412,12 +412,12 @@ _nm_g_strv_contains (const gchar * const *strv,
 #endif
 #if !GLIB_CHECK_VERSION(2, 44, 0)
 #define g_strv_contains(strv, str) \
-	G_GNUC_EXTENSION ({ \
+	({ \
 		_nm_g_strv_contains (strv, str); \
 	})
 #else
 #define g_strv_contains(strv, str) \
-	G_GNUC_EXTENSION ({ \
+	({ \
 		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
 			(g_strv_contains) ((strv), (str)); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
