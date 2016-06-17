@@ -21,9 +21,7 @@
 #ifndef NM_MODEM_OFONO_H
 #define NM_MODEM_OFONO_H
 
-#include <nm-modem.h>
-
-G_BEGIN_DECLS
+#include "nm-modem.h"
 
 #define NM_TYPE_MODEM_OFONO            (nm_modem_ofono_get_type ())
 #define NM_MODEM_OFONO(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_OFONO, NMModemOfono))
@@ -58,7 +56,5 @@ typedef struct {
 GType nm_modem_ofono_get_type (void);
 
 NMModem *nm_modem_ofono_new (const char *path);
-
-G_END_DECLS
 
 #endif /* NM_MODEM_OFONO_H */

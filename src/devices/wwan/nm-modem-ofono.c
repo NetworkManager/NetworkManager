@@ -18,22 +18,19 @@
  * Copyright (C) 2013 - 2016 Canonical Ltd.
  */
 
-#include "config.h"
-
-#include <string.h>
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
-#include "nm-core-internal.h"
 
 #include "nm-modem-ofono.h"
+
+#include <string.h>
+
+#include "nm-core-internal.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
-#include "nm-logging.h"
 #include "nm-modem.h"
 #include "nm-platform.h"
 #include "nm-utils.h"

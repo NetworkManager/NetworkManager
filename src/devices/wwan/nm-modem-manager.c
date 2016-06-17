@@ -22,20 +22,20 @@
 
 #include "nm-default.h"
 
-#include <string.h>
-
-#include <libmm-glib.h>
-
 #include "nm-modem-manager.h"
-#include "nm-dbus-compat.h"
-#include "nm-modem.h"
-#include "nm-modem-broadband.h"
+
+#include <string.h>
+#include <libmm-glib.h>
 
 #if HAVE_LIBSYSTEMD
 #include <systemd/sd-daemon.h>
 #else
 #define sd_booted() FALSE
 #endif
+
+#include "nm-dbus-compat.h"
+#include "nm-modem.h"
+#include "nm-modem-broadband.h"
 
 #if WITH_OFONO
 #include "nm-modem-ofono.h"
