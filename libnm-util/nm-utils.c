@@ -517,24 +517,12 @@ nm_utils_slist_free (GSList *list, GDestroyNotify elem_destroy_fn)
 }
 
 gboolean
-_nm_utils_string_in_list (const char *str, const char **valid_strings)
-{
-	int i;
-
-	for (i = 0; valid_strings[i]; i++)
-		if (strcmp (str, valid_strings[i]) == 0)
-			break;
-
-	return valid_strings[i] != NULL;
-}
-
-gboolean
 _nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 {
 	GSList *iter;
 
 	for (iter = list; iter; iter = iter->next) {
-		if (!_nm_utils_string_in_list ((char *) iter->data, valid_values))
+		if (!g_strv_contains (valid_values, (char *) iter->data))
 			return FALSE;
 	}
 

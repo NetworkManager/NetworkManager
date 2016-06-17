@@ -2707,7 +2707,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (priv->phase1_peapver && !_nm_utils_string_in_list (priv->phase1_peapver, valid_phase1_peapver)) {
+	if (priv->phase1_peapver && !g_strv_contains (valid_phase1_peapver, priv->phase1_peapver)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2717,7 +2717,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase1_peaplabel && !_nm_utils_string_in_list (priv->phase1_peaplabel, valid_phase1_peaplabel)) {
+	if (priv->phase1_peaplabel && !g_strv_contains (valid_phase1_peaplabel, priv->phase1_peaplabel)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2727,7 +2727,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase1_fast_provisioning && !_nm_utils_string_in_list (priv->phase1_fast_provisioning, valid_phase1_fast_pac)) {
+	if (priv->phase1_fast_provisioning && !g_strv_contains (valid_phase1_fast_pac, priv->phase1_fast_provisioning)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2737,7 +2737,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase2_auth && !_nm_utils_string_in_list (priv->phase2_auth, valid_phase2_auth)) {
+	if (priv->phase2_auth && !g_strv_contains (valid_phase2_auth, priv->phase2_auth)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2747,7 +2747,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase2_autheap && !_nm_utils_string_in_list (priv->phase2_autheap, valid_phase2_autheap)) {
+	if (priv->phase2_autheap && !g_strv_contains (valid_phase2_autheap, priv->phase2_autheap)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,

@@ -385,10 +385,11 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 
 	g_return_if_fail (capabilities && g_variant_is_of_type (capabilities, G_VARIANT_TYPE_VARDICT));
 
-	if (g_variant_lookup (capabilities, "Scan", "^a&s", &array)) {
-		if (_nm_utils_string_in_list ("active", array))
+	if (   g_variant_lookup (capabilities, "Scan", "^a&s", &array)
+	    && array) {
+		if (g_strv_contains (array, "active"))
 			have_active = TRUE;
-		if (_nm_utils_string_in_list ("ssid", array))
+		if (g_strv_contains (array, "ssid"))
 			have_ssid = TRUE;
 		g_free (array);
 	}

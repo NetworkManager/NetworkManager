@@ -780,7 +780,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->mode && !_nm_utils_string_in_list (priv->mode, valid_modes)) {
+	if (priv->mode && !g_strv_contains (valid_modes, priv->mode)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -790,7 +790,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->band && !_nm_utils_string_in_list (priv->band, valid_bands)) {
+	if (priv->band && !g_strv_contains (valid_bands, priv->band)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,

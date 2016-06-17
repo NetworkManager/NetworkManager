@@ -182,7 +182,7 @@ object_manager_interfaces_removed (GDBusProxy       *proxy,
                                    const char      **ifaces,
                                    NMBluez5Manager  *self)
 {
-	if (_nm_utils_string_in_list (BLUEZ5_DEVICE_INTERFACE, ifaces))
+	if (ifaces && g_strv_contains (ifaces, BLUEZ5_DEVICE_INTERFACE))
 		device_removed (proxy, path, self);
 }
 

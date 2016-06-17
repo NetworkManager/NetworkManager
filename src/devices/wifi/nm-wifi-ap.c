@@ -365,18 +365,20 @@ security_from_vardict (GVariant *security)
 
 	g_return_val_if_fail (g_variant_is_of_type (security, G_VARIANT_TYPE_VARDICT), NM_802_11_AP_SEC_NONE);
 
-	if (g_variant_lookup (security, "KeyMgmt", "^a&s", &array)) {
-		if (_nm_utils_string_in_list ("wpa-psk", array))
+	if (   g_variant_lookup (security, "KeyMgmt", "^a&s", &array)
+	    && array) {
+		if (g_strv_contains (array, "wpa-psk"))
 			flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-		if (_nm_utils_string_in_list ("wpa-eap", array))
+		if (g_strv_contains (array, "wpa-eap"))
 			flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 		g_free (array);
 	}
 
-	if (g_variant_lookup (security, "Pairwise", "^a&s", &array)) {
-		if (_nm_utils_string_in_list ("tkip", array))
+	if (   g_variant_lookup (security, "Pairwise", "^a&s", &array)
+	    && array) {
+		if (g_strv_contains (array, "tkip"))
 			flags |= NM_802_11_AP_SEC_PAIR_TKIP;
-		if (_nm_utils_string_in_list ("ccmp", array))
+		if (g_strv_contains (array, "ccmp"))
 			flags |= NM_802_11_AP_SEC_PAIR_CCMP;
 		g_free (array);
 	}

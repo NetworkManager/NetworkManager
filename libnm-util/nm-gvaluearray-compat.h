@@ -21,21 +21,21 @@
 #define __NM_GVALUEARRAY_COMPAT_H__
 
 #define g_value_array_get_type() \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_get_type (); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_get_nth(value_array, index_) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_get_nth (value_array, index_); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_new(n_prealloced) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_new (n_prealloced); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
@@ -44,7 +44,7 @@
 static inline void
 __g_value_array_free (GValueArray *value_array)
 {
-	G_GNUC_EXTENSION ({
+	({
 		G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 		g_value_array_free (value_array);
 		G_GNUC_END_IGNORE_DEPRECATIONS
@@ -53,49 +53,49 @@ __g_value_array_free (GValueArray *value_array)
 #define g_value_array_free __g_value_array_free
 
 #define g_value_array_copy(value_array) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_copy (value_array); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_prepend(value_array, value) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_prepend (value_array, value); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_append(value_array, value) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_append (value_array, value); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_insert(value_array, index_, value) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_insert (value_array, index_, value); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_remove(value_array, index_) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_remove (value_array, index_); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_sort(value_array, compare_func) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_sort (value_array, compare_func); \
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
 #define g_value_array_sort_with_data(value_array, compare_func, user_data) \
-  G_GNUC_EXTENSION ({ \
+  ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
     g_value_array_sort_with_data (value_array, compare_func, user_data); \
     G_GNUC_END_IGNORE_DEPRECATIONS \

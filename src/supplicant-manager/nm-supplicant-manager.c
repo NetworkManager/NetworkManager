@@ -194,9 +194,11 @@ update_capabilities (NMSupplicantManager *self)
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
 			array = g_variant_get_strv (value, NULL);
 			priv->ap_support = NM_SUPPLICANT_FEATURE_NO;
-			if (_nm_utils_string_in_list ("ap", array))
-				priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
-			g_free (array);
+			if (array) {
+				if (g_strv_contains (array, "ap"))
+					priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
+				g_free (array);
+			}
 		}
 		g_variant_unref (value);
 	}
@@ -215,9 +217,11 @@ update_capabilities (NMSupplicantManager *self)
 	if (value) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
 			array = g_variant_get_strv (value, NULL);
-			if (_nm_utils_string_in_list ("fast", array))
-				priv->fast_supported = TRUE;
-			g_free (array);
+			if (array) {
+				if (g_strv_contains (array, "fast"))
+					priv->fast_supported = TRUE;
+				g_free (array);
+			}
 		}
 		g_variant_unref (value);
 	}

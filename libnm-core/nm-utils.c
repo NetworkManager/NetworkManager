@@ -442,12 +442,6 @@ nm_utils_same_ssid (const guint8 *ssid1, gsize len1,
 	return memcmp (ssid1, ssid2, len1) == 0 ? TRUE : FALSE;
 }
 
-gboolean
-_nm_utils_string_in_list (const char *str, const char **valid_strings)
-{
-	return _nm_utils_strv_find_first ((char **) valid_strings, -1, str) >= 0;
-}
-
 /**
  * _nm_utils_strv_find_first:
  * @list: the strv list to search
@@ -530,7 +524,7 @@ _nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 	GSList *iter;
 
 	for (iter = list; iter; iter = iter->next) {
-		if (!_nm_utils_string_in_list ((char *) iter->data, valid_values))
+		if (!g_strv_contains (valid_values, (char *) iter->data))
 			return FALSE;
 	}
 
