@@ -394,11 +394,12 @@ g_steal_pointer (gpointer pp)
   (0 ? (*(pp)) : (g_steal_pointer) (pp))
 #endif
 
-#if !GLIB_CHECK_VERSION(2, 44, 0) || defined (NM_GLIB_COMPAT_H_TEST)
+
 static inline gboolean
 _nm_g_strv_contains (const gchar * const *strv,
                      const gchar         *str)
 {
+#if !GLIB_CHECK_VERSION(2, 44, 0)
 	g_return_val_if_fail (strv != NULL, FALSE);
 	g_return_val_if_fail (str != NULL, FALSE);
 
@@ -408,20 +409,12 @@ _nm_g_strv_contains (const gchar * const *strv,
 	}
 
 	return FALSE;
-}
-#endif
-#if !GLIB_CHECK_VERSION(2, 44, 0)
-#define g_strv_contains(strv, str) \
-	({ \
-		_nm_g_strv_contains (strv, str); \
-	})
 #else
-#define g_strv_contains(strv, str) \
-	({ \
-		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
-			(g_strv_contains) ((strv), (str)); \
-		G_GNUC_END_IGNORE_DEPRECATIONS \
-	})
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+	return g_strv_contains (strv, str);
+	G_GNUC_END_IGNORE_DEPRECATIONS
 #endif
+}
+#define g_strv_contains _nm_g_strv_contains
 
 #endif  /* __NM_GLIB_H__ */
