@@ -2911,47 +2911,90 @@ get_valid_settings_array (const char *con_type)
 	return NULL;
 }
 
+/* get_valid_properties_string:
+ * @array: base properties for the current connection type
+ * @array_slv: slave properties (or ipv4/ipv6 ones) for the current connection type
+ * @modifier: to prepend to each element of the returned list
+ * @prefix: only properties matching the prefix will be returned
+ * @postfix: required prefix on the property args; if a empty string is passed, is
+ *           assumed that the @prefix is a shortcut, so it should not be completed
+ *           but left as is (and an additional check for shortcut ambiguity is performed)
+ *
+ * Returns a list of properties compatible with the current connection type
+ * for the shell autocompletion functionality.
+ *
+ * Returns: list of property.arg elements
+ */
 static char *
-get_valid_properties_string (const NameItem *array, const NameItem *array_slv, char modifier, const char *prefix)
+get_valid_properties_string (const NameItem *array,
+                             const NameItem *array_slv,
+                             char modifier,
+                             const char *prefix,
+                             const char *postfix)
 {
 	const NameItem *iter = array;
 	const NmcOutputField *field_iter;
+	const char *prop_name = NULL;
 	GString *str;
-	int i;
+	int i, j;
+
+	g_return_val_if_fail (prefix, NULL);
 
 	str = g_string_sized_new (1024);
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
 		while (iter && iter->name) {
-			int j = 0;
+			if (   !(g_str_has_prefix (iter->name, prefix))
+			    && (!(iter->alias) || !g_str_has_prefix (iter->alias, prefix))) {
+				iter++;
+				continue;
+			}
+			/* If postix (so prefix is terminated by a dot), check
+			 * that prefix is not ambiguous */
+			if (postfix) {
+				if (prop_name)
+					return g_string_free (str, TRUE);
+				prop_name = prefix;
+			} else {
+				prop_name = iter->name;
+			}
 
-			while ((nmc_fields_settings_names[j].name) &&
-			        g_strcmp0 (iter->name, nmc_fields_settings_names[j].name))
+			/* Search the array with the arguments of the current property */
+			j = 0;
+			while (!nm_streq0 (iter->name, nmc_fields_settings_names[j].name)) {
+				g_assert (nmc_fields_settings_names[j].name);
 				j++;
-
+			}
 			field_iter = nmc_fields_settings_names[j].group;
+
 			j = 0;
 			while (field_iter[j].name) {
 				gchar *new;
+				const char *arg_name = field_iter[j].name;
 
-				new  = g_strdup_printf ("%s.%s\n", iter->name, field_iter[j].name);
-				if (g_str_has_prefix (new, prefix)) {
+				/* If required, expand the alias too */
+				if (!postfix && iter->alias) {
 					if (modifier)
 						g_string_append_c (str, modifier);
+					new = g_strdup_printf ("%s.%s\n",
+							       iter->alias,
+							       arg_name);
 					g_string_append (str, new);
-				}
-				g_free (new);
-
-				if (iter->alias) {
-					new  = g_strdup_printf ("%s.%s\n", iter->alias, field_iter[j].name);
-					if (g_str_has_prefix (new, prefix)) {
-						if (modifier)
-							g_string_append_c (str, modifier);
-						g_string_append (str, new);
-					}
 					g_free (new);
 				}
 
+				if (postfix && !g_str_has_prefix (arg_name, postfix)) {
+					j++;
+					continue;
+				}
+
+				if (modifier)
+					g_string_append_c (str, modifier);
+				new = g_strdup_printf ("%s.%s\n",
+						       prop_name,
+						       arg_name);
+				g_string_append (str, new);
+				g_free (new);
 				j++;
 			}
 			iter++;
@@ -4662,7 +4705,10 @@ do_questionnaire_ip_tunnel (char **local, char **parent)
 }
 
 static void
-complete_property_name (NmCli *nmc, NMConnection *connection, char modifier, const gchar *prefix)
+complete_property_name (NmCli *nmc, NMConnection *connection,
+                        char modifier,
+                        const gchar *prefix,
+                        const gchar *postfix)
 {
 	NMSettingConnection *s_con;
 	const NameItem *valid_settings_main = NULL;
@@ -4680,7 +4726,7 @@ complete_property_name (NmCli *nmc, NMConnection *connection, char modifier, con
 	valid_settings_main = get_valid_settings_array (connection_type);
 	valid_settings_slave = get_valid_settings_array (slv_type);
 
-	word_list = get_valid_properties_string (valid_settings_main, valid_settings_slave, modifier, prefix);
+	word_list = get_valid_properties_string (valid_settings_main, valid_settings_slave, modifier, prefix, postfix);
 	if (word_list)
 		g_print ("%s", word_list);
 }
@@ -4738,11 +4784,12 @@ read_connection_properties (NmCli *nmc,
 
 		strv = g_strsplit (s_dot_p, ".", 2);
 		if (g_strv_length (strv) != 2) {
-			if (nmc->complete)
-				complete_property_name (nmc, connection, modifier, s_dot_p);
-			else
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("Error: invalid <setting>.<property> '%s'."), s_dot_p);
+			if (nmc->complete) {
+				complete_property_name (nmc, connection, modifier, s_dot_p, NULL);
+				break;
+			}
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: invalid <setting>.<property> '%s'."), s_dot_p);
 			goto finish;
 		}
 
@@ -4827,7 +4874,7 @@ read_connection_properties (NmCli *nmc,
 	success = TRUE;
 finish:
 	if (!success && nmc->complete) {
-		complete_property_name (nmc, connection, modifier, s_dot_p);
+		complete_property_name (nmc, connection, modifier, strv[0], strv[1]);
 		success = TRUE;
 	}
 	if (strv)
@@ -10263,7 +10310,7 @@ do_connection_modify (NmCli *nmc,
 
 	if (next_arg (&argc, &argv) != 0) {
 		if (nmc->complete) {
-			complete_property_name (nmc, NM_CONNECTION (rc), '\0', "");
+			complete_property_name (nmc, NM_CONNECTION (rc), '\0', "", NULL);
 			goto finish;
 		}
 		g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
