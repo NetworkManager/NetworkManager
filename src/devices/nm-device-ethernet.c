@@ -810,8 +810,11 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
+		if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 		/* If we're re-activating a PPPoE connection a short while after
 		 * a previous PPPoE connection was torn down, wait a bit to allow the
 		 * remote side to handle the disconnection.  Otherwise the peer may

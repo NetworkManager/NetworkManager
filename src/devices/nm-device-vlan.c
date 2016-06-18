@@ -558,7 +558,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
+	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	/* Change MAC address to parent's one if needed */
 	if (priv->parent)

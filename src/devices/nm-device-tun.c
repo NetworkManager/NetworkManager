@@ -303,7 +303,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (g_strcmp0 (priv->mode, "tap"))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
-	nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE);
+	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }

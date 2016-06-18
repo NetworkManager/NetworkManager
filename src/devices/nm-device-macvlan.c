@@ -510,8 +510,9 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
-	return TRUE;
+	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static void

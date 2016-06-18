@@ -2315,7 +2315,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	/* Set spoof MAC to the interface */
-	nm_device_hw_addr_set_cloned (device, connection, TRUE);
+	if (!nm_device_hw_addr_set_cloned (device, connection, TRUE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	/* AP mode never uses a specific object or existing scanned AP */
 	if (priv->mode != NM_802_11_MODE_AP) {
