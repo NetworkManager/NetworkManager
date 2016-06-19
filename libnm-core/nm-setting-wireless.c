@@ -840,6 +840,39 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (!NM_IN_SET (priv->mac_address_randomization,
+	                NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                NM_SETTING_MAC_RANDOMIZATION_NEVER,
+	                NM_SETTING_MAC_RANDOMIZATION_ALWAYS)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("invalid value"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION);
+		return FALSE;
+	}
+
+	/* from here on, check for NM_SETTING_VERIFY_NORMALIZABLE conditions. */
+
+	if (priv->cloned_mac_address) {
+		if (   priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS
+		    && nm_streq (priv->cloned_mac_address, "random"))
+			goto mac_addr_rand_ok;
+		if (   priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER
+		    && nm_streq (priv->cloned_mac_address, "permanent"))
+			goto mac_addr_rand_ok;
+		if (priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
+			goto mac_addr_rand_ok;
+	} else if (priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
+		goto mac_addr_rand_ok;
+	g_set_error (error,
+	             NM_CONNECTION_ERROR,
+	             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+	             _("conflicting value of mac-address-randomization and cloned-mac-address"));
+	g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS);
+	return NM_SETTING_VERIFY_NORMALIZABLE;
+mac_addr_rand_ok:
+
 	return TRUE;
 }
 
@@ -1460,6 +1493,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
 	 * (always randomize the MAC address).
 	 *
 	 * Since: 1.2
+	 * Deprecated: 1.4: Deprecated by NMSettingWireless:cloned-mac-address property
 	 **/
 	/* ---ifcfg-rh---
 	 * property: mac-address-randomization

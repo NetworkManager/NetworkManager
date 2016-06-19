@@ -847,6 +847,52 @@ _normalize_bond_mode (NMConnection *self, GHashTable *parameters)
 	return FALSE;
 }
 
+static gboolean
+_normalize_wireless_mac_address_randomization (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingWireless *s_wifi = nm_connection_get_setting_wireless (self);
+	const char *cloned_mac_address;
+	NMSettingMacRandomization mac_address_randomization;
+
+	if (!s_wifi)
+		return FALSE;
+
+	mac_address_randomization = nm_setting_wireless_get_mac_address_randomization (s_wifi);
+	if (!NM_IN_SET (mac_address_randomization,
+	                NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+	                NM_SETTING_MAC_RANDOMIZATION_NEVER,
+	                NM_SETTING_MAC_RANDOMIZATION_ALWAYS))
+		return FALSE;
+
+	cloned_mac_address = nm_setting_wireless_get_cloned_mac_address (s_wifi);
+	if (cloned_mac_address) {
+		if (nm_streq (cloned_mac_address, "random")) {
+			if (mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
+				return FALSE;
+			mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_ALWAYS;
+		} else if (nm_streq (cloned_mac_address, "permanent")) {
+			if (mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER)
+				return FALSE;
+			mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+		} else {
+			if (mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
+				return FALSE;
+			mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
+		}
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION, mac_address_randomization, NULL);
+		return TRUE;
+	}
+	if (mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
+		g_object_set (s_wifi,
+		              NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
+		              mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS
+		                  ? "random" : "permanent",
+		              NULL);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -1089,6 +1135,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 	was_modified |= _normalize_bond_mode (connection, parameters);
+	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
