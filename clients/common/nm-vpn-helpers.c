@@ -113,7 +113,7 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 }
 
 const VpnPasswordName *
-nm_vpn_get_secret_names (const char *vpn_type)
+nm_vpn_get_secret_names (const char *service_type)
 {
 	const char *type;
 	static VpnPasswordName generic_vpn_secrets[] = { {"password", N_("Password")}, {NULL, NULL} };
@@ -132,16 +132,16 @@ nm_vpn_get_secret_names (const char *vpn_type)
 	                                                 {"gwcert", N_("Gateway certificate hash")},
 	                                                 {NULL, NULL} };
 
-	if (!vpn_type)
+	if (!service_type)
 		return NULL;
 
-	if (   !g_str_has_prefix (vpn_type, NM_DBUS_INTERFACE)
-	    || vpn_type[NM_STRLEN (NM_DBUS_INTERFACE)] != '.') {
+	if (   !g_str_has_prefix (service_type, NM_DBUS_INTERFACE)
+	    || service_type[NM_STRLEN (NM_DBUS_INTERFACE)] != '.') {
 		/* all our well-known, hard-coded vpn-types start with NM_DBUS_INTERFACE. */
 		return NULL;
 	}
 
-	type = vpn_type + (NM_STRLEN (NM_DBUS_INTERFACE) + 1);
+	type = service_type + (NM_STRLEN (NM_DBUS_INTERFACE) + 1);
 	if (   !g_strcmp0 (type, "pptp")
 	    || !g_strcmp0 (type, "iodine")
 	    || !g_strcmp0 (type, "ssh")
