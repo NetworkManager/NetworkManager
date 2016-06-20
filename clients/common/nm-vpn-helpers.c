@@ -135,11 +135,13 @@ nm_vpn_get_secret_names (const char *vpn_type)
 	if (!vpn_type)
 		return NULL;
 
-	if (g_str_has_prefix (vpn_type, NM_DBUS_INTERFACE))
-		type = vpn_type + strlen (NM_DBUS_INTERFACE) + 1;
-	else
-		type = vpn_type;
+	if (   !g_str_has_prefix (vpn_type, NM_DBUS_INTERFACE)
+	    || vpn_type[NM_STRLEN (NM_DBUS_INTERFACE)] != '.') {
+		/* all our well-known, hard-coded vpn-types start with NM_DBUS_INTERFACE. */
+		return NULL;
+	}
 
+	type = vpn_type + (NM_STRLEN (NM_DBUS_INTERFACE) + 1);
 	if (   !g_strcmp0 (type, "pptp")
 	    || !g_strcmp0 (type, "iodine")
 	    || !g_strcmp0 (type, "ssh")
