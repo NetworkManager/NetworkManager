@@ -685,35 +685,31 @@ check_connection_available (NMDevice *device,
 	return !!find_first_compatible_ap (NM_DEVICE_WIFI (device), connection, TRUE);
 }
 
-/*
- * List of manufacturer default SSIDs that are often unchanged by users.
- *
- * NOTE: this list should *not* contain networks that you would like to
- * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
- */
-static const char *
-manf_defaults[] = {
-	"linksys",
-	"linksys-a",
-	"linksys-g",
-	"default",
-	"belkin54g",
-	"NETGEAR",
-	"o2DSL",
-	"WLAN",
-	"ALICE-WLAN",
-	"Speedport W 501V",
-	"TURBONETT",
-};
-
-#define ARRAY_SIZE(a)  (sizeof (a) / sizeof (a[0]))
-
 static gboolean
 is_manf_default_ssid (const GByteArray *ssid)
 {
 	int i;
+	/*
+	 * List of manufacturer default SSIDs that are often unchanged by users.
+	 *
+	 * NOTE: this list should *not* contain networks that you would like to
+	 * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
+	 */
+	static const char *manf_defaults[] = {
+		"linksys",
+		"linksys-a",
+		"linksys-g",
+		"default",
+		"belkin54g",
+		"NETGEAR",
+		"o2DSL",
+		"WLAN",
+		"ALICE-WLAN",
+		"Speedport W 501V",
+		"TURBONETT",
+	};
 
-	for (i = 0; i < ARRAY_SIZE (manf_defaults); i++) {
+	for (i = 0; i < G_N_ELEMENTS (manf_defaults); i++) {
 		if (ssid->len == strlen (manf_defaults[i])) {
 			if (memcmp (manf_defaults[i], ssid->data, ssid->len) == 0)
 				return TRUE;
