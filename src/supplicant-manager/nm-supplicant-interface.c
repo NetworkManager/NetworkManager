@@ -503,12 +503,6 @@ nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
 		priv->ap_support = ap_support;
 }
 
-NMSupplicantFeature
-nm_supplicant_interface_get_mac_randomization_support (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->mac_randomization_support;
-}
-
 static void
 set_preassoc_scan_mac_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -563,7 +557,7 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 			                   g_variant_new ("(ssv)",
 			                                  WPAS_DBUS_IFACE_INTERFACE,
 			                                  "PreassocMacAddr",
-			                                  g_variant_new_string ("1")),
+			                                  g_variant_new_string ("0")),
 			                   G_DBUS_CALL_FLAGS_NONE,
 			                   -1,
 			                   priv->init_cancellable,
@@ -1223,9 +1217,7 @@ set_mac_randomization_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user
 		return;
 	}
 
-	_LOGI ("config: set MAC randomization to %s",
-	       nm_supplicant_config_get_mac_randomization (priv->cfg));
-
+	_LOGT ("config: set MAC randomization to 0");
 	add_network (self);
 }
 
@@ -1256,23 +1248,20 @@ set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	       nm_supplicant_config_get_ap_scan (priv->cfg));
 
 	if (priv->mac_randomization_support == NM_SUPPLICANT_FEATURE_YES) {
-		const char *mac_randomization = nm_supplicant_config_get_mac_randomization (priv->cfg);
-
 		/* Enable/disable association MAC address randomization */
 		g_dbus_proxy_call (priv->iface_proxy,
 		                   DBUS_INTERFACE_PROPERTIES ".Set",
 		                   g_variant_new ("(ssv)",
 		                                  WPAS_DBUS_IFACE_INTERFACE,
 		                                  "MacAddr",
-		                                  g_variant_new_string (mac_randomization)),
+		                                  g_variant_new_string ("0")),
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
 		                   priv->assoc_cancellable,
 		                   (GAsyncReadyCallback) set_mac_randomization_cb,
 		                   self);
-	} else {
+	} else
 		add_network (self);
-	}
 }
 
 gboolean

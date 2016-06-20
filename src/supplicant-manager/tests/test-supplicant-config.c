@@ -160,8 +160,6 @@ test_wifi_open (void)
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
 	                                                     0,
-	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
 	                                                     &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
@@ -265,8 +263,6 @@ test_wifi_wep_key (const char *detail,
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
 	                                                     0,
-	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
 	                                                     &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
@@ -410,8 +406,6 @@ test_wifi_wpa_psk (const char *detail,
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
 	                                                     0,
-	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
 	                                                     &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
@@ -557,8 +551,6 @@ test_wifi_eap (void)
 	g_assert (nm_supplicant_config_add_setting_wireless (config,
 	                                                     s_wifi,
 	                                                     0,
-	                                                     NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                                                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
 	                                                     &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();

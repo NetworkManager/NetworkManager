@@ -62,6 +62,8 @@ _LOG_DECLARE_SELF(NMDeviceWifi);
 #define SCAN_INTERVAL_STEP 20
 #define SCAN_INTERVAL_MAX 120
 
+#define SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN 5
+
 #define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
 
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
@@ -119,6 +121,9 @@ struct _NMDeviceWifiPrivate {
 	guint             reacquire_iface_id;
 
 	NMDeviceWifiCapabilities capabilities;
+
+	gint32 hw_addr_scan_expire;
+	char *hw_addr_scan;
 };
 
 static gboolean check_scanning_allowed (NMDeviceWifi *self);
@@ -168,6 +173,8 @@ static void ap_add_remove (NMDeviceWifi *self,
                            gboolean recheck_available_connections);
 
 static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
+
+static void _hw_addr_set_scanning (NMDeviceWifi *self);
 
 /*****************************************************************/
 
@@ -482,7 +489,8 @@ deactivate (NMDevice *device)
 	/* Clear any critical protocol notification in the Wi-Fi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
-	nm_device_hw_addr_reset (device);
+	g_clear_pointer (&priv->hw_addr_scan, g_free);
+	_hw_addr_set_scanning (self);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
@@ -1013,6 +1021,38 @@ impl_device_wifi_get_all_access_points (NMDeviceWifi *self,
 }
 
 static void
+_hw_addr_set_scanning (NMDeviceWifi *self)
+{
+	NMDevice *device = (NMDevice *) self;
+	NMDeviceWifiPrivate *priv;
+	guint32 now;
+
+	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
+
+	if (   nm_device_is_activating (device)
+	    || nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+		return;
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	now = nm_utils_get_monotonic_timestamp_s ();
+	if (   !priv->hw_addr_scan
+	    || now >= priv->hw_addr_scan_expire) {
+		/* the random MAC address for scanning expires after a while.
+		 *
+		 * We don't bother with to update the MAC address exactly when
+		 * it expires, instead on the next scan request, we will generate
+		 * a new one.*/
+		priv->hw_addr_scan_expire = now + (SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN * 60);
+
+		g_free (priv->hw_addr_scan);
+		priv->hw_addr_scan = nm_utils_hw_addr_gen_random_eth ();
+	}
+
+	nm_device_hw_addr_set (device, priv->hw_addr_scan);
+}
+
+static void
 request_scan_cb (NMDevice *device,
                  GDBusMethodInvocation *context,
                  NMAuthSubject *subject,
@@ -1320,6 +1360,8 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 			} else
 				_LOGD (LOGD_WIFI_SCAN, "no SSIDs to probe scan");
 		}
+
+		_hw_addr_set_scanning (self);
 
 		if (nm_supplicant_interface_request_scan (priv->sup_iface, ssids)) {
 			/* success */
@@ -2195,9 +2237,6 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSupplicantConfig *config = NULL;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
-	NMSupplicantFeature mac_randomization_support;
-	NMSettingMacRandomization mac_randomization_fallback;
-	gs_free char *svalue = NULL;
 
 	g_return_val_if_fail (priv->sup_iface, NULL);
 
@@ -2212,20 +2251,9 @@ build_supplicant_config (NMDeviceWifi *self,
 		_LOGW (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
 	}
 
-	mac_randomization_support = nm_supplicant_interface_get_mac_randomization_support (priv->sup_iface);
-	svalue = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                                "wifi." NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
-	                                                NM_DEVICE (self));
-	mac_randomization_fallback = _nm_utils_ascii_str_to_int64 (svalue, 10,
-	                                                           NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
-	                                                           NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
-	                                                           NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
-
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
 	                                                fixed_freq,
-	                                                mac_randomization_support,
-	                                                mac_randomization_fallback,
 	                                                error)) {
 		g_prefix_error (error, "802-11-wireless: ");
 		goto error;
@@ -2313,6 +2341,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
+
+	/* forget the temporary MAC address used during scanning */
+	g_clear_pointer (&priv->hw_addr_scan, g_free);
 
 	/* Set spoof MAC to the interface */
 	if (!nm_device_hw_addr_set_cloned (device, connection, TRUE))
@@ -2955,6 +2986,8 @@ finalize (GObject *object)
 	nm_assert (g_hash_table_size (priv->aps) == 0);
 
 	g_hash_table_unref (priv->aps);
+
+	g_free (priv->hw_addr_scan);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }

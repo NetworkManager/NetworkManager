@@ -11009,6 +11009,7 @@ _set_state_full (NMDevice *self,
 				if (nm_device_get_act_request (self))
 					nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
 				nm_device_take_down (self, TRUE);
+				nm_device_hw_addr_reset (self);
 				set_nm_ipv6ll (self, FALSE);
 				restore_ip6_properties (self);
 			}
@@ -11409,9 +11410,13 @@ nm_device_update_hw_address (NMDevice *self)
 			_LOGD (LOGD_HW | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
 			_notify (self, PROP_HW_ADDRESS);
 
-			if (!priv->hw_addr_initial) {
-				/* when we get a hw_addr the first time, always update our inital
-				 * hw-address as well. */
+			if (   !priv->hw_addr_initial
+			    || (   priv->hw_addr_type == HW_ADDR_TYPE_UNSET
+			        && priv->state < NM_DEVICE_STATE_PREPARE
+			        && !nm_device_is_activating (self))) {
+				/* when we get a hw_addr the first time or while the device
+				 * is not activated (with no explict hw address set), always
+				 * update our inital hw-address as well. */
 				nm_device_update_initial_hw_address (self);
 			}
 		}
@@ -11433,10 +11438,14 @@ nm_device_update_initial_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	priv->hw_addr_type = HW_ADDR_TYPE_UNSET;
-
 	if (   priv->hw_addr
 	    && !nm_streq0 (priv->hw_addr_initial, priv->hw_addr)) {
+		if (   priv->hw_addr_initial
+		    && priv->hw_addr_type != HW_ADDR_TYPE_UNSET) {
+			/* once we have the initial hw address set, we only allow
+			 * update if the currenty type is "unset". */
+			return;
+		}
 		g_free (priv->hw_addr_initial);
 		priv->hw_addr_initial = g_strdup (priv->hw_addr);
 		_LOGD (LOGD_DEVICE, "hw-addr: update initial MAC address %s",
@@ -11515,11 +11524,26 @@ _get_cloned_mac_address_setting (NMDevice *self, NMConnection *connection, gbool
 		a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 		                                           is_wifi ? "wifi.cloned-mac-address" : "ethernet.cloned-mac-address",
 		                                           self);
-		if (   !a
-		    || (   !NM_CLONED_MAC_IS_SPECIAL (a)
-		        && !nm_utils_hwaddr_valid (a, ETH_ALEN)))
-			addr = NM_CLONED_MAC_PERMANENT;
-		else
+		/* default is permanent. */
+		addr = NM_CLONED_MAC_PERMANENT;
+
+		if (!a) {
+			if (is_wifi) {
+				NMSettingMacRandomization v;
+
+				/* for backward compatibility, read the deprecated wifi.mac-address-randomization setting. */
+				a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+				                                           "wifi." NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
+				                                           self);
+				v = _nm_utils_ascii_str_to_int64 (a, 10,
+				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+				                                  NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
+				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
+				if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
+					addr = NM_CLONED_MAC_RANDOM;
+			}
+		} else if (   NM_CLONED_MAC_IS_SPECIAL (a)
+		           || nm_utils_hwaddr_valid (a, ETH_ALEN))
 			addr = *out_addr = g_steal_pointer (&a);
 	}
 
@@ -11547,6 +11571,7 @@ _hw_addr_set (NMDevice *self,
 	const char *cur_addr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	guint hw_addr_len;
+	gboolean was_up;
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (addr);
@@ -11571,8 +11596,11 @@ _hw_addr_set (NMDevice *self,
 
 	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s'...", addr);
 
-	/* Can't change MAC address while device is up */
-	nm_device_take_down (self, FALSE);
+	was_up = nm_device_is_up (self);
+	if (was_up) {
+		/* Can't change MAC address while device is up */
+		nm_device_take_down (self, FALSE);
+	}
 
 	success = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, hw_addr_len);
 	if (success) {
@@ -11592,8 +11620,10 @@ _hw_addr_set (NMDevice *self,
 		       detail, addr);
 	}
 
-	if (!nm_device_bring_up (self, TRUE, NULL))
-		return FALSE;
+	if (was_up) {
+		if (!nm_device_bring_up (self, TRUE, NULL))
+			return FALSE;
+	}
 
 	return success;
 }
@@ -11610,7 +11640,8 @@ nm_device_hw_addr_set (NMDevice *self, const char *addr)
 	if (!addr)
 		g_return_val_if_reached (FALSE);
 
-	/* this is called by NMDeviceVlan to take the MAC address from the parent.
+	/* this is called by NMDeviceVlan to take the MAC address from the parent
+	 * and by NMDeviceWifi to set a random MAC address during scanning.
 	 * In this case, it's like setting it to PERMANENT. */
 	priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
 
@@ -11634,8 +11665,10 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 
 	addr = _get_cloned_mac_address_setting (self, connection, is_wifi, &hw_addr_tmp);
 
-	if (nm_streq (addr, NM_CLONED_MAC_PRESERVE))
-		return TRUE;
+	if (nm_streq (addr, NM_CLONED_MAC_PRESERVE)) {
+		/* "preserve" means to reset the initial MAC address. */
+		return nm_device_hw_addr_reset (self);
+	}
 
 	if (nm_streq (addr, NM_CLONED_MAC_PERMANENT)) {
 		addr = nm_device_get_permanent_hw_address (self, TRUE);
