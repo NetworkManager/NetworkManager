@@ -153,6 +153,7 @@ typedef struct _NmCli {
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
 	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
+	gboolean complete;                                /* Autocomplete the command line */
 	gboolean show_secrets;                            /* Whether to display secrets (both input and output): option '--show-secrets' */
 	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
