@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CONNECTION_ID             "id"
 #define NM_SETTING_CONNECTION_UUID           "uuid"
+#define NM_SETTING_CONNECTION_STABLE_ID      "stable-id"
 #define NM_SETTING_CONNECTION_INTERFACE_NAME "interface-name"
 #define NM_SETTING_CONNECTION_TYPE           "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT    "autoconnect"
@@ -116,6 +117,8 @@ GType nm_setting_connection_get_type (void);
 NMSetting * nm_setting_connection_new                  (void);
 const char *nm_setting_connection_get_id               (NMSettingConnection *setting);
 const char *nm_setting_connection_get_uuid             (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_4
+const char *nm_setting_connection_get_stable_id        (NMSettingConnection *setting);
 const char *nm_setting_connection_get_interface_name   (NMSettingConnection *setting);
 const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);

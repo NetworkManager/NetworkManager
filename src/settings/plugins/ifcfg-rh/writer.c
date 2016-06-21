@@ -1800,6 +1800,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
+	svSetValue (ifcfg, "STABLE_ID", nm_setting_connection_get_stable_id (s_con), FALSE);
 	svSetValue (ifcfg, "DEVICE", nm_setting_connection_get_interface_name (s_con), FALSE);
 	svSetValue (ifcfg, "ONBOOT",
 	            nm_setting_connection_get_autoconnect (s_con) ? "yes" : "no",
