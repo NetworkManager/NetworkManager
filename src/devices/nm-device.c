@@ -11048,7 +11048,7 @@ _set_state_full (NMDevice *self,
 				if (nm_device_get_act_request (self))
 					nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
 				nm_device_take_down (self, TRUE);
-				nm_device_hw_addr_reset (self);
+				nm_device_hw_addr_reset (self, "unmanage");
 				set_nm_ipv6ll (self, FALSE);
 				restore_ip6_properties (self);
 			}
@@ -11603,6 +11603,7 @@ nm_device_hw_addr_is_explict (NMDevice *self)
 static gboolean
 _hw_addr_set (NMDevice *self,
               const char *addr,
+              const char *operation,
               const char *detail)
 {
 	NMDevicePrivate *priv;
@@ -11614,7 +11615,7 @@ _hw_addr_set (NMDevice *self,
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (addr);
-	nm_assert (detail);
+	nm_assert (operation);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -11633,7 +11634,7 @@ _hw_addr_set (NMDevice *self,
 	    || !nm_utils_hwaddr_aton (addr, addr_bytes, hw_addr_len))
 		g_return_val_if_reached (FALSE);
 
-	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s'...", addr);
+	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s)...", addr, operation, detail);
 
 	was_up = nm_device_is_up (self);
 	if (was_up) {
@@ -11647,16 +11648,17 @@ _hw_addr_set (NMDevice *self,
 		nm_device_update_hw_address (self);
 		cur_addr = nm_device_get_hw_address (self);
 		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s",
-			       detail, addr);
+			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
+			       operation, addr, detail);
 		} else {
 			_LOGW (LOGD_DEVICE,
-			       "set-hw-addr: new MAC address %s not successfully set", addr);
+			       "set-hw-addr: new MAC address %s not successfully set to %s (%s)",
+			       addr, operation, detail);
 			success = FALSE;
 		}
 	} else {
-		_LOGW (LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s",
-		       detail, addr);
+		_LOGW (LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s)",
+		       operation, addr, detail);
 	}
 
 	if (was_up) {
@@ -11668,7 +11670,7 @@ _hw_addr_set (NMDevice *self,
 }
 
 gboolean
-nm_device_hw_addr_set (NMDevice *self, const char *addr)
+nm_device_hw_addr_set (NMDevice *self, const char *addr, const char *detail)
 {
 	NMDevicePrivate *priv;
 
@@ -11684,7 +11686,7 @@ nm_device_hw_addr_set (NMDevice *self, const char *addr)
 	 * In this case, it's like setting it to PERMANENT. */
 	priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
 
-	return _hw_addr_set (self, addr, "set");
+	return _hw_addr_set (self, addr, "set", detail);
 }
 
 gboolean
@@ -11693,7 +11695,7 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 	NMDevicePrivate *priv;
 	gs_free char *hw_addr_tmp = NULL;
 	gs_free char *hw_addr_generated = NULL;
-	const char *addr;
+	const char *addr, *addr_setting;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -11702,11 +11704,11 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 	if (!connection)
 		g_return_val_if_reached (FALSE);
 
-	addr = _get_cloned_mac_address_setting (self, connection, is_wifi, &hw_addr_tmp);
+	addr = addr_setting = _get_cloned_mac_address_setting (self, connection, is_wifi, &hw_addr_tmp);
 
 	if (nm_streq (addr, NM_CLONED_MAC_PRESERVE)) {
 		/* "preserve" means to reset the initial MAC address. */
-		return nm_device_hw_addr_reset (self);
+		return nm_device_hw_addr_reset (self, addr_setting);
 	}
 
 	if (nm_streq (addr, NM_CLONED_MAC_PERMANENT)) {
@@ -11745,11 +11747,11 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 		priv->hw_addr_type = HW_ADDR_TYPE_EXPLICIT;
 	}
 
-	return _hw_addr_set (self, addr, "set-cloned");
+	return _hw_addr_set (self, addr, "set-cloned", addr_setting);
 }
 
 gboolean
-nm_device_hw_addr_reset (NMDevice *self)
+nm_device_hw_addr_reset (NMDevice *self, const char *detail)
 {
 	NMDevicePrivate *priv;
 	const char *addr;
@@ -11769,7 +11771,7 @@ nm_device_hw_addr_reset (NMDevice *self)
 		g_return_val_if_reached (FALSE);
 	}
 
-	return _hw_addr_set (self, addr, "reset");
+	return _hw_addr_set (self, addr, "reset", detail);
 }
 
 const char *

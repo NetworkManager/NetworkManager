@@ -1353,7 +1353,7 @@ deactivate (NMDevice *device)
 	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
 		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 
-	nm_device_hw_addr_reset (device);
+	nm_device_hw_addr_reset (device, "deactivate");
 }
 
 static gboolean

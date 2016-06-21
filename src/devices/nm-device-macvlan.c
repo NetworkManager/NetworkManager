@@ -544,7 +544,7 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 static void
 deactivate (NMDevice *device)
 {
-	nm_device_hw_addr_reset (device);
+	nm_device_hw_addr_reset (device, "deactivate");
 }
 
 /******************************************************************/

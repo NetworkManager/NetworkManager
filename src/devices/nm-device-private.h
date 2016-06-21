@@ -56,9 +56,9 @@ gboolean nm_device_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmwar
 
 void nm_device_take_down (NMDevice *self, gboolean block);
 
-gboolean nm_device_hw_addr_set (NMDevice *device, const char *addr);
+gboolean nm_device_hw_addr_set (NMDevice *device, const char *addr, const char *detail);
 gboolean nm_device_hw_addr_set_cloned (NMDevice *device, NMConnection *connection, gboolean is_wifi);
-gboolean nm_device_hw_addr_reset (NMDevice *device);
+gboolean nm_device_hw_addr_reset (NMDevice *device, const char *detail);
 
 void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 

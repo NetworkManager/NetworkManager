@@ -1056,7 +1056,7 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 	if (!randomize) {
 		g_clear_pointer (&priv->hw_addr_scan, g_free);
 		if (do_reset)
-			nm_device_hw_addr_reset (device);
+			nm_device_hw_addr_reset (device, "scanning");
 		return;
 	}
 
@@ -1075,7 +1075,7 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		priv->hw_addr_scan = nm_utils_hw_addr_gen_random_eth ();
 	}
 
-	nm_device_hw_addr_set (device, priv->hw_addr_scan);
+	nm_device_hw_addr_set (device, priv->hw_addr_scan, "scanning");
 }
 
 static void
