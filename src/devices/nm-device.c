@@ -3362,7 +3362,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 static gboolean
 nm_device_can_assume_connections (NMDevice *self)
 {
-	return   !!NM_DEVICE_GET_CLASS (self)->update_connection;
+	return !!NM_DEVICE_GET_CLASS (self)->update_connection;
 }
 
 /**
@@ -3378,7 +3378,7 @@ nm_device_can_assume_connections (NMDevice *self)
  * if there is no active connection or the active connection cannot be
  * assumed.
  */
-gboolean
+static gboolean
 nm_device_can_assume_active_connection (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -3423,6 +3423,45 @@ nm_device_can_assume_active_connection (NMDevice *self)
 		return FALSE;
 
 	return TRUE;
+}
+
+static gboolean
+unmanaged_on_quit (NMDevice *self)
+{
+	/* Leave certain devices alone when quitting so their configuration
+	 * can be taken over when NM restarts.  This ensures connectivity while
+	 * NM is stopped.
+	 */
+	if (nm_device_uses_assumed_connection (self)) {
+		/* An assume connection must be left alone */
+		return FALSE;
+	}
+
+	if (!nm_device_get_act_request (self)) {
+		/* a device without any active connection is either UNAVAILABLE or DISCONNECTED
+		 * state. Since we don't know whether the device was upped by NetworkManager,
+		 * we must leave it up on exit.
+		 */
+		return FALSE;
+	}
+
+	if (!nm_platform_link_can_assume (NM_PLATFORM_GET, nm_device_get_ifindex (self))) {
+		/* The device has no layer 3 configuration. Leave it up. */
+		return FALSE;
+	}
+
+	if (nm_device_can_assume_active_connection (self))
+		return FALSE;
+
+	return TRUE;
+}
+
+gboolean
+nm_device_unmanage_on_quit (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	return NM_DEVICE_GET_CLASS (self)->unmanaged_on_quit (self);
 }
 
 static gboolean
@@ -12357,6 +12396,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->take_down = take_down;
 	klass->carrier_changed = carrier_changed;
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
+	klass->unmanaged_on_quit = unmanaged_on_quit;
 
 	/* Properties */
 	obj_properties[PROP_UDI] =

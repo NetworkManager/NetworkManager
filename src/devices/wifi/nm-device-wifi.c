@@ -194,6 +194,18 @@ constructed (GObject *object)
 }
 
 static gboolean
+unmanaged_on_quit (NMDevice *self)
+{
+	/* Wi-Fi devices cannot be assumed and are always taken down.
+	 * However, also when being disconnected, we scan and thus
+	 * set the MAC address to a random value.
+	 *
+	 * We must restore the original MAC address when quitting, thus
+	 * signal to unmanage the device. */
+	return TRUE;
+}
+
+static gboolean
 supplicant_interface_acquire (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -3097,6 +3109,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
+	parent_class->unmanaged_on_quit = unmanaged_on_quit;
 
 	parent_class->state_changed = device_state_changed;
 

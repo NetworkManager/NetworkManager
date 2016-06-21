@@ -328,6 +328,8 @@ typedef struct {
 	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
 
 	NMConnection *  (* new_default_connection) (NMDevice *self);
+
+	gboolean        (* unmanaged_on_quit) (NMDevice *self);
 } NMDeviceClass;
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
@@ -417,7 +419,7 @@ gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnec
 
 gboolean nm_device_uses_assumed_connection (NMDevice *device);
 
-gboolean nm_device_can_assume_active_connection (NMDevice *device);
+gboolean nm_device_unmanage_on_quit (NMDevice *self);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 
