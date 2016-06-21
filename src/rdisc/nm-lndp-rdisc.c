@@ -321,7 +321,7 @@ NMRDisc *
 nm_lndp_rdisc_new (NMPlatform *platform,
                    int ifindex,
                    const char *ifname,
-                   const char *uuid,
+                   const char *network_id,
                    NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                    GError **error)
 {
@@ -342,7 +342,7 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
-	rdisc->uuid = g_strdup (uuid);
+	rdisc->network_id = g_strdup (network_id);
 	rdisc->addr_gen_mode = addr_gen_mode;
 
 	rdisc->max_addresses = ipv6_sysctl_get (platform, ifname, "max_addresses",

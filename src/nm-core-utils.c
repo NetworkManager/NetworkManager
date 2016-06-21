@@ -2955,7 +2955,7 @@ nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
 static gboolean
 _set_stable_privacy (struct in6_addr *addr,
                      const char *ifname,
-                     const char *uuid,
+                     const char *network_id,
                      guint dad_counter,
                      guint8 *secret_key,
                      gsize key_len,
@@ -2981,9 +2981,9 @@ _set_stable_privacy (struct in6_addr *addr,
 
 	g_checksum_update (sum, addr->s6_addr, 8);
 	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
-	if (!uuid)
-		uuid = "";
-	g_checksum_update (sum, (const guchar *) uuid, strlen (uuid) + 1);
+	if (!network_id)
+		network_id = "";
+	g_checksum_update (sum, (const guchar *) network_id, strlen (network_id) + 1);
 	tmp[0] = htonl (dad_counter);
 	tmp[1] = htonl (key_len);
 	g_checksum_update (sum, (const guchar *) tmp, sizeof (tmp));
@@ -3011,7 +3011,7 @@ _set_stable_privacy (struct in6_addr *addr,
 gboolean
 nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
                                        const char *ifname,
-                                       const char *uuid,
+                                       const char *network_id,
                                        guint dad_counter,
                                        GError **error)
 {
@@ -3028,7 +3028,7 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 	if (!secret_key)
 		return FALSE;
 
-	return _set_stable_privacy (addr, ifname, uuid, dad_counter,
+	return _set_stable_privacy (addr, ifname, network_id, dad_counter,
 	                            secret_key, key_len, error);
 }
 

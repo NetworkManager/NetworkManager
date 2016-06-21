@@ -355,7 +355,7 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 
 gboolean nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
                                                 const char *ifname,
-                                                const char *uuid,
+                                                const char *network_id,
                                                 guint dad_counter,
                                                 GError **error);
 

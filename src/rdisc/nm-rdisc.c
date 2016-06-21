@@ -142,7 +142,7 @@ complete_address (NMRDisc *rdisc, NMRDiscAddress *addr)
 	if (rdisc->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
 		if (!nm_utils_ipv6_addr_set_stable_privacy (&addr->address,
 		                                            rdisc->ifname,
-		                                            rdisc->uuid,
+		                                            rdisc->network_id,
 		                                            addr->dad_counter++,
 		                                            &error)) {
 			_LOGW ("complete-address: failed to generate an stable-privacy address: %s",
@@ -777,7 +777,7 @@ finalize (GObject *object)
 	NMRDisc *rdisc = NM_RDISC (object);
 
 	g_free (rdisc->ifname);
-	g_free (rdisc->uuid);
+	g_free (rdisc->network_id);
 	g_array_unref (rdisc->gateways);
 	g_array_unref (rdisc->addresses);
 	g_array_unref (rdisc->routes);

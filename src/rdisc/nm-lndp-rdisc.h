@@ -47,7 +47,7 @@ GType nm_lndp_rdisc_get_type (void);
 NMRDisc *nm_lndp_rdisc_new (NMPlatform *platform,
                             int ifindex,
                             const char *ifname,
-                            const char *uuid,
+                            const char *network_id,
                             NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                             GError **error);
 
