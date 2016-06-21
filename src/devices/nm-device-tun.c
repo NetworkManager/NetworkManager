@@ -104,6 +104,12 @@ reload_tun_properties (NMDeviceTun *self)
 	g_object_thaw_notify (object);
 }
 
+static NMDeviceCapabilities
+get_generic_capabilities (NMDevice *dev)
+{
+	return NM_DEVICE_CAP_IS_SOFTWARE;
+}
+
 static void
 link_changed (NMDevice *device, NMPlatformLink *info)
 {
@@ -430,6 +436,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->complete_connection = complete_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
 	device_class->update_connection = update_connection;

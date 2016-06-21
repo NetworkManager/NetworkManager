@@ -136,6 +136,12 @@ update_properties (NMDevice *device)
 	g_object_thaw_notify (object);
 }
 
+static NMDeviceCapabilities
+get_generic_capabilities (NMDevice *dev)
+{
+	return NM_DEVICE_CAP_IS_SOFTWARE;
+}
+
 static void
 link_changed (NMDevice *device, NMPlatformLink *info)
 {
@@ -647,6 +653,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	device_class->create_and_realize = create_and_realize;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
