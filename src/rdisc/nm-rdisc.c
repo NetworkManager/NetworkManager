@@ -140,7 +140,8 @@ complete_address (NMRDisc *rdisc, NMRDiscAddress *addr)
 	GError *error = NULL;
 
 	if (rdisc->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
-		if (!nm_utils_ipv6_addr_set_stable_privacy (&addr->address,
+		if (!nm_utils_ipv6_addr_set_stable_privacy (rdisc->stable_type,
+		                                            &addr->address,
 		                                            rdisc->ifname,
 		                                            rdisc->network_id,
 		                                            addr->dad_counter++,

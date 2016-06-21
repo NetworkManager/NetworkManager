@@ -616,6 +616,30 @@ _add_capabilities (NMDevice *self, NMDeviceCapabilities capabilities)
 
 /***********************************************************/
 
+static const char *
+_get_stable_id (NMConnection *connection, NMUtilsStableType *out_stable_type)
+{
+	NMSettingConnection *s_con;
+	const char *stable_id;
+
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (out_stable_type);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con, NULL);
+
+	stable_id = nm_setting_connection_get_stable_id (s_con);
+	if (!stable_id) {
+		*out_stable_type = NM_UTILS_STABLE_TYPE_UUID;
+		return nm_connection_get_uuid (connection);
+	}
+
+	*out_stable_type = NM_UTILS_STABLE_TYPE_STABLE_ID;
+	return stable_id;
+}
+
+/***********************************************************/
+
 const char *
 nm_device_get_udi (NMDevice *self)
 {
@@ -5859,11 +5883,17 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 
 	if (s_ip6 && nm_setting_ip6_config_get_addr_gen_mode (s_ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
-		if (!nm_utils_ipv6_addr_set_stable_privacy (&lladdr,
-		                                            nm_device_get_iface (self),
-		                                            nm_connection_get_uuid (connection),
-		                                            priv->linklocal6_dad_counter++,
-		                                            &error)) {
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+
+		stable_id = _get_stable_id (connection, &stable_type);
+		if (   !stable_id
+		    || !nm_utils_ipv6_addr_set_stable_privacy (stable_type,
+		                                               &lladdr,
+		                                               nm_device_get_iface (self),
+		                                               stable_id,
+		                                               priv->linklocal6_dad_counter++,
+		                                               &error)) {
 			_LOGW (LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
 			g_clear_error (&error);
 			linklocal6_failed (self);
@@ -6205,6 +6235,8 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	NMActStageReturn ret;
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
+	NMUtilsStableType stable_type;
+	const char *stable_id;
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -6218,12 +6250,16 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 	g_assert (s_ip6);
 
-	priv->rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET,
-	                                 nm_device_get_ip_ifindex (self),
-	                                 nm_device_get_ip_iface (self),
-	                                 nm_connection_get_uuid (connection),
-	                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
-	                                 &error);
+	stable_id = _get_stable_id (connection, &stable_type);
+	if (stable_id) {
+		priv->rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET,
+		                                 nm_device_get_ip_ifindex (self),
+		                                 nm_device_get_ip_iface (self),
+		                                 stable_type,
+		                                 stable_id,
+		                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
+		                                 &error);
+	}
 	if (!priv->rdisc) {
 		_LOGE (LOGD_IP6, "addrconf6: failed to start router discovery: %s", error->message);
 		g_error_free (error);
@@ -10622,6 +10658,8 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	GPtrArray *argv;
 	gs_free char *dhcp4_address = NULL;
 	char *logging_backend;
+	NMUtilsStableType stable_type;
+	const char *stable_id;
 
 	if (priv->state != NM_DEVICE_STATE_ACTIVATED)
 		return;
@@ -10639,6 +10677,12 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	g_ptr_array_add (argv, g_strdup (nm_device_get_ip_iface (self)));
 	g_ptr_array_add (argv, g_strdup ("--uuid"));
 	g_ptr_array_add (argv, g_strdup (nm_connection_get_uuid (connection)));
+
+	stable_id = _get_stable_id (connection, &stable_type);
+	if (stable_id && stable_type != NM_UTILS_STABLE_TYPE_UUID) {
+		g_ptr_array_add (argv, g_strdup ("--stable-id"));
+		g_ptr_array_add (argv, g_strdup_printf ("%d %s", (int) stable_type, stable_id));
+	}
 
 	logging_backend = nm_config_get_is_debug (nm_config_get ())
 	                  ? g_strdup ("debug")

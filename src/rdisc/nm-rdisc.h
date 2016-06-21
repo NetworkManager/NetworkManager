@@ -116,6 +116,8 @@ typedef struct {
 	NMPlatform *_platform;
 	NMPNetns *_netns;
 
+	NMUtilsStableType stable_type;
+
 	int ifindex;
 	char *ifname;
 	char *network_id;

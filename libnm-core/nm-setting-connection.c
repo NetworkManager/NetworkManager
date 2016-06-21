@@ -1413,6 +1413,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * This token to generate stable IDs for the connection. If unset,
 	 * the UUID will be used instead.
 	 *
+	 * The stable-id is used instead of the connection UUID for generating
+	 * IPv6 stable private addresses with ipv6.addr-gen-mode=stable-privacy.
+	 *
 	 * Since: 1.4
 	 **/
 	/* ---ifcfg-rh---

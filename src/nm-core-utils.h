@@ -353,7 +353,13 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
-gboolean nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
+typedef enum {
+	NM_UTILS_STABLE_TYPE_UUID = 0,
+	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
+} NMUtilsStableType;
+
+gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
+                                                struct in6_addr *addr,
                                                 const char *ifname,
                                                 const char *network_id,
                                                 guint dad_counter,

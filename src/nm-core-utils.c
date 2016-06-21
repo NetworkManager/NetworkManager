@@ -2953,7 +2953,8 @@ nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
 /*****************************************************************************/
 
 static gboolean
-_set_stable_privacy (struct in6_addr *addr,
+_set_stable_privacy (guint8 stable_type,
+                     struct in6_addr *addr,
                      const char *ifname,
                      const char *network_id,
                      guint dad_counter,
@@ -2978,6 +2979,19 @@ _set_stable_privacy (struct in6_addr *addr,
 	}
 
 	key_len = MIN (key_len, G_MAXUINT32);
+
+	if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
+		/* Preferably, we would always like to include the stable-type,
+		 * but for backward compatibility reasons, we cannot for UUID.
+		 *
+		 * That is no real problem and it is still impossible to
+		 * force a collision here, because of how the remaining
+		 * fields are hashed. That is, as we also hash @key_len
+		 * and the terminating '\0' of @network_id, it is unambigiously
+		 * possible to revert the process and deduce the @stable_type.
+		 */
+		g_checksum_update (sum, &stable_type, sizeof (stable_type));
+	}
 
 	g_checksum_update (sum, addr->s6_addr, 8);
 	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
@@ -3009,7 +3023,8 @@ _set_stable_privacy (struct in6_addr *addr,
  * Returns: %TRUE on success, %FALSE if the address could not be generated.
  */
 gboolean
-nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
+nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
+                                       struct in6_addr *addr,
                                        const char *ifname,
                                        const char *network_id,
                                        guint dad_counter,
@@ -3017,6 +3032,10 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 {
 	gs_free guint8 *secret_key = NULL;
 	gsize key_len = 0;
+
+	nm_assert (NM_IN_SET (stable_type,
+	                      NM_UTILS_STABLE_TYPE_UUID,
+	                      NM_UTILS_STABLE_TYPE_STABLE_ID));
 
 	if (dad_counter >= RFC7217_IDGEN_RETRIES) {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -3028,7 +3047,7 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 	if (!secret_key)
 		return FALSE;
 
-	return _set_stable_privacy (addr, ifname, network_id, dad_counter,
+	return _set_stable_privacy (stable_type, addr, ifname, network_id, dad_counter,
 	                            secret_key, key_len, error);
 }
 
