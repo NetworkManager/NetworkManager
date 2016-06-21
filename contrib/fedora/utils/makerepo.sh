@@ -408,6 +408,7 @@ c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libn
 # NetworkManager-vpnc
 89bdcd324f2e257eca59168a7d0be5608438aab0  abb26a6c3c8d6c1d91c78471aff86b3a *NetworkManager-vpnc-0.9.8.2.tar.xz
 c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *NetworkManager-vpnc-0.9.9.0.git20140131.tar.bz2
+68ca41550f9289835ea9d80e1ee059322ebe749a  4c16379738264a117d09c171c645ff23 *NetworkManager-vpnc-1.2.2.tar.xz
 
 # NetworkManager-openvpn
 1f159f30617e4a3b8121074b8bf238312941370d  511eae0d4ac17c6d2659a3da2646296f *NetworkManager-openvpn-1.0.2.tar.xz
