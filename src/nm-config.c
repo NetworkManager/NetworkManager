@@ -959,8 +959,9 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	for (i = 0; i < system_confs->len; ) {
 		const char *filename = system_confs->pdata[i];
 
-		/* if a same named file exists in config_dir, skip it. */
-		if (_nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0) {
+		/* if a same named file exists in config_dir or RUN_CONFIG_DIR, skip it. */
+		if (_nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0 ||
+		    _nm_utils_strv_find_first ((char **) run_confs->pdata, run_confs->len, filename) >= 0) {
 			g_ptr_array_remove_index (system_confs, i);
 			continue;
 		}
