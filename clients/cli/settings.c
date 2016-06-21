@@ -2405,7 +2405,44 @@ nmc_setting_custom_init (NMSetting *setting)
 {
 	g_return_if_fail (NM_IS_SETTING (setting));
 
-	if (NM_IS_SETTING_IP4_CONFIG (setting)) {
+	if (NM_IS_SETTING_VLAN (setting)) {
+		/* Set sensible initial VLAN values */
+		g_object_set (NM_SETTING_VLAN (setting),
+		              NM_SETTING_VLAN_ID, 1,
+		              NULL);
+	} else if (NM_IS_SETTING_INFINIBAND (setting)) {
+		/* Initialize 'transport-mode' so that 'infiniband' is valid */
+		g_object_set (NM_SETTING_INFINIBAND (setting),
+		              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+		              NULL);
+	} else if (NM_IS_SETTING_CDMA (setting)) {
+		/* Initialize 'number' so that 'cdma' is valid */
+		g_object_set (NM_SETTING_CDMA (setting),
+		              NM_SETTING_CDMA_NUMBER, "#777",
+		              NULL);
+	} else if (NM_IS_SETTING_GSM (setting)) {
+		/* Initialize 'number' so that 'gsm' is valid */
+		g_object_set (NM_SETTING_GSM (setting),
+		              NM_SETTING_GSM_NUMBER, "*99#",
+		              NULL);
+	} else if (NM_IS_SETTING_OLPC_MESH (setting)) {
+		g_object_set (NM_SETTING_OLPC_MESH (setting),
+		              NM_SETTING_OLPC_MESH_CHANNEL, 1,
+		              NULL);
+	} else if (NM_IS_SETTING_WIRELESS (setting)) {
+		/* For Wi-Fi set mode to "infrastructure". Even though mode == NULL
+		 * is regarded as "infrastructure", explicit value makes no doubts.
+		 */
+		g_object_set (NM_SETTING_WIRELESS (setting),
+		              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+		              NULL);
+		nmc_setting_wireless_connect_handlers (NM_SETTING_WIRELESS (setting));
+	} else if (NM_IS_SETTING_ADSL (setting)) {
+		/* Initialize a protocol */
+		g_object_set (NM_SETTING_ADSL (setting),
+		              NM_SETTING_ADSL_PROTOCOL, NM_SETTING_ADSL_PROTOCOL_PPPOE,
+		              NULL);
+	} else if (NM_IS_SETTING_IP4_CONFIG (setting)) {
 		g_object_set (NM_SETTING_IP_CONFIG (setting),
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 		              NULL);
@@ -2415,11 +2452,14 @@ nmc_setting_custom_init (NMSetting *setting)
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
 		nmc_setting_ip6_connect_handlers (NM_SETTING_IP_CONFIG (setting));
-	} else if (NM_IS_SETTING_WIRELESS (setting)) {
-		g_object_set (NM_SETTING_WIRELESS (setting),
-		              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+	} else if (NM_IS_SETTING_TUN (setting)) {
+		g_object_set (NM_SETTING_TUN (setting),
+		              NM_SETTING_TUN_MODE, NM_SETTING_TUN_MODE_TUN,
 		              NULL);
-		nmc_setting_wireless_connect_handlers (NM_SETTING_WIRELESS (setting));
+	} else if (NM_IS_SETTING_BLUETOOTH (setting)) {
+		g_object_set (NM_SETTING_BLUETOOTH (setting),
+		              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+		              NULL);
 	}
 }
 
@@ -2997,6 +3037,32 @@ done:
 	}
 
 /* --- NM_SETTING_CONNECTION_SETTING_NAME property setter functions --- */
+static gboolean
+nmc_property_connection_set_type (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	gs_free char *uuid = NULL;
+
+	if (nm_setting_connection_get_uuid (NM_SETTING_CONNECTION (setting))) {
+		/* Don't allow setting type unless the connection is brand new.
+		 * Just because it's a bad idea and the user wouldn't probably want that.
+		 * No technical reason, really.
+		 * Also, using uuid to see if the connection is brand new is a bit
+		 * hacky: we can not see if the type is already set, because
+		 * nmc_setting_set_property() is called only after the property
+		 * we're setting (type) has been removed. */
+		g_set_error (error, 1, 0, _("Can not change the connection type"));
+		return FALSE;
+	}
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NULL);
+
+	g_object_set (G_OBJECT (setting), prop, val, NULL);
+	return TRUE;
+}
+
 #if 0
 /*
  * Setting/removing UUID has been forbidden.
@@ -6149,7 +6215,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, TYPE),
 	                    nmc_property_connection_get_type,
-	                    NULL, /* read-only */
+	                    nmc_property_connection_set_type,
 	                    NULL,
 	                    NULL,
 	                    NULL,

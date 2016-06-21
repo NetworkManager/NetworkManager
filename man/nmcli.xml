@@ -78,7 +78,7 @@
         terse output format which is better suited for script processing. Note that
         NetworkManager can also execute scripts, called "dispatcher scripts", in
         response to network events. See
-        <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+        <link linkend='NetworkManager'><link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link></link>
         for details about these dispatcher scripts.</para>
       </listitem>
 
@@ -371,7 +371,7 @@
           domains. Without any argument current logging level and domains are shown. In
           order to change logging state, provide <option>level</option> and, or,
           <option>domain</option> parameters. See
-          <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          <link linkend='NetworkManager.conf'><link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></link>
           for available level and domain values.</para>
         </listitem>
       </varlistentry>
@@ -544,9 +544,9 @@
         <arg choice='plain'><command>show</command></arg>
         <arg choice='plain'><command>up</command></arg>
         <arg choice='plain'><command>down</command></arg>
+        <arg choice='plain'><command>modify</command></arg>
         <arg choice='plain'><command>add</command></arg>
         <arg choice='plain'><command>edit</command></arg>
-        <arg choice='plain'><command>modify</command></arg>
         <arg choice='plain'><command>delete</command></arg>
         <arg choice='plain'><command>monitor</command></arg>
         <arg choice='plain'><command>reload</command></arg>
@@ -811,1156 +811,122 @@
 
       <varlistentry>
         <term>
-          <command>add</command>
-          <arg choice='plain'><option>ifname</option> <replaceable>ifname</replaceable></arg>
-          <arg>con-name <replaceable>name</replaceable></arg>
-          <arg>
-            <option>autoconnect</option>
-            <group choice='req'>
-              <arg choice='plain'>yes</arg>
-              <arg choice='plain'>no</arg>
+          <command>modify</command>
+          <arg><option>--temporary</option></arg>
+          <group>
+            <arg choice='plain'><option>id</option></arg>
+            <arg choice='plain'><option>uuid</option></arg>
+            <arg choice='plain'><option>path</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>ID</replaceable></arg>
+          <arg rep='repeat' choice='plain'>
+            <group>
+              <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
+              <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
-          </arg>
-          <arg>
-            <option>save</option>
-            <group choice='req'>
-              <arg choice='plain'>yes</arg>
-              <arg choice='plain'>no</arg>
-            </group>
-          </arg>
-          <arg>master <replaceable>master</replaceable></arg>
-          <arg>slave-type <replaceable>type</replaceable></arg>
-          <arg>type <replaceable>type</replaceable></arg>
-          <arg rep="repeat"><replaceable>ARGUMENTS</replaceable></arg>
-          <arg>ip4 <replaceable>addr</replaceable></arg>
-          <arg>gw4 <replaceable>addr</replaceable></arg>
-          <arg>ip6 <replaceable>addr</replaceable></arg>
-          <arg>gw6 <replaceable>addr</replaceable></arg>
-          <arg>
-            <option>--</option>
-            <arg choice='plain' rep='repeat'>
-              [+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable>
-              <replaceable>value</replaceable>
-            </arg>
           </arg>
         </term>
 
         <listitem>
-          <para>Add a connection for NetworkManager. Arguments differ according to connection types, see below.</para>
+          <para>Add, modify or remove properties in the connection profile.</para>
+
+          <para>To set the property just specify the property name followed by the
+          value. An empty value (<literal>""</literal>) removes the property value.</para>
+
+          <para>In addition to the properties, you can also use short names for some of
+          the properties. Consult the <link linkend='property_aliases' endterm='property_aliases.title' />
+          section for details.</para>
+
+          <para>If you want to append an item to the existing value, use
+          <literal>+</literal> prefix for the property name. If you want to remove just
+          one item from container-type property, use <literal>-</literal> prefix for
+          the property name and specify a value or an zero-based index of the item to
+          remove (or option name for properties with named options) as
+          <replaceable>value</replaceable>. The <literal>+</literal> and <literal>-</literal>
+          modifies only have a real effect for multi-value (container)
+          properties like <literal>ipv4.dns</literal>, <literal>ipv4.addresses</literal>,
+          <literal>bond.options</literal>, etc.</para>
+
+          <para>See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
+          </citerefentry> for complete reference of setting and property names, their descriptions
+          and default values. The <replaceable>setting</replaceable> and
+          <replaceable>property</replaceable> can be abbreviated provided they are unique.</para>
+
+          <para>The connection is identified by its name, UUID or D-Bus path. If
+          <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
+          <option>uuid</option> or <option>path</option> can be used.</para>
+        </listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+        <term>
+          <command>add</command>
+          <arg rep='repeat' choice='plain'>
+            <group>
+              <arg choice='plain'><option>save</option><group choice='req'><arg choice='plain'>yes</arg><arg choice='plain'>no</arg></group></arg>
+              <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
+              <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
+            </group>
+          </arg>
+        </term>
+
+        <listitem>
+          <para>Create a new connection using specified properties.</para>
+
+          <para>You need to describe the newly created connections with the property and value pairs.
+          See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
+          </citerefentry> for the complete reference. You can also use the aliases described in
+          <link linkend='property_aliases' endterm='property_aliases.title' /> section. The syntax is
+          the same as of the <command>nmcli connection modify</command> command.</para>
+
+          <para>To construct a meaningful connection you at the very least need to set the
+          <option>connection.type</option> property (or use the <option>type</option> alias)
+          to one of known NetworkManager connection types:</para>
+
+          <itemizedlist spacing='compact'>
+            <listitem><para><literal>ethernet</literal></para></listitem>
+            <listitem><para><literal>wifi</literal></para></listitem>
+            <listitem><para><literal>wimax</literal></para></listitem>
+            <listitem><para><literal>pppoe</literal></para></listitem>
+            <listitem><para><literal>gsm</literal></para></listitem>
+            <listitem><para><literal>cdma</literal></para></listitem>
+            <listitem><para><literal>infiniband</literal></para></listitem>
+            <listitem><para><literal>bluetooth</literal></para></listitem>
+            <listitem><para><literal>vlan</literal></para></listitem>
+            <listitem><para><literal>bond</literal></para></listitem>
+            <listitem><para><literal>bond-slave</literal></para></listitem>
+            <listitem><para><literal>team</literal></para></listitem>
+            <listitem><para><literal>team-slave</literal></para></listitem>
+            <listitem><para><literal>bridge</literal></para></listitem>
+            <listitem><para><literal>bridge-slave</literal></para></listitem>
+            <listitem><para><literal>vpn</literal></para></listitem>
+            <listitem><para><literal>olpc-mesh</literal></para></listitem>
+            <listitem><para><literal>adsl</literal></para></listitem>
+            <listitem><para><literal>tun</literal></para></listitem>
+            <listitem><para><literal>ip-tunnel</literal></para></listitem>
+            <listitem><para><literal>macvlan</literal></para></listitem>
+            <listitem><para><literal>vxlan</literal></para></listitem>
+          </itemizedlist>
+
+          <para>The most typical uses are described in the <link linkend='examples' endterm='examples.title' /> section.</para>
+
+          <para>Aside from the properties and values two special options are accepted:</para>
 
           <variablelist>
-
-            <varlistentry>
-              <term><option>ifname</option></term>
-              <listitem>
-                <para>interface to bind the connection to. The connection will only be
-                applicable to this interface name. A special value of <literal>*</literal>
-                can be used for interface-independent connections. The
-                <option>ifname</option> argument is mandatory for all connection types
-                except bond, team, bridge and vlan. Note: use quotes around
-                <literal>*</literal> to suppress shell expansion.</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>con-name</option></term>
-              <listitem>
-                <para>connection name (when not provided a default name is generated:
-                &lt;type&gt;[-&lt;ifname&gt;][-&lt;num&gt;]).</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>autoconnect</option></term>
-              <listitem>
-                <para>whether the connection profile can be automatically activated (default:
-                yes).</para>
-              </listitem>
-            </varlistentry>
-
             <varlistentry>
               <term><option>save</option></term>
               <listitem>
-                <para>whether the connection should be persistent, i.e. NetworkManager should
+                <para>Controls whether the connection should be persistent, i.e. NetworkManager should
                 store it on disk (default: <literal>yes</literal>).</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>master</option></term>
-              <listitem>
-                <para>master interface name, or connection UUID or ID of master connection
-                profile. The value can be prefixed with <literal>ifname/</literal>,
-                <literal>uuid/</literal> or <literal>id/</literal> to disambiguate it.</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>slave-type</option></term>
-              <listitem>
-                <para>type of master connection. Only required when it can not be inferred
-                (i.e. the master connection does
-                not exist yet).</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>type</option></term>
-              <listitem>
-                <para>connection type; see below for allowed values. Note that types
-                <option>bond-slave</option>, <option>team-slave</option> and
-                <option>bridge-slave</option> create <option>ethernet</option> connection
-                profiles. Their use is discouraged in favor of using a specific type with
-                <option>master</option> option.</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type ethernet</option>
-                <arg><option>mac</option> <replaceable>addr</replaceable></arg>
-                <arg><option>cloned-mac</option> <replaceable>addr</replaceable></arg>
-                <arg><option>mtu</option> <replaceable>mtu</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>mac</option></term>
-                    <listitem>
-                      <para>MAC address of the device this connection is locked to.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>cloned-mac</option></term>
-                    <listitem>
-                      <para>cloned MAC.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mtu</option></term>
-                    <listitem>
-                      <para>MTU.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type wifi</option>
-                <arg choice='plain'><option>ssid</option> <replaceable>SSID</replaceable></arg>
-                <arg><option>mac</option> <replaceable>addr</replaceable></arg>
-                <arg><option>cloned-mac</option> <replaceable>addr</replaceable></arg>
-                <arg>
-                  <option>mode</option>
-                  <group choice='req'>
-                    <arg choice='plain'>infrastructure</arg>
-                    <arg choice='plain'>ap</arg>
-                    <arg choice='plain'>adhoc</arg>
-                  </group>
-                </arg>
-                <arg><option>mtu</option> <replaceable>mtu</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>ssid</option></term>
-                    <listitem>
-                      <para>SSID.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mac</option></term>
-                    <listitem>
-                      <para>MAC address of the device this connection is locked to.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>cloned-mac</option></term>
-                    <listitem>
-                      <para>cloned MAC.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mode</option></term>
-                    <listitem>
-                      <para>Wi-Fi network mode. If blank, <literal>infrastructure</literal>
-                      is assumed.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mtu</option></term>
-                    <listitem>
-                      <para>MTU.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type wimax</option>
-                <arg><option>mac</option> <replaceable>addr</replaceable></arg>
-                <arg><option>nsp</option> <replaceable>nsp</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>mac</option></term>
-                    <listitem>
-                      <para>MAC address of the device this connection is locked to.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>nsp</option></term>
-                    <listitem>
-                      <para>Network Service Provider name.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type pppoe</option>
-                <arg choice='plain'><option>username</option> <replaceable>user</replaceable></arg>
-                <arg><option>password</option> <replaceable>passwd</replaceable></arg>
-                <arg><option>service</option> <replaceable>name</replaceable></arg>
-                <arg><option>mtu</option> <replaceable>mtu</replaceable></arg>
-                <arg><option>mac</option> <replaceable>addr</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>username</option></term>
-                    <listitem>
-                      <para>PPPoE username.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>password</option></term>
-                    <listitem>
-                      <para>Password for the PPPoE username.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>service</option></term>
-                    <listitem>
-                      <para>PPPoE service name (if required by concentrator).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mtu</option></term>
-                    <listitem>
-                      <para>MTU.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mac</option></term>
-                    <listitem>
-                      <para>MAC address of the device this connection is locked to.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type gsm</option>
-                <arg><option>apn</option> <replaceable>APN</replaceable></arg>
-                <arg><option>username</option> <replaceable>user</replaceable></arg>
-                <arg><option>password</option> <replaceable>passwd</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>apn</option></term>
-                    <listitem>
-                      <para>APN - GSM Access Point Name.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>user</option></term>
-                    <listitem>
-                      <para>user name.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>password</option></term>
-                    <listitem>
-                      <para>password.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type cdma</option>
-                <arg><option>username</option> <replaceable>user</replaceable></arg>
-                <arg><option>password</option> <replaceable>passwd</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>user</option></term>
-                    <listitem>
-                      <para>user name.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>password</option></term>
-                    <listitem>
-                      <para>password.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type infiniband</option>
-                <arg><option>mac</option> <replaceable>addr</replaceable></arg>
-                <arg><option>mtu</option> <replaceable>mtu</replaceable></arg>
-                <arg>
-                  <option>transport-mode</option>
-                  <group choice='req'>
-                    <arg choice='plain'>datagram</arg>
-                    <arg choice='plain'>connected</arg>
-                  </group>
-                </arg>
-                <arg><option>parent</option> <replaceable>device</replaceable></arg>
-                <arg><option>p-key</option> <replaceable>key</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>mac</option></term>
-                    <listitem>
-                      <para>MAC address of the device this connection is locked to
-                      (InfiniBand MAC is 20 bytes).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mtu</option></term>
-                    <listitem>
-                      <para>MTU.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>transport-mode</option></term>
-                    <listitem>
-                      <para>InfiniBand transport mode.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>parent</option></term>
-                    <listitem>
-                      <para>the interface name of the parent device (if any).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>p-key</option></term>
-                    <listitem>
-                      <para>the InfiniBand P_Key (16-bit unsigned integer).</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type bluetooth</option>
-                <arg><option>addr</option> <replaceable>addr</replaceable></arg>
-                <arg>
-                  <option>bt-type</option>
-                  <group choice='req'>
-                    <arg choice='plain'>panu</arg>
-                    <arg choice='plain'>dun-gsm</arg>
-                    <arg choice='plain'>dun-cdma</arg>
-                  </group>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>addr</option></term>
-                    <listitem>
-                      <para>Bluetooth device address (MAC).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>bt-type</option></term>
-                    <listitem>
-                      <para>Bluetooth connection type.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type vlan</option>
-                <arg choice='plain'><option>dev</option> <replaceable>device</replaceable></arg>
-                <arg choice='plain'><option>id</option> <replaceable>id</replaceable></arg>
-                <arg><option>flags</option> <replaceable>flags</replaceable></arg>
-                <arg><option>ingress</option> <replaceable>mapping</replaceable></arg>
-                <arg><option>egress</option> <replaceable>mapping</replaceable></arg>
-                <arg><option>mtu</option> <replaceable>mtu</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>dev</option></term>
-                    <listitem>
-                      <para>parent device this VLAN is on.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>id</option></term>
-                    <listitem>
-                      <para>VLAN ID in range 0-4095.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>flags</option></term>
-                    <listitem>
-                      <para>flags.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>ingress</option></term>
-                    <listitem>
-                      <para>VLAN ingress priority mapping.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>egress</option></term>
-                    <listitem>
-                      <para>VLAN egress priority mapping.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mtu</option></term>
-                    <listitem>
-                      <para>MTU.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type bond</option>
-                <arg>
-                  <option>mode</option>
-                  <group choice='req'>
-                    <arg choice='plain'>active-backup</arg>
-                    <arg choice='plain'>balance-xor</arg>
-                    <arg choice='plain'>broadcast</arg>
-                    <arg choice='plain'>802.3ad</arg>
-                    <arg choice='plain'>balance-tlb</arg>
-                    <arg choice='plain'>balance-alb</arg>
-                    <arg choice='plain'><replaceable>num</replaceable></arg>
-                  </group>
-                </arg>
-                <arg><option>primary</option> <replaceable>ifname</replaceable></arg>
-                <arg><option>miimon</option> <replaceable>num</replaceable></arg>
-                <arg><option>downdelay</option> <replaceable>num</replaceable></arg>
-                <arg><option>updelay</option> <replaceable>num</replaceable></arg>
-                <arg><option>arp-interval</option> <replaceable>num</replaceable></arg>
-                <arg><option>arp-ip-target</option> <replaceable>num</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-
-                  <varlistentry>
-                    <term><option>mode</option></term>
-                    <listitem>
-                      <para>bonding mode (default: <literal>balance-rr</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>primary</option></term>
-                    <listitem>
-                      <para>primary interface name (for <literal>active-backup</literal> mode).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>miimon</option></term>
-                    <listitem>
-                      <para>miimon (default: <literal>100</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>downdelay</option></term>
-                    <listitem>
-                      <para>downdelay (default: <literal>0</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>updelay</option></term>
-                    <listitem>
-                      <para>updelay (default: <literal>0</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>arp-interval</option></term>
-                    <listitem>
-                      <para>ARP interval (default: <literal>0</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>arp-ip-target</option></term>
-                    <listitem>
-                      <para>ARP IP target.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type bond-slave</option>
-                <arg><option>master</option> <replaceable>master</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>master</option></term>
-                    <listitem>
-                      <para>master bond interface name, or connection UUID or
-                      ID of bond master connection profile. The value can be
-                      prefixed with <literal>ifname/</literal>,
-                      <literal>uuid/</literal> or <literal>id/</literal> to
-                      disambiguate it.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type team</option>
-                <arg>
-                  <option>config</option>
-                  <group choice='req'>
-                    <arg choice='plain'>file</arg>
-                    <arg choice='plain'><replaceable>JSON</replaceable></arg>
-                  </group>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-
-                  <varlistentry>
-                    <term><option>config</option></term>
-                    <listitem>
-                      <para>JSON configuration for team.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type team-slave</option>
-                <arg>
-                  <option>config</option>
-                  <option><replaceable>JSON</replaceable></option>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>master</option></term>
-                    <listitem>
-                      <para>master team interface name, or connection UUID or
-                      ID of team master connection profile. The value can be
-                      prefixed with <literal>ifname/</literal>,
-                      <literal>uuid/</literal> or <literal>id/</literal>to
-                      disambiguate it.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>config</option></term>
-                    <listitem>
-                      <para>JSON configuration for team.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type bridge</option>
-                <arg>
-                  <option>stp</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-                <arg><option>priority</option> <replaceable>num</replaceable></arg>
-                <arg><option>forward-delay</option> <replaceable>2-30</replaceable></arg>
-                <arg><option>hello-time</option> <replaceable>1-10</replaceable></arg>
-                <arg><option>max-age</option> <replaceable>6-42</replaceable></arg>
-                <arg><option>ageing-time</option> <replaceable>0-1000000</replaceable></arg>
-                <arg>
-                  <option>multicast-snooping</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-                <arg><option>mac</option> <replaceable>addr</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>stp</option></term>
-                    <listitem>
-                      <para>controls whether Spanning Tree Protocol (STP) is enabled for this bridge
-                      (default: <literal>yes</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>priority</option></term>
-                    <listitem>
-                      <para>sets STP priority (default: <literal>128</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>forward-delay</option></term>
-                    <listitem>
-                      <para>STP forwarding delay, in seconds (default: <literal>15</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>hello-time</option></term>
-                    <listitem>
-                      <para>STP hello time, in seconds (default: <literal>2</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>max-age</option></term>
-                    <listitem>
-                      <para>STP maximum message age, in seconds (default: <literal>20</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>ageing-time</option></term>
-                    <listitem>
-                      <para>the Ethernet MAC address aging time, in seconds (default: <literal>300</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>multicast-snooping</option></term>
-                    <listitem>
-                      <para>controls whether IGMP snooping is enabled (default: <literal>yes</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mac</option></term>
-                    <listitem>
-                      <para>MAC address of the bridge (note: this requires a recent kernel feature,
-                      originally introduced in 3.15 upstream kernel).</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type bridge-slave</option>
-                <arg><option>master</option> <replaceable>master</replaceable></arg>
-                <arg><option>priority</option> <replaceable>num</replaceable></arg>
-                <arg><option>path-cost</option> <replaceable>1-65535</replaceable></arg>
-                <arg>
-                  <option>hairpin</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>master</option></term>
-                    <listitem>
-                      <para>master bridge interface name, or connection UUID
-                      or ID of bridge master connection profile. The value
-                      can be prefixed with <literal>ifname/</literal>,
-                      <literal>uuid/</literal> or <literal>id/</literal>
-                      to disambiguate it.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>priority</option></term>
-                    <listitem>
-                      <para>STP priority of this slave (default: <literal>32</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>path-cost</option></term>
-                    <listitem>
-                      <para>STP port cost for destinations via this slave (default: <literal>100</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>hairpin</option></term>
-                    <listitem>
-                       <para>'hairpin mode' for the slave, which allows frames to be sent back out
-                       through the slave the frame was received on (default: <literal>yes</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type vpn</option>
-                <arg><option>type</option> <replaceable>type</replaceable></arg>
-                <arg><option>user</option> <replaceable>username</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>vpn-type</option></term>
-                    <listitem>
-                      <para>VPN type.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>user</option></term>
-                    <listitem>
-                      <para>VPN username.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type olpc-mesh</option>
-                <arg choice='plain'><option>ssid</option> <replaceable>SSID</replaceable></arg>
-                <arg><option>channel</option> <replaceable>1-13</replaceable></arg>
-                <arg><option>dhcp-anycast</option> <replaceable>MAC</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>ssid</option></term>
-                    <listitem>
-                      <para>SSID.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>channel</option></term>
-                    <listitem>
-                      <para>channel to use for the network.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>dhcp-anycast</option></term>
-                    <listitem>
-                      <para>anycast DHCP MAC address used when requesting an IP address via DHCP.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type adsl</option>
-                <arg choice='plain'><option>username</option> <replaceable>username</replaceable></arg>
-                <arg choice='plain'>
-                  <option>protocol</option>
-                  <group choice='req'>
-                    <arg choice='plain'>pppoa</arg>
-                    <arg choice='plain'>pppoe</arg>
-                    <arg choice='plain'>ipoatm</arg>
-                  </group>
-                </arg>
-                <arg><option>password</option> <replaceable>passwd</replaceable></arg>
-                <arg>
-                  <option>encapsulation</option>
-                  <group choice='req'>
-                    <arg choice='plain'>vcmux</arg>
-                    <arg choice='plain'>llc</arg>
-                  </group>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>username</option></term>
-                    <listitem>
-                      <para>ADSL user name.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>protocol</option></term>
-                    <listitem>
-                      <para>ADSL protocol.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>password</option></term>
-                    <listitem>
-                      <para>ADSL password.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>encapsulation</option></term>
-                    <listitem>
-                      <para>ADSL encapsulation.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type tun</option>
-                <arg choice='plain'>
-                  <option>mode</option>
-                  <group choice='req'>
-                    <arg choice='plain'>tun</arg>
-                    <arg choice='plain'>tap</arg>
-                  </group>
-                </arg>
-                <arg><option>owner</option> <replaceable>UID</replaceable></arg>
-                <arg><option>group</option> <replaceable>GID</replaceable></arg>
-                <arg>
-                  <option>pi</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-                <arg>
-                  <option>vnet-hdr</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-                <arg>
-                  <option>multi-queue</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>mode</option></term>
-                    <listitem>
-                      <para>Mode for the device.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>owner</option></term>
-                    <listitem>
-                      <para>UID of the owner.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>group</option></term>
-                    <listitem>
-                      <para>GID of the group.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>pi</option></term>
-                    <listitem>
-                      <para>include packet information (~IFF_NO_PI flag).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>vnet-hdr</option></term>
-                    <listitem>
-                      <para>send and receive large (i.e. GSO) packets and packets with partial
-                      checksums (IFF_VNET_HDR flag).</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>multi-queue</option></term>
-                    <listitem>
-                      <para>multi-queue support for tun/tap device (IFF_MULTI_QUEUE flag).</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type ip-tunnel</option>
-                <arg choice='plain'>
-                  <option>mode</option>
-                  <group choice='req'>
-                    <arg choice='plain'>ipip</arg>
-                    <arg choice='plain'>gre</arg>
-                    <arg choice='plain'>sit</arg>
-                    <arg choice='plain'>isatap</arg>
-                    <arg choice='plain'>vti</arg>
-                    <arg choice='plain'>ip6ip6</arg>
-                    <arg choice='plain'>ipip6</arg>
-                    <arg choice='plain'>ip6gre</arg>
-                    <arg choice='plain'>vti6</arg>
-                    <arg choice='plain'>tun</arg>
-                  </group>
-                </arg>
-                <arg choice='plain'><option>remote</option> <replaceable>addr</replaceable></arg>
-                <arg><option>local</option> <replaceable>addr</replaceable></arg>
-                <arg><option>dev</option> <replaceable>device</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>mode</option></term>
-                    <listitem>
-                      <para>tunnel mode.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>remote</option></term>
-                    <listitem>
-                      <para>IPv4 or IPv6 address of the remote tunnel endpoint.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>local</option></term>
-                    <listitem>
-                      <para>IPv4 or IPv6 address of the local tunnel endpoint.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>dev</option></term>
-                    <listitem>
-                      <para>device to use for tunnel endpoint communication.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type macvlan</option>
-                <arg choice='plain'><option>dev</option> <replaceable>device</replaceable></arg>
-                <arg choice='plain'>
-                  <option>mode</option>
-                  <group choice='req'>
-                    <arg choice='plain'>vepa</arg>
-                    <arg choice='plain'>bridge</arg>
-                    <arg choice='plain'>private</arg>
-                    <arg choice='plain'>passthru</arg>
-                    <arg choice='plain'>source</arg>
-                  </group>
-                </arg>
-                <arg>
-                  <option>tap</option>
-                  <group choice='req'>
-                    <arg choice='plain'>yes</arg>
-                    <arg choice='plain'>no</arg>
-                  </group>
-                </arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>dev</option></term>
-                    <listitem>
-                      <para>parent device this MACVLAN is on.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>mode</option></term>
-                    <listitem>
-                      <para>MACVLAN mode, which specifies the communication mechanism between
-                      multiple MACVLANs on the same lower device.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>tap</option></term>
-                    <listitem>
-                      <para>controls the device type. If set to 'yes' a MACVTAP will be created
-                      (default: <literal>no</literal>).</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term>
-                <option>type vxlan</option>
-                <arg choice='plain'><option>id</option> <replaceable>id</replaceable></arg>
-                <arg choice='plain'><option>remote</option> <replaceable>addr</replaceable></arg>
-                <arg><option>dev</option> <replaceable>parent device (ifname or connection UUID)</replaceable></arg>
-                <arg><option>local</option> <replaceable>addr</replaceable></arg>
-                <arg><option>source-port-min</option> <replaceable>0-65535</replaceable></arg>
-                <arg><option>source-port-max</option> <replaceable>0-65535</replaceable></arg>
-                <arg><option>destination-port</option> <replaceable>0-65535</replaceable></arg>
-              </term>
-              <listitem>
-                <variablelist>
-                  <varlistentry>
-                    <term><option>id</option></term>
-                    <listitem>
-                      <para>VXLAN Network Identifer to use.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>remote</option></term>
-                    <listitem>
-                      <para>unicast destination IP address or multicast IP address to join.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>dev</option></term>
-                    <listitem>
-                      <para>device to use for tunnel endpoint communication.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>local</option></term>
-                    <listitem>
-                      <para>source IP address.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>source-port-min</option></term>
-                    <listitem>
-                      <para>minimum UDP source port to communicate to the remote VXLAN tunnel endpoint.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>source-port-max</option></term>
-                    <listitem>
-                      <para>maximum UDP source port to communicate to the remote VXLAN tunnel endpoint.</para>
-                    </listitem>
-                  </varlistentry>
-
-                  <varlistentry>
-                    <term><option>destination-port</option></term>
-                    <listitem>
-                      <para>UDP destination port to communicate to the remote VXLAN tunnel endpoint.</para>
-                    </listitem>
-                  </varlistentry>
-                </variablelist>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>ip4</option></term>
-              <term><option>gw4</option></term>
-              <listitem>
-                <para>IPv4 addresses.</para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><option>ip6</option></term>
-              <term><option>gw6</option></term>
-              <listitem>
-                <para>IPv6 addresses.</para>
               </listitem>
             </varlistentry>
 
             <varlistentry>
               <term><option>--</option></term>
               <listitem>
-                <para>If a <option>--</option> argument is encountered, the rest of command
-                line is interpreted as property list in the same format as <command>connection
-                modify</command> command accepts.  This makes it possible to adjust the
-                connection properties before it's added.</para>
+                <para>If a single <option>--</option> argument is encountered it is ignored.
+                This is for compatibility with older versions on <command>nmcli</command>.</para>
               </listitem>
             </varlistentry>
           </variablelist>
@@ -2023,50 +989,8 @@
           <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> for all NetworkManager settings and property names, and their
           descriptions; and
-          <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+          <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>
           for sample editor sessions.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-          <command>modify</command>
-          <arg><option>--temporary</option></arg>
-          <group>
-            <arg choice='plain'><option>id</option></arg>
-            <arg choice='plain'><option>uuid</option></arg>
-            <arg choice='plain'><option>path</option></arg>
-          </group>
-          <arg choice='plain'><replaceable>ID</replaceable></arg>
-          <arg choice='plain' rep='repeat'>
-            [+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable>
-            <replaceable>value</replaceable>
-          </arg>
-        </term>
-
-        <listitem>
-          <para>Modify one or more properties in the connection profile.</para>
-
-          <para>The connection is identified by its name, UUID or D-Bus path. If
-          <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
-          <option>uuid</option> or <option>path</option> can be used. See
-          <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
-          </citerefentry> for setting and property names, their descriptions and default
-          values. This command supports abbreviations for <replaceable>setting</replaceable>
-          and <replaceable>property</replaceable> provided they are unique. Empty
-          <replaceable>value</replaceable> ("") removes the property value (sets
-          the property to the default value). The provided value overwrites the existing
-          property value.</para>
-
-          <para>If you want to append an item to the existing value, use
-          <literal>+</literal> prefix for the property name. If you want to remove just
-          one item from container-type property, use <literal>-</literal> prefix for
-          the property name and specify a value or an zero-based index of the item to
-          remove (or option name for properties with named options) as
-          <replaceable>value</replaceable>. Of course, <literal>+</literal> and
-          <literal>-</literal> only have a real effect for multi-value (container)
-          properties like <literal>ipv4.dns</literal>, <literal>ipv4.addresses</literal>,
-          <literal>bond.options</literal>, etc.</para>
         </listitem>
       </varlistentry>
 
@@ -2161,7 +1085,7 @@
           disk when a change was made to them. However, the auto-loading feature can be
           enabled and then NetworkManager will reload connection
           files any time they change (monitor-connection-files=true in
-          <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>).
+          <link linkend='NetworkManager.conf'><link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></link>).
           </para>
         </listitem>
       </varlistentry>
@@ -2673,6 +1597,343 @@
 
   </refsect1>
 
+  <refsect1 id='property_aliases'><title id='property_aliases.title'>Property Aliases</title>
+
+    <para>Apart from the property-value pairs, <command>connection
+    add</command> and <command>connection modify</command> also accept short forms
+    of some properties. They exist for convenience and compatiblity with older
+    versions of <command>nmcli</command> that could not accept the raw
+    properties.</para>
+
+   <para>The overview of the aliases is below. An actual connection type is used to
+   disambiguate these options from the options of the same name that are valid for
+   multiple connection types (such as <option>mtu</option>).</para>
+
+    <table><title>Options for all connections</title><tgroup cols="3">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
+    </thead>
+    <tbody>
+      <row>
+        <entry align="left">type</entry>
+        <entry align="left"><link linkend="nm-settings.property.connection.type">connection.type</link></entry>
+        <entry align="left" valign="top">This option also accepts values of <option>bond-slave</option>,
+<option>team-slave</option> and <option>bridge-slave</option>. They create
+<option>ethernet</option> connection profiles. Their use is discouraged in
+favor of using a specific type with <option>master</option> option.</entry>
+      </row>
+      <row>
+        <entry align="left">con-name</entry>
+        <entry align="left"><link linkend="nm-settings.property.connection.id">connection.id</link></entry>
+        <entry align="left" valign="top">When not provided a default name is generated: &lt;type&gt;[-&lt;ifname&gt;][-&lt;num&gt;]).</entry>
+      </row>
+      <row><entry align="left">autoconnect</entry><entry align="left"><link linkend="nm-settings.property.connection.autoconnect">connection.autoconnect</link></entry><entry align="left" /></row>
+      <row>
+        <entry align="left">ifname</entry>
+        <entry align="left"><link linkend="nm-settings.property.connection.interface-name">connection.interface-name</link></entry>
+        <entry align="left" valign="top">A value of <literal>*</literal> will be interpreted as
+no value, making the connection profile interface-independent.
+Note: use quotes around <literal>*</literal> to suppress shell expansion.
+For bond, team and bridge connections a default name will be generated if not set.</entry>
+      </row>
+      <row>
+        <entry align="left">master</entry>
+        <entry align="left"><link linkend="nm-settings.property.connection.master">connection.master</link></entry>
+        <entry align="left" valign="top">Value specified here will be canonicalized.
+It can be prefixed with <literal>ifname/</literal>, <literal>uuid/</literal>
+or <literal>id/</literal> to disambiguate it.</entry>
+If the master connection can be found this will set <literal>connection.slave-type</literal>
+property as well.
+      </row>
+      <row><entry align="left">slave-type</entry><entry align="left"><link linkend="nm-settings.property.connection.slave-type">connection.slave-type</link></entry><entry align="left" /></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>PPPoE options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">username</entry><entry align="left"><link linkend="nm-settings.property.pppoe.username">pppoe.username</link></entry></row>
+      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.pppoe.password">pppoe.password</link></entry></row>
+      <row><entry align="left">service</entry><entry align="left"><link linkend="nm-settings.property.pppoe.service">pppoe.service</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Wired Ethernet options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">mtu</entry><entry align="left"><link linkend="nm-settings.property.802-3-ethernet.mtu">wired.mtu</link></entry></row>
+      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.802-3-ethernet.mac-address">wired.mac-address</link></entry></row>
+      <row><entry align="left">cloned-mac</entry><entry align="left"><link linkend="nm-settings.property.802-3-ethernet.cloned-mac-address">wired.cloned-mac-address</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Infiniband options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">mtu</entry><entry align="left"><link linkend="nm-settings.property.infiniband.mtu">infiniband.mtu</link></entry></row>
+      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.infiniband.mac-address">infiniband.mac-address</link></entry></row>
+      <row><entry align="left">transport-mode</entry><entry align="left"><link linkend="nm-settings.property.infiniband.transport-mode">infiniband.transport-mode</link></entry></row>
+      <row><entry align="left">parent</entry><entry align="left"><link linkend="nm-settings.property.infiniband.parent">infiniband.parent</link></entry></row>
+      <row><entry align="left">p-key</entry><entry align="left"><link linkend="nm-settings.property.infiniband.p-key">infiniband.p-key</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Wi-Fi options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">ssid</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.ssid">wireless.ssid</link></entry></row>
+      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.mode">wireless.mode</link></entry></row>
+      <row><entry align="left">mtu</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.mtu">wireless.mtu</link></entry></row>
+      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.mac-address">wireless.mac-address</link></entry></row>
+      <row><entry align="left">cloned-mac</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.cloned-mac-address">wireless.cloned-mac-address</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>WiMax options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">nsp</entry><entry align="left"><link linkend="nm-settings.property.wimax.network-name">wimax.network-name</link></entry></row>
+      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.wimax.mac-address">wimax.mac-address</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>GSM options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">apn</entry><entry align="left"><link linkend="nm-settings.property.gsm.apn">gsm.apn</link></entry></row>
+      <row><entry align="left">user</entry><entry align="left"><link linkend="nm-settings.property.gsm.username">gsm.username</link></entry></row>
+      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.gsm.password">gsm.password</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>CDMA options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">user</entry><entry align="left"><link linkend="nm-settings.property.cdma.username">cdma.username</link></entry></row>
+      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.cdma.password">cdma.password</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Bluetooth options</title><tgroup cols="3">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">addr</entry><entry align="left"><link linkend="nm-settings.property.bluetooth.bdaddr">bluetooth.bdaddr</link></entry><entry align="left" /></row>
+      <row>
+        <entry align="left">bt-type</entry>
+        <entry align="left"><link linkend="nm-settings.property.bluetooth.type">bluetooth.type</link></entry>
+        <entry align="left" valign="top">Apart from the usual <literal>dun</literal> and
+<literal>panu</literal> options, the values of <literal>dun-gsm</literal>
+and <literal>dun-cdma</literal> can be used for compatibility with older
+versions. They are equivalent to using <literal>dun</literal> and setting
+appropriate <literal>gsm.*</literal> or <literal>cdma.*</literal> properties.</entry>
+      </row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>VLAN options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.vlan.parent">vlan.parent</link></entry></row>
+      <row><entry align="left">id</entry><entry align="left"><link linkend="nm-settings.property.vlan.id">vlan.id</link></entry></row>
+      <row><entry align="left">flags</entry><entry align="left"><link linkend="nm-settings.property.vlan.flags">vlan.flags</link></entry></row>
+      <row><entry align="left">ingress</entry><entry align="left"><link linkend="nm-settings.property.vlan.ingress-priority-map">vlan.ingress-priority-map</link></entry></row>
+      <row><entry align="left">egress</entry><entry align="left"><link linkend="nm-settings.property.vlan.egress-priority-map">vlan.egress-priority-map</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Bonding options</title><tgroup cols="3">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
+    </thead>
+    <tbody>
+      <row>
+        <entry align="left">mode</entry>
+        <entry align="left" morerows="7">bond.options</entry>
+        <entry align="left" morerows="7" valign="top">Setting each of these adds the option to <literal>bond.options</literal> property.
+It's equivalent of using the <literal>+bond.options 'option=value'</literal> syntax.</entry>
+      </row>
+      <row><entry align="left">primary</entry></row>
+      <row><entry align="left">miimon</entry></row>
+      <row><entry align="left">downdelay</entry></row>
+      <row><entry align="left">updelay</entry></row>
+      <row><entry align="left">arp-interval</entry></row>
+      <row><entry align="left">arp-ip-target</entry></row>
+      <row><entry align="left">lacp-rate</entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Team options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team.config">team.config</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Team port options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team-port.config">team-port.config</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Bridge options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">stp</entry><entry align="left"><link linkend="nm-settings.property.bridge.stp">bridge.stp</link></entry></row>
+      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge.priority">bridge.priority</link></entry></row>
+      <row><entry align="left">forward-delay</entry><entry align="left"><link linkend="nm-settings.property.bridge.forward-delay">bridge.forward-delay</link></entry></row>
+      <row><entry align="left">hello-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.hello-time">bridge.hello-time</link></entry></row>
+      <row><entry align="left">max-age</entry><entry align="left"><link linkend="nm-settings.property.bridge.max-age">bridge.max-age</link></entry></row>
+      <row><entry align="left">ageing-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.ageing-time">bridge.ageing-time</link></entry></row>
+      <row><entry align="left">multicast-snooping</entry><entry align="left"><link linkend="nm-settings.property.bridge.multicast-snooping">bridge.multicast-snooping</link></entry></row>
+      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.bridge.mac-address">bridge.mac-address</link></entry></row>
+      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-priority">bridge.port-priority</link></entry></row>
+      <row><entry align="left">path-cost</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-path-cost">bridge.port-path-cost</link></entry></row>
+      <row><entry align="left">hairpin</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-hairpin-mode">bridge.port-hairpin-mode</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>VPN options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">vpn-type</entry><entry align="left"><link linkend="nm-settings.property.vpn.service-type">vpn.service-type</link></entry></row>
+      <row><entry align="left">user</entry><entry align="left"><link linkend="nm-settings.property.vpn.user-name">vpn.user-name</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>OLPC Mesh options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">ssid</entry><entry align="left"><link linkend="nm-settings.property.802-11-olpc-mesh.ssid">olpc-mesh.ssid</link></entry></row>
+      <row><entry align="left">channel</entry><entry align="left"><link linkend="nm-settings.property.802-11-olpc-mesh.channel">olpc-mesh.channel</link></entry></row>
+      <row><entry align="left">dhcp-anycast</entry><entry align="left"><link linkend="nm-settings.property.802-11-olpc-mesh.dhcp-anycast-address">olpc-mesh.dhcp-anycast-address</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>ADSL options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">username</entry><entry align="left"><link linkend="nm-settings.property.adsl.username">adsl.username</link></entry></row>
+      <row><entry align="left">protocol</entry><entry align="left"><link linkend="nm-settings.property.adsl.protocol">adsl.protocol</link></entry></row>
+      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.adsl.password">adsl.password</link></entry></row>
+      <row><entry align="left">encapsulation</entry><entry align="left"><link linkend="nm-settings.property.adsl.encapsulation">adsl.encapsulation</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>MACVLAN options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.macvlan.parent">macvlan.parent</link></entry></row>
+      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.macvlan.mode">macvlan.mode</link></entry></row>
+      <row><entry align="left">tap</entry><entry align="left"><link linkend="nm-settings.property.macvlan.tap">macvlan.tap</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>VxLAN options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">id</entry><entry align="left"><link linkend="nm-settings.property.vxlan.id">vxlan.id</link></entry></row>
+      <row><entry align="left">remote</entry><entry align="left"><link linkend="nm-settings.property.vxlan.remote">vxlan.remote</link></entry></row>
+      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.vxlan.parent">vxlan.parent</link></entry></row>
+      <row><entry align="left">local</entry><entry align="left"><link linkend="nm-settings.property.vxlan.local">vxlan.local</link></entry></row>
+      <row><entry align="left">source-port-min</entry><entry align="left"><link linkend="nm-settings.property.vxlan.source-port-min">vxlan.source-port-min</link></entry></row>
+      <row><entry align="left">source-port-max</entry><entry align="left"><link linkend="nm-settings.property.vxlan.source-port-max">vxlan.source-port-max</link></entry></row>
+      <row><entry align="left">destination-port</entry><entry align="left"><link linkend="nm-settings.property.vxlan.destination-port">vxlan.destination-port</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>Tun options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.tun.mode">tun.mode</link></entry></row>
+      <row><entry align="left">owner</entry><entry align="left"><link linkend="nm-settings.property.tun.owner">tun.owner</link></entry></row>
+      <row><entry align="left">group</entry><entry align="left"><link linkend="nm-settings.property.tun.group">tun.group</link></entry></row>
+      <row><entry align="left">pi</entry><entry align="left"><link linkend="nm-settings.property.tun.pi">tun.pi</link></entry></row>
+      <row><entry align="left">vnet-hdr</entry><entry align="left"><link linkend="nm-settings.property.tun.vnet-hdr">tun.vnet-hdr</link></entry></row>
+      <row><entry align="left">multi-queue</entry><entry align="left"><link linkend="nm-settings.property.tun.multi-queue">tun.multi-queue</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>IP tunneling options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.mode">ip-tunnel.mode</link></entry></row>
+      <row><entry align="left">local</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.local">ip-tunnel.local</link></entry></row>
+      <row><entry align="left">remote</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.remote">ip-tunnel.remote</link></entry></row>
+      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.parent">ip-tunnel.parent</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>IPv4 options</title><tgroup cols="3">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
+    </thead>
+    <tbody>
+      <row>
+        <entry align="left">ip4</entry>
+        <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link></entry>
+        <entry align="left" valign="top">This option can be specified multiple times.
+It's equivalent of using <literal>+ipv4.addresses</literal> syntax.</entry>
+      </row>
+      <row><entry align="left">gw4</entry><entry align="left"><link linkend="nm-settings.property.ipv4.gateway">ipv4.gateway</link></entry><entry align="left" /></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>IPv6 options</title><tgroup cols="3">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
+    </thead>
+    <tbody>
+      <row>
+        <entry align="left">ip6</entry>
+        <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link></entry>
+        <entry align="left" valign="top">This option can be specified multiple times.
+It's equivalent of using <literal>+ipv6.addresses</literal> syntax.</entry>
+      </row>
+      <row><entry align="left">gw6</entry><entry align="left"><link linkend="nm-settings.property.ipv6.gateway">ipv6.gateway</link></entry><entry align="left" /></row>
+    </tbody>
+    </tgroup></table>
+
+  </refsect1>
+
   <refsect1 id='environment_variables'><title>Environment Variables</title>
 
     <para><command>nmcli</command>'s behavior is affected by the following
@@ -2801,11 +2062,11 @@
     </variablelist>
   </refsect1>
 
-  <refsect1 id='examples'><title>Examples</title>
+  <refsect1 id='examples'><title id='examples.title'>Examples</title>
 
     <para>This section presents various examples of <command>nmcli</command> usage. If you want even
     more, please refer to
-    <citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+    <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>
     manual page.</para>
 
     <variablelist>
@@ -2985,7 +2246,7 @@
       </varlistentry>
 
       <varlistentry>
-        <term><userinput>nmcli c a ifname eth0 type ethernet -- ipv4.method disabled ipv6.method link-local</userinput></term>
+        <term><userinput>nmcli c a ifname eth0 type ethernet ipv4.method disabled ipv6.method link-local</userinput></term>
         <listitem>
           <para>non-interactively adds a connection that will use eth0 Ethernet interface
           and only have an IPv6 link-local address configured.</para>
@@ -3074,11 +2335,11 @@
   </refsect1>
 
   <refsect1 id='see_also'><title>See Also</title>
-    <para><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+    <para><link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+    <link linkend='nm-online'><citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+    <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
     <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>.</para>
   </refsect1>
