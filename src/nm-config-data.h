@@ -183,6 +183,17 @@ char *nm_config_data_get_connection_default (const NMConfigData *self,
                                              const char *property,
                                              NMDevice *device);
 
+char *nm_config_data_get_device_config (const NMConfigData *self,
+                                        const char *property,
+                                        NMDevice *device,
+                                        gboolean *has_match);
+
+gboolean nm_config_data_get_device_config_boolean (const NMConfigData *self,
+                                                   const char *property,
+                                                   NMDevice *device,
+                                                   gint val_no_match,
+                                                   gint val_invalid);
+
 char **nm_config_data_get_groups (const NMConfigData *self);
 char **nm_config_data_get_keys (const NMConfigData *self, const char *group);
 gboolean nm_config_data_is_intern_atomic_group (const NMConfigData *self, const char *group);

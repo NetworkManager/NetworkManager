@@ -45,6 +45,7 @@
 
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN                ".intern."
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE                "device"
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN     "global-dns-domain-"
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST ".test-append-stringlist"
 

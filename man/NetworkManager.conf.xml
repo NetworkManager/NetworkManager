@@ -623,7 +623,7 @@ ipv6.ip6-privacy=0
     </para>
     </refsect2>
 
-    <refsect2>
+    <refsect2 id="connection-sections">
     <title>Sections</title>
     <para>
         You can configure multiple <literal>connection</literal>
@@ -692,6 +692,40 @@ ipv6.ip6-privacy=1
           </para></listitem>
         </varlistentry>
       </variablelist>
+    </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title><literal>device</literal> section</title>
+    <para>Contains per-device persistent configuration.
+    </para>
+    <para>
+      Example:
+<programlisting>
+[device]
+match-device=interface-name:eth3
+unmanaged=1
+</programlisting>
+    </para>
+    <refsect2>
+    <title>Supported Properties</title>
+    <para>
+      The following properties can be configured per-device.
+      <variablelist>
+      </variablelist>
+    </para>
+    </refsect2>
+
+    <refsect2>
+    <title>Sections</title>
+    <para>
+        The <literal>[device]</literal> section works the same as the <literal>[connection]</literal> section.
+        That is, multiple sections that all start with the prefix "device" can be specified.
+        The settings "match-device" and "stop-match" are available to match a device section
+        on a device. The order of multiple sections is also top-down within the file and
+        later files overwrite previous settings. See <xref linkend="connection-sections"/>
+        for details.
     </para>
     </refsect2>
   </refsect1>
