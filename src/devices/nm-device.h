@@ -439,7 +439,10 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  *   (e.g. via a D-Bus command)
  * @NM_UNMANAGED_USER_SETTINGS: %TRUE when unmanaged by user decision via
  *   the settings plugin (for example keyfile.unmanaged-devices or ifcfg-rh's
- *   NM_CONTROLLED=no)
+ *   NM_CONTROLLED=no). Although this is user-configuration (provided from
+ *   the settings plugins, such as NM_CONTROLLED=no in ifcfg-rh), it cannot
+ *   be overruled and is authorative. That is because users may depend on
+ *   dropping a ifcfg-rh file to ensure the device is unmanaged.
  * @NM_UNMANAGED_BY_DEFAULT: %TRUE for certain device types where we unmanage
  *   them by default
  * @NM_UNMANAGED_USER_UDEV: %TRUE when unmanaged by user decision (via UDev rule)

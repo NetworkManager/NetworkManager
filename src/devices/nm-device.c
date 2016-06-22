@@ -9522,7 +9522,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 	 * Some flags are authoritative, meaning they always cause
 	 * the device to be unmanaged (e.g. @NM_UNMANAGED_PLATFORM_INIT).
 	 *
-	 * OTOH, some flags can be overwritten. For example NM_UNMANAGED_USER_SETTINGS
+	 * OTOH, some flags can be overwritten. For example NM_UNMANAGED_USER_UDEV
 	 * is ignored once NM_UNMANAGED_USER_EXPLICIT is set. The idea is that
 	 * the flag from the configuration has no effect once the user explicitly
 	 * touches the unmanaged flags. */
