@@ -26,4 +26,12 @@ NMCResultCode do_connections (NmCli *nmc, int argc, char **argv);
 
 void monitor_connections (NmCli *nmc);
 
+gboolean
+nmc_read_connection_properties (NmCli *nmc,
+                                NMConnection *connection,
+                                int *argc,
+                                char ***argv,
+                                GError **error);
+
+
 #endif /* NMC_CONNECTIONS_H */

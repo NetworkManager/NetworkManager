@@ -4225,12 +4225,12 @@ get_value (const char **value, int *argc, char ***argv, const char *option, GErr
 	return TRUE;
 }
 
-static gboolean
-read_connection_properties (NmCli *nmc,
-                            NMConnection *connection,
-                            int *argc,
-                            char ***argv,
-                            GError **error)
+gboolean
+nmc_read_connection_properties (NmCli *nmc,
+                                NMConnection *connection,
+                                int *argc,
+                                char ***argv,
+                                GError **error)
 {
 	const char *option;
 	const char *value = NULL;
@@ -4645,7 +4645,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 
 read_properties:
 	/* Get the arguments from the command line if any */
-	if (argc && !read_connection_properties (nmc, connection, &argc, &argv, &error)) {
+	if (argc && !nmc_read_connection_properties (nmc, connection, &argc, &argv, &error)) {
 		if (g_strcmp0 (*argv, "--") == 0 && !seen_dash_dash) {
 			/* This is for compatibility with older nmcli that required
 			 * options and properties to be separated with "--" */
@@ -7801,7 +7801,7 @@ do_connection_modify (NmCli *nmc,
 
 	next_arg (&argc, &argv);
 
-	if (!read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
+	if (!nmc_read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
 		g_string_assign (nmc->return_text, error->message);
 		nmc->return_value = error->code;
 		g_clear_error (&error);
