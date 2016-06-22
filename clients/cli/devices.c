@@ -516,7 +516,7 @@ get_devices_sorted (NMClient *client)
 }
 
 static GSList *
-device_list (NmCli *nmc, int argc, char **argv)
+get_device_list (NmCli *nmc, int argc, char **argv)
 {
 	int arg_num = argc;
 	char **arg_arr = NULL;
@@ -2045,7 +2045,7 @@ do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
-	queue = device_list (nmc, argc, argv);
+	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
 		goto error;
 	queue = g_slist_reverse (queue);
@@ -2112,7 +2112,7 @@ do_devices_delete (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
-	queue = device_list (nmc, argc, argv);
+	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
 		goto error;
 	queue = g_slist_reverse (queue);
@@ -2335,7 +2335,7 @@ do_devices_monitor (NmCli *nmc, int argc, char **argv)
 		g_signal_connect (nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK (device_added), nmc);
 	} else {
 		/* Monitor just the specified devices. */
-		GSList *queue = device_list (nmc, argc, argv);
+		GSList *queue = get_device_list (nmc, argc, argv);
 		GSList *iter;
 
 		if (!queue)
