@@ -4639,8 +4639,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 read_properties:
-	/* Get the argument from the command line. */
-	if (!read_connection_properties (nmc, connection, &argc, &argv, &error)) {
+	/* Get the arguments from the command line if any */
+	if (argc && !read_connection_properties (nmc, connection, &argc, &argv, &error)) {
 		if (g_strcmp0 (*argv, "--") == 0 && !seen_dash_dash) {
 			/* This is for compatibility with older nmcli that required
 			 * options and properties to be separated with "--" */
