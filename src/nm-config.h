@@ -70,6 +70,8 @@
 #define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"
 #define NM_CONFIG_KEYFILE_KEY_AUDIT                         "audit"
 
+#define NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER         "ignore-carrier"
+
 #define NM_CONFIG_KEYFILE_KEYPREFIX_WAS                     ".was."
 #define NM_CONFIG_KEYFILE_KEYPREFIX_SET                     ".set."
 
