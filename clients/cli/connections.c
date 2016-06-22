@@ -7958,7 +7958,7 @@ do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	                    clone_connection_cb,
 	                    info);
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 finish:
 	if (new_connection)
 		g_object_unref (new_connection);
@@ -8360,7 +8360,7 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	                    add_connection_cb,
 	                    info);
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 finish:
 	if (connection)
 		g_object_unref (connection);

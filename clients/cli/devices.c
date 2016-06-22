@@ -1984,7 +1984,7 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 	}
 
 	nmc->nowait_flag = (nmc->timeout == 0);
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 
 	info = g_slice_new0 (DeviceCbInfo);
 	info->nmc = nmc;
@@ -3325,7 +3325,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	/* Activate the connection now */
 	nmc->nowait_flag = (nmc->timeout == 0);
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
