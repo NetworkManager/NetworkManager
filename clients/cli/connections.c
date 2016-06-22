@@ -3025,7 +3025,7 @@ get_valid_properties_string (const NameItem *array,
 			 * that prefix is not ambiguous */
 			if (postfix) {
 				if (prop_name)
-					return g_string_free (str, TRUE);
+					return g_string_free (str, FALSE);
 				prop_name = prefix;
 			} else {
 				prop_name = iter->name;
