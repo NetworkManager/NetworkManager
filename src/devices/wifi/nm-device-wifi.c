@@ -174,7 +174,7 @@ static void ap_add_remove (NMDeviceWifi *self,
 
 static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
 
-static void _hw_addr_set_scanning (NMDeviceWifi *self);
+static void _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset);
 
 /*****************************************************************/
 
@@ -490,7 +490,7 @@ deactivate (NMDevice *device)
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	g_clear_pointer (&priv->hw_addr_scan, g_free);
-	_hw_addr_set_scanning (self);
+	_hw_addr_set_scanning (self, TRUE);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
@@ -1021,11 +1021,12 @@ impl_device_wifi_get_all_access_points (NMDeviceWifi *self,
 }
 
 static void
-_hw_addr_set_scanning (NMDeviceWifi *self)
+_hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 {
 	NMDevice *device = (NMDevice *) self;
 	NMDeviceWifiPrivate *priv;
 	guint32 now;
+	gboolean randomize;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
 
@@ -1035,7 +1036,20 @@ _hw_addr_set_scanning (NMDeviceWifi *self)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
+	randomize = nm_config_data_get_device_config_boolean (NM_CONFIG_GET_DATA,
+	                                                      "wifi.scan-rand-mac-address",
+	                                                      device,
+	                                                      TRUE, TRUE);
+
+	if (!randomize) {
+		g_clear_pointer (&priv->hw_addr_scan, g_free);
+		if (do_reset)
+			nm_device_hw_addr_reset (device);
+		return;
+	}
+
 	now = nm_utils_get_monotonic_timestamp_s ();
+
 	if (   !priv->hw_addr_scan
 	    || now >= priv->hw_addr_scan_expire) {
 		/* the random MAC address for scanning expires after a while.
@@ -1361,7 +1375,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 				_LOGD (LOGD_WIFI_SCAN, "no SSIDs to probe scan");
 		}
 
-		_hw_addr_set_scanning (self);
+		_hw_addr_set_scanning (self, FALSE);
 
 		if (nm_supplicant_interface_request_scan (priv->sup_iface, ssids)) {
 			/* success */
