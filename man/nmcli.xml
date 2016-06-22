@@ -1163,6 +1163,7 @@
         <arg choice='plain'><command>set</command></arg>
         <arg choice='plain'><command>connect</command></arg>
         <arg choice='plain'><command>reapply</command></arg>
+        <arg choice='plain'><command>modify</command></arg>
         <arg choice='plain'><command>disconnect</command></arg>
         <arg choice='plain'><command>delete</command></arg>
         <arg choice='plain'><command>monitor</command></arg>
@@ -1251,6 +1252,33 @@
         <listitem>
           <para>Attempt to update device with changes to the currently active connection
           made since it was last applied.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <command>modify</command>
+          <arg rep='repeat' choice='plain'>
+            <group>
+              <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
+              <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
+            </group>
+          </arg>
+        </term>
+
+        <listitem>
+          <para>Modify the settings currently active on the device.</para>
+
+          <para>This command lets you do temporary changes to a configuration active on
+          a particular device. The changes are not preserved in the connection profile.</para>
+
+          <para>See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
+          </citerefentry> for the list of available properties. Please note that some
+          properties can't be changed on an already connected device.</para>
+
+          <para>You can also use the aliases described in
+          <link linkend='property_aliases' endterm='property_aliases.title' /> section. The syntax is
+          the same as of the <command>nmcli connection modify</command> command.</para>
         </listitem>
       </varlistentry>
 
@@ -1599,10 +1627,10 @@
 
   <refsect1 id='property_aliases'><title id='property_aliases.title'>Property Aliases</title>
 
-    <para>Apart from the property-value pairs, <command>connection
-    add</command> and <command>connection modify</command> also accept short forms
-    of some properties. They exist for convenience and compatiblity with older
-    versions of <command>nmcli</command> that could not accept the raw
+    <para>Apart from the property-value pairs, <command>connection add</command>,
+    <command>connection modify</command> and <command>device modify</command> also
+    accept short forms of some properties. They exist for convenience and compatiblity
+    with older versions of <command>nmcli</command> that could not accept the raw
     properties.</para>
 
    <para>The overview of the aliases is below. An actual connection type is used to
@@ -2225,6 +2253,22 @@ It's equivalent of using <literal>+ipv6.addresses</literal> syntax.</entry>
         <listitem>
           <para>creates a hotspot profile and connects it. Prints the hotspot password
           the user should use to connect to the hotspot from other devices.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><userinput>nmcli dev modify em1 ipv4.method shared</userinput></term>
+        <listitem>
+          <para>starts IPv4 connection sharing using em1 device. The sharing will be active
+          until the device is disconnected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><userinput>nmcli dev modify em1 ipv6.address 2001:db8::a:bad:c0de</userinput></term>
+        <listitem>
+          <para>temporarily adds an IP address to a device. The address will be removed
+          when the same connection is activated again.</para>
         </listitem>
       </varlistentry>
 

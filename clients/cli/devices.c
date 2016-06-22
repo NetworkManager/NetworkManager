@@ -30,6 +30,7 @@
 #include "utils.h"
 #include "common.h"
 #include "devices.h"
+#include "connections.h"
 
 /* define some prompts */
 #define PROMPT_INTERFACE  _("Interface: ")
@@ -356,6 +357,26 @@ usage_device_reapply (void)
 	              "\n"
 	              "Attempts to update device with changes to the currently active connection\n"
                       "made since it was last applied.\n\n"));
+}
+
+static void
+usage_device_modify (void)
+{
+	g_printerr (_("Usage: nmcli connection modify { ARGUMENTS | --help }\n"
+	              "\n"
+	              "ARGUMENTS := <ifname> ([+|-]<setting>.<property> <value>)+\n"
+	              "\n"
+	              "Modify one or more properties currently active on the device without modifying\n"
+	              "the connection profile. The changes have immediate effect. For multi-valued\n"
+	              "properties you can use optional '+' or '-' prefix to the property name.\n"
+	              "The '+' sign allows appending items instead of overwriting the whole value.\n"
+	              "The '-' sign allows removing selected items instead of the whole value.\n"
+	              "\n"
+	              "Examples:\n"
+	              "nmcli dev mod em1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
+	              "nmcli dev mod em1 +ipv4.dns 8.8.4.4\n"
+	              "nmcli dev mod em1 -ipv4.dns 1\n"
+	              "nmcli dev mod em1 -ipv6.addr \"abbe::cafe/56\"\n"));
 }
 
 static void
@@ -1993,6 +2014,108 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 
 	/* Now reapply the connection to the device */
 	nm_device_reapply_async (device, NULL, 0, 0, NULL, reapply_device_cb, info);
+
+	return nmc->return_value;
+}
+
+typedef struct {
+	NmCli *nmc;
+	int argc;
+	char **argv;
+} ModifyInfo;
+
+static void
+modify_reapply_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (object);
+	ModifyInfo *info = user_data;
+	NmCli *nmc = info->nmc;
+	GError *error = NULL;
+
+	if (!nm_device_reapply_finish (device, result, &error)) {
+		g_string_printf (nmc->return_text, _("Error: Reapplying connection to device '%s' (%s) failed: %s"),
+		                 nm_device_get_iface (device),
+		                 nm_object_get_path (NM_OBJECT (device)),
+		                 error->message);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
+	} else {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			nmc_terminal_erase_line ();
+		g_print (_("Connection successfully reapplied to device '%s'.\n"),
+		         nm_device_get_iface (device));
+	}
+
+	g_slice_free (ModifyInfo, info);
+	quit ();
+}
+
+static void
+modify_get_applied_cb (GObject *object,
+                       GAsyncResult *result,
+                       gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (object);
+	ModifyInfo *info = user_data;
+	NmCli *nmc = info->nmc;
+	gs_free_error GError *error = NULL;
+	NMConnection *connection;
+	guint64 version_id;
+
+	connection = nm_device_get_applied_connection_finish (device,
+	                                                      result,
+	                                                      &version_id,
+	                                                      &error);
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: Reading applied connection from device '%s' (%s) failed: %s"),
+		                 nm_device_get_iface (device),
+		                 nm_object_get_path (NM_OBJECT (device)),
+		                 error->message);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_slice_free (ModifyInfo, info);
+		quit ();
+		return;
+	}
+
+	if (!nmc_read_connection_properties (info->nmc, connection, &info->argc, &info->argv, &error)) {
+		g_string_assign (nmc->return_text, error->message);
+		nmc->return_value = error->code;
+		g_slice_free (ModifyInfo, info);
+		quit ();
+		return;
+	}
+
+	if (nmc->complete)
+		quit ();
+	else
+		nm_device_reapply_async (device, connection, version_id, 0, NULL, modify_reapply_cb, info);
+}
+
+static NMCResultCode
+do_device_modify (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice *device = NULL;
+	ModifyInfo *info = NULL;
+	gs_free_error GError *error = NULL;
+
+	device = get_device (nmc, &argc, &argv, &error);
+	if (!device) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		return error->code;
+	}
+
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
+
+	nmc->nowait_flag = (nmc->timeout == 0);
+	nmc->should_wait++;
+
+	info = g_slice_new0 (ModifyInfo);
+	info->nmc = nmc;
+	info->argc = argc;
+	info->argv = argv;
+
+	nm_device_get_applied_connection_async (device, 0, NULL, modify_get_applied_cb, info);
 
 	return nmc->return_value;
 }
@@ -3757,6 +3880,7 @@ static const NMCCommand device_cmds[] = {
 	{"monitor",     do_devices_monitor,     usage_device_monitor },
 	{"wifi",        do_device_wifi,         usage_device_wifi },
 	{"lldp",        do_device_lldp,         usage_device_lldp },
+	{"modify",      do_device_modify,       usage_device_modify },
 	{NULL,          do_devices_status,      usage },
 };
 
