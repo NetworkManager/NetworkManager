@@ -3446,6 +3446,91 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /*****************************************************************************/
 
+static char *
+_split_word (char *s)
+{
+	/* takes @s and truncates the string on the first white-space.
+	 * then it returns the first word afterwards (again seeking
+	 * over leading white-space). */
+	for (; s[0]; s++) {
+		if (g_ascii_isspace (s[0])) {
+			s[0] = '\0';
+			s++;
+			while (g_ascii_isspace (s[0]))
+				s++;
+			return s;
+		}
+	}
+	return s;
+}
+
+gboolean
+_nm_utils_generate_mac_address_mask_parse (const char *value,
+                                           struct ether_addr *out_mask,
+                                           struct ether_addr **out_ouis,
+                                           gsize *out_ouis_len,
+                                           GError **error)
+{
+	gs_free char *s_free = NULL;
+	char *s, *s_next;
+	struct ether_addr mask;
+	gs_unref_array GArray *ouis = NULL;
+
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (!value || !*value)  {
+		/* NULL and "" are valid values and both mean the default
+		 * "q */
+		if (out_mask) {
+			memset (out_mask, 0, sizeof (*out_mask));
+			out_mask->ether_addr_octet[0] |= 0x02;
+		}
+		NM_SET_OUT (out_ouis, NULL);
+		NM_SET_OUT (out_ouis_len, 0);
+		return TRUE;
+	}
+
+	s_free = g_strdup (value);
+	s = s_free;
+
+	/* skip over leading whitespace */
+	while (g_ascii_isspace (s[0]))
+		s++;
+
+	/* parse the first mask */
+	s_next = _split_word (s);
+	if (!nm_utils_hwaddr_aton (s, &mask, ETH_ALEN)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("not a valid ethernet MAC address for mask at position %lld"),
+		             (long long) (s - s_free));
+		return FALSE;
+	}
+
+	if (s_next[0]) {
+		ouis = g_array_sized_new (FALSE, FALSE, sizeof (struct ether_addr), 4);
+
+		do {
+			s = s_next;
+			s_next = _split_word (s);
+
+			g_array_set_size (ouis, ouis->len + 1);
+			if (!nm_utils_hwaddr_aton (s, &g_array_index (ouis, struct ether_addr, ouis->len - 1), ETH_ALEN)) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+				             _("not a valid ethernet MAC address #%u at position %lld"),
+				             ouis->len, (long long) (s - s_free));
+				return FALSE;
+			}
+		} while (s_next[0]);
+	}
+
+	NM_SET_OUT (out_mask, mask);
+	NM_SET_OUT (out_ouis_len, ouis ? ouis->len : 0);
+	NM_SET_OUT (out_ouis, ouis ? ((struct ether_addr *) g_array_free (g_steal_pointer (&ouis), FALSE)) : NULL);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_bin2hexstr:
  * @src: (type guint8) (array length=len): an array of bytes

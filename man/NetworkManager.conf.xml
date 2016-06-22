@@ -570,6 +570,9 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ethernet.generate-mac-address-mask</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>
         </varlistentry>
         <varlistentry>
@@ -599,6 +602,9 @@ ipv6.ip6-privacy=0
         <varlistentry>
           <term><varname>wifi.cloned-mac-address</varname></term>
           <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.generate-mac-address-mask</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>wifi.mac-address-randomization</varname></term>
@@ -748,6 +754,17 @@ unmanaged=1
               configured.
               For the MAC address used while the device is connected, see instead
               the per-connection setting <literal>wifi.cloned-mac-address</literal>.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.scan-generate-mac-address-mask</varname></term>
+          <listitem>
+            <para>
+              Like the per-connection settings ethernet.generate-mac-address-mask
+              and wifi.generate-mac-address-mask, this allows to configure the
+              generated MAC addresses during scanning. See manual of nm-settings
+              for details.
             </para>
           </listitem>
         </varlistentry>

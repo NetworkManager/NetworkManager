@@ -11589,6 +11589,34 @@ _get_cloned_mac_address_setting (NMDevice *self, NMConnection *connection, gbool
 	return addr;
 }
 
+static const char *
+_get_generate_mac_address_mask_setting (NMDevice *self, NMConnection *connection, gboolean is_wifi, char **out_value)
+{
+	NMSetting *setting;
+	const char *value = NULL;
+	char *a;
+
+	nm_assert (out_value && !*out_value);
+
+	setting = nm_connection_get_setting (connection,
+	                                     is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
+	if (setting) {
+		value = is_wifi
+		        ? nm_setting_wireless_get_generate_mac_address_mask ((NMSettingWireless *) setting)
+		        : nm_setting_wired_get_generate_mac_address_mask ((NMSettingWired *) setting);
+		if (value)
+			return value;
+	}
+
+	a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                           is_wifi ? "wifi.generate-mac-address-mask" : "ethernet.generate-mac-mac-address-mask",
+	                                           self);
+	if (!a)
+		return NULL;
+	*out_value = a;
+	return a;
+}
+
 gboolean
 nm_device_hw_addr_is_explict (NMDevice *self)
 {
@@ -11695,6 +11723,7 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 	NMDevicePrivate *priv;
 	gs_free char *hw_addr_tmp = NULL;
 	gs_free char *hw_addr_generated = NULL;
+	gs_free char *generate_mac_address_mask_tmp = NULL;
 	const char *addr, *addr_setting;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -11717,7 +11746,8 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 			return FALSE;
 		priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
 	} else if (NM_IN_STRSET (addr, NM_CLONED_MAC_RANDOM)) {
-		hw_addr_generated = nm_utils_hw_addr_gen_random_eth ();
+		hw_addr_generated = nm_utils_hw_addr_gen_random_eth (nm_device_get_initial_hw_address (self),
+		                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
 		if (!hw_addr_generated) {
 			_LOGW (LOGD_DEVICE, "set-hw-addr: failed to generate %s MAC address", "random");
 			return FALSE;
@@ -11731,7 +11761,9 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 		stable_id = _get_stable_id (connection, &stable_type);
 		if (stable_id) {
 			hw_addr_generated = nm_utils_hw_addr_gen_stable_eth (stable_type, stable_id,
-			                                                     nm_device_get_ip_iface (self));
+			                                                     nm_device_get_ip_iface (self),
+			                                                     nm_device_get_initial_hw_address (self),
+			                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
 		}
 		if (!hw_addr_generated) {
 			_LOGW (LOGD_DEVICE, "set-hw-addr: failed to generate %s MAC address", "stable");

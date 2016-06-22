@@ -53,6 +53,7 @@ typedef struct {
 	gboolean auto_negotiate;
 	char *device_mac_address;
 	char *cloned_mac_address;
+	char *generate_mac_address_mask;
 	GArray *mac_address_blacklist;
 	guint32 mtu;
 	char **s390_subchannels;
@@ -70,6 +71,7 @@ enum {
 	PROP_AUTO_NEGOTIATE,
 	PROP_MAC_ADDRESS,
 	PROP_CLONED_MAC_ADDRESS,
+	PROP_GENERATE_MAC_ADDRESS_MASK,
 	PROP_MAC_ADDRESS_BLACKLIST,
 	PROP_MTU,
 	PROP_S390_SUBCHANNELS,
@@ -186,6 +188,22 @@ nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
 
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->cloned_mac_address;
+}
+
+/**
+ * nm_setting_wired_get_generate_mac_address_mask:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:generate-mac-address-mask property of the setting
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_setting_wired_get_generate_mac_address_mask (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->generate_mac_address_mask;
 }
 
 /**
@@ -612,6 +630,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	GHashTableIter iter;
 	const char *key, *value;
 	int i;
+	GError *local = NULL;
 
 	if (priv->port && !g_strv_contains (valid_ports, priv->port)) {
 		g_set_error (error,
@@ -704,6 +723,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	/* generate-mac-address-mask only makes sense with cloned-mac-address "random" or
+	 * "stable". Still, let's not be so strict about that and accept the value
+	 * even if it is unused. */
+	if (!_nm_utils_generate_mac_address_mask_parse (priv->generate_mac_address_mask,
+	                                                NULL, NULL, NULL, &local)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     local->message);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK);
+		g_error_free (local);
+		return FALSE;
+	}
+
 	if (   NM_FLAGS_ANY (priv->wol, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
 	    && !nm_utils_is_power_of_two (priv->wol)) {
 		g_set_error_literal (error,
@@ -785,6 +818,7 @@ finalize (GObject *object)
 
 	g_free (priv->device_mac_address);
 	g_free (priv->cloned_mac_address);
+	g_free (priv->generate_mac_address_mask);
 	g_array_unref (priv->mac_address_blacklist);
 
 	if (priv->s390_subchannels)
@@ -828,6 +862,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->cloned_mac_address);
 		priv->cloned_mac_address = _nm_utils_hwaddr_canonical_or_invalid (g_value_get_string (value),
 		                                                                  ETH_ALEN);
+		break;
+	case PROP_GENERATE_MAC_ADDRESS_MASK:
+		g_free (priv->generate_mac_address_mask);
+		priv->generate_mac_address_mask = g_value_dup_string (value);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		blacklist = g_value_get_boxed (value);
@@ -893,6 +931,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
 		g_value_set_string (value, nm_setting_wired_get_cloned_mac_address (setting));
+		break;
+	case PROP_GENERATE_MAC_ADDRESS_MASK:
+		g_value_set_string (value, nm_setting_wired_get_generate_mac_address_mask (setting));
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		g_value_set_boxed (value, (char **) priv->mac_address_blacklist->data);
@@ -1120,6 +1161,53 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_utils_hwaddr_cloned_data_synth,
 	                                          _nm_utils_hwaddr_cloned_data_set);
+
+	/**
+	 * NMSettingWired:generate-mac-address-mask:
+	 *
+	 * With #NMSettingWired:cloned-mac-address setting "random" or "stable",
+	 * by default all bits of the MAC address are scrambled and a locally-administered,
+	 * unicast MAC address is created. This property allows to specify that certain bits
+	 * are fixed. Note that the least significant bit of the first MAC address will
+	 * always be unset to create a unicast MAC address.
+	 *
+	 * If the property is %NULL, it is eligible to be overwritten by a default
+	 * connection setting. If the value is still %NULL or an empty string, the
+	 * default is to create a locally-administered, unicast MAC address.
+	 *
+	 * If the value contains one MAC address, this address is used as mask. The set
+	 * bits of the mask are to be filled with the current MAC address of the device,
+	 * while the unset bits are subject to randomization.
+	 * Setting "FE:FF:FF:00:00:00" means to preserve the OUI of the current MAC address
+	 * and only randomize the lower 3 bytes using the "random" or "stable" algorithm.
+	 *
+	 * If the value contains one additional MAC address after the mask,
+	 * this address is used instead of the current MAC address to fill the bits
+	 * that shall not be randomized. For example, a value of
+	 * "FE:FF:FF:00:00:00 68:F7:28:00:00:00" will set the OUI of the MAC address
+	 * to 68:F7:28, while the lower bits are randomized. A value of
+	 * "02:00:00:00:00:00 00:00:00:00:00:00" will create a fully scrambled
+	 * globally-administered, burned-in MAC address.
+	 *
+	 * If the value contains more then one additional MAC addresses, one of
+	 * them is chosen randomly. For example, "02:00:00:00:00:00 00:00:00:00:00:00 02:00:00:00:00:00"
+	 * will create a fully scrambled MAC address, randomly locally or globally
+	 * administered.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: generate-mac-address-mask
+	 * variable: GENERATE_MAC_ADDRESS_MASK
+	 * description: the MAC address mask for generating randomized and stable
+	 *   cloned-mac-address.
+	 * ---end---
+	 */
+	g_object_class_install_property
+	    (object_class, PROP_GENERATE_MAC_ADDRESS_MASK,
+	     g_param_spec_string (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWired:mac-address-blacklist:

@@ -371,10 +371,13 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
                                                 guint dad_counter,
                                                 GError **error);
 
-char *nm_utils_hw_addr_gen_random_eth (void);
+char *nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
+                                       const char *generate_mac_address_mask);
 char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                                        const char *stable_id,
-                                       const char *iname);
+                                       const char *ifname,
+                                       const char *current_mac_address,
+                                       const char *generate_mac_address_mask);
 
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 

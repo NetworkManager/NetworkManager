@@ -283,6 +283,16 @@ void     _nm_setting_vlan_get_priorities (NMSettingVlan *setting,
 
 /***********************************************************/
 
+struct ether_addr;
+
+gboolean _nm_utils_generate_mac_address_mask_parse (const char *value,
+                                                    struct ether_addr *out_mask,
+                                                    struct ether_addr **out_ouis,
+                                                    gsize *out_ouis_len,
+                                                    GError **error);
+
+/***********************************************************/
+
 typedef enum {
 	NM_BOND_OPTION_TYPE_INT,
 	NM_BOND_OPTION_TYPE_STRING,

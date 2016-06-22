@@ -1064,6 +1064,8 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 
 	if (   !priv->hw_addr_scan
 	    || now >= priv->hw_addr_scan_expire) {
+		gs_free char *generate_mac_address_mask = NULL;
+
 		/* the random MAC address for scanning expires after a while.
 		 *
 		 * We don't bother with to update the MAC address exactly when
@@ -1071,8 +1073,14 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		 * a new one.*/
 		priv->hw_addr_scan_expire = now + (SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN * 60);
 
+		generate_mac_address_mask = nm_config_data_get_device_config (NM_CONFIG_GET_DATA,
+		                                                              "wifi.scan-generate-mac-address-mask",
+		                                                              device,
+		                                                              NULL);
+
 		g_free (priv->hw_addr_scan);
-		priv->hw_addr_scan = nm_utils_hw_addr_gen_random_eth ();
+		priv->hw_addr_scan = nm_utils_hw_addr_gen_random_eth (nm_device_get_initial_hw_address (device),
+		                                                      generate_mac_address_mask);
 	}
 
 	nm_device_hw_addr_set (device, priv->hw_addr_scan, "scanning");

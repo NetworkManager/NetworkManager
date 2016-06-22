@@ -64,32 +64,60 @@ _do_test_hw_addr (NMUtilsStableType stable_type,
                   const guint8 *secret_key,
                   gsize key_len,
                   const char *ifname,
-                  const char *expected)
+                  const char *current_mac_address,
+                  const char *generate_mac_address_mask,
+                  const char **expected)
 {
 	gs_free char *generated = NULL;
+	const char **e;
+	gboolean found = FALSE;
 
-	g_assert (expected);
-	g_assert (nm_utils_hwaddr_valid (expected, ETH_ALEN));
+	for (e = expected; *e; e++) {
+		g_assert (*e);
+		g_assert (nm_utils_hwaddr_valid (*e, ETH_ALEN));
+	}
 
 	generated = _hw_addr_gen_stable_eth (stable_type,
 	                                     stable_id,
 	                                     secret_key,
 	                                     key_len,
-	                                     ifname);
+	                                     ifname,
+	                                     current_mac_address,
+	                                     generate_mac_address_mask);
 
 	g_assert (generated);
 	g_assert (nm_utils_hwaddr_valid (generated, ETH_ALEN));
-	g_assert_cmpstr (generated, ==, expected);
-	g_assert (nm_utils_hwaddr_matches (generated, -1, expected, -1));
+	for (e = expected; *e; e++) {
+		if (!nm_utils_hwaddr_matches (generated, -1, *e, -1))
+			continue;
+		g_assert (!found);
+		found = TRUE;
+		g_assert_cmpstr (generated, ==, *e);
+	}
+	g_assert (found);
 }
-#define do_test_hw_addr(stable_type, stable_id, secret_key, ifname, expected) \
-	_do_test_hw_addr ((stable_type), (stable_id), (const guint8 *) ""secret_key"", NM_STRLEN (secret_key), (ifname), ""expected"")
+#define do_test_hw_addr(stable_type, stable_id, secret_key, ifname, current_mac_address, generate_mac_address_mask, ...) \
+	_do_test_hw_addr ((stable_type), (stable_id), (const guint8 *) ""secret_key"", NM_STRLEN (secret_key), (ifname), ""current_mac_address"", generate_mac_address_mask, (const char *[]) { __VA_ARGS__, NULL })
 
 static void
 test_hw_addr_gen_stable_eth (void)
 {
-	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "06:0D:CD:0C:9E:2C");
-	do_test_hw_addr (NM_UTILS_STABLE_TYPE_STABLE_ID, "stable-1", "key1", "eth0", "C6:AE:A9:9A:76:09");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", NULL, "06:0D:CD:0C:9E:2C");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_STABLE_ID, "stable-1", "key1", "eth0", "01:23:45:67:89:ab", NULL, "C6:AE:A9:9A:76:09");
+
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "FF:FF:FF:00:00:00", "00:23:45:0C:9E:2C");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "03:23:45:67:89:ab", "FF:FF:FF:00:00:00", "02:23:45:0C:9E:2C");
+
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "00:00:00:00:00:00", "06:0D:CD:0C:9E:2C");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "02:00:00:00:00:00", "04:0D:CD:0C:9E:2C");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "02:00:00:00:00:00", "04:0D:CD:0C:9E:2C");
+
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "02:00:00:00:00:00 00:00:00:00:00:00", "04:0D:CD:0C:9E:2C");
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "02:00:00:00:00:00 02:00:00:00:00:00", "06:0D:CD:0C:9E:2C");
+
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "00:00:00:00:00:00 E9:60:CE:F5:ED:2F", "06:0D:CD:0C:9E:2C");
+
+	do_test_hw_addr (NM_UTILS_STABLE_TYPE_UUID,      "stable-1", "key1", "eth0", "01:23:45:67:89:ab", "02:00:00:00:00:00 00:00:00:00:00:00 02:00:00:00:00:00", "06:0D:CD:0C:9E:2C", "04:0D:CD:0C:9E:2C");
 }
 
 /*****************************************************************************/

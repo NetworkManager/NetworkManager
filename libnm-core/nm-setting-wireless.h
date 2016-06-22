@@ -50,6 +50,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_TX_POWER    "tx-power"
 #define NM_SETTING_WIRELESS_MAC_ADDRESS "mac-address"
 #define NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS "cloned-mac-address"
+#define NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK "generate-mac-address-mask"
 #define NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST "mac-address-blacklist"
 #define NM_SETTING_WIRELESS_MTU         "mtu"
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
@@ -125,6 +126,9 @@ guint32           nm_setting_wireless_get_rate               (NMSettingWireless 
 guint32           nm_setting_wireless_get_tx_power           (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
+
+NM_AVAILABLE_IN_1_4
+const char       *nm_setting_wireless_get_generate_mac_address_mask (NMSettingWireless *setting);
 
 const char * const *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting);

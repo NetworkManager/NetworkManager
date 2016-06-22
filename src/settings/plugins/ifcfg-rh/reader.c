@@ -3368,6 +3368,10 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
+	value = svGetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK", FALSE);
+	g_object_set (s_wireless, NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK, value, NULL);
+	g_free (value);
+
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **strv;
@@ -3881,6 +3885,10 @@ make_wired_setting (shvarFile *ifcfg,
 		g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, value, NULL);
 		g_free (value);
 	}
+
+	value = svGetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK", FALSE);
+	g_object_set (s_wired, NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK, value, NULL);
+	g_free (value);
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {

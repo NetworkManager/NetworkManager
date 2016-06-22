@@ -853,6 +853,10 @@ write_wireless_setting (NMConnection *connection,
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
+	svSetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK",
+	            nm_setting_wireless_get_generate_mac_address_mask (s_wireless),
+	            FALSE);
+
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
 	if (macaddr_blacklist[0]) {
@@ -1111,6 +1115,10 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 	svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
+	svSetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK",
+	            nm_setting_wired_get_generate_mac_address_mask (s_wired),
+	            FALSE);
+
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
 	if (macaddr_blacklist[0]) {
@@ -1259,6 +1267,10 @@ write_wired_for_virtual (NMConnection *connection, shvarFile *ifcfg)
 
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 		svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
+
+		svSetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK",
+		            nm_setting_wired_get_generate_mac_address_mask (s_wired),
+		            FALSE);
 
 		mtu = nm_setting_wired_get_mtu (s_wired);
 		if (mtu) {
