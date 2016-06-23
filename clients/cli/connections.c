@@ -3009,13 +3009,14 @@ get_valid_properties_string (const NameItem *array,
 	const char *prop_name = NULL;
 	GString *str;
 	int i, j;
+	gboolean full_match = FALSE;
 
 	g_return_val_if_fail (prefix, NULL);
 
 	str = g_string_sized_new (1024);
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
-		while (iter && iter->name) {
+		while (!full_match && iter && iter->name) {
 			if (   !(g_str_has_prefix (iter->name, prefix))
 			    && (!(iter->alias) || !g_str_has_prefix (iter->alias, prefix))) {
 				iter++;
@@ -3024,8 +3025,16 @@ get_valid_properties_string (const NameItem *array,
 			/* If postix (so prefix is terminated by a dot), check
 			 * that prefix is not ambiguous */
 			if (postfix) {
-				if (prop_name)
-					return g_string_free (str, FALSE);
+				/* If we have a perfect match, no need to look for others
+				 * prefix and no check on ambiguity should be performed.
+				 * Moreover, erase previous matches from output string */
+				if (   nm_streq (prefix, iter->name)
+				    || nm_streq0 (prefix, iter->alias)) {
+					g_string_erase (str, 0, -1);
+					full_match = TRUE;
+				} else if (prop_name) {
+					return g_string_free (str, TRUE);
+				}
 				prop_name = prefix;
 			} else {
 				prop_name = iter->name;
