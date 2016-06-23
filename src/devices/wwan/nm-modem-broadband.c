@@ -30,6 +30,8 @@
 #include "nm-device-private.h"
 #include "nm-platform.h"
 
+#define NM_MODEM_BROADBAND_MODEM "modem"
+
 G_DEFINE_TYPE (NMModemBroadband, nm_modem_broadband, NM_TYPE_MODEM)
 
 typedef enum {
