@@ -1446,7 +1446,7 @@ error:
 }
 
 static NMCResultCode
-do_devices_show (NmCli *nmc, int argc, char **argv)
+do_device_show (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice **devices = NULL;
 	NMDevice *device = NULL;
@@ -2030,7 +2030,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_device_disconnect (NmCli *nmc, int argc, char **argv)
+do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
@@ -2097,7 +2097,7 @@ delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_device_delete (NmCli *nmc, int argc, char **argv)
+do_devices_delete (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
@@ -2315,7 +2315,7 @@ device_removed (NMClient *client, NMDevice *device, NmCli *nmc)
 }
 
 static NMCResultCode
-do_device_monitor (NmCli *nmc, int argc, char **argv)
+do_devices_monitor (NmCli *nmc, int argc, char **argv)
 {
 	if (argc == 0) {
 		/* No devices specified. Monitor all. */
@@ -3758,7 +3758,7 @@ do_devices (NmCli *nmc, int argc, char **argv)
 			}
 			if (!nmc->mode_specified)
 				nmc->multiline_output = TRUE;  /* multiline mode is default for 'device show' */
-			nmc->return_value = do_devices_show (nmc, argc-1, argv+1);
+			nmc->return_value = do_device_show (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "connect") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
@@ -3779,14 +3779,14 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				usage_device_disconnect ();
 				goto usage_exit;
 			}
-			nmc->return_value = do_device_disconnect (nmc, argc-1, argv+1);
+			nmc->return_value = do_devices_disconnect (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "delete") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
 				usage_device_delete ();
 				goto usage_exit;
 			}
-			nmc->return_value = do_device_delete (nmc, argc-1, argv+1);
+			nmc->return_value = do_devices_delete (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "set") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
@@ -3800,7 +3800,7 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				usage_device_monitor ();
 				goto usage_exit;
 			}
-			nmc->return_value = do_device_monitor (nmc, argc-1, argv+1);
+			nmc->return_value = do_devices_monitor (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "wifi") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
@@ -3842,5 +3842,5 @@ opt_error:
 void
 monitor_devices (NmCli *nmc)
 {
-	do_device_monitor (nmc, 0, NULL);
+	do_devices_monitor (nmc, 0, NULL);
 }
