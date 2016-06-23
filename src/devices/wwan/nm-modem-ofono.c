@@ -1008,15 +1008,10 @@ static void
 do_context_activate (NMModemOfono *self)
 {
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_MODEM_OFONO (self));
 
-	g_value_init (&value, G_TYPE_BOOLEAN);
-	g_value_set_boolean (&value, TRUE);
-
 	g_clear_object (&priv->context_proxy);
-
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                          NULL,
