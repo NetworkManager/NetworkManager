@@ -613,12 +613,6 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	}
 }
 
-static void
-deactivate (NMDevice *device)
-{
-	nm_device_hw_addr_reset (device, "deactivate");
-}
-
 /******************************************************************/
 
 static void
@@ -682,7 +676,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->bring_up = bring_up;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	parent_class->deactivate = deactivate;
 	parent_class->is_available = is_available;
 	parent_class->notify_new_device_added = notify_new_device_added;
 

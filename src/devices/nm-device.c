@@ -10653,6 +10653,8 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
 	}
 
+	nm_device_hw_addr_reset (self, "deactivate");
+
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);

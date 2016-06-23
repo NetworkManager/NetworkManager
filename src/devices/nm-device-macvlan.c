@@ -541,12 +541,6 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 	update_properties (device);
 }
 
-static void
-deactivate (NMDevice *device)
-{
-	nm_device_hw_addr_reset (device, "deactivate");
-}
-
 /******************************************************************/
 
 static void
@@ -627,7 +621,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	device_class->complete_connection = complete_connection;
 	device_class->connection_type = NM_SETTING_MACVLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
-	device_class->deactivate = deactivate;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->is_available = is_available;
