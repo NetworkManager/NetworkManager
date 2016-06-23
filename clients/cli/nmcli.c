@@ -640,6 +640,9 @@ main (int argc, char *argv[])
 	loop = g_main_loop_new (NULL, FALSE);  /* create main loop */
 	g_main_loop_run (loop);                /* run main loop */
 
+	if (nm_cli.complete)
+		nm_cli.return_value = NMC_RESULT_SUCCESS;
+
 	/* Print result descripting text */
 	if (nm_cli.return_value != NMC_RESULT_SUCCESS) {
 		g_printerr ("%s\n", nm_cli.return_text->str);

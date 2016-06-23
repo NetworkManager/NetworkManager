@@ -4758,9 +4758,6 @@ finish:
 	if (connection)
 		g_object_unref (connection);
 
-	/* shell completion - be sure to exit with success without printing errors */
-	if (nmc->complete)
-		nmc->return_value = NMC_RESULT_SUCCESS;
 	return nmc->return_value;
 }
 
@@ -7818,9 +7815,6 @@ do_connection_modify (NmCli *nmc,
 	nmc->should_wait++;
 
 finish:
-	/* shell completion - be sure to exit with success without printing errors */
-	if (nmc->complete)
-		nmc->return_value = NMC_RESULT_SUCCESS;
 	return nmc->return_value;
 }
 
