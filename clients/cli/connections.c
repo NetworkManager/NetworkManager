@@ -4255,8 +4255,6 @@ read_connection_properties (NmCli *nmc,
 
 		option = **argv;
 		if (!option) {
-			if (nmc->complete)
-				complete_property_name (nmc, connection, '\0', "", NULL);
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: <setting>.<property> argument is missing."));
 			return FALSE;
@@ -4275,10 +4273,11 @@ read_connection_properties (NmCli *nmc,
 			if (modifier)
 				setting++;
 
+			if (*argc == 1 && nmc->complete)
+				complete_property_name (nmc, connection, modifier, setting, strv[1]);
+
 			setting_name = check_valid_name (setting, type_settings, slv_settings, &local);
 			if (!setting_name) {
-				if (nmc->complete)
-					complete_property_name (nmc, connection, modifier, setting, strv[1]);
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: invalid or not allowed setting '%s': %s."),
 				             setting, local->message);
@@ -4287,11 +4286,8 @@ read_connection_properties (NmCli *nmc,
 			}
 
 			next_arg (argc, argv);
-			if (!get_value (&value, argc, argv, option, error)) {
-				if (nmc->complete)
-					complete_property_name (nmc, connection, modifier, setting, strv[1]);
+			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
-			}
 
 			if (!*argc && nmc->complete)
 				complete_property (setting, strv[1], value ? value : "");
@@ -4318,19 +4314,19 @@ read_connection_properties (NmCli *nmc,
 			if (!chosen) {
 				if (modifier)
 					option++;
-				if (nmc->complete)
+				if (*argc == 1 && nmc->complete)
 					complete_property_name (nmc, connection, modifier, option, NULL);
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 					     _("Error: invalid <setting>.<property> '%s'."), option);
 				return FALSE;
 			}
 
+			if (*argc == 1 && nmc->complete)
+				complete_property_name (nmc, connection, modifier, option, NULL);
+
 			next_arg (argc, argv);
-			if (!get_value (&value, argc, argv, option, error)) {
-				if (nmc->complete)
-					complete_property_name (nmc, connection, modifier, option, NULL);
+			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
-			}
 
 			if (!*argc && nmc->complete)
 				complete_option (chosen, value ? value : "");
