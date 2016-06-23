@@ -1401,6 +1401,12 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
+	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		g_error_free (error);
+		return NMC_RESULT_ERROR_USER_INPUT;
+	}
+
 	while (argc > 0) {
 		g_printerr (_("Unknown parameter: %s\n"), *argv);
 		argc--;
@@ -1421,8 +1427,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'device status': %s"), error->message);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	/* Add headers */
@@ -1440,9 +1445,6 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	g_free (devices);
 
 	return NMC_RESULT_SUCCESS;
-
-error:
-	return nmc->return_value;
 }
 
 static NMCResultCode
@@ -1453,6 +1455,9 @@ do_device_show (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	int i;
 	gboolean ret;
+
+	if (!nmc->mode_specified)
+		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device show' */
 
 	if (argc == 1)
 		ifname = *argv;
@@ -3447,6 +3452,14 @@ error:
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
+	GError *error = NULL;
+
+	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		g_error_free (error);
+		return NMC_RESULT_ERROR_USER_INPUT;
+	}
+
 	if (argc == 0)
 		nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
 	else if (argc > 0) {
@@ -3630,6 +3643,17 @@ error:
 static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
+	GError *error = NULL;
+
+	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		g_error_free (error);
+		return NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	if (!nmc->mode_specified)
+		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
+
 	if (argc == 0)
 		nmc->return_value = do_device_lldp_list (nmc, argc, argv);
 	else if (matches (*argv, "list") == 0)
@@ -3711,11 +3735,23 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
+static const NMCCommand device_cmds[] = {
+	{"status",      do_devices_status,      usage_device_status },
+	{"show",        do_device_show,         usage_device_show },
+	{"connect",     do_device_connect,      usage_device_connect },
+	{"reapply",     do_device_reapply,      usage_device_reapply },
+	{"disconnect",  do_devices_disconnect,  usage_device_disconnect },
+	{"delete",      do_devices_delete,      usage_device_delete },
+	{"set",         do_device_set,          usage_device_set },
+	{"monitor",     do_devices_monitor,     usage_device_monitor },
+	{"wifi",        do_device_wifi,         usage_device_wifi },
+	{"lldp",        do_device_lldp,         usage_device_lldp },
+	{NULL,          do_devices_status,      usage },
+};
+
 NMCResultCode
 do_devices (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
@@ -3727,116 +3763,10 @@ do_devices (NmCli *nmc, int argc, char **argv)
 	/* Check whether NetworkManager is running */
 	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		return nmc->return_value;
+		return NMC_RESULT_ERROR_NM_NOT_RUNNING;
 	}
 
-	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-			goto opt_error;
-		nmc->return_value = do_devices_status (nmc, 0, NULL);
-	}
-
-	if (argc > 0) {
-		if (nmc_arg_is_help (*argv)) {
-			usage ();
-			goto usage_exit;
-		}
-		else if (matches (*argv, "status") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_status ();
-				goto usage_exit;
-			}
-			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto opt_error;
-			nmc->return_value = do_devices_status (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "show") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_show ();
-				goto usage_exit;
-			}
-			if (!nmc->mode_specified)
-				nmc->multiline_output = TRUE;  /* multiline mode is default for 'device show' */
-			nmc->return_value = do_device_show (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "connect") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_connect ();
-				goto usage_exit;
-			}
-			nmc->return_value = do_device_connect (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "reapply") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_reapply ();
-				goto usage_exit;
-			}
-			nmc->return_value = do_device_reapply (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "disconnect") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_disconnect ();
-				goto usage_exit;
-			}
-			nmc->return_value = do_devices_disconnect (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "delete") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_delete ();
-				goto usage_exit;
-			}
-			nmc->return_value = do_devices_delete (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "set") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_set ();
-				goto usage_exit;
-			}
-			nmc->return_value = do_device_set (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "monitor") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_monitor ();
-				goto usage_exit;
-			}
-			nmc->return_value = do_devices_monitor (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "wifi") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_wifi ();
-				goto usage_exit;
-			}
-			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto opt_error;
-			nmc->return_value = do_device_wifi (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "lldp") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_device_lldp ();
-				goto usage_exit;
-			}
-			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto opt_error;
-			if (!nmc->mode_specified)
-				nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
-			nmc->return_value = do_device_lldp (nmc, argc-1, argv+1);
-		}
-		else {
-			usage ();
-			g_string_printf (nmc->return_text, _("Error: 'dev' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-usage_exit:
-	return nmc->return_value;
-
-opt_error:
-	g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	g_error_free (error);
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, device_cmds, *argv, argc, argv);
 }
 
 void
