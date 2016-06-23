@@ -85,10 +85,9 @@ get_capabilities (NMModem *_self,
                   NMDeviceModemCapabilities *modem_caps,
                   NMDeviceModemCapabilities *current_caps)
 {
-	NMDeviceModemCapabilities all_ofono_caps = NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
-
-	*modem_caps = all_ofono_caps;
-	*current_caps = all_ofono_caps;
+	/* FIXME: auto-detect capabilities to allow LTE */
+	*modem_caps = NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
+	*current_caps = NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
 }
 
 static void
