@@ -1470,10 +1470,15 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	                             nm_connection_get_setting_ip4_config (_get_applied_connection (self)),
 	                             route_metric);
 
-	nm_exported_object_clear_and_unexport (&priv->ip4_config);
-	priv->ip4_config = config;
-	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
-	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	if (priv->ip4_config) {
+		nm_ip4_config_replace (priv->ip4_config, config, NULL);
+		g_object_unref (config);
+	} else {
+		priv->ip4_config = config;
+		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	}
+
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
 
@@ -1607,10 +1612,15 @@ next:
 	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
 	                             route_metric);
 
-	nm_exported_object_clear_and_unexport (&priv->ip6_config);
-	priv->ip6_config = config;
-	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
-	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
+	if (priv->ip6_config) {
+		nm_ip6_config_replace (priv->ip6_config, config, NULL);
+		g_object_unref (config);
+	} else {
+		priv->ip6_config = config;
+		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
+	}
+
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
 
