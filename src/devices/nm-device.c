@@ -11748,6 +11748,12 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 			return FALSE;
 		priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
 	} else if (NM_IN_STRSET (addr, NM_CLONED_MAC_RANDOM)) {
+		if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
+			/* hm, we already use a generate MAC address. Most certainly, that is from the same
+			 * activation request, so we should not create a new random address, instead keep
+			 * the current. */
+			return TRUE;
+		}
 		hw_addr_generated = nm_utils_hw_addr_gen_random_eth (nm_device_get_initial_hw_address (self),
 		                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
 		if (!hw_addr_generated) {
@@ -11759,6 +11765,12 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 	} else if (NM_IN_STRSET (addr, NM_CLONED_MAC_STABLE)) {
 		NMUtilsStableType stable_type;
 		const char *stable_id;
+
+		if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
+			/* hm, we already use a generate MAC address. Most certainly, that is from the same
+			 * activation request, so let's skip creating the stable address anew. */
+			return TRUE;
+		}
 
 		stable_id = _get_stable_id (connection, &stable_type);
 		if (stable_id) {
