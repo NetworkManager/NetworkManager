@@ -29,7 +29,6 @@
 #define NM_MODEM_OFONO_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_MODEM_OFONO, NMModemOfonoClass))
 #define NM_IS_MODEM_OFONO_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_MODEM_OFONO))
 #define NM_MODEM_OFONO_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM_OFONO, NMModemOfonoClass))
-#define NM_MODEM_OFONO_MODEM "modem"
 
 #define OFONO_DBUS_SERVICE                      "org.ofono"
 #define OFONO_DBUS_PATH                         "/"
@@ -38,12 +37,6 @@
 #define OFONO_DBUS_INTERFACE_CONNECTION_MANAGER "org.ofono.ConnectionManager"
 #define OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT "org.ofono.ConnectionContext"
 #define OFONO_DBUS_INTERFACE_SIM_MANAGER        "org.ofono.SimManager"
-
-typedef enum {
-	NM_OFONO_ERROR_CONNECTION_NOT_OFONO = 0,  /*< nick=ConnectionNotOfono >*/
-	NM_OFONO_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_OFONO_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
-} NMOfonoError;
 
 typedef struct {
 	NMModem parent;
