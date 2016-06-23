@@ -993,8 +993,12 @@ _nmcli()
                         fi
                         ;;
                     a|ad|add)
-                        _nmcli_array_delete_at words 0 1
-                        _nmcli_list_nl "$(nmcli --complete-args connection add "${words[@]}" 2>/dev/null)"
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(nmcli --complete-args connection add "" 2>/dev/null)"
+                        else
+                            _nmcli_array_delete_at words 0 1
+                            _nmcli_list_nl "$(nmcli --complete-args connection add "${words[@]}" 2>/dev/null)"
+                        fi
                         ;;
                     e|ed|edi|edit)
                         if [[ ${#words[@]} -eq 3 ]]; then
