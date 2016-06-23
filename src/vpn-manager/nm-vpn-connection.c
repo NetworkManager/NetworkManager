@@ -1082,7 +1082,8 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
 
 	_LOGI ("VPN connection: (IP Config Get) complete");
-	_set_vpn_state (self, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	if (priv->vpn_state < STATE_PRE_UP)
+		_set_vpn_state (self, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 	return TRUE;
 }
 
