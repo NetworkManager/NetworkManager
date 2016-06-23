@@ -515,6 +515,19 @@ get_devices_sorted (NMClient *client)
 	return sorted;
 }
 
+static void
+complete_device (NMDevice **devices, const char *prefix)
+{
+	int i;
+
+	for (i = 0; devices[i]; i++) {
+		const char *iface = nm_device_get_iface (devices[i]);
+
+		if (g_str_has_prefix (iface, prefix))
+			g_print ("%s\n", iface);
+	}
+}
+
 static GSList *
 get_device_list (NmCli *nmc, int argc, char **argv)
 {
@@ -542,6 +555,9 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 
 	devices = get_devices_sorted (nmc->client);
 	while (arg_num > 0) {
+		if (arg_num == 1 && nmc->complete)
+			complete_device (devices, *arg_ptr);
+
 		device = NULL;
 		for (i = 0; devices[i]; i++) {
 			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
@@ -556,7 +572,8 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 			else
 				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
 		} else {
-			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
+			if (!nmc->complete)
+				g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
 			g_string_printf (nmc->return_text, _("Error: not all devices found."));
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		}
@@ -596,17 +613,19 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 
 	devices = get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
-		NMDevice *candidate = devices[i];
-		const char *dev_iface = nm_device_get_iface (candidate);
-
-		if (!g_strcmp0 (dev_iface, ifname))
-			return candidate;
+		if (!g_strcmp0 (nm_device_get_iface (devices[i]), ifname))
+			break;
 	}
 
-	g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
-	             _("Device '%s' not found."), ifname);
+	if (nmc->complete && !*argc)
+		complete_device (devices, ifname);
 
-	return NULL;
+	if (devices[i] == NULL) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
+		             _("Device '%s' not found."), ifname);
+	}
+
+	return devices[i];
 }
 
 static int
@@ -1438,6 +1457,10 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
+	/* Nothing to complete */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 		g_error_free (error);
@@ -1506,10 +1529,16 @@ do_device_show (NmCli *nmc, int argc, char **argv)
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
+		if (nmc->complete)
+			return nmc->return_value;
+
 		show_device_info (device, nmc);
 	} else {
 		NMDevice **devices = get_devices_sorted (nmc->client);
 		int i;
+
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
 
 		/* Show details for all devices */
 		for (i = 0; devices[i]; i++) {
@@ -1783,9 +1812,11 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 
 	if (*argv) {
 		g_string_printf (nmc->return_text, _("Error: extra argument not allowed: '%s'."), *argv);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/*
 	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
@@ -1818,7 +1849,6 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, device);
 
-error:
 	return nmc->return_value;
 }
 
@@ -1951,6 +1981,9 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
@@ -2010,7 +2043,9 @@ do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 
 	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
-		goto error;
+		return nmc->return_value;
+	if (nmc->complete)
+		goto out;
 	queue = g_slist_reverse (queue);
 
 	info = g_slice_new0 (DeviceCbInfo);
@@ -2036,7 +2071,7 @@ do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 		nm_device_disconnect_async (device, NULL, disconnect_device_cb, info);
 	}
 
-error:
+out:
 	g_slist_free (queue);
 	return nmc->return_value;
 }
@@ -2077,7 +2112,9 @@ do_devices_delete (NmCli *nmc, int argc, char **argv)
 
 	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
-		goto error;
+		return nmc->return_value;
+	if (nmc->complete)
+		goto out;
 	queue = g_slist_reverse (queue);
 
 	info = g_slice_new0 (DeviceCbInfo);
@@ -2100,7 +2137,7 @@ do_devices_delete (NmCli *nmc, int argc, char **argv)
 		nm_device_delete_async (device, NULL, delete_device_cb, info);
 	}
 
-error:
+out:
 	g_slist_free (queue);
 	return nmc->return_value;
 }
@@ -2121,6 +2158,10 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		[DEV_SET_AUTOCONNECT] = { -1 },
 		[DEV_SET_MANAGED]     = { -1 },
 	};
+
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0) {
 		argc--;
@@ -2285,6 +2326,12 @@ device_removed (NMClient *client, NMDevice *device, NmCli *nmc)
 static NMCResultCode
 do_devices_monitor (NmCli *nmc, int argc, char **argv)
 {
+	GSList *queue = get_device_list (nmc, argc, argv);
+	GSList *iter;
+
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (argc == 0) {
 		/* No devices specified. Monitor all. */
 		const GPtrArray *devices = nm_client_get_devices (nmc->client);
@@ -2297,21 +2344,14 @@ do_devices_monitor (NmCli *nmc, int argc, char **argv)
 		nmc->should_wait++;
 		g_signal_connect (nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK (device_added), nmc);
 	} else {
-		/* Monitor just the specified devices. */
-		GSList *queue = get_device_list (nmc, argc, argv);
-		GSList *iter;
-
-		if (!queue)
-			return nmc->return_value;
-
+		/* Monitor the specified devices. */
 		for (iter = queue; iter; iter = g_slist_next (iter))
 			device_watch (nmc, NM_DEVICE (iter->data));
 		g_slist_free (queue);
 	}
 
 	g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK (device_removed), nmc);
-
-	return NMC_RESULT_SUCCESS;
+	return nmc->return_value;
 }
 
 static void
@@ -3417,6 +3457,10 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 		g_error_free (error);
@@ -3607,6 +3651,10 @@ static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);

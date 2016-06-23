@@ -142,7 +142,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		 * autocompletion mode (so we should just quit and don't print anything).
 		 * This would help us to ensure shell autocompletion after NM package downgrade
 		 * if we ever will enable --complete-args for other commands */
-		if ((argc == 2) || !nm_streq0 (argv[2], "connection"))
+		if ((argc == 2) || !(nm_streq0 (argv[2], "connection") || nm_streq0 (argv[2], "device")))
 			return nmc->return_value;
 		nmc->complete = TRUE;
 		argv[1] = argv[0];
