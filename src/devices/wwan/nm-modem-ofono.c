@@ -62,7 +62,6 @@ typedef struct {
 	gboolean gprs_attached;
 
 	NMIP4Config *ip4_config;
-
 } NMModemOfonoPrivate;
 
 static gboolean
