@@ -946,8 +946,9 @@ static_stage3_ip4_config_start (NMModem *_self,
 		_LOGD ("IP4 config is done; setting modem_state -> CONNECTED");
 		g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, priv->ip4_config, error);
 
-		/* TODO: review!!! */
+		/* Signal listener takes ownership of the IP4Config */
 		priv->ip4_config = NULL;
+
 		nm_modem_set_state (NM_MODEM (self),
 							NM_MODEM_STATE_CONNECTED,
 							nm_modem_state_to_string (NM_MODEM_STATE_CONNECTED));
