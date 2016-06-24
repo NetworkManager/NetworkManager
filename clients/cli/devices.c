@@ -2501,6 +2501,10 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	size_t tmpl_len;
 	const char *base_hdr = _("Wi-Fi scan list");
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
@@ -2809,6 +2813,10 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	int devices_idx;
 	char *ssid_ask = NULL;
 	char *passwd_ask = NULL;
+
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Set default timeout waiting for operation completion. */
 	if (nmc->timeout == -1)
@@ -3261,6 +3269,10 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	GBytes *ssid_bytes;
 	GError *error = NULL;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Set default timeout waiting for operation completion. */
 	if (nmc->timeout == -1)
 		nmc->timeout = 60;
@@ -3475,6 +3487,10 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	const char *ssid;
 	int i;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	ssids = g_ptr_array_new ();
 
 	/* Get the parameters */
@@ -3559,10 +3575,6 @@ static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
-
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
 
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
