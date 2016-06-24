@@ -2281,10 +2281,6 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	};
 	gs_free_error GError *error = NULL;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0) {
 		argc--;
 		argv++;
@@ -2305,11 +2301,16 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	do {
 		gboolean flag;
 
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "managed", "autoconnect", NULL);
+
 		if (matches (*argv, "managed") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bool (*argv);
 			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'managed': %s."),
 				                 error->message);
@@ -2323,6 +2324,8 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bool (*argv);
 			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
 				                 error->message);
@@ -2336,6 +2339,9 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 	} while (next_arg (&argc, &argv) == 0);
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* when multiple properties are specified, set them in the order as they
 	 * are specified on the command line. */

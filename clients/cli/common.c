@@ -1412,6 +1412,14 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 {
 	const NMCCommand *c;
 
+	if (argc == 1 && nmc->complete) {
+		for (c = cmds; c->cmd; ++c) {
+			if (!*cmd || matches (cmd, c->cmd) == 0)
+				g_print ("%s\n", c->cmd);
+		}
+		return nmc->return_value;
+	}
+
 	for (c = cmds; c->cmd; ++c) {
 		if (cmd && matches (cmd, c->cmd) == 0)
 			break;
