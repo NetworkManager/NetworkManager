@@ -3666,6 +3666,9 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 	int counter = 0;
 
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "ifname", NULL);
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
@@ -3700,6 +3703,8 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
 
 	if (device) {
 		nmc_empty_output_fields (nmc);
@@ -3728,10 +3733,6 @@ static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
-
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
 
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
