@@ -3575,6 +3575,14 @@ error:
 	return nmc->return_value;
 }
 
+static NMCCommand device_wifi_cmds[] = {
+	{"list",     do_device_wifi_list,            NULL },
+	{"connect",  do_device_wifi_connect_network, NULL },
+	{"hotspot",  do_device_wifi_hotspot,         NULL },
+	{"rescan",   do_device_wifi_rescan,          NULL },
+	{NULL,       do_device_wifi_list,            NULL }
+};
+
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
@@ -3590,24 +3598,7 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	if (argc == 0)
-		nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
-	else if (argc > 0) {
-		if (matches (*argv, "list") == 0) {
-			nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "connect") == 0) {
-			nmc->return_value = do_device_wifi_connect_network (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "hotspot") == 0) {
-			nmc->return_value = do_device_wifi_hotspot (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "rescan") == 0) {
-			nmc->return_value = do_device_wifi_rescan (nmc, argc-1, argv+1);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: 'device wifi' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
 }
 
 static int
