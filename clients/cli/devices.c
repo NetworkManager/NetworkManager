@@ -2270,9 +2270,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 {
 #define DEV_SET_AUTOCONNECT 0
 #define DEV_SET_MANAGED     1
-	NMDevice **devices;
 	NMDevice *device = NULL;
-	const char *ifname = NULL;
 	int i;
 	struct {
 		int idx;
@@ -2281,6 +2279,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		[DEV_SET_AUTOCONNECT] = { -1 },
 		[DEV_SET_MANAGED]     = { -1 },
 	};
+	gs_free_error GError *error = NULL;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
@@ -2291,57 +2290,30 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	if (argc == 0) {
-		g_string_printf (nmc->return_text, _("Error: No interface specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	} else
-		ifname = *argv;
-
-	if (!ifname) {
-		g_string_printf (nmc->return_text, _("Error: No interface specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
-
-	devices = get_devices_sorted (nmc->client);
-	for (i = 0; devices[i]; i++) {
-		NMDevice *candidate = devices[i];
-		const char *dev_iface = nm_device_get_iface (candidate);
-
-		if (!g_strcmp0 (dev_iface, ifname))
-			device = candidate;
-	}
-	g_free (devices);
-
+	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		goto error;
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		return error->code;
 	}
 
-        if (argc == 1) {
+        if (!argc) {
 		g_string_printf (nmc->return_text, _("Error: No property specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	i = 0;
-	while (next_arg (&argc, &argv) == 0) {
+	do {
 		gboolean flag;
-		gs_free_error GError *tmp_err = NULL;
 
 		if (matches (*argv, "managed") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			if (!nmc_string_to_bool (*argv, &flag, &tmp_err)) {
+			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'managed': %s."),
-				                 tmp_err->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				                 error->message);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			values[DEV_SET_MANAGED].idx = ++i;
 			values[DEV_SET_MANAGED].value = flag;
@@ -2349,25 +2321,21 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		else if (matches (*argv, "autoconnect") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			if (!nmc_string_to_bool (*argv, &flag, &tmp_err)) {
+			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
-				                 tmp_err->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				                 error->message);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			values[DEV_SET_AUTOCONNECT].idx = ++i;
 			values[DEV_SET_AUTOCONNECT].value = flag;
 		}
 		else {
-			usage_device_set ();
 			g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
-	}
+	} while (next_arg (&argc, &argv) == 0);
 
 	/* when multiple properties are specified, set them in the order as they
 	 * are specified on the command line. */
@@ -2382,8 +2350,6 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	if (values[DEV_SET_MANAGED].idx >= 0)
 		nm_device_set_managed (device, values[DEV_SET_MANAGED].value);
 
-error:
-	quit ();
 	return nmc->return_value;
 }
 
