@@ -1025,12 +1025,11 @@ apply_parent_device_config (NMVpnConnection *self)
 		ifindex = nm_device_get_ip_ifindex (parent_dev);
 		if (priv->ip4_config) {
 			vpn4_parent_config = nm_ip4_config_new (ifindex);
-			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-			nm_ip4_config_unset_gateway (vpn4_parent_config);
+			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_NO_DNS);
 		}
 		if (priv->ip6_config) {
 			vpn6_parent_config = nm_ip6_config_new (ifindex);
-			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
+			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_NO_DNS);
 			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
 		}
 	}
