@@ -1442,3 +1442,25 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 
 	return nmc->return_value;
 }
+
+/**
+ * nmc_complete_strings:
+ * @prefix: a string to match
+ * @...: a %NULL-terminated list of candidate strings
+ *
+ * Prints all the matching candidates for completion. Useful when there's
+ * no better way to suggest completion other than a hardcoded string list.
+ */
+void
+nmc_complete_strings (const char *prefix, ...)
+{
+	va_list args;
+	const char *candidate;
+
+	va_start (args, prefix);
+	while ((candidate = va_arg (args, const char *))) {
+		if (!*prefix || matches (prefix, candidate) == 0)
+			g_print ("%s\n", candidate);
+	}
+	va_end (args);
+}
