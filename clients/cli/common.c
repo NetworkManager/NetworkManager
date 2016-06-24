@@ -1464,3 +1464,17 @@ nmc_complete_strings (const char *prefix, ...)
 	}
 	va_end (args);
 }
+
+/**
+ * nmc_complete_bool:
+ * @prefix: a string to match
+ * @...: a %NULL-terminated list of candidate strings
+ *
+ * Prints all the matching possible boolean values for completion.
+ */
+void
+nmc_complete_bool (const char *prefix)
+{
+	nmc_complete_strings (prefix, "true", "yes", "on",
+	                              "false", "no", "off", NULL);
+}
