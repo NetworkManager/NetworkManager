@@ -3685,7 +3685,7 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, char *fields_str, int *coun
 	return neighbors->len;
 }
 
-static gboolean
+static NMCResultCode
 do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL, **devices = NULL;
@@ -3761,6 +3761,11 @@ error:
 	return nmc->return_value;
 }
 
+static NMCCommand device_lldp_cmds[] = {
+	{"list",  do_device_lldp_list,  NULL },
+	{NULL,    do_device_lldp_list,  NULL }
+};
+
 static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
@@ -3779,16 +3784,7 @@ do_device_lldp (NmCli *nmc, int argc, char **argv)
 	if (!nmc->mode_specified)
 		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 
-	if (argc == 0)
-		nmc->return_value = do_device_lldp_list (nmc, argc, argv);
-	else if (matches (*argv, "list") == 0)
-		nmc->return_value = do_device_lldp_list (nmc, argc-1, argv+1);
-	else {
-		g_string_printf (nmc->return_text, _("Error: 'device lldp' command '%s' is not valid."), *argv);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	}
-
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
 }
 
 static gboolean
