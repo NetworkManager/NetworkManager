@@ -3654,24 +3654,26 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, char *fields_str, int *coun
 static NMCResultCode
 do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 {
-	NMDevice *device = NULL, **devices = NULL;
-	GError *error = NULL;
-	const char *ifname = NULL;
+	NMDevice *device = NULL;
+	gs_free_error GError *error = NULL;
 	char *fields_str;
-	int i, counter = 0;
+	int counter = 0;
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			ifname = *argv;
+
+			device = get_device (nmc, &argc, &argv, &error);
+			if (!device) {
+				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+				return error->code;
+			}
 		} else {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
 		argc--;
@@ -3689,41 +3691,25 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'device lldp list': %s"), error->message);
-		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return nmc->return_value;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	devices = get_devices_sorted (nmc->client);
 
-	if (ifname) {
-		for (i = 0; devices[i]; i++) {
-			NMDevice *candidate = devices[i];
-			const char *dev_iface = nm_device_get_iface (candidate);
-
-			if (!g_strcmp0 (dev_iface, ifname)) {
-				device = candidate;
-				break;
-			}
-		}
-
-		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-			goto error;
-		}
-
+	if (device) {
 		nmc_empty_output_fields (nmc);
 		show_device_lldp_list (device, nmc, fields_str, &counter);
 	} else {
+		NMDevice **devices = get_devices_sorted (nmc->client);
+		int i;
+
 		for (i = 0; devices[i]; i++) {
 			nmc_empty_output_fields (nmc);
 			show_device_lldp_list (devices[i], nmc, fields_str, &counter);
 		}
+
+		g_free (devices);
 	}
 
-error:
-	g_free (devices);
 	return nmc->return_value;
 }
 
