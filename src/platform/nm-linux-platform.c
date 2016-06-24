@@ -5869,6 +5869,13 @@ continue_reading:
 	errno = 0;
 	n = nl_recv (sk, &nla, &buf, &creds);
 
+	if (n <= 0) {
+		/* workaround libnl3 <= 3.2.15 returning danling pointers in case nl_recv()
+		 * fails. Fixed by libnl3 69468517d0de1675d80f24661ff57a5dbac7275c. */
+		buf = NULL;
+		creds = NULL;
+	}
+
 	switch (n) {
 	case 0:
 		/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
