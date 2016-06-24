@@ -26,6 +26,7 @@
 
 #include "utils.h"
 #include "common.h"
+#include "nm-vpn-helpers.h"
 
 /* Forward declarations */
 static char *wep_key_type_to_string (NMWepKeyType type);
@@ -2955,6 +2956,16 @@ nmc_property_set_secret_flags (NMSetting *setting, const char *prop, const char 
 	}
 
 	g_object_set (setting, prop, (guint) flags, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_vpn_service (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	gs_free char *service_name = NULL;
+
+	service_name = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), val);
+	g_object_set (setting, prop, service_name ? : val, NULL);
 	return TRUE;
 }
 
@@ -7081,7 +7092,7 @@ nmc_properties_init (void)
 	/* Add editable properties for NM_SETTING_VPN_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (VPN, SERVICE_TYPE),
 	                    nmc_property_vpn_get_service_type,
-	                    nmc_property_set_string,
+	                    nmc_property_set_vpn_service,
 	                    NULL,
 	                    NULL,
 	                    NULL,
