@@ -322,9 +322,9 @@ check_connection_compatible (NMModem *modem,
 
 static void
 handle_sim_property (GDBusProxy *proxy,
-					  const char *property,
-					  GVariant *v,
-					  gpointer user_data)
+                     const char *property,
+                     GVariant *v,
+                     gpointer user_data)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -602,9 +602,9 @@ handle_connman_iface (NMModemOfono *self, gboolean found)
 
 static void
 handle_modem_property (GDBusProxy *proxy,
-					   const char *property,
-					   GVariant *v,
-					   gpointer user_data)
+                       const char *property,
+                       GVariant *v,
+                       gpointer user_data)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -934,8 +934,8 @@ out:
 
 static NMActStageReturn
 static_stage3_ip4_config_start (NMModem *_self,
-								NMActRequest *req,
-								NMDeviceStateReason *reason)
+                                NMActRequest *req,
+                                NMDeviceStateReason *reason)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (_self);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -950,8 +950,8 @@ static_stage3_ip4_config_start (NMModem *_self,
 		priv->ip4_config = NULL;
 
 		nm_modem_set_state (NM_MODEM (self),
-							NM_MODEM_STATE_CONNECTED,
-							nm_modem_state_to_string (NM_MODEM_STATE_CONNECTED));
+		                    NM_MODEM_STATE_CONNECTED,
+		                    nm_modem_state_to_string (NM_MODEM_STATE_CONNECTED));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
@@ -1066,8 +1066,8 @@ act_stage1_prepare (NMModem *modem,
 
 	g_free (priv->context_path);
 	priv->context_path = g_strdup_printf ("%s/%s",
-										  nm_modem_get_path (modem),
-										  id[2]);
+	                                      nm_modem_get_path (modem),
+	                                      id[2]);
 	g_strfreev (id);
 
 	if (!priv->context_path) {
@@ -1108,19 +1108,19 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	/* Watch for custom ofono PropertyChanged signals */
 	_nm_dbus_signal_connect (priv->modem_proxy,
-							 "PropertyChanged",
-							 G_VARIANT_TYPE ("(sv)"),
-							 G_CALLBACK (modem_property_changed),
-							 self);
+	                         "PropertyChanged",
+	                         G_VARIANT_TYPE ("(sv)"),
+	                         G_CALLBACK (modem_property_changed),
+	                         self);
 
 	g_dbus_proxy_call (priv->modem_proxy,
-					   "GetProperties",
-					   NULL,
-				       G_DBUS_CALL_FLAGS_NONE,
-				       20000,
-				       NULL,
-				       (GAsyncReadyCallback) modem_get_properties_done,
-					   g_object_ref (self));
+	                   "GetProperties",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   20000,
+	                   NULL,
+	                   (GAsyncReadyCallback) modem_get_properties_done,
+	                   g_object_ref (self));
 }
 
 static void
