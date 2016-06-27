@@ -328,13 +328,13 @@ _nmcli_compl_ARGS()
         case "${WORD0}" in
             level)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list "OFF ERR WARN INFO DEBUG TRACE"
+                    _nmcli_list "OFF ERR WARN INFO DEBUG TRACE KEEP"
                    return 0
                 fi
                 ;;
             domains)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    local OPTIONS_DOM=(ALL DEFAULT PLATFORM RFKILL ETHER WIFI BT MB DHCP4 DHCP6 PPP WIFI_SCAN IP4 IP6 AUTOIP4 DNS VPN SHARING SUPPLICANT AGENTS SETTINGS SUSPEND CORE DEVICE OLPC WIMAX INFINIBAND FIREWALL ADSL BOND VLAN BRIDGE DBUS_PROPS TEAM CONCHECK DCB DISPATCH)
+                    local OPTIONS_DOM=(ALL DEFAULT DHCP IP PLATFORM RFKILL ETHER WIFI BT MB DHCP4 DHCP6 PPP WIFI_SCAN IP4 IP6 AUTOIP4 DNS VPN SHARING SUPPLICANT AGENTS SETTINGS SUSPEND CORE DEVICE OLPC WIMAX INFINIBAND FIREWALL ADSL BOND VLAN BRIDGE DBUS_PROPS TEAM CONCHECK DCB DISPATCH AUDIT SYSTEMD VPN_PLUGIN)
                     if [[ "${words[1]}" != "" ]]; then
 
                         # split the comma separaeted domain string into its parts LOGD
