@@ -415,10 +415,12 @@ nmc_parse_and_build_route (int family,
 	char *dest = NULL, *plen = NULL;
 	const char *next_hop = NULL;
 	const char *canon_dest;
-	long int prefix = max_prefix, metric = -1;
+	long int prefix = max_prefix;
+	unsigned long int tmp_ulong;
 	NMIPRoute *route = NULL;
 	gboolean success = FALSE;
 	GError *local = NULL;
+	gint64 metric = -1;
 
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
 	g_return_val_if_fail (first != NULL, FALSE);
@@ -444,19 +446,21 @@ nmc_parse_and_build_route (int family,
 			next_hop = second;
 		else {
 			/* 'second' can be a metric */
-			if (!nmc_string_to_int (second, TRUE, 0, G_MAXUINT32, &metric)) {
+			if (!nmc_string_to_uint (second, TRUE, 0, G_MAXUINT32, &tmp_ulong)) {
 				g_set_error (error, 1, 0, _("the second component of route ('%s') is neither "
 				                            "a next hop address nor a metric"), second);
 				goto finish;
 			}
+			metric = tmp_ulong;
 		}
 	}
 
 	if (third) {
-		if (!nmc_string_to_int (third, TRUE, 0, G_MAXUINT32, &metric)) {
+		if (!nmc_string_to_uint (third, TRUE, 0, G_MAXUINT32, &tmp_ulong)) {
 			g_set_error (error, 1, 0, _("invalid metric '%s'"), third);
 			goto finish;
 		}
+		metric = tmp_ulong;
 	}
 
 	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &local);
