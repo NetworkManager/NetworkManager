@@ -123,6 +123,8 @@ _nmcli_compl_match_option()
         S="${S:2}"
     elif [[ "${S:0:1}" == "-" ]]; then
         S="${S:1}"
+    else
+        return 1
     fi
     for V; do
         case "$V" in
