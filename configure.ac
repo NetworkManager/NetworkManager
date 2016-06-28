@@ -734,6 +734,15 @@ else
 fi
 AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
 
+# OFONO
+AC_ARG_WITH(ofono, AS_HELP_STRING([--with-ofono], [Enable oFono support (experimental)]),,[with_ofono=no])
+if (test "${with_ofono}" = "yes"); then
+	AC_DEFINE(WITH_OFONO, 1, [Define if you have oFono support (experimental)])
+else
+	AC_DEFINE(WITH_OFONO, 0, [Define if you have oFono support (experimental)])
+fi
+AM_CONDITIONAL(WITH_OFONO, test "${with_ofono}" = "yes")
+
 # DHCP client support
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
 AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
@@ -1235,6 +1244,7 @@ echo "  wext: $ac_with_wext"
 echo "  wifi: $enable_wifi"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
+echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
 echo "  libteamdctl: $enable_teamdctl"
 echo "  libnm-glib: $with_libnm_glib"

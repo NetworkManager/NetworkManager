@@ -42,6 +42,13 @@ libnm_wwan_la_SOURCES = \
 	\
 	$(GLIB_GENERATED)
 
+if WITH_OFONO
+libnm_wwan_la_SOURCES += \
+	nm-modem-ofono.c \
+	nm-modem-ofono.h \
+	$(NULL)
+endif
+
 WWAN_SYMBOL_VIS_FILE=$(srcdir)/wwan-exports.ver
 
 libnm_wwan_la_LDFLAGS = \
