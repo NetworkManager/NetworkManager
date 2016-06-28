@@ -1023,12 +1023,11 @@ apply_parent_device_config (NMVpnConnection *self)
 		ifindex = nm_device_get_ip_ifindex (parent_dev);
 		if (priv->ip4_config) {
 			vpn4_parent_config = nm_ip4_config_new (ifindex);
-			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-			nm_ip4_config_unset_gateway (vpn4_parent_config);
+			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_NO_DNS);
 		}
 		if (priv->ip6_config) {
 			vpn6_parent_config = nm_ip6_config_new (ifindex);
-			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
+			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_NO_DNS);
 			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
 		}
 	}
@@ -1080,7 +1079,8 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
 
 	_LOGI ("VPN connection: (IP Config Get) complete");
-	_set_vpn_state (self, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	if (priv->vpn_state < STATE_PRE_UP)
+		_set_vpn_state (self, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 	return TRUE;
 }
 
@@ -1467,10 +1467,15 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	                             nm_connection_get_setting_ip4_config (_get_applied_connection (self)),
 	                             route_metric);
 
-	nm_exported_object_clear_and_unexport (&priv->ip4_config);
-	priv->ip4_config = config;
-	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
-	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	if (priv->ip4_config) {
+		nm_ip4_config_replace (priv->ip4_config, config, NULL);
+		g_object_unref (config);
+	} else {
+		priv->ip4_config = config;
+		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	}
+
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
 
@@ -1604,10 +1609,15 @@ next:
 	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
 	                             route_metric);
 
-	nm_exported_object_clear_and_unexport (&priv->ip6_config);
-	priv->ip6_config = config;
-	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
-	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
+	if (priv->ip6_config) {
+		nm_ip6_config_replace (priv->ip6_config, config, NULL);
+		g_object_unref (config);
+	} else {
+		priv->ip6_config = config;
+		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
+	}
+
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
 
