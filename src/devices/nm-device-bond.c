@@ -316,7 +316,7 @@ apply_bonding_config (NMDevice *device)
 	if (NM_IN_STRSET (mode, "active-backup", "balance-alb", "balance-tlb")) {
 		value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
 		set_bond_attr (device, "primary", value ? value : "");
-		set_simple_option (device, "lp_internal", s_bond, NM_SETTING_BOND_OPTION_LP_INTERVAL);
+		set_simple_option (device, "lp_interval", s_bond, NM_SETTING_BOND_OPTION_LP_INTERVAL);
 	}
 
 	/* Clear ARP targets */
