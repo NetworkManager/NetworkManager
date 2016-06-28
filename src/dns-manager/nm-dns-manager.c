@@ -940,6 +940,44 @@ merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 	return TRUE;
 }
 
+static const char *
+get_nameserver_list (void *config, GString **str)
+{
+	NMIP4Config *ip4;
+	NMIP6Config *ip6;
+	guint num, i;
+
+	nm_assert (str);
+
+	if (*str)
+		g_string_truncate (*str, 0);
+	else
+		*str = g_string_sized_new (64);
+
+	if (NM_IS_IP4_CONFIG (config)) {
+		ip4 = (NMIP4Config *) config;
+		num = nm_ip4_config_get_num_nameservers (ip4);
+		for (i = 0; i < num; i++) {
+			g_string_append (*str,
+			                 nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (ip4, i),
+			                                      NULL));
+			g_string_append_c (*str, ' ');
+		}
+	} else if (NM_IS_IP6_CONFIG (config)) {
+		ip6 = (NMIP6Config *) config;
+		num = nm_ip6_config_get_num_nameservers (ip6);
+		for (i = 0; i < num; i++) {
+			g_string_append (*str,
+			                 nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (ip6, i),
+			                                      NULL));
+			g_string_append_c (*str, ' ');
+		}
+	} else
+		g_return_val_if_reached (NULL);
+
+	return (*str)->str;
+}
+
 static gboolean
 update_dns (NMDnsManager *self,
             gboolean no_caching,
@@ -959,6 +997,7 @@ update_dns (NMDnsManager *self,
 	NMConfigData *data;
 	NMGlobalDnsConfig *global_config;
 	gs_free NMDnsIPConfigData **plugin_confs = NULL;
+	nm_auto_free_gstring GString *tmp_gstring = NULL;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -1015,12 +1054,13 @@ update_dns (NMDnsManager *self,
 
 			prev_prio = prio;
 
-			_LOGT ("config: %8d %-7s v%c %-16s %s",
+			_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
 			       prio,
 			       _config_type_to_string (current->type),
-			        v4 ? '4' : '6',
+			       v4 ? '4' : '6',
 			       current->iface,
-			       skip ? "<SKIP>" : "");
+			       skip ? "<SKIP>" : "",
+			       get_nameserver_list (current->config, &tmp_gstring));
 
 			if (!skip) {
 				merge_one_ip_config_data (self, &rc, current);

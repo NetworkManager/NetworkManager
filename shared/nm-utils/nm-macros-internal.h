@@ -51,6 +51,14 @@ _nm_auto_unset_gvalue_impl (GValue *v)
 }
 #define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue_impl)
 
+static inline void
+_nm_auto_free_gstring_impl (GString **str)
+{
+	if (*str)
+		g_string_free (*str, TRUE);
+}
+#define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring_impl)
+
 /********************************************************/
 
 /* http://stackoverflow.com/a/11172679 */
