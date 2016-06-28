@@ -455,8 +455,8 @@ static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceState
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
 static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
-
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
+static void _cancel_activation (NMDevice *self);
 
 /***********************************************************/
 
@@ -2810,6 +2810,8 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 		       nm_connection_get_id (connection),
 		       master_status);
 
+		/* Cancel any pending activation sources */
+		_cancel_activation (self);
 		nm_device_queue_state (self, new_state, reason);
 	} else
 		_LOGI (LOGD_DEVICE, "released from master device %s", nm_device_get_iface (priv->master));
