@@ -404,6 +404,7 @@ c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libn
 # NetworkManager-libreswan, NetworkManager-openswan
 64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
 78555150e4df29eb39fa4a105f884f53b0f4523f  df9144805f37dc30dfaeab8da762f615 *NetworkManager-openswan-1.0.6.tar.xz
+3ef831cf25e86675f9838bf58b1cd6e592c6e14f  01248eb95a1e1d647057a45aed85a3af *NetworkManager-libreswan-1.2.4.tar.xz
 
 # NetworkManager-vpnc
 89bdcd324f2e257eca59168a7d0be5608438aab0  abb26a6c3c8d6c1d91c78471aff86b3a *NetworkManager-vpnc-0.9.8.2.tar.xz
