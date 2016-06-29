@@ -73,4 +73,12 @@ int nmc_rl_set_deftext (void);
 
 char *nmc_parse_lldp_capabilities (guint value);
 
+typedef struct {
+	const char *cmd;
+	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
+	void (*usage) (void);
+} NMCCommand;
+
+NMCResultCode nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *argv0, int argc, char **argv);
+
 #endif /* NMC_COMMON_H */

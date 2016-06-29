@@ -1389,3 +1389,56 @@ nmc_parse_lldp_capabilities (guint value)
 
 	return g_string_free (str, FALSE);
 }
+
+/**
+ * nmc_do_cmd:
+ * @nmc: Client instance
+ * @cmds: Command table
+ * @cmd: Command
+ * @argc: Argument count
+ * @argv: Arguments vector
+ *
+ * Picks the right callback to handle command from the command table.
+ * If --help argument follows and the usage callback is specified for the command
+ * it calls the usage callback.
+ *
+ * The command table is terminated with a %NULL command. The terminating
+ * entry's handlers are called if the command is empty.
+ *
+ * Returns: a nmcli return code
+ */
+NMCResultCode
+nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char **argv)
+{
+	const NMCCommand *c;
+
+	for (c = cmds; c->cmd; ++c) {
+		if (cmd && matches (cmd, c->cmd) == 0)
+			break;
+	}
+
+	if (c->cmd) {
+		/* A valid command was specified. */
+		if (c->usage && nmc_arg_is_help (*(argv+1)))
+			c->usage ();
+		else
+			nmc->return_value = c->func (nmc, argc-1, argv+1);
+	} else if (cmd) {
+		/* Not a known command. */
+		if (nmc_arg_is_help (cmd) && c->usage) {
+			c->usage ();
+		} else {
+			g_string_printf (nmc->return_text, _("Error: argument '%s' not understood. Try passing --help instead."), cmd);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		}
+	} else if (c->func) {
+		/* No command, run the default handler. */
+		nmc->return_value = c->func (nmc, argc-1, argv+1);
+	} else {
+		/* No command and no default handler. */
+		g_string_printf (nmc->return_text, _("Error: missing argument. Try passing --help."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	return nmc->return_value;
+}

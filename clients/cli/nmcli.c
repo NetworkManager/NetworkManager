@@ -114,35 +114,17 @@ do_help (NmCli *nmc, int argc, char **argv)
 	return NMC_RESULT_SUCCESS;
 }
 
-static const struct cmd {
-	const char *cmd;
-	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
-} nmcli_cmds[] = {
-	{ "general",    do_general },
-	{ "monitor",    do_monitor },
-	{ "networking", do_networking },
-	{ "radio",      do_radio },
-	{ "connection", do_connections },
-	{ "device",     do_devices },
-	{ "agent",      do_agent },
-	{ "help",       do_help },
+static const NMCCommand nmcli_cmds[] = {
+	{ "general",    do_general,     NULL },
+	{ "monitor",    do_monitor,     NULL },
+	{ "networking", do_networking,  NULL },
+	{ "radio",      do_radio,       NULL },
+	{ "connection", do_connections, NULL },
+	{ "device",     do_devices,     NULL },
+	{ "agent",      do_agent,       NULL },
+	{ "help",       do_help,        NULL },
 	{ 0 }
 };
-
-static NMCResultCode
-do_cmd (NmCli *nmc, const char *argv0, int argc, char **argv)
-{
-	const struct cmd *c;
-
-	for (c = nmcli_cmds; c->cmd; ++c) {
-		if (matches (argv0, c->cmd) == 0)
-			return c->func (nmc, argc-1, argv+1);
-	}
-
-	g_string_printf (nmc->return_text, _("Error: Object '%s' is unknown, try 'nmcli help'."), argv0);
-	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	return nmc->return_value;
-}
 
 static NMCResultCode
 parse_command_line (NmCli *nmc, int argc, char **argv)
@@ -160,7 +142,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		 * autocompletion mode (so we should just quit and don't print anything).
 		 * This would help us to ensure shell autocompletion after NM package downgrade
 		 * if we ever will enable --complete-args for other commands */
-		if ((argc == 2) || !nm_streq0 (argv[2], "connection"))
+		if ((argc == 2) || !(nm_streq0 (argv[2], "connection") || nm_streq0 (argv[2], "device")))
 			return nmc->return_value;
 		nmc->complete = TRUE;
 		argv[1] = argv[0];
@@ -301,7 +283,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 
 	if (argc > 1) {
 		/* Now run the requested command */
-		return do_cmd (nmc, argv[1], argc-1, argv+1);
+		return nmc_do_cmd (nmc, nmcli_cmds, argv[1], argc-1, argv+1);
 	}
 
 	usage (base);
@@ -639,6 +621,9 @@ main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);  /* create main loop */
 	g_main_loop_run (loop);                /* run main loop */
+
+	if (nm_cli.complete)
+		nm_cli.return_value = NMC_RESULT_SUCCESS;
 
 	/* Print result descripting text */
 	if (nm_cli.return_value != NMC_RESULT_SUCCESS) {

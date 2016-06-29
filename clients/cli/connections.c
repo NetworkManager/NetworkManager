@@ -4225,12 +4225,12 @@ get_value (const char **value, int *argc, char ***argv, const char *option, GErr
 	return TRUE;
 }
 
-static gboolean
-read_connection_properties (NmCli *nmc,
-                            NMConnection *connection,
-                            int *argc,
-                            char ***argv,
-                            GError **error)
+gboolean
+nmc_read_connection_properties (NmCli *nmc,
+                                NMConnection *connection,
+                                int *argc,
+                                char ***argv,
+                                GError **error)
 {
 	const char *option;
 	const char *value = NULL;
@@ -4255,8 +4255,6 @@ read_connection_properties (NmCli *nmc,
 
 		option = **argv;
 		if (!option) {
-			if (nmc->complete)
-				complete_property_name (nmc, connection, '\0', "", NULL);
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: <setting>.<property> argument is missing."));
 			return FALSE;
@@ -4275,10 +4273,11 @@ read_connection_properties (NmCli *nmc,
 			if (modifier)
 				setting++;
 
+			if (*argc == 1 && nmc->complete)
+				complete_property_name (nmc, connection, modifier, setting, strv[1]);
+
 			setting_name = check_valid_name (setting, type_settings, slv_settings, &local);
 			if (!setting_name) {
-				if (nmc->complete)
-					complete_property_name (nmc, connection, modifier, setting, strv[1]);
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: invalid or not allowed setting '%s': %s."),
 				             setting, local->message);
@@ -4287,11 +4286,8 @@ read_connection_properties (NmCli *nmc,
 			}
 
 			next_arg (argc, argv);
-			if (!get_value (&value, argc, argv, option, error)) {
-				if (nmc->complete)
-					complete_property_name (nmc, connection, modifier, setting, strv[1]);
+			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
-			}
 
 			if (!*argc && nmc->complete)
 				complete_property (setting, strv[1], value ? value : "");
@@ -4318,19 +4314,19 @@ read_connection_properties (NmCli *nmc,
 			if (!chosen) {
 				if (modifier)
 					option++;
-				if (nmc->complete)
+				if (*argc == 1 && nmc->complete)
 					complete_property_name (nmc, connection, modifier, option, NULL);
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 					     _("Error: invalid <setting>.<property> '%s'."), option);
 				return FALSE;
 			}
 
+			if (*argc == 1 && nmc->complete)
+				complete_property_name (nmc, connection, modifier, option, NULL);
+
 			next_arg (argc, argv);
-			if (!get_value (&value, argc, argv, option, error)) {
-				if (nmc->complete)
-					complete_property_name (nmc, connection, modifier, option, NULL);
+			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
-			}
 
 			if (!*argc && nmc->complete)
 				complete_option (chosen, value ? value : "");
@@ -4649,7 +4645,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 
 read_properties:
 	/* Get the arguments from the command line if any */
-	if (argc && !read_connection_properties (nmc, connection, &argc, &argv, &error)) {
+	if (argc && !nmc_read_connection_properties (nmc, connection, &argc, &argv, &error)) {
 		if (g_strcmp0 (*argv, "--") == 0 && !seen_dash_dash) {
 			/* This is for compatibility with older nmcli that required
 			 * options and properties to be separated with "--" */
@@ -4762,9 +4758,6 @@ finish:
 	if (connection)
 		g_object_unref (connection);
 
-	/* shell completion - be sure to exit with success without printing errors */
-	if (nmc->complete)
-		nmc->return_value = NMC_RESULT_SUCCESS;
 	return nmc->return_value;
 }
 
@@ -7808,7 +7801,7 @@ do_connection_modify (NmCli *nmc,
 
 	next_arg (&argc, &argv);
 
-	if (!read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
+	if (!nmc_read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
 		g_string_assign (nmc->return_text, error->message);
 		nmc->return_value = error->code;
 		g_clear_error (&error);
@@ -7822,9 +7815,6 @@ do_connection_modify (NmCli *nmc,
 	nmc->should_wait++;
 
 finish:
-	/* shell completion - be sure to exit with success without printing errors */
-	if (nmc->complete)
-		nmc->return_value = NMC_RESULT_SUCCESS;
 	return nmc->return_value;
 }
 
@@ -7968,7 +7958,7 @@ do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	                    clone_connection_cb,
 	                    info);
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 finish:
 	if (new_connection)
 		g_object_unref (new_connection);
@@ -8370,7 +8360,7 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	                    add_connection_cb,
 	                    info);
 
-	nmc->should_wait = TRUE;
+	nmc->should_wait++;
 finish:
 	if (connection)
 		g_object_unref (connection);
