@@ -81,4 +81,8 @@ typedef struct {
 
 NMCResultCode nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *argv0, int argc, char **argv);
 
+void nmc_complete_strings (const char *prefix, ...) G_GNUC_NULL_TERMINATED;
+
+void nmc_complete_bool (const char *prefix);
+
 #endif /* NMC_COMMON_H */

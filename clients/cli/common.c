@@ -1412,6 +1412,14 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 {
 	const NMCCommand *c;
 
+	if (argc == 1 && nmc->complete) {
+		for (c = cmds; c->cmd; ++c) {
+			if (!*cmd || matches (cmd, c->cmd) == 0)
+				g_print ("%s\n", c->cmd);
+		}
+		return nmc->return_value;
+	}
+
 	for (c = cmds; c->cmd; ++c) {
 		if (cmd && matches (cmd, c->cmd) == 0)
 			break;
@@ -1441,4 +1449,40 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 	}
 
 	return nmc->return_value;
+}
+
+/**
+ * nmc_complete_strings:
+ * @prefix: a string to match
+ * @...: a %NULL-terminated list of candidate strings
+ *
+ * Prints all the matching candidates for completion. Useful when there's
+ * no better way to suggest completion other than a hardcoded string list.
+ */
+void
+nmc_complete_strings (const char *prefix, ...)
+{
+	va_list args;
+	const char *candidate;
+
+	va_start (args, prefix);
+	while ((candidate = va_arg (args, const char *))) {
+		if (!*prefix || matches (prefix, candidate) == 0)
+			g_print ("%s\n", candidate);
+	}
+	va_end (args);
+}
+
+/**
+ * nmc_complete_bool:
+ * @prefix: a string to match
+ * @...: a %NULL-terminated list of candidate strings
+ *
+ * Prints all the matching possible boolean values for completion.
+ */
+void
+nmc_complete_bool (const char *prefix)
+{
+	nmc_complete_strings (prefix, "true", "yes", "on",
+	                              "false", "no", "off", NULL);
 }

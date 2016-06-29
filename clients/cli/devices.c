@@ -2270,9 +2270,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 {
 #define DEV_SET_AUTOCONNECT 0
 #define DEV_SET_MANAGED     1
-	NMDevice **devices;
 	NMDevice *device = NULL;
-	const char *ifname = NULL;
 	int i;
 	struct {
 		int idx;
@@ -2281,67 +2279,42 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		[DEV_SET_AUTOCONNECT] = { -1 },
 		[DEV_SET_MANAGED]     = { -1 },
 	};
-
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
+	gs_free_error GError *error = NULL;
 
 	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0) {
 		argc--;
 		argv++;
 	}
 
-	if (argc == 0) {
-		g_string_printf (nmc->return_text, _("Error: No interface specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	} else
-		ifname = *argv;
-
-	if (!ifname) {
-		g_string_printf (nmc->return_text, _("Error: No interface specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
-
-	devices = get_devices_sorted (nmc->client);
-	for (i = 0; devices[i]; i++) {
-		NMDevice *candidate = devices[i];
-		const char *dev_iface = nm_device_get_iface (candidate);
-
-		if (!g_strcmp0 (dev_iface, ifname))
-			device = candidate;
-	}
-	g_free (devices);
-
+	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		goto error;
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		return error->code;
 	}
 
-        if (argc == 1) {
+        if (!argc) {
 		g_string_printf (nmc->return_text, _("Error: No property specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	i = 0;
-	while (next_arg (&argc, &argv) == 0) {
+	do {
 		gboolean flag;
-		gs_free_error GError *tmp_err = NULL;
+
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "managed", "autoconnect", NULL);
 
 		if (matches (*argv, "managed") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			if (!nmc_string_to_bool (*argv, &flag, &tmp_err)) {
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bool (*argv);
+			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'managed': %s."),
-				                 tmp_err->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				                 error->message);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			values[DEV_SET_MANAGED].idx = ++i;
 			values[DEV_SET_MANAGED].value = flag;
@@ -2349,25 +2322,26 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		else if (matches (*argv, "autoconnect") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			if (!nmc_string_to_bool (*argv, &flag, &tmp_err)) {
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bool (*argv);
+			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
-				                 tmp_err->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				                 error->message);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			values[DEV_SET_AUTOCONNECT].idx = ++i;
 			values[DEV_SET_AUTOCONNECT].value = flag;
 		}
 		else {
-			usage_device_set ();
 			g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
-	}
+	} while (next_arg (&argc, &argv) == 0);
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* when multiple properties are specified, set them in the order as they
 	 * are specified on the command line. */
@@ -2382,8 +2356,6 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	if (values[DEV_SET_MANAGED].idx >= 0)
 		nm_device_set_managed (device, values[DEV_SET_MANAGED].value);
 
-error:
-	quit ();
 	return nmc->return_value;
 }
 
@@ -2528,6 +2500,10 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 	const char *base_hdr = _("Wi-Fi scan list");
+
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
@@ -2837,6 +2813,10 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	int devices_idx;
 	char *ssid_ask = NULL;
 	char *passwd_ask = NULL;
+
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Set default timeout waiting for operation completion. */
 	if (nmc->timeout == -1)
@@ -3289,6 +3269,10 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	GBytes *ssid_bytes;
 	GError *error = NULL;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Set default timeout waiting for operation completion. */
 	if (nmc->timeout == -1)
 		nmc->timeout = 60;
@@ -3503,6 +3487,10 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	const char *ssid;
 	int i;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	ssids = g_ptr_array_new ();
 
 	/* Get the parameters */
@@ -3575,14 +3563,18 @@ error:
 	return nmc->return_value;
 }
 
+static NMCCommand device_wifi_cmds[] = {
+	{"list",     do_device_wifi_list,            NULL },
+	{"connect",  do_device_wifi_connect_network, NULL },
+	{"hotspot",  do_device_wifi_hotspot,         NULL },
+	{"rescan",   do_device_wifi_rescan,          NULL },
+	{NULL,       do_device_wifi_list,            NULL }
+};
+
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
-
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
 
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -3590,24 +3582,7 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	if (argc == 0)
-		nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
-	else if (argc > 0) {
-		if (matches (*argv, "list") == 0) {
-			nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "connect") == 0) {
-			nmc->return_value = do_device_wifi_connect_network (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "hotspot") == 0) {
-			nmc->return_value = do_device_wifi_hotspot (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "rescan") == 0) {
-			nmc->return_value = do_device_wifi_rescan (nmc, argc-1, argv+1);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: 'device wifi' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
 }
 
 static int
@@ -3694,27 +3669,32 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, char *fields_str, int *coun
 	return neighbors->len;
 }
 
-static gboolean
+static NMCResultCode
 do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 {
-	NMDevice *device = NULL, **devices = NULL;
-	GError *error = NULL;
-	const char *ifname = NULL;
+	NMDevice *device = NULL;
+	gs_free_error GError *error = NULL;
 	char *fields_str;
-	int i, counter = 0;
+	int counter = 0;
 
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "ifname", NULL);
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			ifname = *argv;
+
+			device = get_device (nmc, &argc, &argv, &error);
+			if (!device) {
+				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+				return error->code;
+			}
 		} else {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
 		argc--;
@@ -3732,52 +3712,39 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'device lldp list': %s"), error->message);
-		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return nmc->return_value;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	devices = get_devices_sorted (nmc->client);
+	if (nmc->complete)
+		return nmc->return_value;
 
-	if (ifname) {
-		for (i = 0; devices[i]; i++) {
-			NMDevice *candidate = devices[i];
-			const char *dev_iface = nm_device_get_iface (candidate);
-
-			if (!g_strcmp0 (dev_iface, ifname)) {
-				device = candidate;
-				break;
-			}
-		}
-
-		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-			goto error;
-		}
-
+	if (device) {
 		nmc_empty_output_fields (nmc);
 		show_device_lldp_list (device, nmc, fields_str, &counter);
 	} else {
+		NMDevice **devices = get_devices_sorted (nmc->client);
+		int i;
+
 		for (i = 0; devices[i]; i++) {
 			nmc_empty_output_fields (nmc);
 			show_device_lldp_list (devices[i], nmc, fields_str, &counter);
 		}
+
+		g_free (devices);
 	}
 
-error:
-	g_free (devices);
 	return nmc->return_value;
 }
+
+static NMCCommand device_lldp_cmds[] = {
+	{"list",  do_device_lldp_list,  NULL },
+	{NULL,    do_device_lldp_list,  NULL }
+};
 
 static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
-
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
 
 	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -3788,16 +3755,7 @@ do_device_lldp (NmCli *nmc, int argc, char **argv)
 	if (!nmc->mode_specified)
 		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 
-	if (argc == 0)
-		nmc->return_value = do_device_lldp_list (nmc, argc, argv);
-	else if (matches (*argv, "list") == 0)
-		nmc->return_value = do_device_lldp_list (nmc, argc-1, argv+1);
-	else {
-		g_string_printf (nmc->return_text, _("Error: 'device lldp' command '%s' is not valid."), *argv);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	}
-
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
 }
 
 static gboolean
