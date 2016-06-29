@@ -243,7 +243,7 @@ detect_build_type 'network-manager-applet-[0-9]*' network-manager-applet.spec
 detect_build_type 'libnl-[0-9]*' libnl3.spec
 detect_build_type 'NetworkManager-openvpn-[0-9]*' NetworkManager-openvpn.spec
 detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-openswan.spec
-detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-libreswan.spec
+detect_build_type 'NetworkManager-libreswan-[0-9]*' NetworkManager-libreswan.spec
 detect_build_type 'NetworkManager-vpnc-[0-9]*' NetworkManager-vpnc.spec
 detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
@@ -323,9 +323,12 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openvpn";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openvpn"
-    elif [[ "$BUILD_TYPE" == "NetworkManager-openswan" || "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
+    elif [[ "$BUILD_TYPE" == "NetworkManager-openswan" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
+    elif [[ "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-libreswan";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-libreswan"
     elif [[ "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-vpnc";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
@@ -445,8 +448,9 @@ EOF
             RELEASE_BASE_COMMIT=
         else
             # verify the base commit...
-            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$RELEASE_BASE_COMMIT^{commit}" 2>/dev/null)"
-            [[ x == "x$RELEASE_BASE_COMMIT" ]] && test -z "$NO_REMOTE" && die "error detecting RELEASE_BASE_COMMIT=$RELEASE_BASE_COMMIT"
+            RELEASE_BASE_COMMIT2="$(git rev-parse --verify -q "$RELEASE_BASE_COMMIT^{commit}" 2>/dev/null)"
+            [[ x == "x$RELEASE_BASE_COMMIT2" ]] && test -z "$NO_REMOTE" && die "error detecting RELEASE_BASE_COMMIT=$RELEASE_BASE_COMMIT"
+            RELEASE_BASE_COMMIT="$RELEASE_BASE_COMMIT2"
         fi
     fi
     if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
