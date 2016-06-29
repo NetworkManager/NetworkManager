@@ -3954,15 +3954,21 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 
 	if (!priv->master_ready_handled) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+		NMActiveConnection *master;
 
-		if (!nm_active_connection_get_master (active)) {
+		master = nm_active_connection_get_master (active);
+
+		if (!master) {
 			g_warn_if_fail (!priv->master_ready_id);
 			priv->master_ready_handled = TRUE;
 		} else {
 			/* If the master connection is ready for slaves, attach ourselves */
 			if (nm_active_connection_get_master_ready (active))
 				master_ready (self, active);
-			else {
+			else if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+				_LOGD (LOGD_DEVICE, "master connection is deactivating");
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			} else {
 				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
 
 				if (priv->master_ready_id == 0) {
