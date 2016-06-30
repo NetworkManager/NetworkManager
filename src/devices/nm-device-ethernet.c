@@ -776,7 +776,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 
 	priv->supplicant.iface = nm_supplicant_manager_create_interface (priv->supplicant.mgr,
 	                                                                 nm_device_get_iface (NM_DEVICE (self)),
-	                                                                 FALSE);
+	                                                                 NM_SUPPLICANT_DRIVER_WIRED);
 
 	if (!priv->supplicant.iface) {
 		_LOGE (LOGD_DEVICE | LOGD_ETHER,

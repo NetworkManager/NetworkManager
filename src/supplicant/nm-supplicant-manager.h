@@ -40,6 +40,6 @@ NMSupplicantManager *nm_supplicant_manager_get (void);
 
 NMSupplicantInterface *nm_supplicant_manager_create_interface (NMSupplicantManager *mgr,
                                                                const char *ifname,
-                                                               gboolean is_wireless);
+                                                               NMSupplicantDriver driver);
 
 #endif /* __NETWORKMANAGER_SUPPLICANT_MANAGER_H__ */

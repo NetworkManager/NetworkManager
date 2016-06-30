@@ -46,6 +46,12 @@ typedef enum {
 	NM_SUPPLICANT_ERROR_CONFIG = 1,                     /*< nick=Config >*/
 } NMSupplicantError;
 
+typedef enum {
+	NM_SUPPLICANT_DRIVER_WIRELESS,
+	NM_SUPPLICANT_DRIVER_WIRED,
+	NM_SUPPLICANT_DRIVER_MACSEC,
+} NMSupplicantDriver;
+
 #define NM_SUPPLICANT_ERROR (nm_supplicant_error_quark ())
 GQuark nm_supplicant_error_quark (void);
 

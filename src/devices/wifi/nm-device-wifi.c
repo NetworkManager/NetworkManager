@@ -232,7 +232,7 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 
 	priv->sup_iface = nm_supplicant_manager_create_interface (priv->sup_mgr,
 	                                                          nm_device_get_iface (NM_DEVICE (self)),
-	                                                          TRUE);
+	                                                          NM_SUPPLICANT_DRIVER_WIRELESS);
 	if (!priv->sup_iface) {
 		_LOGE (LOGD_WIFI, "Couldn't initialize supplicant interface");
 		return FALSE;
