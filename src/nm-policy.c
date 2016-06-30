@@ -1023,8 +1023,10 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const char *master_device, *master_uuid_settings = NULL, *master_uuid_applied = NULL;
-	GSList *connections, *iter;
+	gs_free_slist GSList *connections = NULL;
+	GSList *iter;
 	NMActRequest *req;
+	gboolean internal_activation = FALSE;
 
 	master_device = nm_device_get_iface (device);
 	g_assert (master_device);
@@ -1032,6 +1034,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 	req = nm_device_get_act_request (device);
 	if (req) {
 		NMConnection *con;
+		NMAuthSubject *subject;
 
 		con = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (req));
 		if (con)
@@ -1042,9 +1045,14 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 			if (!g_strcmp0 (master_uuid_settings, master_uuid_applied))
 				master_uuid_settings = NULL;
 		}
+
+		subject = nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req));
+		internal_activation = subject && nm_auth_subject_is_internal (subject);
 	}
 
-	connections = nm_settings_get_connections_sorted (priv->settings);
+	if (!internal_activation)
+		connections = nm_settings_get_connections_sorted (priv->settings);
+
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *slave;
 		NMSettingConnection *s_slave_con;
@@ -1064,8 +1072,6 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		    || !g_strcmp0 (slave_master, master_uuid_settings))
 			nm_settings_connection_reset_autoconnect_retries (NM_SETTINGS_CONNECTION (slave));
 	}
-
-	g_slist_free (connections);
 
 	schedule_activate_all (self);
 }
