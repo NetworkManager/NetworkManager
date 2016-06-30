@@ -63,6 +63,7 @@ typedef struct {
 typedef struct {
 	char *id;
 	char *uuid;
+	char *stable_id;
 	char *interface_name;
 	char *type;
 	char *master;
@@ -99,6 +100,7 @@ enum {
 	PROP_GATEWAY_PING_TIMEOUT,
 	PROP_METERED,
 	PROP_LLDP,
+	PROP_STABLE_ID,
 
 	LAST_PROP
 };
@@ -228,6 +230,24 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->uuid;
+}
+
+/**
+ * nm_setting_connection_get_stable_id:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:stable_id property of the connection.
+ *
+ * Returns: the stable-id for the connection
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_setting_connection_get_stable_id (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->stable_id;
 }
 
 /**
@@ -1128,6 +1148,7 @@ finalize (GObject *object)
 
 	g_free (priv->id);
 	g_free (priv->uuid);
+	g_free (priv->stable_id);
 	g_free (priv->interface_name);
 	g_free (priv->type);
 	g_free (priv->zone);
@@ -1173,6 +1194,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_free (priv->uuid);
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_STABLE_ID:
+		g_free (priv->stable_id);
+		priv->stable_id = g_value_dup_string (value);
 		break;
 	case PROP_INTERFACE_NAME:
 		g_free (priv->interface_name);
@@ -1259,6 +1284,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_UUID:
 		g_value_set_string (value, nm_setting_connection_get_uuid (setting));
+		break;
+	case PROP_STABLE_ID:
+		g_value_set_string (value, nm_setting_connection_get_stable_id (setting));
 		break;
 	case PROP_INTERFACE_NAME:
 		g_value_set_string (value, nm_setting_connection_get_interface_name (setting));
@@ -1368,12 +1396,39 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * property: uuid
 	 * variable: UUID(+)
 	 * description: UUID for the connection profile. When missing, NetworkManager
-	 *   creates the UUID itself (by hashing the file).
+	 *   creates the UUID itself (by hashing the filename).
 	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_UUID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:stable-id:
+	 *
+	 * This token to generate stable IDs for the connection. If unset,
+	 * the UUID will be used instead.
+	 *
+	 * The stable-id is used instead of the connection UUID for generating
+	 * IPv6 stable private addresses with ipv6.addr-gen-mode=stable-privacy.
+	 * It is also used to seed the generated cloned MAC address for
+	 * ethernet.cloned-mac-address=stable and wifi.cloned-mac-address=stable.
+	 *
+	 * Since: 1.4
+	 **/
+	/* ---ifcfg-rh---
+	 * property: stable-id
+	 * variable: STABLE_ID(+)
+	 * description: Token to generate stable IDs.
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_STABLE_ID,
+		 g_param_spec_string (NM_SETTING_CONNECTION_STABLE_ID, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_FUZZY_IGNORE |

@@ -124,6 +124,8 @@ guint32 _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
 
+guint _nm_utils_hwaddr_length (const char *asc);
+
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
 GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
@@ -278,6 +280,16 @@ void     _nm_setting_vlan_get_priorities (NMSettingVlan *setting,
                                           NMVlanPriorityMap map,
                                           NMVlanQosMapping **out_qos_map,
                                           guint *out_n_qos_map);
+
+/***********************************************************/
+
+struct ether_addr;
+
+gboolean _nm_utils_generate_mac_address_mask_parse (const char *value,
+                                                    struct ether_addr *out_mask,
+                                                    struct ether_addr **out_ouis,
+                                                    gsize *out_ouis_len,
+                                                    GError **error);
 
 /***********************************************************/
 

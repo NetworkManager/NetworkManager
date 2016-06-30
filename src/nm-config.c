@@ -399,7 +399,9 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	hw_address = nm_device_get_hw_address (device);
+	hw_address = nm_device_get_permanent_hw_address (device, FALSE);
+	if (!hw_address)
+		return;
 
 	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
 
@@ -576,14 +578,7 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 {
 	const char *a, *b;
 	gboolean a_is_connection, b_is_connection;
-
-	/* basic NULL checking... */
-	if (pa == pb)
-		return 0;
-	if (!pa)
-		return -1;
-	if (!pb)
-		return 1;
+	gboolean a_is_device, b_is_device;
 
 	a = *pa;
 	b = *pb;
@@ -598,16 +593,34 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 			return 1;
 		return -1;
 	}
-	if (!a_is_connection) {
-		/* both are non-connection entries. Don't reorder. */
-		return 0;
+	if (a_is_connection) {
+		/* both are [connection.\+] entires. Reverse their order.
+		 * One of the sections might be literally [connection]. That section
+		 * is special and it's order will be fixed later. It doesn't actually
+		 * matter here how it compares with [connection.\+] sections. */
+		return pa > pb ? -1 : 1;
 	}
 
-	/* both are [connection.\+] entires. Reverse their order.
-	 * One of the sections might be literally [connection]. That section
-	 * is special and it's order will be fixed later. It doesn't actually
-	 * matter here how it compares with [connection.\+] sections. */
-	return pa > pb ? -1 : 1;
+	a_is_device = g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+	b_is_device = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+
+	if (a_is_device != b_is_device) {
+		/* one is a [device*] entry, the other not. We sort [device*] entires
+		 * after.  */
+		if (a_is_device)
+			return 1;
+		return -1;
+	}
+	if (a_is_device) {
+		/* both are [device.\+] entires. Reverse their order.
+		 * One of the sections might be literally [device]. That section
+		 * is special and it's order will be fixed later. It doesn't actually
+		 * matter here how it compares with [device.\+] sections. */
+		return pa > pb ? -1 : 1;
+	}
+
+	/* don't reorder the rest. */
+	return 0;
 }
 
 void
@@ -630,7 +643,8 @@ _setting_is_device_spec (const char *group, const char *key)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier")
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only")
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices")
-	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, "match-device"));
+	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, "match-device"))
+	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE    ) && !strcmp (key, "match-device"));
 }
 
 static gboolean

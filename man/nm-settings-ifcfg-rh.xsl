@@ -257,6 +257,11 @@ DEVICETYPE=TeamPort
                     assigns the interface 10.42.0.1, or it uses the first static address,
                     if configured.</para>
                  </listitem>
+                  <listitem>
+                    <para><literal>HWADDR</literal> -
+                    initscripts compare the currently set hardware address of a device, while
+                    NetworkManager considers the permanent one.</para>
+                  </listitem>
                 </itemizedlist>
               </para></listitem>
             </varlistentry>

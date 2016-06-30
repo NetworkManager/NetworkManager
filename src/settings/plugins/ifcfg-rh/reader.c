@@ -128,6 +128,7 @@ make_connection_setting (const char *file,
 	NMSettingConnectionLldp lldp;
 	const char *ifcfg_name = NULL;
 	char *new_id, *uuid = NULL, *zone = NULL, *value;
+	gs_free char *stable_id = NULL;
 
 	ifcfg_name = utils_get_ifcfg_name (file, TRUE);
 	if (!ifcfg_name)
@@ -146,9 +147,12 @@ make_connection_setting (const char *file,
 		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	}
 
+	stable_id = svGetValue (ifcfg, "STABLE_ID", FALSE);
+
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_STABLE_ID, stable_id,
 	              NULL);
 	g_free (uuid);
 
@@ -3364,6 +3368,10 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
+	value = svGetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK", FALSE);
+	g_object_set (s_wireless, NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK, value, NULL);
+	g_free (value);
+
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **strv;
@@ -3877,6 +3885,10 @@ make_wired_setting (shvarFile *ifcfg,
 		g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, value, NULL);
 		g_free (value);
 	}
+
+	value = svGetValue (ifcfg, "GENERATE_MAC_ADDRESS_MASK", FALSE);
+	g_object_set (s_wired, NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK, value, NULL);
+	g_free (value);
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {

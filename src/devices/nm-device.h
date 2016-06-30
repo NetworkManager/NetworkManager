@@ -57,6 +57,11 @@
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_MTU              "mtu"
 #define NM_DEVICE_HW_ADDRESS       "hw-address"
+
+/* "perm-hw-address" is exposed on D-Bus both for NMDeviceEthernet
+ * and NMDeviceWifi. */
+#define NM_DEVICE_PERM_HW_ADDRESS  "perm-hw-address"
+
 #define NM_DEVICE_METERED          "metered"
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
 #define NM_DEVICE_REAL             "real"
@@ -323,6 +328,8 @@ typedef struct {
 	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
 
 	NMConnection *  (* new_default_connection) (NMDevice *self);
+
+	gboolean        (* unmanaged_on_quit) (NMDevice *self);
 } NMDeviceClass;
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
@@ -353,7 +360,8 @@ guint32         nm_device_get_ip4_route_metric  (NMDevice *dev);
 guint32         nm_device_get_ip6_route_metric  (NMDevice *dev);
 
 const char *    nm_device_get_hw_address        (NMDevice *dev);
-const char *    nm_device_get_permanent_hw_address (NMDevice *dev);
+const char *    nm_device_get_permanent_hw_address (NMDevice *dev,
+                                                    gboolean fallback_fake);
 const char *    nm_device_get_initial_hw_address (NMDevice *dev);
 
 NMDhcp4Config * nm_device_get_dhcp4_config      (NMDevice *dev);
@@ -411,7 +419,7 @@ gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnec
 
 gboolean nm_device_uses_assumed_connection (NMDevice *device);
 
-gboolean nm_device_can_assume_active_connection (NMDevice *device);
+gboolean nm_device_unmanage_on_quit (NMDevice *self);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 
@@ -578,6 +586,7 @@ void nm_device_reactivate_ip6_config (NMDevice *device,
 
 void nm_device_update_hw_address (NMDevice *self);
 void nm_device_update_initial_hw_address (NMDevice *self);
+void nm_device_update_permanent_hw_address (NMDevice *self);
 void nm_device_update_dynamic_ip_setup (NMDevice *self);
 
 G_END_DECLS

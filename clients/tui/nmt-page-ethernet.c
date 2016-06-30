@@ -70,7 +70,7 @@ nmt_page_ethernet_constructed (GObject *object)
 	section = nmt_editor_section_new (_("ETHERNET"), NULL, FALSE);
 	grid = nmt_editor_section_get_body (section);
 
-	widget = nmt_mac_entry_new (40, ETH_ALEN);
+	widget = nmt_mac_entry_new (40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED);
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);

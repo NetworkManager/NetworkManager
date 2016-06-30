@@ -66,6 +66,7 @@ static struct {
 	int tempaddr;
 	char *ifname;
 	char *uuid;
+	char *stable_id;
 	char *dhcp4_address;
 	char *dhcp4_clientid;
 	char *dhcp4_hostname;
@@ -278,8 +279,9 @@ do_early_setup (int *argc, char **argv[])
 	gint64 priority64_v6 = -1;
 	GOptionEntry options[] = {
 		/* Interface/IP config */
-		{ "ifname", 'i', 0, G_OPTION_ARG_STRING, &global_opt.ifname, N_("The interface to manage"), N_("eth0") },
-		{ "uuid", 'u', 0, G_OPTION_ARG_STRING, &global_opt.uuid, N_("Connection UUID"), N_("661e8cd0-b618-46b8-9dc9-31a52baaa16b") },
+		{ "ifname", 'i', 0, G_OPTION_ARG_STRING, &global_opt.ifname, N_("The interface to manage"), "eth0" },
+		{ "uuid", 'u', 0, G_OPTION_ARG_STRING, &global_opt.uuid, N_("Connection UUID"),  "661e8cd0-b618-46b8-9dc9-31a52baaa16b" },
+		{ "stable-id", '\0', 0, G_OPTION_ARG_STRING, &global_opt.stable_id, N_("Connection Token for Stable IDs"),  "eth" },
 		{ "slaac", 's', 0, G_OPTION_ARG_NONE, &global_opt.slaac, N_("Whether to manage IPv6 SLAAC"), NULL },
 		{ "slaac-required", '6', 0, G_OPTION_ARG_NONE, &global_opt.slaac_required, N_("Whether SLAAC must be successful"), NULL },
 		{ "slaac-tempaddr", 't', 0, G_OPTION_ARG_INT, &global_opt.tempaddr, N_("Use an IPv6 temporary privacy address"), NULL },
@@ -469,9 +471,23 @@ main (int argc, char *argv[])
 	}
 
 	if (global_opt.slaac) {
+		NMUtilsStableType stable_type = NM_UTILS_STABLE_TYPE_UUID;
+		const char *stable_id = global_opt.uuid;
+
 		nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, TRUE);
 
-		rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET, ifindex, global_opt.ifname, global_opt.uuid, global_opt.addr_gen_mode, NULL);
+		if (   global_opt.stable_id
+		    && (global_opt.stable_id[0] >= '0' && global_opt.stable_id[0] <= '9')
+		    && global_opt.stable_id[1] == ' ') {
+			/* strict parsing of --stable-id, which is the numeric stable-type
+			 * and the ID, joined with one space. For now, only support stable-types
+			 * from 0 to 9. */
+			stable_type = (global_opt.stable_id[0] - '0');
+			stable_id = &global_opt.stable_id[2];
+		}
+		rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET, ifindex, global_opt.ifname,
+		                           stable_type, stable_id,
+		                           global_opt.addr_gen_mode, NULL);
 		g_assert (rdisc);
 
 		if (iid)

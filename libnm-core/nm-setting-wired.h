@@ -85,6 +85,7 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_WIRED_AUTO_NEGOTIATE "auto-negotiate"
 #define NM_SETTING_WIRED_MAC_ADDRESS "mac-address"
 #define NM_SETTING_WIRED_CLONED_MAC_ADDRESS "cloned-mac-address"
+#define NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK "generate-mac-address-mask"
 #define NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST "mac-address-blacklist"
 #define NM_SETTING_WIRED_MTU "mtu"
 #define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
@@ -116,6 +117,9 @@ const char *      nm_setting_wired_get_duplex           (NMSettingWired *setting
 gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting);
 const char *      nm_setting_wired_get_mac_address      (NMSettingWired *setting);
 const char *      nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
+
+NM_AVAILABLE_IN_1_4
+const char *      nm_setting_wired_get_generate_mac_address_mask (NMSettingWired *setting);
 
 const char * const *nm_setting_wired_get_mac_address_blacklist   (NMSettingWired *setting);
 guint32           nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting);

@@ -36,6 +36,29 @@ gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, g
 
 /* D-Bus transform funcs */
 
+GVariant   *_nm_utils_hwaddr_cloned_get (NMSetting     *setting,
+                                         const char    *property);
+gboolean    _nm_utils_hwaddr_cloned_set (NMSetting     *setting,
+                                         GVariant      *connection_dict,
+                                         const char    *property,
+                                         GVariant      *value,
+                                         NMSettingParseFlags parse_flags,
+                                         GError       **error);
+gboolean    _nm_utils_hwaddr_cloned_not_set (NMSetting *setting,
+                                             GVariant      *connection_dict,
+                                             const char    *property,
+                                             NMSettingParseFlags parse_flags,
+                                             GError       **error);
+GVariant *  _nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
+                                                NMConnection *connection,
+                                                const char *property);
+gboolean    _nm_utils_hwaddr_cloned_data_set (NMSetting *setting,
+                                              GVariant *connection_dict,
+                                              const char *property,
+                                              GVariant *value,
+                                              NMSettingParseFlags parse_flags,
+                                              GError **error);
+
 GVariant *  _nm_utils_hwaddr_to_dbus   (const GValue *prop_value);
 void        _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
                                         GValue *prop_value);

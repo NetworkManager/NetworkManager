@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <poll.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <resolv.h>
@@ -54,7 +55,7 @@
 #endif
 
 G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
-int _nm_utils_testing = 0;
+static int _nm_utils_testing = 0;
 
 gboolean
 nm_utils_get_testing_initialized ()
@@ -1271,8 +1272,10 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
 	const GSList *iter;
 	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
+	guint hwaddr_len = 0;
+	guint8 hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
 
-	g_return_val_if_fail (hwaddr != NULL, NM_MATCH_SPEC_NO_MATCH);
+	nm_assert (nm_utils_hwaddr_valid (hwaddr, -1));
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
 		const char *spec_str = iter->data;
@@ -1293,7 +1296,15 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 		else if (except)
 			continue;
 
-		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1)) {
+		if (G_UNLIKELY (hwaddr_len == 0)) {
+			hwaddr_len = _nm_utils_hwaddr_length (hwaddr);
+			if (!hwaddr_len)
+				g_return_val_if_reached (NM_MATCH_SPEC_NO_MATCH);
+			if (!nm_utils_hwaddr_aton (hwaddr, hwaddr_bin, hwaddr_len))
+				nm_assert_not_reached ();
+		}
+
+		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len)) {
 			if (except)
 				return NM_MATCH_SPEC_NEG_MATCH;
 			match = NM_MATCH_SPEC_MATCH;
@@ -2701,6 +2712,123 @@ nm_utils_machine_id_read (void)
 
 /*****************************************************************************/
 
+/* taken from systemd's fd_wait_for_event(). Note that the timeout
+ * is here in nano-seconds, not micro-seconds. */
+int
+nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns)
+{
+	struct pollfd pollfd = {
+		.fd = fd,
+		.events = event,
+	};
+	struct timespec ts, *pts;
+	int r;
+
+	if (timeout_ns < 0)
+		pts = NULL;
+	else {
+		ts.tv_sec = (time_t) (timeout_ns / NM_UTILS_NS_PER_SECOND);
+		ts.tv_nsec = (long int) (timeout_ns % NM_UTILS_NS_PER_SECOND);
+		pts = &ts;
+	}
+
+	r = ppoll (&pollfd, 1, pts, NULL);
+	if (r < 0)
+		return -errno;
+	if (r == 0)
+		return 0;
+	return pollfd.revents;
+}
+
+/* taken from systemd's loop_read() */
+ssize_t
+nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
+{
+	uint8_t *p = buf;
+	ssize_t n = 0;
+
+	g_return_val_if_fail (fd >= 0, -EINVAL);
+	g_return_val_if_fail (buf, -EINVAL);
+
+	/* If called with nbytes == 0, let's call read() at least
+	 * once, to validate the operation */
+
+	if (nbytes > (size_t) SSIZE_MAX)
+		return -EINVAL;
+
+	do {
+		ssize_t k;
+
+		k = read (fd, p, nbytes);
+		if (k < 0) {
+			if (errno == EINTR)
+				continue;
+
+			if (errno == EAGAIN && do_poll) {
+
+				/* We knowingly ignore any return value here,
+				 * and expect that any error/EOF is reported
+				 * via read() */
+
+				(void) nm_utils_fd_wait_for_event (fd, POLLIN, -1);
+				continue;
+			}
+
+			return n > 0 ? n : -errno;
+		}
+
+		if (k == 0)
+			return n;
+
+		g_assert ((size_t) k <= nbytes);
+
+		p += k;
+		nbytes -= k;
+		n += k;
+	} while (nbytes > 0);
+
+	return n;
+}
+
+/* taken from systemd's loop_read_exact() */
+int
+nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
+{
+	ssize_t n;
+
+	n = nm_utils_fd_read_loop (fd, buf, nbytes, do_poll);
+	if (n < 0)
+		return (int) n;
+	if ((size_t) n != nbytes)
+		return -EIO;
+
+	return 0;
+}
+
+/* taken from systemd's dev_urandom(). */
+int
+nm_utils_read_urandom (void *p, size_t nbytes)
+{
+	int fd = -1;
+	int r;
+
+again:
+	fd = open ("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
+	if (fd < 0) {
+		r = errno;
+		if (r == EINTR)
+			goto again;
+		return r == ENOENT ? -ENOSYS : -r;
+	}
+
+	r = nm_utils_fd_read_loop_exact (fd, p, nbytes, TRUE);
+	close (fd);
+
+	return r;
+}
+
+/*****************************************************************************/
+
 guint8 *
 nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 {
@@ -2719,34 +2847,28 @@ nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 			key_len = 0;
 		}
 	} else {
-		int urandom = open ("/dev/urandom", O_RDONLY);
+		int r;
 		mode_t key_mask;
-
-		if (urandom == -1) {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			             "Can't open /dev/urandom: %s", strerror (errno));
-			key_len = 0;
-			goto out;
-		}
 
 		/* RFC7217 mandates the key SHOULD be at least 128 bits.
 		 * Let's use twice as much. */
 		key_len = 32;
 		secret_key = g_malloc (key_len);
 
+		r = nm_utils_read_urandom (secret_key, key_len);
+		if (r < 0) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			             "Can't read /dev/urandom: %s", strerror (-r));
+			key_len = 0;
+			goto out;
+		}
+
 		key_mask = umask (0077);
-		if (read (urandom, secret_key, key_len) == key_len) {
-			if (!g_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, error)) {
-				g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
-				key_len = 0;
-			}
-		} else {
-			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			                     "Could not obtain a secret");
+		if (!g_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, error)) {
+			g_prefix_error (error, "Can't write " NMSTATEDIR "/secret_key: ");
 			key_len = 0;
 		}
 		umask (key_mask);
-		close (urandom);
 	}
 
 out:
@@ -2953,9 +3075,10 @@ nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
 /*****************************************************************************/
 
 static gboolean
-_set_stable_privacy (struct in6_addr *addr,
+_set_stable_privacy (guint8 stable_type,
+                     struct in6_addr *addr,
                      const char *ifname,
-                     const char *uuid,
+                     const char *network_id,
                      guint dad_counter,
                      guint8 *secret_key,
                      gsize key_len,
@@ -2979,11 +3102,24 @@ _set_stable_privacy (struct in6_addr *addr,
 
 	key_len = MIN (key_len, G_MAXUINT32);
 
+	if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
+		/* Preferably, we would always like to include the stable-type,
+		 * but for backward compatibility reasons, we cannot for UUID.
+		 *
+		 * That is no real problem and it is still impossible to
+		 * force a collision here, because of how the remaining
+		 * fields are hashed. That is, as we also hash @key_len
+		 * and the terminating '\0' of @network_id, it is unambigiously
+		 * possible to revert the process and deduce the @stable_type.
+		 */
+		g_checksum_update (sum, &stable_type, sizeof (stable_type));
+	}
+
 	g_checksum_update (sum, addr->s6_addr, 8);
 	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
-	if (!uuid)
-		uuid = "";
-	g_checksum_update (sum, (const guchar *) uuid, strlen (uuid) + 1);
+	if (!network_id)
+		network_id = "";
+	g_checksum_update (sum, (const guchar *) network_id, strlen (network_id) + 1);
 	tmp[0] = htonl (dad_counter);
 	tmp[1] = htonl (key_len);
 	g_checksum_update (sum, (const guchar *) tmp, sizeof (tmp));
@@ -3009,14 +3145,19 @@ _set_stable_privacy (struct in6_addr *addr,
  * Returns: %TRUE on success, %FALSE if the address could not be generated.
  */
 gboolean
-nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
+nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
+                                       struct in6_addr *addr,
                                        const char *ifname,
-                                       const char *uuid,
+                                       const char *network_id,
                                        guint dad_counter,
                                        GError **error)
 {
 	gs_free guint8 *secret_key = NULL;
 	gsize key_len = 0;
+
+	nm_assert (NM_IN_SET (stable_type,
+	                      NM_UTILS_STABLE_TYPE_UUID,
+	                      NM_UTILS_STABLE_TYPE_STABLE_ID));
 
 	if (dad_counter >= RFC7217_IDGEN_RETRIES) {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -3028,9 +3169,150 @@ nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
 	if (!secret_key)
 		return FALSE;
 
-	return _set_stable_privacy (addr, ifname, uuid, dad_counter,
+	return _set_stable_privacy (stable_type, addr, ifname, network_id, dad_counter,
 	                            secret_key, key_len, error);
 }
+
+/*****************************************************************************/
+
+static void
+_hw_addr_eth_complete (struct ether_addr *addr,
+                       const char *current_mac_address,
+                       const char *generate_mac_address_mask)
+{
+	struct ether_addr mask;
+	struct ether_addr oui;
+	struct ether_addr *ouis;
+	gsize ouis_len;
+	guint i;
+
+	/* the second LSB of the first octet means
+	 * "globally unique, OUI enforced, BIA (burned-in-address)"
+	 * vs. "locally-administered". By default, set it to
+	 * generate locally-administered addresses.
+	 *
+	 * Maybe be overwritten by a mask below. */
+	addr->ether_addr_octet[0] |= 2;
+
+	if (!generate_mac_address_mask || !*generate_mac_address_mask)
+		goto out;
+	if (!_nm_utils_generate_mac_address_mask_parse (generate_mac_address_mask,
+	                                                &mask,
+	                                                &ouis,
+	                                                &ouis_len,
+	                                                NULL))
+		goto out;
+
+	nm_assert ((ouis == NULL) ^ (ouis_len != 0));
+	if (ouis) {
+		/* g_random_int() is good enough here. It uses a static GRand instance
+		 * that is seeded from /dev/urandom. */
+		oui = ouis[g_random_int () % ouis_len];
+		g_free (ouis);
+	} else {
+		if (!nm_utils_hwaddr_aton (current_mac_address, &oui, ETH_ALEN))
+			goto out;
+	}
+
+	for (i = 0; i < ETH_ALEN; i++) {
+		const guint8 a = addr->ether_addr_octet[i];
+		const guint8 o = oui.ether_addr_octet[i];
+		const guint8 m = mask.ether_addr_octet[i];
+
+		addr->ether_addr_octet[i] = (a & ~m) | (o & m);
+	}
+
+out:
+	/* The LSB of the first octet must always be cleared,
+	 * it means Unicast vs. Multicast */
+	addr->ether_addr_octet[0] &= ~1;
+}
+
+char *
+nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
+                                 const char *generate_mac_address_mask)
+{
+	struct ether_addr bin_addr;
+
+	if (nm_utils_read_urandom (&bin_addr, ETH_ALEN) < 0)
+		return NULL;
+	_hw_addr_eth_complete (&bin_addr, current_mac_address, generate_mac_address_mask);
+	return nm_utils_hwaddr_ntoa (&bin_addr, ETH_ALEN);
+}
+
+static char *
+_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
+                         const char *stable_id,
+                         const guint8 *secret_key,
+                         gsize key_len,
+                         const char *ifname,
+                         const char *current_mac_address,
+                         const char *generate_mac_address_mask)
+{
+	GChecksum *sum;
+	guint32 tmp;
+	guint8 digest[32];
+	gsize len = sizeof (digest);
+	struct ether_addr bin_addr;
+	guint8 stable_type_uint8;
+
+	nm_assert (stable_id);
+	nm_assert (NM_IN_SET (stable_type,
+	                      NM_UTILS_STABLE_TYPE_UUID,
+	                      NM_UTILS_STABLE_TYPE_STABLE_ID));
+	nm_assert (secret_key);
+
+	sum = g_checksum_new (G_CHECKSUM_SHA256);
+	if (!sum)
+		return NULL;
+
+	key_len = MIN (key_len, G_MAXUINT32);
+
+	stable_type_uint8 = stable_type;
+	g_checksum_update (sum, (const guchar *) &stable_type_uint8, sizeof (stable_type_uint8));
+
+	tmp = htonl ((guint32) key_len);
+	g_checksum_update (sum, (const guchar *) &tmp, sizeof (tmp));
+	g_checksum_update (sum, (const guchar *) secret_key, key_len);
+	g_checksum_update (sum, (const guchar *) (ifname ?: ""), ifname ? (strlen (ifname) + 1) : 1);
+	g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+
+	g_checksum_get_digest (sum, digest, &len);
+	g_checksum_free (sum);
+
+	g_return_val_if_fail (len == 32, NULL);
+
+	memcpy (&bin_addr, digest, ETH_ALEN);
+	_hw_addr_eth_complete (&bin_addr, current_mac_address, generate_mac_address_mask);
+	return nm_utils_hwaddr_ntoa (&bin_addr, ETH_ALEN);
+}
+
+char *
+nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
+                                 const char *stable_id,
+                                 const char *ifname,
+                                 const char *current_mac_address,
+                                 const char *generate_mac_address_mask)
+{
+	gs_free guint8 *secret_key = NULL;
+	gsize key_len = 0;
+
+	g_return_val_if_fail (stable_id, NULL);
+
+	secret_key = nm_utils_secret_key_read (&key_len, NULL);
+	if (!secret_key)
+		return NULL;
+
+	return _hw_addr_gen_stable_eth (stable_type,
+	                                stable_id,
+	                                secret_key,
+	                                key_len,
+	                                ifname,
+	                                current_mac_address,
+	                                generate_mac_address_mask);
+}
+
+/*****************************************************************************/
 
 /**
  * nm_utils_setpgid:

@@ -310,6 +310,12 @@ const char *nm_utils_ip4_property_path (const char *ifname, const char *property
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
+int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
+ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
+int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
+
+int nm_utils_read_urandom (void *p, size_t n);
+
 char *nm_utils_machine_id_read (void);
 gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
 
@@ -353,11 +359,25 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
-gboolean nm_utils_ipv6_addr_set_stable_privacy (struct in6_addr *addr,
+typedef enum {
+	NM_UTILS_STABLE_TYPE_UUID = 0,
+	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
+} NMUtilsStableType;
+
+gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
+                                                struct in6_addr *addr,
                                                 const char *ifname,
-                                                const char *uuid,
+                                                const char *network_id,
                                                 guint dad_counter,
                                                 GError **error);
+
+char *nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
+                                       const char *generate_mac_address_mask);
+char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
+                                       const char *stable_id,
+                                       const char *ifname,
+                                       const char *current_mac_address,
+                                       const char *generate_mac_address_mask);
 
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 

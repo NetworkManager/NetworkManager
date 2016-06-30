@@ -120,7 +120,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_S390_SUBCHANNELS,
 
@@ -307,14 +306,6 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
-static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->realize_start_notify (device, plink);
-
-	g_object_notify (G_OBJECT (device), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
-}
-
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
@@ -408,7 +399,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
 
-		perm_hw_addr = nm_device_get_permanent_hw_address (device);
+		perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 		mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_hw_addr) {
 			if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
@@ -813,21 +804,17 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMSettingWired *s_wired;
-	const char *cloned_mac;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		s_wired = (NMSettingWired *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_WIRED);
-		if (s_wired) {
-			/* Set device MAC address if the connection wants to change it */
-			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-			nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_ETHER);
-		}
+		if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 		/* If we're re-activating a PPPoE connection a short while after
 		 * a previous PPPoE connection was torn down, wait a bit to allow the
 		 * remote side to handle the disconnection.  Otherwise the peer may
@@ -1365,10 +1352,6 @@ deactivate (NMDevice *device)
 	/* Set last PPPoE connection time */
 	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
 		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
-
-	/* Reset MAC address back to initial address */
-	if (nm_device_get_initial_hw_address (device))
-		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_ETHER);
 }
 
 static gboolean
@@ -1409,7 +1392,7 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 	}
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	if (perm_hw_addr) {
 		setting_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_mac) {
@@ -1438,7 +1421,7 @@ new_default_connection (NMDevice *self)
 	NMConnection *connection;
 	NMSettingsConnection *const*connections;
 	NMSetting *setting;
-	const char *hw_address;
+	const char *perm_hw_addr;
 	gs_free char *defname = NULL;
 	gs_free char *uuid = NULL;
 	gs_free char *machine_id = NULL;
@@ -1446,8 +1429,8 @@ new_default_connection (NMDevice *self)
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
 
-	hw_address = nm_device_get_hw_address (self);
-	if (!hw_address)
+	perm_hw_addr = nm_device_get_permanent_hw_address (self, FALSE);
+	if (!perm_hw_addr)
 		return NULL;
 
 	connection = nm_simple_connection_new ();
@@ -1466,7 +1449,7 @@ new_default_connection (NMDevice *self)
 	uuid = _nm_utils_uuid_generate_from_strings ("default-wired",
 	                                             machine_id ?: "",
 	                                             defname,
-	                                             hw_address,
+	                                             perm_hw_addr,
 	                                             NULL);
 
 	g_object_set (setting,
@@ -1480,7 +1463,7 @@ new_default_connection (NMDevice *self)
 
 	/* Lock the connection to the device */
 	setting = nm_setting_wired_new ();
-	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, hw_address, NULL);
+	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);
 	nm_connection_add_setting (connection, setting);
 
 	return connection;
@@ -1506,7 +1489,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
-	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	const char *mac = nm_device_get_hw_address (device);
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GHashTableIter iter;
@@ -1582,34 +1565,10 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	const guint8 *hwaddr;
-	gsize hwaddrlen = 0;
 
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
 	if (!priv->subchan1 && info->initialized)
 		_update_s390_subchannels (self);
-
-	if (!nm_device_get_initial_hw_address (device)) {
-		hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET,
-		                                       nm_device_get_ifindex (self),
-		                                       &hwaddrlen);
-		if (!nm_utils_hwaddr_matches (hwaddr, hwaddrlen, nm_ip_addr_zero.addr_eth, sizeof (nm_ip_addr_zero.addr_eth))) {
-			_LOGD (LOGD_DEVICE, "device got a valid hw address");
-			nm_device_update_hw_address (self);
-			nm_device_update_initial_hw_address (self);
-			if (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE) {
-				/*
-				 * If the device is UNAVAILABLE, any previous try to
-				 * bring it up probably has failed because of the
-				 * invalid hardware address; try again.
-				 */
-				nm_device_bring_up (self, TRUE, NULL);
-				nm_device_queue_recheck_available (device,
-				                                   NM_DEVICE_STATE_REASON_NONE,
-				                                   NM_DEVICE_STATE_REASON_NONE);
-			}
-		}
-	}
 }
 
 static gboolean
@@ -1663,9 +1622,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, nm_device_get_permanent_hw_address (NM_DEVICE (object)));
-		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);
 		break;
@@ -1707,7 +1663,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->new_default_connection = new_default_connection;
@@ -1726,13 +1681,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->state_changed = device_state_changed;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
 		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",

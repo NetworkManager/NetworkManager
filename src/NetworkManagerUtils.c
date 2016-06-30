@@ -529,8 +529,8 @@ check_connection_mac_address (NMConnection *orig,
 
 static gboolean
 check_connection_cloned_mac_address (NMConnection *orig,
-                              NMConnection *candidate,
-                              GHashTable *settings)
+                                     NMConnection *candidate,
+                                     GHashTable *settings)
 {
 	GHashTable *props;
 	const char *orig_mac = NULL, *cand_mac = NULL;
@@ -550,6 +550,12 @@ check_connection_cloned_mac_address (NMConnection *orig,
 	s_wired_cand = nm_connection_get_setting_wired (candidate);
 	if (s_wired_cand)
 		cand_mac = nm_setting_wired_get_cloned_mac_address (s_wired_cand);
+
+	/* special cloned mac address entires are accepted. */
+	if (NM_CLONED_MAC_IS_SPECIAL (orig_mac))
+		orig_mac = NULL;
+	if (NM_CLONED_MAC_IS_SPECIAL (cand_mac))
+		cand_mac = NULL;
 
 	if (!orig_mac || !cand_mac) {
 		remove_from_hash (settings, props,

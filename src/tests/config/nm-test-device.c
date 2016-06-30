@@ -38,17 +38,6 @@ nm_test_device_init (NMTestDevice *self)
 /* We jump over NMDevice's construct/destruct methods, which require NMPlatform
  * and NMConnectionProvider to be initialized.
  */
-
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
-{
-	return PARENT_CLASS->constructor (type,
-	                                  n_construct_params,
-	                                  construct_params);
-}
-
 static void
 constructed (GObject *object)
 {
@@ -73,7 +62,6 @@ nm_test_device_class_init (NMTestDeviceClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
@@ -85,6 +73,6 @@ nm_test_device_new (const char *hwaddr)
 {
 	return g_object_new (NM_TYPE_TEST_DEVICE,
 	                     NM_DEVICE_IFACE, "dummy",
-	                     NM_DEVICE_HW_ADDRESS, hwaddr,
+	                     NM_DEVICE_PERM_HW_ADDRESS, hwaddr,
 	                     NULL);
 }

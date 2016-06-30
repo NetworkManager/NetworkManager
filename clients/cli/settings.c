@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
+#include "nm-common-macros.h"
 #include "utils.h"
 #include "common.h"
 #include "nm-vpn-helpers.h"
@@ -44,26 +45,28 @@ NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD ("name"),                                      /* 0 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_ID),                    /* 1 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_UUID),                  /* 2 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME),        /* 3 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE),                  /* 4 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT),           /* 5 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY),  /* 6 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP),             /* 7 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY),             /* 8 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS),           /* 9 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE),                  /* 10 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER),                /* 11 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE),            /* 12 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),    /* 13 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES),           /* 14 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),  /* 15 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_METERED),               /* 16 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_LLDP),                  /* 17 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_STABLE_ID),             /* 3 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME),        /* 4 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE),                  /* 5 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT),           /* 6 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY),  /* 7 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP),             /* 8 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY),             /* 9 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS),           /* 10 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE),                  /* 11 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER),                /* 12 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE),            /* 13 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),    /* 14 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES),           /* 15 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),  /* 16 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_METERED),               /* 17 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_LLDP),                  /* 18 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
                                               NM_SETTING_CONNECTION_ID","\
                                               NM_SETTING_CONNECTION_UUID","\
+                                              NM_SETTING_CONNECTION_STABLE_ID","\
                                               NM_SETTING_CONNECTION_INTERFACE_NAME","\
                                               NM_SETTING_CONNECTION_TYPE","\
                                               NM_SETTING_CONNECTION_AUTOCONNECT","\
@@ -89,13 +92,14 @@ NmcOutputField nmc_fields_setting_wired[] = {
 	SETTING_FIELD (NM_SETTING_WIRED_AUTO_NEGOTIATE),         /* 4 */
 	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS),            /* 5 */
 	SETTING_FIELD (NM_SETTING_WIRED_CLONED_MAC_ADDRESS),     /* 6 */
-	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST),  /* 7 */
-	SETTING_FIELD (NM_SETTING_WIRED_MTU),                    /* 8 */
-	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS),       /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE),           /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS),           /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN),            /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD),   /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK), /* 7 */
+	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST),  /* 8 */
+	SETTING_FIELD (NM_SETTING_WIRED_MTU),                    /* 9 */
+	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS),       /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE),           /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS),           /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN),            /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD),   /* 14 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
@@ -105,6 +109,7 @@ NmcOutputField nmc_fields_setting_wired[] = {
                                          NM_SETTING_WIRED_AUTO_NEGOTIATE","\
                                          NM_SETTING_WIRED_MAC_ADDRESS","\
                                          NM_SETTING_WIRED_CLONED_MAC_ADDRESS","\
+                                         NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK","\
                                          NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST","\
                                          NM_SETTING_WIRED_MTU","\
                                          NM_SETTING_WIRED_S390_SUBCHANNELS","\
@@ -200,12 +205,13 @@ NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_TX_POWER),                  /* 7 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS),               /* 8 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS),        /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST),     /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION), /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MTU),                       /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS),               /* 13 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN),                    /* 14 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_POWERSAVE),                 /* 15 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK), /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST),     /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION), /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MTU),                       /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS),               /* 14 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN),                    /* 15 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_POWERSAVE),                 /* 16 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
@@ -218,6 +224,7 @@ NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_TX_POWER","\
                                             NM_SETTING_WIRELESS_MAC_ADDRESS","\
                                             NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS","\
+                                            NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK","\
                                             NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST","\
                                             NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION","\
                                             NM_SETTING_WIRELESS_MTU","\
@@ -1252,6 +1259,7 @@ DEFINE_SECRET_FLAGS_GETTER (nmc_property_cdma_get_password_flags, NM_SETTING_CDM
 /* --- NM_SETTING_CONNECTION_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_connection_get_id, NM_SETTING_CONNECTION_ID)
 DEFINE_GETTER (nmc_property_connection_get_uuid, NM_SETTING_CONNECTION_UUID)
+DEFINE_GETTER (nmc_property_connection_get_stable_id, NM_SETTING_CONNECTION_STABLE_ID)
 DEFINE_GETTER (nmc_property_connection_get_interface_name, NM_SETTING_CONNECTION_INTERFACE_NAME)
 DEFINE_GETTER (nmc_property_connection_get_type, NM_SETTING_CONNECTION_TYPE)
 DEFINE_GETTER (nmc_property_connection_get_autoconnect, NM_SETTING_CONNECTION_AUTOCONNECT)
@@ -1761,6 +1769,7 @@ DEFINE_GETTER (nmc_property_wired_get_duplex, NM_SETTING_WIRED_DUPLEX)
 DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
 DEFINE_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wired_get_generate_mac_address_mask, NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK)
 DEFINE_GETTER (nmc_property_wired_get_mac_address_blacklist, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SUBCHANNELS)
 DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
@@ -1887,6 +1896,7 @@ DEFINE_GETTER (nmc_property_wireless_get_rate, NM_SETTING_WIRELESS_RATE)
 DEFINE_GETTER (nmc_property_wireless_get_tx_power, NM_SETTING_WIRELESS_TX_POWER)
 DEFINE_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wireless_get_generate_mac_address_mask, NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK)
 DEFINE_GETTER (nmc_property_wireless_get_mac_address_blacklist, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wireless_get_seen_bssids, NM_SETTING_WIRELESS_SEEN_BSSIDS)
 DEFINE_GETTER (nmc_property_wireless_get_hidden, NM_SETTING_WIRELESS_HIDDEN)
@@ -2886,17 +2896,30 @@ nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GE
 }
 
 static gboolean
-nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
+_property_set_mac (NMSetting *setting, const char *prop, const char *val, gboolean cloned_mac_addr, GError **error)
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!nm_utils_hwaddr_valid (val, ETH_ALEN)) {
+	if (   (!cloned_mac_addr || !NM_CLONED_MAC_IS_SPECIAL (val))
+	    && !nm_utils_hwaddr_valid (val, ETH_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
 		return FALSE;
 	}
 
 	g_object_set (setting, prop, val, NULL);
 	return TRUE;
+}
+
+static gboolean
+nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return _property_set_mac (setting, prop, val, FALSE, error);
+}
+
+static gboolean
+nmc_property_set_mac_cloned (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return _property_set_mac (setting, prop, val, TRUE, error);
 }
 
 static gboolean
@@ -6217,6 +6240,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, STABLE_ID),
+	                    nmc_property_connection_get_stable_id,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, INTERFACE_NAME),
 	                    nmc_property_connection_get_interface_name,
 	                    nmc_property_set_ifname,
@@ -7188,7 +7218,14 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, CLONED_MAC_ADDRESS),
 	                    nmc_property_wired_get_cloned_mac_address,
-	                    nmc_property_set_mac,
+	                    nmc_property_set_mac_cloned,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, GENERATE_MAC_ADDRESS_MASK),
+	                    nmc_property_wired_get_generate_mac_address_mask,
+	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -7306,7 +7343,14 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, CLONED_MAC_ADDRESS),
 	                    nmc_property_wireless_get_cloned_mac_address,
-	                    nmc_property_set_mac,
+	                    nmc_property_set_mac_cloned,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, GENERATE_MAC_ADDRESS_MASK),
+	                    nmc_property_wireless_get_generate_mac_address_mask,
+	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -8063,21 +8107,22 @@ setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
 	set_val_str (arr, 1, nmc_property_connection_get_id (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 2, nmc_property_connection_get_uuid (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_connection_get_interface_name (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_connection_get_type (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_connection_get_autoconnect (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_connection_get_autoconnect_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_connection_get_timestamp (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_connection_get_read_only (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_connection_get_permissions (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_connection_get_zone (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_connection_get_master (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_connection_get_slave_type (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_connection_get_autoconnect_slaves (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_connection_get_secondaries (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_connection_get_gateway_ping_timeout (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_connection_get_metered (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_connection_get_lldp (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_connection_get_stable_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_connection_get_interface_name (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_connection_get_type (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_connection_get_autoconnect (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_connection_get_autoconnect_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_connection_get_timestamp (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_connection_get_read_only (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_connection_get_permissions (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_connection_get_zone (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_connection_get_master (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_connection_get_slave_type (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_connection_get_autoconnect_slaves (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_connection_get_secondaries (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_connection_get_gateway_ping_timeout (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_connection_get_metered (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 18, nmc_property_connection_get_lldp (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -8109,13 +8154,14 @@ setting_wired_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 	set_val_str (arr, 4, nmc_property_wired_get_auto_negotiate (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 5, nmc_property_wired_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 6, nmc_property_wired_get_cloned_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_wired_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_wired_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_wired_get_s390_subchannels (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_wired_get_s390_nettype (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_wired_get_s390_options (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_wired_get_wake_on_lan (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_wired_get_wake_on_lan_password (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_wired_get_generate_mac_address_mask (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_wired_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_wired_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_wired_get_s390_subchannels (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_wired_get_s390_nettype (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_wired_get_s390_options (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_wired_get_wake_on_lan (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_wired_get_wake_on_lan_password (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -8209,12 +8255,13 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc,  const char *one_prop,
 	set_val_str (arr, 7, nmc_property_wireless_get_tx_power (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 8, nmc_property_wireless_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 9, nmc_property_wireless_get_cloned_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_wireless_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_wireless_get_mac_address_randomization (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_wireless_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_wireless_get_seen_bssids (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_wireless_get_hidden (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_wireless_get_powersave (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_wireless_get_generate_mac_address_mask (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_wireless_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_wireless_get_mac_address_randomization (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_wireless_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_wireless_get_seen_bssids (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_wireless_get_hidden (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_wireless_get_powersave (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

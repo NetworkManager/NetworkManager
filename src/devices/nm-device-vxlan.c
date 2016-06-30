@@ -511,8 +511,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMSettingWired *s_wired;
-	const char *cloned_mac;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -521,12 +519,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
-	if (s_wired) {
-		/* Set device MAC address if the connection wants to change it */
-		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_DEVICE);
-	}
+	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }

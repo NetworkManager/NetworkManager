@@ -47,7 +47,6 @@ typedef struct
 	GHashTable *config;
 	GHashTable *blobs;
 	guint32    ap_scan;
-	NMSettingMacRandomization mac_randomization;
 	gboolean   fast_required;
 	gboolean   dispose_has_run;
 } NMSupplicantConfigPrivate;
@@ -85,7 +84,6 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	                                     (GDestroyNotify) blob_free);
 
 	priv->ap_scan = 1;
-	priv->mac_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
 	priv->dispose_has_run = FALSE;
 }
 
@@ -272,32 +270,6 @@ nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->ap_scan;
 }
 
-const char *
-nm_supplicant_config_get_mac_randomization (NMSupplicantConfig *self)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), 0);
-
-	/**
-	 * mac_addr - MAC address policy default
-	 *
-	 * 0 = use permanent MAC address
-	 * 1 = use random MAC address for each ESS connection
-	 * 2 = like 1, but maintain OUI (with local admin bit set)
-	 *
-	 * By default, permanent MAC address is used unless policy is changed by
-	 * the per-network mac_addr parameter.
-	 */
-
-	switch (NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->mac_randomization) {
-	case NM_SETTING_MAC_RANDOMIZATION_ALWAYS:
-		return "1";
-	case NM_SETTING_MAC_RANDOMIZATION_NEVER:
-	case NM_SETTING_MAC_RANDOMIZATION_DEFAULT:
-	default:
-		return "0";
-	}
-}
-
 gboolean
 nm_supplicant_config_fast_required (NMSupplicantConfig *self)
 {
@@ -385,8 +357,6 @@ gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
                                            guint32 fixed_freq,
-                                           NMSupplicantFeature mac_randomization_support,
-                                           NMSettingMacRandomization mac_randomization_fallback,
                                            GError **error)
 {
 	NMSupplicantConfigPrivate *priv;
@@ -475,23 +445,6 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE, error))
 				return FALSE;
 		}
-	}
-
-	priv->mac_randomization = nm_setting_wireless_get_mac_address_randomization (setting);
-	if (priv->mac_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
-		priv->mac_randomization = mac_randomization_fallback;
-		if (priv->mac_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
-			/* Don't use randomization, unless explicitly enabled.
-			 * Randomization can work badly with captive portals. */
-			priv->mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
-		}
-	}
-
-	if (   priv->mac_randomization != NM_SETTING_MAC_RANDOMIZATION_NEVER
-	    && mac_randomization_support != NM_SUPPLICANT_FEATURE_YES) {
-		g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-		             "cannot enable mac-randomization due to missing supplicant support");
-		return FALSE;
 	}
 
 	return TRUE;

@@ -64,6 +64,7 @@ main (int argc, char **argv)
 	rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET,
 	                           ifindex,
 	                           ifname,
+	                           NM_UTILS_STABLE_TYPE_UUID,
 	                           "8ce666e8-d34d-4fb1-b858-f15a7al28086",
 	                           NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
 	                           &error);

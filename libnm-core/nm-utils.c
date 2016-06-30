@@ -37,6 +37,7 @@
 #include <jansson.h>
 #endif
 
+#include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
@@ -3115,6 +3116,33 @@ hwaddr_binary_len (const char *asc)
 }
 
 /**
+ * _nm_utils_hwaddr_length:
+ * @asc: the ASCII representation of the hardware address
+ *
+ * Validates that @asc is a valid representation of a hardware
+ * address up to (including) %NM_UTILS_HWADDR_LEN_MAX bytes.
+ *
+ * Returns: binary length of the hardware address @asc or
+ *   0 on error.
+ */
+guint
+_nm_utils_hwaddr_length (const char *asc)
+{
+	int l;
+
+	if (!asc)
+		return 0;
+
+	l = hwaddr_binary_len (asc);
+	if (l <= 0 || l > NM_UTILS_HWADDR_LEN_MAX)
+		return 0;
+
+	if (!nm_utils_hwaddr_valid (asc, l))
+		return 0;
+	return l;
+}
+
+/**
  * nm_utils_hwaddr_valid:
  * @asc: the ASCII representation of a hardware address
  * @length: the length of address that @asc is expected to convert to
@@ -3286,22 +3314,122 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	return !memcmp (hwaddr1, hwaddr2, hwaddr1_len);
 }
 
-GVariant *
-_nm_utils_hwaddr_to_dbus (const GValue *prop_value)
+/*****************************************************************************/
+
+static GVariant *
+_nm_utils_hwaddr_to_dbus_impl (const char *str)
 {
-	const char *str = g_value_get_string (prop_value);
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
 	int len;
 
-	if (str) {
-		len = hwaddr_binary_len (str);
-		g_return_val_if_fail (len > 0 && len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
-		if (!nm_utils_hwaddr_aton (str, buf, len))
-			len = 0;
-	} else
-		len = 0;
+	if (!str)
+		return NULL;
+
+	len = _nm_utils_hwaddr_length (str);
+	if (len == 0)
+		return NULL;
+
+	if (!nm_utils_hwaddr_aton (str, buf, len))
+		return NULL;
 
 	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, buf, len, 1);
+}
+
+GVariant *
+_nm_utils_hwaddr_cloned_get (NMSetting     *setting,
+                             const char    *property)
+{
+	gs_free char *addr = NULL;
+
+	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+
+	g_object_get (setting, "cloned-mac-address", &addr, NULL);
+	return _nm_utils_hwaddr_to_dbus_impl (addr);
+}
+
+gboolean
+_nm_utils_hwaddr_cloned_set (NMSetting     *setting,
+                             GVariant      *connection_dict,
+                             const char    *property,
+                             GVariant      *value,
+                             NMSettingParseFlags parse_flags,
+                             GError       **error)
+{
+	gsize length;
+	const guint8 *array;
+	char *str;
+
+	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "cloned-mac-address", "assigned-mac-address"))
+		return TRUE;
+
+	length = 0;
+	array = g_variant_get_fixed_array (value, &length, 1);
+
+	if (!length)
+		return TRUE;
+
+	str = nm_utils_hwaddr_ntoa (array, length);
+	g_object_set (setting,
+	              "cloned-mac-address",
+	              str,
+	              NULL);
+	g_free (str);
+	return TRUE;
+}
+
+gboolean
+_nm_utils_hwaddr_cloned_not_set (NMSetting *setting,
+                                 GVariant      *connection_dict,
+                                 const char    *property,
+                                 NMSettingParseFlags parse_flags,
+                                 GError       **error)
+{
+	nm_assert (nm_streq0 (property, "cloned-mac-address"));
+	return TRUE;
+}
+
+GVariant *
+_nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
+                                    NMConnection *connection,
+                                    const char *property)
+{
+	gs_free char *addr = NULL;
+
+	nm_assert (nm_streq0 (property, "assigned-mac-address"));
+
+	g_object_get (setting,
+	              "cloned-mac-address",
+	              &addr,
+	              NULL);
+	return addr ? g_variant_new_string (addr) : NULL;
+}
+
+gboolean
+_nm_utils_hwaddr_cloned_data_set (NMSetting *setting,
+                                  GVariant *connection_dict,
+                                  const char *property,
+                                  GVariant *value,
+                                  NMSettingParseFlags parse_flags,
+                                  GError **error)
+{
+	nm_assert (nm_streq0 (property, "assigned-mac-address"));
+
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "cloned-mac-address", "assigned-mac-address"))
+		return TRUE;
+
+	g_object_set (setting,
+	              "cloned-mac-address",
+	              g_variant_get_string (value, NULL),
+	              NULL);
+	return TRUE;
+}
+
+GVariant *
+_nm_utils_hwaddr_to_dbus (const GValue *prop_value)
+{
+	return _nm_utils_hwaddr_to_dbus_impl (g_value_get_string (prop_value));
 }
 
 void
@@ -3315,6 +3443,93 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 	str = length ? nm_utils_hwaddr_ntoa (array, length) : NULL;
 	g_value_take_string (prop_value, str);
 }
+
+/*****************************************************************************/
+
+static char *
+_split_word (char *s)
+{
+	/* takes @s and truncates the string on the first white-space.
+	 * then it returns the first word afterwards (again seeking
+	 * over leading white-space). */
+	for (; s[0]; s++) {
+		if (g_ascii_isspace (s[0])) {
+			s[0] = '\0';
+			s++;
+			while (g_ascii_isspace (s[0]))
+				s++;
+			return s;
+		}
+	}
+	return s;
+}
+
+gboolean
+_nm_utils_generate_mac_address_mask_parse (const char *value,
+                                           struct ether_addr *out_mask,
+                                           struct ether_addr **out_ouis,
+                                           gsize *out_ouis_len,
+                                           GError **error)
+{
+	gs_free char *s_free = NULL;
+	char *s, *s_next;
+	struct ether_addr mask;
+	gs_unref_array GArray *ouis = NULL;
+
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (!value || !*value)  {
+		/* NULL and "" are valid values and both mean the default
+		 * "q */
+		if (out_mask) {
+			memset (out_mask, 0, sizeof (*out_mask));
+			out_mask->ether_addr_octet[0] |= 0x02;
+		}
+		NM_SET_OUT (out_ouis, NULL);
+		NM_SET_OUT (out_ouis_len, 0);
+		return TRUE;
+	}
+
+	s_free = g_strdup (value);
+	s = s_free;
+
+	/* skip over leading whitespace */
+	while (g_ascii_isspace (s[0]))
+		s++;
+
+	/* parse the first mask */
+	s_next = _split_word (s);
+	if (!nm_utils_hwaddr_aton (s, &mask, ETH_ALEN)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             _("not a valid ethernet MAC address for mask at position %lld"),
+		             (long long) (s - s_free));
+		return FALSE;
+	}
+
+	if (s_next[0]) {
+		ouis = g_array_sized_new (FALSE, FALSE, sizeof (struct ether_addr), 4);
+
+		do {
+			s = s_next;
+			s_next = _split_word (s);
+
+			g_array_set_size (ouis, ouis->len + 1);
+			if (!nm_utils_hwaddr_aton (s, &g_array_index (ouis, struct ether_addr, ouis->len - 1), ETH_ALEN)) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+				             _("not a valid ethernet MAC address #%u at position %lld"),
+				             ouis->len, (long long) (s - s_free));
+				return FALSE;
+			}
+		} while (s_next[0]);
+	}
+
+	NM_SET_OUT (out_mask, mask);
+	NM_SET_OUT (out_ouis_len, ouis ? ouis->len : 0);
+	NM_SET_OUT (out_ouis, ouis ? ((struct ether_addr *) g_array_free (g_steal_pointer (&ouis), FALSE)) : NULL);
+	return TRUE;
+}
+
+/*****************************************************************************/
 
 /**
  * nm_utils_bin2hexstr:

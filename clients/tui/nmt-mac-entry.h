@@ -25,6 +25,11 @@
 
 G_BEGIN_DECLS
 
+typedef enum { /*< skip >*/
+	NMT_MAC_ENTRY_TYPE_MAC,
+	NMT_MAC_ENTRY_TYPE_CLONED,
+} NmtMacEntryType;
+
 #define NMT_TYPE_MAC_ENTRY            (nmt_mac_entry_get_type ())
 #define NMT_MAC_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_MAC_ENTRY, NmtMacEntry))
 #define NMT_MAC_ENTRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_MAC_ENTRY, NmtMacEntryClass))
@@ -45,7 +50,8 @@ typedef struct {
 GType nmt_mac_entry_get_type (void);
 
 NmtNewtWidget *nmt_mac_entry_new (int width,
-                                  int mac_length);
+                                  int mac_length,
+                                  NmtMacEntryType type);
 
 G_END_DECLS
 

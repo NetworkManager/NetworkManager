@@ -40,7 +40,7 @@ typedef struct {
 		gboolean has;
 		GSList *spec;
 	} match_device;
-} ConnectionInfo;
+} MatchSectionInfo;
 
 typedef struct {
 	char *config_main_file;
@@ -52,7 +52,11 @@ typedef struct {
 
 	/* A zero-terminated list of pre-processed information from the
 	 * [connection] sections. This is to speed up lookup. */
-	ConnectionInfo *connection_infos;
+	MatchSectionInfo *connection_infos;
+
+	/* A zero-terminated list of pre-processed information from the
+	 * [device] sections. This is to speed up lookup. */
+	MatchSectionInfo *device_infos;
 
 	struct {
 		char *uri;
@@ -268,8 +272,15 @@ nm_config_data_get_rc_manager (const NMConfigData *self)
 gboolean
 nm_config_data_get_ignore_carrier (const NMConfigData *self, NMDevice *device)
 {
+	gs_free char *value = NULL;
+	gboolean has_match;
+
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	value = nm_config_data_get_device_config (self, NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER, device, &has_match);
+	if (has_match)
+		return nm_config_parse_boolean (value, FALSE);
 
 	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->ignore_carrier);
 }
@@ -451,6 +462,7 @@ static int
 _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 {
 	gboolean a_is_connection, b_is_connection;
+	gboolean a_is_device, b_is_device;
 	gboolean a_is_intern, b_is_intern;
 	const char *a = *pa;
 	const char *b = *pb;
@@ -486,6 +498,28 @@ _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 	if (a_is_connection && !b_is_connection)
 		return 1;
 	if (b_is_connection && !a_is_connection)
+		return -1;
+
+	/* we sort device groups before connection groups (to the end). */
+	a_is_device = a && g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+	b_is_device = b && g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+
+	if (a_is_device && b_is_device) {
+		/* if both are device groups, we want the explicit [device] group first. */
+		a_is_device = a[NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE)] == '\0';
+		b_is_device = b[NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE)] == '\0';
+
+		if (a_is_device != b_is_device) {
+			if (a_is_device)
+				return -1;
+			return 1;
+		}
+		/* the sections are ordered lowest-priority first. Reverse their order. */
+		return pa < pb ? 1 : -1;
+	}
+	if (a_is_device && !b_is_device)
+		return 1;
+	if (b_is_device && !a_is_device)
 		return -1;
 
 	/* no reordering. */
@@ -1049,25 +1083,18 @@ global_dns_equal (NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
 
 /************************************************************************/
 
-char *
-nm_config_data_get_connection_default (const NMConfigData *self,
-                                       const char *property,
-                                       NMDevice *device)
+static const MatchSectionInfo *
+_match_section_infos_lookup (const MatchSectionInfo *match_section_infos,
+                             GKeyFile *keyfile,
+                             const char *property,
+                             NMDevice *device,
+                             char **out_value)
 {
-	NMConfigDataPrivate *priv;
-	const ConnectionInfo *connection_info;
-
-	g_return_val_if_fail (self, NULL);
-	g_return_val_if_fail (property && *property, NULL);
-	g_return_val_if_fail (strchr (property, '.'), NULL);
-
-	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
-
-	if (!priv->connection_infos)
+	if (!match_section_infos)
 		return NULL;
 
-	for (connection_info = &priv->connection_infos[0]; connection_info->group_name; connection_info++) {
-		char *value;
+	for (; match_section_infos->group_name; match_section_infos++) {
+		char *value = NULL;
 		gboolean match;
 
 		/* FIXME: Here we use g_key_file_get_string(). This should be in sync with what keyfile-reader
@@ -1077,23 +1104,87 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 		 * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
 		 * expose both functions, and we would return here keyfile_to_string(keyfile).
 		 * The caller then could convert the string to the proper value via string_to_value(value). */
-		value = g_key_file_get_string (priv->keyfile, connection_info->group_name, property, NULL);
-		if (!value && !connection_info->stop_match)
+		value = g_key_file_get_string (keyfile, match_section_infos->group_name, property, NULL);
+		if (!value && !match_section_infos->stop_match)
 			continue;
 
 		match = TRUE;
-		if (connection_info->match_device.has)
-			match = device && nm_device_spec_match_list (device, connection_info->match_device.spec);
+		if (match_section_infos->match_device.has)
+			match = device && nm_device_spec_match_list (device, match_section_infos->match_device.spec);
 
-		if (match)
-			return value;
+		if (match) {
+			*out_value = value;
+			return match_section_infos;
+		}
 		g_free (value);
 	}
 	return NULL;
 }
 
+char *
+nm_config_data_get_device_config (const NMConfigData *self,
+                                  const char *property,
+                                  NMDevice *device,
+                                  gboolean *has_match)
+{
+	NMConfigDataPrivate *priv;
+	const MatchSectionInfo *connection_info;
+	char *value = NULL;
+
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (property && *property, NULL);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	connection_info = _match_section_infos_lookup (&priv->device_infos[0],
+	                                               priv->keyfile,
+	                                               property,
+	                                               device,
+	                                               &value);
+	NM_SET_OUT (has_match, !!connection_info);
+	return value;
+}
+
+gboolean
+nm_config_data_get_device_config_boolean (const NMConfigData *self,
+                                          const char *property,
+                                          NMDevice *device,
+                                          gint val_no_match,
+                                          gint val_invalid)
+{
+	gs_free char *value = NULL;
+	gboolean has_match;
+
+	value = nm_config_data_get_device_config (self, property, device, &has_match);
+	if (!has_match)
+		return val_no_match;
+	return nm_config_parse_boolean (value, val_invalid);
+}
+
+char *
+nm_config_data_get_connection_default (const NMConfigData *self,
+                                       const char *property,
+                                       NMDevice *device)
+{
+	NMConfigDataPrivate *priv;
+	char *value = NULL;
+
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (property && *property, NULL);
+	g_return_val_if_fail (strchr (property, '.'), NULL);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	_match_section_infos_lookup (&priv->connection_infos[0],
+	                             priv->keyfile,
+	                             property,
+	                             device,
+	                             &value);
+	return value;
+}
+
 static void
-_get_connection_info_init (ConnectionInfo *connection_info, GKeyFile *keyfile, char *group)
+_get_connection_info_init (MatchSectionInfo *connection_info, GKeyFile *keyfile, char *group)
 {
 	/* pass ownership of @group on... */
 	connection_info->group_name = group;
@@ -1105,27 +1196,43 @@ _get_connection_info_init (ConnectionInfo *connection_info, GKeyFile *keyfile, c
 	connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, group, "stop-match", FALSE);
 }
 
-static ConnectionInfo *
-_get_connection_infos (GKeyFile *keyfile)
+static void
+_match_section_infos_free (MatchSectionInfo *match_section_infos)
+{
+	guint i;
+
+	if (!match_section_infos)
+		return;
+	for (i = 0; match_section_infos[i].group_name; i++) {
+		g_free (match_section_infos[i].group_name);
+		g_slist_free_full (match_section_infos[i].match_device.spec, g_free);
+	}
+	g_free (match_section_infos);
+}
+
+static MatchSectionInfo *
+_match_section_infos_construct (GKeyFile *keyfile, const char *prefix)
 {
 	char **groups;
 	gsize i, j, ngroups;
 	char *connection_tag = NULL;
-	ConnectionInfo *connection_infos = NULL;
+	MatchSectionInfo *match_section_infos = NULL;
 
-	/* get the list of existing [connection.\+] sections that we consider
-	 * for nm_config_data_get_connection_default().
+	/* get the list of existing [connection.\+]/[device.\+] sections.
 	 *
 	 * We expect the sections in their right order, with lowest priority
 	 * first. Only exception is the (literal) [connection] section, which
 	 * we will always reorder to the end. */
 	groups = g_key_file_get_groups (keyfile, &ngroups);
 	if (!groups)
-		ngroups = 0;
-	else if (ngroups > 0) {
+		return NULL;
+
+	if (ngroups > 0) {
+		gsize l = strlen (prefix);
+
 		for (i = 0, j = 0; i < ngroups; i++) {
-			if (g_str_has_prefix (groups[i], NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)) {
-				if (groups[i][NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0')
+			if (g_str_has_prefix (groups[i], prefix)) {
+				if (groups[i][l] == '\0')
 					connection_tag = groups[i];
 				else
 					groups[j++] = groups[i];
@@ -1135,18 +1242,23 @@ _get_connection_infos (GKeyFile *keyfile)
 		ngroups = j;
 	}
 
-	connection_infos = g_new0 (ConnectionInfo, ngroups + 1 + (connection_tag ? 1 : 0));
+	if (ngroups == 0 && !connection_tag) {
+		g_free (groups);
+		return NULL;
+	}
+
+	match_section_infos = g_new0 (MatchSectionInfo, ngroups + 1 + (connection_tag ? 1 : 0));
 	for (i = 0; i < ngroups; i++) {
 		/* pass ownership of @group on... */
-		_get_connection_info_init (&connection_infos[i], keyfile, groups[ngroups - i - 1]);
+		_get_connection_info_init (&match_section_infos[i], keyfile, groups[ngroups - i - 1]);
 	}
 	if (connection_tag) {
 		/* pass ownership of @connection_tag on... */
-		_get_connection_info_init (&connection_infos[i], keyfile, connection_tag);
+		_get_connection_info_init (&match_section_infos[i], keyfile, connection_tag);
 	}
 	g_free (groups);
 
-	return connection_infos;
+	return match_section_infos;
 }
 
 /************************************************************************/
@@ -1306,7 +1418,6 @@ static void
 finalize (GObject *gobject)
 {
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (gobject);
-	guint i;
 
 	g_free (priv->config_main_file);
 	g_free (priv->config_description);
@@ -1326,13 +1437,8 @@ finalize (GObject *gobject)
 
 	nm_global_dns_config_free (priv->global_dns);
 
-	if (priv->connection_infos) {
-		for (i = 0; priv->connection_infos[i].group_name; i++) {
-			g_free (priv->connection_infos[i].group_name);
-			g_slist_free_full (priv->connection_infos[i].match_device.spec, g_free);
-		}
-		g_free (priv->connection_infos);
-	}
+	_match_section_infos_free (priv->connection_infos);
+	_match_section_infos_free (priv->device_infos);
 
 	g_key_file_unref (priv->keyfile);
 	if (priv->keyfile_user)
@@ -1359,7 +1465,8 @@ constructed (GObject *object)
 
 	priv->keyfile = _merge_keyfiles (priv->keyfile_user, priv->keyfile_intern);
 
-	priv->connection_infos = _get_connection_infos (priv->keyfile);
+	priv->connection_infos = _match_section_infos_construct (priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+	priv->device_infos = _match_section_infos_construct (priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
 
 	priv->connectivity.uri = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL));
 	priv->connectivity.response = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);

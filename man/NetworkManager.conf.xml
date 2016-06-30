@@ -224,30 +224,12 @@ no-auto-default=*
         <term><varname>ignore-carrier</varname></term>
         <listitem>
           <para>
-            Specify devices for which NetworkManager will (partially)
-            ignore the carrier state. Normally, for
-            device types that support carrier-detect, such as Ethernet
-            and InfiniBand, NetworkManager will only allow a
-            connection to be activated on the device if carrier is
-            present (ie, a cable is plugged in), and it will
-            deactivate the device if carrier drops for more than a few
-            seconds.
-          </para>
-          <para>
-            Listing a device here will allow activating connections on
-            that device even when it does not have carrier, provided
-            that the connection uses only statically-configured IP
-            addresses. Additionally, it will allow any active
-            connection (whether static or dynamic) to remain active on
-            the device when carrier is lost.
-          </para>
-          <para>
-            Note that the "carrier" property of NMDevices and device D-Bus
-            interfaces will still reflect the actual device state; it's just
-            that NetworkManager will not make use of that information.
-          </para>
-          <para>See <xref linkend="device-spec"/> for the syntax how to
-           specify a device.
+            This setting is deprecated for the per-device setting
+            <literal>ignore-carrier</literal> which overwrites this setting
+            if specified (See <xref linked="ignore-carrier"/>).
+            Otherwise, it is a list of matches to specify for which device
+            carrier should be ignored. See <xref linkend="device-spec"/> for the
+            syntax how to specify a device.
           </para>
         </listitem>
       </varlistentry>
@@ -584,6 +566,13 @@ ipv6.ip6-privacy=0
           <term><varname>connection.lldp</varname></term>
         </varlistentry>
         <varlistentry>
+          <term><varname>ethernet.cloned-mac-address</varname></term>
+          <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ethernet.generate-mac-address-mask</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>
         </varlistentry>
         <varlistentry>
@@ -611,8 +600,17 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>wifi.cloned-mac-address</varname></term>
+          <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.generate-mac-address-mask</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>wifi.mac-address-randomization</varname></term>
-          <listitem><para>If left unspecified, MAC address randomization is disabled.</para></listitem>
+          <listitem><para>If left unspecified, MAC address randomization is disabled.
+            This setting is deprecated for <literal>wifi.cloned-mac-address</literal>.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>wifi.powersave</varname></term>
@@ -623,7 +621,7 @@ ipv6.ip6-privacy=0
     </para>
     </refsect2>
 
-    <refsect2>
+    <refsect2 id="connection-sections">
     <title>Sections</title>
     <para>
         You can configure multiple <literal>connection</literal>
@@ -692,6 +690,97 @@ ipv6.ip6-privacy=1
           </para></listitem>
         </varlistentry>
       </variablelist>
+    </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title><literal>device</literal> section</title>
+    <para>Contains per-device persistent configuration.
+    </para>
+    <para>
+      Example:
+<programlisting>
+[device]
+match-device=interface-name:eth3
+unmanaged=1
+</programlisting>
+    </para>
+    <refsect2>
+    <title>Supported Properties</title>
+    <para>
+      The following properties can be configured per-device.
+      <variablelist>
+        <varlistentry id="ignore-carrier">
+          <term><varname>ignore-carrier</varname></term>
+          <listitem>
+            <para>
+              Specify devices for which NetworkManager will (partially)
+              ignore the carrier state. Normally, for
+              device types that support carrier-detect, such as Ethernet
+              and InfiniBand, NetworkManager will only allow a
+              connection to be activated on the device if carrier is
+              present (ie, a cable is plugged in), and it will
+              deactivate the device if carrier drops for more than a few
+              seconds.
+            </para>
+            <para>
+              A device with carrier ignored will allow activating connections on
+              that device even when it does not have carrier, provided
+              that the connection uses only statically-configured IP
+              addresses. Additionally, it will allow any active
+              connection (whether static or dynamic) to remain active on
+              the device when carrier is lost.
+            </para>
+            <para>
+              Note that the "carrier" property of NMDevices and device D-Bus
+              interfaces will still reflect the actual device state; it's just
+              that NetworkManager will not make use of that information.
+            </para>
+            <para>
+              This setting overwrites the deprecated <literal>main.ignore-carrier</literal>
+              setting above.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.scan-rand-mac-address</varname></term>
+          <listitem>
+            <para>
+              Configures the MAC address of a Wi-Fi device during scanning.
+              This defaults to <literal>yes</literal> in which case a random,
+              locally-administered MAC address will be confiugred.
+              Otherwise, the MAC address is left unchanged to whatever was
+              configured.
+              For the MAC address used while the device is connected, see instead
+              the per-connection setting <literal>wifi.cloned-mac-address</literal>.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.scan-generate-mac-address-mask</varname></term>
+          <listitem>
+            <para>
+              Like the per-connection settings ethernet.generate-mac-address-mask
+              and wifi.generate-mac-address-mask, this allows to configure the
+              generated MAC addresses during scanning. See manual of nm-settings
+              for details.
+            </para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+    </refsect2>
+
+    <refsect2>
+    <title>Sections</title>
+    <para>
+        The <literal>[device]</literal> section works the same as the <literal>[connection]</literal> section.
+        That is, multiple sections that all start with the prefix "device" can be specified.
+        The settings "match-device" and "stop-match" are available to match a device section
+        on a device. The order of multiple sections is also top-down within the file and
+        later files overwrite previous settings. See <xref linkend="connection-sections"/>
+        for details.
     </para>
     </refsect2>
   </refsect1>
@@ -978,7 +1067,8 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
       <title>Device List Format</title>
       <para>
           The configuration options <literal>main.no-auto-default</literal>, <literal>main.ignore-carrier</literal>,
-          and <literal>keyfile.unmanaged-devices</literal> select devices based on a list of matchings.
+          <literal>keyfile.unmanaged-devices</literal>, <literal>connection*.match-device</literal> and
+          <literal>device*.match-device</literal> select devices based on a list of matchings.
           Devices can be specified using the following format:
       </para>
       <para>
@@ -993,7 +1083,7 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
         </varlistentry>
         <varlistentry>
           <term>HWADDR</term>
-          <listitem><para>Match the MAC address of the device. Globbing is not supported</para></listitem>
+          <listitem><para>Match the permanent MAC address of the device. Globbing is not supported</para></listitem>
         </varlistentry>
         <varlistentry>
           <term>interface-name:IFNAME</term>
@@ -1008,7 +1098,7 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
         </varlistentry>
         <varlistentry>
           <term>mac:HWADDR</term>
-          <listitem><para>Match the MAC address of the device. Globbing is not supported</para></listitem>
+          <listitem><para>Match the permanent MAC address of the device. Globbing is not supported</para></listitem>
         </varlistentry>
         <varlistentry>
           <term>s390-subchannels:HWADDR</term>

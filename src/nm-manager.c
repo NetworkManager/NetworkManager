@@ -595,7 +595,7 @@ nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
 }
 
 static NMDevice *
-find_device_by_hw_addr (NMManager *manager, const char *hwaddr)
+find_device_by_permanent_hw_addr (NMManager *manager, const char *hwaddr)
 {
 	GSList *iter;
 	const char *device_addr;
@@ -604,7 +604,7 @@ find_device_by_hw_addr (NMManager *manager, const char *hwaddr)
 
 	if (nm_utils_hwaddr_valid (hwaddr, -1)) {
 		for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-			device_addr = nm_device_get_hw_address (NM_DEVICE (iter->data));
+			device_addr = nm_device_get_permanent_hw_address (NM_DEVICE (iter->data), FALSE);
 			if (device_addr && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
 				return NM_DEVICE (iter->data);
 		}
@@ -945,28 +945,12 @@ remove_device (NMManager *self,
 	       nm_device_get_iface (device), allow_unmanage, nm_device_get_managed (device, FALSE));
 
 	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
-		unmanage = TRUE;
 
-		if (!quitting) {
+		if (quitting)
+			unmanage = nm_device_unmanage_on_quit (device);
+		else {
 			/* the device is already gone. Unmanage it. */
-		} else {
-			/* Leave certain devices alone when quitting so their configuration
-			 * can be taken over when NM restarts.  This ensures connectivity while
-			 * NM is stopped.
-			 */
-			if (nm_device_uses_assumed_connection (device)) {
-				/* An assume connection must be left alone */
-				unmanage = FALSE;
-			} else if (!nm_device_get_act_request (device)) {
-				/* a device without any active connection is either UNAVAILABLE or DISCONNECTED
-				 * state. Since we don't know whether the device was upped by NetworkManager,
-				 * we must leave it up on exit. */
-				unmanage = FALSE;
-			} else if (!nm_platform_link_can_assume (NM_PLATFORM_GET, nm_device_get_ifindex (device))) {
-				/* The device has no layer 3 configuration. Leave it up. */
-				unmanage = FALSE;
-			} else if (nm_device_can_assume_active_connection (device))
-				unmanage = FALSE;
+			unmanage = TRUE;
 		}
 
 		if (unmanage) {
@@ -1054,7 +1038,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 		return parent;
 
 	/* Maybe a hardware address */
-	parent = find_device_by_hw_addr (self, parent_name);
+	parent = find_device_by_permanent_hw_addr (self, parent_name);
 	if (parent)
 		return parent;
 

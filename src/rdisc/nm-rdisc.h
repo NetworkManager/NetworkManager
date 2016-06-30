@@ -116,9 +116,11 @@ typedef struct {
 	NMPlatform *_platform;
 	NMPNetns *_netns;
 
+	NMUtilsStableType stable_type;
+
 	int ifindex;
 	char *ifname;
-	char *uuid;
+	char *network_id;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMUtilsIPv6IfaceId iid;
 	gint32 max_addresses;
