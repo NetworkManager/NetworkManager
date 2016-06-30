@@ -141,6 +141,11 @@ static const struct Opt opt_table[] = {
 	{ "bgscan",             TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "pac_file",           TYPE_BYTES,   0, 1024, FALSE,  NULL },
 	{ "freq_list",          TYPE_KEYWORD, 0, 0, FALSE,  NULL },
+	{ "macsec_policy",      TYPE_INT,     0, 1, FALSE, NULL },
+	{ "macsec_integ_only",  TYPE_INT,     0, 1, FALSE, NULL },
+	{ "mka_cak",            TYPE_BYTES,   0, 65536, FALSE, NULL },
+	{ "mka_ckn",            TYPE_BYTES,   0, 65536, FALSE, NULL },
+	{ "macsec_port",        TYPE_INT,     1, 65534, FALSE, NULL },
 };
 
 

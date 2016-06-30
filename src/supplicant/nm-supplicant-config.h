@@ -22,6 +22,7 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_CONFIG_H__
 #define __NETWORKMANAGER_SUPPLICANT_CONFIG_H__
 
+#include <nm-setting-macsec.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
@@ -70,5 +71,9 @@ gboolean nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                                  guint32 mtu,
                                                  gboolean wired,
                                                  GError **error);
+
+gboolean nm_supplicant_config_add_setting_macsec (NMSupplicantConfig *self,
+                                                  NMSettingMacsec *setting,
+                                                  GError **error);
 
 #endif /* __NETWORKMANAGER_SUPPLICANT_CONFIG_H__ */
