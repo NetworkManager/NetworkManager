@@ -68,6 +68,7 @@ libnm-core/nm-setting-ip-config.c
 libnm-core/nm-setting-ip4-config.c
 libnm-core/nm-setting-ip6-config.c
 libnm-core/nm-setting-ip-tunnel.c
+libnm-core/nm-setting-macsec.c
 libnm-core/nm-setting-macvlan.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ppp.c

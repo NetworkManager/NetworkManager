@@ -379,6 +379,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-ip-tunnel.h \
 	libnm-core/nm-setting-ip4-config.h \
 	libnm-core/nm-setting-ip6-config.h \
+	libnm-core/nm-setting-macsec.h \
 	libnm-core/nm-setting-macvlan.h \
 	libnm-core/nm-setting-olpc-mesh.h \
 	libnm-core/nm-setting-ppp.h \
@@ -441,6 +442,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-ip-tunnel.c \
 	libnm-core/nm-setting-ip4-config.c \
 	libnm-core/nm-setting-ip6-config.c \
+	libnm-core/nm-setting-macsec.c \
 	libnm-core/nm-setting-macvlan.c \
 	libnm-core/nm-setting-olpc-mesh.c \
 	libnm-core/nm-setting-ppp.c \

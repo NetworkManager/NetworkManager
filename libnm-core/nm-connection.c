@@ -1850,6 +1850,7 @@ nm_connection_is_virtual (NMConnection *connection)
 	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TUN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_MACSEC_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_VXLAN_SETTING_NAME))
 		return TRUE;
@@ -2159,6 +2160,24 @@ nm_connection_get_setting_ip6_config (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingIPConfig *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+}
+
+/**
+ * nm_connection_get_setting_macsec:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingMacsec the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingMacsec if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.6
+ **/
+NMSettingMacsec *
+nm_connection_get_setting_macsec (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingMacsec *) nm_connection_get_setting (connection, NM_TYPE_SETTING_MACSEC);
 }
 
 /**

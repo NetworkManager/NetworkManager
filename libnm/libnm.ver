@@ -1090,6 +1090,7 @@ global:
 	nm_client_get_dns_configuration;
 	nm_client_get_dns_mode;
 	nm_client_get_dns_rc_manager;
+	nm_connection_get_setting_macsec;
 	nm_connection_get_setting_proxy;
 	nm_device_macsec_get_cipher_suite;
 	nm_device_macsec_get_encoding_sa;
@@ -1113,6 +1114,18 @@ global:
 	nm_dns_entry_get_vpn;
 	nm_dns_entry_unref;
 	nm_setting_connection_get_autoconnect_retries;
+	nm_setting_macsec_get_encrypt;
+	nm_setting_macsec_get_mka_cak;
+	nm_setting_macsec_get_mka_cak_flags;
+	nm_setting_macsec_get_mka_ckn;
+	nm_setting_macsec_get_mode;
+	nm_setting_macsec_get_parent;
+	nm_setting_macsec_get_port;
+	nm_setting_macsec_get_type;
+	nm_setting_macsec_get_validation;
+	nm_setting_macsec_mode_get_type;
+	nm_setting_macsec_new;
+	nm_setting_macsec_validation_get_type;
 	nm_setting_proxy_get_type;
 	nm_setting_proxy_new;
 	nm_setting_proxy_get_method;
