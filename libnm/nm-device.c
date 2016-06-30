@@ -267,6 +267,7 @@ coerce_type (NMDeviceType type)
 	case NM_DEVICE_TYPE_BRIDGE:
 	case NM_DEVICE_TYPE_VLAN:
 	case NM_DEVICE_TYPE_ADSL:
+	case NM_DEVICE_TYPE_MACSEC:
 	case NM_DEVICE_TYPE_MACVLAN:
 	case NM_DEVICE_TYPE_VXLAN:
 	case NM_DEVICE_TYPE_IP_TUNNEL:
@@ -1691,6 +1692,8 @@ get_type_name (NMDevice *device)
 		return _("Tun");
 	case NM_DEVICE_TYPE_VETH:
 		return _("Veth");
+	case NM_DEVICE_TYPE_MACSEC:
+		return _("MACsec");
 	case NM_DEVICE_TYPE_GENERIC:
 	case NM_DEVICE_TYPE_UNUSED1:
 	case NM_DEVICE_TYPE_UNUSED2:
