@@ -279,6 +279,8 @@ typedef struct {
 	                                             GAsyncResult *res,
 	                                             GError **error);
 
+	void            (* deactivate_reset_hw_addr) (NMDevice *self);
+
 	/* Sync deactivating (in the DISCONNECTED phase) */
 	void            (* deactivate) (NMDevice *self);
 

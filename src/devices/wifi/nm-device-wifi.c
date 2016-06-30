@@ -501,9 +501,6 @@ deactivate (NMDevice *device)
 	/* Clear any critical protocol notification in the Wi-Fi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
-	g_clear_pointer (&priv->hw_addr_scan, g_free);
-	_hw_addr_set_scanning (self, TRUE);
-
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
@@ -523,6 +520,12 @@ deactivate (NMDevice *device)
 		nm_clear_g_source (&priv->pending_scan_id);
 		request_wireless_scan (self, NULL);
 	}
+}
+
+static void
+deactivate_reset_hw_addr (NMDevice *device)
+{
+	_hw_addr_set_scanning ((NMDeviceWifi *) device, TRUE);
 }
 
 static gboolean
@@ -3117,6 +3120,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
+	parent_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 	parent_class->unmanaged_on_quit = unmanaged_on_quit;
 
 	parent_class->state_changed = device_state_changed;

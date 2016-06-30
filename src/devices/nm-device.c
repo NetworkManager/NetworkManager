@@ -10653,8 +10653,6 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
 	}
 
-	nm_device_hw_addr_reset (self, "deactivate");
-
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
@@ -10678,7 +10676,28 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		nm_lldp_listener_stop (priv->lldp_listener);
 
 	nm_device_update_metered (self);
+
+
+	/* during device cleanup, we want to reset the MAC address of the device
+	 * to the initial state.
+	 *
+	 * We certainly want to do that when reaching the UNMANAGED state... */
+	if (nm_device_get_state (self) <= NM_DEVICE_STATE_UNMANAGED)
+		nm_device_hw_addr_reset (self, "unmanage");
+	else {
+		/* for other device states (UNAVAILABLE, DISCONNECTED), allow the
+		 * device to overwrite the reset behavior, so that Wi-Fi can set
+		 * a randomized MAC address used during scanning. */
+		NM_DEVICE_GET_CLASS (self)->deactivate_reset_hw_addr (self);
+	}
+
 	_cleanup_generic_post (self, cleanup_type);
+}
+
+static void
+deactivate_reset_hw_addr (NMDevice *self)
+{
+	nm_device_hw_addr_reset (self, "deactivate");
 }
 
 static char *
@@ -12445,6 +12464,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->carrier_changed = carrier_changed;
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 	klass->unmanaged_on_quit = unmanaged_on_quit;
+	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 
 	/* Properties */
 	obj_properties[PROP_UDI] =
