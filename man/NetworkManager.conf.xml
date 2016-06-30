@@ -747,12 +747,15 @@ unmanaged=1
           <term><varname>wifi.scan-rand-mac-address</varname></term>
           <listitem>
             <para>
-              Configures the MAC address of a Wi-Fi device during scanning.
-              This defaults to <literal>yes</literal> in which case a random,
-              locally-administered MAC address will be confiugred.
-              Otherwise, the MAC address is left unchanged to whatever was
-              configured.
-              For the MAC address used while the device is connected, see instead
+              Configures MAC address randomization of a Wi-Fi device during
+              scanning. This defaults to <literal>yes</literal> in which case
+              a random, locally-administered MAC address will be used.
+              The setting <literal>wifi.scan-generate-mac-address-mask</literal>
+              allows to influence the generated MAC address to use certain vendor
+              OUIs.
+              If disabled, the MAC address during scanning is left unchanged to
+              whatever is configured.
+              For the configured MAC address while the device is associated, see instead
               the per-connection setting <literal>wifi.cloned-mac-address</literal>.
             </para>
           </listitem>
@@ -761,9 +764,9 @@ unmanaged=1
           <term><varname>wifi.scan-generate-mac-address-mask</varname></term>
           <listitem>
             <para>
-              Like the per-connection settings ethernet.generate-mac-address-mask
-              and wifi.generate-mac-address-mask, this allows to configure the
-              generated MAC addresses during scanning. See manual of nm-settings
+              Like the per-connection settings <literal>ethernet.generate-mac-address-mask</literal>
+              and <literal>wifi.generate-mac-address-mask</literal>, this allows to configure the
+              generated MAC addresses during scanning. See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>
               for details.
             </para>
           </listitem>
