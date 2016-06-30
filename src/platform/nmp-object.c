@@ -2230,6 +2230,15 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_ipip_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ipip_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_MACSEC - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACSEC,
+		.sizeof_data                        = sizeof (NMPObjectLnkMacsec),
+		.sizeof_public                      = sizeof (NMPlatformLnkMacsec),
+		.obj_type_name                      = "macsec",
+		.lnk_link_type                      = NM_LINK_TYPE_MACSEC,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macsec_to_string,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macsec_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_MACVLAN - 1] = {
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACVLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacvlan),

@@ -427,6 +427,22 @@ typedef struct {
 } NMPlatformLnkIpIp;
 
 typedef struct {
+	int parent_ifindex;
+	guint64 sci;	/* host byte order */
+	guint64 cipher_suite;
+	guint32 window;
+	guint8 icv_length;
+	guint8 encoding_sa;
+	guint8 validation;
+	bool encrypt:1;
+	bool protect:1;
+	bool include_sci:1;
+	bool es:1;
+	bool scb:1;
+	bool replay_protect:1;
+} NMPlatformLnkMacsec;
+
+typedef struct {
 	guint mode;
 	bool no_promisc:1;
 	bool tap:1;
@@ -588,6 +604,11 @@ typedef struct {
 	                           const char *name,
 	                           const NMPlatformLnkIpIp *props,
 	                           const NMPlatformLink **out_link);
+	gboolean (*link_macsec_add) (NMPlatform *,
+	                             const char *name,
+	                             int parent,
+	                             const NMPlatformLnkMacsec *props,
+	                             const NMPlatformLink **out_link);
 	gboolean (*link_macvlan_add) (NMPlatform *,
 	                              const char *name,
 	                              int parent,
@@ -818,6 +839,7 @@ const NMPlatformLnkIp6Tnl *nm_platform_link_get_lnk_ip6tnl (NMPlatform *self, in
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkMacsec *nm_platform_link_get_lnk_macsec (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvtap *nm_platform_link_get_lnk_macvtap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkSit *nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
@@ -902,6 +924,11 @@ NMPlatformError nm_platform_link_ipip_add (NMPlatform *self,
                                            const char *name,
                                            const NMPlatformLnkIpIp *props,
                                            const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_macsec_add (NMPlatform *self,
+                                             const char *name,
+                                             int parent,
+                                             const NMPlatformLnkMacsec *props,
+                                             const NMPlatformLink **out_link);
 NMPlatformError nm_platform_link_macvlan_add (NMPlatform *self,
                                               const char *name,
                                               int parent,
@@ -956,6 +983,7 @@ const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *bu
 const char *nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_ipip_to_string (const NMPlatformLnkIpIp *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_macsec_to_string (const NMPlatformLnkMacsec *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_sit_to_string (const NMPlatformLnkSit *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len);
@@ -976,6 +1004,7 @@ int nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *
 int nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b);
 int nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6Tnl *b);
 int nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b);
+int nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b);
 int nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b);
 int nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b);
 int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);
