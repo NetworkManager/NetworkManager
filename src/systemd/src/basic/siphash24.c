@@ -19,6 +19,8 @@
 
 #include "nm-sd-adapt.h"
 
+#include <stdio.h>
+
 #include "macro.h"
 #include "siphash24.h"
 #include "unaligned.h"

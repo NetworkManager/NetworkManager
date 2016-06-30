@@ -725,11 +725,18 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 		return FALSE;
 	}
 
-	ret = sd_lldp_new (&priv->lldp_handle, ifindex);
+	ret = sd_lldp_new (&priv->lldp_handle);
 	if (ret < 0) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		                     "initialization failed");
 		return FALSE;
+	}
+
+	ret = sd_lldp_set_ifindex (priv->lldp_handle, ifindex);
+	if (ret < 0) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                     "failed setting ifindex");
+		goto err;
 	}
 
 	ret = sd_lldp_set_callback (priv->lldp_handle, lldp_event_handler, self);

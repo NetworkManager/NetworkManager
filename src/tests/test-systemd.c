@@ -48,10 +48,9 @@ static void
 test_lldp_create (void)
 {
 	sd_lldp *lldp = NULL;
-	int ifindex = 1;
 	int r;
 
-	r = sd_lldp_new (&lldp, ifindex);
+	r = sd_lldp_new (&lldp);
 	g_assert (r == 0);
 	g_assert (lldp);
 

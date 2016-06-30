@@ -90,6 +90,7 @@ int prot_from_flags(int flags) _const_;
 int fork_agent(pid_t *pid, const int except[], unsigned n_except, const char *path, ...);
 
 bool in_initrd(void);
+void in_initrd_force(bool value);
 
 void *xbsearch_r(const void *key, const void *base, size_t nmemb, size_t size,
                  int (*compar) (const void *, const void *, void *),
@@ -187,6 +188,7 @@ int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *
 int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int root_fd);
 
 uint64_t physical_memory(void);
+uint64_t physical_memory_scale(uint64_t v, uint64_t max);
 
 int update_reboot_parameter_and_warn(const char *param);
 

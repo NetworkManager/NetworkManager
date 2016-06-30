@@ -141,16 +141,16 @@ char **strv_new_ap(const char *x, va_list ap) {
         va_list aq;
 
         /* As a special trick we ignore all listed strings that equal
-         * (const char*) -1. This is supposed to be used with the
+         * STRV_IGNORE. This is supposed to be used with the
          * STRV_IFNOTNULL() macro to include possibly NULL strings in
          * the string list. */
 
         if (x) {
-                n = x == (const char*) -1 ? 0 : 1;
+                n = x == STRV_IGNORE ? 0 : 1;
 
                 va_copy(aq, ap);
                 while ((s = va_arg(aq, const char*))) {
-                        if (s == (const char*) -1)
+                        if (s == STRV_IGNORE)
                                 continue;
 
                         n++;
@@ -164,7 +164,7 @@ char **strv_new_ap(const char *x, va_list ap) {
                 return NULL;
 
         if (x) {
-                if (x != (const char*) -1) {
+                if (x != STRV_IGNORE) {
                         a[i] = strdup(x);
                         if (!a[i])
                                 goto fail;
@@ -173,7 +173,7 @@ char **strv_new_ap(const char *x, va_list ap) {
 
                 while ((s = va_arg(ap, const char*))) {
 
-                        if (s == (const char*) -1)
+                        if (s == STRV_IGNORE)
                                 continue;
 
                         a[i] = strdup(s);
@@ -808,11 +808,7 @@ char **strv_reverse(char **l) {
                 return l;
 
         for (i = 0; i < n / 2; i++) {
-                char *t;
-
-                t = l[i];
-                l[i] = l[n-1-i];
-                l[n-1-i] = t;
+                SWAP_TWO(l[i], l[n-1-i]);
         }
 
         return l;
@@ -842,7 +838,7 @@ bool strv_fnmatch(char* const* patterns, const char *s, int flags) {
         char* const* p;
 
         STRV_FOREACH(p, patterns)
-                if (fnmatch(*p, s, 0) == 0)
+                if (fnmatch(*p, s, flags) == 0)
                         return true;
 
         return false;
