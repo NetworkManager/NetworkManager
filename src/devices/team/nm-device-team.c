@@ -152,7 +152,7 @@ ensure_teamd_connection (NMDevice *device)
 	return !!priv->tdc;
 }
 
-static void
+static gboolean
 teamd_read_config (NMDevice *device)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
@@ -163,7 +163,7 @@ teamd_read_config (NMDevice *device)
 	if (priv->tdc) {
 		err = teamdctl_config_get_raw_direct (priv->tdc, &config);
 		if (err)
-			_LOGI (LOGD_TEAM, "failed to read teamd config (err=%d)", err);
+			return FALSE;
 	}
 
 	if (!nm_streq0 (config, priv->config)) {
@@ -171,6 +171,8 @@ teamd_read_config (NMDevice *device)
 		priv->config = g_strdup (config);
 		_notify (self, PROP_CONFIG);
 	}
+
+	return TRUE;
 }
 
 static void
@@ -204,9 +206,9 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 static gboolean
 master_update_slave_connection (NMDevice *self,
-                                   NMDevice *slave,
-                                   NMConnection *connection,
-                                   GError **error)
+                                NMDevice *slave,
+                                NMConnection *connection,
+                                GError **error)
 {
 	NMSettingTeamPort *s_port;
 	char *port_config = NULL;
@@ -310,7 +312,10 @@ teamd_timeout_cb (gpointer user_data)
 		/* Read again the configuration after the timeout since it might
 		 * have changed.
 		 */
-		teamd_read_config (device);
+		if (!teamd_read_config (device)) {
+			_LOGW (LOGD_TEAM, "failed to read teamd configuration");
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+		}
 	}
 
 	return G_SOURCE_REMOVE;
@@ -370,10 +375,11 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	 */
 	success = ensure_teamd_connection (device);
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_PREPARE) {
-		if (success) {
-			teamd_read_config (device);
+		if (success)
+			success = teamd_read_config (device);
+		if (success)
 			nm_device_activate_schedule_stage2_device_config (device);
-		} else if (!nm_device_uses_assumed_connection (device))
+		else if (!nm_device_uses_assumed_connection (device))
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
 }
