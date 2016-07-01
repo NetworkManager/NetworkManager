@@ -130,6 +130,8 @@ typedef struct {
 
 	NMSleepMonitor *sleep_monitor;
 
+	NMAuthManager *auth_mgr;
+
 	GSList *auth_chains;
 	GHashTable *sleep_devices;
 
@@ -5110,7 +5112,7 @@ _set_prop_filter (NMManager *self, GDBusConnection *connection)
 /******************************************************************************/
 
 static void
-authority_changed_cb (NMAuthManager *auth_manager, gpointer user_data)
+auth_mgr_changed (NMAuthManager *auth_manager, gpointer user_data)
 {
 	/* Let clients know they should re-check their authorization */
 	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
@@ -5405,9 +5407,10 @@ nm_manager_init (NMManager *self)
 	                  G_CALLBACK (sleeping_cb), self);
 
 	/* Listen for authorization changes */
-	g_signal_connect (nm_auth_manager_get (),
+	priv->auth_mgr = g_object_ref (nm_auth_manager_get ());
+	g_signal_connect (priv->auth_mgr,
 	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
-	                  G_CALLBACK (authority_changed_cb),
+	                  G_CALLBACK (auth_mgr_changed),
 	                  self);
 
 
@@ -5589,9 +5592,12 @@ dispose (GObject *object)
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
 
-	g_signal_handlers_disconnect_by_func (nm_auth_manager_get (),
-	                                      G_CALLBACK (authority_changed_cb),
-	                                      manager);
+	if (priv->auth_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->auth_mgr,
+		                                      G_CALLBACK (auth_mgr_changed),
+		                                      manager);
+		g_clear_object (&priv->auth_mgr);
+	}
 
 	g_assert (priv->devices == NULL);
 
