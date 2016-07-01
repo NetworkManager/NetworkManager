@@ -3919,6 +3919,49 @@ test_connection_normalize_gateway_never_default (void)
 }
 
 static void
+test_connection_normalize_may_fail (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	gs_free_error GError *error = NULL;
+
+	con = nmtst_create_minimal_connection ("test2", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+	              NULL);
+
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+	              NULL);
+
+	nm_connection_add_setting (con, (NMSetting *) s_ip4);
+	nm_connection_add_setting (con, (NMSetting *) s_ip6);
+
+	nmtst_assert_connection_verifies_without_normalization (con);
+
+	/* Now set method=disabled/ignore and check that may-fail becomes TRUE
+	 * after normalization
+	 * */
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NULL);
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	nmtst_assert_connection_verifies (con);
+	nmtst_connection_normalize (con);
+	g_assert_cmpint (nm_setting_ip_config_get_may_fail (s_ip4), ==, TRUE);
+	g_assert_cmpint (nm_setting_ip_config_get_may_fail (s_ip6), ==, TRUE);
+}
+
+static void
 test_setting_ip4_gateway (void)
 {
 	NMConnection *conn;
@@ -5321,6 +5364,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);
 	g_test_add_func ("/core/general/test_connection_normalize_infiniband_mtu", test_connection_normalize_infiniband_mtu);
 	g_test_add_func ("/core/general/test_connection_normalize_gateway_never_default", test_connection_normalize_gateway_never_default);
+	g_test_add_func ("/core/general/test_connection_normalize_may_fail", test_connection_normalize_may_fail);
 
 	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
 	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);
