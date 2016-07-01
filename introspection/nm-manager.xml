@@ -206,6 +206,47 @@
     </method>
 
     <!--
+        CheckpointCreate:
+
+        @devices: a list of device paths for which a checkpoint should be created. An empty list means all managed devices.
+        @rollback_timeout: the time in seconds until NetworkManager will automatically rollback to the checkpoint. Set to zero for infinite.
+        @flags: optional flags that influence the creation.
+        @checkpoint: on success, returns the path of the checkpoint.
+
+        Create a checkpoint of the current networking configuration
+        for given interfaces. If @rollback_timeout is not zero, a
+        rollback is automatically performed after the given timeout.
+    -->
+    <method name="CheckpointCreate">
+      <arg name="devices" type="ao" direction="in"/>
+      <arg name="rollback_timeout" type="u" direction="in"/>
+      <arg name="flags" type="u" direction="in"/>
+      <arg name="checkpoint" type="o" direction="out"/>
+    </method>
+
+    <!--
+        CheckpointDestroy:
+        @checkpoint: the checkpoint to be destroyed. Set to empty to cancel all pending checkpoints.
+
+        Destroy a previously created checkpoint.
+    -->
+    <method name="CheckpointDestroy">
+      <arg name="checkpoint" type="o" direction="in"/>
+    </method>
+
+    <!--
+        CheckpointRollback:
+        @checkpoint: the checkpoint to be rolled back.
+        @result: on return, a dictionary of devices and results. Devices are represented by their original D-Bus path; each result is a <link linkend="NMRollbackResult">RollbackResult</link>.
+
+        Rollback a checkpoint before the timeout is reached.
+    -->
+    <method name="CheckpointRollback">
+      <arg name="checkpoint" type="o" direction="in"/>
+      <arg name="result" type="a{su}" direction="out" />
+    </method>
+
+    <!--
         Devices:
 
         The list of realized network devices. Realized devices are those which

@@ -91,6 +91,8 @@ const GSList *      nm_manager_get_devices             (NMManager *manager);
 
 NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);
+NMDevice *          nm_manager_get_device_by_path      (NMManager *manager,
+                                                        const char *path);
 
 char *              nm_manager_get_connection_iface (NMManager *self,
                                                      NMConnection *connection,

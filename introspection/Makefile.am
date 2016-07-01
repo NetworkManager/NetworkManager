@@ -17,6 +17,8 @@ nodist_libnmdbus_la_SOURCES = \
 	nmdbus-active-connection.h \
 	nmdbus-agent-manager.c \
 	nmdbus-agent-manager.h \
+	nmdbus-checkpoint.c \
+	nmdbus-checkpoint.h \
 	nmdbus-device-adsl.c \
 	nmdbus-device-adsl.h \
 	nmdbus-device-bond.c \
@@ -81,6 +83,7 @@ nodist_libnmdbus_la_SOURCES = \
 DBUS_INTERFACE_DOCS = \
 	nmdbus-access-point-org.freedesktop.NetworkManager.AccessPoint.xml \
 	nmdbus-active-connection-org.freedesktop.NetworkManager.Connection.Active.xml \
+	nmdbus-checkpoint-org.freedesktop.NetworkManager.Checkpoint.xml \
 	nmdbus-device-team-org.freedesktop.NetworkManager.Device.Team.xml \
 	nmdbus-dhcp6-config-org.freedesktop.NetworkManager.DHCP6Config.xml \
 	nmdbus-device-wifi-org.freedesktop.NetworkManager.Device.Wireless.xml \
@@ -139,6 +142,7 @@ EXTRA_DIST = \
 	nm-access-point.xml \
 	nm-active-connection.xml \
 	nm-agent-manager.xml \
+	nm-checkpoint.xml \
 	nm-device-adsl.xml \
 	nm-device-bond.xml \
 	nm-device-bridge.xml \

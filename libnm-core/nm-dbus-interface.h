@@ -689,4 +689,38 @@ typedef enum {
 	NM_IP_TUNNEL_MODE_VTI6        = 9,
 } NMIPTunnelMode;
 
+
+/**
+ * NMCheckpointCreateFlags:
+ * @NM_CHECKPOINT_CREATE_FLAG_NONE: no flags
+ * @NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL: when creating
+ *   a new checkpoint, destroy all existing ones.
+ *
+ * The flags for CheckpointCreate call
+ *
+ * Since: 1.4
+ */
+typedef enum { /*< skip >*/
+	NM_CHECKPOINT_CREATE_FLAG_NONE              = 0,
+	NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL       = 0x01,
+} NMCheckpointCreateFlags;
+
+/**
+ * NMRollbackResult:
+ * @NM_ROLLBACK_RESULT_OK: the rollback succeeded.
+ * @NM_ROLLBACK_RESULT_ERR_NO_DEVICE: the device no longer exists.
+ * @NM_ROLLBACK_RESULT_ERR_DEVICE_UNMANAGED: the device is now unmanaged.
+ * @NM_ROLLBACK_RESULT_ERR_FAILED: other errors during rollback.
+ *
+ * The result of a checkpoint Rollback() operation for a specific device.
+ *
+ * Since: 1.4
+ **/
+typedef enum { /*< skip >*/
+	NM_ROLLBACK_RESULT_OK                   = 0,
+	NM_ROLLBACK_RESULT_ERR_NO_DEVICE        = 1,
+	NM_ROLLBACK_RESULT_ERR_DEVICE_UNMANAGED = 2,
+	NM_ROLLBACK_RESULT_ERR_FAILED           = 3,
+} NMRollbackResult;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

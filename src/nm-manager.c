@@ -53,6 +53,8 @@
 #include "nm-config.h"
 #include "nm-audit-manager.h"
 #include "nm-dbus-compat.h"
+#include "nm-checkpoint.h"
+#include "nm-checkpoint-manager.h"
 #include "NetworkManagerUtils.h"
 
 #include "nmdbus-manager.h"
@@ -118,6 +120,8 @@ typedef struct {
 		guint            id;
 	} prop_filter;
 	NMRfkillManager *rfkill_mgr;
+
+	NMCheckpointManager *checkpoint_mgr;
 
 	NMSettings *settings;
 	char *hostname;
@@ -578,7 +582,7 @@ impl_manager_reload (NMManager *self,
 
 /************************************************************************/
 
-static NMDevice *
+NMDevice *
 nm_manager_get_device_by_path (NMManager *manager, const char *path)
 {
 	GSList *iter;
@@ -5122,6 +5126,116 @@ _set_prop_filter (NMManager *self, GDBusConnection *connection)
 
 /******************************************************************************/
 
+static NMCheckpointManager *
+_checkpoint_mgr_get (NMManager *self, gboolean create_as_needed)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (!priv->checkpoint_mgr) && create_as_needed)
+		priv->checkpoint_mgr = nm_checkpoint_manager_new (self);
+	return priv->checkpoint_mgr;
+}
+
+static void
+impl_manager_checkpoint_create (NMManager *self,
+                                GDBusMethodInvocation *context,
+                                const char *const *devices,
+                                guint32 rollback_timeout,
+                                guint32 flags)
+{
+	NMManagerPrivate *priv;
+	NMCheckpoint *checkpoint;
+	GError *error = NULL;
+	const char *path;
+
+	G_STATIC_ASSERT_EXPR (sizeof (flags) <= sizeof (NMCheckpointCreateFlags));
+	g_return_if_fail (NM_IS_MANAGER (self));
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!nm_bus_manager_ensure_root (priv->dbus_mgr,
+	                                 context,
+	                                 NM_MANAGER_ERROR,
+	                                 NM_MANAGER_ERROR_PERMISSION_DENIED))
+		return;
+
+	checkpoint = nm_checkpoint_manager_create (_checkpoint_mgr_get (self, TRUE),
+	                                           (const char *const *) devices,
+	                                           rollback_timeout,
+	                                           (NMCheckpointCreateFlags) flags,
+	                                           &error);
+
+	if (!checkpoint) {
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (checkpoint));
+	g_dbus_method_invocation_return_value (context, g_variant_new ("(o)", path));
+}
+
+static void
+impl_manager_checkpoint_destroy (NMManager *self,
+                                 GDBusMethodInvocation *context,
+                                 const char *checkpoint_path)
+{
+	NMManagerPrivate *priv;
+	GError *error = NULL;
+	gboolean r;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!nm_bus_manager_ensure_root (priv->dbus_mgr,
+	                                 context,
+	                                 NM_MANAGER_ERROR,
+	                                 NM_MANAGER_ERROR_PERMISSION_DENIED))
+		return;
+
+	r = nm_checkpoint_manager_destroy (_checkpoint_mgr_get (self, TRUE),
+	                                   checkpoint_path, &error);
+
+	if (!r) {
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	g_dbus_method_invocation_return_value (context, NULL);
+}
+
+static void
+impl_manager_checkpoint_rollback (NMManager *self,
+                                  GDBusMethodInvocation *context,
+                                  const char *checkpoint_path)
+{
+	NMManagerPrivate *priv;
+	GError *error = NULL;
+	GVariant *results;
+	gboolean r;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!nm_bus_manager_ensure_root (priv->dbus_mgr,
+	                                 context,
+	                                 NM_MANAGER_ERROR,
+	                                 NM_MANAGER_ERROR_PERMISSION_DENIED))
+		return;
+
+	r = nm_checkpoint_manager_rollback (_checkpoint_mgr_get (self, TRUE),
+	                                    checkpoint_path,
+	                                    &results,
+	                                    &error);
+
+	if (!r) {
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	g_dbus_method_invocation_return_value (context, results);
+}
+
+/******************************************************************************/
+
 static void
 auth_mgr_changed (NMAuthManager *auth_manager, gpointer user_data)
 {
@@ -5424,7 +5538,6 @@ nm_manager_init (NMManager *self)
 	                  G_CALLBACK (auth_mgr_changed),
 	                  self);
 
-
 	/* Monitor the firmware directory */
 	if (strlen (KERNEL_FIRMWARE_DIR)) {
 		file = g_file_new_for_path (KERNEL_FIRMWARE_DIR "/");
@@ -5602,6 +5715,11 @@ dispose (GObject *object)
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
+
+	if (priv->checkpoint_mgr) {
+		nm_checkpoint_manager_destroy_all (priv->checkpoint_mgr, NULL);
+		g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_unref);
+	}
 
 	if (priv->auth_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->auth_mgr,
@@ -5936,6 +6054,9 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                                        "GetLogging", impl_manager_get_logging,
 	                                        "CheckConnectivity", impl_manager_check_connectivity,
 	                                        "state", impl_manager_get_state,
+	                                        "CheckpointCreate", impl_manager_checkpoint_create,
+	                                        "CheckpointDestroy", impl_manager_checkpoint_destroy,
+	                                        "CheckpointRollback", impl_manager_checkpoint_rollback,
 	                                        NULL);
 }
 
