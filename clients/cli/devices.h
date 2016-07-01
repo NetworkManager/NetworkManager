@@ -26,4 +26,8 @@ NMCResultCode do_devices (NmCli *nmc, int argc, char **argv);
 
 void monitor_devices (NmCli *nmc);
 
+NMDevice ** nmc_get_devices_sorted (NMClient *client);
+
+void nmc_device_state_to_color (NMDeviceState state, NmcTermColor *color, NmcTermFormat *color_fmt);
+
 #endif /* NMC_DEVICES_H */
