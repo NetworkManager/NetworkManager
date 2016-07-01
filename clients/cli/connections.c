@@ -914,6 +914,19 @@ find_active_connection (const GPtrArray *active_cons,
 	return found;
 }
 
+void
+nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColor *color)
+{
+	*color = NMC_TERM_COLOR_NORMAL;
+
+	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+		*color = NMC_TERM_COLOR_YELLOW;
+	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		*color = NMC_TERM_COLOR_GREEN;
+	else if (state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		*color = NMC_TERM_COLOR_RED;
+}
+
 static void
 fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_only)
 {
@@ -929,6 +942,7 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	const char *ac_state = NULL;
 	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 	char *ac_dev = NULL;
+	NmcTermColor color;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -957,15 +971,10 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	arr = nmc_dup_fields_array (nmc_fields_con_show,
 	                            sizeof (nmc_fields_con_show),
 	                            0);
+
 	/* Show active connections in color */
-	if (ac) {
-		if (ac_state_int == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-			set_val_color_all (arr, NMC_TERM_COLOR_YELLOW);
-		else if (ac_state_int == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-			set_val_color_all (arr, NMC_TERM_COLOR_GREEN);
-		else if (ac_state_int > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-			set_val_color_all (arr, NMC_TERM_COLOR_RED);
-	}
+	nmc_active_connection_state_to_color (ac_state_int, &color);
+	set_val_color_all (arr, color);
 
 	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
 	set_val_strc (arr, 1, nm_setting_connection_get_uuid (s_con));
@@ -1517,7 +1526,7 @@ compare_connections (gconstpointer a, gconstpointer b, gpointer user_data)
 	}
 
 	for (i = 0; i < order->len; i++) {
-		item = g_array_index (order, NmcSortOrder, i); 
+		item = g_array_index (order, NmcSortOrder, i);
 		switch (item) {
 		case NMC_SORT_ACTIVE:
 		case NMC_SORT_ACTIVE_INV:
