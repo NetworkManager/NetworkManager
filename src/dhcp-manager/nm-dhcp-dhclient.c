@@ -52,6 +52,7 @@ typedef struct {
 	const char *def_leasefile;
 	char *lease_file;
 	char *pid_file;
+	NMDhcpListener *dhcp_listener;
 } NMDhcpDhclientPrivate;
 
 static const char *
@@ -622,7 +623,8 @@ nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 	if (!priv->def_leasefile)
 		priv->def_leasefile = SYSCONFDIR "/dhclient6.leases";
 
-	g_signal_connect (nm_dhcp_listener_get (),
+	priv->dhcp_listener = g_object_ref (nm_dhcp_listener_get ());
+	g_signal_connect (priv->dhcp_listener,
 	                  NM_DHCP_LISTENER_EVENT,
 	                  G_CALLBACK (nm_dhcp_client_handle_event),
 	                  self);
@@ -633,9 +635,12 @@ dispose (GObject *object)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
 
-	g_signal_handlers_disconnect_by_func (nm_dhcp_listener_get (),
-	                                      G_CALLBACK (nm_dhcp_client_handle_event),
-	                                      NM_DHCP_DHCLIENT (object));
+	if (priv->dhcp_listener) {
+		g_signal_handlers_disconnect_by_func (priv->dhcp_listener,
+		                                      G_CALLBACK (nm_dhcp_client_handle_event),
+		                                      NM_DHCP_DHCLIENT (object));
+		g_clear_object (&priv->dhcp_listener);
+	}
 
 	g_free (priv->pid_file);
 	g_free (priv->conf_file);
