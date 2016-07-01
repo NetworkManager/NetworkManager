@@ -914,7 +914,7 @@ check_if_startup_complete (NMManager *self)
 		g_signal_handlers_disconnect_by_func (dev, G_CALLBACK (device_has_pending_action_changed), self);
 	}
 
-	if (nm_config_get_configure_and_quit (nm_config_get ()))
+	if (nm_config_get_configure_and_quit (priv->config))
 		g_signal_emit (self, signals[CONFIGURE_QUIT], 0);
 }
 
@@ -960,7 +960,7 @@ remove_device (NMManager *self,
 				nm_device_set_unmanaged_by_quitting (device);
 			else
 				nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
-		} else if (quitting && nm_config_get_configure_and_quit (nm_config_get ())) {
+		} else if (quitting && nm_config_get_configure_and_quit (priv->config)) {
 			nm_device_spawn_iface_helper (device);
 		}
 	}
