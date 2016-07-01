@@ -92,6 +92,7 @@ extern NmcOutputField nmc_fields_setting_dcb[];
 extern NmcOutputField nmc_fields_setting_tun[];
 extern NmcOutputField nmc_fields_setting_ip_tunnel[];
 extern NmcOutputField nmc_fields_setting_macvlan[];
+extern NmcOutputField nmc_fields_setting_macsec[];
 extern NmcOutputField nmc_fields_setting_vxlan[];
 extern NmcOutputField nmc_fields_setting_proxy[];
 

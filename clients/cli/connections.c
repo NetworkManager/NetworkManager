@@ -169,9 +169,10 @@ NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME,               nmc_fields_setting_dcb + 1),               /* 24 */
 	SETTING_FIELD (NM_SETTING_TUN_SETTING_NAME,               nmc_fields_setting_tun + 1),               /* 25 */
 	SETTING_FIELD (NM_SETTING_IP_TUNNEL_SETTING_NAME,         nmc_fields_setting_ip_tunnel + 1),         /* 26 */
-	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 27 */
-	SETTING_FIELD (NM_SETTING_VXLAN_SETTING_NAME,             nmc_fields_setting_vxlan + 1),             /* 28 */
-	SETTING_FIELD (NM_SETTING_PROXY_SETTING_NAME,             nmc_fields_setting_proxy + 1),             /* 29 */
+	SETTING_FIELD (NM_SETTING_MACSEC_SETTING_NAME,            nmc_fields_setting_macsec + 1),            /* 27 */
+	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 28 */
+	SETTING_FIELD (NM_SETTING_VXLAN_SETTING_NAME,             nmc_fields_setting_vxlan + 1),             /* 29 */
+	SETTING_FIELD (NM_SETTING_PROXY_SETTING_NAME,             nmc_fields_setting_proxy + 1),             /* 30 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -200,6 +201,7 @@ NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_DCB_SETTING_NAME"," \
                                          NM_SETTING_TUN_SETTING_NAME"," \
                                          NM_SETTING_IP_TUNNEL_SETTING_NAME"," \
+                                         NM_SETTING_MACSEC_SETTING_NAME"," \
                                          NM_SETTING_MACVLAN_SETTING_NAME"," \
                                          NM_SETTING_VXLAN_SETTING_NAME"," \
                                          NM_SETTING_PROXY_SETTING_NAME
@@ -450,6 +452,11 @@ usage_connection_add (void)
 	              "                  remote <remote endpoint IP>\n"
 	              "                  [local <local endpoint IP>]\n"
 	              "                  [dev <parent device (ifname or connection UUID)>]\n\n"
+	              "    macsec:       dev <parent device (connection UUID, ifname, or MAC)>\n"
+	              "                  mode <psk|eap>\n"
+	              "                  [cak <key> ckn <key>]\n"
+	              "                  [encrypt yes|no]\n"
+	              "                  [port 1-65534]\n\n\n"
 	              "    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
 	              "                  mode vepa|bridge|private|passthru|source\n"
 	              "                  [tap yes|no]\n\n"
@@ -3028,6 +3035,14 @@ static const NameItem nmc_ip_tunnel_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
+static const NameItem nmc_macsec_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
+	{ NM_SETTING_MACSEC_SETTING_NAME,     NULL,       NULL, TRUE  },
+	{ NULL, NULL, NULL, FALSE }
+};
+
 static const NameItem nmc_macvlan_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
@@ -3066,6 +3081,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ "no-slave",                         NULL,        nmc_no_slave_settings     },
 	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,        nmc_ip_tunnel_settings    },
+	{ NM_SETTING_MACSEC_SETTING_NAME,     NULL,        nmc_macsec_settings       },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,        nmc_macvlan_settings      },
 	{ NM_SETTING_VXLAN_SETTING_NAME,      NULL,        nmc_vxlan_settings        },
 	{ NULL, NULL, NULL }
@@ -3878,6 +3894,17 @@ gen_func_ip_tunnel_mode (const char *text, int state)
 }
 
 static char *
+gen_func_macsec_mode (const char *text, int state)
+{
+	gs_free const char **words = NULL;
+
+	words = nm_utils_enum_get_values (nm_setting_macsec_mode_get_type (),
+	                                  G_MININT,
+	                                  G_MAXINT);
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
 gen_func_macvlan_mode (const char *text, int state)
 {
 	gs_free const char **words = NULL;
@@ -4292,6 +4319,13 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PASSWORD,               "password",     OPTION_NONE, N_("Password [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_ENCAPSULATION,          "encapsulation", OPTION_NONE, PROMPT_ADSL_ENCAP, PROMPT_ADSL_ENCAP_CHOICES,
                                                                                                         NULL, gen_func_adsl_encap },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PARENT,               "dev",          OPTION_REQD, N_("MACsec parent device or connection UUID"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MODE,                 "mode",         OPTION_REQD, N_("Mode"), NULL, NULL, gen_func_macsec_mode },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_ENCRYPT,              "encrypt",      OPTION_NONE, N_("Enable encryption [yes]"), NULL, set_yes_no, gen_func_bool_values_l10n },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CAK,              "cak",          OPTION_NONE, N_("MKA CAK"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CKN,              "ckn",          OPTION_NONE, N_("MKA_CKN"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PORT,                 "port",         OPTION_NONE, N_("SCI port [1]"), NULL, NULL, NULL },
+
 	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_PARENT,              "dev",          OPTION_REQD, N_("MACVLAN parent device or connection UUID"), NULL,
                                                                                                         NULL, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_MODE,                "mode",         OPTION_REQD, PROMPT_MACVLAN_MODE, NULL,
@@ -4823,6 +4857,8 @@ setting_name_to_name (const char *name)
 		return _("OLPC Mesh connection");
 	if (strcmp (name, NM_SETTING_ADSL_SETTING_NAME) == 0)
 		return _("ADSL connection");
+	if (strcmp (name, NM_SETTING_MACSEC_SETTING_NAME) == 0)
+		return _("MACsec connection");
 	if (strcmp (name, NM_SETTING_MACVLAN_SETTING_NAME) == 0)
 		return _("macvlan connection");
 	if (strcmp (name, NM_SETTING_VXLAN_SETTING_NAME) == 0)

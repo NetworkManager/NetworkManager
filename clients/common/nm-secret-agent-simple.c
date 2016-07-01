@@ -492,7 +492,7 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			secret = nm_secret_agent_simple_secret_new (_("PIN"),
 			                                            NM_SETTING (s_gsm),
 			                                            NM_SETTING_GSM_PIN,
-								    NULL,
+			                                            NULL,
 			                                            NULL,
 			                                            FALSE);
 			g_ptr_array_add (secrets, secret);
@@ -508,6 +508,25 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			                                            NULL,
 			                                            TRUE);
 			g_ptr_array_add (secrets, secret);
+		}
+	} else if (nm_connection_is_type (request->connection, NM_SETTING_MACSEC_SETTING_NAME)) {
+		NMSettingMacsec *s_macsec = nm_connection_get_setting_macsec (request->connection);
+
+		msg = g_strdup_printf (_("Secrets are required to access the MACsec network '%s'"),
+		                       nm_connection_get_id (request->connection));
+
+		if (nm_setting_macsec_get_mode (s_macsec) == NM_SETTING_MACSEC_MODE_PSK) {
+			title = _("MACsec PSK authentication");
+			secret = nm_secret_agent_simple_secret_new (_("MKA CAK"),
+			                                            NM_SETTING (s_macsec),
+			                                            NM_SETTING_MACSEC_MKA_CAK,
+			                                            NULL,
+			                                            NULL,
+			                                            TRUE);
+			g_ptr_array_add (secrets, secret);
+		} else {
+			title = _("MACsec EAP authentication");
+			ok = add_8021x_secrets (request, secrets);
 		}
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_CDMA_SETTING_NAME)) {
 		NMSettingCdma *s_cdma = nm_connection_get_setting_cdma (request->connection);
