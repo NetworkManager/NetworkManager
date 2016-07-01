@@ -588,7 +588,7 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 	gs_free char *tmp_string = NULL;
 	const char *p, *mac_str;
 	gs_free guint8 *buf_arr = NULL;
-	guint buf_len;
+	guint buf_len = 0;
 	gsize length;
 
 	tmp_string = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
