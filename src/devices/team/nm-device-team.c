@@ -161,7 +161,7 @@ teamd_read_config (NMDevice *device)
 	int err;
 
 	if (priv->tdc) {
-		err = teamdctl_config_get_raw_direct (priv->tdc, &config);
+		err = teamdctl_config_actual_get_raw_direct (priv->tdc, &config);
 		if (err)
 			return FALSE;
 	}
