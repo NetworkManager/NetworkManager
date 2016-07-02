@@ -54,6 +54,7 @@ typedef struct {
 	GPid teamd_pid;
 	guint teamd_process_watch;
 	guint teamd_timeout;
+	guint teamd_read_timeout;
 	guint teamd_dbus_watch;
 	char *config;
 } NMDeviceTeamPrivate;
@@ -175,6 +176,17 @@ teamd_read_config (NMDevice *device)
 	return TRUE;
 }
 
+static gboolean
+teamd_read_timeout_cb (gpointer user_data)
+{
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (user_data);
+
+	teamd_read_config ((NMDevice *) user_data);
+	priv->teamd_read_timeout = 0;
+
+	return G_SOURCE_REMOVE;
+}
+
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
@@ -278,6 +290,7 @@ teamd_cleanup (NMDevice *device, gboolean free_tdc)
 
 	nm_clear_g_source (&priv->teamd_process_watch);
 	nm_clear_g_source (&priv->teamd_timeout);
+	nm_clear_g_source (&priv->teamd_read_timeout);
 
 	if (priv->teamd_pid > 0) {
 		nm_utils_kill_child_async (priv->teamd_pid, SIGTERM, LOGD_TEAM, "teamd", 2000, NULL, NULL);
@@ -665,6 +678,11 @@ enslave_slave (NMDevice *device,
 		if (!success)
 			return FALSE;
 
+		nm_clear_g_source (&priv->teamd_read_timeout);
+		priv->teamd_read_timeout = g_timeout_add_seconds (5,
+		                                                  teamd_read_timeout_cb,
+		                                                  self);
+
 		_LOGI (LOGD_TEAM, "enslaved team port %s", slave_iface);
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was enslaved", slave_iface);
@@ -678,6 +696,7 @@ release_slave (NMDevice *device,
                gboolean configure)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
 	gboolean success, no_firmware = FALSE;
 
 	if (configure) {
@@ -697,6 +716,11 @@ release_slave (NMDevice *device,
 		if (!nm_device_bring_up (slave, TRUE, &no_firmware))
 			_LOGW (LOGD_TEAM, "released team port %s could not be brought up",
 			       nm_device_get_ip_iface (slave));
+
+		nm_clear_g_source (&priv->teamd_read_timeout);
+		priv->teamd_read_timeout = g_timeout_add_seconds (5,
+		                                                  teamd_read_timeout_cb,
+		                                                  self);
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface (slave));
 }
