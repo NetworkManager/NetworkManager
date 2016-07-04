@@ -417,6 +417,7 @@ c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *Netw
 
 # NetworkManager-openvpn
 1f159f30617e4a3b8121074b8bf238312941370d  511eae0d4ac17c6d2659a3da2646296f *NetworkManager-openvpn-1.0.2.tar.xz
+75585a94b394c04e45a28d2b032fe83dcdaeebee  ee4c09a8896eab3e1740f7c7bc1434f9  NetworkManager-openvpn-1.2.4.tar.xz
 
 # mipv6-daemon
 428974c2d0d8e75a2750a3ab0488708c5dfdd8e3  8e3ebd242e7926822bbdf5ce77c1d076 *mipv6-daemon-1.0.tar.gz
