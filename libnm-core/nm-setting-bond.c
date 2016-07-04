@@ -92,7 +92,7 @@ static const BondDefault defaults[] = {
 	  { "slow", "fast", NULL } },
 	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,     "",           NM_BOND_OPTION_TYPE_IFNAME },
 	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO,"65535",      NM_BOND_OPTION_TYPE_INT, 1, 65535 },
-	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,  "",           NM_BOND_OPTION_TYPE_MAC },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,  NULL,         NM_BOND_OPTION_TYPE_MAC },
 	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, "0",          NM_BOND_OPTION_TYPE_INT, 0, 1023},
 	{ NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE,"0",          NM_BOND_OPTION_TYPE_INT, 0, 1},
 	{ NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS,  "any",        NM_BOND_OPTION_TYPE_BOTH, 0, 1, {"any", "all"}},
@@ -427,10 +427,21 @@ nm_setting_bond_get_valid_options  (NMSettingBond *setting)
 const char *
 nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 {
+	const char *mode;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
 	g_return_val_if_fail (nm_setting_bond_validate_option (name, NULL), NULL);
+
+	if (nm_streq (name, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
+		/* The default value depends on the current mode */
+		mode = nm_setting_bond_get_option_by_name (setting, NM_SETTING_BOND_OPTION_MODE);
+		if (   nm_streq0 (mode, "4")
+		    || nm_streq0 (mode, "802.3ad"))
+			return "00:00:00:00:00:00";
+		else
+			return "";
+	}
 
 	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
 		if (g_strcmp0 (defaults[i].opt, name) == 0)

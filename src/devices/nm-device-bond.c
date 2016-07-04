@@ -329,6 +329,11 @@ apply_bonding_config (NMDevice *device)
 	set_arp_targets (device, mode, value, ",", "+");
 	g_free (contents);
 
+	/* AD actor system: don't set if empty */
+	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM);
+	if (value)
+		set_bond_attr (device, mode, "ad_actor_system", value);
+
 	set_simple_option (device, mode, "primary_reselect", s_bond, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT);
 	set_simple_option (device, mode, "fail_over_mac", s_bond, NM_SETTING_BOND_OPTION_FAIL_OVER_MAC);
 	set_simple_option (device, mode, "use_carrier", s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER);
