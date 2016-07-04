@@ -307,6 +307,22 @@ _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
 
 /***********************************************************/
 
+typedef enum {
+	NM_BOND_MODE_UNKNOWN = 0,
+	NM_BOND_MODE_ROUNDROBIN,
+	NM_BOND_MODE_ACTIVEBACKUP,
+	NM_BOND_MODE_XOR,
+	NM_BOND_MODE_BROADCAST,
+	NM_BOND_MODE_8023AD,
+	NM_BOND_MODE_TLB,
+	NM_BOND_MODE_ALB,
+} NMBondMode;
+
+NMBondMode _nm_setting_bond_mode_from_string (const char *str);
+gboolean _nm_setting_bond_option_supported (const char *option, NMBondMode mode);
+
+/***********************************************************/
+
 gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 #endif
