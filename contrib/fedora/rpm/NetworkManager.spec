@@ -10,11 +10,11 @@
 %global dbus_version 1.1
 %global dbus_glib_version 0.100
 
-%global glib2_version	2.32.0
+%global glib2_version 2.32.0
 %global wireless_tools_version 1:28-0pre9
 %global libnl3_version 3.2.7
 
-%global ppp_version %(rpm -q ppp-devel >/dev/null && rpm -q --qf '%%{version}' ppp-devel || echo -n bad)
+%global ppp_version %(sed -n 's/^#define\\s*VERSION\\s*"\\([^\\s]*\\)"$/\\1/p' %{_includedir}/pppd/patchlevel.h 2>/dev/null | grep . || echo bad)
 
 %global snapshot %{nil}
 %global git_sha __COMMIT__
