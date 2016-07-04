@@ -1340,6 +1340,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	const char *str;
 	GVariant *v;
 	gboolean b;
+	guint i, n;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1426,7 +1427,14 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	route_metric = nm_vpn_connection_get_ip4_route_metric (self);
 
-	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
+	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES, "b", &b)
+	    && b) {
+		if (priv->ip4_config) {
+			n = nm_ip4_config_get_num_routes (priv->ip4_config);
+			for (i = 0; i < n; i++)
+				nm_ip4_config_add_route (config, nm_ip4_config_get_route (priv->ip4_config, i));
+		}
+	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
 		while (g_variant_iter_next (iter, "@au", &v)) {
 			NMPlatformIP4Route route = { 0, };
 
@@ -1492,6 +1500,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	const char *str;
 	GVariant *v;
 	gboolean b;
+	guint i, n;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1568,7 +1577,14 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 	route_metric = nm_vpn_connection_get_ip6_route_metric (self);
 
-	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &iter)) {
+	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES, "b", &b)
+	    && b) {
+		if (priv->ip6_config) {
+			n = nm_ip6_config_get_num_routes (priv->ip6_config);
+			for (i = 0; i < n; i++)
+				nm_ip6_config_add_route (config, nm_ip6_config_get_route (priv->ip6_config, i));
+		}
+	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &iter)) {
 		GVariant *dest, *next_hop;
 		guint32 prefix, metric;
 

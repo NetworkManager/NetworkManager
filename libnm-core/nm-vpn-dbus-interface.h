@@ -242,6 +242,9 @@ typedef enum {
  */
 #define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES      "routes"
 
+/* whether the previous IP4 routing configuration should be preserved. */
+#define NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES "preserve-routes"
+
 /* boolean: prevent this VPN connection from ever getting the default route */
 #define NM_VPN_PLUGIN_IP4_CONFIG_NEVER_DEFAULT "never-default"
 
@@ -292,6 +295,9 @@ typedef enum {
  *         by nm_utils_ip6_routes_to/from_gvalue
  */
 #define NM_VPN_PLUGIN_IP6_CONFIG_ROUTES      "routes"
+
+/* whether the previous IP6 routing configuration should be preserved. */
+#define NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES "preserve-routes"
 
 /* boolean: prevent this VPN connection from ever getting the default route */
 #define NM_VPN_PLUGIN_IP6_CONFIG_NEVER_DEFAULT "never-default"
