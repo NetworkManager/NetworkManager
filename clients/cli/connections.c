@@ -1963,6 +1963,14 @@ find_device_for_connection (NmCli *nmc,
 	}
 }
 
+typedef struct {
+	NmCli *nmc;
+	NMDevice *device;
+	NMActiveConnection *active;
+} ActivateConnectionInfo;
+
+static void activate_connection_info_finish (ActivateConnectionInfo *info);
+
 static const char *
 vpn_connection_state_reason_to_string (NMVpnConnectionStateReason reason)
 {
@@ -1997,9 +2005,9 @@ vpn_connection_state_reason_to_string (NMVpnConnectionStateReason reason)
 }
 
 static void
-device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
+device_state_cb (NMDevice *device, GParamSpec *pspec, ActivateConnectionInfo *info)
 {
-	NmCli *nmc = (NmCli *) user_data;
+	NmCli *nmc = info->nmc;
 	NMActiveConnection *active;
 	NMDeviceState state;
 	NMActiveConnectionState ac_state;
@@ -2014,7 +2022,7 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
-		quit ();
+		activate_connection_info_finish (info);
 	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
 	           && state >= NM_DEVICE_STATE_IP_CONFIG
 	           && state <= NM_DEVICE_STATE_ACTIVATED) {
@@ -2022,24 +2030,26 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
-		quit ();
-	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
-	           && state == NM_DEVICE_STATE_FAILED) {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		g_print (_("Error: Connection activation failed.\n"));
-		quit ();
-	} else if (active && ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
+		activate_connection_info_finish (info);
 	}
 }
 
 static void
-active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data)
+active_connection_removed_cb (NMClient *client, NMActiveConnection *active, ActivateConnectionInfo *info)
 {
-	NmCli *nmc = (NmCli *) user_data;
+	NmCli *nmc = info->nmc;
+
+	if (active == info->active) {
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		activate_connection_info_finish (info);
+	}
+}
+
+static void
+active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, ActivateConnectionInfo *info)
+{
+	NmCli *nmc = info->nmc;
 	NMActiveConnectionState state;
 
 	state = nm_active_connection_get_state (active);
@@ -2049,13 +2059,7 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
-		g_object_unref (active);
-		quit ();
-	} else if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		g_object_unref (active);
-		quit ();
+		activate_connection_info_finish (info);
 	} else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		/* activating master connection does not automatically activate any slaves, so their
 		 * active connection state will not progress beyond ACTIVATING state.
@@ -2076,10 +2080,8 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 		    && (   NM_IS_DEVICE_BOND (device)
 		        || NM_IS_DEVICE_TEAM (device)
 		        || NM_IS_DEVICE_BRIDGE (device))) {
-			g_signal_handlers_disconnect_by_func (active, G_CALLBACK (active_connection_state_cb), nmc);
-			g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state_cb), nmc);
-
-			device_state_cb (device, NULL, nmc);
+			g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state_cb), info);
+			device_state_cb (device, NULL, info);
 		}
 	}
 }
@@ -2088,9 +2090,9 @@ static void
 vpn_connection_state_cb (NMVpnConnection *vpn,
                          NMVpnConnectionState state,
                          NMVpnConnectionStateReason reason,
-                         gpointer user_data)
+                         ActivateConnectionInfo *info)
 {
-	NmCli *nmc = (NmCli *) user_data;
+	NmCli *nmc = info->nmc;
 
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_PREPARE:
@@ -2105,8 +2107,7 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 			nmc_terminal_erase_line ();
 		g_print (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (vpn)));
-		g_object_unref (vpn);
-		quit ();
+		activate_connection_info_finish (info);
 		break;
 
 	case NM_VPN_CONNECTION_STATE_FAILED:
@@ -2114,8 +2115,7 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s."),
 		                 vpn_connection_state_reason_to_string (reason));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		g_object_unref (vpn);
-		quit ();
+		activate_connection_info_finish (info);
 		break;
 
 	default:
@@ -2126,13 +2126,14 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 static gboolean
 timeout_cb (gpointer user_data)
 {
-	/* Time expired -> exit nmcli */
+	ActivateConnectionInfo *info = user_data;
+	NmCli *nmc = info->nmc;
 
-	NmCli *nmc = (NmCli *) user_data;
+	/* Time expired -> exit nmcli */
 
 	g_string_printf (nmc->return_text, _("Error: Timeout %d sec expired."), nmc->timeout);
 	nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
-	quit ();
+	activate_connection_info_finish (info);
 	return FALSE;
 }
 
@@ -2171,10 +2172,24 @@ progress_vpn_cb (gpointer user_data)
 	return TRUE;
 }
 
-typedef struct {
-	NmCli *nmc;
-	NMDevice *device;
-} ActivateConnectionInfo;
+static void
+activate_connection_info_finish (ActivateConnectionInfo *info)
+{
+	if (info->device)
+		g_signal_handlers_disconnect_by_func (info->device, G_CALLBACK (device_state_cb), info);
+	if (info->active) {
+		if (NM_IS_VPN_CONNECTION (info->active))
+			g_signal_handlers_disconnect_by_func (info->active, G_CALLBACK (vpn_connection_state_cb), info);
+		else
+			g_signal_handlers_disconnect_by_func (info->active, G_CALLBACK (active_connection_state_cb), info);
+		g_object_unref (info->active);
+
+	}
+	g_signal_handlers_disconnect_by_func (info->nmc->client, G_CALLBACK (active_connection_removed_cb), info);
+
+	g_free (info);
+	quit ();
+}
 
 static void
 activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_data)
@@ -2187,14 +2202,14 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 	const GPtrArray *ac_devs;
 	GError *error = NULL;
 
-	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
+	info->active = active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 		                 error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
+		activate_connection_info_finish (info);
 	} else {
 		state = nm_active_connection_get_state (active);
 		if (!device) {
@@ -2211,12 +2226,11 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 				g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 				         nm_object_get_path (NM_OBJECT (active)));
 			}
-			g_object_unref (active);
-			quit ();
+			activate_connection_info_finish (info);
 		} else {
 			if (NM_IS_VPN_CONNECTION (active)) {
 				/* Monitor VPN state */
-				g_signal_connect (G_OBJECT (active), "vpn-state-changed", G_CALLBACK (vpn_connection_state_cb), nmc);
+				g_signal_connect (G_OBJECT (active), "vpn-state-changed", G_CALLBACK (vpn_connection_state_cb), info);
 
 				/* Start progress indication showing VPN states */
 				if (nmc->print_output == NMC_PRINT_PRETTY) {
@@ -2225,8 +2239,8 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 					progress_id = g_timeout_add (120, progress_vpn_cb, NM_VPN_CONNECTION (active));
 				}
 			} else {
-				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), nmc);
-				active_connection_state_cb (active, NULL, nmc);
+				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), info);
+				active_connection_state_cb (active, NULL, info);
 
 				/* Start progress indication showing device states */
 				if (nmc->print_output == NMC_PRINT_PRETTY) {
@@ -2237,10 +2251,13 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 			}
 
 			/* Start timer not to loop forever when signals are not emitted */
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
+			g_timeout_add_seconds (nmc->timeout, timeout_cb, info);
+
+			/* Fail when the active connection goes away. */
+			g_signal_connect (nmc->client, NM_CLIENT_ACTIVE_CONNECTION_REMOVED,
+			                  G_CALLBACK (active_connection_removed_cb), info);
 		}
 	}
-	g_free (info);
 }
 
 /**
