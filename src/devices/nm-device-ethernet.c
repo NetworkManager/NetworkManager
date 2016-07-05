@@ -147,21 +147,21 @@ static void
 _update_s390_subchannels (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	GUdevDevice *dev;
-	GUdevDevice *parent = NULL;
+	gs_unref_object GUdevDevice *dev = NULL;
+	gs_unref_object GUdevDevice *parent = NULL;
 	const char *parent_path, *item, *driver;
 	int ifindex;
 	GDir *dir;
 	GError *error = NULL;
 
-	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
-	dev = (GUdevDevice *) nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex);
+	ifindex = nm_device_get_ifindex ((NMDevice *) self);
+	dev = (GUdevDevice *) nm_g_object_ref (nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex));
 	if (!dev) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device %d '%s' with udev",
-		       ifindex, nm_device_get_iface (NM_DEVICE (self)) ?: "(null)");
-		goto out;
+		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device %s (%d) with udev",
+		       nm_strquote_a (20, nm_device_get_iface ((NMDevice *) self)),
+		       ifindex);
+		return;
 	}
-	g_object_ref (dev);
 
 	/* Try for the "ccwgroup" parent */
 	parent = g_udev_device_get_parent_with_subsystem (dev, "ccwgroup", NULL);
@@ -169,7 +169,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		/* FIXME: whatever 'lcs' devices' subsystem is here... */
 		if (!parent) {
 			/* Not an s390 device */
-			goto out;
+			return;
 		}
 	}
 
@@ -179,7 +179,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to open directory '%s': %s",
 		       parent_path, error->message);
 		g_clear_error (&error);
-		goto out;
+		return;
 	}
 
 	while ((item = g_dir_read_name (dir))) {
@@ -235,15 +235,9 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	priv->subchannels_dbus[2] = g_strdup (priv->subchan3);
 	priv->subchannels_dbus[3] = NULL;
 
-	driver = nm_device_get_driver (NM_DEVICE (self));
+	driver = nm_device_get_driver ((NMDevice *) self);
 	_LOGI (LOGD_DEVICE | LOGD_HW, "found s390 '%s' subchannels [%s]",
 	       driver ? driver : "(unknown driver)", priv->subchannels);
-
-out:
-	if (parent)
-		g_object_unref (parent);
-	if (dev)
-		g_object_unref (dev);
 }
 
 static GObject*
@@ -256,20 +250,16 @@ constructor (GType type,
 	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
 	                                                                        n_construct_params,
 	                                                                        construct_params);
-	if (object) {
-#ifndef G_DISABLE_ASSERT
-		int ifindex = nm_device_get_ifindex (NM_DEVICE (object));
-		NMLinkType link_type = nm_platform_link_get_type (NM_PLATFORM_GET, ifindex);
+	if (!object)
+		return NULL;
 
-		g_assert (   link_type == NM_LINK_TYPE_ETHERNET
-		          || link_type == NM_LINK_TYPE_VETH
-		          || link_type == NM_LINK_TYPE_NONE);
-#endif
+	nm_assert (NM_IN_SET (nm_platform_link_get_type (NM_PLATFORM_GET,
+	                                                 nm_device_get_ifindex ((NMDevice *) object)),
+	                      NM_LINK_TYPE_NONE,
+	                      NM_LINK_TYPE_ETHERNET,
+	                      NM_LINK_TYPE_VETH));
 
-		/* s390 stuff */
-		_update_s390_subchannels (NM_DEVICE_ETHERNET (object));
-	}
-
+	_update_s390_subchannels ((NMDeviceEthernet *) object);
 	return object;
 }
 
