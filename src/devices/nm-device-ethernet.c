@@ -157,10 +157,9 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	ifindex = nm_device_get_ifindex ((NMDevice *) self);
 	dev = (GUdevDevice *) nm_g_object_ref (nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex));
 	if (!dev) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: failed to find device %s (%d) with udev",
-		       nm_strquote_a (20, nm_device_get_iface ((NMDevice *) self)),
-		       ifindex);
-		return;
+		/* we only call _update_s390_subchannels() when platform claims the device to be initialized.
+		 * Thus, we expect to successfully lookup a GUdevDevice. */
+		g_return_if_reached ();
 	}
 
 	/* Try for the "ccwgroup" parent */
@@ -240,27 +239,16 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	       driver ? driver : "(unknown driver)", priv->subchannels);
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
+	const NMPlatformLink *pllink;
 
-	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
-	                                                                        n_construct_params,
-	                                                                        construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructed (object);
 
-	nm_assert (NM_IN_SET (nm_platform_link_get_type (NM_PLATFORM_GET,
-	                                                 nm_device_get_ifindex ((NMDevice *) object)),
-	                      NM_LINK_TYPE_NONE,
-	                      NM_LINK_TYPE_ETHERNET,
-	                      NM_LINK_TYPE_VETH));
-
-	_update_s390_subchannels ((NMDeviceEthernet *) object);
-	return object;
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, nm_device_get_ifindex ((NMDevice *) object));
+	if (pllink && pllink->initialized)
+		_update_s390_subchannels ((NMDeviceEthernet *) object);
 }
 
 static void
@@ -1646,7 +1634,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
