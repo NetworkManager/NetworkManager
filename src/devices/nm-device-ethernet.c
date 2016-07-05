@@ -118,13 +118,10 @@ typedef struct _NMDeviceEthernetPrivate {
 	gulong        dcb_carrier_id;
 } NMDeviceEthernetPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceEthernet,
 	PROP_SPEED,
 	PROP_S390_SUBCHANNELS,
-
-	LAST_PROP
-};
+);
 
 /*****************************************************************************/
 
@@ -1530,7 +1527,7 @@ get_link_speed (NMDevice *device)
 		return;
 
 	priv->speed = speed;
-	g_object_notify (G_OBJECT (device), "speed");
+	_notify (self, PROP_SPEED);
 
 	_LOGD (LOGD_HW | LOGD_ETHER, "speed is now %d Mb/s", speed);
 }
@@ -1664,20 +1661,19 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	parent_class->state_changed = device_state_changed;
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SPEED,
-		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SPEED] =
+	    g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_S390_SUBCHANNELS,
-		 g_param_spec_boxed (NM_DEVICE_ETHERNET_S390_SUBCHANNELS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_S390_SUBCHANNELS] =
+	    g_param_spec_boxed (NM_DEVICE_ETHERNET_S390_SUBCHANNELS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_ETHERNET_SKELETON,
