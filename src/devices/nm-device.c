@@ -6440,11 +6440,18 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 
 	priv->nm_ipv6ll = enable;
 	if (ifindex > 0) {
+		NMPlatformError plerr;
 		const char *detail = enable ? "enable" : "disable";
 
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
-		if (!nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable))
-			_LOGW (LOGD_IP6, "failed to %s userspace IPv6LL address handling", detail);
+		plerr = nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable);
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+			_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
+			        LOGD_IP6,
+			        "failed to %s userspace IPv6LL address handling (%s)",
+			        detail,
+			        nm_platform_error_to_string (plerr));
+		}
 
 		if (enable) {
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */

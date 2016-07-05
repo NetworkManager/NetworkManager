@@ -205,6 +205,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_WRONG_TYPE,  "wrong-type"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NOT_SLAVE,   "not-slave"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NO_FIRMWARE, "no-firmware"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_OPNOTSUPP,   "not-supported"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_PLATFORM_ERROR_MININT),
 );
 
@@ -981,18 +982,16 @@ nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
  * platform or OS doesn't support changing the IPv6LL address mode, this call
  * will fail and return %FALSE.
  *
- * Returns: %TRUE if the operation was successful, %FALSE if it failed.
+ * Returns: %NM_PLATFORM_ERROR_SUCCESS if the operation was successful or an error code otherwise.
  */
-gboolean
+NMPlatformError
 nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (ifindex > 0, NM_PLATFORM_ERROR_BUG);
 
-	if (klass->link_set_user_ipv6ll_enabled)
-		return klass->link_set_user_ipv6ll_enabled (self, ifindex, enabled);
-	return FALSE;
+	return klass->link_set_user_ipv6ll_enabled (self, ifindex, enabled);
 }
 
 /**
