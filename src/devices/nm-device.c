@@ -11548,8 +11548,8 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 		 * a temporary address (fake). */
 		_LOGD (LOGD_HW | LOGD_ETHER, "hw-addr: %s (use current: %s)",
 		       success_read
-		           ? "unable to read permanent MAC address"
-		           : "read HW addr length of permanent MAC address differs",
+		           ? "read HW addr length of permanent MAC address differs"
+		           : "unable to read permanent MAC address",
 		       priv->hw_addr);
 		priv->hw_addr_perm_fake = TRUE;
 		priv->hw_addr_perm = g_strdup (priv->hw_addr);
