@@ -6440,11 +6440,18 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 
 	priv->nm_ipv6ll = enable;
 	if (ifindex > 0) {
+		NMPlatformError plerr;
 		const char *detail = enable ? "enable" : "disable";
 
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
-		if (!nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable))
-			_LOGW (LOGD_IP6, "failed to %s userspace IPv6LL address handling", detail);
+		plerr = nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable);
+		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
+			_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
+			        LOGD_IP6,
+			        "failed to %s userspace IPv6LL address handling (%s)",
+			        detail,
+			        nm_platform_error_to_string (plerr));
+		}
 
 		if (enable) {
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
@@ -11657,6 +11664,7 @@ _hw_addr_set (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 	gboolean success = FALSE;
+	NMPlatformError plerr;
 	const char *cur_addr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	guint hw_addr_len;
@@ -11691,7 +11699,8 @@ _hw_addr_set (NMDevice *self,
 		nm_device_take_down (self, FALSE);
 	}
 
-	success = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, hw_addr_len);
+	plerr = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, hw_addr_len);
+	success = (plerr == NM_PLATFORM_ERROR_SUCCESS);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
@@ -11706,8 +11715,10 @@ _hw_addr_set (NMDevice *self,
 			success = FALSE;
 		}
 	} else {
-		_LOGW (LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s)",
-		       operation, addr, detail);
+		_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
+		        LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s) (%s)",
+		        operation, addr, detail,
+		        nm_platform_error_to_string (plerr));
 	}
 
 	if (was_up) {

@@ -4089,6 +4089,9 @@ retry:
 	} else if (NM_IN_SET (-((int) seq_result), ESRCH, ENOENT)) {
 		log_detail = ", firmware not found";
 		result = NM_PLATFORM_ERROR_NO_FIRMWARE;
+	} else if (NM_IN_SET (-((int) seq_result), ENODEV)) {
+		log_level = LOGL_DEBUG;
+		result = NM_PLATFORM_ERROR_NOT_FOUND;
 	} else {
 		log_level = LOGL_ERR;
 		result = NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -4325,7 +4328,7 @@ link_get_udev_device (NMPlatform *platform, int ifindex)
 	return obj_cache ? (GObject *) obj_cache->_link.udev.device : NULL;
 }
 
-static gboolean
+static NMPlatformError
 link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enabled)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4333,7 +4336,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 
 	if (!_support_user_ipv6ll_get ()) {
 		_LOGD ("link: change %d: user-ipv6ll: not supported", ifindex);
-		return FALSE;
+		return NM_PLATFORM_ERROR_OPNOTSUPP;
 	}
 
 	_LOGD ("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
@@ -4348,9 +4351,9 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	                          0);
 	if (   !nlmsg
 	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
-		g_return_val_if_reached (FALSE);
+		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, ifindex, nlmsg);
 }
 
 static gboolean
@@ -4405,14 +4408,14 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	return nmp_utils_ethtool_supports_vlans (obj->link.name);
 }
 
-static gboolean
+static NMPlatformError
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	gs_free char *mac = NULL;
 
 	if (!address || !length)
-		g_return_val_if_reached (FALSE);
+		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
 	_LOGD ("link: change %d: address: %s (%lu bytes)", ifindex,
 	       (mac = nm_utils_hwaddr_ntoa (address, length)),
@@ -4425,13 +4428,13 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	                          0,
 	                          0);
 	if (!nlmsg)
-		return FALSE;
+		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
 
 	NLA_PUT (nlmsg, IFLA_ADDRESS, length, address);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, ifindex, nlmsg);
 nla_put_failure:
-	g_return_val_if_reached (FALSE);
+	g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
 }
 
 static gboolean

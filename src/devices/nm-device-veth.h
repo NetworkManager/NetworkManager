@@ -34,8 +34,8 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_VETH_PEER "peer"
 
-typedef NMDeviceEthernet NMDeviceVeth;
-typedef NMDeviceEthernetClass NMDeviceVethClass;
+typedef struct _NMDeviceVeth NMDeviceVeth;
+typedef struct _NMDeviceVethClass NMDeviceVethClass;
 
 GType nm_device_veth_get_type (void);
 

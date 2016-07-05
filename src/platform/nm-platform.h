@@ -88,6 +88,7 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_WRONG_TYPE,
 	NM_PLATFORM_ERROR_NOT_SLAVE,
 	NM_PLATFORM_ERROR_NO_FIRMWARE,
+	NM_PLATFORM_ERROR_OPNOTSUPP,
 } NMPlatformError;
 
 
@@ -519,14 +520,14 @@ typedef struct {
 	const char *(*link_get_udi) (NMPlatform *self, int ifindex);
 	GObject *(*link_get_udev_device) (NMPlatform *self, int ifindex);
 
-	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
+	NMPlatformError (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
 	gboolean (*link_set_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId iid);
 
 	gboolean (*link_get_permanent_address) (NMPlatform *,
 	                                        int ifindex,
 	                                        guint8 *buf,
 	                                        size_t *length);
-	gboolean (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
+	NMPlatformError (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
 	gboolean (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
 
 	char *   (*link_get_physical_port_id) (NMPlatform *, int ifindex);
@@ -753,11 +754,11 @@ const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
 
 GObject *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
+NMPlatformError nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
 gboolean nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
 
 gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
-gboolean nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
+NMPlatformError nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
 gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 
 char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);

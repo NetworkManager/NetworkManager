@@ -38,23 +38,44 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVeth);
 
-G_DEFINE_TYPE (NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
-
-#define NM_DEVICE_VETH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VETH, NMDeviceVethPrivate))
+/*****************************************************************************/
 
 typedef struct {
 	NMDevice *peer;
 	gboolean ever_had_peer;
 } NMDeviceVethPrivate;
 
-enum {
-	PROP_0,
-	PROP_PEER,
-
-	LAST_PROP
+struct _NMDeviceVeth {
+	NMDeviceEthernet parent;
+	NMDeviceVethPrivate _priv;
 };
 
-/**************************************************************/
+struct _NMDeviceVethClass {
+	NMDeviceEthernetClass parent_class;
+};
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVeth,
+	PROP_PEER,
+);
+
+/*****************************************************************************/
+
+G_DEFINE_TYPE (NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
+
+#define NM_DEVICE_VETH_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMDeviceVeth *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_DEVICE_VETH (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static void
 set_peer (NMDeviceVeth *self, NMDevice *peer)
@@ -66,7 +87,7 @@ set_peer (NMDeviceVeth *self, NMDevice *peer)
 		priv->peer = peer;
 		g_object_add_weak_pointer (G_OBJECT (peer), (gpointer *) &priv->peer);
 
-		g_object_notify (G_OBJECT (self), NM_DEVICE_VETH_PEER);
+		_notify (self, PROP_PEER);
 	}
 }
 
@@ -150,8 +171,6 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMDeviceVethPrivate));
-
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VETH)
 
 	object_class->get_property = get_property;
@@ -159,13 +178,13 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_PEER,
-		 g_param_spec_string (NM_DEVICE_VETH_PEER, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PEER] =
+	    g_param_spec_string (NM_DEVICE_VETH_PEER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_VETH_SKELETON,
