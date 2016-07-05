@@ -363,17 +363,9 @@ update_connection (SettingsPluginIfcfg *self,
 		                  self);
 
 		if (nm_ifcfg_connection_get_unmanaged_spec (connection_new)) {
-			const char *spec;
-			const char *device_id;
-
-			spec = nm_ifcfg_connection_get_unmanaged_spec (connection_new);
-			device_id = strchr (spec, ':');
-			if (device_id)
-				device_id++;
-			else
-				device_id = spec;
-			_LOGW ("Ignoring connection "NM_IFCFG_CONNECTION_LOG_FMT" / device '%s' due to NM_CONTROLLED=no.",
-			       NM_IFCFG_CONNECTION_LOG_ARG (connection_new), device_id);
+			_LOGI ("Ignoring connection "NM_IFCFG_CONNECTION_LOG_FMT" due to NM_CONTROLLED=no. Unmanaged: %s.",
+			       NM_IFCFG_CONNECTION_LOG_ARG (connection_new),
+			       nm_ifcfg_connection_get_unmanaged_spec (connection_new));
 		} else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
 			_LOGW ("Ignoring connection "NM_IFCFG_CONNECTION_LOG_FMT" of unrecognized type.", NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
 
