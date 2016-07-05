@@ -157,7 +157,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	ifindex = nm_device_get_ifindex ((NMDevice *) self);
 	dev = (GUdevDevice *) nm_g_object_ref (nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex));
 	if (!dev) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device %s (%d) with udev",
+		_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: failed to find device %s (%d) with udev",
 		       nm_strquote_a (20, nm_device_get_iface ((NMDevice *) self)),
 		       ifindex);
 		return;
@@ -176,7 +176,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	parent_path = g_udev_device_get_sysfs_path (parent);
 	dir = g_dir_open (parent_path, 0, &error);
 	if (!dir) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to open directory '%s': %s",
+		_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: failed to open directory '%s': %s",
 		       parent_path, error->message);
 		g_clear_error (&error);
 		return;
@@ -206,11 +206,11 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 				g_hash_table_insert (priv->s390_options, g_strdup (item), value);
 				value = NULL;
 			} else
-				_LOGW (LOGD_DEVICE | LOGD_HW, "error reading %s", path);
+				_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: error reading %s", path);
 		}
 
 		if (error) {
-			_LOGW (LOGD_DEVICE | LOGD_HW, "%s", error->message);
+			_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: failed reading sysfs for %s (%s)", item, error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -236,7 +236,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	priv->subchannels_dbus[3] = NULL;
 
 	driver = nm_device_get_driver ((NMDevice *) self);
-	_LOGI (LOGD_DEVICE | LOGD_HW, "found s390 '%s' subchannels [%s]",
+	_LOGI (LOGD_DEVICE | LOGD_HW, "update-s390: found s390 '%s' subchannels [%s]",
 	       driver ? driver : "(unknown driver)", priv->subchannels);
 }
 
