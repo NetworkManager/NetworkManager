@@ -664,7 +664,8 @@ _nm_log_impl (const char *file,
 					_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
 			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", global.level_desc[level].name);
-			_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func ?: "");
+			if (func)
+				_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_FILE=%s", file ?: "");
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_LINE=%u", line);
 			_iovec_set_format (iov, iov_free, i_field++, "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000));
