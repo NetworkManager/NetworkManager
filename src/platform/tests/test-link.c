@@ -60,16 +60,12 @@ test_bogus(void)
 	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	g_assert (!nm_platform_link_get_type_name (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*failure changing link: *");
 	g_assert (!nm_platform_link_set_up (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*failure changing link: *");
 	g_assert (!nm_platform_link_set_down (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*failure changing link: *");
 	g_assert (!nm_platform_link_set_arp (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*failure changing link: *");
 	g_assert (!nm_platform_link_set_noarp (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, BOGUS_IFINDEX));
@@ -80,7 +76,6 @@ test_bogus(void)
 	g_assert (!addrlen);
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*failure changing link: *");
 	g_assert (!nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU));
 
 	g_assert (!nm_platform_link_get_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX));
@@ -515,13 +510,13 @@ test_bridge_addr (void)
 		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_EUI64);
 
-		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, TRUE));
+		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, TRUE) == NM_PLATFORM_ERROR_SUCCESS);
 		g_assert (nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
 		g_assert (plink);
 		g_assert_cmpint (_nm_platform_uint8_inv (plink->inet6_addr_gen_mode_inv), ==, NM_IN6_ADDR_GEN_MODE_NONE);
 
-		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, FALSE));
+		g_assert (nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex, FALSE) == NM_PLATFORM_ERROR_SUCCESS);
 		g_assert (!nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, link.ifindex));
 		plink = nm_platform_link_get (NM_PLATFORM_GET, link.ifindex);
 		g_assert (plink);
