@@ -55,14 +55,14 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceEthernet);
 
-G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate))
+/*****************************************************************************/
 
 #define WIRED_SECRETS_TRIES "wired-secrets-tries"
 
 #define PPPOE_RECONNECT_DELAY 7
 #define PPPOE_ENCAP_OVERHEAD  8 /* 2 bytes for PPP, 6 for PPPoE */
+
+/*****************************************************************************/
 
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
@@ -91,7 +91,7 @@ typedef enum {
 	DCB_WAIT_CARRIER_POSTCONFIG_UP,
 } DcbWait;
 
-typedef struct {
+typedef struct _NMDeviceEthernetPrivate {
 	guint32             speed;
 
 	Supplicant          supplicant;
@@ -126,6 +126,24 @@ enum {
 	LAST_PROP
 };
 
+/*****************************************************************************/
+
+G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_ETHERNET_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMDeviceEthernet *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_DEVICE_ETHERNET (_self)); \
+		_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static char *
 get_link_basename (const char *parent_path, const char *name, GError **error)
@@ -280,7 +298,11 @@ device_state_changed (NMDevice *device,
 static void
 nm_device_ethernet_init (NMDeviceEthernet *self)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMDeviceEthernetPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate);
+	self->_priv = priv;
+
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
@@ -912,7 +934,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
 
-	s_pppoe = (NMSettingPppoe *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_PPPOE);
+	s_pppoe = (NMSettingPppoe *) nm_device_get_applied_setting ((NMDevice *) self, NM_TYPE_SETTING_PPPOE);
 	g_assert (s_pppoe);
 
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
@@ -961,8 +983,8 @@ dcb_carrier_timeout (gpointer user_data)
 static gboolean
 dcb_configure (NMDevice *device)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	NMDeviceEthernet *self = (NMDeviceEthernet *) device;
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingDcb *s_dcb;
 	GError *error = NULL;
 
@@ -1150,7 +1172,7 @@ found:
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernet *self = (NMDeviceEthernet *) device;
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	const char *connection_type;
@@ -1261,7 +1283,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	guint32 mtu;
 
 	/* MTU only set for plain ethernet */
-	if (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->ppp_manager)
+	if (NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device)->ppp_manager)
 		return;
 
 	connection = nm_device_get_applied_connection (device);
@@ -1313,7 +1335,7 @@ deactivate (NMDevice *device)
 
 	/* Set last PPPoE connection time */
 	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
-		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
+		priv->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 }
 
 static gboolean
@@ -1435,7 +1457,7 @@ static NMMatchSpecMatchType
 spec_match_list (NMDevice *device, const GSList *specs)
 {
 	NMMatchSpecMatchType matched = NM_MATCH_SPEC_NO_MATCH, m;
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device);
 
 	if (priv->subchannels)
 		matched = nm_match_spec_s390_subchannels (specs, priv->subchannels);
@@ -1449,7 +1471,7 @@ spec_match_list (NMDevice *device, const GSList *specs)
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
 	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
 	const char *mac = nm_device_get_hw_address (device);

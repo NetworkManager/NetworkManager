@@ -36,8 +36,16 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_SPEED "speed"
 #define NM_DEVICE_ETHERNET_S390_SUBCHANNELS "s390-subchannels"
 
-typedef NMDevice NMDeviceEthernet;
-typedef NMDeviceClass NMDeviceEthernetClass;
+struct _NMDeviceEthernetPrivate;
+
+typedef struct {
+	NMDevice parent;
+	struct _NMDeviceEthernetPrivate *_priv;
+} NMDeviceEthernet;
+
+typedef struct {
+	NMDeviceClass parent_class;
+} NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type (void);
 
