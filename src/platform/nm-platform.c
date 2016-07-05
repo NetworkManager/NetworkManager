@@ -1003,16 +1003,18 @@ nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolea
  *
  * Set interface MAC address.
  */
-gboolean
+NMPlatformError
 nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer address, size_t length)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (address, FALSE);
-	g_return_val_if_fail (length > 0, FALSE);
+	g_return_val_if_fail (ifindex > 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (address, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (length > 0, NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("link: setting '%s' (%d) hardware address", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting %s (%d) hardware address",
+	       nm_strquote_a (20, nm_platform_link_get_name (self, ifindex)),
+	       ifindex);
 	return klass->link_set_address (self, ifindex, address, length);
 }
 

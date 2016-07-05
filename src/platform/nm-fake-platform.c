@@ -506,7 +506,7 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	return TRUE;
 }
 
-static gboolean
+static NMPlatformError
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t len)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -515,7 +515,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 	    || len == 0
 	    || len > NM_UTILS_HWADDR_LEN_MAX
 	    || !addr)
-		g_return_val_if_reached (FALSE);
+		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
 	if (   device->link.addr.len != len
 	    || (   len > 0
@@ -525,7 +525,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 		link_changed (platform, link_get (platform, ifindex), TRUE);
 	}
 
-	return TRUE;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean

@@ -592,7 +592,7 @@ test_internal (void)
 	g_assert (nm_platform_link_supports_vlans (NM_PLATFORM_GET, ifindex));
 
 	/* Set MAC address */
-	g_assert (nm_platform_link_set_address (NM_PLATFORM_GET, ifindex, mac, sizeof (mac)));
+	g_assert (nm_platform_link_set_address (NM_PLATFORM_GET, ifindex, mac, sizeof (mac)) == NM_PLATFORM_ERROR_SUCCESS);
 	address = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &addrlen);
 	g_assert (addrlen == sizeof(mac));
 	g_assert (!memcmp (address, mac, addrlen));
