@@ -164,10 +164,19 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	gs_unref_object GUdevDevice *dev = NULL;
 	gs_unref_object GUdevDevice *parent = NULL;
-	const char *parent_path, *item, *driver;
+	const char *parent_path, *item;
 	int ifindex;
 	GDir *dir;
 	GError *error = NULL;
+
+	if (priv->subchannels) {
+		/* only read the subchannels once. For one, we don't expect them to change
+		 * on multiple invocations. Second, we didn't implement proper reloading.
+		 * Proper reloading might also be complicated, because the subchannels are
+		 * used to match on devices based on a device-spec. Thus, it's not clear
+		 * what it means to change afterwards. */
+		return;
+	}
 
 	ifindex = nm_device_get_ifindex ((NMDevice *) self);
 	dev = (GUdevDevice *) nm_g_object_ref (nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex));
@@ -249,9 +258,11 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	priv->subchannels_dbus[2] = g_strdup (priv->subchan3);
 	priv->subchannels_dbus[3] = NULL;
 
-	driver = nm_device_get_driver ((NMDevice *) self);
 	_LOGI (LOGD_DEVICE | LOGD_HW, "update-s390: found s390 '%s' subchannels [%s]",
-	       driver ? driver : "(unknown driver)", priv->subchannels);
+	       nm_device_get_driver ((NMDevice *) self) ?: "(unknown driver)",
+	       priv->subchannels);
+
+	_notify (self, PROP_S390_SUBCHANNELS);
 }
 
 static void
@@ -1544,12 +1555,9 @@ carrier_changed (NMDevice *device, gboolean carrier)
 static void
 link_changed (NMDevice *device, NMPlatformLink *info)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
-	if (!priv->subchan1 && info->initialized)
-		_update_s390_subchannels (self);
+	if (info->initialized)
+		_update_s390_subchannels ((NMDeviceEthernet *) device);
 }
 
 static gboolean
