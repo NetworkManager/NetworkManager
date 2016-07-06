@@ -92,7 +92,7 @@ static const BondDefault defaults[] = {
 	  { "slow", "fast", NULL } },
 	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,     "",           NM_BOND_OPTION_TYPE_IFNAME },
 	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO,"65535",      NM_BOND_OPTION_TYPE_INT, 1, 65535 },
-	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,  "",           NM_BOND_OPTION_TYPE_MAC },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,  NULL,         NM_BOND_OPTION_TYPE_MAC },
 	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, "0",          NM_BOND_OPTION_TYPE_INT, 0, 1023},
 	{ NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE,"0",          NM_BOND_OPTION_TYPE_INT, 0, 1},
 	{ NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS,  "any",        NM_BOND_OPTION_TYPE_BOTH, 0, 1, {"any", "all"}},
@@ -427,10 +427,21 @@ nm_setting_bond_get_valid_options  (NMSettingBond *setting)
 const char *
 nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 {
+	const char *mode;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
 	g_return_val_if_fail (nm_setting_bond_validate_option (name, NULL), NULL);
+
+	if (nm_streq (name, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
+		/* The default value depends on the current mode */
+		mode = nm_setting_bond_get_option_by_name (setting, NM_SETTING_BOND_OPTION_MODE);
+		if (   nm_streq0 (mode, "4")
+		    || nm_streq0 (mode, "802.3ad"))
+			return "00:00:00:00:00:00";
+		else
+			return "";
+	}
 
 	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
 		if (g_strcmp0 (defaults[i].opt, name) == 0)
@@ -461,6 +472,60 @@ _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name)
 	}
 	/* Any option that passes nm_setting_bond_validate_option() should also be found in defaults */
 	g_assert_not_reached ();
+}
+
+NMBondMode
+_nm_setting_bond_mode_from_string (const char *str)
+{
+	g_return_val_if_fail (str, NM_BOND_MODE_UNKNOWN);
+
+	if (nm_streq (str, "balance-rr"))
+		return NM_BOND_MODE_ROUNDROBIN;
+	if (nm_streq (str, "active-backup"))
+		return NM_BOND_MODE_ACTIVEBACKUP;
+	if (nm_streq (str, "balance-xor"))
+		return NM_BOND_MODE_XOR;
+	if (nm_streq (str, "broadcast"))
+		return NM_BOND_MODE_BROADCAST;
+	if (nm_streq (str, "802.3ad"))
+		return NM_BOND_MODE_8023AD;
+	if (nm_streq (str, "balance-tlb"))
+		return NM_BOND_MODE_TLB;
+	if (nm_streq (str, "balance-alb"))
+		return NM_BOND_MODE_ALB;
+
+	return NM_BOND_MODE_UNKNOWN;
+}
+
+#define BIT(x) (1 << (x))
+
+const static struct {
+	const char *option;
+	NMBondMode unsupp_modes;
+} bond_unsupp_modes[] = {
+	{ NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, ~(BIT (NM_BOND_MODE_ROUNDROBIN)) },
+	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,      BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,      BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
+	{ NM_SETTING_BOND_OPTION_LACP_RATE,         ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,           ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,      ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,    ~(BIT (NM_BOND_MODE_TLB)) },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,   ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY,  ~(BIT (NM_BOND_MODE_8023AD)) },
+};
+
+gboolean
+_nm_setting_bond_option_supported (const char *option, NMBondMode mode)
+{
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (bond_unsupp_modes); i++) {
+		if (nm_streq (option, bond_unsupp_modes[i].option))
+		    return !NM_FLAGS_HAS (bond_unsupp_modes[i].unsupp_modes, BIT (mode));
+	}
+
+	return TRUE;
 }
 
 static gboolean
