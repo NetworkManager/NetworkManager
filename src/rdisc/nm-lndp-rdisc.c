@@ -41,18 +41,18 @@ typedef struct {
 	GIOChannel *event_channel;
 	guint event_id;
 	guint ra_timeout_id;  /* first RA timeout */
-} NMLNDPRDiscPrivate;
+} NMLndpRDiscPrivate;
 
-#define NM_LNDP_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LNDP_RDISC, NMLNDPRDiscPrivate))
+#define NM_LNDP_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LNDP_RDISC, NMLndpRDiscPrivate))
 
-G_DEFINE_TYPE (NMLNDPRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
+G_DEFINE_TYPE (NMLndpRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 
 /******************************************************************/
 
 static gboolean
 send_rs (NMRDisc *rdisc, GError **error)
 {
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	struct ndp_msg *msg;
 	int errsv;
 
@@ -283,7 +283,7 @@ static gboolean
 event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
 	_LOGD ("processing libndp events");
 
@@ -297,7 +297,7 @@ event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 static void
 start (NMRDisc *rdisc)
 {
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	int fd = ndp_get_eventfd (priv->ndp);
 
 	priv->event_channel = g_io_channel_unix_new (fd);
@@ -328,7 +328,7 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDisc *rdisc;
-	NMLNDPRDiscPrivate *priv;
+	NMLndpRDiscPrivate *priv;
 	int errsv;
 
 	g_return_val_if_fail (NM_IS_PLATFORM (platform), NULL);
@@ -370,15 +370,15 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 }
 
 static void
-nm_lndp_rdisc_init (NMLNDPRDisc *lndp_rdisc)
+nm_lndp_rdisc_init (NMLndpRDisc *lndp_rdisc)
 {
 }
 
 static void
 dispose (GObject *object)
 {
-	NMLNDPRDisc *rdisc = NM_LNDP_RDISC (object);
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDisc *rdisc = NM_LNDP_RDISC (object);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
 	nm_clear_g_source (&priv->event_id);
 	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
@@ -393,12 +393,12 @@ dispose (GObject *object)
 }
 
 static void
-nm_lndp_rdisc_class_init (NMLNDPRDiscClass *klass)
+nm_lndp_rdisc_class_init (NMLndpRDiscClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMRDiscClass *rdisc_class = NM_RDISC_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMLNDPRDiscPrivate));
+	g_type_class_add_private (klass, sizeof (NMLndpRDiscPrivate));
 
 	object_class->dispose = dispose;
 	rdisc_class->start = start;
