@@ -939,7 +939,7 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 	    g_signal_new (NM_RDISC_RA_TIMEOUT,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMRDiscClass, ra_timeout),
+	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 0);
 }
