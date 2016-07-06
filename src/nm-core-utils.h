@@ -359,7 +359,7 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_UTILS_STABLE_TYPE_UUID = 0,
 	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
 } NMUtilsStableType;

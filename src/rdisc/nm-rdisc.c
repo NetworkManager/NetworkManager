@@ -45,6 +45,12 @@ struct _NMRDiscPrivate {
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 	char *last_send_rs_error;
 
+	int ifindex;
+	char *ifname;
+	char *network_id;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	NMUtilsStableType stable_type;
+
 	NMPlatform *platform;
 	NMPNetns *netns;
 };
@@ -53,6 +59,11 @@ typedef struct _NMRDiscPrivate NMRDiscPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PLATFORM,
+	PROP_IFINDEX,
+	PROP_IFNAME,
+	PROP_STABLE_TYPE,
+	PROP_NETWORK_ID,
+	PROP_ADDR_GEN_MODE,
 );
 
 enum {
@@ -106,7 +117,25 @@ nm_rdisc_netns_push (NMRDisc *self, NMPNetns **netns)
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
+
+int
+nm_rdisc_get_ifindex (NMRDisc *self)
+{
+	g_return_val_if_fail (NM_IS_RDISC (self), 0);
+
+	return NM_RDISC_GET_PRIVATE (self)->ifindex;
+}
+
+const char *
+nm_rdisc_get_ifname (NMRDisc *self)
+{
+	g_return_val_if_fail (NM_IS_RDISC (self), NULL);
+
+	return NM_RDISC_GET_PRIVATE (self)->ifname;
+}
+
+/*****************************************************************************/
 
 gboolean
 nm_rdisc_add_gateway (NMRDisc *rdisc, const NMRDiscGateway *new)
@@ -158,13 +187,17 @@ nm_rdisc_add_gateway (NMRDisc *rdisc, const NMRDiscGateway *new)
 static gboolean
 complete_address (NMRDisc *rdisc, NMRDiscAddress *addr)
 {
+	NMRDiscPrivate *priv;
 	GError *error = NULL;
 
-	if (rdisc->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
-		if (!nm_utils_ipv6_addr_set_stable_privacy (rdisc->stable_type,
+	g_return_val_if_fail (NM_IS_RDISC (rdisc), FALSE);
+
+	priv = NM_RDISC_GET_PRIVATE (rdisc);
+	if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
+		if (!nm_utils_ipv6_addr_set_stable_privacy (priv->stable_type,
 		                                            &addr->address,
-		                                            rdisc->ifname,
-		                                            rdisc->network_id,
+		                                            priv->ifname,
+		                                            priv->network_id,
 		                                            addr->dad_counter++,
 		                                            &error)) {
 			_LOGW ("complete-address: failed to generate an stable-privacy address: %s",
@@ -351,12 +384,15 @@ nm_rdisc_add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 gboolean
 nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 {
+	NMRDiscPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_RDISC (rdisc), FALSE);
 
 	if (rdisc->iid.id != iid.id) {
 		rdisc->iid = iid;
 
-		if (rdisc->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
+		priv = NM_RDISC_GET_PRIVATE (rdisc);
+		if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
 			return FALSE;
 
 		if (rdisc->addresses->len) {
@@ -450,7 +486,7 @@ nm_rdisc_start (NMRDisc *rdisc)
 
 	g_assert (klass->start);
 
-	_LOGD ("starting router discovery: %d", rdisc->ifindex);
+	_LOGD ("starting router discovery: %d", priv->ifindex);
 
 	if (!nm_rdisc_netns_push (rdisc, &netns))
 		return;
@@ -756,6 +792,28 @@ set_property (GObject *object, guint prop_id,
 
 		g_return_if_fail (!priv->netns || priv->netns == nmp_netns_get_current ());
 		break;
+	case PROP_IFINDEX:
+		/* construct-only */
+		priv->ifindex = g_value_get_int (value);
+		g_return_if_fail (priv->ifindex > 0);
+		break;
+	case PROP_IFNAME:
+		/* construct-only */
+		priv->ifname = g_value_dup_string (value);
+		g_return_if_fail (priv->ifname && priv->ifname[0]);
+		break;
+	case PROP_STABLE_TYPE:
+		/* construct-only */
+		priv->stable_type = g_value_get_int (value);
+		break;
+	case PROP_NETWORK_ID:
+		/* construct-only */
+		priv->network_id = g_value_dup_string (value);
+		break;
+	case PROP_ADDR_GEN_MODE:
+		/* construct-only */
+		priv->addr_gen_mode = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -805,8 +863,9 @@ finalize (GObject *object)
 	NMRDisc *rdisc = NM_RDISC (object);
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 
-	g_free (rdisc->ifname);
-	g_free (rdisc->network_id);
+	g_free (priv->ifname);
+	g_free (priv->network_id);
+
 	g_array_unref (rdisc->gateways);
 	g_array_unref (rdisc->addresses);
 	g_array_unref (rdisc->routes);
@@ -837,6 +896,36 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IFINDEX] =
+	    g_param_spec_int (NM_RDISC_IFINDEX, "", "",
+	                      0, G_MAXINT, 0,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IFNAME] =
+	    g_param_spec_string (NM_RDISC_IFNAME, "", "",
+	                         NULL,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_STABLE_TYPE] =
+	    g_param_spec_int (NM_RDISC_STABLE_TYPE, "", "",
+	                      NM_UTILS_STABLE_TYPE_UUID, NM_UTILS_STABLE_TYPE_STABLE_ID, NM_UTILS_STABLE_TYPE_UUID,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_NETWORK_ID] =
+	    g_param_spec_string (NM_RDISC_NETWORK_ID, "", "",
+	                         NULL,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ADDR_GEN_MODE] =
+	    g_param_spec_int (NM_RDISC_ADDR_GEN_MODE, "", "",
+	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[CONFIG_CHANGED] =

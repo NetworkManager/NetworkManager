@@ -35,6 +35,11 @@
 #define NM_RDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_RDISC, NMRDiscClass))
 
 #define NM_RDISC_PLATFORM       "platform"
+#define NM_RDISC_IFINDEX        "ifindex"
+#define NM_RDISC_IFNAME         "ifname"
+#define NM_RDISC_NETWORK_ID     "network-id"
+#define NM_RDISC_ADDR_GEN_MODE  "addr-gen-mode"
+#define NM_RDISC_STABLE_TYPE    "stable-type"
 #define NM_RDISC_CONFIG_CHANGED "config-changed"
 #define NM_RDISC_RA_TIMEOUT     "ra-timeout"
 
@@ -107,7 +112,6 @@ struct _NMRDiscPrivate;
 
 /**
  * NMRDisc:
- * @ifindex: Interface index
  *
  * Interface-specific structure that handles incoming router advertisements,
  * caches advertised items and removes them when they are obsolete.
@@ -117,12 +121,6 @@ typedef struct {
 
 	struct _NMRDiscPrivate *_priv;
 
-	NMUtilsStableType stable_type;
-
-	int ifindex;
-	char *ifname;
-	char *network_id;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMUtilsIPv6IfaceId iid;
 	gint32 max_addresses;
 	gint32 rtr_solicitations;
@@ -149,6 +147,9 @@ typedef struct {
 } NMRDiscClass;
 
 GType nm_rdisc_get_type (void);
+
+int nm_rdisc_get_ifindex (NMRDisc *self);
+const char *nm_rdisc_get_ifname (NMRDisc *self);
 
 gboolean nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
 void nm_rdisc_start (NMRDisc *rdisc);

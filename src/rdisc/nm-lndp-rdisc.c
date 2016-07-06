@@ -89,7 +89,7 @@ send_rs (NMRDisc *rdisc, GError **error)
 		                     "cannot create router solicitation");
 		return FALSE;
 	}
-	ndp_msg_ifindex_set (msg, rdisc->ifindex);
+	ndp_msg_ifindex_set (msg, nm_rdisc_get_ifindex (rdisc));
 
 	errsv = ndp_msg_send (priv->ndp, msg);
 	ndp_msg_destroy (msg);
@@ -332,7 +332,7 @@ start (NMRDisc *rdisc)
 	/* Flush any pending messages to avoid using obsolete information */
 	event_ready (priv->event_channel, 0, rdisc);
 
-	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, rdisc->ifindex, rdisc);
+	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, nm_rdisc_get_ifindex (rdisc), rdisc);
 }
 
 /*****************************************************************************/
@@ -372,13 +372,12 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 
 	rdisc = g_object_new (NM_TYPE_LNDP_RDISC,
 	                      NM_RDISC_PLATFORM, platform,
+	                      NM_RDISC_STABLE_TYPE, (int) stable_type,
+	                      NM_RDISC_IFINDEX, ifindex,
+	                      NM_RDISC_IFNAME, ifname,
+	                      NM_RDISC_NETWORK_ID, network_id,
+	                      NM_RDISC_ADDR_GEN_MODE, (int) addr_gen_mode,
 	                      NULL);
-
-	rdisc->ifindex = ifindex;
-	rdisc->ifname = g_strdup (ifname);
-	rdisc->stable_type = stable_type;
-	rdisc->network_id = g_strdup (network_id);
-	rdisc->addr_gen_mode = addr_gen_mode;
 
 	rdisc->max_addresses = ipv6_sysctl_get (platform, ifname, "max_addresses",
 	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);
@@ -405,14 +404,14 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 static void
 dispose (GObject *object)
 {
-	NMLndpRDisc *rdisc = NM_LNDP_RDISC (object);
-	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMRDisc *rdisc = (NMRDisc *) object;
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 
 	nm_clear_g_source (&priv->event_id);
 	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
 
 	if (priv->ndp) {
-		ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, NM_RDISC (rdisc)->ifindex, rdisc);
+		ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_rdisc_get_ifindex (rdisc), rdisc);
 		ndp_close (priv->ndp);
 		priv->ndp = NULL;
 	}
