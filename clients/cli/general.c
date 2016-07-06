@@ -400,6 +400,9 @@ do_general_status (NmCli *nmc, int argc, char **argv)
                 return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	show_nm_status (nmc, NULL, NULL);
 	return nmc->return_value;
 }
@@ -518,6 +521,9 @@ do_general_permissions (NmCli *nmc, int argc, char **argv)
                 return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	show_nm_permissions (nmc);
 	return nmc->return_value;
 }
@@ -586,6 +592,10 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 			g_error_free (error);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
+
+		if (nmc->complete)
+			return nmc->return_value;
+
 		show_general_logging (nmc);
 	} else {
 		/* arguments provided -> set logging level and domains */
@@ -594,6 +604,10 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 		nmc_arg_t exp_args[] = { {"level",   TRUE, &level,   TRUE},
 		                         {"domains", TRUE, &domains, TRUE},
 		                         {NULL} };
+
+		/* TODO: nmc_parse_args needs completion */
+		if (nmc->complete)
+			return nmc->return_value;
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
 			g_string_assign (nmc->return_text, error->message);
@@ -631,6 +645,9 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static NMCResultCode
 do_general_hostname (NmCli *nmc, int argc, char **argv)
 {
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (argc == 0) {
 		/* no arguments -> get hostname */
 		char *hostname = NULL;
@@ -670,10 +687,6 @@ static const NMCCommand general_cmds[] = {
 NMCResultCode
 do_general (NmCli *nmc, int argc, char **argv)
 {
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
