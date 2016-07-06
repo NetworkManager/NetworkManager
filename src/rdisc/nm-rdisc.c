@@ -20,33 +20,33 @@
 
 #include "nm-default.h"
 
+#include "nm-rdisc.h"
+
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <string.h>
 
-#include "nm-rdisc.h"
-#include "nm-rdisc-private.h"
+#include "nm-setting-ip6-config.h"
 
+#include "nm-rdisc-private.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "nmp-netns.h"
 
-#include <nm-setting-ip6-config.h>
-
 #define _NMLOG_PREFIX_NAME                "rdisc"
 
-typedef struct {
+/*****************************************************************************/
+
+struct _NMRDiscPrivate {
 	int solicitations_left;
 	guint send_rs_id;
 	gint64 last_rs;
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 	char *last_send_rs_error;
-} NMRDiscPrivate;
+};
 
-#define NM_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_RDISC, NMRDiscPrivate))
-
-G_DEFINE_TYPE (NMRDisc, nm_rdisc, G_TYPE_OBJECT)
+typedef struct _NMRDiscPrivate NMRDiscPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PLATFORM,
@@ -60,7 +60,22 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/******************************************************************/
+G_DEFINE_TYPE (NMRDisc, nm_rdisc, G_TYPE_OBJECT)
+
+#define NM_RDISC_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMRDisc *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_RDISC (_self)); \
+		_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 NMPNetns *
 nm_rdisc_netns_get (NMRDisc *self)
@@ -687,8 +702,10 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 static gboolean
 timeout_cb (gpointer user_data)
 {
-	NM_RDISC_GET_PRIVATE (user_data)->timeout_id = 0;
-	check_timestamps (NM_RDISC (user_data), nm_utils_get_monotonic_timestamp_s (), 0);
+	NMRDisc *self = user_data;
+
+	NM_RDISC_GET_PRIVATE (self)->timeout_id = 0;
+	check_timestamps (self, nm_utils_get_monotonic_timestamp_s (), 0);
 	return G_SOURCE_REMOVE;
 }
 
@@ -741,7 +758,10 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_rdisc_init (NMRDisc *rdisc)
 {
-	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
+	NMRDiscPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (rdisc, NM_TYPE_RDISC, NMRDiscPrivate);
+	rdisc->_priv = priv;
 
 	rdisc->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
 	rdisc->addresses = g_array_new (FALSE, FALSE, sizeof (NMRDiscAddress));

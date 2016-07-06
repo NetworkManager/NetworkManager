@@ -103,6 +103,8 @@ typedef enum {
 #define NM_RDISC_RTR_SOLICITATIONS_DEFAULT 3
 #define NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT 4
 
+struct _NMRDiscPrivate;
+
 /**
  * NMRDisc:
  * @ifindex: Interface index
@@ -112,6 +114,8 @@ typedef enum {
  */
 typedef struct {
 	GObject parent;
+
+	struct _NMRDiscPrivate *_priv;
 
 	NMPlatform *_platform;
 	NMPNetns *_netns;
