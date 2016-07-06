@@ -117,9 +117,6 @@ typedef struct {
 
 	struct _NMRDiscPrivate *_priv;
 
-	NMPlatform *_platform;
-	NMPNetns *_netns;
-
 	NMUtilsStableType stable_type;
 
 	int ifindex;

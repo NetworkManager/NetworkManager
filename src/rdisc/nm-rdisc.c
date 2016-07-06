@@ -44,6 +44,9 @@ struct _NMRDiscPrivate {
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 	char *last_send_rs_error;
+
+	NMPlatform *platform;
+	NMPNetns *netns;
 };
 
 typedef struct _NMRDiscPrivate NMRDiscPrivate;
@@ -82,21 +85,24 @@ nm_rdisc_netns_get (NMRDisc *self)
 {
 	g_return_val_if_fail (NM_IS_RDISC (self), NULL);
 
-	return self->_netns;
+	return NM_RDISC_GET_PRIVATE (self)->netns;
 }
 
 gboolean
 nm_rdisc_netns_push (NMRDisc *self, NMPNetns **netns)
 {
+	NMRDiscPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_RDISC (self), FALSE);
 
-	if (   self->_netns
-	    && !nmp_netns_push (self->_netns)) {
+	priv = NM_RDISC_GET_PRIVATE (self);
+	if (   priv->netns
+	    && !nmp_netns_push (priv->netns)) {
 		NM_SET_OUT (netns, NULL);
 		return FALSE;
 	}
 
-	NM_SET_OUT (netns, self->_netns);
+	NM_SET_OUT (netns, priv->netns);
 	return TRUE;
 }
 
@@ -733,21 +739,22 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMRDisc *self = NM_RDISC (object);
+	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_PLATFORM:
 		/* construct-only */
-		self->_platform = g_value_get_object (value) ? : NM_PLATFORM_GET;
-		if (!self->_platform)
+		priv->platform = g_value_get_object (value) ? : NM_PLATFORM_GET;
+		if (!priv->platform)
 			g_return_if_reached ();
 
-		g_object_ref (self->_platform);
+		g_object_ref (priv->platform);
 
-		self->_netns = nm_platform_netns_get (self->_platform);
-		if (self->_netns)
-			g_object_ref (self->_netns);
+		priv->netns = nm_platform_netns_get (priv->platform);
+		if (priv->netns)
+			g_object_ref (priv->netns);
 
-		g_return_if_fail (!self->_netns || self->_netns == nmp_netns_get_current ());
+		g_return_if_fail (!priv->netns || priv->netns == nmp_netns_get_current ());
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -796,6 +803,7 @@ static void
 finalize (GObject *object)
 {
 	NMRDisc *rdisc = NM_RDISC (object);
+	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 
 	g_free (rdisc->ifname);
 	g_free (rdisc->network_id);
@@ -805,8 +813,8 @@ finalize (GObject *object)
 	g_array_unref (rdisc->dns_servers);
 	g_array_unref (rdisc->dns_domains);
 
-	g_clear_object (&rdisc->_netns);
-	g_clear_object (&rdisc->_platform);
+	g_clear_object (&priv->netns);
+	g_clear_object (&priv->platform);
 
 	G_OBJECT_CLASS (nm_rdisc_parent_class)->finalize (object);
 }
