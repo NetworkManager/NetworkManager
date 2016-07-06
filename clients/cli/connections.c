@@ -1695,6 +1695,40 @@ parse_preferred_connection_order (const char *order, GError **error)
 	return order_arr;
 }
 
+static NMConnection *
+get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
+{
+	NMConnection *connection = NULL;
+	const char *selector = NULL;
+
+	if (*argc == 0) {
+		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		                     _("No connection specified"));
+		return NULL;
+	}
+
+	if (   strcmp (**argv, "id") == 0
+	    || strcmp (**argv, "uuid") == 0
+	    || strcmp (**argv, "path") == 0) {
+		selector = **argv;
+		if (next_arg (argc, argv) != 0) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("%s argument is missing"), selector);
+			return NULL;
+		}
+	}
+
+	connection = nmc_find_connection (nmc->connections, selector, **argv, pos);
+	if (!connection) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
+		             _("unknown connection '%s'"), **argv);
+	}
+
+	next_arg (argc, argv);
+
+	return connection;
+}
+
 static NMCResultCode
 do_connections_show (NmCli *nmc, int argc, char **argv)
 {
@@ -2532,10 +2566,11 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *ap = NULL;
 	const char *nsp = NULL;
 	const char *pwds = NULL;
-	GError *error = NULL;
-	const char *selector = NULL;
-	const char *name = NULL;
-	char *line = NULL;
+	gs_free_error GError *error = NULL;
+	char **arg_arr = NULL;
+	int arg_num;
+	char ***argv_ptr = &argv;
+	int *argc_ptr = &argc;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
@@ -2547,34 +2582,19 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 90;
 
-	if (argc == 0) {
-		if (nmc->ask) {
-			line = nmc_readline (PROMPT_CONNECTION);
-			name = line ? line : "";
-		}
-	} else if (strcmp (*argv, "ifname") != 0) {
-		if (   strcmp (*argv, "id") == 0
-		    || strcmp (*argv, "uuid") == 0
-		    || strcmp (*argv, "path") == 0) {
-
-			selector = *argv;
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-			name = *argv;
-		}
-		name = *argv;
-		next_arg (&argc, &argv);
+	if (argc == 0 && nmc->ask) {
+		char *line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
+		g_free (line);
+		argv_ptr = &arg_arr;
+		argc_ptr = &arg_num;
 	}
 
-	if (name) {
-		connection = nmc_find_connection (nmc->connections, selector, name, NULL);
+	if (argc > 0 && strcmp (*argv, "ifname") != 0) {
+		connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, &error);
 		if (!connection) {
-			g_string_printf (nmc->return_text, _("Error: Connection '%s' does not exist."), name);
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-			goto error;
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			return error->code;
 		}
 	}
 
@@ -2582,8 +2602,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
 			ifname = *argv;
@@ -2591,8 +2610,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		else if (strcmp (*argv, "ap") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
 			ap = *argv;
@@ -2600,8 +2618,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		else if (strcmp (*argv, "passwd-file") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
 			pwds = *argv;
@@ -2624,18 +2641,14 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, pwds, activate_connection_cb, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."),
 		                 error->message);
-		nmc->return_value = error->code;
-		g_clear_error (&error);
 		nmc->should_wait--;
-		goto error;
+		return error->code;
 	}
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, _("preparing"));
 
-error:
-	g_free (line);
 	return nmc->return_value;
 }
 
@@ -7910,61 +7923,28 @@ do_connection_modify (NmCli *nmc,
 {
 	NMConnection *connection = NULL;
 	NMRemoteConnection *rc = NULL;
-	const char *name;
-	const char *selector = NULL;
 	GError *error = NULL;
 	gboolean temporary = FALSE;
 
-	if (argc == 0) {
-		/*
-		 * TODO(?) complete "uuid", "path", "id" or connection name.
-		 * (if we ever will move this here from shell completion script)
-		if (nmc->complete) {
-			quit ();
-		 */
-		g_string_printf (nmc->return_text, _("Error: No arguments provided."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto finish;
-	}
-
-	if (nmc_arg_is_option (*argv, "temporary")) {
+	if (argc && nmc_arg_is_option (*argv, "temporary")) {
 		if (nmc->complete)
 			goto finish;
 		temporary = TRUE;
 		next_arg (&argc, &argv);
 	}
 
-	if (   strcmp (*argv, "id") == 0
-	    || strcmp (*argv, "uuid") == 0
-	    || strcmp (*argv, "path") == 0) {
-
-		selector = *argv;
-		if (next_arg (&argc, &argv) != 0) {
-			/*
-			 * TODO(?): complete uuid, path or id
-			if (nmc->complete) {
-				quit ();
-			}
-			 */
-			g_string_printf (nmc->return_text, _("Error: %s argument is missing."),
-			                 selector);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-		name = *argv;
-	}
-	name = *argv;
-
-	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
+	connection = get_connection (nmc, &argc, &argv, NULL, &error);
 	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = error->code;
 		goto finish;
 	}
+
 	rc = nm_client_get_connection_by_uuid (nmc->client,
 	                                       nm_connection_get_uuid (connection));
 	if (!rc) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
+		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."),
+		                 nm_connection_get_uuid (connection));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
@@ -8035,74 +8015,51 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 	NMConnection *new_connection = NULL;
 	NMSettingConnection *s_con;
 	CloneConnectionInfo *info;
-	const char *name;
 	const char *new_name;
-	char *name_ask = NULL;
 	char *new_name_ask = NULL;
-	const char *selector = NULL;
 	char *uuid;
 	gboolean temporary = FALSE;
+	char **arg_arr = NULL;
+	int arg_num;
+	char ***argv_ptr = &argv;
+	int *argc_ptr = &argc;
+	GError *error = NULL;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (argc == 0) {
-		if (nmc->ask) {
-			name = name_ask = nmc_readline (PROMPT_CONNECTION);
-			new_name = new_name_ask = nmc_readline (_("New connection name: "));
-		} else {
-			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-	} else {
-		if (nmc_arg_is_option (*argv, "temporary")) {
-			temporary = TRUE;
-			next_arg (&argc, &argv);
-		}
-
-		if (   strcmp (*argv, "id") == 0
-		    || strcmp (*argv, "uuid") == 0
-		    || strcmp (*argv, "path") == 0) {
-
-			selector = *argv;
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."),
-				                 selector);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
-			}
-		}
-		name = *argv;
-		if (next_arg (&argc, &argv) != 0) {
-			g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-		new_name = *argv;
-		if (next_arg (&argc, &argv) == 0) {
-			g_string_printf (nmc->return_text, _("Error: unexpected extra argument '%s'."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
+	if (argc == 0 && nmc->ask) {
+		char *line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
+		g_free (line);
+		argv_ptr = &arg_arr;
+		argc_ptr = &arg_num;
+	} else if (nmc_arg_is_option (*argv, "temporary")) {
+		temporary = TRUE;
+		next_arg (&argc, &argv);
 	}
 
-	if (!name) {
-		g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, &error);
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = error->code;
 		goto finish;
 	}
-	if (!new_name) {
+
+	if (next_arg (&argc, &argv) == 0)
+		new_name = *argv;
+	else if (nmc->ask)
+		new_name = new_name_ask = nmc_readline (_("New connection name: "));
+	else {
 		g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
 
-	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
-	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+	if (next_arg (argc_ptr, argv_ptr) == 0) {
+		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
 
@@ -8138,7 +8095,6 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 finish:
 	if (new_connection)
 		g_object_unref (new_connection);
-	g_free (name_ask);
 	g_free (new_name_ask);
 
 	return nmc->return_value;
@@ -8174,6 +8130,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	int arg_num = argc;
 	GString *invalid_cons = NULL;
 	int pos = 0;
+	GError *error = NULL;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
@@ -8184,33 +8141,20 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			char *line = nmc_readline (PROMPT_CONNECTIONS);
+			char *line = nmc_readline ("%s: ", PROMPT_CONNECTIONS);
 			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
 		}
 		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No connection specified."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			goto finish;
 		}
 	}
 
 	while (arg_num > 0) {
-		const char *selector = NULL;
-
-		if (   strcmp (*arg_ptr, "id") == 0
-		    || strcmp (*arg_ptr, "uuid") == 0
-		    || strcmp (*arg_ptr, "path") == 0) {
-			selector = *arg_ptr;
-			if (next_arg (&arg_num, &arg_ptr) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
-			}
-		}
-
-		connection = nmc_find_connection (nmc->connections, selector, *arg_ptr, &pos);
+		connection = get_connection (nmc, &arg_num, &arg_ptr, &pos, &error);
 		if (connection) {
 			/* Check if the connection is unique. */
 			/* Calling delete for the same connection repeatedly would result in
@@ -8218,9 +8162,14 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			if (!g_slist_find (queue, connection))
 				queue = g_slist_prepend (queue, g_object_ref (connection));
 		} else {
-			g_printerr (_("Error: unknown connection '%s'\n"), *arg_ptr);
-			g_string_printf (nmc->return_text, _("Error: not all active connections found."));
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+			g_printerr (_("Error: %s.\n"), error->message);
+			g_string_printf (nmc->return_text, _("Error: not all connections found."));
+			nmc->return_value = error->code;
+			g_clear_error (&error);
+
+			if (nmc->return_value != NMC_RESULT_ERROR_NOT_FOUND)
+				goto finish;
+
 			if (!invalid_cons)
 				invalid_cons = g_string_new (NULL);
 			g_string_append_printf (invalid_cons, "'%s', ", *arg_ptr);
@@ -8232,7 +8181,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (!queue) {
-		g_string_printf (nmc->return_text, _("Error: no connection provided."));
+		g_string_printf (nmc->return_text, _("Error: No connection specified."));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
@@ -8311,6 +8260,7 @@ connection_removed (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
 static NMCResultCode
 do_connection_monitor (NmCli *nmc, int argc, char **argv)
 {
+	GError *error = NULL;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
@@ -8335,25 +8285,13 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 		int pos = 0;
 
 		do {
-			const char *selector = NULL;
-
-			if (   strcmp (*arg_ptr, "id") == 0
-			    || strcmp (*arg_ptr, "uuid") == 0
-			    || strcmp (*arg_ptr, "path") == 0) {
-				selector = *arg_ptr;
-				if (next_arg (&arg_num, &arg_ptr) != 0) {
-					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
-					return NMC_RESULT_ERROR_USER_INPUT;
-				}
-			}
-
-			connection = nmc_find_connection (nmc->connections, selector, *arg_ptr, &pos);
+			connection = get_connection (nmc, &arg_num, &arg_ptr, &pos, &error);
 			if (connection) {
 				connection_watch (nmc, connection);
 			} else {
-				g_printerr (_("Error: unknown connection '%s'\n"), *arg_ptr);
+				g_printerr (_("Error: %s.\n"), error->message);
 				g_string_printf (nmc->return_text, _("Error: not all connections found."));
-				return NMC_RESULT_ERROR_NOT_FOUND;
+				return error->code;
 			}
 
 			/* Take next argument (if there's no other connection of the same name) */
@@ -8556,64 +8494,46 @@ static NMCResultCode
 do_connection_export (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
-	const char *name;
 	const char *out_name = NULL;
 	char *name_ask = NULL;
 	char *out_name_ask = NULL;
 	const char *path = NULL;
-	const char *selector = NULL;
 	const char *type = NULL;
 	NMVpnEditorPlugin *plugin;
 	GError *error = NULL;
 	char tmpfile[] = "/tmp/nmcli-export-temp-XXXXXX";
+	char **arg_arr = NULL;
+	int arg_num;
+	char ***argv_ptr = &argv;
+	int *argc_ptr = &argc;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (argc == 0) {
-		if (nmc->ask) {
-			name_ask = nmc_readline (PROMPT_VPN_CONNECTION);
-			name = name_ask = name_ask ? g_strstrip (name_ask) : NULL;
-			out_name = out_name_ask = nmc_readline (_("Output file name: "));
-		} else {
-			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-	} else {
-		if (   strcmp (*argv, "id") == 0
-		    || strcmp (*argv, "uuid") == 0
-		    || strcmp (*argv, "path") == 0) {
-
-			selector = *argv;
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."),
-				                 selector);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
-			}
-		}
-		name = *argv;
-		if (next_arg (&argc, &argv) == 0)
-			out_name = *argv;
-
-		if (next_arg (&argc, &argv) == 0) {
-			g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
+	if (argc == 0 && nmc->ask) {
+		char *line = nmc_readline ("%s: ", PROMPT_VPN_CONNECTION);
+		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
+		g_free (line);
+		argv_ptr = &arg_arr;
+		argc_ptr = &arg_num;
 	}
 
-	if (!name) {
-		g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, &error);
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = error->code;
 		goto finish;
 	}
-	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
-	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+
+	if (next_arg (&argc, &argv) == 0)
+		out_name = *argv;
+	else if (nmc->ask)
+		out_name = out_name_ask = nmc_readline (_("Output file name: "));
+
+	if (next_arg (argc_ptr, argv_ptr) == 0) {
+		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
 
