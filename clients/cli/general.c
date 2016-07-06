@@ -813,6 +813,9 @@ do_radio_all (NmCli *nmc, int argc, char **argv)
 	gs_free_error GError *error = NULL;
 
 	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
+
 		/* no argument, show all radio switches */
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -820,6 +823,12 @@ do_radio_all (NmCli *nmc, int argc, char **argv)
 		}
 		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
 	} else {
+		if (nmc->complete) {
+			if (argc == 1)
+				nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
+
 		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 			return nmc->return_value;
 
@@ -838,9 +847,17 @@ do_radio_wifi (NmCli *nmc, int argc, char **argv)
 	gboolean enable_flag;
 
 	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
+
 		/* no argument, show current WiFi state */
 		nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
 	} else {
+		if (nmc->complete) {
+			if (argc == 1)
+				nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
 		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 			return nmc->return_value;
 
@@ -857,9 +874,17 @@ do_radio_wwan (NmCli *nmc, int argc, char **argv)
 	gboolean enable_flag;
 
 	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
+
 		/* no argument, show current WWAN (mobile broadband) state */
 		nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
 	} else {
+		if (nmc->complete) {
+			if (argc == 1)
+				nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
 		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 			return nmc->return_value;
 
@@ -883,10 +908,6 @@ static const NMCCommand radio_cmds[] = {
 NMCResultCode
 do_radio (NmCli *nmc, int argc, char **argv)
 {
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
