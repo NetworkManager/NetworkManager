@@ -806,15 +806,83 @@ finish:
 	return nmc->return_value;
 }
 
+static NMCResultCode
+do_radio_all (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+	gs_free_error GError *error = NULL;
+
+	if (argc == 0) {
+		/* no argument, show all radio switches */
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			return NMC_RESULT_ERROR_USER_INPUT;
+		}
+		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
+	} else {
+		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+			return nmc->return_value;
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_wireless_set_enabled (nmc->client, enable_flag);
+		nm_client_wimax_set_enabled (nmc->client, enable_flag);
+		nm_client_wwan_set_enabled (nmc->client, enable_flag);
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
+do_radio_wifi (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+
+	if (argc == 0) {
+		/* no argument, show current WiFi state */
+		nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
+	} else {
+		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+			return nmc->return_value;
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_wireless_set_enabled (nmc->client, enable_flag);
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
+do_radio_wwan (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+
+	if (argc == 0) {
+		/* no argument, show current WWAN (mobile broadband) state */
+		nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
+	} else {
+		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+			return nmc->return_value;
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_wwan_set_enabled (nmc->client, enable_flag);
+	}
+
+	return nmc->return_value;
+}
+
+static const NMCCommand radio_cmds[] = {
+	{"all",   do_radio_all,   usage_radio_all },
+	{"wifi",  do_radio_wifi,  usage_radio_wifi },
+	{"wwan",  do_radio_wwan,  usage_radio_wwan },
+	{NULL,    do_radio_all,   usage_radio }
+};
+
 /*
  * Entry point function for radio switch commands 'nmcli radio'
  */
 NMCResultCode
 do_radio (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-	gboolean enable_flag;
-
 	/* Not (yet?) supported */
 	if (nmc->complete)
 		return nmc->return_value;
@@ -822,86 +890,7 @@ do_radio (NmCli *nmc, int argc, char **argv)
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			g_error_free (error);
-			goto finish;
-		}
-		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
-	}
-
-	if (argc > 0) {
-		if (nmc_arg_is_help (*argv)) {
-			usage_radio ();
-		}
-		else if (matches (*argv, "all") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_all ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show all radio switches */
-				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					g_error_free (error);
-					goto finish;
-				}
-				show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wireless_set_enabled (nmc->client, enable_flag);
-				nm_client_wimax_set_enabled (nmc->client, enable_flag);
-				nm_client_wwan_set_enabled (nmc->client, enable_flag);
-			}
-		}
-		else if (matches (*argv, "wifi") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_wifi ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current WiFi state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-				
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wireless_set_enabled (nmc->client, enable_flag);
-			}
-		}
-		else if (matches (*argv, "wwan") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_wwan ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current WWAN (mobile broadband) state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wwan_set_enabled (nmc->client, enable_flag);
-			}
-		}
-		else {
-			usage_radio ();
-			g_string_printf (nmc->return_text, _("Error: 'radio' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-finish:
-	quit ();
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, radio_cmds, *argv, argc, argv);
 }
 
 static void
