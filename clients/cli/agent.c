@@ -138,6 +138,9 @@ secrets_requested (NMSecretAgentSimple *agent,
 static NMCResultCode
 do_agent_secret (NmCli *nmc, int argc, char **argv)
 {
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-agent");
 	if (nmc->secret_agent) {
@@ -160,6 +163,9 @@ do_agent_polkit (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Initialize polkit agent */
 	if (!nmc_polkit_agent_init (nmc, TRUE, &error)) {
 		g_dbus_error_strip_remote_error (error);
@@ -181,6 +187,9 @@ static NMCResultCode
 do_agent_all (NmCli *nmc, int argc, char **argv)
 {
 	NMCResultCode secret_res;
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Run both secret and polkit agent */
 	secret_res = do_agent_secret (nmc, argc, argv);
@@ -206,10 +215,6 @@ static const NMCCommand agent_cmds[] = {
 NMCResultCode
 do_agent (NmCli *nmc, int argc, char **argv)
 {
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	/* Get NMClient object */
 	nmc->get_client (nmc);
 
