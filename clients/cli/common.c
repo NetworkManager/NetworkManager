@@ -1445,7 +1445,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 		}
 	} else if (c->func) {
 		/* No command, run the default handler. */
-		nmc->return_value = c->func (nmc, argc-1, argv+1);
+		nmc->return_value = c->func (nmc, argc, argv);
 	} else {
 		/* No command and no default handler. */
 		g_string_printf (nmc->return_text, _("Error: missing argument. Try passing --help."));
