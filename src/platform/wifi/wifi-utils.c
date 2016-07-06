@@ -70,6 +70,22 @@ wifi_utils_init (const char *iface, int ifindex, gboolean check_scan)
 	return ret;
 }
 
+int
+wifi_utils_get_ifindex (WifiData *data)
+{
+	g_return_val_if_fail (data != NULL, -1);
+
+	return data->ifindex;
+}
+
+const char *
+wifi_utils_get_iface (WifiData *data)
+{
+	g_return_val_if_fail (data != NULL, NULL);
+
+	return data->iface;
+}
+
 NMDeviceWifiCapabilities
 wifi_utils_get_caps (WifiData *data)
 {
