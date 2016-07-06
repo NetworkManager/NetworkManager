@@ -5234,13 +5234,30 @@ static WifiData *
 wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	const NMPlatformLink *pllink;
 	WifiData *wifi_data;
 
 	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
-	if (!wifi_data) {
-		const NMPlatformLink *pllink;
+	pllink = nm_platform_link_get (platform, ifindex);
 
-		pllink = nm_platform_link_get (platform, ifindex);
+	/* @wifi_data contains an interface name which is used for WEXT queries. If
+	 * the interface name changes we should at least replace the name in the
+	 * existing structure; but probably a complete reinitialization is better
+	 * because during the initial creation there can be race conditions while
+	 * the interface is renamed by udev.
+	 */
+	if (wifi_data && pllink) {
+		if (!nm_streq (wifi_utils_get_iface (wifi_data), pllink->name)) {
+			_LOGD ("wifi: interface %s renamed to %s, dropping old data for ifindex %d",
+			       wifi_utils_get_iface (wifi_data),
+			       pllink->name,
+			       ifindex);
+			g_hash_table_remove (priv->wifi_data, GINT_TO_POINTER (ifindex));
+			wifi_data = NULL;
+		}
+	}
+
+	if (!wifi_data) {
 		if (pllink) {
 			if (pllink->type == NM_LINK_TYPE_WIFI)
 				wifi_data = wifi_utils_init (pllink->name, ifindex, TRUE);
