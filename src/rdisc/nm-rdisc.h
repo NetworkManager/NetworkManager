@@ -141,7 +141,6 @@ typedef struct {
 
 	void (*start) (NMRDisc *rdisc);
 	gboolean (*send_rs) (NMRDisc *rdisc, GError **error);
-	void (*config_changed) (NMRDisc *rdisc, NMRDiscConfigMap changed);
 } NMRDiscClass;
 
 GType nm_rdisc_get_type (void);

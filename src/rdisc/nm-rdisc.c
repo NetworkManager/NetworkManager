@@ -91,6 +91,10 @@ G_DEFINE_TYPE (NMRDisc, nm_rdisc, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static void _config_changed_log (NMRDisc *rdisc, NMRDiscConfigMap changed);
+
+/*****************************************************************************/
+
 NMPNetns *
 nm_rdisc_netns_get (NMRDisc *self)
 {
@@ -140,6 +144,7 @@ nm_rdisc_get_ifname (NMRDisc *self)
 static void
 _emit_config_change (NMRDisc *self, NMRDiscConfigMap changed)
 {
+	_config_changed_log (self, changed);
 	g_signal_emit (self, signals[CONFIG_CHANGED], 0, (int) changed);
 }
 
@@ -570,47 +575,48 @@ dhcp_level_to_string (NMRDiscDHCPLevel dhcp_level)
 #define expiry(item) (item->timestamp + item->lifetime)
 
 static void
-config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed)
+_config_changed_log (NMRDisc *rdisc, NMRDiscConfigMap changed)
 {
 	int i;
 	char changedstr[CONFIG_MAP_MAX_STR];
 	char addrstr[INET6_ADDRSTRLEN];
 
-	if (_LOGD_ENABLED ()) {
-		config_map_to_string (changed, changedstr);
-		_LOGD ("router discovery configuration changed [%s]:", changedstr);
-		_LOGD ("  dhcp-level %s", dhcp_level_to_string (rdisc->dhcp_level));
-		for (i = 0; i < rdisc->gateways->len; i++) {
-			NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
+	if (!_LOGD_ENABLED ())
+		return;
 
-			inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
-			_LOGD ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
-		}
-		for (i = 0; i < rdisc->addresses->len; i++) {
-			NMRDiscAddress *address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
+	config_map_to_string (changed, changedstr);
+	_LOGD ("router discovery configuration changed [%s]:", changedstr);
+	_LOGD ("  dhcp-level %s", dhcp_level_to_string (rdisc->dhcp_level));
+	for (i = 0; i < rdisc->gateways->len; i++) {
+		NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
 
-			inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
-			_LOGD ("  address %s exp %u", addrstr, expiry (address));
-		}
-		for (i = 0; i < rdisc->routes->len; i++) {
-			NMRDiscRoute *route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
+		inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
+		_LOGD ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
+	}
+	for (i = 0; i < rdisc->addresses->len; i++) {
+		NMRDiscAddress *address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 
-			inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-			_LOGD ("  route %s/%d via %s pref %d exp %u", addrstr, route->plen,
-				   nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
-				   expiry (route));
-		}
-		for (i = 0; i < rdisc->dns_servers->len; i++) {
-			NMRDiscDNSServer *dns_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
+		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
+		_LOGD ("  address %s exp %u", addrstr, expiry (address));
+	}
+	for (i = 0; i < rdisc->routes->len; i++) {
+		NMRDiscRoute *route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
 
-			inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
-			_LOGD ("  dns_server %s exp %u", addrstr, expiry (dns_server));
-		}
-		for (i = 0; i < rdisc->dns_domains->len; i++) {
-			NMRDiscDNSDomain *dns_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
+		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
+		_LOGD ("  route %s/%d via %s pref %d exp %u", addrstr, route->plen,
+		       nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
+		       expiry (route));
+	}
+	for (i = 0; i < rdisc->dns_servers->len; i++) {
+		NMRDiscDNSServer *dns_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
 
-			_LOGD ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
-		}
+		inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
+		_LOGD ("  dns_server %s exp %u", addrstr, expiry (dns_server));
+	}
+	for (i = 0; i < rdisc->dns_domains->len; i++) {
+		NMRDiscDNSDomain *dns_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
+
+		_LOGD ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
 	}
 }
 
@@ -896,7 +902,6 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
-	klass->config_changed = config_changed;
 
 	obj_properties[PROP_PLATFORM] =
 	    g_param_spec_object (NM_RDISC_PLATFORM, "", "",
@@ -940,7 +945,7 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 	    g_signal_new (NM_RDISC_CONFIG_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMRDiscClass, config_changed),
+	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, G_TYPE_INT);
 	signals[RA_TIMEOUT] =
