@@ -332,8 +332,6 @@ libNetworkManager_la_SOURCES = \
 	platform/wifi/wifi-utils.c \
 	platform/wifi/wifi-utils.h \
 	\
-	rdisc/nm-fake-rdisc.c \
-	rdisc/nm-fake-rdisc.h \
 	rdisc/nm-lndp-rdisc.c \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
@@ -553,8 +551,6 @@ libnm_iface_helper_la_SOURCES = \
 	platform/wifi/wifi-utils.c \
 	platform/wifi/wifi-utils.h \
 	\
-	rdisc/nm-fake-rdisc.c \
-	rdisc/nm-fake-rdisc.h \
 	rdisc/nm-lndp-rdisc.c \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
