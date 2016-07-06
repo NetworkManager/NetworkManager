@@ -613,42 +613,6 @@ usage_connection_export (void)
 	              "The data are directed to standard output or to a file if a name is given.\n\n"));
 }
 
-static gboolean
-usage_connection_second_level (const char *cmd)
-{
-	gboolean ret = TRUE;
-
-	if (matches (cmd, "show") == 0)
-		usage_connection_show ();
-	else if (matches (cmd, "up") == 0)
-		usage_connection_up ();
-	else if (matches (cmd, "down") == 0)
-		usage_connection_down ();
-	else if (matches (cmd, "add") == 0)
-		usage_connection_add ();
-	else if (matches (cmd, "modify") == 0)
-		usage_connection_modify ();
-	else if (matches (cmd, "clone") == 0)
-		usage_connection_clone ();
-	else if (matches (cmd, "edit") == 0)
-		usage_connection_edit ();
-	else if (matches (cmd, "delete") == 0)
-		usage_connection_delete ();
-	else if (matches (cmd, "monitor") == 0)
-		usage_connection_monitor ();
-	else if (matches (cmd, "reload") == 0)
-		usage_connection_reload ();
-	else if (matches (cmd, "load") == 0)
-		usage_connection_load ();
-	else if (matches (cmd, "import") == 0)
-		usage_connection_import ();
-	else if (matches (cmd, "export") == 0)
-		usage_connection_export ();
-	else
-		ret = FALSE;
-	return ret;
-}
-
 /* quit main loop */
 static void
 quit (void)
@@ -1671,17 +1635,106 @@ get_invisible_active_connections (NmCli *nmc)
 	return invisibles;
 }
 
+static GArray *
+parse_preferred_connection_order (const char *order, GError **error)
+{
+	char **strv, **iter;
+	const char *str;
+	GArray *order_arr;
+	NmcSortOrder val;
+	gboolean inverse, unique;
+	int i;
+
+	strv = nmc_strsplit_set (order, ":", -1);
+	if (!strv || !*strv) {
+		g_set_error (error, NMCLI_ERROR, 0,
+		             _("incorrect string '%s' of '--order' option"), order);
+		g_strfreev (strv);
+		return NULL;
+	}
+
+	order_arr = g_array_sized_new (FALSE, FALSE, sizeof (NmcSortOrder), 4);
+	for (iter = strv; iter && *iter; iter++) {
+		str = *iter;
+		inverse = FALSE;
+		if (str[0] == '-')
+			inverse = TRUE;
+		if (str[0] == '+' || str[0] == '-')
+			str++;
+
+		if (matches (str, "active") == 0)
+			val = inverse ? NMC_SORT_ACTIVE_INV : NMC_SORT_ACTIVE;
+		else if (matches (str, "name") == 0)
+			val = inverse ? NMC_SORT_NAME_INV : NMC_SORT_NAME;
+		else if (matches (str, "type") == 0)
+			val = inverse ? NMC_SORT_TYPE_INV : NMC_SORT_TYPE;
+		else if (matches (str, "path") == 0)
+			val = inverse ? NMC_SORT_PATH_INV : NMC_SORT_PATH;
+		else {
+			g_array_unref (order_arr);
+			order_arr = NULL;
+			g_set_error (error, NMCLI_ERROR, 0,
+			             _("incorrect item '%s' in '--order' option"), *iter);
+			break;
+		}
+		/* Check for duplicates and ignore them. */
+		unique = TRUE;
+		for (i = 0; i < order_arr->len; i++) {
+			if (abs (g_array_index (order_arr, NmcSortOrder, i)) - abs (val) == 0) {
+				unique = FALSE;
+				break;
+			}
+		}
+
+		/* Value is ok and unique, add it to the array */
+		if (unique)
+			g_array_append_val (order_arr, val);
+	}
+
+	g_strfreev (strv);
+	return order_arr;
+}
+
 static NMCResultCode
-do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
-                     const GArray *order, int argc, char **argv)
+do_connections_show (NmCli *nmc, int argc, char **argv)
 {
 	GError *err = NULL;
 	char *profile_flds = NULL, *active_flds = NULL;
 	GPtrArray *invisibles, *sorted_cons;
+	gboolean active_only = FALSE;
+	gboolean show_secrets = FALSE;
+	GArray *order = NULL;
+	int i;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
 		goto finish;
+
+	/* check connection show options [--active] [--show-secrets] */
+	for (i = 0; i < 3; i++) {
+		if (!active_only && nmc_arg_is_option (*argv, "active")) {
+			active_only = TRUE;
+			next_arg (&argc, &argv);
+		}
+		/* --show-secrets is deprecated in favour of global --show-secrets */
+		/* Keep it here for backwards compatibility */
+		if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
+			show_secrets = TRUE;
+			next_arg (&argc, &argv);
+		}
+		if (!order && nmc_arg_is_option (*argv, "order")) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_set_error_literal (&err, NMCLI_ERROR, 0,
+				                     _("'--order' argument is missing"));
+				goto finish;
+			}
+			order = parse_preferred_connection_order (*argv, &err);
+			if (err)
+				goto finish;
+			next_arg (&argc, &argv);
+		}
+	}
+	show_secrets = nmc->show_secrets || show_secrets;
 
 	if (argc == 0) {
 		char *fields_str;
@@ -1689,7 +1742,6 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 		char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
 		NmcOutputField *tmpl, *arr;
 		size_t tmpl_len;
-		int i;
 
 		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 			fields_str = fields_common;
@@ -1835,6 +1887,8 @@ finish:
 	}
 	g_free (profile_flds);
 	g_free (active_flds);
+	if (order)
+		g_array_unref (order);
 	return nmc->return_value;
 }
 
@@ -7598,7 +7652,7 @@ editor_init_existing_connection (NMConnection *connection)
 }
 
 static NMCResultCode
-do_connection_edit (NmCli *nmc, int argc, char **argv)
+do_connection_edit_func (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
@@ -7622,6 +7676,10 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	                         {"uuid",     TRUE, &con_uuid, FALSE},
 	                         {"path",     TRUE, &con_path, FALSE},
 	                         {NULL} };
+
+	/* TODO: complete uuid, path or id */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
@@ -7779,6 +7837,46 @@ error:
 	return nmc->return_value;
 }
 
+typedef struct {
+	NmCli *nmc;
+	int argc;
+	char **argv;
+} NmcEditorThreadData;
+
+static GThread *editor_thread;
+static NmcEditorThreadData editor_thread_data;
+
+/*
+ * We need to run do_connection_edit_func() in a thread so that
+ * glib main loop is not blocked and could receive and process D-Bus
+ * return messages.
+ */
+static gpointer
+connection_editor_thread_func (gpointer data)
+{
+	NmcEditorThreadData *td = (NmcEditorThreadData *) data;
+
+	/* run editor for editing/adding connections */
+	td->nmc->return_value = do_connection_edit_func (td->nmc, td->argc, td->argv);
+
+	/* quit glib main loop now that we are done with this thread */
+	quit ();
+
+	return NULL;
+}
+
+static NMCResultCode
+do_connection_edit (NmCli *nmc, int argc, char **argv)
+{
+	nmc->should_wait++;
+	editor_thread_data.nmc = nmc;
+	editor_thread_data.argc = argc;
+	editor_thread_data.argv = argv;
+	editor_thread = g_thread_new ("editor-thread", connection_editor_thread_func, &editor_thread_data);
+	g_thread_unref (editor_thread);
+
+	return nmc->return_value;
+}
 
 static void
 modify_connection_cb (GObject *connection,
@@ -7807,7 +7905,6 @@ modify_connection_cb (GObject *connection,
 
 static NMCResultCode
 do_connection_modify (NmCli *nmc,
-                      gboolean temporary,
                       int argc,
                       char **argv)
 {
@@ -7816,6 +7913,7 @@ do_connection_modify (NmCli *nmc,
 	const char *name;
 	const char *selector = NULL;
 	GError *error = NULL;
+	gboolean temporary = FALSE;
 
 	if (argc == 0) {
 		/*
@@ -7828,6 +7926,14 @@ do_connection_modify (NmCli *nmc,
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
+
+	if (nmc_arg_is_option (*argv, "temporary")) {
+		if (nmc->complete)
+			goto finish;
+		temporary = TRUE;
+		next_arg (&argc, &argv);
+	}
+
 	if (   strcmp (*argv, "id") == 0
 	    || strcmp (*argv, "uuid") == 0
 	    || strcmp (*argv, "path") == 0) {
@@ -7923,7 +8029,7 @@ clone_connection_cb (GObject *client,
 }
 
 static NMCResultCode
-do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
+do_connection_clone (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	NMConnection *new_connection = NULL;
@@ -7935,6 +8041,7 @@ do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	char *new_name_ask = NULL;
 	const char *selector = NULL;
 	char *uuid;
+	gboolean temporary = FALSE;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
@@ -7950,6 +8057,11 @@ do_connection_clone (NmCli *nmc, gboolean temporary, int argc, char **argv)
 			goto finish;
 		}
 	} else {
+		if (nmc_arg_is_option (*argv, "temporary")) {
+			temporary = TRUE;
+			next_arg (&argc, &argv);
+		}
+
 		if (   strcmp (*argv, "id") == 0
 		    || strcmp (*argv, "uuid") == 0
 		    || strcmp (*argv, "path") == 0) {
@@ -8319,7 +8431,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 #define PROMPT_IMPORT_FILE N_("File to import: ")
 
 static NMCResultCode
-do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
+do_connection_import (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	const char *type = NULL, *filename = NULL;
@@ -8328,6 +8440,7 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	NMConnection *connection = NULL;
 	NMVpnEditorPlugin *plugin;
 	gs_free char *service_type = NULL;
+	gboolean temporary = FALSE;
 
 	/* Not (yet?) supported */
 	if (nmc->complete)
@@ -8347,6 +8460,11 @@ do_connection_import (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	}
 
 	while (argc > 0) {
+		if (nmc_arg_is_option (*argv, "temporary")) {
+			temporary = TRUE;
+			next_arg (&argc, &argv);
+		}
+
 		if (strcmp (*argv, "type") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
@@ -8560,35 +8678,6 @@ finish:
 	return nmc->return_value;
 }
 
-
-typedef struct {
-	NmCli *nmc;
-	int argc;
-	char **argv;
-} NmcEditorThreadData;
-
-static GThread *editor_thread;
-static NmcEditorThreadData editor_thread_data;
-
-/*
- * We need to run do_connection_edit() in a thread so that
- * glib main loop is not blocked and could receive and process D-Bus
- * return messages.
- */
-static gpointer
-connection_editor_thread_func (gpointer data)
-{
-	NmcEditorThreadData *td = (NmcEditorThreadData *) data;
-
-	/* run editor for editing/adding connections */
-	td->nmc->return_value = do_connection_edit (td->nmc, td->argc, td->argv);
-
-	/* quit glib main loop now that we are done with this thread */
-	quit ();
-
-	return NULL;
-}
-
 static char *
 gen_func_connection_names (const char *text, int state)
 {
@@ -8675,87 +8764,32 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
-static GArray *
-parse_preferred_connection_order (const char *order, GError **error)
-{
-	char **strv, **iter;
-	const char *str;
-	GArray *order_arr;
-	NmcSortOrder val;
-	gboolean inverse, unique;
-	int i;
-
-	strv = nmc_strsplit_set (order, ":", -1);
-	if (!strv || !*strv) {
-		g_set_error (error, NMCLI_ERROR, 0,
-		             _("incorrect string '%s' of '--order' option"), order);
-		g_strfreev (strv);
-		return NULL;
-	}
-
-	order_arr = g_array_sized_new (FALSE, FALSE, sizeof (NmcSortOrder), 4);
-	for (iter = strv; iter && *iter; iter++) {
-		str = *iter;
-		inverse = FALSE;
-		if (str[0] == '-')
-			inverse = TRUE;
-		if (str[0] == '+' || str[0] == '-')
-			str++;
-
-		if (matches (str, "active") == 0)
-			val = inverse ? NMC_SORT_ACTIVE_INV : NMC_SORT_ACTIVE;
-		else if (matches (str, "name") == 0)
-			val = inverse ? NMC_SORT_NAME_INV : NMC_SORT_NAME;
-		else if (matches (str, "type") == 0)
-			val = inverse ? NMC_SORT_TYPE_INV : NMC_SORT_TYPE;
-		else if (matches (str, "path") == 0)
-			val = inverse ? NMC_SORT_PATH_INV : NMC_SORT_PATH;
-		else {
-			g_array_unref (order_arr);
-			order_arr = NULL;
-			g_set_error (error, NMCLI_ERROR, 0,
-			             _("incorrect item '%s' in '--order' option"), *iter);
-			break;
-		}
-		/* Check for duplicates and ignore them. */
-		unique = TRUE;
-		for (i = 0; i < order_arr->len; i++) {
-			if (abs (g_array_index (order_arr, NmcSortOrder, i)) - abs (val) == 0) {
-				unique = FALSE;
-				break;
-			}
-		}
-
-		/* Value is ok and unique, add it to the array */
-		if (unique)
-			g_array_append_val (order_arr, val);
-	}
-
-	g_strfreev (strv);
-	return order_arr;
-}
+static const NMCCommand connection_cmds[] = {
+	{"show",     do_connections_show,      usage_connection_show },
+	{"up",       do_connection_up,         usage_connection_up },
+	{"down",     do_connection_down,       usage_connection_down },
+	{"add",      do_connection_add,        usage_connection_add },
+	{"edit",     do_connection_edit,       usage_connection_edit },
+	{"delete",   do_connection_delete,     usage_connection_delete },
+	{"reload",   do_connection_reload,     usage_connection_reload },
+	{"load",     do_connection_load,       usage_connection_load },
+	{"modify",   do_connection_modify,     usage_connection_modify },
+	{"clone",    do_connection_clone,      usage_connection_clone },
+	{"import",   do_connection_import,     usage_connection_import },
+	{"export",   do_connection_export,     usage_connection_export },
+	{"monitor",  do_connection_monitor,    usage_connection_monitor },
+	{NULL,       do_connections_show,      usage },
+};
 
 /* Entry point function for connections-related commands: 'nmcli connection' */
 NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
 	/* Set completion function for 'nmcli con' */
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;
-
-	/* Exit early on help */
-	if (nmc_arg_is_help (*argv)) {
-		usage ();
-		return nmc->return_value;
-	}
-	if (argc != 0 && nmc_arg_is_help (*(argv+1))) {
-		if (usage_connection_second_level (*argv))
-			return nmc->return_value;
-	}
 
 	/* Get NMClient object early */
 	nmc->get_client (nmc);
@@ -8772,124 +8806,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	/* Get the connection list */
 	nmc->connections = nm_client_get_connections (nmc->client);
 
-	/* Now parse the command line and perform the required operation */
-	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-			goto opt_error;
-		nmc->return_value = do_connections_show (nmc, FALSE, FALSE, NULL, argc, argv);
-	} else {
-		if (matches (*argv, "show") == 0) {
-			gboolean active = FALSE;
-			gboolean show_secrets = FALSE;
-			GArray *order = NULL;
-			int i;
-
-			next_arg (&argc, &argv);
-			/* check connection show options [--active] [--show-secrets] */
-			for (i = 0; i < 3; i++) {
-				if (!active && nmc_arg_is_option (*argv, "active")) {
-					active = TRUE;
-					next_arg (&argc, &argv);
-				}
-				/* --show-secrets is deprecated in favour of global --show-secrets */
-				/* Keep it here for backwards compatibility */
-				if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
-					show_secrets = TRUE;
-					next_arg (&argc, &argv);
-				}
-				if (!order && nmc_arg_is_option (*argv, "order")) {
-					if (next_arg (&argc, &argv) != 0) {
-						g_set_error_literal (&error, NMCLI_ERROR, 0,
-						                     _("'--order' argument is missing"));
-						goto opt_error;
-					}
-					order = parse_preferred_connection_order (*argv, &error);
-					if (error)
-						goto opt_error;
-					next_arg (&argc, &argv);
-				}
-			}
-			show_secrets = nmc->show_secrets || show_secrets;
-			nmc->return_value = do_connections_show (nmc, active, show_secrets, order, argc, argv);
-			if (order)
-				g_array_unref (order);
-		} else if (matches(*argv, "up") == 0) {
-			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "down") == 0) {
-			nmc->return_value = do_connection_down (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "add") == 0) {
-			nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "edit") == 0) {
-			/* edit with --complete? Should not happen */
-			if (nmc->complete)
-				goto opt_error;
-			nmc->should_wait++;
-			editor_thread_data.nmc = nmc;
-			editor_thread_data.argc = argc - 1;
-			editor_thread_data.argv = argv + 1;
-			editor_thread = g_thread_new ("editor-thread", connection_editor_thread_func, &editor_thread_data);
-			g_thread_unref (editor_thread);
-		} else if (matches(*argv, "delete") == 0) {
-			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "reload") == 0) {
-			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "load") == 0) {
-			nmc->return_value = do_connection_load (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "modify") == 0) {
-			gboolean temporary = FALSE;
-
-			next_arg (&argc, &argv);
-			if (nmc_arg_is_option (*argv, "temporary")) {
-				if (nmc->complete)
-					goto opt_error;
-				temporary = TRUE;
-				next_arg (&argc, &argv);
-			}
-			nmc->return_value = do_connection_modify (nmc, temporary, argc, argv);
-		} else if (matches (*argv, "clone") == 0) {
-			gboolean temporary = FALSE;
-
-			next_arg (&argc, &argv);
-			if (nmc_arg_is_option (*argv, "temporary")) {
-				if (nmc->complete)
-					goto opt_error;
-				temporary = TRUE;
-				next_arg (&argc, &argv);
-			}
-			nmc->return_value = do_connection_clone (nmc, temporary, argc, argv);
-		} else if (matches(*argv, "import") == 0) {
-			gboolean temporary = FALSE;
-
-			next_arg (&argc, &argv);
-			if (nmc_arg_is_option (*argv, "temporary")) {
-				if (nmc->complete)
-					goto opt_error;
-				temporary = TRUE;
-				next_arg (&argc, &argv);
-			}
-			nmc->return_value = do_connection_import (nmc, temporary, argc, argv);
-		} else if (matches(*argv, "export") == 0) {
-			nmc->return_value = do_connection_export (nmc, argc-1, argv+1);
-		} else if (matches(*argv, "monitor") == 0) {
-			nmc->return_value = do_connection_monitor (nmc, argc-1, argv+1);
-		} else {
-			if (nmc->complete)
-				goto opt_error;
-			usage ();
-			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-	return nmc->return_value;
-
-opt_error:
-	if (!nmc->complete) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	}
-	g_error_free (error);
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, connection_cmds, *argv, argc, argv);
 }
 
 void
