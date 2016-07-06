@@ -66,22 +66,16 @@ _LOG_DECLARE_SELF(NMDeviceWifi);
 
 #define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
 
-G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIFI, NMDeviceWifiPrivate))
-
-
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifi,
 	PROP_MODE,
 	PROP_BITRATE,
 	PROP_ACCESS_POINTS,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
 	PROP_SCANNING,
-
-	LAST_PROP
-};
+);
 
 enum {
 	ACCESS_POINT_ADDED,
@@ -93,7 +87,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-struct _NMDeviceWifiPrivate {
+typedef struct {
 	gint8             invalid_strength_counter;
 
 	GHashTable *      aps;
@@ -124,7 +118,40 @@ struct _NMDeviceWifiPrivate {
 
 	gint32 hw_addr_scan_expire;
 	char *hw_addr_scan;
+} NMDeviceWifiPrivate;
+
+struct _NMDeviceWifi
+{
+	NMDevice parent;
+	NMDeviceWifiPrivate _priv;
 };
+
+struct _NMDeviceWifiClass
+{
+	NMDeviceClass parent;
+
+	/* Signals */
+	gboolean (*scanning_allowed) (NMDeviceWifi *device);
+};
+
+/*****************************************************************************/
+
+G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_WIFI_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMDeviceWifi *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_DEVICE_WIFI (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static gboolean check_scanning_allowed (NMDeviceWifi *self);
 
@@ -176,7 +203,7 @@ static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
 
 static void _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset);
 
-/*****************************************************************/
+/*****************************************************************************/
 
 static void
 constructed (GObject *object)
@@ -379,7 +406,7 @@ set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap, gboolean recheck_avai
 		g_object_unref (old_ap);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
+	_notify (self, PROP_ACTIVE_ACCESS_POINT);
 }
 
 static void
@@ -425,7 +452,7 @@ periodic_update (NMDeviceWifi *self)
 	new_rate = nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex);
 	if (new_rate != priv->rate) {
 		priv->rate = new_rate;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
+		_notify (self, PROP_BITRATE);
 	}
 }
 
@@ -439,7 +466,7 @@ periodic_update_cb (gpointer user_data)
 static gboolean
 bring_up (NMDevice *device, gboolean *no_firmware)
 {
-	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
+	if (!NM_DEVICE_WIFI_GET_PRIVATE ((NMDeviceWifi *) device)->enabled)
 		return FALSE;
 
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->bring_up (device, no_firmware);
@@ -462,7 +489,7 @@ ap_add_remove (NMDeviceWifi *self,
 	}
 
 	g_signal_emit (self, signals[signum], 0, ap);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
+	_notify (self, PROP_ACCESS_POINTS);
 
 	if (signum == ACCESS_POINT_REMOVED) {
 		g_hash_table_remove (priv->aps, nm_exported_object_get_path ((NMExportedObject *) ap));
@@ -527,7 +554,7 @@ deactivate (NMDevice *device)
 
 	if (priv->mode != NM_802_11_MODE_INFRA) {
 		priv->mode = NM_802_11_MODE_INFRA;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
+		_notify (self, PROP_MODE);
 	}
 
 	/* Ensure we trigger a scan after deactivating a Hotspot */
@@ -1433,10 +1460,11 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 static gboolean
 request_wireless_scan_periodic (gpointer user_data)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (user_data);
+	NMDeviceWifi *self = user_data;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	priv->pending_scan_id = 0;
-	request_wireless_scan (user_data, NULL);
+	request_wireless_scan (self, NULL);
 	return FALSE;
 }
 
@@ -2052,7 +2080,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	/* Signal scanning state changes */
 	if (   new_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
 	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		g_object_notify (G_OBJECT (self), "scanning");
+		_notify (self, PROP_SCANNING);
 }
 
 static void
@@ -2096,7 +2124,7 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	scanning = nm_supplicant_interface_get_scanning (iface);
 	_LOGD (LOGD_WIFI_SCAN, "now %s", scanning ? "scanning" : "idle");
 
-	g_object_notify (G_OBJECT (self), "scanning");
+	_notify (self, PROP_SCANNING);
 
 	/* Run a quick update of current AP when coming out of a scan */
 	state = nm_device_get_state (NM_DEVICE (self));
@@ -2378,7 +2406,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 		/* Scanning not done in AP mode; clear the scan list */
 		remove_all_aps (self);
 	}
-	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
+	_notify (self, PROP_MODE);
 
 	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
 	 * and turns them into open networks.  It's been this way since at least
@@ -3107,8 +3135,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMDeviceWifiPrivate));
-
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRELESS_SETTING_NAME, NM_LINK_TYPE_WIFI)
 
 	object_class->constructed = constructed;
@@ -3141,77 +3167,73 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	klass->scanning_allowed = scanning_allowed;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
-		                    NM_802_11_MODE_UNKNOWN,
-		                    NM_802_11_MODE_AP,
-		                    NM_802_11_MODE_INFRA,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
+	                       NM_802_11_MODE_UNKNOWN,
+	                       NM_802_11_MODE_AP,
+	                       NM_802_11_MODE_INFRA,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_BITRATE,
-		 g_param_spec_uint (NM_DEVICE_WIFI_BITRATE, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BITRATE] =
+	    g_param_spec_uint (NM_DEVICE_WIFI_BITRATE, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ACCESS_POINTS,
-		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACCESS_POINTS] =
+	    g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_ACCESS_POINT,
-		 g_param_spec_string (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_ACCESS_POINT] =
+	    g_param_spec_string (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAPABILITIES] =
+	    g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES, "", "",
+	                       0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_SCANNING,
-		 g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SCANNING] =
+	    g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
-		g_signal_new ("access-point-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_AP);
+	    g_signal_new ("access-point-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_AP);
 
 	signals[ACCESS_POINT_REMOVED] =
-		g_signal_new ("access-point-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_AP);
+	    g_signal_new ("access-point-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_AP);
 
 	signals[SCANNING_ALLOWED] =
-		g_signal_new ("scanning-allowed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),
-		              scanning_allowed_accumulator, NULL, NULL,
-		              G_TYPE_BOOLEAN, 0);
+	    g_signal_new ("scanning-allowed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),
+	                  scanning_allowed_accumulator, NULL, NULL,
+	                  G_TYPE_BOOLEAN, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_WIFI_SKELETON,
