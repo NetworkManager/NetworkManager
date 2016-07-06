@@ -337,13 +337,16 @@ start (NMRDisc *rdisc)
 
 /*****************************************************************************/
 
-static inline gint32
-ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, gint32 defval)
+static inline int
+ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, int min, int max, int defval)
 {
-	return nm_platform_sysctl_get_int32 (platform, nm_utils_ip6_property_path (ifname, property), defval);
+	return (int) nm_platform_sysctl_get_int_checked (platform,
+	                                                 nm_utils_ip6_property_path (ifname, property),
+	                                                 10,
+	                                                 min,
+	                                                 max,
+	                                                 defval);
 }
-
-/*****************************************************************************/
 
 static void
 nm_lndp_rdisc_init (NMLndpRDisc *lndp_rdisc)
@@ -377,14 +380,16 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 	                      NM_RDISC_IFNAME, ifname,
 	                      NM_RDISC_NETWORK_ID, network_id,
 	                      NM_RDISC_ADDR_GEN_MODE, (int) addr_gen_mode,
+	                      NM_RDISC_MAX_ADDRESSES, ipv6_sysctl_get (platform, ifname,
+	                                                               "max_addresses",
+	                                                               0, G_MAXINT32, NM_RDISC_MAX_ADDRESSES_DEFAULT),
+	                      NM_RDISC_ROUTER_SOLICITATIONS, ipv6_sysctl_get (platform, ifname,
+	                                                                      "router_solicitations",
+	                                                                      1, G_MAXINT32, NM_RDISC_ROUTER_SOLICITATIONS_DEFAULT),
+	                      NM_RDISC_ROUTER_SOLICITATION_INTERVAL, ipv6_sysctl_get (platform, ifname,
+	                                                                              "router_solicitation_interval",
+	                                                                              1, G_MAXINT32, NM_RDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT),
 	                      NULL);
-
-	rdisc->max_addresses = ipv6_sysctl_get (platform, ifname, "max_addresses",
-	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);
-	rdisc->rtr_solicitations = ipv6_sysctl_get (platform, ifname, "router_solicitations",
-	                                            NM_RDISC_RTR_SOLICITATIONS_DEFAULT);
-	rdisc->rtr_solicitation_interval = ipv6_sysctl_get (platform, ifname, "router_solicitation_interval",
-	                                                    NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT);
 
 	priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 

@@ -38,19 +38,23 @@
 /*****************************************************************************/
 
 struct _NMRDiscPrivate {
-	int solicitations_left;
+	gint32 solicitations_left;
 	guint send_rs_id;
-	gint64 last_rs;
+	gint32 last_rs;
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 	char *last_send_rs_error;
 	NMUtilsIPv6IfaceId iid;
 
+	/* immutable values: */
 	int ifindex;
 	char *ifname;
 	char *network_id;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMUtilsStableType stable_type;
+	gint32 max_addresses;
+	gint32 router_solicitations;
+	gint32 router_solicitation_interval;
 
 	NMPlatform *platform;
 	NMPNetns *netns;
@@ -65,6 +69,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_STABLE_TYPE,
 	PROP_NETWORK_ID,
 	PROP_ADDR_GEN_MODE,
+	PROP_MAX_ADDRESSES,
+	PROP_ROUTER_SOLICITATIONS,
+	PROP_ROUTER_SOLICITATION_INTERVAL,
 );
 
 enum {
@@ -241,6 +248,7 @@ complete_address (NMRDisc *rdisc, NMRDiscAddress *addr)
 gboolean
 nm_rdisc_complete_and_add_address (NMRDisc *rdisc, NMRDiscAddress *new)
 {
+	NMRDiscPrivate *priv;
 	int i;
 
 	if (!complete_address (rdisc, new))
@@ -264,11 +272,13 @@ nm_rdisc_complete_and_add_address (NMRDisc *rdisc, NMRDiscAddress *new)
 		}
 	}
 
+	priv = NM_RDISC_GET_PRIVATE (rdisc);
+
 	/* we create at most max_addresses autoconf addresses. This is different from
 	 * what the kernel does, because it considers *all* addresses (including
 	 * static and other temporary addresses).
 	 **/
-	if (rdisc->max_addresses && rdisc->addresses->len >= rdisc->max_addresses)
+	if (priv->max_addresses && rdisc->addresses->len >= priv->max_addresses)
 		return FALSE;
 
 	if (new->lifetime)
@@ -421,12 +431,14 @@ nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 }
 
 static gboolean
-send_rs (NMRDisc *rdisc)
+send_rs_timeout (NMRDisc *rdisc)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDiscClass *klass = NM_RDISC_GET_CLASS (rdisc);
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 	GError *error = NULL;
+
+	priv->send_rs_id = 0;
 
 	if (!nm_rdisc_netns_push (rdisc, &netns))
 		return G_SOURCE_REMOVE;
@@ -451,13 +463,12 @@ send_rs (NMRDisc *rdisc)
 	priv->last_rs = nm_utils_get_monotonic_timestamp_s ();
 	if (priv->solicitations_left > 0) {
 		_LOGD ("scheduling router solicitation retry in %d seconds.",
-		       rdisc->rtr_solicitation_interval);
-		priv->send_rs_id = g_timeout_add_seconds (rdisc->rtr_solicitation_interval,
-		                                          (GSourceFunc) send_rs, rdisc);
+		       (int) priv->router_solicitation_interval);
+		priv->send_rs_id = g_timeout_add_seconds (priv->router_solicitation_interval,
+		                                          (GSourceFunc) send_rs_timeout, rdisc);
 	} else {
 		_LOGD ("did not receive a router advertisement after %d solicitations.",
-		       rdisc->rtr_solicitations);
-		priv->send_rs_id = 0;
+		       (int) priv->router_solicitations);
 	}
 
 	return G_SOURCE_REMOVE;
@@ -467,17 +478,20 @@ static void
 solicit (NMRDisc *rdisc)
 {
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
-	gint64 next;
+	gint64 next, now;
 
-	if (!priv->send_rs_id) {
-		priv->solicitations_left = rdisc->rtr_solicitations;
+	if (priv->send_rs_id)
+		return;
 
-		next = CLAMP (priv->last_rs + rdisc->rtr_solicitation_interval - now, 0, G_MAXINT32);
-		_LOGD ("scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
-		       next);
-		priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs, rdisc);
-	}
+	now = nm_utils_get_monotonic_timestamp_s ();
+
+	priv->solicitations_left = priv->router_solicitations;
+
+	next = (((gint64) priv->last_rs) + priv->router_solicitation_interval) - now;
+	next = CLAMP (next, 0, G_MAXINT32);
+	_LOGD ("scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
+	       next);
+	priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs_timeout, rdisc);
 }
 
 static gboolean
@@ -496,7 +510,7 @@ nm_rdisc_start (NMRDisc *rdisc)
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 	NMRDiscClass *klass = NM_RDISC_GET_CLASS (rdisc);
-	guint ra_wait_secs;
+	gint64 ra_wait_secs;
 
 	g_assert (klass->start);
 
@@ -506,9 +520,10 @@ nm_rdisc_start (NMRDisc *rdisc)
 		return;
 
 	nm_clear_g_source (&priv->ra_timeout_id);
-	ra_wait_secs = CLAMP (rdisc->rtr_solicitations * rdisc->rtr_solicitation_interval, 30, 120);
+	ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
+	ra_wait_secs = CLAMP (ra_wait_secs, 30, 120);
 	priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, rdisc_ra_timeout_cb, rdisc);
-	_LOGD ("scheduling RA timeout in %d seconds", ra_wait_secs);
+	_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
 
 	if (klass->start)
 		klass->start (rdisc);
@@ -829,6 +844,18 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->addr_gen_mode = g_value_get_int (value);
 		break;
+	case PROP_MAX_ADDRESSES:
+		/* construct-only */
+		priv->max_addresses = g_value_get_int (value);
+		break;
+	case PROP_ROUTER_SOLICITATIONS:
+		/* construct-only */
+		priv->router_solicitations = g_value_get_int (value);
+		break;
+	case PROP_ROUTER_SOLICITATION_INTERVAL:
+		/* construct-only */
+		priv->router_solicitation_interval = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -851,7 +878,7 @@ nm_rdisc_init (NMRDisc *rdisc)
 	g_array_set_clear_func (rdisc->dns_domains, dns_domain_free);
 	rdisc->hop_limit = 64;
 
-	/* Start at very low number so that last_rs - rtr_solicitation_interval
+	/* Start at very low number so that last_rs - router_solicitation_interval
 	 * is much lower than nm_utils_get_monotonic_timestamp_s() at startup.
 	 */
 	priv->last_rs = G_MININT32;
@@ -937,6 +964,24 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 	obj_properties[PROP_ADDR_GEN_MODE] =
 	    g_param_spec_int (NM_RDISC_ADDR_GEN_MODE, "", "",
 	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_MAX_ADDRESSES] =
+	    g_param_spec_int (NM_RDISC_MAX_ADDRESSES, "", "",
+	                      0, G_MAXINT32, NM_RDISC_MAX_ADDRESSES_DEFAULT,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ROUTER_SOLICITATIONS] =
+	    g_param_spec_int (NM_RDISC_ROUTER_SOLICITATIONS, "", "",
+	                      1, G_MAXINT32, NM_RDISC_ROUTER_SOLICITATIONS_DEFAULT,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ROUTER_SOLICITATION_INTERVAL] =
+	    g_param_spec_int (NM_RDISC_ROUTER_SOLICITATION_INTERVAL, "", "",
+	                      1, G_MAXINT32, NM_RDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
 	                      G_PARAM_WRITABLE |
 	                      G_PARAM_CONSTRUCT_ONLY |
 	                      G_PARAM_STATIC_STRINGS);

@@ -344,18 +344,10 @@ nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self)
 NMRDisc *
 nm_fake_rdisc_new (int ifindex, const char *ifname)
 {
-	NMRDisc *rdisc;
-
-	rdisc = g_object_new (NM_TYPE_FAKE_RDISC,
-	                      NM_RDISC_IFINDEX, ifindex,
-	                      NM_RDISC_IFNAME, ifname,
-	                      NULL);
-
-	rdisc->max_addresses = NM_RDISC_MAX_ADDRESSES_DEFAULT;
-	rdisc->rtr_solicitations = NM_RDISC_RTR_SOLICITATIONS_DEFAULT;
-	rdisc->rtr_solicitation_interval = NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT;
-
-	return rdisc;
+	return g_object_new (NM_TYPE_FAKE_RDISC,
+	                     NM_RDISC_IFINDEX, ifindex,
+	                     NM_RDISC_IFNAME, ifname,
+	                     NULL);
 }
 
 static void
@@ -388,10 +380,10 @@ nm_fake_rdisc_class_init (NMFakeRDiscClass *klass)
 	rdisc_class->start = start;
 	rdisc_class->send_rs = send_rs;
 
-	signals[RS_SENT] = g_signal_new (
-			NM_FAKE_RDISC_RS_SENT,
-			G_OBJECT_CLASS_TYPE (klass),
-			G_SIGNAL_RUN_FIRST,
-			0,  NULL, NULL, NULL,
-			G_TYPE_NONE, 0);
+	signals[RS_SENT] =
+	    g_signal_new (NM_FAKE_RDISC_RS_SENT,
+	                  G_OBJECT_CLASS_TYPE (klass),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 }

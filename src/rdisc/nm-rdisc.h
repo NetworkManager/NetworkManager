@@ -40,6 +40,10 @@
 #define NM_RDISC_NETWORK_ID     "network-id"
 #define NM_RDISC_ADDR_GEN_MODE  "addr-gen-mode"
 #define NM_RDISC_STABLE_TYPE    "stable-type"
+#define NM_RDISC_MAX_ADDRESSES  "max-addresses"
+#define NM_RDISC_ROUTER_SOLICITATIONS "router-solicitations"
+#define NM_RDISC_ROUTER_SOLICITATION_INTERVAL "router-solicitation-interval"
+
 #define NM_RDISC_CONFIG_CHANGED "config-changed"
 #define NM_RDISC_RA_TIMEOUT     "ra-timeout"
 
@@ -105,8 +109,8 @@ typedef enum {
 } NMRDiscConfigMap;
 
 #define NM_RDISC_MAX_ADDRESSES_DEFAULT 16
-#define NM_RDISC_RTR_SOLICITATIONS_DEFAULT 3
-#define NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT 4
+#define NM_RDISC_ROUTER_SOLICITATIONS_DEFAULT 3
+#define NM_RDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4
 
 struct _NMRDiscPrivate;
 
@@ -120,10 +124,6 @@ typedef struct {
 	GObject parent;
 
 	struct _NMRDiscPrivate *_priv;
-
-	gint32 max_addresses;
-	gint32 rtr_solicitations;
-	gint32 rtr_solicitation_interval;
 
 	NMRDiscDHCPLevel dhcp_level;
 	GArray *gateways;
