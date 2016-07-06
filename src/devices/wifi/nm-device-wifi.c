@@ -99,20 +99,20 @@ struct _NMDeviceWifiPrivate {
 	GHashTable *      aps;
 	NMAccessPoint *   current_ap;
 	guint32           rate;
-	gboolean          enabled; /* rfkilled or not */
+	bool              enabled:1; /* rfkilled or not */
+	bool              requested_scan:1;
+	bool              ssid_found:1;
 
 	gint32            last_scan;
 	gint32            scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             ap_dump_id;
-	bool              requested_scan;
 
 	NMSupplicantManager   *sup_mgr;
 	NMSupplicantInterface *sup_iface;
 	guint                  sup_timeout_id; /* supplicant association timeout */
 
-	bool              ssid_found;
 	NM80211Mode       mode;
 
 	guint             periodic_source_id;
@@ -2923,6 +2923,8 @@ set_enabled (NMDevice *device, gboolean enabled)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDeviceState state;
+
+	enabled = !!enabled;
 
 	if (priv->enabled == enabled)
 		return;
