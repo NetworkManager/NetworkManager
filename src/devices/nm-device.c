@@ -8253,7 +8253,7 @@ nm_device_steal_connection (NMDevice *self, NMSettingsConnection *connection)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGW (LOGD_DEVICE, "disconnecting connection '%s' for new activation request.",
+	_LOGI (LOGD_DEVICE, "disconnecting connection '%s' for new activation request",
 	       nm_settings_connection_get_id (connection));
 
 	if (   priv->queued_act_request
