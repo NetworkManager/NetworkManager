@@ -2228,66 +2228,66 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	/* properties */
 	obj_properties[PROP_IFINDEX] =
-		g_param_spec_int (NM_IP6_CONFIG_IFINDEX, "", "",
-		                  -1, G_MAXINT, -1,
-		                  G_PARAM_READWRITE |
-		                  G_PARAM_CONSTRUCT_ONLY |
-		                  G_PARAM_STATIC_STRINGS);
+	    g_param_spec_int (NM_IP6_CONFIG_IFINDEX, "", "",
+	                      -1, G_MAXINT, -1,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESS_DATA] =
-		g_param_spec_variant (NM_IP6_CONFIG_ADDRESS_DATA, "", "",
-		                      G_VARIANT_TYPE ("aa{sv}"),
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_IP6_CONFIG_ADDRESS_DATA, "", "",
+	                          G_VARIANT_TYPE ("aa{sv}"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESSES] =
-		g_param_spec_variant (NM_IP6_CONFIG_ADDRESSES, "", "",
-		                      G_VARIANT_TYPE ("a(ayuay)"),
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_IP6_CONFIG_ADDRESSES, "", "",
+	                          G_VARIANT_TYPE ("a(ayuay)"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTE_DATA] =
-		g_param_spec_variant (NM_IP6_CONFIG_ROUTE_DATA, "", "",
-		                      G_VARIANT_TYPE ("aa{sv}"),
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_IP6_CONFIG_ROUTE_DATA, "", "",
+	                          G_VARIANT_TYPE ("aa{sv}"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTES] =
-		g_param_spec_variant (NM_IP6_CONFIG_ROUTES, "", "",
-		                      G_VARIANT_TYPE ("a(ayuayu)"),
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_IP6_CONFIG_ROUTES, "", "",
+	                          G_VARIANT_TYPE ("a(ayuayu)"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_GATEWAY] =
-		g_param_spec_string (NM_IP6_CONFIG_GATEWAY, "", "",
-		                     NULL,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_IP6_CONFIG_GATEWAY, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NAMESERVERS] =
-		g_param_spec_variant (NM_IP6_CONFIG_NAMESERVERS, "", "",
-		                      G_VARIANT_TYPE ("aay"),
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_IP6_CONFIG_NAMESERVERS, "", "",
+	                          G_VARIANT_TYPE ("aay"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DOMAINS] =
-		g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
-		                    G_TYPE_STRV,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_SEARCHES] =
-		g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
-		                    G_TYPE_STRV,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DNS_OPTIONS] =
-		g_param_spec_boxed (NM_IP6_CONFIG_DNS_OPTIONS, "", "",
-		                    G_TYPE_STRV,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boxed (NM_IP6_CONFIG_DNS_OPTIONS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DNS_PRIORITY] =
-		g_param_spec_int (NM_IP6_CONFIG_DNS_PRIORITY, "", "",
-		                  G_MININT32, G_MAXINT32, 0,
-		                  G_PARAM_READABLE |
-		                  G_PARAM_STATIC_STRINGS);
+	    g_param_spec_int (NM_IP6_CONFIG_DNS_PRIORITY, "", "",
+	                      G_MININT32, G_MAXINT32, 0,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
