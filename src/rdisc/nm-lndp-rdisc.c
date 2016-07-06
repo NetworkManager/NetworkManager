@@ -20,20 +20,22 @@
 
 #include "nm-default.h"
 
+#include "nm-lndp-rdisc.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 /* stdarg.h included because of a bug in ndp.h */
 #include <stdarg.h>
 #include <ndp.h>
 
-#include "nm-lndp-rdisc.h"
 #include "nm-rdisc-private.h"
-
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME                "rdisc-lndp"
+
+/*****************************************************************************/
 
 typedef struct {
 	struct ndp *ndp;
@@ -43,16 +45,40 @@ typedef struct {
 	guint ra_timeout_id;  /* first RA timeout */
 } NMLndpRDiscPrivate;
 
-#define NM_LNDP_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LNDP_RDISC, NMLndpRDiscPrivate))
+/*****************************************************************************/
+
+struct _NMLndpRDisc {
+	NMRDisc parent;
+	NMLndpRDiscPrivate _priv;
+};
+
+struct _NMLndpRDiscClass {
+	NMRDiscClass parent;
+};
+
+/*****************************************************************************/
 
 G_DEFINE_TYPE (NMLndpRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 
-/******************************************************************/
+#define NM_LNDP_RDISC_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMLndpRDisc *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_LNDP_RDISC (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static gboolean
 send_rs (NMRDisc *rdisc, GError **error)
 {
-	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 	struct ndp_msg *msg;
 	int errsv;
 
@@ -283,7 +309,7 @@ static gboolean
 event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 
 	_LOGD ("processing libndp events");
 
@@ -297,7 +323,7 @@ event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 static void
 start (NMRDisc *rdisc)
 {
-	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 	int fd = ndp_get_eventfd (priv->ndp);
 
 	priv->event_channel = g_io_channel_unix_new (fd);
@@ -309,12 +335,19 @@ start (NMRDisc *rdisc)
 	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, rdisc->ifindex, rdisc);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static inline gint32
 ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, gint32 defval)
 {
 	return nm_platform_sysctl_get_int32 (platform, nm_utils_ip6_property_path (ifname, property), defval);
+}
+
+/*****************************************************************************/
+
+static void
+nm_lndp_rdisc_init (NMLndpRDisc *lndp_rdisc)
+{
 }
 
 NMRDisc *
@@ -354,7 +387,7 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 	rdisc->rtr_solicitation_interval = ipv6_sysctl_get (platform, ifname, "router_solicitation_interval",
 	                                                    NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT);
 
-	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 
 	errsv = ndp_open (&priv->ndp);
 
@@ -367,11 +400,6 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 		return NULL;
 	}
 	return rdisc;
-}
-
-static void
-nm_lndp_rdisc_init (NMLndpRDisc *lndp_rdisc)
-{
 }
 
 static void
@@ -397,8 +425,6 @@ nm_lndp_rdisc_class_init (NMLndpRDiscClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMRDiscClass *rdisc_class = NM_RDISC_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMLndpRDiscPrivate));
 
 	object_class->dispose = dispose;
 	rdisc_class->start = start;

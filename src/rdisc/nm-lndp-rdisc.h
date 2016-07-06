@@ -31,17 +31,8 @@
 #define NM_IS_LNDP_RDISC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_LNDP_RDISC))
 #define NM_LNDP_RDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_LNDP_RDISC, NMLndpRDiscClass))
 
-/******************************************************************/
-
-typedef struct {
-	NMRDisc parent;
-} NMLndpRDisc;
-
-typedef struct {
-	NMRDiscClass parent;
-} NMLndpRDiscClass;
-
-/******************************************************************/
+typedef struct _NMLndpRDisc NMLndpRDisc;
+typedef struct _NMLndpRDiscClass NMLndpRDiscClass;
 
 GType nm_lndp_rdisc_get_type (void);
 
