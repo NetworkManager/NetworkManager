@@ -78,9 +78,9 @@ nmcli_error_quark (void)
 }
 
 static void
-usage (const char *prog_name)
+usage (void)
 {
-	g_printerr (_("Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+	g_printerr (_("Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 	              "\n"
 	              "OPTIONS\n"
 	              "  -t[erse]                                   terse output\n"
@@ -103,15 +103,7 @@ usage (const char *prog_name)
 	              "  d[evice]        devices managed by NetworkManager\n"
 	              "  a[gent]         NetworkManager secret agent or polkit agent\n"
 	              "  m[onitor]       monitor NetworkManager changes\n"
-	              "\n"),
-	            prog_name);
-}
-
-static NMCResultCode 
-do_help (NmCli *nmc, int argc, char **argv)
-{
-	usage ("nmcli");
-	return NMC_RESULT_SUCCESS;
+	              "\n"));
 }
 
 static const NMCCommand nmcli_cmds[] = {
@@ -122,8 +114,7 @@ static const NMCCommand nmcli_cmds[] = {
 	{ "connection", do_connections, NULL },
 	{ "device",     do_devices,     NULL },
 	{ "agent",      do_agent,       NULL },
-	{ "help",       do_help,        NULL },
-	{ NULL,         do_overview,    NULL },
+	{ NULL,         do_overview,    usage }
 };
 
 static NMCResultCode
@@ -270,7 +261,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			g_print (_("nmcli tool, version %s\n"), NMCLI_VERSION);
 			return NMC_RESULT_SUCCESS;
 		} else if (matches (opt, "-help") == 0) {
-			usage (base);
+			usage ();
 			return NMC_RESULT_SUCCESS;
 		} else {
 			g_string_printf (nmc->return_text, _("Error: Option '%s' is unknown, try 'nmcli -help'."), opt);
