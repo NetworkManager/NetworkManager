@@ -44,6 +44,7 @@ struct _NMRDiscPrivate {
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 	char *last_send_rs_error;
+	NMUtilsIPv6IfaceId iid;
 
 	int ifindex;
 	char *ifname;
@@ -222,14 +223,14 @@ complete_address (NMRDisc *rdisc, NMRDiscAddress *addr)
 		return TRUE;
 	}
 
-	if (!rdisc->iid.id) {
+	if (!priv->iid.id) {
 		_LOGW ("complete-address: can't generate an EUI-64 address: no interface identifier");
 		return FALSE;
 	}
 
 	if (addr->address.s6_addr32[2] == 0x0 && addr->address.s6_addr32[3] == 0x0) {
 		_LOGD ("complete-address: adding an EUI-64 address");
-		nm_utils_ipv6_addr_set_interface_identifier (&addr->address, rdisc->iid);
+		nm_utils_ipv6_addr_set_interface_identifier (&addr->address, priv->iid);
 		return TRUE;
 	}
 
@@ -401,10 +402,10 @@ nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 
 	g_return_val_if_fail (NM_IS_RDISC (rdisc), FALSE);
 
-	if (rdisc->iid.id != iid.id) {
-		rdisc->iid = iid;
+	priv = NM_RDISC_GET_PRIVATE (rdisc);
+	if (priv->iid.id != iid.id) {
+		priv->iid = iid;
 
-		priv = NM_RDISC_GET_PRIVATE (rdisc);
 		if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
 			return FALSE;
 

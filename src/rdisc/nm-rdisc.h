@@ -121,7 +121,6 @@ typedef struct {
 
 	struct _NMRDiscPrivate *_priv;
 
-	NMUtilsIPv6IfaceId iid;
 	gint32 max_addresses;
 	gint32 rtr_solicitations;
 	gint32 rtr_solicitation_interval;
