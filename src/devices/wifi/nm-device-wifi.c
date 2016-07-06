@@ -257,6 +257,24 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 }
 
 static void
+_requested_scan_set (NMDeviceWifi *self, gboolean value)
+{
+	NMDeviceWifiPrivate *priv;
+
+	value = !!value;
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	if (priv->requested_scan == value)
+		return;
+
+	priv->requested_scan = value;
+	if (value)
+		nm_device_add_pending_action ((NMDevice *) self, "scan", TRUE);
+	else
+		nm_device_remove_pending_action ((NMDevice *) self, "scan", TRUE);
+}
+
+static void
 supplicant_interface_release (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv;
@@ -265,10 +283,7 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->requested_scan) {
-		priv->requested_scan = FALSE;
-		nm_device_remove_pending_action (NM_DEVICE (self), "scan", TRUE);
-	}
+	_requested_scan_set (self, FALSE);
 
 	nm_clear_g_source (&priv->pending_scan_id);
 
@@ -1403,8 +1418,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 		if (nm_supplicant_interface_request_scan (priv->sup_iface, ssids)) {
 			/* success */
 			backoff = TRUE;
-			priv->requested_scan = TRUE;
-			nm_device_add_pending_action (NM_DEVICE (self), "scan", TRUE);
+			_requested_scan_set (self, TRUE);
 		}
 
 		if (ssids)
@@ -1486,10 +1500,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 	schedule_scan (self, success);
 
-	if (priv->requested_scan) {
-		priv->requested_scan = FALSE;
-		nm_device_remove_pending_action (NM_DEVICE (self), "scan", TRUE);
-	}
+	_requested_scan_set (self, FALSE);
 }
 
 /****************************************************************************
@@ -2024,7 +2035,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
-		priv->requested_scan = FALSE;
+		_requested_scan_set (self, FALSE);
 		nm_clear_g_source (&priv->pending_scan_id);
 		request_wireless_scan (self, NULL);
 		break;
