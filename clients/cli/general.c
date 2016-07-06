@@ -747,19 +747,31 @@ do_networking (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	if (argc == 0)
+	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
 		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
-	else if (argc > 0) {
+	} else if (argc > 0) {
+
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv, "connectivity", NULL);
+			nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
+
 		if (nmc_arg_is_help (*argv)) {
+			if (nmc->complete)
+				return nmc->return_value;
 			usage_networking ();
 		} else if (matches (*argv, "connectivity") == 0) {
+			if (nmc->complete) {
+				if (argc == 2)
+					nmc_complete_strings (*(argv+1), "check", NULL);
+				return nmc->return_value;
+			}
 			if (nmc_arg_is_help (*(argv+1))) {
 				usage_networking_connectivity ();
 				goto finish;
@@ -784,6 +796,8 @@ do_networking (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			}
 		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
+			if (nmc->complete)
+				return nmc->return_value;
 			if (nmc_arg_is_help (*(argv+1))) {
 				if (enable_flag)
 					usage_networking_on ();
@@ -795,6 +809,8 @@ do_networking (NmCli *nmc, int argc, char **argv)
 			nmc->get_client (nmc); /* create NMClient */
 			nm_client_networking_set_enabled (nmc->client, enable_flag, NULL);
 		} else {
+			if (nmc->complete)
+				return nmc->return_value;
 			usage_networking ();
 			g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
