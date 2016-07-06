@@ -137,6 +137,14 @@ nm_rdisc_get_ifname (NMRDisc *self)
 
 /*****************************************************************************/
 
+static void
+_emit_config_change (NMRDisc *self, NMRDiscConfigMap changed)
+{
+	g_signal_emit (self, signals[CONFIG_CHANGED], 0, (int) changed);
+}
+
+/*****************************************************************************/
+
 gboolean
 nm_rdisc_add_gateway (NMRDisc *rdisc, const NMRDiscGateway *new)
 {
@@ -398,7 +406,7 @@ nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 		if (rdisc->addresses->len) {
 			_LOGD ("IPv6 interface identifier changed, flushing addresses");
 			g_array_remove_range (rdisc->addresses, 0, rdisc->addresses->len);
-			g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, NM_RDISC_CONFIG_ADDRESSES);
+			_emit_config_change (rdisc, NM_RDISC_CONFIG_ADDRESSES);
 		}
 		return TRUE;
 	}
@@ -472,7 +480,7 @@ rdisc_ra_timeout_cb (gpointer user_data)
 	NMRDisc *rdisc = NM_RDISC (user_data);
 
 	NM_RDISC_GET_PRIVATE (rdisc)->ra_timeout_id = 0;
-	g_signal_emit_by_name (rdisc, NM_RDISC_RA_TIMEOUT);
+	g_signal_emit (rdisc, signals[RA_TIMEOUT], 0);
 	return G_SOURCE_REMOVE;
 }
 
@@ -521,7 +529,7 @@ nm_rdisc_dad_failed (NMRDisc *rdisc, struct in6_addr *address)
 	}
 
 	if (changed)
-		g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, NM_RDISC_CONFIG_ADDRESSES);
+		_emit_config_change (rdisc, NM_RDISC_CONFIG_ADDRESSES);
 }
 
 #define CONFIG_MAP_MAX_STR 7
@@ -731,7 +739,7 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 	clean_dns_domains (rdisc, now, &changed, &nextevent);
 
 	if (changed)
-		g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, changed);
+		_emit_config_change (rdisc, changed);
 
 	if (nextevent != never) {
 		g_return_if_fail (nextevent > now);
