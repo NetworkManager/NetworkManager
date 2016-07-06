@@ -570,6 +570,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
@@ -741,6 +745,10 @@ do_networking (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
@@ -804,6 +812,10 @@ do_radio (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	gboolean enable_flag;
+
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
@@ -1181,6 +1193,9 @@ do_overview (NmCli *nmc, int argc, char **argv)
 NMCResultCode
 do_monitor (NmCli *nmc, int argc, char **argv)
 {
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (argc > 0) {
 		if (!nmc_arg_is_help (*argv)) {
 			g_string_printf (nmc->return_text, _("Error: 'monitor' command '%s' is not valid."), *argv);

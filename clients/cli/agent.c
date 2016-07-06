@@ -198,6 +198,10 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 NMCResultCode
 do_agent (NmCli *nmc, int argc, char **argv)
 {
+	/* Not (yet?) supported */
+	if (nmc->complete)
+		return nmc->return_value;
+
 	/* Get NMClient object */
 	nmc->get_client (nmc);
 
