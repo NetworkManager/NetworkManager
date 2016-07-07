@@ -455,8 +455,8 @@ static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceState
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
 static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
-
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
+static void _cancel_activation (NMDevice *self);
 
 /***********************************************************/
 
@@ -2810,6 +2810,8 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 		       nm_connection_get_id (connection),
 		       master_status);
 
+		/* Cancel any pending activation sources */
+		_cancel_activation (self);
 		nm_device_queue_state (self, new_state, reason);
 	} else
 		_LOGI (LOGD_DEVICE, "released from master device %s", nm_device_get_iface (priv->master));
@@ -3952,15 +3954,21 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 
 	if (!priv->master_ready_handled) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+		NMActiveConnection *master;
 
-		if (!nm_active_connection_get_master (active)) {
+		master = nm_active_connection_get_master (active);
+
+		if (!master) {
 			g_warn_if_fail (!priv->master_ready_id);
 			priv->master_ready_handled = TRUE;
 		} else {
 			/* If the master connection is ready for slaves, attach ourselves */
 			if (nm_active_connection_get_master_ready (active))
 				master_ready (self, active);
-			else {
+			else if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+				_LOGD (LOGD_DEVICE, "master connection is deactivating");
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			} else {
 				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
 
 				if (priv->master_ready_id == 0) {

@@ -719,14 +719,14 @@ nm_active_connection_get_assumed (NMActiveConnection *self)
 
 /****************************************************************/
 
-static void unwatch_parent (NMActiveConnection *self);
+static void unwatch_parent (NMActiveConnection *self, gboolean unref);
 
 static void
 parent_destroyed (gpointer user_data, GObject *parent)
 {
 	NMActiveConnection *self = user_data;
 
-	unwatch_parent (self);
+	unwatch_parent (self, FALSE);
 	g_signal_emit (self, signals[PARENT_ACTIVE], 0, NULL);
 }
 
@@ -741,19 +741,20 @@ parent_state_cb (NMActiveConnection *parent_ac,
 	if (parent_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
 		return;
 
-	unwatch_parent (self);
+	unwatch_parent (self, TRUE);
 	g_signal_emit (self, signals[PARENT_ACTIVE], 0, parent_ac);
 }
 
 static void
-unwatch_parent (NMActiveConnection *self)
+unwatch_parent (NMActiveConnection *self, gboolean unref)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	g_signal_handlers_disconnect_by_func (priv->parent,
 	                                      (GCallback) parent_state_cb,
 	                                      self);
-	g_object_weak_unref ((GObject *) priv->parent, parent_destroyed, self);
+	if (unref)
+		g_object_weak_unref ((GObject *) priv->parent, parent_destroyed, self);
 	priv->parent = NULL;
 }
 
@@ -1135,7 +1136,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->master);
 
 	if (priv->parent)
-		unwatch_parent (self);
+		unwatch_parent (self, TRUE);
 
 	g_clear_object (&priv->subject);
 
