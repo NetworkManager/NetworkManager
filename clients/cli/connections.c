@@ -1707,6 +1707,9 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 		return NULL;
 	}
 
+	if (*argc == 1 && nmc->complete)
+		nmc_complete_strings (**argv, "id", "uuid", "path", NULL);
+
 	if (   strcmp (**argv, "id") == 0
 	    || strcmp (**argv, "uuid") == 0
 	    || strcmp (**argv, "path") == 0) {
@@ -1718,7 +1721,8 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 		}
 	}
 
-	connection = nmc_find_connection (nmc->connections, selector, **argv, pos);
+	connection = nmc_find_connection (nmc->connections, selector, **argv, pos,
+	                                  *argc == 1 && nmc->complete);
 	if (!connection) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
 		             _("unknown connection '%s'"), **argv);
@@ -1848,7 +1852,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			}
 
 			/* Find connection by id, uuid, path or apath */
-			con = nmc_find_connection (nmc->connections, selector, *argv, &pos);
+			con = nmc_find_connection (nmc->connections, selector, *argv, &pos, FALSE);
 			if (!con) {
 				acon = find_active_connection (active_cons, nmc->connections, selector, *argv, NULL, FALSE);
 				if (acon)
@@ -4903,7 +4907,7 @@ uuid_display_hook (char **array, int len, int max_len)
 	char *tmp;
 	const char *id;
 	for (i = 1; i <= len; i++) {
-		con = nmc_find_connection (nmc_tab_completion.nmc->connections, "uuid", array[i], NULL);
+		con = nmc_find_connection (nmc_tab_completion.nmc->connections, "uuid", array[i], NULL, FALSE);
 		id = con ? nm_connection_get_id (con) : NULL;
 		if (id) {
 			tmp = g_strdup_printf ("%s (%s)", array[i], id);
@@ -7737,7 +7741,7 @@ do_connection_edit_func (NmCli *nmc, int argc, char **argv)
 		/* Existing connection */
 		NMConnection *found_con;
 
-		found_con = nmc_find_connection (nmc->connections, selector, con, NULL);
+		found_con = nmc_find_connection (nmc->connections, selector, con, NULL, FALSE);
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;

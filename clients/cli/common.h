@@ -48,7 +48,8 @@ gboolean nmc_team_check_config (const char *config, char **out_config, GError **
 NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
                                    const char *filter_val,
-                                   int *start);
+                                   int *start,
+                                   gboolean complete);
 
 void nmc_secrets_requested (NMSecretAgentSimple *agent,
                             const char          *request_id,
