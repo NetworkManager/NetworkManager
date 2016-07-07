@@ -238,11 +238,15 @@ receive_ra (gpointer user_data)
 	NMRDiscConfigMap changed = 0;
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	guint i;
+	NMRDiscDHCPLevel dhcp_level;
 
 	priv->receive_ra_id = 0;
 
-	if (rdata->public.dhcp_level != ra->dhcp_level) {
-		rdata->public.dhcp_level = ra->dhcp_level;
+	/* preserve the "most managed" level  on updates. */
+	dhcp_level = MAX (rdata->public.dhcp_level, ra->dhcp_level);
+
+	if (rdata->public.dhcp_level != dhcp_level) {
+		rdata->public.dhcp_level = dhcp_level;
 		changed |= NM_RDISC_CONFIG_DHCP_LEVEL;
 	}
 

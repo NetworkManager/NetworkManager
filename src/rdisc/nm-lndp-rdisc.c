@@ -152,6 +152,12 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		else
 			dhcp_level = NM_RDISC_DHCP_LEVEL_NONE;
 
+		/* when receiving multiple RA (possibly from different routers),
+		 * let's keep the "most managed" level. */
+		G_STATIC_ASSERT_EXPR (NM_RDISC_DHCP_LEVEL_MANAGED > NM_RDISC_DHCP_LEVEL_OTHERCONF);
+		G_STATIC_ASSERT_EXPR (NM_RDISC_DHCP_LEVEL_OTHERCONF > NM_RDISC_DHCP_LEVEL_NONE);
+		dhcp_level = MAX (dhcp_level, rdata->public.dhcp_level);
+
 		if (dhcp_level != rdata->public.dhcp_level) {
 			rdata->public.dhcp_level = dhcp_level;
 			changed |= NM_RDISC_CONFIG_DHCP_LEVEL;
