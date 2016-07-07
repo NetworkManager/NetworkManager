@@ -8278,13 +8278,12 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (argc == 0) {
 		/* No connections specified. Monitor all. */
 		int i;
+
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
 
 		nmc->connections = nm_client_get_connections (nmc->client);
 		for (i = 0; i < nmc->connections->len; i++)
@@ -8296,26 +8295,29 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 	} else {
 		/* Look up the specified connections and watch them. */
 		NMConnection *connection;
-		char **arg_ptr = argv;
-		int arg_num = argc;
 		int pos = 0;
 
 		do {
-			connection = get_connection (nmc, &arg_num, &arg_ptr, &pos, &error);
-			if (connection) {
-				connection_watch (nmc, connection);
-			} else {
-				g_printerr (_("Error: %s.\n"), error->message);
+			connection = get_connection (nmc, &argc, &argv, &pos, &error);
+			if (!connection) {
+				if (!nmc->complete)
+					g_printerr (_("Error: %s.\n"), error->message);
 				g_string_printf (nmc->return_text, _("Error: not all connections found."));
 				return error->code;
 			}
-
 			/* Take next argument (if there's no other connection of the same name) */
 			if (!pos)
-				next_arg (&arg_num, &arg_ptr);
-		} while (arg_num > 0);
+				next_arg (&argc, &argv);
+
+			if (nmc->complete)
+				continue;
+
+			connection_watch (nmc, connection);
+		} while (argc > 0);
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
 	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED, G_CALLBACK (connection_removed), nmc);
 
 	return NMC_RESULT_SUCCESS;
