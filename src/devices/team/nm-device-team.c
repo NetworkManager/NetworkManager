@@ -55,7 +55,6 @@ typedef struct {
 	guint teamd_process_watch;
 	guint teamd_timeout;
 	guint teamd_dbus_watch;
-	gboolean teamd_dbus_name_owned;
 	char *config;
 } NMDeviceTeamPrivate;
 
@@ -153,7 +152,7 @@ ensure_teamd_connection (NMDevice *device)
 	return !!priv->tdc;
 }
 
-static void
+static gboolean
 teamd_read_config (NMDevice *device)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
@@ -164,7 +163,7 @@ teamd_read_config (NMDevice *device)
 	if (priv->tdc) {
 		err = teamdctl_config_get_raw_direct (priv->tdc, &config);
 		if (err)
-			_LOGI (LOGD_TEAM, "failed to read teamd config (err=%d)", err);
+			return FALSE;
 	}
 
 	if (!nm_streq0 (config, priv->config)) {
@@ -172,6 +171,8 @@ teamd_read_config (NMDevice *device)
 		priv->config = g_strdup (config);
 		_notify (self, PROP_CONFIG);
 	}
+
+	return TRUE;
 }
 
 static void
@@ -180,6 +181,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMSettingTeam *s_team = nm_connection_get_setting_team (connection);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+	struct teamdctl *tdc = priv->tdc;
 
 	if (!s_team) {
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
@@ -190,6 +192,13 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!priv->config && ensure_teamd_connection (device))
 		teamd_read_config (device);
 
+	/* Restore previous tdc state */
+	if (priv->tdc && !tdc) {
+		teamdctl_disconnect (priv->tdc);
+		teamdctl_free (priv->tdc);
+		priv->tdc = NULL;
+	}
+
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, priv->config, NULL);
 }
 
@@ -197,9 +206,9 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 static gboolean
 master_update_slave_connection (NMDevice *self,
-                                   NMDevice *slave,
-                                   NMConnection *connection,
-                                   GError **error)
+                                NMDevice *slave,
+                                NMConnection *connection,
+                                GError **error)
 {
 	NMSettingTeamPort *s_port;
 	char *port_config = NULL;
@@ -303,7 +312,10 @@ teamd_timeout_cb (gpointer user_data)
 		/* Read again the configuration after the timeout since it might
 		 * have changed.
 		 */
-		teamd_read_config (device);
+		if (!teamd_read_config (device)) {
+			_LOGW (LOGD_TEAM, "failed to read teamd configuration");
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+		}
 	}
 
 	return G_SOURCE_REMOVE;
@@ -321,7 +333,6 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	gboolean success;
 
 	g_return_if_fail (priv->teamd_dbus_watch);
-	priv->teamd_dbus_name_owned = TRUE;
 
 	_LOGI (LOGD_TEAM, "teamd appeared on D-Bus");
 	nm_device_queue_recheck_assume (device);
@@ -364,10 +375,11 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	 */
 	success = ensure_teamd_connection (device);
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_PREPARE) {
-		if (success) {
-			teamd_read_config (device);
+		if (success)
+			success = teamd_read_config (device);
+		if (success)
 			nm_device_activate_schedule_stage2_device_config (device);
-		} else if (!nm_device_uses_assumed_connection (device))
+		else if (!nm_device_uses_assumed_connection (device))
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
 }
@@ -384,7 +396,7 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
-	if (!priv->teamd_dbus_name_owned) {
+	if (!priv->tdc) {
 		/* g_bus_watch_name will always raise an initial signal, to indicate whether the
 		 * name exists/not exists initially. Do not take this as a failure if it hadn't
 		 * previously appeared.
@@ -392,8 +404,6 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 		_LOGD (LOGD_TEAM, "teamd not on D-Bus (ignored)");
 		return;
 	}
-
-	priv->teamd_dbus_name_owned = FALSE;
 
 	_LOGI (LOGD_TEAM, "teamd vanished from D-Bus");
 	teamd_cleanup (device, TRUE);
