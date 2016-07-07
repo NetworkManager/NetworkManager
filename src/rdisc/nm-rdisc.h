@@ -113,6 +113,25 @@ typedef enum {
 #define NM_RDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4
 
 struct _NMRDiscPrivate;
+struct _NMRDiscDataInternal;
+
+typedef struct {
+	NMRDiscDHCPLevel dhcp_level;
+	guint32 mtu;
+	int hop_limit;
+
+	guint gateways_n;
+	guint addresses_n;
+	guint routes_n;
+	guint dns_servers_n;
+	guint dns_domains_n;
+
+	const NMRDiscGateway *gateways;
+	const NMRDiscAddress *addresses;
+	const NMRDiscRoute *routes;
+	const NMRDiscDNSServer *dns_servers;
+	const NMRDiscDNSDomain *dns_domains;
+} NMRDiscData;
 
 /**
  * NMRDisc:
@@ -122,17 +141,10 @@ struct _NMRDiscPrivate;
  */
 typedef struct {
 	GObject parent;
-
-	struct _NMRDiscPrivate *_priv;
-
-	NMRDiscDHCPLevel dhcp_level;
-	GArray *gateways;
-	GArray *addresses;
-	GArray *routes;
-	GArray *dns_servers;
-	GArray *dns_domains;
-	int hop_limit;
-	guint32 mtu;
+	union {
+		struct _NMRDiscPrivate *_priv;
+		struct _NMRDiscDataInternal *rdata;
+	};
 } NMRDisc;
 
 typedef struct {

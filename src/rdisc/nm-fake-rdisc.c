@@ -233,6 +233,7 @@ receive_ra (gpointer user_data)
 	NMFakeRDisc *self = user_data;
 	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
 	NMRDisc *rdisc = NM_RDISC (self);
+	NMRDiscDataInternal *rdata = rdisc->rdata;
 	FakeRa *ra = priv->ras->data;
 	NMRDiscConfigMap changed = 0;
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
@@ -240,8 +241,8 @@ receive_ra (gpointer user_data)
 
 	priv->receive_ra_id = 0;
 
-	if (rdisc->dhcp_level != ra->dhcp_level) {
-		rdisc->dhcp_level = ra->dhcp_level;
+	if (rdata->public.dhcp_level != ra->dhcp_level) {
+		rdata->public.dhcp_level = ra->dhcp_level;
 		changed |= NM_RDISC_CONFIG_DHCP_LEVEL;
 	}
 
@@ -294,13 +295,13 @@ receive_ra (gpointer user_data)
 			changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 	}
 
-	if (rdisc->mtu != ra->mtu) {
-		rdisc->mtu = ra->mtu;
+	if (rdata->public.mtu != ra->mtu) {
+		rdata->public.mtu = ra->mtu;
 		changed |= NM_RDISC_CONFIG_MTU;
 	}
 
-	if (rdisc->hop_limit != ra->hop_limit) {
-		rdisc->hop_limit = ra->hop_limit;
+	if (rdata->public.hop_limit != ra->hop_limit) {
+		rdata->public.hop_limit = ra->hop_limit;
 		changed |= NM_RDISC_CONFIG_HOP_LIMIT;
 	}
 

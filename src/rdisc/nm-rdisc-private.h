@@ -25,6 +25,17 @@
 
 /* Functions only used by rdisc implementations */
 
+struct _NMRDiscDataInternal {
+	NMRDiscData public;
+	GArray *gateways;
+	GArray *addresses;
+	GArray *routes;
+	GArray *dns_servers;
+	GArray *dns_domains;
+};
+
+typedef struct _NMRDiscDataInternal NMRDiscDataInternal;
+
 void nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed);
 
 gboolean nm_rdisc_add_gateway              (NMRDisc *rdisc, const NMRDiscGateway *new);

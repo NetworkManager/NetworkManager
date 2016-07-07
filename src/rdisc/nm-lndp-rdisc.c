@@ -115,6 +115,7 @@ static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 {
 	NMRDisc *rdisc = (NMRDisc *) user_data;
+	NMRDiscDataInternal *rdata = rdisc->rdata;
 	NMRDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	struct in6_addr gateway_addr;
@@ -151,8 +152,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		else
 			dhcp_level = NM_RDISC_DHCP_LEVEL_NONE;
 
-		if (dhcp_level != rdisc->dhcp_level) {
-			rdisc->dhcp_level = dhcp_level;
+		if (dhcp_level != rdata->public.dhcp_level) {
+			rdata->public.dhcp_level = dhcp_level;
 			changed |= NM_RDISC_CONFIG_DHCP_LEVEL;
 		}
 	}
@@ -281,8 +282,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	}
 
 	hop_limit = ndp_msgra_curhoplimit (msgra);
-	if (rdisc->hop_limit != hop_limit) {
-		rdisc->hop_limit = hop_limit;
+	if (rdata->public.hop_limit != hop_limit) {
+		rdata->public.hop_limit = hop_limit;
 		changed |= NM_RDISC_CONFIG_HOP_LIMIT;
 	}
 
@@ -290,8 +291,10 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	ndp_msg_opt_for_each_offset(offset, msg, NDP_MSG_OPT_MTU) {
 		guint32 mtu = ndp_msg_opt_mtu(msg, offset);
 		if (mtu >= 1280) {
-			rdisc->mtu = mtu;
-			changed |= NM_RDISC_CONFIG_MTU;
+			if (rdata->public.mtu != mtu) {
+				rdata->public.mtu = mtu;
+				changed |= NM_RDISC_CONFIG_MTU;
+			}
 		} else {
 			/* All sorts of bad things would happen if we accepted this.
 			 * Kernel would set it, but would flush out all IPv6 addresses away

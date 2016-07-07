@@ -6097,8 +6097,9 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 }
 
 static void
-rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
+rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, NMDevice *self)
 {
+	NMRDiscConfigMap changed = changed_int;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int i;
 	int system_support;
@@ -6128,11 +6129,9 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 
 	if (changed & NM_RDISC_CONFIG_GATEWAYS) {
 		/* Use the first gateway as ordered in router discovery cache. */
-		if (rdisc->gateways->len) {
-			NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, 0);
-
-			nm_ip6_config_set_gateway (priv->ac_ip6_config, &gateway->address);
-		} else
+		if (rdata->gateways_n)
+			nm_ip6_config_set_gateway (priv->ac_ip6_config, &rdata->gateways[0].address);
+		else
 			nm_ip6_config_set_gateway (priv->ac_ip6_config, NULL);
 	}
 
@@ -6145,8 +6144,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		 * also counts static and temporary addresses when checking
 		 * max_addresses.
 		 **/
-		for (i = 0; i < rdisc->addresses->len; i++) {
-			NMRDiscAddress *discovered_address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
+		for (i = 0; i < rdata->addresses_n; i++) {
+			const NMRDiscAddress *discovered_address = &rdata->addresses[i];
 			NMPlatformIP6Address address;
 
 			memset (&address, 0, sizeof (address));
@@ -6168,8 +6167,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		/* Rebuild route list from router discovery cache. */
 		nm_ip6_config_reset_routes (priv->ac_ip6_config);
 
-		for (i = 0; i < rdisc->routes->len; i++) {
-			NMRDiscRoute *discovered_route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
+		for (i = 0; i < rdata->routes_n; i++) {
+			const NMRDiscRoute *discovered_route = &rdata->routes[i];
 			NMPlatformIP6Route route;
 
 			/* Only accept non-default routes.  The router has no idea what the
@@ -6194,28 +6193,22 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		/* Rebuild DNS server list from router discovery cache. */
 		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
 
-		for (i = 0; i < rdisc->dns_servers->len; i++) {
-			NMRDiscDNSServer *discovered_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
-
-			nm_ip6_config_add_nameserver (priv->ac_ip6_config, &discovered_server->address);
-		}
+		for (i = 0; i < rdata->dns_servers_n; i++)
+			nm_ip6_config_add_nameserver (priv->ac_ip6_config, &rdata->dns_servers[i].address);
 	}
 
 	if (changed & NM_RDISC_CONFIG_DNS_DOMAINS) {
 		/* Rebuild domain list from router discovery cache. */
 		nm_ip6_config_reset_domains (priv->ac_ip6_config);
 
-		for (i = 0; i < rdisc->dns_domains->len; i++) {
-			NMRDiscDNSDomain *discovered_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
-
-			nm_ip6_config_add_domain (priv->ac_ip6_config, discovered_domain->domain);
-		}
+		for (i = 0; i < rdata->dns_domains_n; i++)
+			nm_ip6_config_add_domain (priv->ac_ip6_config, rdata->dns_domains[i].domain);
 	}
 
 	if (changed & NM_RDISC_CONFIG_DHCP_LEVEL) {
 		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, TRUE);
 
-		priv->dhcp6.mode = rdisc->dhcp_level;
+		priv->dhcp6.mode = rdata->dhcp_level;
 		if (priv->dhcp6.mode != NM_RDISC_DHCP_LEVEL_NONE) {
 			NMDeviceStateReason reason;
 
@@ -6232,10 +6225,10 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	}
 
 	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdisc->hop_limit);
+		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdata->hop_limit);
 
 	if (changed & NM_RDISC_CONFIG_MTU)
-		priv->ip6_mtu = rdisc->mtu;
+		priv->ip6_mtu = rdata->mtu;
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }

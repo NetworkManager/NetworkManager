@@ -130,8 +130,9 @@ dhcp4_state_changed (NMDhcpClient *client,
 }
 
 static void
-rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_data)
+rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, gpointer user_data)
 {
+	NMRDiscConfigMap changed = changed_int;
 	static NMIP6Config *rdisc_config = NULL;
 	NMIP6Config *existing;
 	static int system_support = -1;
@@ -166,11 +167,9 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 
 	if (changed & NM_RDISC_CONFIG_GATEWAYS) {
 		/* Use the first gateway as ordered in router discovery cache. */
-		if (rdisc->gateways->len) {
-			NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, 0);
-
-			nm_ip6_config_set_gateway (rdisc_config, &gateway->address);
-		} else
+		if (rdata->gateways_n)
+			nm_ip6_config_set_gateway (rdisc_config, &rdata->gateways[0].address);
+		else
 			nm_ip6_config_set_gateway (rdisc_config, NULL);
 	}
 
@@ -183,8 +182,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 		 * also counts static and temporary addresses when checking
 		 * max_addresses.
 		 **/
-		for (i = 0; i < rdisc->addresses->len; i++) {
-			NMRDiscAddress *discovered_address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
+		for (i = 0; i < rdata->addresses_n; i++) {
+			const NMRDiscAddress *discovered_address = &rdata->addresses[i];
 			NMPlatformIP6Address address;
 
 			memset (&address, 0, sizeof (address));
@@ -206,8 +205,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 		/* Rebuild route list from router discovery cache. */
 		nm_ip6_config_reset_routes (rdisc_config);
 
-		for (i = 0; i < rdisc->routes->len; i++) {
-			NMRDiscRoute *discovered_route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
+		for (i = 0; i < rdata->routes_n; i++) {
+			const NMRDiscRoute *discovered_route = &rdata->routes[i];
 			NMPlatformIP6Route route;
 
 			/* Only accept non-default routes.  The router has no idea what the
@@ -233,12 +232,12 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 	}
 
 	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
-		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdisc->hop_limit);
+		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
 
 	if (changed & NM_RDISC_CONFIG_MTU) {
 		char val[16];
 
-		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
+		g_snprintf (val, sizeof (val), "%d", rdata->mtu);
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "mtu"), val);
 	}
 
