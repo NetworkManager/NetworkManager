@@ -90,11 +90,12 @@ match_route (const NMRDiscData *rdata, guint idx, const char *nw, int plen, cons
 	g_assert (rdata);
 	g_assert_cmpint (idx, <, rdata->routes_n);
 	g_assert (rdata->routes);
+	g_assert (plen > 0 && plen <= 128);
 
 	route = &rdata->routes[idx];
 
 	g_assert_cmpstr (inet_ntop (AF_INET6, &route->network, buf, sizeof (buf)), ==, nw);
-	g_assert_cmpint (route->plen, ==, plen);
+	g_assert_cmpint ((int) route->plen, ==, plen);
 	g_assert_cmpstr (inet_ntop (AF_INET6, &route->gateway, buf, sizeof (buf)), ==, gw);
 	g_assert_cmpint (route->timestamp, ==, ts);
 	g_assert_cmpint (route->lifetime, ==, lt);

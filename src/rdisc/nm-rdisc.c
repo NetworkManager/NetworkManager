@@ -320,8 +320,16 @@ nm_rdisc_add_route (NMRDisc *rdisc, const NMRDiscRoute *new)
 	NMRDiscDataInternal *rdata;
 	int i, insert_idx = -1;
 
-	if (new->plen == 0 || new->plen > 128)
-		return FALSE;
+	if (new->plen == 0 || new->plen > 128) {
+		/* Only expect non-default routes.  The router has no idea what the
+		 * local configuration or user preferences are, so sending routes
+		 * with a prefix length of 0 must be ignored by NMRDisc.
+		 *
+		 * Also, upper layers also don't expect that NMRDisc exposes routes
+		 * with a plen or zero or larger then 128.
+		 */
+		g_return_val_if_reached (FALSE);
+	}
 
 	priv = NM_RDISC_GET_PRIVATE (rdisc);
 	rdata = &priv->rdata;
@@ -672,7 +680,7 @@ _config_changed_log (NMRDisc *rdisc, NMRDiscConfigMap changed)
 		NMRDiscRoute *route = &g_array_index (rdata->routes, NMRDiscRoute, i);
 
 		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-		_LOGD ("  route %s/%d via %s pref %d exp %u", addrstr, route->plen,
+		_LOGD ("  route %s/%d via %s pref %d exp %u", addrstr, (int) route->plen,
 		       nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
 		       expiry (route));
 	}

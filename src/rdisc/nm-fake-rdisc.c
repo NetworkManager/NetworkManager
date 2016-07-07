@@ -264,6 +264,8 @@ receive_ra (gpointer user_data)
 			.preference = item->preference,
 		};
 
+		g_assert (route.plen > 0 && route.plen <= 128);
+
 		if (nm_rdisc_add_route (rdisc, &route))
 			changed |= NM_RDISC_CONFIG_ROUTES;
 

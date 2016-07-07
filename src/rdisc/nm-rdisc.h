@@ -78,7 +78,7 @@ typedef struct {
 
 typedef struct {
 	struct in6_addr network;
-	int plen;
+	guint8 plen;
 	struct in6_addr gateway;
 	guint32 timestamp;
 	guint32 lifetime;

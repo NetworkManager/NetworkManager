@@ -6169,23 +6169,15 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 
 		for (i = 0; i < rdata->routes_n; i++) {
 			const NMRDiscRoute *discovered_route = &rdata->routes[i];
-			NMPlatformIP6Route route;
+			const NMPlatformIP6Route route = {
+				.network    = discovered_route->network,
+				.plen       = discovered_route->plen,
+				.gateway    = discovered_route->gateway,
+				.rt_source  = NM_IP_CONFIG_SOURCE_RDISC,
+				.metric     = nm_device_get_ip6_route_metric (self),
+			};
 
-			/* Only accept non-default routes.  The router has no idea what the
-			 * local configuration or user preferences are, so sending routes
-			 * with a prefix length of 0 is quite rude and thus ignored.
-			 */
-			if (discovered_route->plen > 0) {
-				memset (&route, 0, sizeof (route));
-				route.network = discovered_route->network;
-				nm_assert (discovered_route->plen <= 128);
-				route.plen = discovered_route->plen;
-				route.gateway = discovered_route->gateway;
-				route.rt_source = NM_IP_CONFIG_SOURCE_RDISC;
-				route.metric = nm_device_get_ip6_route_metric (self);
-
-				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
-			}
+			nm_ip6_config_add_route (priv->ac_ip6_config, &route);
 		}
 	}
 
