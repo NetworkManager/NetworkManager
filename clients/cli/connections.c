@@ -8366,7 +8366,6 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
-	/* Not (yet?) supported */
 	if (nmc->complete)
 		return nmc->return_value;
 
