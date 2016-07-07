@@ -823,18 +823,15 @@ nm_device_get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *iid, gboo
 {
 	NMSettingIP6Config *s_ip6;
 	const char *token = NULL;
-	NMConnection *connection;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	connection = nm_device_get_applied_connection (self);
-	nm_assert (connection);
-
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
-	nm_assert (s_ip6);
-
-	if (!ignore_token)
+	if (!ignore_token) {
+		s_ip6 = (NMSettingIP6Config *)
+			nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+		g_return_val_if_fail (s_ip6, FALSE);
 		token = nm_setting_ip6_config_get_token (s_ip6);
+	}
 	if (token)
 		return nm_utils_ipv6_interface_identifier_get_from_token (iid, token);
 	else
@@ -9459,8 +9456,7 @@ queued_ip6_config_change (gpointer user_data)
 	priv->queued_ip6_config_id = 0;
 	update_ip6_config (self, FALSE);
 
-	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
-	    && priv->state < NM_DEVICE_STATE_DEACTIVATING
+	if (priv->state < NM_DEVICE_STATE_DEACTIVATING
 	    && nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex)) {
 		/* Handle DAD failures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
