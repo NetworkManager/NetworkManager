@@ -37,7 +37,7 @@
 %global git_sha_dot .%{git_sha}
 %endif
 
-%global snap %{?git_sha_dot}%{?snapshot_dot}
+%global snap %{?snapshot_dot}%{?git_sha_dot}
 
 ###############################################################################
 
