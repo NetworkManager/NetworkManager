@@ -8525,12 +8525,13 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	char ***argv_ptr = &argv;
 	int *argc_ptr = &argc;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (argc == 0 && nmc->ask) {
-		char *line = nmc_readline ("%s: ", PROMPT_VPN_CONNECTION);
+		char *line;
+
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
+
+		line = nmc_readline ("%s: ", PROMPT_VPN_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8543,6 +8544,9 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = error->code;
 		goto finish;
 	}
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	if (next_arg (&argc, &argv) == 0)
 		out_name = *argv;
