@@ -8143,16 +8143,17 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	int pos = 0;
 	GError *error = NULL;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			char *line = nmc_readline ("%s: ", PROMPT_CONNECTIONS);
+			char *line;
+
+			/* nmc_do_cmd() should not call this with argc=0. */
+			g_assert (!nmc->complete);
+
+			line = nmc_readline ("%s: ", PROMPT_CONNECTIONS);
 			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
@@ -8173,7 +8174,8 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			if (!g_slist_find (queue, connection))
 				queue = g_slist_prepend (queue, g_object_ref (connection));
 		} else {
-			g_printerr (_("Error: %s.\n"), error->message);
+			if (!nmc->complete)
+				g_printerr (_("Error: %s.\n"), error->message);
 			g_string_printf (nmc->return_text, _("Error: not all connections found."));
 			nmc->return_value = error->code;
 			g_clear_error (&error);
@@ -8194,6 +8196,9 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	if (!queue) {
 		g_string_printf (nmc->return_text, _("Error: No connection specified."));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto finish;
+	} else if (nmc->complete) {
+		g_slist_free (queue);
 		goto finish;
 	}
 	queue = g_slist_reverse (queue);
