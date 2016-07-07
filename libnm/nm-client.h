@@ -66,6 +66,8 @@ G_BEGIN_DECLS
 #define NM_CLIENT_PERMISSION_CHANGED "permission-changed"
 #define NM_CLIENT_CONNECTION_ADDED "connection-added"
 #define NM_CLIENT_CONNECTION_REMOVED "connection-removed"
+#define NM_CLIENT_ACTIVE_CONNECTION_ADDED "active-connection-added"
+#define NM_CLIENT_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
 
 /**
  * NMClientPermission:
