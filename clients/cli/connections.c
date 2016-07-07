@@ -8029,12 +8029,16 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 	int *argc_ptr = &argc;
 	GError *error = NULL;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
+	if (argc == 1 && nmc->complete)
+		nmc_complete_strings (*argv, "temporary", NULL);
 
 	if (argc == 0 && nmc->ask) {
-		char *line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		char *line;
+
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
+
+		line = nmc_readline ("%s: ", PROMPT_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -8050,6 +8054,9 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = error->code;
 		goto finish;
 	}
+
+	if (nmc->complete)
+		goto finish;
 
 	if (next_arg (&argc, &argv) == 0)
 		new_name = *argv;
