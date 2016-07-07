@@ -9099,8 +9099,7 @@ queued_ip6_config_change (gpointer user_data)
 	g_object_ref (self);
 	update_ip6_config (self, FALSE);
 
-	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
-	    && priv->state < NM_DEVICE_STATE_DEACTIVATING
+	if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
 	    && nm_platform_link_get (NM_PLATFORM_GET, priv->ifindex)) {
 		/* Handle DAD failures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
