@@ -21,10 +21,6 @@
 #ifndef NM_EXPORTED_OBJECT_H
 #define NM_EXPORTED_OBJECT_H
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 /*****************************************************************************/
 
 char *nm_exported_object_skeletonify_method_name (const char *dbus_method_name);
@@ -79,6 +75,4 @@ GDBusInterfaceSkeleton *nm_exported_object_get_interface_by_type (NMExportedObje
 void        _nm_exported_object_clear_and_unexport (NMExportedObject **location);
 #define nm_exported_object_clear_and_unexport(location) _nm_exported_object_clear_and_unexport ((NMExportedObject **) (location))
 
-G_END_DECLS
-
-#endif	/* NM_EXPORTED_OBJECT_H */
+#endif /* NM_EXPORTED_OBJECT_H */

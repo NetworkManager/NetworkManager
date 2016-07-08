@@ -32,36 +32,75 @@ SUBDIRS += \
 	tests
 endif
 
-AM_CPPFLAGS =				\
-	-I$(top_srcdir)/shared		\
-	-I$(top_builddir)/shared \
-	-I$(top_builddir)/introspection	\
-	-I$(top_srcdir)/libnm-core	\
-	-I$(top_builddir)/libnm-core	\
-	-I$(top_srcdir)/callouts	\
-	-DPREFIX=\"$(prefix)\"          \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON
-
-# add each subdirectory that contains a libNM source file. $(sort) is being used
-# primarily for its side effect of removing duplicates.
-AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d)
-
-noinst_LTLIBRARIES = \
-	libNetworkManager.la \
-	libNetworkManagerTest.la \
-	libnm-iface-helper.la \
-	libsystemd-nm.la
-
-######################
-# libsystemd-nm
-######################
-
 SYSTEMD_NM_CFLAGS_PATHS = \
 	-I$(top_srcdir)/src/systemd/src/systemd \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
 	-I$(top_srcdir)/src/systemd/src/basic \
 	-I$(top_srcdir)/src/systemd
+
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_builddir)/introspection \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	\
+	 $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d) \
+	\
+	-DPREFIX=\"$(prefix)\"          \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	\
+	-DBINDIR=\"$(bindir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DRUNSTATEDIR=\"$(runstatedir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DRUNDIR=\"$(rundir)\" \
+	\
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMPLUGINDIR=\"$(pkglibdir)\" \
+	-DNMRUNDIR=\"$(nmrundir)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
+	-DNMLIBDIR=\"$(nmlibdir)\" \
+	\
+	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
+	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
+	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
+	\
+	$(GLIB_CFLAGS) \
+	$(GUDEV_CFLAGS) \
+	$(LIBNL_CFLAGS) \
+	$(LIBNDP_CFLAGS) \
+	$(LIBSOUP_CFLAGS) \
+	$(SELINUX_CFLAGS) \
+	$(LIBAUDIT_CFLAGS) \
+	$(SYSTEMD_LOGIN_CFLAGS) \
+	$(SYSTEMD_JOURNAL_CFLAGS) \
+	$(SYSTEMD_NM_CFLAGS_PATHS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	\
+	$(NULL)
+
+AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
+
+sbin_PROGRAMS = \
+	NetworkManager
+
+libexec_PROGRAMS = \
+	nm-iface-helper
+
+noinst_LTLIBRARIES = \
+	libNetworkManagerBase.la \
+	libNetworkManager.la \
+	libNetworkManagerTest.la \
+	libnm-iface-helper.la \
+	libsystemd-nm.la
+
+###############################################################################
 
 libsystemd_nm_la_SOURCES = \
 	systemd/nm-sd.c \
@@ -177,8 +216,8 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/systemd/sd-ndisc.h
 
 libsystemd_nm_la_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/shared/ \
+	-I$(top_builddir)/shared/ \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	$(SYSTEMD_NM_CFLAGS_PATHS) \
@@ -189,13 +228,7 @@ libsystemd_nm_la_CPPFLAGS = \
 libsystemd_nm_la_LIBADD = \
 	$(GLIB_LIBS)
 
-######################
-# libsystemd-nm-base
-######################
-
-if ENABLE_TESTS
-noinst_LTLIBRARIES += \
-	libNetworkManagerBase.la
+###############################################################################
 
 libNetworkManagerBase_la_SOURCES = \
 	nm-core-utils.c \
@@ -203,38 +236,17 @@ libNetworkManagerBase_la_SOURCES = \
 	nm-logging.c \
 	nm-logging.h
 
-libNetworkManagerBase_la_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/platform \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	-DNO_SYSTEMD_JOURNAL \
-	-DPREFIX=\"$(prefix)\" \
-	-DLOCALSTATEDIR=\"$(localstatedir)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\" \
-	$(GLIB_CFLAGS)
-
 libNetworkManagerBase_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
-	$(GLIB_LIBS)
-endif
+	$(GLIB_LIBS) \
+	$(SYSTEMD_JOURNAL_LIBS) \
+	$(NULL)
 
-###########################################
-# NetworkManager
-###########################################
+###############################################################################
 
-sbin_PROGRAMS = NetworkManager
-
-NetworkManager_SOURCES = \
-	$(nm_device_sources) $(nm_device_headers) \
-	$(nm_dhcp_client_sources) $(nm_dhcp_client_headers) \
-	main-utils.c \
-	main-utils.h \
-	main.c
-
-NetworkManager_LDADD = libNetworkManager.la
+# These source files have a attribute((constructor)) to register their factories.
+# This gets stripped out from the resulting binary if we add them to libNetworkManager.la.
+# Instead, add them to the binary. An alternative would be to link with --as-needed.
 
 nm_device_sources = \
 	devices/nm-device-bond.c \
@@ -259,23 +271,27 @@ nm_device_headers = \
 	devices/nm-device-tun.h \
 	devices/nm-device-veth.h \
 	devices/nm-device-vlan.h \
-	devices/nm-device-vxlan.h
+	devices/nm-device-vxlan.h \
+	$(NULL)
 
 nm_dhcp_client_sources = \
 	dhcp-manager/nm-dhcp-dhclient.c \
-	dhcp-manager/nm-dhcp-dhclient-utils.c \
 	dhcp-manager/nm-dhcp-dhcpcd.c \
-	dhcp-manager/nm-dhcp-systemd.c
+	dhcp-manager/nm-dhcp-systemd.c \
+	$(NULL)
 
 nm_dhcp_client_headers = \
 	dhcp-manager/nm-dhcp-dhclient.h \
-	dhcp-manager/nm-dhcp-dhclient-utils.h \
 	dhcp-manager/nm-dhcp-dhcpcd.h \
-	dhcp-manager/nm-dhcp-systemd.h
+	dhcp-manager/nm-dhcp-systemd.h \
+	$(NULL)
+
+###############################################################################
 
 libNetworkManager_la_SOURCES = \
-	$(nm_device_headers) \
-	$(nm_dhcp_client_headers) \
+	\
+	dhcp-manager/nm-dhcp-dhclient-utils.c \
+	dhcp-manager/nm-dhcp-dhclient-utils.h \
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-lldp-listener.c \
@@ -416,8 +432,6 @@ libNetworkManager_la_SOURCES = \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
 	nm-ip6-config.h \
-	nm-logging.c \
-	nm-logging.h \
 	nm-auth-manager.c \
 	nm-auth-manager.h \
 	nm-auth-subject.c \
@@ -437,11 +451,9 @@ libNetworkManager_la_SOURCES = \
 	nm-sleep-monitor.c \
 	nm-sleep-monitor.h \
 	nm-types.h \
-	nm-core-utils.c \
-	nm-core-utils.h \
 	NetworkManagerUtils.c \
-	NetworkManagerUtils.h
-
+	NetworkManagerUtils.h \
+	$(NULL)
 
 if WITH_WEXT
 libNetworkManager_la_SOURCES += \
@@ -450,65 +462,15 @@ libNetworkManager_la_SOURCES += \
 endif
 
 
-GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
-GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
-GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-nm_enum_types_sources = $(filter-out \
-                              %/nm-device-private.h \
-                              %/nm-rdisc-private.h \
-                              %/wifi-utils-private.h \
-                              %/nm-dhcp-client-logging.h \
-                              %/nm-device-logging.h \
-                              , $(libNetworkManager_la_SOURCES))
-
-BUILT_SOURCES = $(GLIB_GENERATED)
-
-AM_CPPFLAGS += \
-	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	$(LIBNL_CFLAGS) \
-	$(LIBNDP_CFLAGS) \
-	$(LIBSOUP_CFLAGS) \
-	$(SELINUX_CFLAGS) \
-	$(LIBAUDIT_CFLAGS) \
-	$(SYSTEMD_LOGIN_CFLAGS) \
-	$(SYSTEMD_JOURNAL_CFLAGS) \
-	$(SYSTEMD_NM_CFLAGS_PATHS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	\
-	-DBINDIR=\"$(bindir)\" \
-	-DDATADIR=\"$(datadir)\" \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DLOCALSTATEDIR=\"$(localstatedir)\" \
-	-DRUNSTATEDIR=\"$(runstatedir)\" \
-	-DSBINDIR=\"$(sbindir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DRUNDIR=\"$(rundir)\" \
-	\
-	-DNMCONFDIR=\"$(nmconfdir)\" \
-	-DNMLOCALEDIR=\"$(datadir)/locale\" \
-	-DNMPLUGINDIR=\"$(pkglibdir)\" \
-	-DNMRUNDIR=\"$(nmrundir)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\" \
-	-DNMLIBDIR=\"$(nmlibdir)\" \
-	\
-	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
-	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
-	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
-	\
-	$(NULL)
-
-AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
-
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(top_builddir)/introspection/libnmdbus.la \
+	libNetworkManagerBase.la \
 	libsystemd-nm.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
-	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(LIBDL) \
 	$(LIBM) \
@@ -518,10 +480,6 @@ libNetworkManager_la_LIBADD = \
 if WITH_LIBSOUP
 libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
 endif
-
-NetworkManager_LDFLAGS = \
-	-rdynamic \
-	-Wl,--version-script="$(srcdir)/NetworkManager.ver"
 
 ###############################################################################
 
@@ -534,9 +492,31 @@ libNetworkManagerTest_la_SOURCES = \
 libNetworkManagerTest_la_LIBADD = \
 	$(srcdir)/libNetworkManager.la
 
-######################
+###############################################################################
+
+NetworkManager_SOURCES = \
+	\
+	$(nm_device_sources) \
+	$(nm_device_headers) \
+	\
+	$(nm_dhcp_client_sources) \
+	$(nm_dhcp_client_headers) \
+	\
+	main-utils.c \
+	main-utils.h \
+	main.c
+
+NetworkManager_LDADD = \
+	libNetworkManager.la
+
+NetworkManager_LDFLAGS = \
+	-rdynamic \
+	-Wl,--version-script="$(srcdir)/NetworkManager.ver"
+
+###############################################################################
 
 libnm_iface_helper_la_SOURCES = \
+	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
 	dhcp-manager/nm-dhcp-client-logging.h \
@@ -578,12 +558,8 @@ libnm_iface_helper_la_SOURCES = \
 	\
 	nm-enum-types.c \
 	nm-enum-types.h \
-	nm-logging.c \
-	nm-logging.h \
 	nm-multi-index.c \
 	nm-multi-index.h \
-	nm-core-utils.c \
-	nm-core-utils.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
@@ -596,6 +572,7 @@ endif
 libnm_iface_helper_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(top_builddir)/introspection/libnmdbus.la \
+	libNetworkManagerBase.la \
 	libsystemd-nm.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
@@ -603,8 +580,6 @@ libnm_iface_helper_la_LIBADD = \
 	$(LIBNDP_LIBS) \
 	$(LIBDL) \
 	$(LIBM)
-
-libexec_PROGRAMS = nm-iface-helper
 
 nm_iface_helper_SOURCES = \
 	dhcp-manager/nm-dhcp-systemd.h \
@@ -619,14 +594,29 @@ nm_iface_helper_LDADD = \
 	libnm-iface-helper.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
-	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(LIBM)
 
-nm_iface_helper_LDFLAGS = -rdynamic
+nm_iface_helper_LDFLAGS = \
+	-rdynamic
 
-######################
+###############################################################################
+
+GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
+GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
+nm_enum_types_sources = $(filter-out \
+                              %/nm-device-private.h \
+                              %/nm-rdisc-private.h \
+                              %/wifi-utils-private.h \
+                              %/nm-dhcp-client-logging.h \
+                              %/nm-device-logging.h \
+                              , $(libNetworkManager_la_SOURCES))
+
+BUILT_SOURCES = $(GLIB_GENERATED)
+
+###############################################################################
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = org.freedesktop.NetworkManager.conf

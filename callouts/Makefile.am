@@ -28,8 +28,8 @@ libexec_PROGRAMS = \
 
 
 nm_dispatcher_SOURCES = \
+	$(top_srcdir)/shared/nm-dispatcher-api.h \
 	nm-dispatcher.c \
-	nm-dispatcher-api.h \
 	nm-dispatcher-utils.c \
 	nm-dispatcher-utils.h
 

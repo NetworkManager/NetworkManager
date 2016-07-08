@@ -22,8 +22,6 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 
-#include "nm-default.h"
-
 char *nm_dhcp_dhclient_create_config (const char *interface,
                                       gboolean is_ip6,
                                       GBytes *client_id,
