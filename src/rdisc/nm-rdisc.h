@@ -35,6 +35,15 @@
 #define NM_RDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_RDISC, NMRDiscClass))
 
 #define NM_RDISC_PLATFORM       "platform"
+#define NM_RDISC_IFINDEX        "ifindex"
+#define NM_RDISC_IFNAME         "ifname"
+#define NM_RDISC_NETWORK_ID     "network-id"
+#define NM_RDISC_ADDR_GEN_MODE  "addr-gen-mode"
+#define NM_RDISC_STABLE_TYPE    "stable-type"
+#define NM_RDISC_MAX_ADDRESSES  "max-addresses"
+#define NM_RDISC_ROUTER_SOLICITATIONS "router-solicitations"
+#define NM_RDISC_ROUTER_SOLICITATION_INTERVAL "router-solicitation-interval"
+
 #define NM_RDISC_CONFIG_CHANGED "config-changed"
 #define NM_RDISC_RA_TIMEOUT     "ra-timeout"
 
@@ -69,7 +78,7 @@ typedef struct {
 
 typedef struct {
 	struct in6_addr network;
-	int plen;
+	guint8 plen;
 	struct in6_addr gateway;
 	guint32 timestamp;
 	guint32 lifetime;
@@ -100,41 +109,42 @@ typedef enum {
 } NMRDiscConfigMap;
 
 #define NM_RDISC_MAX_ADDRESSES_DEFAULT 16
-#define NM_RDISC_RTR_SOLICITATIONS_DEFAULT 3
-#define NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT 4
+#define NM_RDISC_ROUTER_SOLICITATIONS_DEFAULT 3
+#define NM_RDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4
+
+struct _NMRDiscPrivate;
+struct _NMRDiscDataInternal;
+
+typedef struct {
+	NMRDiscDHCPLevel dhcp_level;
+	guint32 mtu;
+	int hop_limit;
+
+	guint gateways_n;
+	guint addresses_n;
+	guint routes_n;
+	guint dns_servers_n;
+	guint dns_domains_n;
+
+	const NMRDiscGateway *gateways;
+	const NMRDiscAddress *addresses;
+	const NMRDiscRoute *routes;
+	const NMRDiscDNSServer *dns_servers;
+	const NMRDiscDNSDomain *dns_domains;
+} NMRDiscData;
 
 /**
  * NMRDisc:
- * @ifindex: Interface index
  *
  * Interface-specific structure that handles incoming router advertisements,
  * caches advertised items and removes them when they are obsolete.
  */
 typedef struct {
 	GObject parent;
-
-	NMPlatform *_platform;
-	NMPNetns *_netns;
-
-	NMUtilsStableType stable_type;
-
-	int ifindex;
-	char *ifname;
-	char *network_id;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-	NMUtilsIPv6IfaceId iid;
-	gint32 max_addresses;
-	gint32 rtr_solicitations;
-	gint32 rtr_solicitation_interval;
-
-	NMRDiscDHCPLevel dhcp_level;
-	GArray *gateways;
-	GArray *addresses;
-	GArray *routes;
-	GArray *dns_servers;
-	GArray *dns_domains;
-	int hop_limit;
-	guint32 mtu;
+	union {
+		struct _NMRDiscPrivate *_priv;
+		struct _NMRDiscDataInternal *rdata;
+	};
 } NMRDisc;
 
 typedef struct {
@@ -142,12 +152,12 @@ typedef struct {
 
 	void (*start) (NMRDisc *rdisc);
 	gboolean (*send_rs) (NMRDisc *rdisc, GError **error);
-	void (*config_changed) (NMRDisc *rdisc, NMRDiscConfigMap changed);
-	void (*ra_process) (NMRDisc *rdisc);
-	void (*ra_timeout) (NMRDisc *rdisc);
 } NMRDiscClass;
 
 GType nm_rdisc_get_type (void);
+
+int nm_rdisc_get_ifindex (NMRDisc *self);
+const char *nm_rdisc_get_ifname (NMRDisc *self);
 
 gboolean nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
 void nm_rdisc_start (NMRDisc *rdisc);

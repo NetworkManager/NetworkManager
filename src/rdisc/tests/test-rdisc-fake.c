@@ -46,10 +46,16 @@ rdisc_new (void)
 }
 
 static void
-match_gateway (GArray *array, guint idx, const char *addr, guint32 ts, guint32 lt, NMRDiscPreference pref)
+match_gateway (const NMRDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt, NMRDiscPreference pref)
 {
-	NMRDiscGateway *gw = &g_array_index (array, NMRDiscGateway, idx);
+	const NMRDiscGateway *gw;
 	char buf[INET6_ADDRSTRLEN];
+
+	g_assert (rdata);
+	g_assert_cmpint (idx, <, rdata->gateways_n);
+	g_assert (rdata->gateways);
+
+	gw = &rdata->gateways[idx];
 
 	g_assert_cmpstr (inet_ntop (AF_INET6, &gw->address, buf, sizeof (buf)), ==, addr);
 	g_assert_cmpint (gw->timestamp, ==, ts);
@@ -58,10 +64,16 @@ match_gateway (GArray *array, guint idx, const char *addr, guint32 ts, guint32 l
 }
 
 static void
-match_address (GArray *array, guint idx, const char *addr, guint32 ts, guint32 lt, guint32 preferred)
+match_address (const NMRDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt, guint32 preferred)
 {
-	NMRDiscAddress *a = &g_array_index (array, NMRDiscAddress, idx);
+	const NMRDiscAddress *a;
 	char buf[INET6_ADDRSTRLEN];
+
+	g_assert (rdata);
+	g_assert_cmpint (idx, <, rdata->addresses_n);
+	g_assert (rdata->addresses);
+
+	a = &rdata->addresses[idx];
 
 	g_assert_cmpstr (inet_ntop (AF_INET6, &a->address, buf, sizeof (buf)), ==, addr);
 	g_assert_cmpint (a->timestamp, ==, ts);
@@ -70,13 +82,20 @@ match_address (GArray *array, guint idx, const char *addr, guint32 ts, guint32 l
 }
 
 static void
-match_route (GArray *array, guint idx, const char *nw, int plen, const char *gw, guint32 ts, guint32 lt, NMRDiscPreference pref)
+match_route (const NMRDiscData *rdata, guint idx, const char *nw, int plen, const char *gw, guint32 ts, guint32 lt, NMRDiscPreference pref)
 {
-	NMRDiscRoute *route = &g_array_index (array, NMRDiscRoute, idx);
+	const NMRDiscRoute *route;
 	char buf[INET6_ADDRSTRLEN];
 
+	g_assert (rdata);
+	g_assert_cmpint (idx, <, rdata->routes_n);
+	g_assert (rdata->routes);
+	g_assert (plen > 0 && plen <= 128);
+
+	route = &rdata->routes[idx];
+
 	g_assert_cmpstr (inet_ntop (AF_INET6, &route->network, buf, sizeof (buf)), ==, nw);
-	g_assert_cmpint (route->plen, ==, plen);
+	g_assert_cmpint ((int) route->plen, ==, plen);
 	g_assert_cmpstr (inet_ntop (AF_INET6, &route->gateway, buf, sizeof (buf)), ==, gw);
 	g_assert_cmpint (route->timestamp, ==, ts);
 	g_assert_cmpint (route->lifetime, ==, lt);
@@ -84,10 +103,16 @@ match_route (GArray *array, guint idx, const char *nw, int plen, const char *gw,
 }
 
 static void
-match_dns_server (GArray *array, guint idx, const char *addr, guint32 ts, guint32 lt)
+match_dns_server (const NMRDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt)
 {
-	NMRDiscDNSServer *dns = &g_array_index (array, NMRDiscDNSServer, idx);
+	const NMRDiscDNSServer *dns;
 	char buf[INET6_ADDRSTRLEN];
+
+	g_assert (rdata);
+	g_assert_cmpint (idx, <, rdata->dns_servers_n);
+	g_assert (rdata->dns_servers);
+
+	dns = &rdata->dns_servers[idx];
 
 	g_assert_cmpstr (inet_ntop (AF_INET6, &dns->address, buf, sizeof (buf)), ==, addr);
 	g_assert_cmpint (dns->timestamp, ==, ts);
@@ -95,9 +120,15 @@ match_dns_server (GArray *array, guint idx, const char *addr, guint32 ts, guint3
 }
 
 static void
-match_dns_domain (GArray *array, guint idx, const char *domain, guint32 ts, guint32 lt)
+match_dns_domain (const NMRDiscData *rdata, guint idx, const char *domain, guint32 ts, guint32 lt)
 {
-	NMRDiscDNSDomain *dns = &g_array_index (array, NMRDiscDNSDomain, idx);
+	const NMRDiscDNSDomain *dns;
+
+	g_assert (rdata);
+	g_assert_cmpint (idx, <, rdata->dns_domains_n);
+	g_assert (rdata->dns_domains);
+
+	dns = &rdata->dns_domains[idx];
 
 	g_assert_cmpstr (dns->domain, ==, domain);
 	g_assert_cmpint (dns->timestamp, ==, ts);
@@ -114,8 +145,10 @@ typedef struct {
 } TestData;
 
 static void
-test_simple_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
+test_simple_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, TestData *data)
 {
+	NMRDiscConfigMap changed = changed_int;
+
 	g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_DHCP_LEVEL |
 	                              NM_RDISC_CONFIG_GATEWAYS |
 	                              NM_RDISC_CONFIG_ADDRESSES |
@@ -124,12 +157,12 @@ test_simple_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
 	                              NM_RDISC_CONFIG_DNS_DOMAINS |
 	                              NM_RDISC_CONFIG_HOP_LIMIT |
 	                              NM_RDISC_CONFIG_MTU);
-	g_assert_cmpint (rdisc->dhcp_level, ==, NM_RDISC_DHCP_LEVEL_OTHERCONF);
-	match_gateway (rdisc->gateways, 0, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
-	match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
-	match_route (rdisc->routes, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 10);
-	match_dns_server (rdisc->dns_servers, 0, "2001:db8:c:c::1", data->timestamp1, 10);
-	match_dns_domain (rdisc->dns_domains, 0, "foobar.com", data->timestamp1, 10);
+	g_assert_cmpint (rdata->dhcp_level, ==, NM_RDISC_DHCP_LEVEL_OTHERCONF);
+	match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+	match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
+	match_route (rdata, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 10);
+	match_dns_server (rdata, 0, "2001:db8:c:c::1", data->timestamp1, 10);
+	match_dns_domain (rdata, 0, "foobar.com", data->timestamp1, 10);
 
 	g_assert (nm_fake_rdisc_done (NM_FAKE_RDISC (rdisc)));
 	data->counter++;
@@ -172,40 +205,42 @@ test_everything_rs_sent (NMRDisc *rdisc, TestData *data)
 }
 
 static void
-test_everything_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
+test_everything_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, TestData *data)
 {
+	NMRDiscConfigMap changed = changed_int;
+
 	if (data->counter == 0) {
 		g_assert_cmpint (data->rs_counter, ==, 1);
 		g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_DHCP_LEVEL |
-			                          NM_RDISC_CONFIG_GATEWAYS |
-			                          NM_RDISC_CONFIG_ADDRESSES |
-			                          NM_RDISC_CONFIG_ROUTES |
-			                          NM_RDISC_CONFIG_DNS_SERVERS |
-			                          NM_RDISC_CONFIG_DNS_DOMAINS |
-			                          NM_RDISC_CONFIG_HOP_LIMIT |
-			                          NM_RDISC_CONFIG_MTU);
-		match_gateway (rdisc->gateways, 0, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
-		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
-		match_route (rdisc->routes, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 10);
-		match_dns_server (rdisc->dns_servers, 0, "2001:db8:c:c::1", data->timestamp1, 10);
-		match_dns_domain (rdisc->dns_domains, 0, "foobar.com", data->timestamp1, 10);
+		                              NM_RDISC_CONFIG_GATEWAYS |
+		                              NM_RDISC_CONFIG_ADDRESSES |
+		                              NM_RDISC_CONFIG_ROUTES |
+		                              NM_RDISC_CONFIG_DNS_SERVERS |
+		                              NM_RDISC_CONFIG_DNS_DOMAINS |
+		                              NM_RDISC_CONFIG_HOP_LIMIT |
+		                              NM_RDISC_CONFIG_MTU);
+		match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
+		match_route (rdata, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 10);
+		match_dns_server (rdata, 0, "2001:db8:c:c::1", data->timestamp1, 10);
+		match_dns_domain (rdata, 0, "foobar.com", data->timestamp1, 10);
 	} else if (data->counter == 1) {
 		g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_GATEWAYS |
-			                          NM_RDISC_CONFIG_ADDRESSES |
-			                          NM_RDISC_CONFIG_ROUTES |
-			                          NM_RDISC_CONFIG_DNS_SERVERS |
-			                          NM_RDISC_CONFIG_DNS_DOMAINS);
+		                              NM_RDISC_CONFIG_ADDRESSES |
+		                              NM_RDISC_CONFIG_ROUTES |
+		                              NM_RDISC_CONFIG_DNS_SERVERS |
+		                              NM_RDISC_CONFIG_DNS_DOMAINS);
 
-		g_assert_cmpint (rdisc->gateways->len, ==, 1);
-		match_gateway (rdisc->gateways, 0, "fe80::2", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
-		g_assert_cmpint (rdisc->addresses->len, ==, 1);
-		match_address (rdisc->addresses, 0, "2001:db8:a:b::1", data->timestamp1, 10, 10);
-		g_assert_cmpint (rdisc->routes->len, ==, 1);
-		match_route (rdisc->routes, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1, 10, 10);
-		g_assert_cmpint (rdisc->dns_servers->len, ==, 1);
-		match_dns_server (rdisc->dns_servers, 0, "2001:db8:c:c::2", data->timestamp1, 10);
-		g_assert_cmpint (rdisc->dns_domains->len, ==, 1);
-		match_dns_domain (rdisc->dns_domains, 0, "foobar2.com", data->timestamp1, 10);
+		g_assert_cmpint (rdata->gateways_n, ==, 1);
+		match_gateway (rdata, 0, "fe80::2", data->timestamp1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		g_assert_cmpint (rdata->addresses_n, ==, 1);
+		match_address (rdata, 0, "2001:db8:a:b::1", data->timestamp1, 10, 10);
+		g_assert_cmpint (rdata->routes_n, ==, 1);
+		match_route (rdata, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1, 10, 10);
+		g_assert_cmpint (rdata->dns_servers_n, ==, 1);
+		match_dns_server (rdata, 0, "2001:db8:c:c::2", data->timestamp1, 10);
+		g_assert_cmpint (rdata->dns_domains_n, ==, 1);
+		match_dns_domain (rdata, 0, "foobar2.com", data->timestamp1, 10);
 
 		g_assert (nm_fake_rdisc_done (NM_FAKE_RDISC (rdisc)));
 		g_main_loop_quit (data->loop);
@@ -263,35 +298,37 @@ test_everything (void)
 }
 
 static void
-test_preference_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
+test_preference_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, TestData *data)
 {
+	NMRDiscConfigMap changed = changed_int;
+
 	if (data->counter == 1) {
 		g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_GATEWAYS |
-			                          NM_RDISC_CONFIG_ADDRESSES |
-			                          NM_RDISC_CONFIG_ROUTES);
-		g_assert_cmpint (rdisc->gateways->len, ==, 2);
-		match_gateway (rdisc->gateways, 0, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
-		match_gateway (rdisc->gateways, 1, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_LOW);
-		g_assert_cmpint (rdisc->addresses->len, ==, 2);
-		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
-		match_address (rdisc->addresses, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
-		g_assert_cmpint (rdisc->routes->len, ==, 2);
-		match_route (rdisc->routes, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
-		match_route (rdisc->routes, 1, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 5);
+		                              NM_RDISC_CONFIG_ADDRESSES |
+		                              NM_RDISC_CONFIG_ROUTES);
+		g_assert_cmpint (rdata->gateways_n, ==, 2);
+		match_gateway (rdata, 0, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		match_gateway (rdata, 1, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_LOW);
+		g_assert_cmpint (rdata->addresses_n, ==, 2);
+		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
+		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
+		g_assert_cmpint (rdata->routes_n, ==, 2);
+		match_route (rdata, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
+		match_route (rdata, 1, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 5);
 	} else if (data->counter == 2) {
 		g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_GATEWAYS |
-			                          NM_RDISC_CONFIG_ADDRESSES |
-			                          NM_RDISC_CONFIG_ROUTES);
+		                              NM_RDISC_CONFIG_ADDRESSES |
+		                              NM_RDISC_CONFIG_ROUTES);
 
-		g_assert_cmpint (rdisc->gateways->len, ==, 2);
-		match_gateway (rdisc->gateways, 0, "fe80::1", data->timestamp1 + 2, 10, NM_RDISC_PREFERENCE_HIGH);
-		match_gateway (rdisc->gateways, 1, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
-		g_assert_cmpint (rdisc->addresses->len, ==, 2);
-		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1 + 2, 10, 10);
-		match_address (rdisc->addresses, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
-		g_assert_cmpint (rdisc->routes->len, ==, 2);
-		match_route (rdisc->routes, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1 + 2, 10, 15);
-		match_route (rdisc->routes, 1, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
+		g_assert_cmpint (rdata->gateways_n, ==, 2);
+		match_gateway (rdata, 0, "fe80::1", data->timestamp1 + 2, 10, NM_RDISC_PREFERENCE_HIGH);
+		match_gateway (rdata, 1, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		g_assert_cmpint (rdata->addresses_n, ==, 2);
+		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1 + 2, 10, 10);
+		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
+		g_assert_cmpint (rdata->routes_n, ==, 2);
+		match_route (rdata, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1 + 2, 10, 15);
+		match_route (rdata, 1, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
 
 		g_assert (nm_fake_rdisc_done (NM_FAKE_RDISC (rdisc)));
 		g_main_loop_quit (data->loop);
@@ -342,7 +379,7 @@ test_preference (void)
 }
 
 static void
-test_dns_solicit_loop_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
+test_dns_solicit_loop_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, TestData *data)
 {
 	data->counter++;
 }

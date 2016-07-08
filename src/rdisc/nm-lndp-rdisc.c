@@ -20,20 +20,22 @@
 
 #include "nm-default.h"
 
+#include "nm-lndp-rdisc.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 /* stdarg.h included because of a bug in ndp.h */
 #include <stdarg.h>
 #include <ndp.h>
 
-#include "nm-lndp-rdisc.h"
 #include "nm-rdisc-private.h"
-
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME                "rdisc-lndp"
+
+/*****************************************************************************/
 
 typedef struct {
 	struct ndp *ndp;
@@ -41,18 +43,42 @@ typedef struct {
 	GIOChannel *event_channel;
 	guint event_id;
 	guint ra_timeout_id;  /* first RA timeout */
-} NMLNDPRDiscPrivate;
+} NMLndpRDiscPrivate;
 
-#define NM_LNDP_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LNDP_RDISC, NMLNDPRDiscPrivate))
+/*****************************************************************************/
 
-G_DEFINE_TYPE (NMLNDPRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
+struct _NMLndpRDisc {
+	NMRDisc parent;
+	NMLndpRDiscPrivate _priv;
+};
 
-/******************************************************************/
+struct _NMLndpRDiscClass {
+	NMRDiscClass parent;
+};
+
+/*****************************************************************************/
+
+G_DEFINE_TYPE (NMLndpRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
+
+#define NM_LNDP_RDISC_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMLndpRDisc *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_LNDP_RDISC (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static gboolean
 send_rs (NMRDisc *rdisc, GError **error)
 {
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 	struct ndp_msg *msg;
 	int errsv;
 
@@ -63,7 +89,7 @@ send_rs (NMRDisc *rdisc, GError **error)
 		                     "cannot create router solicitation");
 		return FALSE;
 	}
-	ndp_msg_ifindex_set (msg, rdisc->ifindex);
+	ndp_msg_ifindex_set (msg, nm_rdisc_get_ifindex (rdisc));
 
 	errsv = ndp_msg_send (priv->ndp, msg);
 	ndp_msg_destroy (msg);
@@ -89,6 +115,7 @@ static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 {
 	NMRDisc *rdisc = (NMRDisc *) user_data;
+	NMRDiscDataInternal *rdata = rdisc->rdata;
 	NMRDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	struct in6_addr gateway_addr;
@@ -125,8 +152,14 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		else
 			dhcp_level = NM_RDISC_DHCP_LEVEL_NONE;
 
-		if (dhcp_level != rdisc->dhcp_level) {
-			rdisc->dhcp_level = dhcp_level;
+		/* when receiving multiple RA (possibly from different routers),
+		 * let's keep the "most managed" level. */
+		G_STATIC_ASSERT_EXPR (NM_RDISC_DHCP_LEVEL_MANAGED > NM_RDISC_DHCP_LEVEL_OTHERCONF);
+		G_STATIC_ASSERT_EXPR (NM_RDISC_DHCP_LEVEL_OTHERCONF > NM_RDISC_DHCP_LEVEL_NONE);
+		dhcp_level = MAX (dhcp_level, rdata->public.dhcp_level);
+
+		if (dhcp_level != rdata->public.dhcp_level) {
+			rdata->public.dhcp_level = dhcp_level;
 			changed |= NM_RDISC_CONFIG_DHCP_LEVEL;
 		}
 	}
@@ -255,8 +288,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	}
 
 	hop_limit = ndp_msgra_curhoplimit (msgra);
-	if (rdisc->hop_limit != hop_limit) {
-		rdisc->hop_limit = hop_limit;
+	if (rdata->public.hop_limit != hop_limit) {
+		rdata->public.hop_limit = hop_limit;
 		changed |= NM_RDISC_CONFIG_HOP_LIMIT;
 	}
 
@@ -264,8 +297,10 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	ndp_msg_opt_for_each_offset(offset, msg, NDP_MSG_OPT_MTU) {
 		guint32 mtu = ndp_msg_opt_mtu(msg, offset);
 		if (mtu >= 1280) {
-			rdisc->mtu = mtu;
-			changed |= NM_RDISC_CONFIG_MTU;
+			if (rdata->public.mtu != mtu) {
+				rdata->public.mtu = mtu;
+				changed |= NM_RDISC_CONFIG_MTU;
+			}
 		} else {
 			/* All sorts of bad things would happen if we accepted this.
 			 * Kernel would set it, but would flush out all IPv6 addresses away
@@ -283,7 +318,7 @@ static gboolean
 event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 
 	_LOGD ("processing libndp events");
 
@@ -297,7 +332,7 @@ event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 static void
 start (NMRDisc *rdisc)
 {
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 	int fd = ndp_get_eventfd (priv->ndp);
 
 	priv->event_channel = g_io_channel_unix_new (fd);
@@ -306,15 +341,25 @@ start (NMRDisc *rdisc)
 	/* Flush any pending messages to avoid using obsolete information */
 	event_ready (priv->event_channel, 0, rdisc);
 
-	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, rdisc->ifindex, rdisc);
+	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, nm_rdisc_get_ifindex (rdisc), rdisc);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
-static inline gint32
-ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, gint32 defval)
+static inline int
+ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, int min, int max, int defval)
 {
-	return nm_platform_sysctl_get_int32 (platform, nm_utils_ip6_property_path (ifname, property), defval);
+	return (int) nm_platform_sysctl_get_int_checked (platform,
+	                                                 nm_utils_ip6_property_path (ifname, property),
+	                                                 10,
+	                                                 min,
+	                                                 max,
+	                                                 defval);
+}
+
+static void
+nm_lndp_rdisc_init (NMLndpRDisc *lndp_rdisc)
+{
 }
 
 NMRDisc *
@@ -328,7 +373,7 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMRDisc *rdisc;
-	NMLNDPRDiscPrivate *priv;
+	NMLndpRDiscPrivate *priv;
 	int errsv;
 
 	g_return_val_if_fail (NM_IS_PLATFORM (platform), NULL);
@@ -339,22 +384,23 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 
 	rdisc = g_object_new (NM_TYPE_LNDP_RDISC,
 	                      NM_RDISC_PLATFORM, platform,
+	                      NM_RDISC_STABLE_TYPE, (int) stable_type,
+	                      NM_RDISC_IFINDEX, ifindex,
+	                      NM_RDISC_IFNAME, ifname,
+	                      NM_RDISC_NETWORK_ID, network_id,
+	                      NM_RDISC_ADDR_GEN_MODE, (int) addr_gen_mode,
+	                      NM_RDISC_MAX_ADDRESSES, ipv6_sysctl_get (platform, ifname,
+	                                                               "max_addresses",
+	                                                               0, G_MAXINT32, NM_RDISC_MAX_ADDRESSES_DEFAULT),
+	                      NM_RDISC_ROUTER_SOLICITATIONS, ipv6_sysctl_get (platform, ifname,
+	                                                                      "router_solicitations",
+	                                                                      1, G_MAXINT32, NM_RDISC_ROUTER_SOLICITATIONS_DEFAULT),
+	                      NM_RDISC_ROUTER_SOLICITATION_INTERVAL, ipv6_sysctl_get (platform, ifname,
+	                                                                              "router_solicitation_interval",
+	                                                                              1, G_MAXINT32, NM_RDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT),
 	                      NULL);
 
-	rdisc->ifindex = ifindex;
-	rdisc->ifname = g_strdup (ifname);
-	rdisc->stable_type = stable_type;
-	rdisc->network_id = g_strdup (network_id);
-	rdisc->addr_gen_mode = addr_gen_mode;
-
-	rdisc->max_addresses = ipv6_sysctl_get (platform, ifname, "max_addresses",
-	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);
-	rdisc->rtr_solicitations = ipv6_sysctl_get (platform, ifname, "router_solicitations",
-	                                            NM_RDISC_RTR_SOLICITATIONS_DEFAULT);
-	rdisc->rtr_solicitation_interval = ipv6_sysctl_get (platform, ifname, "router_solicitation_interval",
-	                                                    NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT);
-
-	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 
 	errsv = ndp_open (&priv->ndp);
 
@@ -370,21 +416,16 @@ nm_lndp_rdisc_new (NMPlatform *platform,
 }
 
 static void
-nm_lndp_rdisc_init (NMLNDPRDisc *lndp_rdisc)
-{
-}
-
-static void
 dispose (GObject *object)
 {
-	NMLNDPRDisc *rdisc = NM_LNDP_RDISC (object);
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	NMRDisc *rdisc = (NMRDisc *) object;
+	NMLndpRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE ((NMLndpRDisc *) rdisc);
 
 	nm_clear_g_source (&priv->event_id);
 	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
 
 	if (priv->ndp) {
-		ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, NM_RDISC (rdisc)->ifindex, rdisc);
+		ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_rdisc_get_ifindex (rdisc), rdisc);
 		ndp_close (priv->ndp);
 		priv->ndp = NULL;
 	}
@@ -393,12 +434,10 @@ dispose (GObject *object)
 }
 
 static void
-nm_lndp_rdisc_class_init (NMLNDPRDiscClass *klass)
+nm_lndp_rdisc_class_init (NMLndpRDiscClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMRDiscClass *rdisc_class = NM_RDISC_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMLNDPRDiscPrivate));
 
 	object_class->dispose = dispose;
 	rdisc_class->start = start;
