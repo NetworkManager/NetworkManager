@@ -49,6 +49,7 @@ AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(to
 
 noinst_LTLIBRARIES = \
 	libNetworkManager.la \
+	libNetworkManagerTest.la \
 	libnm-iface-helper.la \
 	libsystemd-nm.la
 
@@ -324,8 +325,6 @@ libNetworkManager_la_SOURCES = \
 	platform/nm-platform.h \
 	platform/nm-linux-platform.c \
 	platform/nm-linux-platform.h \
-	platform/nm-fake-platform.c \
-	platform/nm-fake-platform.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
@@ -523,6 +522,17 @@ endif
 NetworkManager_LDFLAGS = \
 	-rdynamic \
 	-Wl,--version-script="$(srcdir)/NetworkManager.ver"
+
+###############################################################################
+
+libNetworkManagerTest_la_SOURCES = \
+	rdisc/nm-fake-rdisc.c \
+	rdisc/nm-fake-rdisc.h \
+	platform/nm-fake-platform.c \
+	platform/nm-fake-platform.h
+
+libNetworkManagerTest_la_LIBADD = \
+	$(srcdir)/libNetworkManager.la
 
 ######################
 

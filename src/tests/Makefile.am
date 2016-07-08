@@ -62,7 +62,7 @@ test_route_manager_fake_SOURCES = \
 	test-route-manager.c
 
 test_route_manager_fake_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
+	$(top_builddir)/src/libNetworkManagerTest.la
 
 test_route_manager_linux_SOURCES = \
 	$(top_srcdir)/src/platform/tests/test-common.c \

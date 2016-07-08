@@ -28,7 +28,7 @@ TEST_SOURCES = \
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_LDFLAGS = $(GLIB_LIBS) $(GUDEV_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
 PLATFORM_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
+	$(top_builddir)/src/libNetworkManagerTest.la
 
 @GNOME_CODE_COVERAGE_RULES@
 
@@ -109,12 +109,12 @@ test_cleanup_linux_LDADD = $(PLATFORM_LDADD)
 test_nmp_object_SOURCES = \
 	test-nmp-object.c
 test_nmp_object_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
+	$(top_builddir)/src/libNetworkManagerTest.la
 
 test_general_SOURCES = \
 	test-general.c
 test_general_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
+	$(top_builddir)/src/libNetworkManagerTest.la
 
 
 @VALGRIND_RULES@
