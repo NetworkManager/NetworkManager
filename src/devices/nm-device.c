@@ -11674,7 +11674,7 @@ _hw_addr_set (NMDevice *self,
 
 	/* Do nothing if current MAC is same */
 	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-		_LOGD (LOGD_DEVICE, "set-hw-addr: no MAC address change needed");
+		_LOGT (LOGD_DEVICE, "set-hw-addr: no MAC address change needed (%s)", cur_addr);
 		return TRUE;
 	}
 
