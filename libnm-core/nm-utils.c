@@ -3068,10 +3068,11 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 }
 
 static char *
-_bin2str (gconstpointer addr, gsize length, const char *LOOKUP)
+_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 {
 	const guint8 *in = addr;
 	char *out, *result;
+	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
 
 	g_return_val_if_fail (addr != NULL, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
@@ -3102,7 +3103,7 @@ _bin2str (gconstpointer addr, gsize length, const char *LOOKUP)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 {
-	return _bin2str (addr, length, "0123456789ABCDEF");
+	return _bin2str (addr, length, TRUE);
 }
 
 /**
@@ -3118,8 +3119,7 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 char *
 _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 {
-	return _bin2str (addr, length,
-	                 upper_case ? "0123456789ABCDEF" : "0123456789abcdef");
+	return _bin2str (addr, length, upper_case);
 }
 
 static int
