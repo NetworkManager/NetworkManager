@@ -111,20 +111,20 @@ handle_event (GDBusConnection  *connection,
 
 	iface = get_option (options, "interface");
 	if (iface == NULL) {
-		nm_log_warn (LOGD_DHCP, "DHCP event: didn't have associated interface.");
+		nm_log_warn (LOGD_DHCP, "dhcp-event: didn't have associated interface.");
 		goto out;
 	}
 
 	pid_str = get_option (options, "pid");
 	pid = _nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
 	if (pid == -1) {
-		nm_log_warn (LOGD_DHCP, "DHCP event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
+		nm_log_warn (LOGD_DHCP, "dhcp-event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
 		goto out;
 	}
 
 	reason = get_option (options, "reason");
 	if (reason == NULL) {
-		nm_log_warn (LOGD_DHCP, "(pid %d) DHCP event didn't have a reason", pid);
+		nm_log_warn (LOGD_DHCP, "dhcp-event: (pid %d) DHCP event didn't have a reason", pid);
 		goto out;
 	}
 
@@ -132,9 +132,9 @@ handle_event (GDBusConnection  *connection,
 	if (!handled) {
 		if (g_ascii_strcasecmp (reason, "RELEASE") == 0) {
 			/* Ignore event when the dhcp client gets killed and we receive its last message */
-			nm_log_dbg (LOGD_DHCP, "(pid %d) unhandled RELEASE DHCP event for interface %s", pid, iface);
+			nm_log_dbg (LOGD_DHCP, "dhcp-event: (pid %d) unhandled RELEASE DHCP event for interface %s", pid, iface);
 		} else
-			nm_log_warn (LOGD_DHCP, "(pid %d) unhandled DHCP event for interface %s", pid, iface);
+			nm_log_warn (LOGD_DHCP, "dhcp-event: (pid %d) unhandled DHCP event for interface %s", pid, iface);
 	}
 
 out:

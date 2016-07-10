@@ -193,7 +193,7 @@ add_requests_to_options (GHashTable *options, const ReqOption *requests)
 #define LOG_LEASE(domain, ...) \
 G_STMT_START { \
 	if (log_lease) { \
-		nm_log (LOGL_INFO, (domain), __VA_ARGS__); \
+		_LOG2I ((domain), (iface), __VA_ARGS__); \
 	} \
 } G_STMT_END
 

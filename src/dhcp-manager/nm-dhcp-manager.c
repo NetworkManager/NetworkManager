@@ -372,7 +372,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	for (iter = client_descs; iter; iter = iter->next) {
 		ClientDesc *desc = iter->data;
 
-		nm_log_dbg (LOGD_DHCP, "Registered DHCP client '%s' (%s)",
+		nm_log_dbg (LOGD_DHCP, "dhcp-init: Registered DHCP client '%s' (%s)",
 		            desc->name, g_type_name (desc->gtype));
 	}
 
@@ -380,7 +380,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	client = nm_config_get_dhcp_client (config);
 	if (nm_config_get_configure_and_quit (config)) {
 		if (g_strcmp0 (client, "internal") != 0)
-			nm_log_warn (LOGD_DHCP, "Using internal DHCP client since configure-and-quit is set.");
+			nm_log_warn (LOGD_DHCP, "dhcp-init: Using internal DHCP client since configure-and-quit is set.");
 		client = "internal";
 	}
 
@@ -389,7 +389,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 
 	if (type == G_TYPE_INVALID) {
 		if (client)
-			nm_log_warn (LOGD_DHCP, "DHCP client '%s' not available", client);
+			nm_log_warn (LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
 
 		type = is_client_enabled ("dhclient");
 		if (type == G_TYPE_INVALID)
@@ -399,9 +399,9 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	}
 
 	if (type == G_TYPE_INVALID)
-		nm_log_warn (LOGD_DHCP, "No usable DHCP client found! DHCP configurations will fail");
+		nm_log_warn (LOGD_DHCP, "dhcp-init: No usable DHCP client found! DHCP configurations will fail");
 	else
-		nm_log_info (LOGD_DHCP, "Using DHCP client '%s'", find_client_desc (NULL, type)->name);
+		nm_log_info (LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", find_client_desc (NULL, type)->name);
 
 	priv->client_type = type;
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
