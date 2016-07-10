@@ -126,6 +126,8 @@ gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue 
 
 guint _nm_utils_hwaddr_length (const char *asc);
 
+char *_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case);
+
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
 GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);

@@ -10698,24 +10698,6 @@ deactivate_reset_hw_addr (NMDevice *self)
 }
 
 static char *
-bin2hexstr (const char *bytes, gsize len)
-{
-	GString *str;
-	int i;
-
-	g_return_val_if_fail (bytes != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-
-	str = g_string_sized_new (len * 2 + 1);
-	for (i = 0; i < len; i++) {
-		if (str->len)
-			g_string_append_c (str, ':');
-		g_string_append_printf (str, "%02x", (guint8) bytes[i]);
-	}
-	return g_string_free (str, FALSE);
-}
-
-static char *
 find_dhcp4_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -10787,7 +10769,6 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
 		NMSettingIPConfig *s_ip4;
-		char *hex_client_id;
 
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		g_assert (s_ip4);
@@ -10807,9 +10788,10 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			client_id = nm_dhcp_client_get_client_id (priv->dhcp4.client);
 			if (client_id) {
 				g_ptr_array_add (argv, g_strdup ("--dhcp4-clientid"));
-				hex_client_id = bin2hexstr (g_bytes_get_data (client_id, NULL),
-				                            g_bytes_get_size (client_id));
-				g_ptr_array_add (argv, hex_client_id);
+				g_ptr_array_add (argv,
+				                 _nm_utils_bin2str (g_bytes_get_data (client_id, NULL),
+				                                    g_bytes_get_size (client_id),
+				                                    FALSE));
 			}
 
 			hostname = nm_dhcp_client_get_hostname (priv->dhcp4.client);
@@ -10831,7 +10813,6 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		NMSettingIPConfig *s_ip6;
-		char *hex_iid;
 		NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
 
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -10850,8 +10831,10 @@ nm_device_spawn_iface_helper (NMDevice *self)
 
 		if (nm_device_get_ip_iface_identifier (self, &iid, FALSE)) {
 			g_ptr_array_add (argv, g_strdup ("--iid"));
-			hex_iid = bin2hexstr ((const char *) iid.id_u8, sizeof (NMUtilsIPv6IfaceId));
-			g_ptr_array_add (argv, hex_iid);
+			g_ptr_array_add (argv,
+			                 _nm_utils_bin2str (iid.id_u8,
+			                                    sizeof (NMUtilsIPv6IfaceId),
+			                                    FALSE));
 		}
 
 		g_ptr_array_add (argv, g_strdup ("--addr-gen-mode"));

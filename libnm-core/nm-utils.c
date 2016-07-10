@@ -3067,24 +3067,14 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 		return NULL;
 }
 
-/**
- * nm_utils_hwaddr_ntoa:
- * @addr: (type guint8) (array length=length): a binary hardware address
- * @length: the length of @addr
- *
- * Converts @addr to textual form.
- *
- * Return value: (transfer full): the textual form of @addr
- */
-char *
-nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
+static char *
+_bin2str (gconstpointer addr, gsize length, const char *LOOKUP)
 {
 	const guint8 *in = addr;
 	char *out, *result;
-	const char *LOOKUP = "0123456789ABCDEF";
 
 	g_return_val_if_fail (addr != NULL, g_strdup (""));
-	g_return_val_if_fail (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, g_strdup (""));
+	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = out = g_malloc (length * 3);
 	while (length--) {
@@ -3098,6 +3088,38 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 
 	*out = 0;
 	return result;
+}
+
+/**
+ * nm_utils_hwaddr_ntoa:
+ * @addr: (type guint8) (array length=length): a binary hardware address
+ * @length: the length of @addr
+ *
+ * Converts @addr to textual form.
+ *
+ * Return value: (transfer full): the textual form of @addr
+ */
+char *
+nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
+{
+	return _bin2str (addr, length, "0123456789ABCDEF");
+}
+
+/**
+ * _nm_utils_bin2str:
+ * @addr: (type guint8) (array length=length): a binary hardware address
+ * @length: the length of @addr
+ * @upper_case: the case for the hexadecimal digits.
+ *
+ * Converts @addr to textual form.
+ *
+ * Return value: (transfer full): the textual form of @addr
+ */
+char *
+_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
+{
+	return _bin2str (addr, length,
+	                 upper_case ? "0123456789ABCDEF" : "0123456789abcdef");
 }
 
 static int

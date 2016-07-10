@@ -29,6 +29,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-dhcp-client-logging.h"
+#include "nm-core-internal.h"
 
 /********************************************/
 
@@ -695,18 +696,9 @@ error:
 char *
 nm_dhcp_utils_duid_to_string (const GByteArray *duid)
 {
-	guint32 i = 0;
-	GString *s;
-
 	g_return_val_if_fail (duid != NULL, NULL);
 
-	s = g_string_sized_new (MIN (duid->len * 3, 50));
-	while (i < duid->len) {
-		if (s->len)
-			g_string_append_c (s, ':');
-		g_string_append_printf (s, "%02x", duid->data[i++]);
-	}
-	return g_string_free (s, FALSE);
+	return _nm_utils_bin2str (duid->data, duid->len, FALSE);
 }
 
 /**
