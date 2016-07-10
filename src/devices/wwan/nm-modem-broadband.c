@@ -1283,8 +1283,10 @@ get_sim_ready (MMModem *modem,
 		if (self->priv->ctx && self->priv->ctx->step == CONNECT_STEP_WAIT_FOR_SIM)
 			connect_context_step (self);
 	} else {
-		_LOGW ("failed to retrieve SIM object: %s",
-		       NM_G_ERROR_MSG (error));
+		_NMLOG (g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_NOT_FOUND)
+		            ? LOGL_INFO : LOGL_WARN,
+		        "failed to retrieve SIM object: %s",
+		        NM_G_ERROR_MSG (error));
 	}
 	g_clear_error (&error);
 	g_object_unref (self);
