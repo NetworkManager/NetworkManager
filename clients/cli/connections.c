@@ -33,6 +33,7 @@
 #include "common.h"
 #include "settings.h"
 #include "connections.h"
+#include "devices.h"
 #include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
 #include "nm-vpn-helpers.h"
@@ -2576,9 +2577,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	char ***argv_ptr = &argv;
 	int *argc_ptr = &argc;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
 	/*
 	 * Set default timeout for connection activation.
 	 * Activation can take quite a long time, use 90 seconds.
@@ -2587,7 +2585,12 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		nmc->timeout = 90;
 
 	if (argc == 0 && nmc->ask) {
-		char *line = nmc_readline ("%s: ", PROMPT_CONNECTION);
+		char *line;
+
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
+
+		line = nmc_readline ("%s: ", PROMPT_CONNECTION);
 		nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 		g_free (line);
 		argv_ptr = &arg_arr;
@@ -2603,6 +2606,9 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	}
 
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "ifname", "ap", "passwd-file", NULL);
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
@@ -2610,6 +2616,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			}
 
 			ifname = *argv;
+			if (argc == 1 && nmc->complete)
+				nmc_complete_device (nmc->client, ifname, ap != NULL);
 		}
 		else if (strcmp (*argv, "ap") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
@@ -2618,6 +2626,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			}
 
 			ap = *argv;
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bssid (nmc->client, ifname, ap);
 		}
 		else if (strcmp (*argv, "passwd-file") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
@@ -2625,15 +2635,21 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
+			if (argc == 1 && nmc->complete)
+				nmc->return_value = NMC_RESULT_COMPLETE_FILE;
+
 			pwds = *argv;
 		}
-		else {
+		else if (!nmc->complete) {
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
 		argc--;
 		argv++;
 	}
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Use nowait_flag instead of should_wait because exiting has to be postponed till
 	 * active_connection_state_cb() is called. That gives NM time to check our permissions
