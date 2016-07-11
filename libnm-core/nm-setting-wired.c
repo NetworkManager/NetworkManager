@@ -1151,7 +1151,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 * format: string
 	 * description: The new field for the cloned MAC address. It can be either
 	 *   a hardware address in ASCII representation, or one of the special values
-	 *   "preserve", "permanent", "random", "random" or "stable".
+	 *   "preserve", "permanent", "random" or "stable".
 	 *   This field replaces the deprecated "cloned-mac-address" on D-Bus, which
 	 *   can only contain explict hardware addresses.
 	 * ---end---
