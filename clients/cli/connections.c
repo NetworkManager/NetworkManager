@@ -8412,11 +8412,10 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 	gs_free char *service_type = NULL;
 	gboolean temporary = FALSE;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (argc == 0) {
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
+
 		if (nmc->ask) {
 			type_ask = nmc_readline (gettext (PROMPT_IMPORT_TYPE));
 			filename_ask = nmc_readline (gettext (PROMPT_IMPORT_FILE));
@@ -8430,6 +8429,8 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 	}
 
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "temporary", "type", "file", NULL);
 		if (nmc_arg_is_option (*argv, "temporary")) {
 			temporary = TRUE;
 			next_arg (&argc, &argv);
@@ -8452,6 +8453,8 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
+			if (argc == 1 && nmc->complete)
+				nmc->return_value = NMC_RESULT_COMPLETE_FILE;
 			if (!filename)
 				filename = *argv;
 			else
@@ -8465,6 +8468,9 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		argc--;
 		argv++;
 	}
+
+	if (nmc->complete)
+		goto finish;
 
 	if (!type) {
 		g_string_printf (nmc->return_text, _("Error: 'type' argument is required."));
