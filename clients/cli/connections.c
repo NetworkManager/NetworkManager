@@ -864,7 +864,8 @@ find_active_connection (const GPtrArray *active_cons,
                         const GPtrArray *cons,
                         const char *filter_type,
                         const char *filter_val,
-                        int *idx)
+                        int *idx,
+                        gboolean complete)
 {
 	int i;
 	int start = (idx && *idx > 0) ? *idx : 0;
@@ -891,22 +892,43 @@ find_active_connection (const GPtrArray *active_cons,
 		 * type. If 'path' or 'apath' filter types are specified, comparison
 		 * against numeric index (in addition to the whole path) is allowed.
 		 */
-		if (   (   (!filter_type || strcmp (filter_type, "id")  == 0)
-		        && strcmp (filter_val, id) == 0)
-		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
-		        && strcmp (filter_val, uuid) == 0)
-		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
-		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))
-		    || (   (!filter_type || strcmp (filter_type, "apath") == 0)
-		        && (g_strcmp0 (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0)))) {
-			if (!idx)
-				return candidate;
-			if (found) {
-				*idx = i;
-				return found;
-			}
-			found = candidate;
+		if (!filter_type || strcmp (filter_type, "id")  == 0) {
+			if (complete)
+				nmc_complete_strings (filter_val, id, NULL);
+			if (strcmp (filter_val, id) == 0)
+				goto found;
 		}
+
+		if (!filter_type || strcmp (filter_type, "uuid") == 0) {
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, uuid, NULL);
+			if (strcmp (filter_val, uuid) == 0)
+				goto found;
+		}
+
+		if (!filter_type || strcmp (filter_type, "path") == 0) {
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, path, filter_type ? path_num : NULL, NULL);
+		        if (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))
+				goto found;
+		}
+
+		if (!filter_type || strcmp (filter_type, "apath") == 0) {
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, a_path, filter_type ? a_path_num : NULL, NULL);
+		        if (g_strcmp0 (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0))
+				goto found;
+		}
+
+		continue;
+found:
+		if (!idx)
+			return candidate;
+		if (found) {
+			*idx = i;
+			return found;
+		}
+		found = candidate;
 	}
 
 	if (idx)
@@ -1742,7 +1764,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 			/* Find connection by id, uuid, path or apath */
 			con = nmc_find_connection (nmc->connections, selector, *argv, &pos);
 			if (!con) {
-				acon = find_active_connection (active_cons, nmc->connections, selector, *argv, NULL);
+				acon = find_active_connection (active_cons, nmc->connections, selector, *argv, NULL, FALSE);
 				if (acon)
 					con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 			}
@@ -2692,7 +2714,8 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		active = find_active_connection (active_cons, nmc->connections, selector, *arg_ptr, &idx);
+		active = find_active_connection (active_cons, nmc->connections, selector, *arg_ptr, &idx,
+		                                 arg_num == 1 && nmc->complete);
 		if (active) {
 			/* Check if the connection is unique. */
 			/* Calling down for the same connection repeatedly would result in
