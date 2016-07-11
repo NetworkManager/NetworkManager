@@ -2484,6 +2484,43 @@ show_access_point_info (NMDevice *device, NmCli *nmc)
 	g_free (info);
 }
 
+/*
+ * Find a Wi-Fi device with 'iface' in 'devices' array. If 'iface' is NULL,
+ * the first Wi-Fi device is returned. 'idx' parameter is updated to the point
+ * where the function finished so that the function can be called repeatedly
+ * to get next matching device.
+ * Returns: found device or NULL
+ */
+static NMDevice *
+find_wifi_device_by_iface (const GPtrArray *devices, const char *iface, int *idx)
+{
+	NMDevice *device = NULL;
+	int i;
+
+	for (i = *idx; i < devices->len; i++) {
+		NMDevice *candidate = g_ptr_array_index (devices, i);
+		const char *dev_iface = nm_device_get_iface (candidate);
+
+		if (!NM_IS_DEVICE_WIFI (candidate))
+			continue;
+
+		if (iface) {
+			/* If a iface was specified then use it. */
+			if (g_strcmp0 (dev_iface, iface) == 0) {
+				device = candidate;
+				break;
+			}
+		} else {
+			/* Else return the first Wi-Fi device. */
+			device = candidate;
+			break;
+		}
+	}
+
+	*idx = i + 1;
+	return device;
+}
+
 static NMCResultCode
 do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 {
@@ -2696,43 +2733,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 error:
 	g_free (devices);
 	return nmc->return_value;
-}
-
-/*
- * Find a Wi-Fi device with 'iface' in 'devices' array. If 'iface' is NULL,
- * the first Wi-Fi device is returned. 'idx' parameter is updated to the point
- * where the function finished so that the function can be called repeatedly
- * to get next matching device.
- * Returns: found device or NULL
- */
-static NMDevice *
-find_wifi_device_by_iface (const GPtrArray *devices, const char *iface, int *idx)
-{
-	NMDevice *device = NULL;
-	int i;
-
-	for (i = *idx; i < devices->len; i++) {
-		NMDevice *candidate = g_ptr_array_index (devices, i);
-		const char *dev_iface = nm_device_get_iface (candidate);
-
-		if (!NM_IS_DEVICE_WIFI (candidate))
-			continue;
-
-		if (iface) {
-			/* If a iface was specified then use it. */
-			if (g_strcmp0 (dev_iface, iface) == 0) {
-				device = candidate;
-				break;
-			}
-		} else {
-			/* Else return the first Wi-Fi device. */
-			device = candidate;
-			break;
-		}
-	}
-
-	*idx = i + 1;
-	return device;
 }
 
 /*
