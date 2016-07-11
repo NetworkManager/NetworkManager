@@ -1745,32 +1745,34 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	GArray *order = NULL;
 	int i;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		goto finish;
-
 	/* check connection show options [--active] [--show-secrets] */
 	for (i = 0; i < 3; i++) {
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv, "--active", "--show-secrets",
+			                             "--order", NULL);
+		}
+
 		if (!active_only && nmc_arg_is_option (*argv, "active")) {
 			active_only = TRUE;
 			next_arg (&argc, &argv);
-		}
-		/* --show-secrets is deprecated in favour of global --show-secrets */
-		/* Keep it here for backwards compatibility */
-		if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
+		} else if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
+			/* --show-secrets is deprecated in favour of global --show-secrets */
+			/* Keep it here for backwards compatibility */
 			show_secrets = TRUE;
 			next_arg (&argc, &argv);
-		}
-		if (!order && nmc_arg_is_option (*argv, "order")) {
+		} else if (!order && nmc_arg_is_option (*argv, "order")) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_set_error_literal (&err, NMCLI_ERROR, 0,
 				                     _("'--order' argument is missing"));
 				goto finish;
 			}
+			/* TODO: complete --order */
 			order = parse_preferred_connection_order (*argv, &err);
 			if (err)
 				goto finish;
 			next_arg (&argc, &argv);
+		} else {
+			break;
 		}
 	}
 	show_secrets = nmc->show_secrets || show_secrets;
@@ -1781,6 +1783,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
 		NmcOutputField *tmpl, *arr;
 		size_t tmpl_len;
+
+		if (nmc->complete)
+			goto finish;
 
 		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 			fields_str = fields_common;
@@ -1840,6 +1845,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			NMActiveConnection *acon = NULL;
 			const char *selector = NULL;
 
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (*argv, "id", "uuid", "path", "apath", NULL);
+
 			if (   strcmp (*argv, "id") == 0
 			    || strcmp (*argv, "uuid") == 0
 			    || strcmp (*argv, "path") == 0
@@ -1852,10 +1860,13 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 				}
 			}
 
-			/* Find connection by id, uuid, path or apath */
-			con = nmc_find_connection (nmc->connections, selector, *argv, &pos, FALSE);
-			if (!con) {
-				acon = find_active_connection (active_cons, nmc->connections, selector, *argv, NULL, FALSE);
+			/* Try to find connection by id, uuid or path first */
+			con = nmc_find_connection (nmc->connections, selector, *argv, &pos,
+			                           argc == 1 && nmc->complete);
+			if (!con && (!selector || strcmp (selector, "apath") == 0)) {
+				/* Try apath too */
+				acon = find_active_connection (active_cons, nmc->connections, "apath", *argv, NULL,
+				                               argc == 1 && nmc->complete);
 				if (acon)
 					con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 			}
@@ -1876,6 +1887,11 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			if (!acon)
 				acon = get_ac_for_connection (active_cons, con);
 			if (active_only && !acon) {
+				next_arg (&argc, &argv);
+				continue;
+			}
+
+			if (nmc->complete) {
 				next_arg (&argc, &argv);
 				continue;
 			}
