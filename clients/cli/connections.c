@@ -8365,15 +8365,13 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	char **filenames, **failures = NULL;
 	int i;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No connection specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return nmc->return_value;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
+
+	if (nmc->complete)
+		return NMC_RESULT_COMPLETE_FILE;
 
 	filenames = g_new (char *, argc + 1);
 	for (i = 0; i < argc; i++)
