@@ -2762,14 +2762,13 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	int arg_num = argc;
 	int idx = 0;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
 	if (argc == 0) {
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
+
 		if (nmc->ask) {
 			char *line = nmc_readline (PROMPT_ACTIVE_CONNECTIONS);
 			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
@@ -2779,7 +2778,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No connection specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			goto finish;
 		}
 	}
 
@@ -2787,6 +2786,9 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	active_cons = nm_client_get_active_connections (nmc->client);
 	while (arg_num > 0) {
 		const char *selector = NULL;
+
+		if (arg_num == 1)
+			nmc_complete_strings (*arg_ptr, "id", "uuid", "path", "apath", NULL);
 
 		if (   strcmp (*arg_ptr, "id") == 0
 		    || strcmp (*arg_ptr, "uuid") == 0
@@ -2797,7 +2799,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			if (next_arg (&arg_num, &arg_ptr) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 		}
 
@@ -2810,7 +2812,8 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			if (!g_slist_find (queue, active))
 				queue = g_slist_prepend (queue, g_object_ref (active));
 		} else {
-			g_printerr (_("Error: '%s' is not an active connection.\n"), *arg_ptr);
+			if (!nmc->complete)
+				g_printerr (_("Error: '%s' is not an active connection.\n"), *arg_ptr);
 			g_string_printf (nmc->return_text, _("Error: not all active connections found."));
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		}
@@ -2822,7 +2825,10 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	if (!queue) {
 		g_string_printf (nmc->return_text, _("Error: no active connection provided."));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		goto error;
+		goto finish;
+	} else if (nmc->complete) {
+		g_slist_free (queue);
+		goto finish;
 	}
 	queue = g_slist_reverse (queue);
 
@@ -2848,7 +2854,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
 	}
 
-error:
+finish:
 	g_strfreev (arg_arr);
 	return nmc->return_value;
 }
