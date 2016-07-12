@@ -2616,7 +2616,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	NMAccessPoint *ap = NULL;
 	const char *ifname = NULL;
 	const char *bssid_user = NULL;
-	NMDevice **devices = NULL;
+	gs_free NMDevice **devices = NULL;
 	const GPtrArray *aps;
 	APInfo *info;
 	int i, j;
@@ -2627,27 +2627,29 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	size_t tmpl_len;
 	const char *base_hdr = _("Wi-Fi scan list");
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
+	devices = nmc_get_devices_sorted (nmc->client);
 
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "ifname", "bssid", NULL);
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			ifname = *argv;
+			complete_device (devices, ifname, TRUE);
 		} else if (strcmp (*argv, "bssid") == 0 || strcmp (*argv, "hwaddr") == 0) {
 			/* hwaddr is deprecated and will be removed later */
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			bssid_user = *argv;
-		} else {
+			if (argc == 1 && nmc->complete)
+				complete_aps (devices, NULL, bssid_user, NULL);
+		} else if (!nmc->complete) {
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
@@ -2669,19 +2671,18 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'device wifi': %s"), error->message);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	devices = nmc_get_devices_sorted (nmc->client);
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (ifname) {
 		device = find_wifi_device_by_iface (devices, ifname, NULL);
 		if (!device) {
 			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-			goto error;
+			return NMC_RESULT_ERROR_NOT_FOUND;
 		}
-
 		/* Main header name */
 		nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, ifname);
 
@@ -2702,8 +2703,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				if (!ap) {
 					g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
 					                 bssid_user);
-					nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-					goto error;
+					return NMC_RESULT_ERROR_NOT_FOUND;
 				}
 				/* Add headers (field names) */
 				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
@@ -2734,8 +2734,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				                 _("Error: Device '%s' is not a Wi-Fi device."),
 				                 ifname);
 			}
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			goto error;
+			return NMC_RESULT_ERROR_UNKNOWN;
 		}
 	} else {
 		gboolean empty_line = FALSE;
@@ -2786,8 +2785,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			if (!ap) {
 				g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
 				                 bssid_user);
-				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-				goto error;
+				return NMC_RESULT_ERROR_NOT_FOUND;
 			}
 		} else {
 			for (i = 0; devices[i]; i++) {
@@ -2808,8 +2806,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
-error:
-	g_free (devices);
 	return nmc->return_value;
 }
 
