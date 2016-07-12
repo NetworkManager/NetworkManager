@@ -2521,6 +2521,59 @@ find_wifi_device_by_iface (const GPtrArray *devices, const char *iface, int *idx
 	return device;
 }
 
+/*
+ * Find AP on 'device' according to 'bssid' or 'ssid' parameter.
+ * Returns: found AP or NULL
+ */
+static NMAccessPoint *
+find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
+{
+	const GPtrArray *aps;
+	NMAccessPoint *ap = NULL;
+	int i;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
+	g_return_val_if_fail ((bssid && !ssid) || (!bssid && ssid), NULL);
+
+	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
+	for (i = 0; i < aps->len; i++) {
+		NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
+
+		if (ssid) {
+			/* Parameter is SSID */
+			GBytes *candidate_ssid;
+
+			candidate_ssid = nm_access_point_get_ssid (candidate_ap);
+			if (candidate_ssid) {
+				char *ssid_tmp = nm_utils_ssid_to_utf8 (g_bytes_get_data (candidate_ssid, NULL),
+				                                        g_bytes_get_size (candidate_ssid));
+
+				/* Compare SSIDs */
+				if (strcmp (ssid, ssid_tmp) == 0) {
+					ap = candidate_ap;
+					g_free (ssid_tmp);
+					break;
+				}
+				g_free (ssid_tmp);
+			}
+		} else if (bssid) {
+			/* Parameter is BSSID */
+			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
+			char *bssid_up = nm_utils_hwaddr_ntoa (bssid->data, bssid->len);
+
+			/* Compare BSSIDs */
+			if (strcmp (bssid_up, candidate_bssid) == 0) {
+				ap = candidate_ap;
+				g_free (bssid_up);
+				break;
+			}
+			g_free (bssid_up);
+		}
+	}
+
+	return ap;
+}
+
 static NMCResultCode
 do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 {
@@ -2733,59 +2786,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 error:
 	g_free (devices);
 	return nmc->return_value;
-}
-
-/*
- * Find AP on 'device' according to 'bssid' or 'ssid' parameter.
- * Returns: found AP or NULL
- */
-static NMAccessPoint *
-find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
-{
-	const GPtrArray *aps;
-	NMAccessPoint *ap = NULL;
-	int i;
-
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
-	g_return_val_if_fail ((bssid && !ssid) || (!bssid && ssid), NULL);
-
-	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
-	for (i = 0; i < aps->len; i++) {
-		NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
-
-		if (ssid) {
-			/* Parameter is SSID */
-			GBytes *candidate_ssid;
-
-			candidate_ssid = nm_access_point_get_ssid (candidate_ap);
-			if (candidate_ssid) {
-				char *ssid_tmp = nm_utils_ssid_to_utf8 (g_bytes_get_data (candidate_ssid, NULL),
-				                                        g_bytes_get_size (candidate_ssid));
-
-				/* Compare SSIDs */
-				if (strcmp (ssid, ssid_tmp) == 0) {
-					ap = candidate_ap;
-					g_free (ssid_tmp);
-					break;
-				}
-				g_free (ssid_tmp);
-			}
-		} else if (bssid) {
-			/* Parameter is BSSID */
-			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
-			char *bssid_up = nm_utils_hwaddr_ntoa (bssid->data, bssid->len);
-
-			/* Compare BSSIDs */
-			if (strcmp (bssid_up, candidate_bssid) == 0) {
-				ap = candidate_ap;
-				g_free (bssid_up);
-				break;
-			}
-			g_free (bssid_up);
-		}
-	}
-
-	return ap;
 }
 
 static NMCResultCode
