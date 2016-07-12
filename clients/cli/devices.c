@@ -2837,22 +2837,26 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	char *ssid_ask = NULL;
 	char *passwd_ask = NULL;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	/* Set default timeout waiting for operation completion. */
 	if (nmc->timeout == -1)
 		nmc->timeout = 90;
+
+	devices = nmc_get_devices_sorted (nmc->client);
 
 	/* Get the first compulsory argument (SSID or BSSID) */
 	if (argc > 0) {
 		param_user = *argv;
 		bssid1_arr = nm_utils_hwaddr_atoba (param_user, ETH_ALEN);
 
+		if (argc == 1 && nmc->complete)
+			complete_aps (devices, NULL, param_user, param_user);
+
 		argc--;
 		argv++;
 	} else {
+		/* nmc_do_cmd() should not call this with argc=0. */
+		g_assert (!nmc->complete);
+
 		if (nmc->ask) {
 			ssid_ask = nmc_readline (_("SSID or BSSID: "));
 			param_user = ssid_ask ? ssid_ask : "";
@@ -2861,46 +2865,56 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		if (!ssid_ask) {
 			g_string_printf (nmc->return_text, _("Error: SSID or BSSID are missing."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			goto finish;
 		}
 	}
 
 	/* Get the rest of the parameters */
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv, "ifname", "bssid", "password", "wep-key-type",
+			                      "name", "private", "hidden", NULL);
+		}
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			ifname = *argv;
+			complete_device (devices, ifname, TRUE);
 		} else if (strcmp (*argv, "bssid") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			bssid = *argv;
+			if (argc == 1 && nmc->complete)
+				complete_aps (devices, NULL, bssid, NULL);
 			bssid2_arr = nm_utils_hwaddr_atoba (bssid, ETH_ALEN);
 			if (!bssid2_arr) {
 				g_string_printf (nmc->return_text, _("Error: bssid argument value '%s' is not a valid BSSID."),
 				                 bssid);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 		} else if (strcmp (*argv, "password") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			password = *argv;
 		} else if (strcmp (*argv, "wep-key-type") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (*argv, "key", "phrase", NULL);
 			if (strcmp (*argv, "key") == 0)
 				wep_passphrase = FALSE;
 			else if (strcmp (*argv, "phrase") == 0)
@@ -2910,13 +2924,13 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				                 _("Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."),
 				                 *argv);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 		} else if (strcmp (*argv, "name") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			con_name = *argv;
 		} else if (strcmp (*argv, "private") == 0) {
@@ -2924,28 +2938,32 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bool (*argv);
 			if (!nmc_string_to_bool (*argv, &private, &err_tmp)) {
 				g_string_printf (nmc->return_text, _("Error: %s: %s."), *(argv-1), err_tmp->message);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				g_clear_error (&err_tmp);
-				goto error;
+				goto finish;
 			}
 		} else if (strcmp (*argv, "hidden") == 0) {
 			GError *err_tmp = NULL;
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
+			if (argc == 1 && nmc->complete)
+				nmc_complete_bool (*argv);
 			if (!nmc_string_to_bool (*argv, &hidden, &err_tmp)) {
 				g_string_printf (nmc->return_text, _("Error: %s: %s."), *(argv-1), err_tmp->message);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				g_clear_error (&err_tmp);
-				goto error;
+				goto finish;
 			}
-		} else {
+		} else if (!nmc->complete) {
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
@@ -2953,20 +2971,21 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
+	if (nmc->complete)
+		goto finish;
+
 	/* Verify SSID/BSSID parameters */
 	if (bssid1_arr && bssid2_arr && memcmp (bssid1_arr->data, bssid2_arr->data, ETH_ALEN)) {
 		g_string_printf (nmc->return_text, _("Error: BSSID to connect to (%s) differs from bssid argument (%s)."),
 		                 param_user, bssid);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		goto finish;
 	}
 	if (!bssid1_arr && strlen (param_user) > 32) {
 		g_string_printf (nmc->return_text, _("Error: Parameter '%s' is neither SSID nor BSSID."), param_user);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		goto finish;
 	}
-
-	devices = nmc_get_devices_sorted (nmc->client);
 
 	/* Find a device to activate the connection on */
 	devices_idx = 0;
@@ -2978,7 +2997,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto error;
+		goto finish;
 	}
 
 	/* For hidden SSID first scan it so that NM learns about the AP */
@@ -3000,7 +3019,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			                 scan_err->message);
 			g_clear_error (&scan_err);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-			goto error;
+			goto finish;
 		}
 	}
 
@@ -3027,7 +3046,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: No access point with BSSID '%s' found."), param_user);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		goto error;
+		goto finish;
 	}
 
 	/* If there are some connection data from user, create a connection and
@@ -3130,7 +3149,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	                                             add_and_activate_cb,
 	                                             info);
 
-error:
+finish:
 	if (bssid1_arr)
 		g_byte_array_free (bssid1_arr, TRUE);
 	if (bssid2_arr)
