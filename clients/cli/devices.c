@@ -3513,42 +3513,46 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	const char *ssid;
 	int i;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	ssids = g_ptr_array_new ();
+	devices = nmc_get_devices_sorted (nmc->client);
 
 	/* Get the parameters */
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete)
+			nmc_complete_strings (*argv, "ifname", "ssid", NULL);
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (ifname) {
 				g_string_printf (nmc->return_text, _("Error: '%s' cannot repeat."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			ifname = *argv;
+			if (argc == 1 && nmc->complete)
+				complete_device (devices, ifname, TRUE);
 		} else if (strcmp (*argv, "ssid") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 			g_ptr_array_add (ssids, *argv);
-		} else
+		} else if (!nmc->complete)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 
 		argc--;
 		argv++;
 	}
 
+	if (nmc->complete)
+		goto finish;
+
 	/* Find Wi-Fi device to scan on. When no ifname is provided, the first Wi-Fi is used. */
-	devices = nmc_get_devices_sorted (nmc->client);
 	device = find_wifi_device_by_iface (devices, ifname, NULL);
 
 	if (!device) {
@@ -3557,7 +3561,7 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto error;
+		goto finish;
 	}
 
 
@@ -3580,10 +3584,8 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (device),
 		                                   NULL, request_rescan_cb, nmc);
 
-	g_ptr_array_free (ssids, FALSE);
-	return nmc->return_value;
-error:
 	nmc->should_wait++;
+finish:
 	g_ptr_array_free (ssids, FALSE);
 	return nmc->return_value;
 }
