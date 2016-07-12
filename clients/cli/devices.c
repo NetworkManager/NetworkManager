@@ -553,6 +553,15 @@ complete_device (NMDevice **devices, const char *prefix, gboolean wifi_only)
 	}
 }
 
+void
+nmc_complete_device (NMClient *client, const char *prefix, gboolean wifi_only)
+{
+	gs_free NMDevice **devices = NULL;
+
+	devices = nmc_get_devices_sorted (client);
+	complete_device (devices, prefix, wifi_only);
+}
+
 static GSList *
 get_device_list (NmCli *nmc, int argc, char **argv)
 {
@@ -2525,52 +2534,78 @@ find_wifi_device_by_iface (NMDevice **devices, const char *iface, int *idx)
  * Returns: found AP or NULL
  */
 static NMAccessPoint *
-find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
+find_ap_on_device (NMDevice *device, const char *bssid, const char *ssid, gboolean complete)
 {
 	const GPtrArray *aps;
 	NMAccessPoint *ap = NULL;
 	int i;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
-	g_return_val_if_fail ((bssid && !ssid) || (!bssid && ssid), NULL);
 
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 	for (i = 0; i < aps->len; i++) {
 		NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
 
+		if (bssid) {
+			/* Parameter is BSSID */
+			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
+
+			/* Compare BSSIDs */
+			if (complete) {
+				if (g_str_has_prefix (candidate_bssid, bssid))
+					g_print ("%s\n", candidate_bssid);
+			} else if (strcmp (bssid, candidate_bssid) == 0) {
+				ap = candidate_ap;
+				break;
+			}
+		}
+
 		if (ssid) {
 			/* Parameter is SSID */
 			GBytes *candidate_ssid;
+			char *ssid_tmp;
 
 			candidate_ssid = nm_access_point_get_ssid (candidate_ap);
-			if (candidate_ssid) {
-				char *ssid_tmp = nm_utils_ssid_to_utf8 (g_bytes_get_data (candidate_ssid, NULL),
-				                                        g_bytes_get_size (candidate_ssid));
+			if (!candidate_ssid)
+				continue;
 
-				/* Compare SSIDs */
-				if (strcmp (ssid, ssid_tmp) == 0) {
-					ap = candidate_ap;
-					g_free (ssid_tmp);
-					break;
-				}
-				g_free (ssid_tmp);
-			}
-		} else if (bssid) {
-			/* Parameter is BSSID */
-			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
-			char *bssid_up = nm_utils_hwaddr_ntoa (bssid->data, bssid->len);
+			ssid_tmp = nm_utils_ssid_to_utf8 (g_bytes_get_data (candidate_ssid, NULL),
+			                                  g_bytes_get_size (candidate_ssid));
 
-			/* Compare BSSIDs */
-			if (strcmp (bssid_up, candidate_bssid) == 0) {
+			/* Compare SSIDs */
+			if (complete) {
+				if (g_str_has_prefix (ssid_tmp, ssid))
+					g_print ("%s\n", ssid_tmp);
+			} else if (strcmp (ssid, ssid_tmp) == 0) {
 				ap = candidate_ap;
-				g_free (bssid_up);
+				g_free (ssid_tmp);
 				break;
 			}
-			g_free (bssid_up);
+			g_free (ssid_tmp);
 		}
 	}
 
 	return ap;
+}
+
+static void
+complete_aps (NMDevice **devices, const char *ifname,
+              const char *bssid_prefix, const char *ssid_prefix)
+{
+	int devices_idx = 0;
+	NMDevice *device;
+
+	while ((device = find_wifi_device_by_iface (devices, ifname, &devices_idx)))
+		find_ap_on_device (device, bssid_prefix, ssid_prefix, TRUE);
+}
+
+void
+nmc_complete_bssid (NMClient *client, const char *ifname, const char *bssid_prefix)
+{
+	gs_free NMDevice **devices = NULL;
+
+	devices = nmc_get_devices_sorted (client);
+	complete_aps (devices, ifname, bssid_prefix, NULL);
 }
 
 static NMCResultCode
@@ -2974,13 +3009,15 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Find an AP to connect to */
-	ap = find_ap_on_device (device, bssid1_arr, bssid1_arr ? NULL : param_user);
+	ap = find_ap_on_device (device, bssid1_arr ? param_user : NULL,
+	                                bssid1_arr ? NULL : param_user, FALSE);
 	if (!ap && !ifname) {
 		NMDevice *dev;
 
 		/* AP not found, ifname was not specified, so try finding the AP on another device. */
 		while ((dev = find_wifi_device_by_iface (devices, NULL, &devices_idx)) != NULL) {
-			ap = find_ap_on_device (dev, bssid1_arr, bssid1_arr ? NULL : param_user);
+			ap = find_ap_on_device (dev, bssid1_arr ? param_user : NULL,
+			                             bssid1_arr ? NULL : param_user, FALSE);
 			if (ap) {
 				device = dev;
 				break;
