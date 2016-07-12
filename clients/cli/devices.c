@@ -538,12 +538,15 @@ nmc_get_devices_sorted (NMClient *client)
 }
 
 static void
-complete_device (NMDevice **devices, const char *prefix)
+complete_device (NMDevice **devices, const char *prefix, gboolean wifi_only)
 {
 	int i;
 
 	for (i = 0; devices[i]; i++) {
 		const char *iface = nm_device_get_iface (devices[i]);
+
+		if (wifi_only && !NM_IS_DEVICE_WIFI (devices[i]))
+			continue;
 
 		if (g_str_has_prefix (iface, prefix))
 			g_print ("%s\n", iface);
@@ -578,7 +581,7 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 	devices = nmc_get_devices_sorted (nmc->client);
 	while (arg_num > 0) {
 		if (arg_num == 1 && nmc->complete)
-			complete_device (devices, *arg_ptr);
+			complete_device (devices, *arg_ptr, FALSE);
 
 		device = NULL;
 		for (i = 0; devices[i]; i++) {
@@ -640,7 +643,7 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 	}
 
 	if (nmc->complete && !*argc)
-		complete_device (devices, ifname);
+		complete_device (devices, ifname, FALSE);
 
 	if (devices[i] == NULL) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
