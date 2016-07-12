@@ -2089,6 +2089,13 @@ It's equivalent of using <literal>+ipv6.addresses</literal> syntax.</entry>
           <para>Connection, device, or access point does not exist.</para>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><errorcode>65</errorcode></term>
+        <listitem>
+          <para>When used with <option>--complete-args</option> option, a file name is expected to follow.</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 

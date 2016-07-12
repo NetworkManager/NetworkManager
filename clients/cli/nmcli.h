@@ -63,7 +63,10 @@ typedef enum {
 	NMC_RESULT_ERROR_VERSIONS_MISMATCH = 9,
 
 	/* Connection/Device/AP not found */
-	NMC_RESULT_ERROR_NOT_FOUND = 10
+	NMC_RESULT_ERROR_NOT_FOUND = 10,
+
+	/* --complete-args signals a file name may follow */
+	NMC_RESULT_COMPLETE_FILE = 65,
 } NMCResultCode;
 
 typedef enum {
