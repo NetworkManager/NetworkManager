@@ -3312,66 +3312,65 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	GBytes *ssid_bytes;
 	GError *error = NULL;
 
-	/* Not (yet?) supported */
-	if (nmc->complete)
-		return nmc->return_value;
-
 	/* Set default timeout waiting for operation completion. */
 	if (nmc->timeout == -1)
 		nmc->timeout = 60;
 
+	devices = nmc_get_devices_sorted (nmc->client);
+
 	while (argc > 0) {
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv, "ifname", "con-name", "ssid", "band",
+			                             "channel", "password", NULL);
+		}
+
 		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			ifname = *argv;
+			if (argc == 1 && nmc->complete)
+				complete_device (devices, ifname, TRUE);
 		} else if (strcmp (*argv, "con-name") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			con_name = *argv;
 		} else if (strcmp (*argv, "ssid") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			ssid = *argv;
 			if (strlen (ssid) > 32) {
 				g_string_printf (nmc->return_text, _("Error: ssid is too long."));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 		} else if (strcmp (*argv, "band") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			band = *argv;
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (band, "a", "bg", NULL);
 			if (strcmp (band, "a") && strcmp (band, "bg")) {
 				g_string_printf (nmc->return_text, _("Error: band argument value '%s' is invalid; use 'a' or 'bg'."),
 				                 band);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 		} else if (strcmp (*argv, "channel") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			channel = *argv;
 		} else if (strcmp (*argv, "password") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			password = *argv;
 		/* --show-password is deprecated in favour of global --show-secrets option */
@@ -3380,14 +3379,16 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 			show_password = TRUE;
 		} else {
 			g_string_printf (nmc->return_text, _("Error: Unknown parameter %s."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
 		argc--;
 		argv++;
 	}
 	show_password = nmc->show_secrets || show_password;
+
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Verify band and channel parameters */
 	if (!channel) {
@@ -3399,20 +3400,17 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	if (channel) {
 		if (!band) {
 			g_string_printf (nmc->return_text, _("Error: channel requires band too."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 		if (   !nmc_string_to_uint (channel, TRUE, 1, 5825, &channel_int)
 		    || !nm_utils_wifi_is_channel_valid (channel_int, band)) {
 			g_string_printf (nmc->return_text, _("Error: channel '%s' not valid for band '%s'."),
 			                 channel, band);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
 	/* Find Wi-Fi device. When no ifname is provided, the first Wi-Fi is used. */
-	devices = nmc_get_devices_sorted (nmc->client);
 	device = find_wifi_device_by_iface (devices, ifname, NULL);
 
 	if (!device) {
@@ -3420,8 +3418,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto error;
+		return NMC_RESULT_ERROR_UNKNOWN;
 	}
 
 	/* Check device supported mode */
@@ -3433,8 +3430,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	else {
 		g_string_printf (nmc->return_text, _("Error: Device '%s' supports neither AP nor Ad-Hoc mode."),
 		                 nm_device_get_iface (device));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto error;
+		return NMC_RESULT_ERROR_UNKNOWN;
 	}
 
 	/* Create a connection with appropriate parameters */
@@ -3467,9 +3463,8 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, show_password, &error)) {
 		g_object_unref (connection);
 		g_string_printf (nmc->return_text, _("Error: Invalid 'password': %s."), error->message);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_clear_error (&error);
-		goto error;
+		return NMC_RESULT_ERROR_UNKNOWN;
 	}
 
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -3497,7 +3492,6 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	                                             add_and_activate_cb,
 	                                             info);
 
-error:
 	return nmc->return_value;
 }
 
