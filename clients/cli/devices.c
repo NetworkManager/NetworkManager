@@ -2637,16 +2637,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 	devices = nmc_get_devices_sorted (nmc->client);
 	if (ifname) {
-		/* Device specified - list only APs of this interface */
-		for (i = 0; devices[i]; i++) {
-			NMDevice *candidate = devices[i];
-			const char *dev_iface = nm_device_get_iface (candidate);
-
-			if (!g_strcmp0 (dev_iface, ifname)) {
-				device = candidate;
-				break;
-			}
-		}
+		device = find_wifi_device_by_iface (devices, ifname, NULL);
 		if (!device) {
 			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
