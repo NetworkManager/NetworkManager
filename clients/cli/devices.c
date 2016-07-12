@@ -2496,7 +2496,7 @@ find_wifi_device_by_iface (NMDevice **devices, const char *iface, int *idx)
 {
 	int i;
 
-	for (i = *idx; devices[i]; i++) {
+	for (i = idx ? *idx : 0; devices[i]; i++) {
 		const char *dev_iface = nm_device_get_iface (devices[i]);
 
 		if (!NM_IS_DEVICE_WIFI (devices[i]))
@@ -2512,7 +2512,8 @@ find_wifi_device_by_iface (NMDevice **devices, const char *iface, int *idx)
 		}
 	}
 
-	*idx = i + 1;
+	if (idx)
+		*idx = i + 1;
 	return devices[i];
 }
 
@@ -3255,7 +3256,6 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	const char *password = NULL;
 	gboolean show_password = FALSE;
 	NMDevice *device = NULL;
-	int devices_idx;
 	gs_free NMDevice **devices = NULL;
 	NMDeviceWifiCapabilities caps;
 	NMConnection *connection = NULL;
@@ -3367,8 +3367,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	/* Find Wi-Fi device. When no ifname is provided, the first Wi-Fi is used. */
 	devices = nmc_get_devices_sorted (nmc->client);
-	devices_idx = 0;
-	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
+	device = find_wifi_device_by_iface (devices, ifname, NULL);
 
 	if (!device) {
 		if (ifname)
@@ -3478,7 +3477,6 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	GPtrArray *ssids;
 	gs_free NMDevice **devices = NULL;
-	int devices_idx;
 	GVariantBuilder builder, array_builder;
 	GVariant *options;
 	const char *ssid;
@@ -3520,8 +3518,7 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 
 	/* Find Wi-Fi device to scan on. When no ifname is provided, the first Wi-Fi is used. */
 	devices = nmc_get_devices_sorted (nmc->client);
-	devices_idx = 0;
-	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
+	device = find_wifi_device_by_iface (devices, ifname, NULL);
 
 	if (!device) {
 		if (ifname)
