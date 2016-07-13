@@ -494,8 +494,6 @@ get_duid (NMDhcpClient *self)
 	GByteArray *copy = NULL;
 
 	if (G_UNLIKELY (duid == NULL)) {
-		gs_free char *str = NULL;
-
 		duid = generate_duid_from_machine_id ();
 		g_assert (duid);
 	}
