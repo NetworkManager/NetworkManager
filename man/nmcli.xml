@@ -1843,9 +1843,9 @@ It's equivalent of using the <literal>+bond.options 'option=value'</literal> syn
       <row><entry align="left">ageing-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.ageing-time">bridge.ageing-time</link></entry></row>
       <row><entry align="left">multicast-snooping</entry><entry align="left"><link linkend="nm-settings.property.bridge.multicast-snooping">bridge.multicast-snooping</link></entry></row>
       <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.bridge.mac-address">bridge.mac-address</link></entry></row>
-      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-priority">bridge.port-priority</link></entry></row>
-      <row><entry align="left">path-cost</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-path-cost">bridge.port-path-cost</link></entry></row>
-      <row><entry align="left">hairpin</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-hairpin-mode">bridge.port-hairpin-mode</link></entry></row>
+      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.priority">bridge-port.priority</link></entry></row>
+      <row><entry align="left">path-cost</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.path-cost">bridge-port.path-cost</link></entry></row>
+      <row><entry align="left">hairpin</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.hairpin-mode">bridge-port.hairpin-mode</link></entry></row>
     </tbody>
     </tgroup></table>
 
