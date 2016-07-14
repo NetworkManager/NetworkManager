@@ -821,7 +821,7 @@
           </group>
           <arg choice='plain'><replaceable>ID</replaceable></arg>
           <arg rep='repeat' choice='plain'>
-            <group>
+            <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
               <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
@@ -863,9 +863,9 @@
       <varlistentry>
         <term>
           <command>add</command>
+          <arg><option>save</option><group choice='req'><arg choice='plain'>yes</arg><arg choice='plain'>no</arg></group></arg>
           <arg rep='repeat' choice='plain'>
-            <group>
-              <arg choice='plain'><option>save</option><group choice='req'><arg choice='plain'>yes</arg><arg choice='plain'>no</arg></group></arg>
+            <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
               <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
@@ -1108,8 +1108,8 @@
         <term>
           <command>import</command>
           <arg><option>--temporary</option></arg>
-          <arg><option>type</option> <replaceable>type</replaceable></arg>
-          <arg><option>file</option> <replaceable>file</replaceable></arg>
+          <arg choice='plain'><option>type</option> <replaceable>type</replaceable></arg>
+          <arg choice='plain'><option>file</option> <replaceable>file</replaceable></arg>
         </term>
 
         <listitem>
@@ -1231,7 +1231,7 @@
       <varlistentry>
         <term>
           <command>connect</command>
-          <arg><replaceable>ifname</replaceable></arg>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1247,7 +1247,7 @@
       <varlistentry>
         <term>
           <command>reapply</command>
-          <arg><replaceable>ifname</replaceable></arg>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1287,7 +1287,7 @@
       <varlistentry>
         <term>
           <command>disconnect</command>
-          <arg rep='repeat'><replaceable>ifname</replaceable></arg>
+          <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1304,7 +1304,7 @@
       <varlistentry>
         <term>
           <command>delete</command>
-          <arg rep='repeat'><replaceable>ifname</replaceable></arg>
+          <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
