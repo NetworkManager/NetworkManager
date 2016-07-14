@@ -1258,8 +1258,9 @@
       <varlistentry>
         <term>
           <command>modify</command>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
           <arg rep='repeat' choice='plain'>
-            <group>
+            <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
               <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
