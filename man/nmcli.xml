@@ -547,10 +547,13 @@
         <arg choice='plain'><command>modify</command></arg>
         <arg choice='plain'><command>add</command></arg>
         <arg choice='plain'><command>edit</command></arg>
+        <arg choice='plain'><command>clone</command></arg>
         <arg choice='plain'><command>delete</command></arg>
         <arg choice='plain'><command>monitor</command></arg>
         <arg choice='plain'><command>reload</command></arg>
         <arg choice='plain'><command>load</command></arg>
+        <arg choice='plain'><command>import</command></arg>
+        <arg choice='plain'><command>export</command></arg>
       </group>
       <arg rep='repeat'><replaceable>ARGUMENTS</replaceable></arg>
     </cmdsynopsis>
