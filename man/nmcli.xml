@@ -361,7 +361,7 @@
         <term>
           <command>logging</command>
           <arg><option>level</option> <replaceable>level</replaceable></arg>
-          <arg rep='repeat'><option>domain</option> <replaceable>domains</replaceable></arg>
+          <arg rep='repeat'><option>domains</option> <replaceable>domains</replaceable></arg>
         </term>
 
         <listitem>
