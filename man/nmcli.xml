@@ -1004,8 +1004,8 @@
             <arg choice='plain'><option>uuid</option></arg>
             <arg choice='plain'><option>path</option></arg>
           </group>
-          <arg choice='plain' rep='repeat'><replaceable>ID</replaceable></arg>
-          <arg choice='plain'><option>new</option> <replaceable>name</replaceable></arg>
+          <arg choice='plain'><replaceable>ID</replaceable></arg>
+          <arg choice='plain'><replaceable>new_name</replaceable></arg>
         </term>
 
         <listitem>
@@ -1013,9 +1013,9 @@
           name, UUID or D-Bus path. If <replaceable>ID</replaceable> is ambiguous, a keyword
           <option>id</option>, <option>uuid</option> or <option>path</option>
           can be used. See <command>connection show</command> above for the description
-          of the <replaceable>ID</replaceable>-specifying keywords. <replaceable>name</replaceable> is
+          of the <replaceable>ID</replaceable>-specifying keywords. <replaceable>new_name</replaceable> is
           the name of the new cloned connection. The new connection will be the exact
-          copy except the connection.id (<replaceable>name</replaceable>) and
+          copy except the connection.id (<replaceable>new_name</replaceable>) and
           connection.uuid (generated) properties.</para>
 
           <para>The new connection profile will be saved as persistent unless
