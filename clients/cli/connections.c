@@ -312,7 +312,7 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
-	              "COMMAND := { show | up | down | add | modify | edit | delete | monitor | reload | load }\n\n"
+	              "COMMAND := { show | up | down | add | modify | clone | edit | delete | monitor | reload | load | import | export }\n\n"
 	              "  show [--active] [--order <order spec>]\n"
 	              "  show [--active] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
