@@ -191,7 +191,7 @@
           <arg choice='plain'><option>-f</option></arg>
           <arg choice='plain'><option>--fields</option></arg>
           <group choice='req'>
-            <arg conice='plain' rep='repeat'><replaceable>field</replaceable></arg>
+            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
             <arg choice='plain'>all</arg>
             <arg choice='plain'>common</arg>
           </group>
