@@ -700,7 +700,7 @@
             <arg choice='plain'><option>uuid</option></arg>
             <arg choice='plain'><option>path</option></arg>
           </group>
-          <arg rep='repeat' choice='plain'><replaceable>ID</replaceable></arg>
+          <arg choice='plain'><replaceable>ID</replaceable></arg>
           <arg><option>ifname</option> <replaceable>ifname</replaceable></arg>
           <arg><option>ap</option> <replaceable>BSSID</replaceable></arg>
           <arg><option>passwd-file</option> <replaceable>file</replaceable></arg>
@@ -944,7 +944,7 @@
                 <arg choice='plain'><option>uuid</option></arg>
                 <arg choice='plain'><option>path</option></arg>
               </group>
-              <arg rep='repeat' choice='plain'><replaceable>ID</replaceable></arg>
+              <arg choice='plain'><replaceable>ID</replaceable></arg>
             </arg>
             <arg choice='plain'>
               <arg><option>type</option> <replaceable>type</replaceable></arg>
