@@ -258,13 +258,11 @@
       </varlistentry>
 
       <varlistentry>
-        <term><arg>
-          <group choice='plain'>
-            <arg choice='plain'><option>-w</option></arg>
-            <arg choice='plain'><option>--wait</option></arg>
-          </group>
-          <arg choice='plain' rep='repeat'><replaceable>seconds</replaceable></arg>
-        </arg></term>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-w</option></arg>
+          <arg choice='plain'><option>--wait</option></arg></group>
+          <arg choice='plain'><replaceable>seconds</replaceable></arg>
+        </term>
 
         <listitem>
           <para>This option sets a timeout period for which <command>nmcli</command> will
