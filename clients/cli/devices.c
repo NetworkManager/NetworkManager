@@ -624,7 +624,7 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 
 		if (!ifname_ask) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("No interface specified."));
+			                     _("No interface specified"));
 			return NULL;
 		}
 	} else {
@@ -643,7 +643,7 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 
 	if (devices[i] == NULL) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
-		             _("Device '%s' not found."), ifname);
+		             _("Device '%s' not found"), ifname);
 	}
 
 	return devices[i];
