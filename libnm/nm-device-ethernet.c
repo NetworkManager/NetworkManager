@@ -228,8 +228,8 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		s_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_addr) {
 			if (!nm_utils_hwaddr_valid (perm_addr, ETH_ALEN)) {
-				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-				                     _("Invalid device MAC address."));
+				g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+				                     _("Invalid device MAC address %s."), perm_addr);
 				return FALSE;
 			}
 			if (try_mac && s_mac && !nm_utils_hwaddr_matches (s_mac, -1, perm_addr, -1)) {

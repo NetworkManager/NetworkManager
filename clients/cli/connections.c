@@ -1927,17 +1927,22 @@ find_device_for_connection (NmCli *nmc,
 
 			if (iface) {
 				const char *dev_iface = nm_device_get_iface (dev);
-				if (   !g_strcmp0 (dev_iface, iface)
-				    && nm_device_connection_compatible (dev, connection, NULL)) {
-					found_device = dev;
+				if (!nm_streq0 (dev_iface, iface))
+					continue;
+
+				if (!nm_device_connection_compatible (dev, connection, error)) {
+					g_prefix_error (error, _("device '%s' not compatible with connection '%s':"),
+					                iface, nm_setting_connection_get_id (s_con));
+					return FALSE;
 				}
+
 			} else {
-				if (nm_device_connection_compatible (dev, connection, NULL)) {
-					found_device = dev;
-				}
+				if (!nm_device_connection_compatible (dev, connection, NULL))
+					continue;
 			}
 
-			if (found_device && ap && !strcmp (con_type, NM_SETTING_WIRELESS_SETTING_NAME) && NM_IS_DEVICE_WIFI (dev)) {
+			found_device = dev;
+			if (ap && !strcmp (con_type, NM_SETTING_WIRELESS_SETTING_NAME) && NM_IS_DEVICE_WIFI (dev)) {
 				char *bssid_up = g_ascii_strup (ap, -1);
 				const GPtrArray *aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				found_device = NULL;  /* Mark as not found; set to the device again later, only if AP matches */
