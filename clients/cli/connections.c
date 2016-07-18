@@ -2137,16 +2137,20 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 	}
 }
 
+static void
+set_nmc_error_timeout (NmCli *nmc)
+{
+	g_string_printf (nmc->return_text, _("Error: Timeout expired (%d seconds)"), nmc->timeout);
+	nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
+}
+
 static gboolean
-timeout_cb (gpointer user_data)
+activate_connection_timeout_cb (gpointer user_data)
 {
 	ActivateConnectionInfo *info = user_data;
-	NmCli *nmc = info->nmc;
 
 	/* Time expired -> exit nmcli */
-
-	g_string_printf (nmc->return_text, _("Error: Timeout %d sec expired."), nmc->timeout);
-	nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
+	set_nmc_error_timeout (info->nmc);
 	activate_connection_info_finish (info);
 	return FALSE;
 }
@@ -2265,7 +2269,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 			}
 
 			/* Start timer not to loop forever when signals are not emitted */
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, info);
+			g_timeout_add_seconds (nmc->timeout, activate_connection_timeout_cb, info);
 
 			/* Fail when the active connection goes away. */
 			g_signal_connect (nmc->client, NM_CLIENT_ACTIVE_CONNECTION_REMOVED,
@@ -2597,7 +2601,7 @@ connection_op_timeout_cb (gpointer user_data)
 {
 	ConnectionCbInfo *info = user_data;
 
-	timeout_cb (info->nmc);
+	set_nmc_error_timeout (info->nmc);
 	connection_cb_info_finish (info, NULL);
 	return G_SOURCE_REMOVE;
 }
