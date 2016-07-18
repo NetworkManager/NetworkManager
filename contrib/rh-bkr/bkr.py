@@ -403,7 +403,7 @@ class RpmScheme_ParseWebsite(RpmScheme):
         return self._urls
 
 class RpmSchemeJenkins(RpmScheme_ParseWebsite):
-    jenkins_base_url = 'http://10.34.130.105:8080/job/NetworkManager/'
+    jenkins_base_url = 'http://testuslav.usersys.redhat.com:8080/job/NetworkManager/'
     def __init__(self, uri, arch):
         RpmScheme_ParseWebsite.__init__(self, uri, arch)
     def parse_uri(self):
