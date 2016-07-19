@@ -184,7 +184,12 @@ create_connection (NmtNewtWidget *widget, gpointer list)
 	connection = nm_editor_utils_create_connection (type, priv->master, nm_client);
 	nmt_edit_connection (connection);
 	g_object_unref (connection);
+}
 
+static void
+create_connection_and_quit (NmtNewtWidget *widget, gpointer list)
+{
+	create_connection (widget, list);
 	nmt_newt_form_quit (list);
 }
 
@@ -203,7 +208,7 @@ nmt_add_connection_init (NmtAddConnection *form)
 
 	listbox = nmt_newt_listbox_new (5, NMT_NEWT_LISTBOX_SCROLL);
 	priv->listbox = NMT_NEWT_LISTBOX (listbox);
-	g_signal_connect (priv->listbox, "activated", G_CALLBACK (create_connection), form);
+	g_signal_connect (priv->listbox, "activated", G_CALLBACK (create_connection_and_quit), form);
 	nmt_newt_grid_add (grid, listbox, 0, 1);
 	nmt_newt_widget_set_padding (listbox, 0, 1, 0, 0);
 	nmt_newt_grid_set_flags (grid, listbox, NMT_NEWT_GRID_EXPAND_X);
@@ -223,7 +228,7 @@ nmt_add_connection_init (NmtAddConnection *form)
 	                         NMT_NEWT_GRID_FILL_Y);
 
 	button = g_object_ref_sink (nmt_newt_button_new (_("Create")));
-	g_signal_connect (button, "clicked", G_CALLBACK (create_connection), form);
+	g_signal_connect (button, "clicked", G_CALLBACK (create_connection_and_quit), form);
 	nmt_newt_grid_add (NMT_NEWT_GRID (buttons), button, 1, 0);
 
 	nmt_newt_form_set_content (NMT_NEWT_FORM (form), NMT_NEWT_WIDGET (grid));
