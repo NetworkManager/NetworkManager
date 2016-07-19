@@ -28,6 +28,7 @@
 
 #include "nm-connectivity.h"
 #include "nm-config.h"
+#include "nm-dispatcher.h"
 #include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
@@ -96,6 +97,9 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 		       nm_connectivity_state_to_string (state));
 		priv->state = state;
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
+
+		/* Notify dispatcher scripts of a connectivity state change */
+		nm_dispatcher_call_connectivity (DISPATCHER_ACTION_CONNECTIVITY_CHANGE);
 	}
 }
 

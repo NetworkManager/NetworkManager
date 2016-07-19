@@ -422,6 +422,7 @@ static const char *action_table[] = {
 	[DISPATCHER_ACTION_VPN_DOWN]     = NMD_ACTION_VPN_DOWN,
 	[DISPATCHER_ACTION_DHCP4_CHANGE] = NMD_ACTION_DHCP4_CHANGE,
 	[DISPATCHER_ACTION_DHCP6_CHANGE] = NMD_ACTION_DHCP6_CHANGE,
+	[DISPATCHER_ACTION_CONNECTIVITY_CHANGE] = NMD_ACTION_CONNECTIVITY_CHANGE
 };
 
 static const char *
@@ -482,8 +483,9 @@ _dispatcher_call (DispatcherAction action,
 
 	_ensure_requests ();
 
-	/* All actions except 'hostname' require a device */
-	if (action == DISPATCHER_ACTION_HOSTNAME) {
+	/* All actions except 'hostname' and 'connectivity-change' require a device */
+	if (   action == DISPATCHER_ACTION_HOSTNAME
+	    || action == DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
 		_LOGD ("(%u) dispatching action '%s'%s",
 		       reqid, action_to_string (action),
 		       blocking
@@ -551,8 +553,9 @@ _dispatcher_call (DispatcherAction action,
 	g_variant_builder_init (&vpn_ip4_props, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_init (&vpn_ip6_props, G_VARIANT_TYPE_VARDICT);
 
-	/* hostname actions only send the hostname */
-	if (action != DISPATCHER_ACTION_HOSTNAME) {
+	/* hostname and connectivity-change actions don't send device data */
+	if (   action != DISPATCHER_ACTION_HOSTNAME
+	    && action != DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
 		fill_device_props (device,
 		                   &device_props,
 		                   &device_ip4_props,
@@ -758,6 +761,21 @@ nm_dispatcher_call_vpn_sync (DispatcherAction action,
 {
 	return _dispatcher_call (action, TRUE, settings_connection, applied_connection, parent_device, vpn_iface,
 	                         vpn_ip4_config, vpn_ip6_config, NULL, NULL, NULL);
+}
+
+/**
+ * nm_dispatcher_call_connectivity():
+ * @action: the %DispatcherAction
+ *
+ * This method does not block the caller.
+ *
+ * Returns: %TRUE if the action was dispatched, %FALSE on failure
+ */
+gboolean
+nm_dispatcher_call_connectivity (DispatcherAction action)
+{
+	return _dispatcher_call (action, FALSE, NULL, NULL, NULL,
+	                         NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 void

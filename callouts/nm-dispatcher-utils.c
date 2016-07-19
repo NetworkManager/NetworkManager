@@ -352,9 +352,11 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	g_return_val_if_fail (out_iface != NULL, NULL);
 	g_return_val_if_fail (*out_iface == NULL, NULL);
 
-	/* Hostname changes don't require a device nor contain a connection */
-	if (!strcmp (action, NMD_ACTION_HOSTNAME))
+	/* Hostname and connectivity changes don't require a device nor contain a connection */
+	if (   !strcmp (action, NMD_ACTION_HOSTNAME)
+	    || !strcmp (action, NMD_ACTION_CONNECTIVITY_CHANGE)) {
 		goto done;
+	}
 
 	/* Connection properties */
 	if (!g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path)) {

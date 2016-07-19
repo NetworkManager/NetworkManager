@@ -49,6 +49,7 @@
 #define NMD_ACTION_VPN_DOWN     "vpn-down"
 #define NMD_ACTION_DHCP4_CHANGE "dhcp4-change"
 #define NMD_ACTION_DHCP6_CHANGE "dhcp6-change"
+#define NMD_ACTION_CONNECTIVITY_CHANGE "connectivity-change"
 
 typedef enum {
 	DISPATCH_RESULT_UNKNOWN = 0,
