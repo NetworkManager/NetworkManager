@@ -566,8 +566,7 @@ get_secret_flags (NMSetting *setting,
                   GError **error)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-	gboolean success = FALSE;
-	char *flags_key;
+	gs_free char *flags_key = NULL;
 	gpointer val;
 	unsigned long tmp;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
@@ -576,28 +575,21 @@ get_secret_flags (NMSetting *setting,
 	if (g_hash_table_lookup_extended (priv->data, flags_key, NULL, &val)) {
 		errno = 0;
 		tmp = strtoul ((const char *) val, NULL, 10);
-		if ((errno == 0) && (tmp <= NM_SETTING_SECRET_FLAGS_ALL)) {
-			flags = (NMSettingSecretFlags) tmp;
-			success = TRUE;
-		} else {
+		if ((errno != 0) || (tmp > NM_SETTING_SECRET_FLAGS_ALL)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("failed to convert value '%s' to uint"),
 			             (const char *) val);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, flags_key);
+			return FALSE;
 		}
-	} else {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("secret flags property not found"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, flags_key);
+		flags = (NMSettingSecretFlags) tmp;
 	}
-	g_free (flags_key);
+
 	if (out_flags)
 		*out_flags = flags;
-	return success;
+	return TRUE;
 }
 
 static gboolean
