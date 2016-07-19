@@ -25,6 +25,7 @@
 #include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"
+#include "common.h"
 #include "nm-common-macros.h"
 
 #include "devices.h"
@@ -958,6 +959,225 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	g_free (str);
 }
 
+
+static void
+device_overview (NmCli *nmc, NMDevice *device)
+{
+	GString *outbuf = g_string_sized_new (80);
+	char *tmp;
+	const GPtrArray *activatable;
+
+	activatable = nm_device_get_available_connections (device);
+
+	g_string_append_printf (outbuf, "%s", nm_device_get_type_description (device));
+
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_DISCONNECTED) {
+		if (activatable) {
+			if (activatable->len == 1)
+				g_print ("\t%d %s\n", activatable->len, _("connection available"));
+			else if (activatable->len > 1)
+				g_print ("\t%d %s\n", activatable->len, _("connections available"));
+		}
+	}
+
+	if (   nm_device_get_driver (device)
+	    && strcmp (nm_device_get_driver (device), "")
+	    && strcmp (nm_device_get_driver (device), nm_device_get_type_description (device))) {
+		g_string_append_printf (outbuf, " (%s)", nm_device_get_driver (device));
+	}
+
+	g_string_append_printf (outbuf, ", ");
+
+	if (   nm_device_get_hw_address (device)
+	    && strcmp (nm_device_get_hw_address (device), "")) {
+		g_string_append_printf (outbuf, "%s, ", nm_device_get_hw_address (device));
+	}
+
+	if (!nm_device_get_autoconnect (device))
+		g_string_append_printf (outbuf, "%s, ", _("autoconnect"));
+	if (nm_device_get_firmware_missing (device)) {
+		tmp = nmc_colorize (nmc, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("fw missing"));
+		g_string_append_printf (outbuf, "%s, ", tmp);
+		g_free (tmp);
+	}
+	if (nm_device_get_nm_plugin_missing (device)) {
+		tmp = nmc_colorize (nmc, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("plugin missing"));
+		g_string_append_printf (outbuf, "%s, ", tmp);
+		g_free (tmp);
+	}
+	if (nm_device_is_software (device))
+		g_string_append_printf (outbuf, "%s, ", _("sw"));
+	else
+		g_string_append_printf (outbuf, "%s, ", _("hw"));
+
+	if (   nm_device_get_ip_iface (device)
+	    && g_strcmp0 (nm_device_get_ip_iface (device), nm_device_get_iface (device))
+	    && g_strcmp0 (nm_device_get_ip_iface (device), ""))
+		g_string_append_printf (outbuf, "%s %s,", _("iface"), nm_device_get_ip_iface (device));
+
+	if (nm_device_get_physical_port_id (device))
+		g_string_append_printf (outbuf, "%s %s, ", _("port"), nm_device_get_physical_port_id (device));
+
+	if (nm_device_get_mtu (device))
+		g_string_append_printf (outbuf, "%s %d, ", _("mtu"), nm_device_get_mtu (device));
+
+	if (outbuf->len >= 2) {
+		g_string_truncate (outbuf, outbuf->len - 2);
+		g_print ("\t%s\n", outbuf->str);
+	}
+
+	g_string_free (outbuf, TRUE);
+}
+
+static void
+ac_overview (NmCli *nmc, NMActiveConnection *ac)
+{
+	GString *outbuf = g_string_sized_new (80);
+	NMIPConfig *ip;
+
+	if (nm_active_connection_get_master (ac)) {
+		g_string_append_printf (outbuf, "%s %s,", _("master"),
+		                        nm_device_get_iface (nm_active_connection_get_master (ac)));
+	}
+	if (nm_active_connection_get_vpn (ac))
+		g_string_append_printf (outbuf, "%s, ", _("VPN"));
+	if (nm_active_connection_get_default (ac))
+		g_string_append_printf (outbuf, "%s, ", _("ip4 default"));
+	if (nm_active_connection_get_default6 (ac))
+		g_string_append_printf (outbuf, "%s, ", _("ip6 default"));
+	if (outbuf->len >= 2) {
+		g_string_truncate (outbuf, outbuf->len - 2);
+		g_print ("\t%s\n", outbuf->str);
+	}
+
+	ip = nm_active_connection_get_ip4_config (ac);
+	if (ip) {
+		const GPtrArray *p;
+		int i;
+
+		p = nm_ip_config_get_addresses (ip);
+		for (i = 0; i < p->len; i++) {
+			NMIPAddress *a = p->pdata[i];
+			g_print ("\tinet4 %s/%d\n", nm_ip_address_get_address (a),
+			                            nm_ip_address_get_prefix (a));
+		}
+
+		p = nm_ip_config_get_routes (ip);
+		for (i = 0; i < p->len; i++) {
+			NMIPRoute *a = p->pdata[i];
+			g_print ("\troute4 %s/%d\n", nm_ip_route_get_dest (a),
+			                            nm_ip_route_get_prefix (a));
+		}
+	}
+
+	ip = nm_active_connection_get_ip6_config (ac);
+	if (ip) {
+		const GPtrArray *p;
+		int i;
+
+		p = nm_ip_config_get_addresses (ip);
+		for (i = 0; i < p->len; i++) {
+			NMIPAddress *a = p->pdata[i];
+			g_print ("\tinet6 %s/%d\n", nm_ip_address_get_address (a),
+			                            nm_ip_address_get_prefix (a));
+		}
+
+		p = nm_ip_config_get_routes (ip);
+		for (i = 0; i < p->len; i++) {
+			NMIPRoute *a = p->pdata[i];
+			g_print ("\troute6 %s/%d\n", nm_ip_route_get_dest (a),
+			                            nm_ip_route_get_prefix (a));
+		}
+	}
+
+	g_string_free (outbuf, TRUE);
+}
+
+/*
+ * Entry point function for 'nmcli' without arguments.
+ */
+NMCResultCode
+do_overview (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice **devices;
+	const GPtrArray *p;
+	NMActiveConnection *ac;
+	NmcTermColor color;
+	char *tmp;
+	int i;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
+
+	/* Get NMClient object early */
+	nmc->get_client (nmc);
+
+	/* Check whether NetworkManager is running */
+	if (!nm_client_get_nm_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		return NMC_RESULT_ERROR_NM_NOT_RUNNING;
+	}
+
+	/* The VPN connections don't have devices (yet?). */
+	p = nm_client_get_active_connections (nmc->client);
+	for (i = 0; i < p->len; i++) {
+		NMActiveConnectionState state;
+
+		ac = p->pdata[i];
+
+		if (!nm_active_connection_get_vpn (ac))
+			continue;
+
+		state = nm_active_connection_get_state (ac);
+		nmc_active_connection_state_to_color (state, &color);
+		tmp = nmc_colorize (nmc, color, NMC_TERM_FORMAT_NORMAL, _("%s VPN connection"),
+		                    nm_active_connection_get_id (ac));
+		g_print ("%s\n", tmp);
+		g_free (tmp);
+
+		ac_overview (nmc, ac);
+		g_print ("\n");
+	}
+
+	devices = nmc_get_devices_sorted (nmc->client);
+	for (i = 0; devices[i]; i++) {
+		NmcTermFormat color_fmt;
+		NMDeviceState state;
+
+		ac = nm_device_get_active_connection (devices[i]);
+
+		state = nm_device_get_state (devices[i]);
+		nmc_device_state_to_color (state, &color, &color_fmt);
+		tmp = nmc_colorize (nmc, color, color_fmt, "%s: %s%s%s",
+		                    nm_device_get_iface (devices[i]),
+		                    nmc_device_state_to_string (state),
+		                    ac ? " to " : "",
+		                    ac ? nm_active_connection_get_id (ac) : "");
+		g_print ("%s\n", tmp);
+		g_free (tmp);
+
+		if (nm_device_get_description (devices[i]) && strcmp (nm_device_get_description (devices[i]), ""))
+			g_print ("\t\"%s\"\n", nm_device_get_description (devices[i]));
+
+
+		device_overview (nmc, devices[i]);
+		if (ac)
+			ac_overview (nmc, ac);
+		g_print ("\n");
+	}
+	g_free (devices);
+
+	g_print (_("Use \"nmcli device show\" to get complete information about known devices and\n"
+	           "\"nmcli connection show\" to get an overview on active connection profiles.\n"
+	           "\n"
+	           "Consult nmcli(1) and nmcli-exmaples(5) manual pages for complete usage details.\n"));
+
+	return NMC_RESULT_SUCCESS;
+}
+
+/*
+ * Entry point function for 'nmcli monitor'
+ */
 NMCResultCode
 do_monitor (NmCli *nmc, int argc, char **argv)
 {

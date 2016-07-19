@@ -521,8 +521,8 @@ compare_devices (const void *a, const void *b)
 	                  nm_device_get_iface (db));
 }
 
-static NMDevice **
-get_devices_sorted (NMClient *client)
+NMDevice **
+nmc_get_devices_sorted (NMClient *client)
 {
 	const GPtrArray *devs;
 	NMDevice **sorted;
@@ -575,7 +575,7 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
-	devices = get_devices_sorted (nmc->client);
+	devices = nmc_get_devices_sorted (nmc->client);
 	while (arg_num > 0) {
 		if (arg_num == 1 && nmc->complete)
 			complete_device (devices, *arg_ptr);
@@ -633,7 +633,7 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 		next_arg (argc, argv);
 	}
 
-	devices = get_devices_sorted (nmc->client);
+	devices = nmc_get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
 		if (!g_strcmp0 (nm_device_get_iface (devices[i]), ifname))
 			break;
@@ -683,27 +683,22 @@ sort_access_points (const GPtrArray *aps)
 	return sorted;
 }
 
-typedef struct {
-	NmcTermColor color;
-	NmcTermFormat color_fmt;
-} ColorInfo;
-
-static ColorInfo
-wifi_signal_to_color (guint8 strength)
+static void
+wifi_signal_to_color (guint8 strength, NmcTermColor *color, NmcTermFormat *color_fmt)
 {
-	ColorInfo color_info = { NMC_TERM_COLOR_NORMAL, NMC_TERM_FORMAT_NORMAL };
+	*color = NMC_TERM_COLOR_NORMAL;
+	*color_fmt = NMC_TERM_FORMAT_NORMAL;
 
 	if (strength > 80)
-		color_info.color = NMC_TERM_COLOR_GREEN;
+		*color = NMC_TERM_COLOR_GREEN;
 	else if (strength > 55)
-		color_info.color = NMC_TERM_COLOR_YELLOW;
+		*color = NMC_TERM_COLOR_YELLOW;
 	else if (strength > 30)
-		color_info.color = NMC_TERM_COLOR_MAGENTA;
+		*color = NMC_TERM_COLOR_MAGENTA;
 	else if (strength > 5)
-		color_info.color = NMC_TERM_COLOR_CYAN;
+		*color = NMC_TERM_COLOR_CYAN;
 	else
-		color_info.color_fmt = NMC_TERM_FORMAT_DIM;
-	return color_info;
+		*color_fmt = NMC_TERM_FORMAT_DIM;
 }
 
 static char *
@@ -775,7 +770,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	GString *security_str;
 	char *ap_name;
 	const char *sig_bars;
-	ColorInfo color_info;
+	NmcTermColor color;
+	NmcTermFormat color_fmt;
 
 	if (info->active_bssid) {
 		const char *current_bssid = nm_access_point_get_bssid (ap);
@@ -862,9 +858,9 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_strc (arr, 16, nm_object_get_path (NM_OBJECT (ap)));
 
 	/* Set colors */
-	color_info = wifi_signal_to_color (strength);
-	set_val_color_all (arr, color_info.color);
-	set_val_color_fmt_all (arr, color_info.color_fmt);
+	wifi_signal_to_color (strength, &color, &color_fmt);
+	set_val_color_all (arr, color);
+	set_val_color_fmt_all (arr, color_fmt);
 	if (active)
 		arr[15].color = NMC_TERM_COLOR_GREEN;
 
@@ -1422,20 +1418,20 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	return TRUE;
 }
 
-static ColorInfo
-device_state_to_color (NMDeviceState state)
+void
+nmc_device_state_to_color (NMDeviceState state, NmcTermColor *color, NmcTermFormat *color_fmt)
 {
-	ColorInfo color_info = { NMC_TERM_COLOR_NORMAL, NMC_TERM_FORMAT_NORMAL };
+	*color = NMC_TERM_COLOR_NORMAL;
+	*color_fmt = NMC_TERM_FORMAT_NORMAL;
 
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
-		color_info.color_fmt= NMC_TERM_FORMAT_DIM;
+		*color_fmt= NMC_TERM_FORMAT_DIM;
 	else if (state == NM_DEVICE_STATE_DISCONNECTED)
-		color_info.color = NMC_TERM_COLOR_RED;
+		*color = NMC_TERM_COLOR_RED;
 	else if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
-		color_info.color = NMC_TERM_COLOR_YELLOW;
+		*color = NMC_TERM_COLOR_YELLOW;
 	else if (state == NM_DEVICE_STATE_ACTIVATED)
-		color_info.color = NMC_TERM_COLOR_GREEN;
-	return color_info;
+		*color = NMC_TERM_COLOR_GREEN;
 }
 
 static void
@@ -1443,7 +1439,8 @@ fill_output_device_status (NMDevice *device, NmCli *nmc)
 {
 	NMActiveConnection *ac;
 	NMDeviceState state;
-	ColorInfo color_info;
+	NmcTermColor color;
+	NmcTermFormat color_fmt;
 	NmcOutputField *arr = nmc_dup_fields_array (nmc_fields_dev_status,
 	                                            sizeof (nmc_fields_dev_status),
 	                                            0);
@@ -1452,9 +1449,9 @@ fill_output_device_status (NMDevice *device, NmCli *nmc)
 	ac = nm_device_get_active_connection (device);
 
 	/* Show devices in color */
-	color_info = device_state_to_color (state);
-	set_val_color_all (arr, color_info.color);
-	set_val_color_fmt_all (arr, color_info.color_fmt);
+	nmc_device_state_to_color (state, &color, &color_fmt);
+	set_val_color_all (arr, color);
+	set_val_color_fmt_all (arr, color_fmt);
 
 	set_val_strc (arr, 0, nm_device_get_iface (device));
 	set_val_strc (arr, 1, nm_device_get_type_description (device));
@@ -1517,7 +1514,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
-	devices = get_devices_sorted (nmc->client);
+	devices = nmc_get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++)
 		fill_output_device_status (devices[i], nmc);
 
@@ -1556,7 +1553,7 @@ do_device_show (NmCli *nmc, int argc, char **argv)
 
 		show_device_info (device, nmc);
 	} else {
-		NMDevice **devices = get_devices_sorted (nmc->client);
+		NMDevice **devices = nmc_get_devices_sorted (nmc->client);
 		int i;
 
 		/* nmc_do_cmd() should not call this with argc=0. */
@@ -2364,10 +2361,14 @@ static void
 device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 {
 	NMDeviceState state = nm_device_get_state (device);
-	ColorInfo color = device_state_to_color (state);
-	char *str = nmc_colorize (nmc, color.color, color.color_fmt, "%s: %s\n",
-	                          nm_device_get_iface (device),
-	                          nmc_device_state_to_string (state));
+	NmcTermColor color;
+	NmcTermFormat color_fmt;
+	char *str;
+
+	nmc_device_state_to_color (state, &color, &color_fmt);
+	str = nmc_colorize (nmc, color, color_fmt, "%s: %s\n",
+	                    nm_device_get_iface (device),
+	                    nmc_device_state_to_string (state));
 
 	g_print ("%s", str);
 	g_free (str);
@@ -2548,7 +2549,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	devices = get_devices_sorted (nmc->client);
+	devices = nmc_get_devices_sorted (nmc->client);
 	if (ifname) {
 		/* Device specified - list only APs of this interface */
 		for (i = 0; devices[i]; i++) {
@@ -3723,7 +3724,7 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 		nmc_empty_output_fields (nmc);
 		show_device_lldp_list (device, nmc, fields_str, &counter);
 	} else {
-		NMDevice **devices = get_devices_sorted (nmc->client);
+		NMDevice **devices = nmc_get_devices_sorted (nmc->client);
 		int i;
 
 		for (i = 0; devices[i]; i++) {

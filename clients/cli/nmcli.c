@@ -123,7 +123,7 @@ static const NMCCommand nmcli_cmds[] = {
 	{ "device",     do_devices,     NULL },
 	{ "agent",      do_agent,       NULL },
 	{ "help",       do_help,        NULL },
-	{ 0 }
+	{ NULL,         do_overview,    NULL },
 };
 
 static NMCResultCode
@@ -281,13 +281,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	if (argc > 1) {
-		/* Now run the requested command */
-		return nmc_do_cmd (nmc, nmcli_cmds, argv[1], argc-1, argv+1);
-	}
-
-	usage (base);
-	return nmc->return_value;
+	/* Now run the requested command */
+	return nmc_do_cmd (nmc, nmcli_cmds, argv[1], argc-1, argv+1);
 }
 
 static gboolean nmcli_sigint = FALSE;

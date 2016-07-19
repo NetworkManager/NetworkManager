@@ -26,5 +26,6 @@ NMCResultCode do_general    (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_networking (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_radio      (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_monitor    (NmCli *nmc, int argc, char **argv);
+NMCResultCode do_overview   (NmCli *nmc, int argc, char **argv);
 
 #endif /* NMC_GENERAL_H */

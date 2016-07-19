@@ -33,5 +33,6 @@ nmc_read_connection_properties (NmCli *nmc,
                                 char ***argv,
                                 GError **error);
 
+void nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColor *color);
 
 #endif /* NMC_CONNECTIONS_H */
