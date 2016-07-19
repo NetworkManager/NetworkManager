@@ -292,12 +292,13 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli device { COMMAND | help }\n\n"
-	              "COMMAND := { status | show | connect | reapply | disconnect | delete | monitor | wifi | lldp }\n\n"
+	              "COMMAND := { status | show | set | connect | reapply | modify | disconnect | delete | monitor | wifi | lldp }\n\n"
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
 	              "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
 	              "  connect <ifname>\n\n"
 	              "  reapply <ifname>\n\n"
+	              "  modify <ifname> ([+|-]<setting>.<property> <value>)+\n\n"
 	              "  disconnect <ifname> ...\n\n"
 	              "  delete <ifname> ...\n\n"
 	              "  monitor <ifname> ...\n\n"
@@ -362,7 +363,7 @@ usage_device_reapply (void)
 static void
 usage_device_modify (void)
 {
-	g_printerr (_("Usage: nmcli connection modify { ARGUMENTS | --help }\n"
+	g_printerr (_("Usage: nmcli device modify { ARGUMENTS | --help }\n"
 	              "\n"
 	              "ARGUMENTS := <ifname> ([+|-]<setting>.<property> <value>)+\n"
 	              "\n"

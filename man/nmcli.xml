@@ -191,7 +191,7 @@
           <arg choice='plain'><option>-f</option></arg>
           <arg choice='plain'><option>--fields</option></arg>
           <group choice='req'>
-            <arg conice='plain' rep='repeat'><replaceable>field</replaceable></arg>
+            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
             <arg choice='plain'>all</arg>
             <arg choice='plain'>common</arg>
           </group>
@@ -258,13 +258,11 @@
       </varlistentry>
 
       <varlistentry>
-        <term><arg>
-          <group choice='plain'>
-            <arg choice='plain'><option>-w</option></arg>
-            <arg choice='plain'><option>--wait</option></arg>
-          </group>
-          <arg choice='plain' rep='repeat'><replaceable>seconds</replaceable></arg>
-        </arg></term>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-w</option></arg>
+          <arg choice='plain'><option>--wait</option></arg></group>
+          <arg choice='plain'><replaceable>seconds</replaceable></arg>
+        </term>
 
         <listitem>
           <para>This option sets a timeout period for which <command>nmcli</command> will
@@ -363,7 +361,7 @@
         <term>
           <command>logging</command>
           <arg><option>level</option> <replaceable>level</replaceable></arg>
-          <arg rep='repeat'><option>domain</option> <replaceable>domains</replaceable></arg>
+          <arg rep='repeat'><option>domains</option> <replaceable>domains</replaceable></arg>
         </term>
 
         <listitem>
@@ -547,10 +545,13 @@
         <arg choice='plain'><command>modify</command></arg>
         <arg choice='plain'><command>add</command></arg>
         <arg choice='plain'><command>edit</command></arg>
+        <arg choice='plain'><command>clone</command></arg>
         <arg choice='plain'><command>delete</command></arg>
         <arg choice='plain'><command>monitor</command></arg>
         <arg choice='plain'><command>reload</command></arg>
         <arg choice='plain'><command>load</command></arg>
+        <arg choice='plain'><command>import</command></arg>
+        <arg choice='plain'><command>export</command></arg>
       </group>
       <arg rep='repeat'><replaceable>ARGUMENTS</replaceable></arg>
     </cmdsynopsis>
@@ -699,7 +700,7 @@
             <arg choice='plain'><option>uuid</option></arg>
             <arg choice='plain'><option>path</option></arg>
           </group>
-          <arg rep='repeat' choice='plain'><replaceable>ID</replaceable></arg>
+          <arg choice='plain'><replaceable>ID</replaceable></arg>
           <arg><option>ifname</option> <replaceable>ifname</replaceable></arg>
           <arg><option>ap</option> <replaceable>BSSID</replaceable></arg>
           <arg><option>passwd-file</option> <replaceable>file</replaceable></arg>
@@ -820,7 +821,7 @@
           </group>
           <arg choice='plain'><replaceable>ID</replaceable></arg>
           <arg rep='repeat' choice='plain'>
-            <group>
+            <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
               <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
@@ -862,9 +863,9 @@
       <varlistentry>
         <term>
           <command>add</command>
+          <arg><option>save</option><group choice='req'><arg choice='plain'>yes</arg><arg choice='plain'>no</arg></group></arg>
           <arg rep='repeat' choice='plain'>
-            <group>
-              <arg choice='plain'><option>save</option><group choice='req'><arg choice='plain'>yes</arg><arg choice='plain'>no</arg></group></arg>
+            <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
               <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
@@ -943,7 +944,7 @@
                 <arg choice='plain'><option>uuid</option></arg>
                 <arg choice='plain'><option>path</option></arg>
               </group>
-              <arg rep='repeat' choice='plain'><replaceable>ID</replaceable></arg>
+              <arg choice='plain'><replaceable>ID</replaceable></arg>
             </arg>
             <arg choice='plain'>
               <arg><option>type</option> <replaceable>type</replaceable></arg>
@@ -1003,8 +1004,8 @@
             <arg choice='plain'><option>uuid</option></arg>
             <arg choice='plain'><option>path</option></arg>
           </group>
-          <arg choice='plain' rep='repeat'><replaceable>ID</replaceable></arg>
-          <arg choice='plain'><option>new</option> <replaceable>name</replaceable></arg>
+          <arg choice='plain'><replaceable>ID</replaceable></arg>
+          <arg choice='plain'><replaceable>new_name</replaceable></arg>
         </term>
 
         <listitem>
@@ -1012,9 +1013,9 @@
           name, UUID or D-Bus path. If <replaceable>ID</replaceable> is ambiguous, a keyword
           <option>id</option>, <option>uuid</option> or <option>path</option>
           can be used. See <command>connection show</command> above for the description
-          of the <replaceable>ID</replaceable>-specifying keywords. <replaceable>name</replaceable> is
+          of the <replaceable>ID</replaceable>-specifying keywords. <replaceable>new_name</replaceable> is
           the name of the new cloned connection. The new connection will be the exact
-          copy except the connection.id (<replaceable>name</replaceable>) and
+          copy except the connection.id (<replaceable>new_name</replaceable>) and
           connection.uuid (generated) properties.</para>
 
           <para>The new connection profile will be saved as persistent unless
@@ -1107,8 +1108,8 @@
         <term>
           <command>import</command>
           <arg><option>--temporary</option></arg>
-          <arg><option>type</option> <replaceable>type</replaceable></arg>
-          <arg><option>file</option> <replaceable>file</replaceable></arg>
+          <arg choice='plain'><option>type</option> <replaceable>type</replaceable></arg>
+          <arg choice='plain'><option>file</option> <replaceable>file</replaceable></arg>
         </term>
 
         <listitem>
@@ -1230,7 +1231,7 @@
       <varlistentry>
         <term>
           <command>connect</command>
-          <arg><replaceable>ifname</replaceable></arg>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1246,7 +1247,7 @@
       <varlistentry>
         <term>
           <command>reapply</command>
-          <arg><replaceable>ifname</replaceable></arg>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1258,8 +1259,9 @@
       <varlistentry>
         <term>
           <command>modify</command>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
           <arg rep='repeat' choice='plain'>
-            <group>
+            <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
               <arg choice='plain'>[+|-]<replaceable>setting</replaceable>.<replaceable>property</replaceable> <replaceable>value</replaceable></arg>
             </group>
@@ -1285,7 +1287,7 @@
       <varlistentry>
         <term>
           <command>disconnect</command>
-          <arg rep='repeat'><replaceable>ifname</replaceable></arg>
+          <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1302,7 +1304,7 @@
       <varlistentry>
         <term>
           <command>delete</command>
-          <arg rep='repeat'><replaceable>ifname</replaceable></arg>
+          <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
         </term>
 
         <listitem>
@@ -1839,9 +1841,9 @@ It's equivalent of using the <literal>+bond.options 'option=value'</literal> syn
       <row><entry align="left">ageing-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.ageing-time">bridge.ageing-time</link></entry></row>
       <row><entry align="left">multicast-snooping</entry><entry align="left"><link linkend="nm-settings.property.bridge.multicast-snooping">bridge.multicast-snooping</link></entry></row>
       <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.bridge.mac-address">bridge.mac-address</link></entry></row>
-      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-priority">bridge.port-priority</link></entry></row>
-      <row><entry align="left">path-cost</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-path-cost">bridge.port-path-cost</link></entry></row>
-      <row><entry align="left">hairpin</entry><entry align="left"><link linkend="nm-settings.property.bridge.port-hairpin-mode">bridge.port-hairpin-mode</link></entry></row>
+      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.priority">bridge-port.priority</link></entry></row>
+      <row><entry align="left">path-cost</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.path-cost">bridge-port.path-cost</link></entry></row>
+      <row><entry align="left">hairpin</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.hairpin-mode">bridge-port.hairpin-mode</link></entry></row>
     </tbody>
     </tgroup></table>
 
