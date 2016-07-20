@@ -39,6 +39,7 @@ parse_main (GKeyFile *kf,
             GVariant **out_con_props,
             char **out_expected_iface,
             char **out_action,
+            char **out_connectivity_state,
             char **out_vpn_ip_iface,
             GError **error)
 {
@@ -51,6 +52,7 @@ parse_main (GKeyFile *kf,
 	if (*out_expected_iface == NULL)
 		return FALSE;
 
+	*out_connectivity_state = g_key_file_get_string (kf, "main", "connectivity-state", NULL);
 	*out_vpn_ip_iface = g_key_file_get_string (kf, "main", "vpn-ip-iface", NULL);
 
 	*out_action = g_key_file_get_string (kf, "main", "action", error);
@@ -359,6 +361,7 @@ get_dispatcher_file (const char *file,
                      GVariant **out_device_ip6_props,
                      GVariant **out_device_dhcp4_props,
                      GVariant **out_device_dhcp6_props,
+                     char **out_connectivity_state,
                      char **out_vpn_ip_iface,
                      GVariant **out_vpn_ip4_props,
                      GVariant **out_vpn_ip6_props,
@@ -379,6 +382,7 @@ get_dispatcher_file (const char *file,
 	g_assert (out_device_ip6_props && !*out_device_ip6_props);
 	g_assert (out_device_dhcp4_props && !*out_device_dhcp4_props);
 	g_assert (out_device_dhcp6_props && !*out_device_dhcp6_props);
+	g_assert (out_connectivity_state && !*out_connectivity_state);
 	g_assert (out_vpn_ip_iface && !*out_vpn_ip_iface);
 	g_assert (out_vpn_ip4_props && !*out_vpn_ip4_props);
 	g_assert (out_vpn_ip6_props && !*out_vpn_ip6_props);
@@ -396,6 +400,7 @@ get_dispatcher_file (const char *file,
 	                 out_con_props,
 	                 out_expected_iface,
 	                 out_action,
+	                 out_connectivity_state,
 	                 out_vpn_ip_iface,
 	                 error))
 		goto out;
@@ -451,6 +456,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	GVariant *device_ip6_props = NULL;
 	GVariant *device_dhcp4_props = NULL;
 	GVariant *device_dhcp6_props = NULL;
+	char *connectivity_change = NULL;
 	char *vpn_ip_iface = NULL;
 	GVariant *vpn_ip4_props = NULL;
 	GVariant *vpn_ip6_props = NULL;
@@ -474,6 +480,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	                               &device_ip6_props,
 	                               &device_dhcp4_props,
 	                               &device_dhcp6_props,
+	                               &connectivity_change,
 	                               &vpn_ip_iface,
 	                               &vpn_ip4_props,
 	                               &vpn_ip6_props,
@@ -494,6 +501,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	                                           device_ip6_props,
 	                                           device_dhcp4_props,
 	                                           device_dhcp6_props,
+	                                           connectivity_change,
 	                                           override_vpn_ip_iface ? override_vpn_ip_iface : vpn_ip_iface,
 	                                           vpn_ip4_props,
 	                                           vpn_ip6_props,
@@ -602,6 +610,15 @@ test_external (void)
 }
 
 static void
+test_connectivity_changed (void)
+{
+	/* These tests will check that the CONNECTIVITY_STATE environment
+	 * variable is only defined for known states, such as 'full'. */
+	test_generic ("dispatcher-connectivity-unknown", NULL);
+	test_generic ("dispatcher-connectivity-full", NULL);
+}
+
+static void
 test_up_empty_vpn_iface (void)
 {
 	/* Test that an empty VPN iface variable, like is passed through D-Bus
@@ -624,6 +641,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dispatcher/vpn_up", test_vpn_up);
 	g_test_add_func ("/dispatcher/vpn_down", test_vpn_down);
 	g_test_add_func ("/dispatcher/external", test_external);
+	g_test_add_func ("/dispatcher/connectivity_changed", test_connectivity_changed);
 
 	g_test_add_func ("/dispatcher/up_empty_vpn_iface", test_up_empty_vpn_iface);
 
