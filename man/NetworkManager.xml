@@ -79,7 +79,8 @@
       device an operation just happened on, and second the action. For device actions,
       the interface is the name of the kernel interface suitable for IP configuration.
       Thus it is either VPN_IP_IFACE, DEVICE_IP_IFACE, or DEVICE_IFACE, as applicable.
-      For the <varname>hostname</varname> action it is always "none".
+      For the <varname>hostname</varname> and <varname>connectivity-change</varname>
+      actions it is always "none".
     </para>
     <para>The actions are:</para>
     <variablelist class="dispatcher-options">
@@ -166,6 +167,12 @@
         <term><varname>dhcp6-change</varname></term>
         <listitem><para>
           The DHCPv6 lease has changed (renewed, rebound, etc).
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>connectivity-change</varname></term>
+        <listitem><para>
+          The network connectivity state has changed (no connectivity, went online, etc).
         </para></listitem>
       </varlistentry>
     </variablelist>
@@ -279,6 +286,15 @@
           <listitem><para>
             The same variables as for IPv4 are available for IPv6, but the prefixes are IP6_
             and DHCP6_ instead.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>CONNECTIVITY_STATE</varname></term>
+          <listitem><para> The network connectivity state, which can
+          take the values defined by the NMConnectivityState type,
+          from the org.freedesktop.NetworkManager D-Bus API: unknown,
+          none, portal, limited or full. Note: this variable will only
+          be set for connectivity-change actions.
           </para></listitem>
         </varlistentry>
       </variablelist>
