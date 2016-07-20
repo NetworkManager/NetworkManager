@@ -13,6 +13,7 @@
         @device_ip6_config: Properties of the device's IPv6 configuration.
         @device_dhcp4_config: Properties of the device's DHCPv4 configuration.
         @device_dhcp6_config: Properties of the device's DHCPv6 configuration.
+        @connectivity_state: Current connectivity state: unknown, none, limited, portal or full.
         @vpn_ip_iface: VPN interface name.
         @vpn_ip4_config: Properties of the VPN's IPv4 configuration.
         @vpn_ip6_config: Properties of the VPN's IPv6 configuration.
@@ -30,6 +31,7 @@
       <arg name="device_ip6_config" type="a{sv}" direction="in"/>
       <arg name="device_dhcp4_config" type="a{sv}" direction="in"/>
       <arg name="device_dhcp6_config" type="a{sv}" direction="in"/>
+      <arg name="connectivity_state" type="s" direction="in"/>
       <arg name="vpn_ip_iface" type="s" direction="in"/>
       <arg name="vpn_ip4_config" type="a{sv}" direction="in"/>
       <arg name="vpn_ip6_config" type="a{sv}" direction="in"/>

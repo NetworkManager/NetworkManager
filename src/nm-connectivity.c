@@ -99,7 +99,7 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
 
 		/* Notify dispatcher scripts of a connectivity state change */
-		nm_dispatcher_call_connectivity (DISPATCHER_ACTION_CONNECTIVITY_CHANGE);
+		nm_dispatcher_call_connectivity (DISPATCHER_ACTION_CONNECTIVITY_CHANGE, state);
 	}
 }
 

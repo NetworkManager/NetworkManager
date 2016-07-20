@@ -76,7 +76,8 @@ gboolean nm_dispatcher_call_vpn_sync (DispatcherAction action,
                                       NMIP4Config *vpn_ip4_config,
                                       NMIP6Config *vpn_ip6_config);
 
-gboolean nm_dispatcher_call_connectivity (DispatcherAction action);
+gboolean nm_dispatcher_call_connectivity (DispatcherAction action,
+                                          NMConnectivityState state);
 
 void nm_dispatcher_call_cancel (guint call_id);
 
