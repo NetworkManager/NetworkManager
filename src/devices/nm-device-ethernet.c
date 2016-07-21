@@ -1421,7 +1421,7 @@ new_default_connection (NMDevice *self)
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (self, FALSE);
+	perm_hw_addr = nm_device_get_permanent_hw_address (self, TRUE);
 	if (!perm_hw_addr)
 		return NULL;
 
