@@ -227,9 +227,14 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		perm_addr = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
 		s_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_addr) {
+			/* Virtual devices will have empty permanent addr but they should not be excluded
+			 * from the MAC address check specified in the connection */
+			if (*perm_addr == 0)
+				perm_addr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
+
 			if (!nm_utils_hwaddr_valid (perm_addr, ETH_ALEN)) {
-				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-				                     _("Invalid device MAC address."));
+				g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+				                     _("Invalid device MAC address %s."), perm_addr);
 				return FALSE;
 			}
 			if (try_mac && s_mac && !nm_utils_hwaddr_matches (s_mac, -1, perm_addr, -1)) {

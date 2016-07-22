@@ -407,7 +407,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
 
-		perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
+		perm_hw_addr = nm_device_get_permanent_hw_address (device, TRUE);
 		mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_hw_addr) {
 			if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
@@ -1421,7 +1421,7 @@ new_default_connection (NMDevice *self)
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (self, FALSE);
+	perm_hw_addr = nm_device_get_permanent_hw_address (self, TRUE);
 	if (!perm_hw_addr)
 		return NULL;
 
