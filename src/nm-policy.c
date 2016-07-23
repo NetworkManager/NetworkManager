@@ -1294,6 +1294,22 @@ device_state_changed (NMDevice *device,
 }
 
 static void
+device_dhcp_config_changed (NMDevice *device,
+                            GParamSpec *pspec,
+                            gpointer user_data)
+{
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = priv->self;
+
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
+		/* Ensure that a hostname received through DHCP4/DHCP6 is applied even
+		 * if the IPv4/IPv6 method completed after initial activation.
+		 */
+		update_routing_and_dns (self, FALSE);
+	}
+}
+
+static void
 device_ip4_config_changed (NMDevice *device,
                            NMIP4Config *new_config,
                            NMIP4Config *old_config,
@@ -1401,6 +1417,8 @@ devices_list_register (NMPolicy *self, NMDevice *device)
 	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip6_config_changed, priv);
 	g_signal_connect       (device, "notify::" NM_DEVICE_AUTOCONNECT, (GCallback) device_autoconnect_changed, priv);
 	g_signal_connect       (device, NM_DEVICE_RECHECK_AUTO_ACTIVATE,  (GCallback) device_recheck_auto_activate, priv);
+	g_signal_connect       (device, "notify::" NM_DEVICE_DHCP4_CONFIG,(GCallback) device_dhcp_config_changed, priv);
+	g_signal_connect       (device, "notify::" NM_DEVICE_DHCP6_CONFIG,(GCallback) device_dhcp_config_changed, priv);
 }
 
 static void
