@@ -1041,7 +1041,8 @@ get_secrets_from_user (const char *request_id,
 					}
 				}
 				g_print ("%s\n", msg);
-				pwd = nmc_readline_echo (echo_on, "%s (%s): ", secret->name, secret->prop_name);
+				pwd = nmc_readline_echo (secret->password ? echo_on : TRUE,
+				                         "%s (%s): ", secret->name, secret->prop_name);
 				if (!pwd)
 					pwd = g_strdup ("");
 			} else {
