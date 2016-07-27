@@ -115,7 +115,7 @@ struct _OptionInfo {
 #define BASE_PROMPT "nmcli> "
 
 /* Available fields for 'connection show' */
-static NmcOutputField nmc_fields_con_show[] = {
+NmcOutputField nmc_fields_con_show[] = {
 	{"NAME",                 N_("NAME")},                  /* 0 */
 	{"UUID",                 N_("UUID")},                  /* 1 */
 	{"TYPE",                 N_("TYPE")},                  /* 2 */
@@ -138,39 +138,8 @@ static NmcOutputField nmc_fields_con_show[] = {
 /* Helper macro to define fields */
 #define SETTING_FIELD(setting, props) { setting, N_(setting), 0, props, NULL, FALSE, FALSE, 0 }
 
-/* defined in settings.c */
-extern NmcOutputField nmc_fields_setting_connection[];
-extern NmcOutputField nmc_fields_setting_wired[];
-extern NmcOutputField nmc_fields_setting_8021X[];
-extern NmcOutputField nmc_fields_setting_wireless[];
-extern NmcOutputField nmc_fields_setting_wireless_security[];
-extern NmcOutputField nmc_fields_setting_ip4_config[];
-extern NmcOutputField nmc_fields_setting_ip6_config[];
-extern NmcOutputField nmc_fields_setting_serial[];
-extern NmcOutputField nmc_fields_setting_ppp[];
-extern NmcOutputField nmc_fields_setting_pppoe[];
-extern NmcOutputField nmc_fields_setting_adsl[];
-extern NmcOutputField nmc_fields_setting_gsm[];
-extern NmcOutputField nmc_fields_setting_cdma[];
-extern NmcOutputField nmc_fields_setting_bluetooth[];
-extern NmcOutputField nmc_fields_setting_olpc_mesh[];
-extern NmcOutputField nmc_fields_setting_vpn[];
-extern NmcOutputField nmc_fields_setting_wimax[];
-extern NmcOutputField nmc_fields_setting_infiniband[];
-extern NmcOutputField nmc_fields_setting_bond[];
-extern NmcOutputField nmc_fields_setting_vlan[];
-extern NmcOutputField nmc_fields_setting_bridge[];
-extern NmcOutputField nmc_fields_setting_bridge_port[];
-extern NmcOutputField nmc_fields_setting_team[];
-extern NmcOutputField nmc_fields_setting_team_port[];
-extern NmcOutputField nmc_fields_setting_dcb[];
-extern NmcOutputField nmc_fields_setting_tun[];
-extern NmcOutputField nmc_fields_setting_ip_tunnel[];
-extern NmcOutputField nmc_fields_setting_macvlan[];
-extern NmcOutputField nmc_fields_setting_vxlan[];
-
 /* Available settings for 'connection show <con>' - profile part */
-static NmcOutputField nmc_fields_settings_names[] = {
+NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME,        nmc_fields_setting_connection + 1),        /* 0 */
 	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME,             nmc_fields_setting_wired + 1),             /* 1 */
 	SETTING_FIELD (NM_SETTING_802_1X_SETTING_NAME,            nmc_fields_setting_8021X + 1),             /* 2 */
@@ -234,7 +203,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 
 /* Active connection data */
 /* Available fields for GENERAL group */
-static NmcOutputField nmc_fields_con_active_details_general[] = {
+NmcOutputField nmc_fields_con_active_details_general[] = {
 	{"GROUP",         N_("GROUP")},        /* 0 */
 	{"NAME",          N_("NAME")},         /* 1 */
 	{"UUID",          N_("UUID")},         /* 2 */
@@ -256,7 +225,7 @@ static NmcOutputField nmc_fields_con_active_details_general[] = {
 /* IP group is handled by common.c */
 
 /* Available fields for VPN group */
-static NmcOutputField nmc_fields_con_active_details_vpn[] = {
+NmcOutputField nmc_fields_con_active_details_vpn[] = {
 	{"GROUP",     N_("GROUP")},      /* 0 */
 	{"TYPE",      N_("TYPE")},       /* 1 */
 	{"USERNAME",  N_("USERNAME")},   /* 2 */
@@ -275,7 +244,7 @@ extern NmcOutputField nmc_fields_dhcp4_config[];
 extern NmcOutputField nmc_fields_dhcp6_config[];
 
 /* Available fields for 'connection show <con>' - active part */
-static NmcOutputField nmc_fields_con_active_details_groups[] = {
+NmcOutputField nmc_fields_con_active_details_groups[] = {
 	{"GENERAL",  N_("GENERAL"), 0, nmc_fields_con_active_details_general + 1},  /* 0 */
 	{"IP4",      N_("IP4"),     0, nmc_fields_ip4_config + 1                },  /* 1 */
 	{"DHCP4",    N_("DHCP4"),   0, nmc_fields_dhcp4_config + 1              },  /* 2 */

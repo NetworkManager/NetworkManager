@@ -41,6 +41,7 @@
 #include "devices.h"
 #include "general.h"
 #include "agent.h"
+#include "settings.h"
 
 #if defined(NM_DIST_VERSION)
 # define NMCLI_VERSION NM_DIST_VERSION
@@ -63,6 +64,105 @@ typedef struct {
 GMainLoop *loop = NULL;
 static sigset_t signal_set;
 struct termios termios_orig;
+
+static void
+complete_field (GHashTable *h, const char *setting, NmcOutputField field[])
+{
+	int i;
+
+	for (i = 0; field[i].name; i++) {
+		if (setting)
+			g_hash_table_add (h, g_strdup_printf ("%s.%s", setting, field[i].name));
+		else
+			g_hash_table_add (h, g_strdup (field[i].name));
+	}
+}
+
+static void
+complete_one (gpointer key, gpointer value, gpointer user_data)
+{
+	const char *prefix = user_data;
+	const char *name = key;
+	const char *last;
+
+	last = strrchr (prefix, ',');
+	if (last)
+		last++;
+	else
+		last = prefix;
+
+	if ((!*last && !strchr (name, '.')) || matches (last, name) == 0) {
+		g_print ("%.*s%s%s\n", (int)(last-prefix), prefix, name,
+		                       strcmp (last, name) == 0 ? "," : "");
+	}
+}
+
+static void
+complete_fields (const char *prefix)
+{
+
+	GHashTable *h;
+
+	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+	complete_field (h, NULL, nmc_fields_ip4_config);
+	complete_field (h, NULL, nmc_fields_dhcp4_config);
+	complete_field (h, NULL, nmc_fields_ip6_config);
+	complete_field (h, NULL, nmc_fields_dhcp6_config);
+	complete_field (h, NULL, nmc_fields_con_show);
+	complete_field (h, NULL, nmc_fields_settings_names);
+	complete_field (h, NULL, nmc_fields_con_active_details_general);
+	complete_field (h, NULL, nmc_fields_con_active_details_vpn);
+	complete_field (h, NULL, nmc_fields_con_active_details_groups);
+	complete_field (h, NULL, nmc_fields_dev_status);
+	complete_field (h, NULL, nmc_fields_dev_show_general);
+	complete_field (h, NULL, nmc_fields_dev_show_connections);
+	complete_field (h, NULL, nmc_fields_dev_show_cap);
+	complete_field (h, NULL, nmc_fields_dev_show_wired_prop);
+	complete_field (h, NULL, nmc_fields_dev_show_wifi_prop);
+	complete_field (h, NULL, nmc_fields_dev_show_wimax_prop);
+	complete_field (h, NULL, nmc_fields_dev_wifi_list);
+	complete_field (h, NULL, nmc_fields_dev_wimax_list);
+	complete_field (h, NULL, nmc_fields_dev_show_master_prop);
+	complete_field (h, NULL, nmc_fields_dev_show_team_prop);
+	complete_field (h, NULL, nmc_fields_dev_show_vlan_prop);
+	complete_field (h, NULL, nmc_fields_dev_show_bluetooth);
+	complete_field (h, NULL, nmc_fields_dev_show_sections);
+	complete_field (h, NULL, nmc_fields_dev_lldp_list);
+
+	complete_field (h, "connection", nmc_fields_setting_connection);
+	complete_field (h, "wired", nmc_fields_setting_wired);
+	complete_field (h, "8021X", nmc_fields_setting_8021X);
+	complete_field (h, "wireless", nmc_fields_setting_wireless);
+	complete_field (h, "wireless_security", nmc_fields_setting_wireless_security);
+	complete_field (h, "ip4-config", nmc_fields_setting_ip4_config);
+	complete_field (h, "ip6-config", nmc_fields_setting_ip6_config);
+	complete_field (h, "serial", nmc_fields_setting_serial);
+	complete_field (h, "ppp", nmc_fields_setting_ppp);
+	complete_field (h, "pppoe", nmc_fields_setting_pppoe);
+	complete_field (h, "adsl", nmc_fields_setting_adsl);
+	complete_field (h, "gsm", nmc_fields_setting_gsm);
+	complete_field (h, "cdma", nmc_fields_setting_cdma);
+	complete_field (h, "bluetooth", nmc_fields_setting_bluetooth);
+	complete_field (h, "olpc-mesh", nmc_fields_setting_olpc_mesh);
+	complete_field (h, "vpn", nmc_fields_setting_vpn);
+	complete_field (h, "wimax", nmc_fields_setting_wimax);
+	complete_field (h, "infiniband", nmc_fields_setting_infiniband);
+	complete_field (h, "bond", nmc_fields_setting_bond);
+	complete_field (h, "vlan", nmc_fields_setting_vlan);
+	complete_field (h, "bridge", nmc_fields_setting_bridge);
+	complete_field (h, "bridge-port", nmc_fields_setting_bridge_port);
+	complete_field (h, "team", nmc_fields_setting_team);
+	complete_field (h, "team0port", nmc_fields_setting_team_port);
+	complete_field (h, "dcb", nmc_fields_setting_dcb);
+	complete_field (h, "tun", nmc_fields_setting_tun);
+	complete_field (h, "ip-tunnel", nmc_fields_setting_ip_tunnel);
+	complete_field (h, "macvlan", nmc_fields_setting_macvlan);
+	complete_field (h, "vxlan", nmc_fields_setting_vxlan);
+
+	g_hash_table_foreach (h, complete_one, (gpointer) prefix);
+	g_hash_table_destroy (h);
+}
 
 
 /* Get an error quark for use with GError */
@@ -188,7 +288,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
 			if (matches (argv[0], "tabular") == 0)
 				nmc->multiline_output = FALSE;
 			else if (matches (argv[0], "multiline") == 0)
@@ -204,7 +305,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
 			if (matches (argv[0], "auto") == 0)
 				nmc->use_colors = NMC_USE_COLOR_AUTO;
 			else if (matches (argv[0], "yes") == 0)
@@ -222,7 +324,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			nmc_complete_strings (argv[0], "yes", "no", NULL);
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (argv[0], "yes", "no", NULL);
 			if (matches (argv[0], "yes") == 0)
 				nmc->escape_values = TRUE;
 			else if (matches (argv[0], "no") == 0)
@@ -238,6 +341,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
+			if (argc == 1 && nmc->complete)
+				complete_fields (argv[0]);
 			nmc->required_fields = g_strdup (argv[0]);
 		} else if (matches (opt, "-nocheck") == 0) {
 			/* ignore for backward compatibility */

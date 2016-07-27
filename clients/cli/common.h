@@ -86,4 +86,9 @@ void nmc_complete_strings (const char *prefix, ...) G_GNUC_NULL_TERMINATED;
 
 void nmc_complete_bool (const char *prefix);
 
+extern NmcOutputField nmc_fields_ip4_config[];
+extern NmcOutputField nmc_fields_dhcp4_config[];
+extern NmcOutputField nmc_fields_ip6_config[];
+extern NmcOutputField nmc_fields_dhcp6_config[];
+
 #endif /* NMC_COMMON_H */
