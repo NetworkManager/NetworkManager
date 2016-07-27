@@ -140,6 +140,12 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		if (opt[0] != '-')
 			break;
 
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (opt, "--terse", "--pretty", "--mode", "--colors", "--escape",
+			                           "--fields", "--nocheck", "--ask", "--show-secrets",
+			                           "--wait", "--version", "--help", NULL);
+		}
+
 		if (opt[1] == '-') {
 			opt++;
 			/* '--' ends options */
@@ -182,6 +188,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
+			nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
 			if (matches (argv[0], "tabular") == 0)
 				nmc->multiline_output = FALSE;
 			else if (matches (argv[0], "multiline") == 0)
@@ -197,6 +204,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
+			nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
 			if (matches (argv[0], "auto") == 0)
 				nmc->use_colors = NMC_USE_COLOR_AUTO;
 			else if (matches (argv[0], "yes") == 0)
@@ -214,6 +222,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
+			nmc_complete_strings (argv[0], "yes", "no", NULL);
 			if (matches (argv[0], "yes") == 0)
 				nmc->escape_values = TRUE;
 			else if (matches (argv[0], "no") == 0)
