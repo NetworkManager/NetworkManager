@@ -132,18 +132,23 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		argv[1] = argv[0];
 		argc--; argv++;
 	}
+	argc--; argv++;
+
 	/* parse options */
-	while (argc > 1) {
-		char *opt = argv[1];
-		/* '--' ends options */
-		if (strcmp (opt, "--") == 0) {
-			argc--; argv++;
-			break;
-		}
+	while (argc) {
+		char *opt = argv[0];
 		if (opt[0] != '-')
 			break;
-		if (opt[1] == '-')
+
+		if (opt[1] == '-') {
 			opt++;
+			/* '--' ends options */
+			if (opt[1] == '\0') {
+				argc--; argv++;
+				break;
+			}
+		}
+
 		if (matches (opt, "-terse") == 0) {
 			if (nmc->print_output == NMC_PRINT_TERSE) {
 				g_string_printf (nmc->return_text, _("Error: Option '--terse' is specified the second time."));
@@ -172,63 +177,59 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->print_output = NMC_PRINT_PRETTY;
 		} else if (matches (opt, "-mode") == 0) {
 			nmc->mode_specified = TRUE;
-			next_arg (&argc, &argv);
-			if (argc <= 1) {
+			if (next_arg (&argc, &argv) != 0) {
 		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			if (matches (argv[1], "tabular") == 0)
+			if (matches (argv[0], "tabular") == 0)
 				nmc->multiline_output = FALSE;
-			else if (matches (argv[1], "multiline") == 0)
+			else if (matches (argv[0], "multiline") == 0)
 				nmc->multiline_output = TRUE;
 			else {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-colors") == 0) {
-			next_arg (&argc, &argv);
-			if (argc <= 1) {
+			if (next_arg (&argc, &argv) != 0) {
 		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			if (matches (argv[1], "auto") == 0)
+			if (matches (argv[0], "auto") == 0)
 				nmc->use_colors = NMC_USE_COLOR_AUTO;
-			else if (matches (argv[1], "yes") == 0)
+			else if (matches (argv[0], "yes") == 0)
 				nmc->use_colors = NMC_USE_COLOR_YES;
-			else if (matches (argv[1], "no") == 0)
+			else if (matches (argv[0], "no") == 0)
 				nmc->use_colors = NMC_USE_COLOR_NO;
 			else {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-escape") == 0) {
-			next_arg (&argc, &argv);
-			if (argc <= 1) {
+			if (next_arg (&argc, &argv) != 0) {
 		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			if (matches (argv[1], "yes") == 0)
+			if (matches (argv[0], "yes") == 0)
 				nmc->escape_values = TRUE;
-			else if (matches (argv[1], "no") == 0)
+			else if (matches (argv[0], "no") == 0)
 				nmc->escape_values = FALSE;
 			else {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-fields") == 0) {
-			next_arg (&argc, &argv);
-			if (argc <= 1) {
+			if (next_arg (&argc, &argv) != 0) {
 		 		g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			nmc->required_fields = g_strdup (argv[1]);
+			nmc->required_fields = g_strdup (argv[0]);
 		} else if (matches (opt, "-nocheck") == 0) {
 			/* ignore for backward compatibility */
 		} else if (matches (opt, "-ask") == 0) {
@@ -237,24 +238,25 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			nmc->show_secrets = TRUE;
 		} else if (matches (opt, "-wait") == 0) {
 			unsigned long timeout;
-			next_arg (&argc, &argv);
-			if (argc <= 1) {
+			if (next_arg (&argc, &argv) != 0) {
 		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			if (!nmc_string_to_uint (argv[1], TRUE, 0, G_MAXINT, &timeout)) {
+			if (!nmc_string_to_uint (argv[0], TRUE, 0, G_MAXINT, &timeout)) {
 		 		g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout for '%s' option."),
-				                 argv[1], opt);
+				                 argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			nmc->timeout = (int) timeout;
 		} else if (matches (opt, "-version") == 0) {
-			g_print (_("nmcli tool, version %s\n"), NMCLI_VERSION);
+			if (!nmc->complete)
+				g_print (_("nmcli tool, version %s\n"), NMCLI_VERSION);
 			return NMC_RESULT_SUCCESS;
 		} else if (matches (opt, "-help") == 0) {
-			usage ();
+			if (!nmc->complete)
+				usage ();
 			return NMC_RESULT_SUCCESS;
 		} else {
 			g_string_printf (nmc->return_text, _("Error: Option '%s' is unknown, try 'nmcli -help'."), opt);
@@ -266,7 +268,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Now run the requested command */
-	return nmc_do_cmd (nmc, nmcli_cmds, argv[1], argc-1, argv+1);
+	return nmc_do_cmd (nmc, nmcli_cmds, *argv, argc, argv);
 }
 
 static gboolean nmcli_sigint = FALSE;
