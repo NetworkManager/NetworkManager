@@ -2193,8 +2193,11 @@ progress_vpn_cb (gpointer user_data)
 static void
 activate_connection_info_finish (ActivateConnectionInfo *info)
 {
-	if (info->device)
+	if (info->device) {
 		g_signal_handlers_disconnect_by_func (info->device, G_CALLBACK (device_state_cb), info);
+		g_object_unref (info->device);
+	}
+
 	if (info->active) {
 		if (NM_IS_VPN_CONNECTION (info->active))
 			g_signal_handlers_disconnect_by_func (info->active, G_CALLBACK (vpn_connection_state_cb), info);
@@ -2233,7 +2236,9 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 		if (!device) {
 			/* device could be NULL for virtual devices. Fill it here. */
 			ac_devs = nm_active_connection_get_devices (active);
-			info->device = device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+			device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+			if (device)
+				info->device = g_object_ref (device);
 		}
 
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
@@ -2430,7 +2435,8 @@ nmc_activate_connection (NmCli *nmc,
 
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
-	info->device = device;
+	if (device)
+		info->device = g_object_ref (device);
 
 	nm_client_activate_connection_async (nmc->client,
 	                                     connection,
