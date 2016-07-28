@@ -401,7 +401,8 @@ else
 	AC_DEFINE([SYSTEMD_JOURNAL], 0, [Define to 1 if libsystemd-journald is available])
 fi
 
-AC_ARG_WITH(config-logging-backend-default, AS_HELP_STRING([--with-logging-backend-default=backend], [Default value for logging.backend]), nm_config_logging_backend_default="$withval", nm_config_logging_backend_default="")
+AC_ARG_WITH(config-logging-backend-default, AS_HELP_STRING([--with-config-logging-backend-default=backend], [Default value for logging.backend]), nm_config_logging_backend_default="$withval", nm_config_logging_backend_default="")
+
 if test "$nm_config_logging_backend_default" != 'debug' \
      -a "$nm_config_logging_backend_default" != 'syslog' \
      -a "$nm_config_logging_backend_default" != 'journal' \
