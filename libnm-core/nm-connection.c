@@ -907,6 +907,38 @@ _normalize_wireless_mac_address_randomization (NMConnection *self, GHashTable *p
 	return FALSE;
 }
 
+static gboolean
+_normalize_team_config (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingTeam *s_team = nm_connection_get_setting_team (self);
+
+	if (s_team) {
+		const char *config = nm_setting_team_get_config (s_team);
+
+		if (config && !*config) {
+			g_object_set (s_team, NM_SETTING_TEAM_CONFIG, NULL, NULL);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+_normalize_team_port_config (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingTeamPort *s_team_port = nm_connection_get_setting_team_port (self);
+
+	if (s_team_port) {
+		const char *config = nm_setting_team_port_get_config (s_team_port);
+
+		if (config && !*config) {
+			g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, NULL, NULL);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -1150,6 +1182,8 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 	was_modified |= _normalize_bond_mode (connection, parameters);
 	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
+	was_modified |= _normalize_team_config (connection, parameters);
+	was_modified |= _normalize_team_port_config (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
