@@ -94,7 +94,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                "%s.%s: ",
 			                NM_SETTING_TEAM_SETTING_NAME,
 			                NM_SETTING_TEAM_CONFIG);
-			return FALSE;
+			/* We treat an empty string as no config for compatibility. */
+			return *priv->config ? FALSE : NM_SETTING_VERIFY_NORMALIZABLE;
 		}
 	}
 

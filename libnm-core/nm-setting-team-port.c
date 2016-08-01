@@ -87,16 +87,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
 
-	if (priv->config) {
-		if (!_nm_utils_check_valid_json (priv->config, error)) {
-			g_prefix_error (error,
-			                "%s.%s: ",
-			                NM_SETTING_TEAM_PORT_SETTING_NAME,
-			                NM_SETTING_TEAM_PORT_CONFIG);
-			return FALSE;
-		}
-	}
-
 	if (connection) {
 		NMSettingConnection *s_con;
 		const char *slave_type;
@@ -125,6 +115,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			return FALSE;
 		}
 	}
+
+	if (priv->config) {
+		if (!_nm_utils_check_valid_json (priv->config, error)) {
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_TEAM_PORT_SETTING_NAME,
+			                NM_SETTING_TEAM_PORT_CONFIG);
+			/* We treat an empty string as no config for compatibility. */
+			return *priv->config ? FALSE : NM_SETTING_VERIFY_NORMALIZABLE;
+		}
+	}
+
 	return TRUE;
 }
 
