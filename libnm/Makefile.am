@@ -137,6 +137,7 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\
 libnm_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(top_builddir)/introspection/libnmdbus.la \
+	$(LIBDL) \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
 	$(GUDEV_LIBS)
