@@ -5144,16 +5144,21 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	char *op, *checkpoint_path, **devices;
+	char *op, *checkpoint_path = NULL, **devices;
 	NMCheckpoint *checkpoint;
 	NMAuthCallResult result;
 	guint32 timeout, flags;
 	GVariant *variant = NULL;
 	GError *error = NULL;
+	const char *arg = NULL;
 
-	op = nm_auth_chain_get_data (chain, "op");
+	op = nm_auth_chain_get_data (chain, "audit-op");
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
+
+	if (   nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_DESTROY)
+	    || nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_ROLLBACK))
+		arg = checkpoint_path = nm_auth_chain_get_data (chain, "checkpoint_path");
 
 	if (auth_error) {
 		error = g_error_new (NM_MANAGER_ERROR,
@@ -5165,7 +5170,7 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to checkpoint/rollback");
 	} else {
-		if (nm_streq0 (op, "create")) {
+		if (nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_CREATE)) {
 			timeout = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "timeout"));
 			flags = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "flags"));
 			devices = nm_auth_chain_get_data (chain, "devices");
@@ -5176,27 +5181,27 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 			                                           (NMCheckpointCreateFlags) flags,
 			                                           &error);
 			if (checkpoint) {
-				NMExportedObject *exported;
-
-				exported = NM_EXPORTED_OBJECT (checkpoint);
-				variant = g_variant_new ("(o)", nm_exported_object_get_path (exported));
+				arg = nm_exported_object_get_path (NM_EXPORTED_OBJECT (checkpoint));
+				variant = g_variant_new ("(o)", arg);
 			}
-		} else if (nm_streq0 (op, "destroy")) {
-			checkpoint_path = nm_auth_chain_get_data (chain, "checkpoint_path");
+		} else if (nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_DESTROY)) {
 			nm_checkpoint_manager_destroy (_checkpoint_mgr_get (self, TRUE),
 			                               checkpoint_path, &error);
-		} else if (nm_streq0 (op, "rollback")) {
-			checkpoint_path = nm_auth_chain_get_data (chain, "checkpoint_path");
+		} else if (nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_ROLLBACK)) {
 			nm_checkpoint_manager_rollback (_checkpoint_mgr_get (self, TRUE),
 			                                checkpoint_path, &variant, &error);
 		} else
 			g_return_if_reached ();
 	}
 
+	nm_audit_log_checkpoint_op (op, arg ?: "", !error, nm_auth_chain_get_subject (chain),
+	                            error ? error->message : NULL);
+
 	if (error)
 		g_dbus_method_invocation_take_error (context, error);
 	else
 		g_dbus_method_invocation_return_value (context, variant);
+
 
 	nm_auth_chain_unref (chain);
 }
@@ -5226,7 +5231,7 @@ impl_manager_checkpoint_create (NMManager *self,
 	}
 
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-	nm_auth_chain_set_data (chain, "op", "create", NULL);
+	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_CREATE, NULL);
 	nm_auth_chain_set_data (chain, "devices", g_strdupv ((char **) devices), (GDestroyNotify) g_strfreev);
 	nm_auth_chain_set_data (chain, "flags",  GUINT_TO_POINTER (flags), NULL);
 	nm_auth_chain_set_data (chain, "timeout", GUINT_TO_POINTER (rollback_timeout), NULL);
@@ -5255,7 +5260,7 @@ impl_manager_checkpoint_destroy (NMManager *self,
 	}
 
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-	nm_auth_chain_set_data (chain, "op", "destroy", NULL);
+	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_DESTROY, NULL);
 	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
 }
@@ -5282,7 +5287,7 @@ impl_manager_checkpoint_rollback (NMManager *self,
 	}
 
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-	nm_auth_chain_set_data (chain, "op", "rollback", NULL);
+	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_ROLLBACK, NULL);
 	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
 }

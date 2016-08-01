@@ -261,7 +261,7 @@ _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, gui
 }
 
 void
-_nm_audit_manager_log_control_op (NMAuditManager *self, const char *file, guint line,
+_nm_audit_manager_log_generic_op (NMAuditManager *self, const char *file, guint line,
                                   const char *func, const char *op, const char *arg,
                                   gboolean result, gpointer subject_context,
                                   const char *reason)
