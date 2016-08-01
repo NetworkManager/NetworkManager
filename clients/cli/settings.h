@@ -63,4 +63,34 @@ gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *
 
 gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
 
+extern NmcOutputField nmc_fields_setting_connection[];
+extern NmcOutputField nmc_fields_setting_wired[];
+extern NmcOutputField nmc_fields_setting_8021X[];
+extern NmcOutputField nmc_fields_setting_wireless[];
+extern NmcOutputField nmc_fields_setting_wireless_security[];
+extern NmcOutputField nmc_fields_setting_ip4_config[];
+extern NmcOutputField nmc_fields_setting_ip6_config[];
+extern NmcOutputField nmc_fields_setting_serial[];
+extern NmcOutputField nmc_fields_setting_ppp[];
+extern NmcOutputField nmc_fields_setting_pppoe[];
+extern NmcOutputField nmc_fields_setting_adsl[];
+extern NmcOutputField nmc_fields_setting_gsm[];
+extern NmcOutputField nmc_fields_setting_cdma[];
+extern NmcOutputField nmc_fields_setting_bluetooth[];
+extern NmcOutputField nmc_fields_setting_olpc_mesh[];
+extern NmcOutputField nmc_fields_setting_vpn[];
+extern NmcOutputField nmc_fields_setting_wimax[];
+extern NmcOutputField nmc_fields_setting_infiniband[];
+extern NmcOutputField nmc_fields_setting_bond[];
+extern NmcOutputField nmc_fields_setting_vlan[];
+extern NmcOutputField nmc_fields_setting_bridge[];
+extern NmcOutputField nmc_fields_setting_bridge_port[];
+extern NmcOutputField nmc_fields_setting_team[];
+extern NmcOutputField nmc_fields_setting_team_port[];
+extern NmcOutputField nmc_fields_setting_dcb[];
+extern NmcOutputField nmc_fields_setting_tun[];
+extern NmcOutputField nmc_fields_setting_ip_tunnel[];
+extern NmcOutputField nmc_fields_setting_macvlan[];
+extern NmcOutputField nmc_fields_setting_vxlan[];
+
 #endif /* NMC_SETTINGS_H */

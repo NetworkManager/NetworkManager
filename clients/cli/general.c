@@ -24,6 +24,7 @@
 
 #include "polkit-agent.h"
 #include "utils.h"
+#include "common.h"
 #include "general.h"
 #include "common.h"
 #include "nm-common-macros.h"
@@ -389,6 +390,23 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	return TRUE;
 }
 
+static NMCResultCode
+do_general_status (NmCli *nmc, int argc, char **argv)
+{
+	gs_free_error GError *error = NULL;
+
+        if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+                g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+                return NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	if (nmc->complete)
+		return nmc->return_value;
+
+	show_nm_status (nmc, NULL, NULL);
+	return nmc->return_value;
+}
+
 static const char *
 permission_to_string (NMClientPermission perm)
 {
@@ -493,6 +511,23 @@ show_nm_permissions (NmCli *nmc)
 	return TRUE;
 }
 
+static NMCResultCode
+do_general_permissions (NmCli *nmc, int argc, char **argv)
+{
+	gs_free_error GError *error = NULL;
+
+        if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+                g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+                return NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	if (nmc->complete)
+		return nmc->return_value;
+
+	show_nm_permissions (nmc);
+	return nmc->return_value;
+}
+
 static gboolean
 show_general_logging (NmCli *nmc)
 {
@@ -546,6 +581,51 @@ show_general_logging (NmCli *nmc)
 	return TRUE;
 }
 
+static NMCResultCode
+do_general_logging (NmCli *nmc, int argc, char **argv)
+{
+	gs_free_error GError *error = NULL;
+
+	if (argc == 0) {
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			g_error_free (error);
+			return NMC_RESULT_ERROR_USER_INPUT;
+		}
+
+		if (nmc->complete)
+			return nmc->return_value;
+
+		show_general_logging (nmc);
+	} else {
+		/* arguments provided -> set logging level and domains */
+		const char *level = NULL;
+		const char *domains = NULL;
+		nmc_arg_t exp_args[] = { {"level",   TRUE, &level,   TRUE},
+		                         {"domains", TRUE, &domains, TRUE},
+		                         {NULL} };
+
+		/* TODO: nmc_parse_args needs completion */
+		if (nmc->complete)
+			return nmc->return_value;
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
+			g_string_assign (nmc->return_text, error->message);
+			return error->code;
+		}
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_set_logging (nmc->client, level, domains, &error);
+		if (error) {
+			g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
+			                 error->message);
+			return NMC_RESULT_ERROR_UNKNOWN;
+		}
+	}
+
+	return nmc->return_value;
+}
+
 static void
 save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
@@ -562,129 +642,55 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	quit ();
 }
 
+static NMCResultCode
+do_general_hostname (NmCli *nmc, int argc, char **argv)
+{
+	if (nmc->complete)
+		return nmc->return_value;
+
+	if (argc == 0) {
+		/* no arguments -> get hostname */
+		char *hostname = NULL;
+
+		nmc->get_client (nmc); /* create NMClient */
+		g_object_get (nmc->client, NM_CLIENT_HOSTNAME, &hostname, NULL);
+		if (hostname)
+			g_print ("%s\n", hostname);
+		g_free (hostname);
+	} else {
+		/* hostname provided -> set it */
+		const char *hostname = *argv;
+
+		if (next_arg (&argc, &argv) == 0)
+			g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
+
+		nmc->should_wait++;
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_save_hostname_async (nmc->client, hostname, NULL, save_hostname_cb, nmc);
+	}
+
+	return nmc->return_value;
+
+}
+
+static const NMCCommand general_cmds[] = {
+	{"status",       do_general_status,       usage_general_status },
+	{"hostname",     do_general_hostname,     usage_general_hostname },
+	{"permissions",  do_general_permissions,  usage_general_permissions },
+	{"logging",      do_general_logging,      usage_general_logging },
+	{NULL,           do_general_status,       usage_general }
+};
+
 /*
  * Entry point function for general operations 'nmcli general'
  */
 NMCResultCode
 do_general (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-		show_nm_status (nmc, NULL, NULL);
-	}
-
-	if (argc > 0) {
-		if (nmc_arg_is_help (*argv)) {
-			usage_general ();
-		}
-		else if (matches (*argv, "status") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_general_status ();
-				goto finish;
-			}
-			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
-			}
-			show_nm_status (nmc, NULL, NULL);
-		}
-		else if (matches (*argv, "hostname") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_general_hostname ();
-				goto finish;
-			}
-
-			if (next_arg (&argc, &argv) != 0) {
-				/* no arguments -> get hostname */
-				char *hostname = NULL;
-
-				nmc->get_client (nmc); /* create NMClient */
-				g_object_get (nmc->client, NM_CLIENT_HOSTNAME, &hostname, NULL);
-				if (hostname)
-					g_print ("%s\n", hostname);
-				g_free (hostname);
-			} else {
-				/* hostname provided -> set it */
-				const char *hostname = *argv;
-
-				if (next_arg (&argc, &argv) == 0)
-					g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
-
-				nmc->should_wait++;
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_save_hostname_async (nmc->client, hostname, NULL, save_hostname_cb, nmc);
-			}
-		}
-		else if (matches (*argv, "permissions") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_general_permissions ();
-				goto finish;
-			}
-			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
-			}
-			show_nm_permissions (nmc);
-		}
-		else if (matches (*argv, "logging") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_general_logging ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no arguments -> get logging level and domains */
-				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					goto finish;
-				}
-				show_general_logging (nmc);
-			} else {
-				/* arguments provided -> set logging level and domains */
-				const char *level = NULL;
-				const char *domains = NULL;
-				nmc_arg_t exp_args[] = { {"level",   TRUE, &level,   TRUE},
-				                         {"domains", TRUE, &domains, TRUE},
-				                         {NULL} };
-
-				if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
-					g_string_assign (nmc->return_text, error->message);
-					nmc->return_value = error->code;
-					goto finish;
-				}
-
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_set_logging (nmc->client, level, domains, &error);
-				if (error) {
-					g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
-					                 error->message);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-					goto finish;
-				}
-			}
-		}
-		else {
-			usage_general ();
-			g_string_printf (nmc->return_text, _("Error: 'general' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-finish:
-	if (error)
-		g_error_free (error);
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, general_cmds, *argv, argc, argv);
 }
 
 static gboolean
@@ -744,12 +750,28 @@ do_networking (NmCli *nmc, int argc, char **argv)
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	if (argc == 0)
+	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
 		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
-	else if (argc > 0) {
+	} else if (argc > 0) {
+
+		if (argc == 1 && nmc->complete) {
+			nmc_complete_strings (*argv, "connectivity", NULL);
+			nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
+
 		if (nmc_arg_is_help (*argv)) {
+			if (nmc->complete)
+				return nmc->return_value;
 			usage_networking ();
 		} else if (matches (*argv, "connectivity") == 0) {
+			if (nmc->complete) {
+				if (argc == 2)
+					nmc_complete_strings (*(argv+1), "check", NULL);
+				return nmc->return_value;
+			}
 			if (nmc_arg_is_help (*(argv+1))) {
 				usage_networking_connectivity ();
 				goto finish;
@@ -774,6 +796,8 @@ do_networking (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			}
 		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
+			if (nmc->complete)
+				return nmc->return_value;
 			if (nmc_arg_is_help (*(argv+1))) {
 				if (enable_flag)
 					usage_networking_on ();
@@ -785,6 +809,8 @@ do_networking (NmCli *nmc, int argc, char **argv)
 			nmc->get_client (nmc); /* create NMClient */
 			nm_client_networking_set_enabled (nmc->client, enable_flag, NULL);
 		} else {
+			if (nmc->complete)
+				return nmc->return_value;
 			usage_networking ();
 			g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -796,98 +822,112 @@ finish:
 	return nmc->return_value;
 }
 
+static NMCResultCode
+do_radio_all (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+	gs_free_error GError *error = NULL;
+
+	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
+
+		/* no argument, show all radio switches */
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			return NMC_RESULT_ERROR_USER_INPUT;
+		}
+		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
+	} else {
+		if (nmc->complete) {
+			if (argc == 1)
+				nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
+
+		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+			return nmc->return_value;
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_wireless_set_enabled (nmc->client, enable_flag);
+		nm_client_wimax_set_enabled (nmc->client, enable_flag);
+		nm_client_wwan_set_enabled (nmc->client, enable_flag);
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
+do_radio_wifi (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+
+	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
+
+		/* no argument, show current WiFi state */
+		nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
+	} else {
+		if (nmc->complete) {
+			if (argc == 1)
+				nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
+		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+			return nmc->return_value;
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_wireless_set_enabled (nmc->client, enable_flag);
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
+do_radio_wwan (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+
+	if (argc == 0) {
+		if (nmc->complete)
+			return nmc->return_value;
+
+		/* no argument, show current WWAN (mobile broadband) state */
+		nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
+	} else {
+		if (nmc->complete) {
+			if (argc == 1)
+				nmc_complete_bool (*argv);
+			return nmc->return_value;
+		}
+		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+			return nmc->return_value;
+
+		nmc->get_client (nmc); /* create NMClient */
+		nm_client_wwan_set_enabled (nmc->client, enable_flag);
+	}
+
+	return nmc->return_value;
+}
+
+static const NMCCommand radio_cmds[] = {
+	{"all",   do_radio_all,   usage_radio_all },
+	{"wifi",  do_radio_wifi,  usage_radio_wifi },
+	{"wwan",  do_radio_wwan,  usage_radio_wwan },
+	{NULL,    do_radio_all,   usage_radio }
+};
+
 /*
  * Entry point function for radio switch commands 'nmcli radio'
  */
 NMCResultCode
 do_radio (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-	gboolean enable_flag;
-
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			g_error_free (error);
-			goto finish;
-		}
-		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
-	}
-
-	if (argc > 0) {
-		if (nmc_arg_is_help (*argv)) {
-			usage_radio ();
-		}
-		else if (matches (*argv, "all") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_all ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show all radio switches */
-				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					g_error_free (error);
-					goto finish;
-				}
-				show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wireless_set_enabled (nmc->client, enable_flag);
-				nm_client_wimax_set_enabled (nmc->client, enable_flag);
-				nm_client_wwan_set_enabled (nmc->client, enable_flag);
-			}
-		}
-		else if (matches (*argv, "wifi") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_wifi ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current WiFi state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-				
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wireless_set_enabled (nmc->client, enable_flag);
-			}
-		}
-		else if (matches (*argv, "wwan") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_wwan ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current WWAN (mobile broadband) state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wwan_set_enabled (nmc->client, enable_flag);
-			}
-		}
-		else {
-			usage_radio ();
-			g_string_printf (nmc->return_text, _("Error: 'radio' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
-	}
-
-finish:
-	quit ();
-	return nmc->return_value;
+	return nmc_do_cmd (nmc, radio_cmds, *argv, argc, argv);
 }
 
 static void
@@ -1181,6 +1221,9 @@ do_overview (NmCli *nmc, int argc, char **argv)
 NMCResultCode
 do_monitor (NmCli *nmc, int argc, char **argv)
 {
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (argc > 0) {
 		if (!nmc_arg_is_help (*argv)) {
 			g_string_printf (nmc->return_text, _("Error: 'monitor' command '%s' is not valid."), *argv);

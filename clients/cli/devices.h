@@ -24,10 +24,30 @@
 
 NMCResultCode do_devices (NmCli *nmc, int argc, char **argv);
 
+void nmc_complete_device (NMClient *client, const char *prefix, gboolean wifi_only);
+
+void nmc_complete_bssid (NMClient *client, const char *ifname, const char *bssid_prefix);
+
 void monitor_devices (NmCli *nmc);
 
 NMDevice ** nmc_get_devices_sorted (NMClient *client);
 
 void nmc_device_state_to_color (NMDeviceState state, NmcTermColor *color, NmcTermFormat *color_fmt);
+
+extern NmcOutputField nmc_fields_dev_status[];
+extern NmcOutputField nmc_fields_dev_show_general[];
+extern NmcOutputField nmc_fields_dev_show_connections[];
+extern NmcOutputField nmc_fields_dev_show_cap[];
+extern NmcOutputField nmc_fields_dev_show_wired_prop[];
+extern NmcOutputField nmc_fields_dev_show_wifi_prop[];
+extern NmcOutputField nmc_fields_dev_show_wimax_prop[];
+extern NmcOutputField nmc_fields_dev_wifi_list[];
+extern NmcOutputField nmc_fields_dev_wimax_list[];
+extern NmcOutputField nmc_fields_dev_show_master_prop[];
+extern NmcOutputField nmc_fields_dev_show_team_prop[];
+extern NmcOutputField nmc_fields_dev_show_vlan_prop[];
+extern NmcOutputField nmc_fields_dev_show_bluetooth[];
+extern NmcOutputField nmc_fields_dev_show_sections[];
+extern NmcOutputField nmc_fields_dev_lldp_list[];
 
 #endif /* NMC_DEVICES_H */

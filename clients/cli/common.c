@@ -872,6 +872,7 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
  * @filter_val: connection to find (connection name, UUID or path)
  * @start: where to start in @list. The location is updated so that the function
  *   can be called multiple times (for connections with the same name).
+ * @complete: print possible completions
  *
  * Find a connection in @list according to @filter_val. @filter_type determines
  * what property is used for comparison. When @filter_type is NULL, compare
@@ -885,7 +886,8 @@ NMConnection *
 nmc_find_connection (const GPtrArray *connections,
                      const char *filter_type,
                      const char *filter_val,
-                     int *start)
+                     int *start,
+                     gboolean complete)
 {
 	NMConnection *connection;
 	NMConnection *found = NULL;
@@ -907,20 +909,36 @@ nmc_find_connection (const GPtrArray *connections,
 		 * type. If 'path' filter type is specified, comparison against
 		 * numeric index (in addition to the whole path) is allowed.
 		 */
-		if (   (   (!filter_type || strcmp (filter_type, "id")  == 0)
-		        && strcmp (filter_val, id) == 0)
-		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
-		        && strcmp (filter_val, uuid) == 0)
-		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
-		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))) {
-			if (!start)
-				return connection;
-			if (found) {
-				*start = i;
-				return found;
-			}
-			found = connection;
+		if (!filter_type || strcmp (filter_type, "id")  == 0) {
+			if (complete)
+				nmc_complete_strings (filter_val, id, NULL);
+			if (strcmp (filter_val, id) == 0)
+				goto found;
 		}
+
+		if (!filter_type || strcmp (filter_type, "uuid") == 0) {
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, uuid, NULL);
+			if (strcmp (filter_val, uuid) == 0)
+				goto found;
+		}
+
+		if (!filter_type || strcmp (filter_type, "path") == 0) {
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, path, filter_type ? path_num : NULL, NULL);
+		        if (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))
+				goto found;
+		}
+
+		continue;
+found:
+		if (!start)
+			return connection;
+		if (found) {
+			*start = i;
+			return found;
+		}
+		found = connection;
 	}
 
 	if (start)
@@ -1096,7 +1114,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		p = strrchr (path, '/');
 		if (p)
 			*p = '\0';
-		connection = nmc_find_connection (nmc->connections, "path", path, NULL);
+		connection = nmc_find_connection (nmc->connections, "path", path, NULL, FALSE);
 		g_free (path);
 	}
 
@@ -1416,6 +1434,9 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 {
 	const NMCCommand *c;
 
+	if (argc == 0 && nmc->complete)
+		return nmc->return_value;
+
 	if (argc == 1 && nmc->complete) {
 		for (c = cmds; c->cmd; ++c) {
 			if (!*cmd || matches (cmd, c->cmd) == 0)
@@ -1445,7 +1466,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 		}
 	} else if (c->func) {
 		/* No command, run the default handler. */
-		nmc->return_value = c->func (nmc, argc-1, argv+1);
+		nmc->return_value = c->func (nmc, argc, argv);
 	} else {
 		/* No command and no default handler. */
 		g_string_printf (nmc->return_text, _("Error: missing argument. Try passing --help."));

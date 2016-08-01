@@ -278,6 +278,23 @@
 
       <varlistentry>
         <term><group choice='plain'>
+          <arg choice='plain'><option>--complete-args</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Instead of conducting the desired action, <command>nmcli</command>
+          will list possible completions for the last argument. This is useful to implement
+          argument completion in shell.</para>
+
+          <para>The <link linkend='exit_status'>exit status</link> will indicate success
+          or return a code 65 to indicate the last argument is a file name.</para>
+
+          <para>NetworkManager ships with command completion support for GNU Bash.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
           <arg choice='plain'><option>-v</option></arg>
           <arg choice='plain'><option>--version</option></arg>
         </group></term>
@@ -2087,6 +2104,13 @@ It's equivalent of using <literal>+ipv6.addresses</literal> syntax.</entry>
         <term><errorcode>10</errorcode></term>
         <listitem>
           <para>Connection, device, or access point does not exist.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><errorcode>65</errorcode></term>
+        <listitem>
+          <para>When used with <option>--complete-args</option> option, a file name is expected to follow.</para>
         </listitem>
       </varlistentry>
     </variablelist>

@@ -3247,8 +3247,7 @@ nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, c
 			continue;
 
 		if (nm_utils_is_uuid (*iter)) {
-			con = nmc_find_connection (nm_cli.connections,
-			                           "uuid", *iter, NULL);
+			con = nmc_find_connection (nm_cli.connections, "uuid", *iter, NULL, FALSE);
 			if (!con)
 				g_print (_("Warning: %s is not an UUID of any existing connection profile\n"), *iter);
 			else {
@@ -3260,8 +3259,7 @@ nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, c
 				}
 			}
 		} else {
-			con = nmc_find_connection (nm_cli.connections,
-			                           "id", *iter, NULL);
+			con = nmc_find_connection (nm_cli.connections, "id", *iter, NULL, FALSE);
 			if (!con) {
 				g_set_error (error, 1, 0, _("'%s' is not a name of any exiting profile"), *iter);
 				g_strfreev (strv);
