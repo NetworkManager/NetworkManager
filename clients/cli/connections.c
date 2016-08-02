@@ -1698,7 +1698,11 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 		             _("unknown connection '%s'"), **argv);
 	}
 
-	next_arg (argc, argv);
+	/* If the caller wants multiple results (pos is set) and there are any,
+	 * don't switch to next argument.
+	 */
+	if (!pos || !*pos)
+		next_arg (argc, argv);
 
 	return connection;
 }
@@ -8192,10 +8196,6 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 				invalid_cons = g_string_new (NULL);
 			g_string_append_printf (invalid_cons, "'%s', ", *arg_ptr);
 		}
-
-		/* Take next argument (if there's no other connection of the same name) */
-		if (!pos)
-			next_arg (&arg_num, &arg_ptr);
 	}
 
 	if (!queue) {
@@ -8310,9 +8310,6 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 				g_string_printf (nmc->return_text, _("Error: not all connections found."));
 				return error->code;
 			}
-			/* Take next argument (if there's no other connection of the same name) */
-			if (!pos)
-				next_arg (&argc, &argv);
 
 			if (nmc->complete)
 				continue;
