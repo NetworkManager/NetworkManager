@@ -8145,7 +8145,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	NMConnection *connection;
 	ConnectionCbInfo *info = NULL;
 	GSList *queue = NULL, *iter;
-	char **arg_arr = NULL;
+	char **arg_arr = NULL, *old_arg;
 	char **arg_ptr = argv;
 	int arg_num = argc;
 	GString *invalid_cons = NULL;
@@ -8175,6 +8175,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	}
 
 	while (arg_num > 0) {
+		old_arg = *arg_ptr;
 		connection = get_connection (nmc, &arg_num, &arg_ptr, &pos, &error);
 		if (connection) {
 			/* Check if the connection is unique. */
@@ -8194,7 +8195,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 
 			if (!invalid_cons)
 				invalid_cons = g_string_new (NULL);
-			g_string_append_printf (invalid_cons, "'%s', ", *arg_ptr);
+			g_string_append_printf (invalid_cons, "'%s', ", old_arg);
 		}
 	}
 
