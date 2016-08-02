@@ -1,4 +1,55 @@
 ============================================
+NetworkManager-1.4
+Overview of changes since NetworkManager-1.2
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The MAC address assigned to a device can now be set according to
+    different policies: preserve, permanent, random, stable
+* NetworkManager now waits for IPv6 DAD to terminate before completing
+    the activation
+* Added support for setting IPv6 tokenized interface identifiers
+    through the 'ipv6.token' connection property
+* Added a 'Reload' D-Bus method to reload configuration and reapply
+    DNS configuration
+* NetworkManager now follows symlinks when accessing resolv.conf and
+    rc-manager is set to 'file'
+* Added support for oFono as modem manager
+* The 'may-fail' property of ipv4 and ipv6 settings is now respected
+    more accurately
+* The timeout for requests of secrets to agents has been increased
+    from 25 to 120 seconds
+* Name servers passed to dnsmasq now specify an egress interface to
+    avoid problems with multiple active connections
+* Reverse DNS entries for IPv6 are now added to dnsmasq, and IPv4
+    reverse entries now honor the network prefix
+* A new 'dns-priority' property of ipv4 and ipv6 settings can be used
+    to tweak the order of servers in resolv.conf when multiple
+    connections are active
+* configure script accepts --enable-{address,undefined}-sanitizer
+    options to build NetworkManager with GCC sanitizers
+* The default resolv.conf manager can now be specified at build time
+    using the --with-config-dns-rc-manager-default configure option
+* NetworkManager is now compiled with --gc-sections to reduce
+    executable size
+* Added a new 'VPN_PLUGIN' logging domain
+* It is now possible to change the configuration currently applied on
+    a device with 'nmcli device modify'
+* nmcli invoked without parameters shows an overview of the current
+    network configuration
+* The 'nmcli connection add' syntax has been extended and is now
+    possible to pass properties (e.g. 'ipv4.dns') along with aliases
+* nmtui now returns to initial menu after a sub-form exits
+* Improved bash autocompletion for nmcli
+* Now devices are disconnected before the system suspends, executing
+    dispatcher scripts.  This allows external applications to be notified
+    of the change in connectivity
+* Dispatcher scripts are now called also when connectivity status
+    changes
+* Many other fixes and improvements
+
+============================================
 NetworkManager-1.2
 Overview of changes since NetworkManager-1.0
 ============================================
