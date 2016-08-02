@@ -7960,8 +7960,6 @@ do_connection_modify (NmCli *nmc,
 		goto finish;
 	}
 
-	next_arg (&argc, &argv);
-
 	if (!nmc_read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
 		g_string_assign (nmc->return_text, error->message);
 		nmc->return_value = error->code;
@@ -8065,7 +8063,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		goto finish;
 
-	if (next_arg (&argc, &argv) == 0)
+	if (argv[0])
 		new_name = *argv;
 	else if (nmc->ask)
 		new_name = new_name_ask = nmc_readline (_("New connection name: "));
