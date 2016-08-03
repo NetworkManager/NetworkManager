@@ -1,3 +1,32 @@
+==============================================
+NetworkManager-1.2.4
+Overview of changes since NetworkManager-1.2.2
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The timeout for requests of secrets to agents has been increased from 25 to
+  120 seconds.
+* NetworkManager now follows symlinks when accessing resolv.conf and
+  'rc-manager=file'.
+* Added new values 'symlink' and 'unmanaged' to rc-manager configuration option.
+* It is now possible to configure the default rc-manager option at compile time.
+* Name servers passed to dnsmasq now specify an egress interface to avoid
+  problems with multiple active connections.
+* Reverse DNS entries for IPv6 are now added to dnsmasq, and IPv4 reverse
+  entries now honor the network prefix.
+* A new 'dns-priority' property of ipv4 and ipv6 settings can be used to tweak
+  the order of servers in resolv.conf when multiple connections are active.
+* Added a 'Reload' D-Bus method to reload configuration and reapply DNS
+  configuration.
+* Now devices are disconnected before the system suspends, executing dispatcher
+  scripts. This allows external applications to be notified of the change in
+  connectivity.
+* Devices without L3 configuration are not more put in DOWN state on shutdown.
+* MTU settings are now applied also to devices without IPv4 configuration.
+* Improved VPN support in nmcli.
+* Many bug fixes.
+
 ============================================
 NetworkManager-1.2.2
 Overview of changes since NetworkManager-1.2
