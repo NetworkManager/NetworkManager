@@ -1430,7 +1430,6 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	svSetValue (ifcfg, "DEVICE", iface, FALSE);
 	config = nm_setting_team_get_config (s_team);
 	svSetValue (ifcfg, "TEAM_CONFIG", config, FALSE);
-	svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM, FALSE);
 
 	*wired = write_wired_for_virtual (connection, ifcfg);
 
@@ -1808,6 +1807,10 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	const char *master, *type;
 	char *tmp;
 	gint i_int;
+	const char *v_master = NULL;
+	const char *v_slave = NULL;
+	const char *v_bridge = NULL;
+	const char *v_team_master = NULL;
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
@@ -1876,16 +1879,27 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	master = nm_setting_connection_get_master (s_con);
 	if (master) {
 		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
-			svSetValue (ifcfg, "MASTER", master, FALSE);
-			svSetValue (ifcfg, "SLAVE", "yes", FALSE);
+			v_master = master;
+			v_slave = "yes";
 		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
-			svSetValue (ifcfg, "BRIDGE", master, FALSE);
+			v_bridge = master;
 		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
-			svSetValue (ifcfg, "TEAM_MASTER", master, FALSE);
-			svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
+			v_team_master = master;
 			svSetValue (ifcfg, "TYPE", NULL, FALSE);
 		}
 	}
+
+	svSetValue (ifcfg, "MASTER", v_master, FALSE);
+	svSetValue (ifcfg, "SLAVE", v_slave, FALSE);
+	svSetValue (ifcfg, "BRIDGE", v_bridge, FALSE);
+	svSetValue (ifcfg, "TEAM_MASTER", v_team_master, FALSE);
+
+	if (nm_streq0 (type, NM_SETTING_TEAM_SETTING_NAME))
+		svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM, FALSE);
+	else if (master && nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
+		svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
+	else
+		svSetValue (ifcfg, "DEVICETYPE", NULL, FALSE);
 
 	/* secondary connection UUIDs */
 	svSetValue (ifcfg, "SECONDARY_UUIDS", NULL, FALSE);

@@ -1734,6 +1734,69 @@ test_read_dns_options (void)
 }
 
 static void
+test_clear_master (void)
+{
+	NMSettingConnection *s_con;
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *testfile = NULL, *keyfile;
+	GError *error = NULL;
+	gboolean success;
+	shvarFile *f;
+	char *val;
+
+	/* 1. load the bridge slave connection from disk */
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bridge-component",
+	                                    NULL, TYPE_ETHERNET, &unmanaged);
+	g_assert_cmpstr (unmanaged, ==, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "br0");
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, "bridge");
+
+	/* 2. write the connection to a new file */
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
+
+	/* 3. clear master and slave-type */
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, NULL,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NULL,
+	              NULL);
+
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, NULL);
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
+
+	/* 4. update the connection on disk */
+	keyfile = utils_get_keys_path (testfile);
+	success = writer_update_connection (connection,
+	                                    TEST_SCRATCH_DIR "/network-scripts/",
+	                                    testfile,
+	                                    keyfile,
+	                                    &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	unlink (keyfile);
+	g_free (keyfile);
+
+	/* 5. check that BRIDGE variable has been removed */
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
+
+	val = svGetValue (f, "BRIDGE", FALSE);
+	g_assert (!val);
+	svCloseFile (f);
+
+	unlink (testfile);
+	g_free (testfile);
+	g_object_unref (connection);
+}
+
+static void
 test_write_dns_options (void)
 {
 	NMConnection *connection;
@@ -8781,6 +8844,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/2001:db8:8:4::2", "2001:db8:8:4::2", test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
 	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
+	g_test_add_func (TPATH "clear-master", test_clear_master);
 
 	nmtst_add_test_func (TPATH "read-static",           test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           GINT_TO_POINTER (TRUE));
 	nmtst_add_test_func (TPATH "read-static-bootproto", test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", GINT_TO_POINTER (FALSE));
