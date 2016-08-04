@@ -481,7 +481,9 @@ if test "z$with_suspend_resume" = "z"; then
 fi
 
 case $with_suspend_resume in
-    upower) ;;
+    upower)
+        AC_DEFINE([SUSPEND_RESUME_UPOWER], 1, [Define to 1 to use UPower suspend api])
+	;;
     systemd)
         PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd >= 209],,
                           [PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])])
@@ -494,9 +496,6 @@ case $with_suspend_resume in
         AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd, consolekit])
         ;;
 esac
-AM_CONDITIONAL(SUSPEND_RESUME_UPOWER, test "x$with_suspend_resume" = "xupower")
-AM_CONDITIONAL(SUSPEND_RESUME_SYSTEMD, test "x$with_suspend_resume" = "xsystemd")
-AM_CONDITIONAL(SUSPEND_RESUME_CONSOLEKIT, test "x$with_suspend_resume" = "xconsolekit")
 
 # SELinux support
 AC_ARG_WITH(selinux, AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux (default: auto)]),,[with_selinux=auto])
