@@ -1368,7 +1368,7 @@ nm_client_add_connection_finish (NMClient *client,
 /**
  * nm_client_load_connections:
  * @client: the %NMClient
- * @filenames: %NULL-terminated array of filenames to load
+ * @filenames: (array zero-terminated=1): %NULL-terminated array of filenames to load
  * @failures: (out) (transfer full): on return, a %NULL-terminated array of
  *   filenames that failed to load
  * @cancellable: a #GCancellable, or %NULL
@@ -1427,7 +1427,7 @@ load_connections_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 /**
  * nm_client_load_connections_async:
  * @client: the %NMClient
- * @filenames: %NULL-terminated array of filenames to load
+ * @filenames: (array zero-terminated=1): %NULL-terminated array of filenames to load
  * @cancellable: a #GCancellable, or %NULL
  * @callback: (scope async): callback to be called when the operation completes
  * @user_data: (closure): caller-specific data passed to @callback
@@ -1465,8 +1465,8 @@ nm_client_load_connections_async (NMClient *client,
 /**
  * nm_client_load_connections_finish:
  * @client: the %NMClient
- * @failures: (out) (transfer full): on return, a %NULL-terminated array of
- *   filenames that failed to load
+ * @failures: (out) (transfer full) (array zero-terminated=1): on return, a
+ *    %NULL-terminated array of filenames that failed to load
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  *
