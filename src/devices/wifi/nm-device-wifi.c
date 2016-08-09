@@ -246,6 +246,11 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
+	if (priv->requested_scan) {
+		priv->requested_scan = FALSE;
+		nm_device_remove_pending_action (NM_DEVICE (self), "scan", TRUE);
+	}
+
 	nm_clear_g_source (&priv->pending_scan_id);
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
@@ -1950,6 +1955,11 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			priv->reacquire_iface_id = g_timeout_add_seconds (10, reacquire_interface_cb, self);
 		else
 			_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
+		break;
+	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
+		priv->requested_scan = FALSE;
+		nm_clear_g_source (&priv->pending_scan_id);
+		request_wireless_scan (self, NULL);
 		break;
 	default:
 		break;
