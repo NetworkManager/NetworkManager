@@ -163,9 +163,9 @@ typedef struct {
 } ActivationHandleData;
 
 typedef enum {
-	CLEANUP_TYPE_DECONFIGURE,
 	CLEANUP_TYPE_KEEP,
 	CLEANUP_TYPE_REMOVED,
+	CLEANUP_TYPE_DECONFIGURE,
 } CleanupType;
 
 typedef enum {
@@ -10790,26 +10790,27 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
-	/* master: release slaves */
-	nm_device_master_release_slaves (self);
+	if (cleanup_type != CLEANUP_TYPE_KEEP) {
+		/* master: release slaves */
+		nm_device_master_release_slaves (self);
 
-	/* slave: mark no longer enslaved */
-	if (   priv->master
-	    && nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex) <= 0)
-		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+		/* slave: mark no longer enslaved */
+		if (   priv->master
+		    && nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex) <= 0)
+			nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
-	/* Take out any entries in the routing table and any IP address the device had. */
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex > 0) {
-		nm_route_manager_route_flush (nm_route_manager_get (), ifindex);
-		nm_platform_address_flush (NM_PLATFORM_GET, ifindex);
+		/* Take out any entries in the routing table and any IP address the device had. */
+		ifindex = nm_device_get_ip_ifindex (self);
+		if (ifindex > 0) {
+			nm_route_manager_route_flush (nm_route_manager_get (), ifindex);
+			nm_platform_address_flush (NM_PLATFORM_GET, ifindex);
+		}
 	}
 
 	if (priv->lldp_listener)
 		nm_lldp_listener_stop (priv->lldp_listener);
 
 	nm_device_update_metered (self);
-
 
 	/* during device cleanup, we want to reset the MAC address of the device
 	 * to the initial state.
@@ -11180,6 +11181,8 @@ _set_state_full (NMDevice *self,
 		if (old_state > NM_DEVICE_STATE_UNMANAGED) {
 			if (reason == NM_DEVICE_STATE_REASON_REMOVED) {
 				nm_device_cleanup (self, reason, CLEANUP_TYPE_REMOVED);
+			} else if (reason == NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
+				nm_device_cleanup (self, reason, CLEANUP_TYPE_KEEP);
 			} else {
 				/* Clean up if the device is now unmanaged but was activated */
 				if (nm_device_get_act_request (self))
