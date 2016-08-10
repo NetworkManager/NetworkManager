@@ -68,6 +68,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN      NM_DBUS_INTERFACE_DEVICE ".Vxlan"
 #define NM_DBUS_INTERFACE_DEVICE_GRE        NM_DBUS_INTERFACE_DEVICE ".Gre"
 #define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL  NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
+#define NM_DBUS_INTERFACE_DEVICE_STATISTICS NM_DBUS_INTERFACE_DEVICE ".Statistics"
 
 #define NM_DBUS_INTERFACE_SETTINGS        "org.freedesktop.NetworkManager.Settings"
 #define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"

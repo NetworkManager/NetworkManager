@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.Device.Statistics">
+
+    <!--
+        RefreshRateMs:
+
+        Rate of change of the rest of properties of this interface. If zero, the
+        properties do not change. Otherwise, the properties are refreshed each
+        RefreshRateMs milliseconds in case the underlying counter has changed
+        too.
+    -->
+    <property name="RefreshRateMs" type="u" access="readwrite"/>
+
+    <!--
+        TxBytes:
+
+        Number of transmitted bytes
+    -->
+    <property name="TxBytes" type="t" access="read"/>
+
+    <!--
+        RxBytes:
+
+        Number of received bytes
+    -->
+    <property name="RxBytes" type="t" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+    -->
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

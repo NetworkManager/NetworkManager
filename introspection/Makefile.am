@@ -43,6 +43,8 @@ nodist_libnmdbus_la_SOURCES = \
 	nmdbus-device-modem.h \
 	nmdbus-device-olpc-mesh.c \
 	nmdbus-device-olpc-mesh.h \
+	nmdbus-device-statistics.c \
+	nmdbus-device-statistics.h \
 	nmdbus-device-team.c \
 	nmdbus-device-team.h \
 	nmdbus-device-tun.c \
@@ -114,7 +116,8 @@ DBUS_INTERFACE_DOCS = \
 	nmdbus-device-veth-org.freedesktop.NetworkManager.Device.Veth.xml \
 	nmdbus-settings-org.freedesktop.NetworkManager.Settings.xml \
 	nmdbus-device-ethernet-org.freedesktop.NetworkManager.Device.Wired.xml \
-	nmdbus-ip4-config-org.freedesktop.NetworkManager.IP4Config.xml
+	nmdbus-ip4-config-org.freedesktop.NetworkManager.IP4Config.xml \
+	nmdbus-device-statistics-org.freedesktop.NetworkManager.Device.Statistics.xml
 
 define _make_nmdbus_rule
 $(1): $(patsubst nmdbus-%.c,nm-%.xml,$(1))
@@ -154,6 +157,7 @@ EXTRA_DIST = \
 	nm-device-macvlan.xml \
 	nm-device-modem.xml \
 	nm-device-olpc-mesh.xml \
+	nm-device-statistics.xml \
 	nm-device-team.xml \
 	nm-device-tun.xml \
 	nm-device-veth.xml \

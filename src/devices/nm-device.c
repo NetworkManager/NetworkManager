@@ -66,11 +66,13 @@
 #include "sd-ipv4ll.h"
 #include "nm-audit-manager.h"
 #include "nm-arping-manager.h"
+#include "nm-device-statistics.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
 
 #include "nmdbus-device.h"
+#include "nmdbus-device-statistics.h"
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
@@ -138,6 +140,9 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_LLDP_NEIGHBORS,
 	PROP_REAL,
 	PROP_SLAVES,
+	PROP_REFRESH_RATE_MS,
+	PROP_TX_BYTES,
+	PROP_RX_BYTES,
 );
 
 #define DEFAULT_AUTOCONNECT TRUE
@@ -407,6 +412,13 @@ typedef struct _NMDevicePrivate {
 	NMLldpListener *lldp_listener;
 
 	guint check_delete_unrealized_id;
+
+	guint refresh_rate_ms;
+	guint64 tx_bytes;
+	guint64 rx_bytes;
+
+	NMDeviceStatistics *statistics;
+
 } NMDevicePrivate;
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
@@ -767,6 +779,36 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
 		_notify (self, PROP_IP_IFACE);
 	g_free (old_ip_iface);
+}
+
+void
+nm_device_set_tx_bytes (NMDevice *self, guint64 tx_bytes)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (tx_bytes == priv->tx_bytes)
+		return;
+
+	priv->tx_bytes = tx_bytes;
+	_notify (self, PROP_TX_BYTES);
+}
+
+void
+nm_device_set_rx_bytes (NMDevice *self, guint64 rx_bytes)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (rx_bytes == priv->rx_bytes)
+		return;
+
+	priv->rx_bytes = rx_bytes;
+	_notify (self, PROP_RX_BYTES);
 }
 
 static gboolean
@@ -2199,6 +2241,11 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		priv->carrier = TRUE;
 	}
 
+	if (priv->refresh_rate_ms && !priv->statistics) {
+		priv->statistics = nm_device_statistics_new (self,
+		                                             priv->refresh_rate_ms);
+	}
+
 	klass->realize_start_notify (self, plink);
 
 	/* Do not manage externally created software devices until they are IFF_UP
@@ -2369,6 +2416,14 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	if (priv->physical_port_id) {
 		g_clear_pointer (&priv->physical_port_id, g_free);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
+	}
+	if (priv->statistics) {
+		nm_device_statistics_unref (priv->statistics);
+		priv->statistics = NULL;
+		priv->tx_bytes = 0;
+		priv->tx_bytes = 0;
+		_notify (self, PROP_TX_BYTES);
+		_notify (self, PROP_RX_BYTES);
 	}
 
 	priv->hw_addr_type = HW_ADDR_TYPE_UNSET;
@@ -11963,6 +12018,11 @@ nm_device_init (NMDevice *self)
 
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
+
+	priv->refresh_rate_ms = 0;
+	priv->tx_bytes = 0;
+	priv->rx_bytes = 0;
+	priv->statistics = NULL;
 }
 
 static GObject*
@@ -12111,6 +12171,11 @@ dispose (GObject *object)
 		g_clear_object (&priv->lldp_listener);
 	}
 
+	if (priv->statistics) {
+		nm_device_statistics_unref (priv->statistics);
+		priv->statistics = NULL;
+	}
+
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 
 	if (nm_clear_g_source (&priv->queued_state.id)) {
@@ -12243,6 +12308,28 @@ set_property (GObject *object, guint prop_id,
 		/* construct only */
 		priv->hw_addr_perm = g_value_dup_string (value);
 		break;
+	case PROP_REFRESH_RATE_MS: {
+		guint refresh_rate_ms;
+
+		refresh_rate_ms = g_value_get_uint (value);
+		if (priv->refresh_rate_ms == refresh_rate_ms)
+			break;
+
+		priv->refresh_rate_ms = refresh_rate_ms;
+		_LOGI (LOGD_DEVICE, "statistics refresh rate set to %u ms", priv->refresh_rate_ms);
+
+		if (priv->refresh_rate_ms) {
+			if (priv->statistics)
+				nm_device_statistics_change_rate (priv->statistics, priv->refresh_rate_ms);
+			else
+				priv->statistics =
+				    nm_device_statistics_new (self, priv->refresh_rate_ms);
+		} else {
+			nm_device_statistics_unref (priv->statistics);
+			priv->statistics = NULL;
+		}
+		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -12405,6 +12492,15 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, slave_list);
 		break;
 	}
+	case PROP_REFRESH_RATE_MS:
+		g_value_set_uint (value, priv->refresh_rate_ms);
+		break;
+	case PROP_TX_BYTES:
+		g_value_set_uint64 (value, priv->tx_bytes);
+		break;
+	case PROP_RX_BYTES:
+		g_value_set_uint64 (value, priv->rx_bytes);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -12655,6 +12751,23 @@ nm_device_class_init (NMDeviceClass *klass)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
+	/* Statistics */
+	obj_properties[PROP_REFRESH_RATE_MS] =
+	    g_param_spec_uint (NM_DEVICE_STATISTICS_REFRESH_RATE_MS, "", "",
+	                       0, UINT32_MAX, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_TX_BYTES] =
+	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_TX_BYTES, "", "",
+	                         0, UINT64_MAX, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_RX_BYTES] =
+	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_RX_BYTES, "", "",
+	                         0, UINT64_MAX, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
@@ -12724,5 +12837,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	                                        "GetAppliedConnection", impl_device_get_applied_connection,
 	                                        "Disconnect", impl_device_disconnect,
 	                                        "Delete", impl_device_delete,
+	                                        NULL);
+
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
+	                                        NMDBUS_TYPE_DEVICE_STATISTICS_SKELETON,
 	                                        NULL);
 }

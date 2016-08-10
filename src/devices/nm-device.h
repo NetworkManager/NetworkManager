@@ -88,6 +88,10 @@
 #define NM_DEVICE_STATE_CHANGED         "state-changed"
 #define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
 
+#define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
+#define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"
+#define NM_DEVICE_STATISTICS_RX_BYTES        "rx-bytes"
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
