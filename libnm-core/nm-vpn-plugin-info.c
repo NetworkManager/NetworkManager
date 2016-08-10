@@ -622,7 +622,7 @@ static const char *known_names[] = {
 
 /**
  * nm_vpn_plugin_info_list_find_service_type:
- * @list: a possibly empty #GSList of #NMVpnPluginInfo instances
+ * @list: (element-type NMVpnPluginInfo): a possibly empty #GSList of #NMVpnPluginInfo instances
  * @name: a name to lookup the service-type.
  *
  * A VPN plugin provides one or several service-types, like org.freedesktop.NetworkManager.libreswan
@@ -699,7 +699,7 @@ _service_type_get_default_abbreviation (const char *service_type)
 
 /**
  * nm_vpn_plugin_info_list_get_service_types:
- * @list: a possibly empty #GSList of #NMVpnPluginInfo
+ * @list: (element-type NMVpnPluginInfo): a possibly empty #GSList of #NMVpnPluginInfo
  * @only_existing: only include results that are actually in @list.
  *   Otherwise, the result is extended with a hard-code list or
  *   well-known plugins
