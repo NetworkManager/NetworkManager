@@ -142,5 +142,14 @@
     </defaults>
   </action>
 
+  <action id="org.freedesktop.NetworkManager.enable-disable-statistics">
+    <_description>Enable or disable device statistics</_description>
+    <_message>System policy prevents enabling or disabling device statistics</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
 </policyconfig>
 
