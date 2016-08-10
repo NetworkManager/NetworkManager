@@ -139,9 +139,9 @@ nm_vpn_editor_plugin_get_plugin_info (NMVpnEditorPlugin *plugin)
  * @plugin: the #NMVpnEditorPlugin instance
  * @plugin_info: (allow-none): a #NMVpnPluginInfo instance or %NULL
  *
- * Returns: (transfer none): set or clear the plugin-info instance.
- *   This takes a weak reference on @plugin_info, to avoid circular
- *   reference as the plugin-info might also reference the editor-plugin.
+ * Set or clear the plugin-info instance.
+ * This takes a weak reference on @plugin_info, to avoid circular
+ * reference as the plugin-info might also reference the editor-plugin.
  *
  * Since: 1.4
  */
