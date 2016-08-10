@@ -98,6 +98,7 @@
       <xi:include href="../../introspection/nmdbus-ip6-config-org.freedesktop.NetworkManager.IP6Config.xml"/>
       <xi:include href="../../introspection/nmdbus-vpn-plugin-org.freedesktop.NetworkManager.VPN.Plugin.xml"/>
       <xi:include href="../../introspection/nmdbus-secret-agent-org.freedesktop.NetworkManager.SecretAgent.xml"/>
+      <xi:include href="../../introspection/nmdbus-device-statistics-org.freedesktop.NetworkManager.Device.Statistics.xml"/>
     </section>
     <section id="dbus-types">
       <title>Types</title>
