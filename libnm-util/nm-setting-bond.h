@@ -40,6 +40,8 @@ G_BEGIN_DECLS
  * @NM_SETTING_BOND_ERROR_UNKNOWN: unknown or unclassified error
  * @NM_SETTING_BOND_ERROR_INVALID_PROPERTY: the property was invalid
  * @NM_SETTING_BOND_ERROR_MISSING_PROPERTY: the property was missing and is
+ * @NM_SETTING_BOND_ERROR_INVALID_OPTION: the option was invalid
+ * @NM_SETTING_BOND_ERROR_MISSING_OPTION: the option was missing
  * required
  */
 typedef enum {
