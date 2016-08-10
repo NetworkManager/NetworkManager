@@ -1476,6 +1476,15 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		nl_info_data = li[IFLA_INFO_DATA];
 	}
 
+	if (tb[IFLA_STATS64]) {
+		struct rtnl_link_stats64 *stats = nla_data (tb[IFLA_STATS64]);
+
+		obj->link.rx_packets = stats->rx_packets;
+		obj->link.rx_bytes = stats->rx_bytes;
+		obj->link.tx_packets = stats->tx_packets;
+		obj->link.tx_bytes = stats->tx_bytes;
+	}
+
 	obj->link.n_ifi_flags = ifi->ifi_flags;
 	obj->link.connected = NM_FLAGS_HAS (obj->link.n_ifi_flags, IFF_LOWER_UP);
 	obj->link.arptype = ifi->ifi_type;
@@ -3732,6 +3741,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	case RTM_NEWLINK:
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
+	case RTM_GETLINK:
 		cache_op = nmp_cache_update_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
 
 		cache_post (platform, msghdr, cache_op, obj, obj_cache);
@@ -4515,6 +4525,27 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	int_val = _nm_utils_ascii_str_to_int64 (id, 16, 0, G_MAXUINT16, 0);
 
 	return errno ? 0 : (int) int_val;
+}
+
+static gboolean
+link_get_stats (NMPlatform *platform, int ifindex,
+                guint64 *rx_packets, guint64 *rx_bytes,
+                guint64 *tx_packets, guint64 *tx_bytes)
+{
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+	const NMPObject *obj;
+
+	obj = cache_lookup_link (platform, ifindex);
+
+	if (!obj)
+		return FALSE;
+
+	*rx_packets = obj->link.rx_packets;
+	*rx_bytes = obj->link.rx_bytes;
+	*tx_packets = obj->link.tx_packets;
+	*tx_bytes = obj->link.tx_bytes;
+
+	return TRUE;
 }
 
 static int
@@ -6509,6 +6540,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
+	platform_class->link_get_stats = link_get_stats;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
 	platform_class->link_get_driver_info = link_get_driver_info;
 
