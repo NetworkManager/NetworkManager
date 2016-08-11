@@ -490,7 +490,7 @@ libNetworkManagerTest_la_SOURCES = \
 	platform/nm-fake-platform.h
 
 libNetworkManagerTest_la_LIBADD = \
-	$(srcdir)/libNetworkManager.la
+	libNetworkManager.la
 
 ###############################################################################
 
