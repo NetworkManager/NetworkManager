@@ -420,7 +420,16 @@ _nm_g_strv_contains (const gchar * const *strv,
 static inline GVariant *
 _nm_g_variant_new_take_string (gchar *string)
 {
-#if !GLIB_CHECK_VERSION(2, 38, 0)
+#if !GLIB_CHECK_VERSION(2, 36, 0)
+	GVariant *value;
+
+	g_return_val_if_fail (string != NULL, NULL);
+	g_return_val_if_fail (g_utf8_validate (string, -1, NULL), NULL);
+
+	value = g_variant_new_string (string);
+	g_free (string);
+	return value;
+#elif !GLIB_CHECK_VERSION(2, 38, 0)
 	GVariant *value;
 	GBytes *bytes;
 
