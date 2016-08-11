@@ -200,6 +200,8 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd-network/sd-ipv4ll.c \
 	systemd/src/libsystemd-network/sd-lldp.c \
 	systemd/src/libsystemd/sd-event/sd-event.c \
+	systemd/src/libsystemd/sd-id128/id128-util.c \
+	systemd/src/libsystemd/sd-id128/id128-util.h \
 	systemd/src/libsystemd/sd-id128/sd-id128.c \
 	systemd/src/shared/dns-domain.c \
 	systemd/src/shared/dns-domain.h \

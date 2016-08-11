@@ -84,6 +84,12 @@ test_dhcp_create (void)
 	g_assert (r == 0);
 	g_assert (client4);
 
+	if (/* never true */ client4 == (gpointer) &r) {
+		/* we don't want to call this, but ensure that the linker
+		 * includes all these symbols. */
+		sd_dhcp_client_start (client4);
+	}
+
 	sd_dhcp_client_unref (client4);
 }
 
