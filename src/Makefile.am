@@ -32,13 +32,6 @@ SUBDIRS += \
 	tests
 endif
 
-SYSTEMD_NM_CFLAGS_PATHS = \
-	-I$(top_srcdir)/src/systemd/sd-adapt/ \
-	-I$(top_srcdir)/src/systemd/src/systemd \
-	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
-	-I$(top_srcdir)/src/systemd/src/basic \
-	-I$(top_srcdir)/src/systemd
-
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
@@ -81,8 +74,10 @@ AM_CPPFLAGS = \
 	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
-	$(SYSTEMD_NM_CFLAGS_PATHS) \
 	$(CODE_COVERAGE_CFLAGS) \
+	\
+	-I$(top_srcdir)/src/systemd/src/systemd/ \
+	-I$(top_srcdir)/src/systemd/ \
 	\
 	$(NULL)
 
@@ -241,8 +236,11 @@ libsystemd_nm_la_CPPFLAGS = \
 	-I$(top_builddir)/shared/ \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
-	$(SYSTEMD_NM_CFLAGS_PATHS) \
-	-I$(top_srcdir)/src/systemd/src/shared \
+	-I$(top_srcdir)/src/systemd/sd-adapt/ \
+	-I$(top_srcdir)/src/systemd/src/systemd/ \
+	-I$(top_srcdir)/src/systemd/src/basic/ \
+	-I$(top_srcdir)/src/systemd/src/shared/ \
+	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
 	$(GLIB_CFLAGS)
 
