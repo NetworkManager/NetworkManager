@@ -61,6 +61,10 @@ static inline const char* one_zero(bool b) {
         return b ? "1" : "0";
 }
 
+static inline const char* enable_disable(bool b) {
+        return b ? "enable" : "disable";
+}
+
 void execute_directories(const char* const* directories, usec_t timeout, char *argv[]);
 
 bool plymouth_running(void);
@@ -176,8 +180,6 @@ static inline unsigned log2u_round_up(unsigned x) {
         return log2u(x - 1) + 1;
 }
 
-bool id128_is_valid(const char *s) _pure_;
-
 int container_get_leader(const char *machine, pid_t *pid);
 
 int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *userns_fd, int *root_fd);
@@ -185,6 +187,9 @@ int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int
 
 uint64_t physical_memory(void);
 uint64_t physical_memory_scale(uint64_t v, uint64_t max);
+
+uint64_t system_tasks_max(void);
+uint64_t system_tasks_max_scale(uint64_t v, uint64_t max);
 
 int update_reboot_parameter_and_warn(const char *param);
 

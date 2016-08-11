@@ -47,6 +47,8 @@
 #include "umask-util.h"
 #include "utf8.h"
 
+#define READ_FULL_BYTES_MAX (4U*1024U*1024U)
+
 int write_string_stream(FILE *f, const char *line, bool enforce_newline) {
 
         assert(f);
@@ -230,7 +232,7 @@ int read_full_stream(FILE *f, char **contents, size_t *size) {
         if (S_ISREG(st.st_mode)) {
 
                 /* Safety check */
-                if (st.st_size > 4*1024*1024)
+                if (st.st_size > READ_FULL_BYTES_MAX)
                         return -E2BIG;
 
                 /* Start with the right file size, but be prepared for
@@ -245,26 +247,31 @@ int read_full_stream(FILE *f, char **contents, size_t *size) {
                 char *t;
                 size_t k;
 
-                t = realloc(buf, n+1);
+                t = realloc(buf, n + 1);
                 if (!t)
                         return -ENOMEM;
 
                 buf = t;
                 k = fread(buf + l, 1, n - l, f);
+                if (k > 0)
+                        l += k;
 
-                if (k <= 0) {
-                        if (ferror(f))
-                                return -errno;
+                if (ferror(f))
+                        return -errno;
 
+                if (feof(f))
                         break;
-                }
 
-                l += k;
-                n *= 2;
+                /* We aren't expecting fread() to return a short read outside
+                 * of (error && eof), assert buffer is full and enlarge buffer.
+                 */
+                assert(l == n);
 
                 /* Safety check */
-                if (n > 4*1024*1024)
+                if (n >= READ_FULL_BYTES_MAX)
                         return -E2BIG;
+
+                n = MIN(n * 2, READ_FULL_BYTES_MAX);
         }
 
         buf[l] = 0;
@@ -1067,7 +1074,7 @@ int fflush_and_check(FILE *f) {
         return 0;
 }
 
-/* This is much like like mkostemp() but is subject to umask(). */
+/* This is much like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern, int flags) {
         _cleanup_umask_ mode_t u = 0;
         int fd;
@@ -1161,8 +1168,8 @@ int tempfn_random_child(const char *p, const char *extra, char **ret) {
         char *t, *x;
         uint64_t u;
         unsigned i;
+        int r;
 
-        assert(p);
         assert(ret);
 
         /* Turns this:
@@ -1170,6 +1177,12 @@ int tempfn_random_child(const char *p, const char *extra, char **ret) {
          * Into this:
          *         /foo/bar/waldo/.#<extra>3c2b6219aa75d7d0
          */
+
+        if (!p) {
+                r = tmp_dir(&p);
+                if (r < 0)
+                        return r;
+        }
 
         if (!extra)
                 extra = "";
@@ -1257,9 +1270,13 @@ int fputs_with_space(FILE *f, const char *s, const char *separator, bool *space)
 
 int open_tmpfile_unlinkable(const char *directory, int flags) {
         char *p;
-        int fd;
+        int fd, r;
 
-        assert(directory);
+        if (!directory) {
+                r = tmp_dir(&directory);
+                if (r < 0)
+                        return r;
+        }
 
         /* Returns an unlinked temporary file that cannot be linked into the file system anymore */
 
@@ -1351,6 +1368,47 @@ int link_tmpfile(int fd, const char *path, const char *target) {
                 if (linkat(AT_FDCWD, proc_fd_path, AT_FDCWD, target, AT_SYMLINK_FOLLOW) < 0)
                         return -errno;
         }
+
+        return 0;
+}
+
+int read_nul_string(FILE *f, char **ret) {
+        _cleanup_free_ char *x = NULL;
+        size_t allocated = 0, n = 0;
+
+        assert(f);
+        assert(ret);
+
+        /* Reads a NUL-terminated string from the specified file. */
+
+        for (;;) {
+                int c;
+
+                if (!GREEDY_REALLOC(x, allocated, n+2))
+                        return -ENOMEM;
+
+                c = fgetc(f);
+                if (c == 0) /* Terminate at NUL byte */
+                        break;
+                if (c == EOF) {
+                        if (ferror(f))
+                                return -errno;
+                        break; /* Terminate at EOF */
+                }
+
+                x[n++] = (char) c;
+        }
+
+        if (x)
+                x[n] = 0;
+        else {
+                x = new0(char, 1);
+                if (!x)
+                        return -ENOMEM;
+        }
+
+        *ret = x;
+        x = NULL;
 
         return 0;
 }

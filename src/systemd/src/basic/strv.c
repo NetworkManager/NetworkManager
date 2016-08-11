@@ -638,6 +638,17 @@ char **strv_remove(char **l, const char *s) {
 }
 
 char **strv_parse_nulstr(const char *s, size_t l) {
+        /* l is the length of the input data, which will be split at NULs into
+         * elements of the resulting strv. Hence, the number of items in the resulting strv
+         * will be equal to one plus the number of NUL bytes in the l bytes starting at s,
+         * unless s[l-1] is NUL, in which case the final empty string is not stored in
+         * the resulting strv, and length is equal to the number of NUL bytes.
+         *
+         * Note that contrary to a normal nulstr which cannot contain empty strings, because
+         * the input data is terminated by any two consequent NUL bytes, this parser accepts
+         * empty strings in s.
+         */
+
         const char *p;
         unsigned c = 0, i = 0;
         char **v;
@@ -700,6 +711,13 @@ char **strv_split_nulstr(const char *s) {
 }
 
 int strv_make_nulstr(char **l, char **p, size_t *q) {
+        /* A valid nulstr with two NULs at the end will be created, but
+         * q will be the length without the two trailing NULs. Thus the output
+         * string is a valid nulstr and can be iterated over using NULSTR_FOREACH,
+         * and can also be parsed by strv_parse_nulstr as long as the length
+         * is provided separately.
+         */
+
         size_t n_allocated = 0, n = 0;
         _cleanup_free_ char *m = NULL;
         char **i;
@@ -712,7 +730,7 @@ int strv_make_nulstr(char **l, char **p, size_t *q) {
 
                 z = strlen(*i);
 
-                if (!GREEDY_REALLOC(m, n_allocated, n + z + 1))
+                if (!GREEDY_REALLOC(m, n_allocated, n + z + 2))
                         return -ENOMEM;
 
                 memcpy(m + n, *i, z + 1);
@@ -723,11 +741,14 @@ int strv_make_nulstr(char **l, char **p, size_t *q) {
                 m = new0(char, 1);
                 if (!m)
                         return -ENOMEM;
-                n = 0;
-        }
+                n = 1;
+        } else
+                /* make sure there is a second extra NUL at the end of resulting nulstr */
+                m[n] = '\0';
 
+        assert(n > 0);
         *p = m;
-        *q = n;
+        *q = n - 1;
 
         m = NULL;
 
@@ -803,9 +824,8 @@ char **strv_reverse(char **l) {
         if (n <= 1)
                 return l;
 
-        for (i = 0; i < n / 2; i++) {
+        for (i = 0; i < n / 2; i++)
                 SWAP_TWO(l[i], l[n-1-i]);
-        }
 
         return l;
 }
@@ -876,7 +896,7 @@ int strv_extend_n(char ***l, const char *value, size_t n) {
         if (n == 0)
                 return 0;
 
-        /* Adds the value value n times to l */
+        /* Adds the value n times to l */
 
         k = strv_length(*l);
 
