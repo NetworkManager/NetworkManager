@@ -534,6 +534,36 @@ nm_bus_manager_get_caller_info_from_message (NMBusManager *self,
 }
 
 gboolean
+nm_bus_manager_ensure_root (NMBusManager          *self,
+                            GDBusMethodInvocation *context,
+                            GQuark error_domain,
+                            int error_code)
+{
+	gulong caller_uid;
+	GError *error = NULL;
+
+	g_return_val_if_fail (NM_IS_BUS_MANAGER (self), FALSE);
+	g_return_val_if_fail (G_IS_DBUS_METHOD_INVOCATION (context), FALSE);
+
+	if (!nm_bus_manager_get_caller_info (self, context, NULL, &caller_uid, NULL)) {
+		error = g_error_new_literal (error_domain,
+		                             error_code,
+		                             "Unable to determine request UID.");
+		g_dbus_method_invocation_take_error (context, error);
+		return FALSE;
+	}
+	if (caller_uid != 0) {
+		error = g_error_new_literal (error_domain,
+		                             error_code,
+		                             "Permission denied");
+		g_dbus_method_invocation_take_error (context, error);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
 nm_bus_manager_get_unix_user (NMBusManager *self,
                               const char *sender,
                               gulong *out_uid)

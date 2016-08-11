@@ -62,7 +62,7 @@ test_route_manager_fake_SOURCES = \
 	test-route-manager.c
 
 test_route_manager_fake_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
+	$(top_builddir)/src/libNetworkManagerTest.la
 
 test_route_manager_linux_SOURCES = \
 	$(top_srcdir)/src/platform/tests/test-common.c \
@@ -130,7 +130,7 @@ test_systemd_SOURCES = \
 	test-systemd.c
 
 test_systemd_LDADD = \
-	$(top_builddir)/src/libNetworkManager-base.la \
+	$(top_builddir)/src/libNetworkManagerBase.la \
 	$(top_builddir)/src/libsystemd-nm.la
 
 ####### utils test #######

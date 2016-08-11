@@ -68,6 +68,11 @@ gboolean nm_bus_manager_get_caller_info (NMBusManager *self,
                                          gulong *out_uid,
                                          gulong *out_pid);
 
+gboolean nm_bus_manager_ensure_root (NMBusManager          *self,
+                                     GDBusMethodInvocation *context,
+                                     GQuark error_domain,
+                                     int error_code);
+
 const char *nm_bus_manager_connection_get_private_name (NMBusManager *self,
                                                         GDBusConnection *connection);
 

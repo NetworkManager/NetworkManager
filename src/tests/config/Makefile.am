@@ -21,7 +21,7 @@ test_config_SOURCES = \
 	test-config.c
 
 test_config_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
+	$(top_builddir)/src/libNetworkManagerTest.la
 
 @VALGRIND_RULES@
 TESTS = test-config

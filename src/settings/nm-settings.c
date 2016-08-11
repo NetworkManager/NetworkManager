@@ -1512,31 +1512,6 @@ impl_settings_add_connection_unsaved (NMSettings *self,
 	impl_settings_add_connection_helper (self, context, settings, FALSE);
 }
 
-static gboolean
-ensure_root (NMBusManager          *dbus_mgr,
-             GDBusMethodInvocation *context)
-{
-	gulong caller_uid;
-	GError *error = NULL;
-
-	if (!nm_bus_manager_get_caller_info (dbus_mgr, context, NULL, &caller_uid, NULL)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
-		g_dbus_method_invocation_take_error (context, error);
-		return FALSE;
-	}
-	if (caller_uid != 0) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Permission denied");
-		g_dbus_method_invocation_take_error (context, error);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static void
 impl_settings_load_connections (NMSettings *self,
                                 GDBusMethodInvocation *context,
@@ -1547,7 +1522,8 @@ impl_settings_load_connections (NMSettings *self,
 	GSList *iter;
 	int i;
 
-	if (!ensure_root (nm_bus_manager_get (), context))
+	if (!nm_bus_manager_ensure_root (nm_bus_manager_get (), context,
+	                                 NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_PERMISSION_DENIED))
 		return;
 
 	failures = g_ptr_array_new ();
@@ -1583,7 +1559,8 @@ impl_settings_reload_connections (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 
-	if (!ensure_root (nm_bus_manager_get (), context))
+	if (!nm_bus_manager_ensure_root (nm_bus_manager_get (), context,
+	                                 NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_PERMISSION_DENIED))
 		return;
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
