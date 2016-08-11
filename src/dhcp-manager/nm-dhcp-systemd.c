@@ -34,12 +34,10 @@
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-dhcp-client-logging.h"
+#include "nm-sd.h"
 
 #include "sd-dhcp-client.h"
 #include "sd-dhcp6-client.h"
-
-#include "nm-sd-adapt.h"
-#include "dhcp-lease-internal.h"
 
 G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 

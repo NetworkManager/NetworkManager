@@ -106,8 +106,8 @@ noinst_LTLIBRARIES = \
 libsystemd_nm_la_SOURCES = \
 	systemd/nm-sd.c \
 	systemd/nm-sd.h \
-	systemd/nm-sd-adapt.c \
-	systemd/nm-sd-adapt.h \
+	systemd/sd-adapt/nm-sd-adapt.c \
+	systemd/sd-adapt/nm-sd-adapt.h \
 	systemd/sd-adapt/build.h \
 	systemd/sd-adapt/cgroup-util.h \
 	systemd/sd-adapt/condition.h \
