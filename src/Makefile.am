@@ -590,7 +590,6 @@ nm_iface_helper_SOURCES = \
 
 nm_iface_helper_LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
-	libsystemd-nm.la \
 	libnm-iface-helper.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
