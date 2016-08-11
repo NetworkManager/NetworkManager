@@ -27,9 +27,7 @@
 #include <string.h>
 
 #include "alloc-util.h"
-#if 0 /* NM_IGNORED */
 #include "gunicode.h"
-#endif /* NM_IGNORED */
 #include "macro.h"
 #include "string-util.h"
 #include "utf8.h"

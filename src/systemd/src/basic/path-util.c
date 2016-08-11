@@ -38,13 +38,9 @@
 #include "fs-util.h"
 #include "log.h"
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 #include "path-util.h"
-#if 0 /* NM_IGNORED */
 #include "stat-util.h"
-#endif /* NM_IGNORED */
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"

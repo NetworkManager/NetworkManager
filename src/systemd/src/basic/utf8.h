@@ -27,9 +27,7 @@
 #endif /* NM_IGNORED */
 
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 
 #define UTF8_REPLACEMENT_CHARACTER "\xef\xbf\xbd"
 #define UTF8_BYTE_ORDER_MARK "\xef\xbb\xbf"

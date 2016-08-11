@@ -31,9 +31,7 @@
 #include "extract-word.h"
 #include "macro.h"
 #include "parse-util.h"
-#if 0 /* NM_IGNORED */
 #include "process-util.h"
-#endif /* NM_IGNORED */
 #include "string-util.h"
 
 int parse_boolean(const char *v) {

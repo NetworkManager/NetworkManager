@@ -26,10 +26,8 @@
 #include "sd-ndisc.h"
 
 #include "alloc-util.h"
-#if 0 /* NM_IGNORED */
 #include "condition.h"
 #include "conf-parser.h"
-#endif /* NM_IGNORED */
 #include "dhcp-lease-internal.h"
 #include "ether-addr-util.h"
 #include "hexdecoct.h"

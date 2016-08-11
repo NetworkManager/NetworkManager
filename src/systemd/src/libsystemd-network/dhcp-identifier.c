@@ -19,9 +19,7 @@
 
 #include "nm-sd-adapt.h"
 
-#if 0 /* NM_IGNORED */
 #include "libudev.h"
-#endif /* NM_IGNORED */
 #include "sd-id128.h"
 
 #include "dhcp-identifier.h"
@@ -29,9 +27,10 @@
 #include "network-internal.h"
 #include "siphash24.h"
 #include "sparse-endian.h"
-#if 0 /* NM_IGNORED */
 #include "udev-util.h"
 #include "virt.h"
+
+#if 0 /* NM_IGNORED */
 #else /* NM_IGNORED */
 #include <net/if.h>
 #endif /* NM_IGNORED */

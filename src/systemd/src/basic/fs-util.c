@@ -30,30 +30,22 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
-#if 0 /* NM_IGNORED */
 #include "dirent-util.h"
-#endif /* NM_IGNORED */
 #include "fd-util.h"
 #include "fileio.h"
 #include "fs-util.h"
 #include "log.h"
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
 #include "mkdir.h"
-#endif /* NM_IGNORED */
 #include "parse-util.h"
 #include "path-util.h"
-#if 0 /* NM_IGNORED */
 #include "stat-util.h"
-#endif /* NM_IGNORED */
 #include "stdio-util.h"
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
-#if 0 /* NM_IGNORED */
 #include "user-util.h"
-#endif /* NM_IGNORED */
 #include "util.h"
 
 int unlink_noerrno(const char *path) {

@@ -23,9 +23,7 @@
 #include <sys/timerfd.h>
 #include <sys/wait.h>
 
-#if 0 /* NM_IGNORED */
 #include "sd-daemon.h"
-#endif
 #include "sd-event.h"
 #include "sd-id128.h"
 
@@ -34,13 +32,9 @@
 #include "hashmap.h"
 #include "list.h"
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif
 #include "prioq.h"
-#if 0 /* NM_IGNORED */
 #include "process-util.h"
-#endif
 #include "set.h"
 #include "signal-util.h"
 #include "string-table.h"

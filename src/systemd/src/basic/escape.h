@@ -28,9 +28,7 @@
 #endif /* NM_IGNORED */
 
 #include "string-util.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 
 /* What characters are special in the shell? */
 /* must be escaped outside and inside double-quotes */

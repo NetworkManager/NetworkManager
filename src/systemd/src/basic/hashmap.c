@@ -29,9 +29,7 @@
 #include "hashmap.h"
 #include "macro.h"
 #include "mempool.h"
-#if 0 /* NM_IGNORED */
 #include "process-util.h"
-#endif /* NM_IGNORED */
 #include "random-util.h"
 #include "set.h"
 #include "siphash24.h"

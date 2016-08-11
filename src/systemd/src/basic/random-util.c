@@ -34,9 +34,7 @@
 
 #include "fd-util.h"
 #include "io-util.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif
 #include "random-util.h"
 #include "time-util.h"
 

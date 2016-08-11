@@ -140,8 +140,12 @@ sd_notify (int unset_environment, const char *state)
 }
 
 /* Can't include both net/if.h and linux/if.h; so have to define this here */
+#ifndef IF_NAMESIZE
+#define IF_NAMESIZE 16
+#endif
+
 #ifndef IFNAMSIZ
-#define IFNAMSIZ 16
+#define IFNAMSIZ IF_NAMESIZE
 #endif
 
 #ifndef MAX_HANDLE_SZ

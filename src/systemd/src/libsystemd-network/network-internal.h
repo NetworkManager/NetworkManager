@@ -23,7 +23,6 @@
 
 #include "sd-dhcp-lease.h"
 
-#if 0 /* NM_IGNORED */
 #include "condition.h"
 #include "udev.h"
 
@@ -65,7 +64,6 @@ int config_parse_iaid(const char *unit, const char *filename, unsigned line,
 
 int net_get_unique_predictable_data(struct udev_device *device, uint64_t *result);
 const char *net_get_name(struct udev_device *device);
-#endif /* NM_IGNORED */
 
 void serialize_in_addrs(FILE *f, const struct in_addr *addresses, size_t size);
 int deserialize_in_addrs(struct in_addr **addresses, const char *string);

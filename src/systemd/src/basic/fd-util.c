@@ -29,9 +29,7 @@
 #include "fd-util.h"
 #include "fs-util.h"
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 #include "parse-util.h"
 #include "path-util.h"
 #include "socket-util.h"

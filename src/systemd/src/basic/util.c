@@ -37,41 +37,29 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
-#if 0 /* NM_IGNORED */
 #include "build.h"
 #include "cgroup-util.h"
 #include "def.h"
 #include "dirent-util.h"
-#endif /* NM_IGNORED */
 #include "fd-util.h"
 #include "fileio.h"
-#if 0 /* NM_IGNORED */
 #include "formats-util.h"
-#endif /* NM_IGNORED */
 #include "hashmap.h"
 #include "hostname-util.h"
 #include "log.h"
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 #include "parse-util.h"
 #include "path-util.h"
-#if 0 /* NM_IGNORED */
 #include "process-util.h"
-#endif /* NM_IGNORED */
 #include "set.h"
 #include "signal-util.h"
-#if 0 /* NM_IGNORED */
 #include "stat-util.h"
-#endif /* NM_IGNORED */
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
 #include "umask-util.h"
-#if 0 /* NM_IGNORED */
 #include "user-util.h"
-#endif /* NM_IGNORED */
 #include "util.h"
 
 /* Put this test here for a lack of better place */

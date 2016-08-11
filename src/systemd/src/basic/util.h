@@ -41,13 +41,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#if 0 /* NM_IGNORED */
 #include "formats-util.h"
-#endif /* NM_IGNORED */
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 #include "time-util.h"
 
 size_t page_size(void) _pure_;

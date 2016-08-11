@@ -33,6 +33,7 @@ SUBDIRS += \
 endif
 
 SYSTEMD_NM_CFLAGS_PATHS = \
+	-I$(top_srcdir)/src/systemd/sd-adapt/ \
 	-I$(top_srcdir)/src/systemd/src/systemd \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
 	-I$(top_srcdir)/src/systemd/src/basic \
@@ -107,6 +108,24 @@ libsystemd_nm_la_SOURCES = \
 	systemd/nm-sd.h \
 	systemd/nm-sd-adapt.c \
 	systemd/nm-sd-adapt.h \
+	systemd/sd-adapt/build.h \
+	systemd/sd-adapt/cgroup-util.h \
+	systemd/sd-adapt/condition.h \
+	systemd/sd-adapt/conf-parser.h \
+	systemd/sd-adapt/def.h \
+	systemd/sd-adapt/dirent-util.h \
+	systemd/sd-adapt/formats-util.h \
+	systemd/sd-adapt/gunicode.h \
+	systemd/sd-adapt/libudev.h \
+	systemd/sd-adapt/missing.h \
+	systemd/sd-adapt/mkdir.h \
+	systemd/sd-adapt/process-util.h \
+	systemd/sd-adapt/sd-daemon.h \
+	systemd/sd-adapt/stat-util.h \
+	systemd/sd-adapt/udev-util.h \
+	systemd/sd-adapt/udev.h \
+	systemd/sd-adapt/user-util.h \
+	systemd/sd-adapt/virt.h \
 	systemd/src/basic/alloc-util.c \
 	systemd/src/basic/alloc-util.h \
 	systemd/src/basic/async.h \

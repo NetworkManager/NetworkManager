@@ -36,23 +36,17 @@
 #include "alloc-util.h"
 #include "fd-util.h"
 #include "fileio.h"
-#if 0 /* NM_IGNORED */
 #include "formats-util.h"
-#endif /* NM_IGNORED */
 #include "log.h"
 #include "macro.h"
-#if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif /* NM_IGNORED */
 #include "parse-util.h"
 #include "path-util.h"
 #include "socket-util.h"
 #include "string-table.h"
 #include "string-util.h"
 #include "strv.h"
-#if 0 /* NM_IGNORED */
 #include "user-util.h"
-#endif /* NM_IGNORED */
 #include "utf8.h"
 #include "util.h"
 
