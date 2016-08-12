@@ -449,26 +449,27 @@ out:
 static void
 test_generic (const char *file, const char *override_vpn_ip_iface)
 {
-	GVariant *con_dict = NULL;
-	GVariant *con_props = NULL;
-	GVariant *device_props = NULL;
-	GVariant *device_ip4_props = NULL;
-	GVariant *device_ip6_props = NULL;
-	GVariant *device_dhcp4_props = NULL;
-	GVariant *device_dhcp6_props = NULL;
+	gs_unref_variant GVariant *con_dict = NULL;
+	gs_unref_variant GVariant *con_props = NULL;
+	gs_unref_variant GVariant *device_props = NULL;
+	gs_unref_variant GVariant *device_ip4_props = NULL;
+	gs_unref_variant GVariant *device_ip6_props = NULL;
+	gs_unref_variant GVariant *device_dhcp4_props = NULL;
+	gs_unref_variant GVariant *device_dhcp6_props = NULL;
 	gs_free char *connectivity_change = NULL;
-	char *vpn_ip_iface = NULL;
-	GVariant *vpn_ip4_props = NULL;
-	GVariant *vpn_ip6_props = NULL;
-	char *expected_iface = NULL;
-	char *action = NULL;
-	char *out_iface = NULL;
+	gs_free char *vpn_ip_iface = NULL;
+	gs_unref_variant GVariant *vpn_ip4_props = NULL;
+	gs_unref_variant GVariant *vpn_ip6_props = NULL;
+	gs_free char *expected_iface = NULL;
+	gs_free char *action = NULL;
+	gs_free char *out_iface = NULL;
 	const char *error_message = NULL;
-	GHashTable *expected_env = NULL;
+	gs_unref_hashtable GHashTable *expected_env = NULL;
 	GError *error = NULL;
 	gboolean success;
 	char *p;
-	char **denv, **iter;
+	gs_strfreev char **denv = NULL;
+	char **iter;
 
 	/* Read in the test file */
 	p = g_build_filename (SRCDIR, file, NULL);
@@ -553,28 +554,6 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	}
 
 	g_assert_cmpstr (expected_iface, ==, out_iface);
-
-	g_strfreev (denv);
-	g_free (out_iface);
-	g_free (vpn_ip_iface);
-	g_free (expected_iface);
-	g_free (action);
-	g_variant_unref (con_dict);
-	g_variant_unref (con_props);
-	g_variant_unref (device_props);
-	if (device_ip4_props)
-		g_variant_unref (device_ip4_props);
-	if (device_ip6_props)
-		g_variant_unref (device_ip6_props);
-	if (device_dhcp4_props)
-		g_variant_unref (device_dhcp4_props);
-	if (device_dhcp6_props)
-		g_variant_unref (device_dhcp6_props);
-	if (vpn_ip4_props)
-		g_variant_unref (vpn_ip4_props);
-	if (vpn_ip6_props)
-		g_variant_unref (vpn_ip6_props);
-	g_hash_table_destroy (expected_env);
 }
 
 /*******************************************/
