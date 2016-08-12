@@ -130,7 +130,6 @@ test_systemd_SOURCES = \
 	test-systemd.c
 
 test_systemd_LDADD = \
-	$(top_builddir)/src/libNetworkManagerBase.la \
 	$(top_builddir)/src/libsystemd-nm.la
 
 ####### utils test #######

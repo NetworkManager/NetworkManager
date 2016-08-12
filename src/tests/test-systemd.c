@@ -27,6 +27,51 @@
 
 #include "nm-test-utils-core.h"
 
+/*****************************************************************************
+ * Stub implementations of libNetworkManagerBase symbols
+ *****************************************************************************/
+
+gboolean
+nm_utils_get_testing_initialized (void)
+{
+	return TRUE;
+}
+
+void
+_nm_utils_set_testing (NMUtilsTestFlags flags)
+{
+	g_assert_not_reached ();
+}
+
+gint32
+nm_utils_get_monotonic_timestamp_s (void)
+{
+	return 1;
+}
+
+NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL];
+
+void
+_nm_log_impl (const char *file,
+              guint line,
+              const char *func,
+              NMLogLevel level,
+              NMLogDomain domain,
+              int error,
+              const char *fmt,
+              ...)
+{
+}
+
+gboolean
+nm_logging_setup (const char  *level,
+                  const char  *domains,
+                  char       **bad_domains,
+                  GError     **error)
+{
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static void
