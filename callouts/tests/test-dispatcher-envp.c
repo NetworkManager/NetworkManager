@@ -456,7 +456,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	GVariant *device_ip6_props = NULL;
 	GVariant *device_dhcp4_props = NULL;
 	GVariant *device_dhcp6_props = NULL;
-	char *connectivity_change = NULL;
+	gs_free char *connectivity_change = NULL;
 	char *vpn_ip_iface = NULL;
 	GVariant *vpn_ip4_props = NULL;
 	GVariant *vpn_ip6_props = NULL;
