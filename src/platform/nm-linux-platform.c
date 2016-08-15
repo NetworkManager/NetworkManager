@@ -1577,7 +1577,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	    && (   lnk_data_complete_from_cache
 	        || address_complete_from_cache
 	        || !af_inet6_token_valid
-	        || !af_inet6_addr_gen_mode_valid)) {
+	        || !af_inet6_addr_gen_mode_valid
+	        || !tb[IFLA_STATS64])) {
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
 		if (link_cached) {
 			if (   lnk_data_complete_from_cache
@@ -1600,6 +1601,12 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 				obj->link.inet6_token = link_cached->link.inet6_token;
 			if (!af_inet6_addr_gen_mode_valid)
 				obj->link.inet6_addr_gen_mode_inv = link_cached->link.inet6_addr_gen_mode_inv;
+			if (!tb[IFLA_STATS64]) {
+				obj->link.rx_packets = link_cached->link.rx_packets;
+				obj->link.rx_bytes = link_cached->link.rx_bytes;
+				obj->link.tx_packets = link_cached->link.tx_packets;
+				obj->link.tx_bytes = link_cached->link.tx_bytes;
+			}
 		}
 	}
 
