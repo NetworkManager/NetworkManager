@@ -538,9 +538,6 @@ typedef struct {
 
 	char *   (*link_get_physical_port_id) (NMPlatform *, int ifindex);
 	guint    (*link_get_dev_id) (NMPlatform *, int ifindex);
-	gboolean (*link_get_stats) (NMPlatform *platform, int ifindex,
-	                            guint64 *rx_packets, guint64 *rx_bytes,
-	                            guint64 *tx_packets, guint64 *tx_bytes);
 	gboolean (*link_get_wake_on_lan) (NMPlatform *, int ifindex);
 	gboolean (*link_get_driver_info) (NMPlatform *,
 	                                  int ifindex,
@@ -772,9 +769,6 @@ gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 
 char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_get_stats (NMPlatform *self, int ifindex,
-                                     guint64 *rx_packets, guint64 *rx_bytes,
-                                     guint64 *tx_packets, guint64 *tx_bytes);
 gboolean nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_get_driver_info (NMPlatform *self,
                                            int ifindex,

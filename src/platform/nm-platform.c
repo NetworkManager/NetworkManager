@@ -1265,21 +1265,6 @@ nm_platform_link_get_dev_id (NMPlatform *self, int ifindex)
 	return 0;
 }
 
-gboolean nm_platform_link_get_stats (NMPlatform *self, int ifindex,
-                                     guint64 *rx_packets, guint64 *rx_bytes,
-                                     guint64 *tx_packets, guint64 *tx_bytes)
-{
-	_CHECK_SELF (self, klass, 0);
-
-	g_return_val_if_fail (ifindex >= 0, 0);
-
-	if (klass->link_get_stats)
-		return klass->link_get_stats (self, ifindex,
-									  rx_packets, rx_bytes,
-									  tx_packets, tx_bytes);
-	return FALSE;
-}
-
 /**
  * nm_platform_link_get_wake_onlan:
  * @self: platform instance

@@ -42,25 +42,20 @@ static gboolean
 update_stats (gpointer user_data)
 {
 	NMDeviceStatistics *self = user_data;
-	guint64 rx_packets;
-	guint64 rx_bytes;
-	guint64 tx_packets;
-	guint64 tx_bytes;
 	int ifindex;
+	const NMPlatformLink *pllink;
 
 	ifindex = nm_device_get_ip_ifindex (self->device);
 
-	if (nm_platform_link_get_stats (NM_PLATFORM_GET, ifindex,
-		                            &rx_packets, &rx_bytes,
-		                            &tx_packets, &tx_bytes)) {
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+	if (pllink) {
 		_LOGT ("{RX} %"PRIu64" packets %"PRIu64" bytes {TX} %"PRIu64" packets %"PRIu64" bytes",
-		       rx_packets, rx_bytes, tx_packets, tx_bytes);
+		       pllink->rx_packets, pllink->rx_bytes, pllink->tx_packets, pllink->tx_bytes);
 
-		nm_device_set_tx_bytes (self->device, tx_bytes);
-		nm_device_set_rx_bytes (self->device, rx_bytes);
-	} else {
+		nm_device_set_tx_bytes (self->device, pllink->tx_bytes);
+		nm_device_set_rx_bytes (self->device, pllink->rx_bytes);
+	} else
 		_LOGE ("error no stats available");
-	}
 
 	/* Keep polling */
 	nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);

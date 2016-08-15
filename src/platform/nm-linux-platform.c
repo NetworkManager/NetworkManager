@@ -4534,27 +4534,6 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	return errno ? 0 : (int) int_val;
 }
 
-static gboolean
-link_get_stats (NMPlatform *platform, int ifindex,
-                guint64 *rx_packets, guint64 *rx_bytes,
-                guint64 *tx_packets, guint64 *tx_bytes)
-{
-	nm_auto_pop_netns NMPNetns *netns = NULL;
-	const NMPObject *obj;
-
-	obj = cache_lookup_link (platform, ifindex);
-
-	if (!obj)
-		return FALSE;
-
-	*rx_packets = obj->link.rx_packets;
-	*rx_bytes = obj->link.rx_bytes;
-	*tx_packets = obj->link.tx_packets;
-	*tx_bytes = obj->link.tx_bytes;
-
-	return TRUE;
-}
-
 static int
 vlan_add (NMPlatform *platform,
           const char *name,
@@ -6547,7 +6526,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
-	platform_class->link_get_stats = link_get_stats;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
 	platform_class->link_get_driver_info = link_get_driver_info;
 
