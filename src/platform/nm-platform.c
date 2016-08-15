@@ -3792,10 +3792,6 @@ int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
 	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, rx_packets);
-	_CMP_FIELD (a, b, rx_bytes);
-	_CMP_FIELD (a, b, tx_packets);
-	_CMP_FIELD (a, b, tx_bytes);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, type);
 	_CMP_FIELD_STR (a, b, name);
@@ -3813,6 +3809,10 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	if (a->addr.len)
 		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
 	_CMP_FIELD_MEMCMP (a, b, inet6_token);
+	_CMP_FIELD (a, b, rx_packets);
+	_CMP_FIELD (a, b, rx_bytes);
+	_CMP_FIELD (a, b, tx_packets);
+	_CMP_FIELD (a, b, tx_bytes);
 	return 0;
 }
 
