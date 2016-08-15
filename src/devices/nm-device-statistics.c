@@ -49,13 +49,16 @@ update_stats (gpointer user_data)
 
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
 	if (pllink) {
-		_LOGT ("{RX} %"PRIu64" packets %"PRIu64" bytes {TX} %"PRIu64" packets %"PRIu64" bytes",
-		       pllink->rx_packets, pllink->rx_bytes, pllink->tx_packets, pllink->tx_bytes);
+		_LOGT ("ifindex %d: {RX} %"PRIu64" packets %"PRIu64" bytes {TX} %"PRIu64" packets %"PRIu64" bytes",
+		       ifindex, pllink->rx_packets, pllink->rx_bytes, pllink->tx_packets, pllink->tx_bytes);
 
 		nm_device_set_tx_bytes (self->device, pllink->tx_bytes);
 		nm_device_set_rx_bytes (self->device, pllink->rx_bytes);
-	} else
-		_LOGE ("error no stats available");
+	} else {
+		_LOGT ("error no stats available for ifindex %d", ifindex);
+		nm_device_set_tx_bytes (self->device, 0);
+		nm_device_set_rx_bytes (self->device, 0);
+	}
 
 	/* Keep polling */
 	nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
