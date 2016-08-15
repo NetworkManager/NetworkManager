@@ -275,8 +275,8 @@ LT_LIB_M
 dnl
 dnl Checks for libdl - on certain platforms its part of libc
 dnl
-AC_CHECK_LIB([dl], [dladdr], LIBDL="-ldl", LIBDL="")
-AC_SUBST(LIBDL)
+AC_SEARCH_LIBS([dlopen], [dl dld], [], [ac_cv_search_dlopen=])
+AC_SUBST([DL_LIBS], "$ac_cv_search_dlopen")
 
 PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
 	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh')

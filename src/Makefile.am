@@ -491,7 +491,7 @@ libNetworkManager_la_LIBADD = \
 	$(LIBNL_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBNDP_LIBS) \
-	$(LIBDL) \
+	$(DL_LIBS) \
 	$(LIBM) \
 	$(SELINUX_LIBS) \
 	$(LIBAUDIT_LIBS)
@@ -597,7 +597,7 @@ libnm_iface_helper_la_LIBADD = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
-	$(LIBDL) \
+	$(DL_LIBS) \
 	$(LIBM)
 
 nm_iface_helper_SOURCES = \

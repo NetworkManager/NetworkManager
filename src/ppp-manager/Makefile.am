@@ -22,7 +22,7 @@ nm_pppd_plugin_la_LDFLAGS = -module -avoid-version
 
 nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
-	$(LIBDL) \
+	$(DL_LIBS) \
 	$(NULL)
 
 endif
