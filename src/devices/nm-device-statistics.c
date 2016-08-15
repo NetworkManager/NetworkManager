@@ -47,6 +47,8 @@ update_stats (gpointer user_data)
 
 	ifindex = nm_device_get_ip_ifindex (self->device);
 
+	nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
+
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
 	if (pllink) {
 		_LOGT ("ifindex %d: {RX} %"PRIu64" packets %"PRIu64" bytes {TX} %"PRIu64" packets %"PRIu64" bytes",
@@ -59,9 +61,6 @@ update_stats (gpointer user_data)
 		nm_device_set_tx_bytes (self->device, 0);
 		nm_device_set_rx_bytes (self->device, 0);
 	}
-
-	/* Keep polling */
-	nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
 
 	return TRUE;
 }
