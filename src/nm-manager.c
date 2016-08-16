@@ -4920,7 +4920,7 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	} else if (!strcmp (pfd->glib_propname, NM_DEVICE_STATISTICS_REFRESH_RATE_MS)) {
 		g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32));
 		/* the same here */
-		g_object_set (object, pfd->glib_propname, g_variant_get_uint32 (value), NULL);
+		g_object_set (object, pfd->glib_propname, (guint) g_variant_get_uint32 (value), NULL);
 	} else {
 		g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN));
 		/* the same here */
