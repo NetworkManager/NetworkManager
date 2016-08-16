@@ -245,65 +245,6 @@ because the user has no physical access to the router itself, but has been given
 as passphrase/PSK instead.
 
 
-* Proxies
-
-HTTP and other proxies are per-connection configuration.  It's highly unlikely
-that the same proxy you need to use at work is used at home or in a coffee shop.
-Thus, it makes sense that which proxy settings to use should be updated when
-network connections change.  NetworkManager is a perfect place to do this since
-it tracks which network connections are active, and it already queries the
-network for automatic proxy configuration via DHCP and WPAD.
-
-However, proxy handling is complicated and may require use of Javascript to
-parse PAC files provided by WPAD, and this is not something NetworkManager
-should do itself.  Instead, that should be left to "proxy handlers", or external
-utilities like libproxy or pacrunner that take raw proxy information, parse it,
-and tell applications what proxy server to use for a specific network resource.
-NetworkManager should provide all the proxy information it can find to these
-external proxy handlers via the D-Bus interface and dispatcher scripts.
-
-We should add a new NMSetting subclass called NMSettingProxy that holds
-necessary proxy configuration.  The properties of this setting should be a
-superset of what is provided in the Firefox proxy configuration screen and the
-various desktop environment proxy configuration tools like the GNOME Network
-Proxy control panel; this should include at a minimum:
-
-  method: "auto", "manual", "none"
-  default-proxy: string
-  default-proxy-port: uint
-  default-always: boolean (use default proxy for all protocols)
-  ssl-proxy: string
-  ssl-proxy-port: uint
-  ftp-proxy: string
-  ftp-proxy-port: uint
-  socks-proxy: string
-  socks-proxy-port: uint
-  socks-version: uint, either 4 or 5
-  no-proxy-for: array of strings (things not to use the proxy for, ie ".foobar.com",
-                 "192.168.0.1/24", an IPv6 address, etc)
-  pac-url: string (URL of PAC file, overrides DHCP-provided WPAD value)
-  (FIXME: proxy authentication?  do we need separate user/pass properties for
-    each protocol type?  should NM handle proxy auth or should it be punted
-    to each application?)
-
-After completing IP configuration but still during the NM_DEVICE_STATE_IP_CONFIG
-activation stage, NetworkManager would merge the automatically supplied proxy
-configuration (from DHCP's WPAD option) with user-provided overrides from the
-NMSettingProxy export the resulting proxy configuration via D-Bus and dispatcher
-scripts.  The 'default' connection's proxy configuration would be preferred, so
-we'd have to update proxy configuration from nm-policy.c the same time we update
-DNS information and the default route.
-
-Merged proxy information should be exposed in two places.  First, it should be
-exported over D-Bus as a property of the org.freedesktop.NetworkManager.Device
-interface.  This property should be named "ProxyInfo" and should have the
-D-Bus signature "a{sv}" (eg, dictionary) and should mirror the properties from
-the NMSettingProxy object.
-
-Second, it should be exported via the dispatcher to dispatcher scripts when
-with the "up" and "down" events.
-
-
 * Better Tablet/Mobile Behavior
 
 There are a few components to this:
