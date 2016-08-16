@@ -101,6 +101,54 @@ add_domains (GSList *items,
 }
 
 static GSList *
+construct_proxy_items (GSList *items, GVariant *proxy_config, const char *prefix)
+{
+	GVariant *val;
+
+	if (proxy_config == NULL)
+		return items;
+
+	if (prefix == NULL)
+		prefix = "";
+
+	/* Proxies */
+	val = g_variant_lookup_value (proxy_config, "proxies", G_VARIANT_TYPE_STRING_ARRAY);
+	if (val) {
+		items = _list_append_val_strv (items, g_variant_dup_strv (val, NULL),
+		                               "%sPROXIES=", prefix);
+		g_variant_unref (val);
+	}
+
+	/* PAC Url */
+	val = g_variant_lookup_value (proxy_config, "pac-url", G_VARIANT_TYPE_STRING);
+	if (val) {
+		char *str;
+
+		str = g_strdup_printf ("%sPROXY_PAC_URL=%s",
+		                       prefix,
+		                       g_variant_get_string (val, NULL));
+
+		items = g_slist_prepend (items, str);
+		g_variant_unref (val);
+	}
+
+	/* PAC Script */
+	val = g_variant_lookup_value (proxy_config, "pac-script", G_VARIANT_TYPE_STRING);
+	if (val) {
+		char *str;
+
+		str = g_strdup_printf ("%sPROXY_PAC_SCRIPT=%s",
+		                       prefix,
+		                       g_variant_get_string (val, NULL));
+
+		items = g_slist_prepend (items, str);
+		g_variant_unref (val);
+	}
+
+	return items;
+}
+
+static GSList *
 construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
@@ -323,12 +371,14 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     GVariant *connection_dict,
                                     GVariant *connection_props,
                                     GVariant *device_props,
+                                    GVariant *device_proxy_props,
                                     GVariant *device_ip4_props,
                                     GVariant *device_ip6_props,
                                     GVariant *device_dhcp4_props,
                                     GVariant *device_dhcp6_props,
                                     const char *connectivity_state,
                                     const char *vpn_ip_iface,
+                                    GVariant *vpn_proxy_props,
                                     GVariant *vpn_ip4_props,
                                     GVariant *vpn_ip6_props,
                                     char **out_iface,
@@ -443,6 +493,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	/* Device it's aren't valid if the device isn't activated */
 	if (iface && (dev_state == NM_DEVICE_STATE_ACTIVATED)) {
+		items = construct_proxy_items (items, device_proxy_props, NULL);
 		items = construct_ip4_items (items, device_ip4_props, NULL);
 		items = construct_ip6_items (items, device_ip6_props, NULL);
 		items = construct_device_dhcp4_items (items, device_dhcp4_props);
@@ -451,6 +502,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	if (vpn_ip_iface) {
 		items = g_slist_prepend (items, g_strdup_printf ("VPN_IP_IFACE=%s", vpn_ip_iface));
+		items = construct_proxy_items (items, vpn_proxy_props, "VPN_");
 		items = construct_ip4_items (items, vpn_ip4_props, "VPN_");
 		items = construct_ip6_items (items, vpn_ip6_props, "VPN_");
 	}
