@@ -43,6 +43,7 @@ typedef struct _NMSettingGsm              NMSettingGsm;
 typedef struct _NMSettingInfiniband       NMSettingInfiniband;
 typedef struct _NMSettingIPConfig         NMSettingIPConfig;
 typedef struct _NMSettingIPTunnel         NMSettingIPTunnel;
+typedef struct _NMSettingProxy            NMSettingProxy;
 typedef struct _NMSettingIP4Config        NMSettingIP4Config;
 typedef struct _NMSettingIP6Config        NMSettingIP6Config;
 typedef struct _NMSettingMacvlan          NMSettingMacvlan;

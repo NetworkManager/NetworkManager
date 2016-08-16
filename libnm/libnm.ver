@@ -1087,5 +1087,24 @@ global:
 libnm_1_6_0 {
 global:
 	nm_capability_get_type;
+	nm_connection_get_setting_proxy;
+	nm_setting_proxy_get_type;
+	nm_setting_proxy_new;
+	nm_setting_proxy_get_method;
+	nm_setting_proxy_method_get_type;
+	nm_setting_proxy_get_http_proxy;
+	nm_setting_proxy_get_http_port;
+	nm_setting_proxy_get_http_default;
+	nm_setting_proxy_get_ssl_proxy;
+	nm_setting_proxy_get_ssl_port;
+	nm_setting_proxy_get_ftp_proxy;
+	nm_setting_proxy_get_ftp_port;
+	nm_setting_proxy_get_socks_proxy;
+	nm_setting_proxy_get_socks_port;
+	nm_setting_proxy_get_socks_version_5;
+	nm_setting_proxy_get_pac_script;
+	nm_setting_proxy_get_no_proxy_for;
+	nm_setting_proxy_get_browser_only;
+	nm_setting_proxy_get_pac_url;
 	nm_utils_is_json_object;
 } libnm_1_4_0;
