@@ -1955,6 +1955,8 @@ nm_device_realize_start (NMDevice *self,
                          gboolean *out_compatible,
                          GError **error)
 {
+	NMPlatformLink plink_copy;
+
 	NM_SET_OUT (out_compatible, TRUE);
 
 	if (plink) {
@@ -1969,6 +1971,10 @@ nm_device_realize_start (NMDevice *self,
 			return FALSE;
 	}
 
+	if (plink) {
+		plink_copy = *plink;
+		plink = &plink_copy;
+	}
 	realize_start_setup (self, plink);
 
 	return TRUE;
