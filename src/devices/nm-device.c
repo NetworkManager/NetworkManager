@@ -12018,11 +12018,6 @@ nm_device_init (NMDevice *self)
 
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
-
-	priv->refresh_rate_ms = 0;
-	priv->tx_bytes = 0;
-	priv->rx_bytes = 0;
-	priv->statistics = NULL;
 }
 
 static GObject*
