@@ -803,30 +803,24 @@ _stats_update_counters (NMDevice *self,
 }
 
 static void
-_stats_refresh (NMDevice *self)
+_stats_update_counters_from_pllink (NMDevice *self, const NMPlatformLink *pllink)
 {
-	const NMPlatformLink *pllink;
-	int ifindex;
-
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex > 0) {
-		nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
-		pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
-		if (pllink) {
-			_stats_update_counters (self, pllink->tx_bytes, pllink->rx_bytes);
-			return;
-		}
-	}
-	_stats_update_counters (self, 0, 0);
+	_stats_update_counters (self, pllink->tx_bytes, pllink->rx_bytes);
 }
 
 static gboolean
 _stats_timeout_cb (gpointer user_data)
 {
 	NMDevice *self = user_data;
+	int ifindex;
 
-	_LOGT (LOGD_DEVICE, "stats: refresh");
-	_stats_refresh (self);
+	ifindex = nm_device_get_ip_ifindex (self);
+
+	_LOGT (LOGD_DEVICE, "stats: refresh %d", ifindex);
+
+	if (ifindex > 0)
+		nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
+
 	return G_SOURCE_CONTINUE;
 }
 
@@ -851,6 +845,7 @@ static void
 _stats_set_refresh_rate (NMDevice *self, guint refresh_rate_ms)
 {
 	NMDevicePrivate *priv;
+	int ifindex;
 	guint old_rate;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -871,16 +866,17 @@ _stats_set_refresh_rate (NMDevice *self, guint refresh_rate_ms)
 	if (_stats_refresh_rate_real (old_rate) == refresh_rate_ms)
 		return;
 
-	if (!refresh_rate_ms) {
-		nm_clear_g_source (&priv->stats.timeout_id);
-		_stats_update_counters (self, 0, 0);
-		return;
-	}
-
 	nm_clear_g_source (&priv->stats.timeout_id);
 
-	/* trigger an inital refresh of the data when the refresh-rate changes */
-	_stats_refresh (self);
+	if (!refresh_rate_ms)
+		return;
+
+	/* trigger an inital refresh of the data whenever the refresh-rate changes.
+	 * As we process the result in an idle handler with device_link_changed(),
+	 * we don't get the result right away. */
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex > 0)
+		nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
 
 	priv->stats.timeout_id = g_timeout_add (refresh_rate_ms, _stats_timeout_cb, self);
 }
@@ -1830,6 +1826,9 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_DRIVER);
 	}
 
+	if (ifindex == nm_device_get_ip_ifindex (self))
+		_stats_update_counters_from_pllink (self, &info);
+
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
 	got_hw_addr = (!had_hw_addr && priv->hw_addr);
@@ -1957,6 +1956,8 @@ device_ip_link_changed (NMDevice *self)
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, priv->ip_ifindex);
 	if (!pllink)
 		return G_SOURCE_REMOVE;
+
+	_stats_update_counters_from_pllink (self, pllink);
 
 	if (pllink->name[0] && g_strcmp0 (priv->ip_iface, pllink->name)) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
@@ -2251,6 +2252,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	if (plink) {
 		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
 		update_device_from_platform_link (self, plink);
+		_stats_update_counters_from_pllink (self, plink);
 	}
 
 	if (priv->ifindex > 0) {
@@ -2321,11 +2323,8 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	nm_assert (!priv->stats.timeout_id);
 	real_rate = _stats_refresh_rate_real (priv->stats.refresh_rate_ms);
-	if (real_rate) {
-		if (plink)
-			_stats_update_counters (self, plink->tx_bytes, plink->rx_bytes);
+	if (real_rate)
 		priv->stats.timeout_id = g_timeout_add (real_rate, _stats_timeout_cb, self);
-	}
 
 	klass->realize_start_notify (self, plink);
 

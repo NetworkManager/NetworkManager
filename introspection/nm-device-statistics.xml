@@ -5,10 +5,10 @@
     <!--
         RefreshRateMs:
 
-        Rate of change of the rest of properties of this interface. If zero, the
-        properties do not change. Otherwise, the properties are refreshed each
-        RefreshRateMs milliseconds in case the underlying counter has changed
-        too.
+        Refresh rate of the rest of properties of this interface. The properties
+        are guaranteed to be refreshed each RefreshRateMs milliseconds in case
+        the underlying counter has changed too.
+        If zero, there is no guaranteed refresh rate of the properties.
     -->
     <property name="RefreshRateMs" type="u" access="readwrite"/>
 
