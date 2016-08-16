@@ -413,11 +413,13 @@ typedef struct _NMDevicePrivate {
 
 	guint check_delete_unrealized_id;
 
-	guint refresh_rate_ms;
-	guint64 tx_bytes;
-	guint64 rx_bytes;
+	struct {
+		guint refresh_rate_ms;
+		guint64 tx_bytes;
+		guint64 rx_bytes;
 
-	NMDeviceStatistics *statistics;
+		NMDeviceStatistics *statistics;
+	} stats;
 
 } NMDevicePrivate;
 
@@ -789,10 +791,10 @@ nm_device_set_tx_bytes (NMDevice *self, guint64 tx_bytes)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (tx_bytes == priv->tx_bytes)
+	if (tx_bytes == priv->stats.tx_bytes)
 		return;
 
-	priv->tx_bytes = tx_bytes;
+	priv->stats.tx_bytes = tx_bytes;
 	_notify (self, PROP_TX_BYTES);
 }
 
@@ -804,10 +806,10 @@ nm_device_set_rx_bytes (NMDevice *self, guint64 rx_bytes)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (rx_bytes == priv->rx_bytes)
+	if (rx_bytes == priv->stats.rx_bytes)
 		return;
 
-	priv->rx_bytes = rx_bytes;
+	priv->stats.rx_bytes = rx_bytes;
 	_notify (self, PROP_RX_BYTES);
 }
 
@@ -2241,9 +2243,9 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		priv->carrier = TRUE;
 	}
 
-	if (priv->refresh_rate_ms && !priv->statistics) {
-		priv->statistics = nm_device_statistics_new (self,
-		                                             priv->refresh_rate_ms);
+	if (priv->stats.refresh_rate_ms && !priv->stats.statistics) {
+		priv->stats.statistics = nm_device_statistics_new (self,
+		                                                   priv->stats.refresh_rate_ms);
 	}
 
 	klass->realize_start_notify (self, plink);
@@ -2417,11 +2419,11 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		g_clear_pointer (&priv->physical_port_id, g_free);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
 	}
-	if (priv->statistics) {
-		nm_device_statistics_unref (priv->statistics);
-		priv->statistics = NULL;
-		priv->tx_bytes = 0;
-		priv->tx_bytes = 0;
+	if (priv->stats.statistics) {
+		nm_device_statistics_unref (priv->stats.statistics);
+		priv->stats.statistics = NULL;
+		priv->stats.tx_bytes = 0;
+		priv->stats.tx_bytes = 0;
 		_notify (self, PROP_TX_BYTES);
 		_notify (self, PROP_RX_BYTES);
 	}
@@ -12166,9 +12168,9 @@ dispose (GObject *object)
 		g_clear_object (&priv->lldp_listener);
 	}
 
-	if (priv->statistics) {
-		nm_device_statistics_unref (priv->statistics);
-		priv->statistics = NULL;
+	if (priv->stats.statistics) {
+		nm_device_statistics_unref (priv->stats.statistics);
+		priv->stats.statistics = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
@@ -12307,21 +12309,21 @@ set_property (GObject *object, guint prop_id,
 		guint refresh_rate_ms;
 
 		refresh_rate_ms = g_value_get_uint (value);
-		if (priv->refresh_rate_ms == refresh_rate_ms)
+		if (priv->stats.refresh_rate_ms == refresh_rate_ms)
 			break;
 
-		priv->refresh_rate_ms = refresh_rate_ms;
-		_LOGI (LOGD_DEVICE, "statistics refresh rate set to %u ms", priv->refresh_rate_ms);
+		priv->stats.refresh_rate_ms = refresh_rate_ms;
+		_LOGI (LOGD_DEVICE, "statistics refresh rate set to %u ms", priv->stats.refresh_rate_ms);
 
-		if (priv->refresh_rate_ms) {
-			if (priv->statistics)
-				nm_device_statistics_change_rate (priv->statistics, priv->refresh_rate_ms);
+		if (priv->stats.refresh_rate_ms) {
+			if (priv->stats.statistics)
+				nm_device_statistics_change_rate (priv->stats.statistics, priv->stats.refresh_rate_ms);
 			else
-				priv->statistics =
-				    nm_device_statistics_new (self, priv->refresh_rate_ms);
+				priv->stats.statistics =
+				    nm_device_statistics_new (self, priv->stats.refresh_rate_ms);
 		} else {
-			nm_device_statistics_unref (priv->statistics);
-			priv->statistics = NULL;
+			nm_device_statistics_unref (priv->stats.statistics);
+			priv->stats.statistics = NULL;
 		}
 		break;
 	}
@@ -12488,13 +12490,13 @@ get_property (GObject *object, guint prop_id,
 		break;
 	}
 	case PROP_REFRESH_RATE_MS:
-		g_value_set_uint (value, priv->refresh_rate_ms);
+		g_value_set_uint (value, priv->stats.refresh_rate_ms);
 		break;
 	case PROP_TX_BYTES:
-		g_value_set_uint64 (value, priv->tx_bytes);
+		g_value_set_uint64 (value, priv->stats.tx_bytes);
 		break;
 	case PROP_RX_BYTES:
-		g_value_set_uint64 (value, priv->rx_bytes);
+		g_value_set_uint64 (value, priv->stats.rx_bytes);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
