@@ -114,9 +114,6 @@ void nm_device_ip_method_failed (NMDevice *self, int family, NMDeviceStateReason
 
 gboolean nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value);
 
-void nm_device_set_tx_bytes (NMDevice *self, guint64 tx_bytes);
-void nm_device_set_rx_bytes (NMDevice *self, guint64 rx_bytes);
-
 #define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
 	NM_DEVICE_CLASS (klass)->connection_type = conn_type; \
 	{ \

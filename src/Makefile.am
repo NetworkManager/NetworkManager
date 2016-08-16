@@ -331,8 +331,6 @@ libNetworkManager_la_SOURCES = \
 	devices/nm-device-generic.h \
 	devices/nm-device-logging.h \
 	devices/nm-device-private.h \
-	devices/nm-device-statistics.c \
-	devices/nm-device-statistics.h \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
