@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <syslog.h>
 
+#include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-platform.h"
@@ -41,6 +42,7 @@
 #include "nm-dispatcher.h"
 #include "nm-agent-manager.h"
 #include "nm-core-internal.h"
+#include "nm-pacrunner-manager.h"
 #include "nm-default-route-manager.h"
 #include "nm-route-manager.h"
 #include "nm-firewall-manager.h"
@@ -124,6 +126,7 @@ typedef struct {
 	GCancellable *cancellable;
 	GVariant *connect_hash;
 	guint connect_timeout;
+	NMProxyConfig *proxy_config;
 	gboolean has_ip4;
 	NMIP4Config *ip4_config;
 	guint32 ip4_internal_gw;
@@ -537,6 +540,7 @@ _set_vpn_state (NMVpnConnection *self,
 		                             _get_applied_connection (self),
 		                             parent_dev,
 		                             priv->ip_iface,
+		                             priv->proxy_config,
 		                             priv->ip4_config,
 		                             priv->ip6_config,
 		                             dispatcher_pre_up_done,
@@ -556,11 +560,20 @@ _set_vpn_state (NMVpnConnection *self,
 		                        _get_applied_connection (self),
 		                        parent_dev,
 		                        priv->ip_iface,
+		                        priv->proxy_config,
 		                        priv->ip4_config,
 		                        priv->ip6_config,
 		                        NULL,
 		                        NULL,
 		                        NULL);
+
+		/* Load PacRunner with VPN's config */
+		if (!nm_pacrunner_manager_send (nm_pacrunner_manager_get (),
+		                                priv->ip_iface,
+		                                priv->proxy_config,
+		                                priv->ip4_config,
+		                                priv->ip6_config))
+			_LOGI ("Couldn't update pacrunner for %s", priv->ip_iface);
 		break;
 	case STATE_DEACTIVATING:
 		if (quitting) {
@@ -569,6 +582,7 @@ _set_vpn_state (NMVpnConnection *self,
 			                             _get_applied_connection (self),
 			                             parent_dev,
 			                             priv->ip_iface,
+			                             priv->proxy_config,
 			                             priv->ip4_config,
 			                             priv->ip6_config);
 		} else {
@@ -577,6 +591,7 @@ _set_vpn_state (NMVpnConnection *self,
 			                             _get_applied_connection (self),
 			                             parent_dev,
 			                             priv->ip_iface,
+			                             priv->proxy_config,
 			                             priv->ip4_config,
 			                             priv->ip6_config,
 			                             dispatcher_pre_down_done,
@@ -586,6 +601,9 @@ _set_vpn_state (NMVpnConnection *self,
 				dispatcher_pre_down_done (0, self);
 			}
 		}
+
+		/* Remove config from PacRunner */
+		nm_pacrunner_manager_remove (nm_pacrunner_manager_get(), priv->ip_iface);
 		break;
 	case STATE_FAILED:
 	case STATE_DISCONNECTED:
@@ -599,6 +617,7 @@ _set_vpn_state (NMVpnConnection *self,
 				                             parent_dev,
 				                             priv->ip_iface,
 				                             NULL,
+				                             NULL,
 				                             NULL);
 			} else {
 				nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
@@ -606,6 +625,7 @@ _set_vpn_state (NMVpnConnection *self,
 				                        _get_applied_connection (self),
 				                        parent_dev,
 				                        priv->ip_iface,
+				                        NULL,
 				                        NULL,
 				                        NULL,
 				                        NULL,
@@ -1276,6 +1296,20 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 		priv->banner = g_strdup (str);
 		_notify (self, PROP_BANNER);
 	}
+
+	/* Proxy Config */
+	g_clear_object (&priv->proxy_config);
+	priv->proxy_config = nm_proxy_config_new ();
+
+	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_PROXY_PAC, "&s", &str)) {
+		nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_AUTO);
+		nm_proxy_config_set_pac_url (priv->proxy_config, str);
+	} else
+		nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_NONE);
+
+	/* User overrides if any from the NMConnection's Proxy settings */
+	nm_proxy_config_merge_setting (priv->proxy_config,
+	                               nm_connection_get_setting_proxy (_get_applied_connection (self)));
 
 	/* External world-visible address of the VPN server */
 	priv->ip4_external_gw = 0;
@@ -2199,6 +2233,14 @@ nm_vpn_connection_get_banner (NMVpnConnection *self)
 	return NM_VPN_CONNECTION_GET_PRIVATE (self)->banner;
 }
 
+NMProxyConfig *
+nm_vpn_connection_get_proxy_config (NMVpnConnection *self)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->proxy_config;
+}
+
 NMIP4Config *
 nm_vpn_connection_get_ip4_config (NMVpnConnection *self)
 {
@@ -2597,6 +2639,7 @@ dispose (GObject *object)
 		g_cancellable_cancel (priv->cancellable);
 		g_clear_object (&priv->cancellable);
 	}
+	g_clear_object (&priv->proxy_config);
 	nm_exported_object_clear_and_unexport (&priv->ip4_config);
 	nm_exported_object_clear_and_unexport (&priv->ip6_config);
 	g_clear_object (&priv->proxy);

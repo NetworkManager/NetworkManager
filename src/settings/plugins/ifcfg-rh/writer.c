@@ -36,6 +36,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-proxy.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-pppoe.h"
@@ -1998,6 +1999,138 @@ error:
 }
 
 static gboolean
+write_proxy_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingProxy *s_proxy;
+	NMSettingProxyMethod method;
+	char *tmp;
+	const char *pac_url, *pac_script;
+	const char *http_proxy, *ssl_proxy, *ftp_proxy, *socks_proxy;
+	guint32 http_port, ssl_port, ftp_port, socks_port;
+	gboolean http_default, socks_version_5, browser_only;
+	const char *const*excludes;
+
+	s_proxy = nm_connection_get_setting_proxy (connection);
+	if (!s_proxy)
+		return TRUE;
+
+	svSetValue (ifcfg, "HTTP_PROXY", NULL, FALSE);
+	svSetValue (ifcfg, "HTTP_PORT", NULL, FALSE);
+	svSetValue (ifcfg, "HTTP_DEFAULT", NULL, FALSE);
+	svSetValue (ifcfg, "SSL_PROXY", NULL, FALSE);
+	svSetValue (ifcfg, "SSL_PORT", NULL, FALSE);
+	svSetValue (ifcfg, "FTP_PROXY", NULL, FALSE);
+	svSetValue (ifcfg, "FTP_PORT", NULL, FALSE);
+	svSetValue (ifcfg, "SOCKS_PROXY", NULL, FALSE);
+	svSetValue (ifcfg, "SOCKS_PORT", NULL, FALSE);
+	svSetValue (ifcfg, "SOCKS_VERSION_5", NULL, FALSE);
+	svSetValue (ifcfg, "NO_PROXY_FOR", NULL, FALSE);
+	svSetValue (ifcfg, "BROWSER_ONLY", NULL, FALSE);
+	svSetValue (ifcfg, "PAC_URL", NULL, FALSE);
+	svSetValue (ifcfg, "PAC_SCRIPT", NULL, FALSE);
+
+	method = nm_setting_proxy_get_method (s_proxy);
+	switch (method) {
+	case NM_SETTING_PROXY_METHOD_AUTO:
+		svSetValue (ifcfg, "PROXY_METHOD", "auto", FALSE);
+
+		pac_url = nm_setting_proxy_get_pac_url (s_proxy);
+		if (pac_url)
+			svSetValue (ifcfg, "PAC_URL", pac_url, FALSE);
+
+		pac_script = nm_setting_proxy_get_pac_script (s_proxy);
+		if (pac_script)
+			svSetValue (ifcfg, "PAC_SCRIPT", pac_script, FALSE);
+
+		break;
+	case NM_SETTING_PROXY_METHOD_MANUAL:
+		svSetValue (ifcfg, "PROXY_METHOD", "manual", FALSE);
+
+		excludes = nm_setting_proxy_get_no_proxy_for (s_proxy);
+		if (excludes && excludes[0]) {
+			gs_free char *str = NULL;
+
+			str = g_strjoinv (" ", (char **) excludes);
+			svSetValue (ifcfg, "NO_PROXY_FOR", str, FALSE);
+		}
+
+		http_proxy = nm_setting_proxy_get_http_proxy (s_proxy);
+		if (http_proxy)
+			svSetValue (ifcfg, "HTTP_PROXY", http_proxy, FALSE);
+
+		svSetValue (ifcfg, "HTTP_PORT", NULL, FALSE);
+		http_port = nm_setting_proxy_get_http_port (s_proxy);
+		if (http_port) {
+			tmp = g_strdup_printf ("%u", http_port);
+			svSetValue (ifcfg, "HTTP_PORT", tmp, FALSE);
+			g_free (tmp);
+		}
+
+		http_default = nm_setting_proxy_get_http_default (s_proxy);
+		if (http_default) {
+			svSetValue (ifcfg, "HTTP_DEFAULT", "yes", FALSE);
+			break;
+		} else
+			svSetValue (ifcfg, "HTTP_DEFAULT", "no", FALSE);
+
+		ssl_proxy = nm_setting_proxy_get_ssl_proxy (s_proxy);
+		if (ssl_proxy)
+			svSetValue (ifcfg, "SSL_PROXY", ssl_proxy, FALSE);
+
+		svSetValue (ifcfg, "SSL_PORT", NULL, FALSE);
+		ssl_port = nm_setting_proxy_get_ssl_port (s_proxy);
+		if (ssl_port) {
+			tmp = g_strdup_printf ("%u", ssl_port);
+			svSetValue (ifcfg, "SSL_PORT", tmp, FALSE);
+			g_free (tmp);
+		}
+
+		ftp_proxy = nm_setting_proxy_get_ftp_proxy (s_proxy);
+		if (ftp_proxy)
+			svSetValue (ifcfg, "FTP_PROXY", ftp_proxy, FALSE);
+
+		svSetValue (ifcfg, "FTP_PORT", NULL, FALSE);
+		ftp_port = nm_setting_proxy_get_ftp_port (s_proxy);
+		if (ftp_port) {
+			tmp = g_strdup_printf ("%u", ftp_port);
+			svSetValue (ifcfg, "FTP_PORT", tmp, FALSE);
+			g_free (tmp);
+		}
+
+		socks_proxy = nm_setting_proxy_get_socks_proxy (s_proxy);
+		if (socks_proxy)
+			svSetValue (ifcfg, "SOCKS_PROXY", socks_proxy, FALSE);
+
+		svSetValue (ifcfg, "SOCKS_PORT", NULL, FALSE);
+		socks_port = nm_setting_proxy_get_socks_port (s_proxy);
+		if (socks_port) {
+			tmp = g_strdup_printf ("%u", socks_port);
+			svSetValue (ifcfg, "SOCKS_PORT", tmp, FALSE);
+			g_free (tmp);
+		}
+
+		socks_version_5 = nm_setting_proxy_get_socks_version_5 (s_proxy);
+		if (socks_version_5)
+			svSetValue (ifcfg, "SOCKS_VERSION_5", "yes", FALSE);
+		else
+			svSetValue (ifcfg, "SOCKS_VERSION_5", "no", FALSE);
+
+		break;
+	case NM_SETTING_PROXY_METHOD_NONE:
+		svSetValue (ifcfg, "PROXY_METHOD", "none", FALSE);
+		/* Write nothing more */
+	}
+
+	browser_only = nm_setting_proxy_get_browser_only (s_proxy);
+	if (browser_only)
+		svSetValue (ifcfg, "BROWSER_ONLY", "yes", FALSE);
+	else
+		svSetValue (ifcfg, "BROWSER_ONLY", "no", FALSE);
+
+	return TRUE;
+}
+
+static gboolean
 write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
@@ -2885,6 +3018,9 @@ write_connection (NMConnection *connection,
 		goto out;
 
 	if (!write_dcb_setting (connection, ifcfg, error))
+		goto out;
+
+	if (!write_proxy_setting (connection, ifcfg, error))
 		goto out;
 
 	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
