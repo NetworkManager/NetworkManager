@@ -48,6 +48,7 @@ typedef struct _NMIP6Config          NMIP6Config;
 typedef struct _NMManager            NMManager;
 typedef struct _NMPolicy             NMPolicy;
 typedef struct _NMRfkillManager      NMRfkillManager;
+typedef struct _NMPacRunnerManager   NMPacRunnerManager;
 typedef struct _NMRouteManager       NMRouteManager;
 typedef struct _NMSessionMonitor     NMSessionMonitor;
 typedef struct _NMSleepMonitor       NMSleepMonitor;
