@@ -795,6 +795,42 @@ NmcOutputField nmc_fields_setting_vxlan[] = {
                                              NM_SETTING_VXLAN_L2_MISS","\
                                              NM_SETTING_VXLAN_L3_MISS
 
+/* Available fields for NM_SETTING_PROXY_SETTING_NAME */
+NmcOutputField nmc_fields_setting_proxy[] = {
+	SETTING_FIELD ("name"),                            /* 0 */
+	SETTING_FIELD (NM_SETTING_PROXY_METHOD),           /* 1 */
+	SETTING_FIELD (NM_SETTING_PROXY_HTTP_PROXY),       /* 2 */
+	SETTING_FIELD (NM_SETTING_PROXY_HTTP_PORT),        /* 3 */
+	SETTING_FIELD (NM_SETTING_PROXY_HTTP_DEFAULT),     /* 4 */
+	SETTING_FIELD (NM_SETTING_PROXY_SSL_PROXY),        /* 5 */
+	SETTING_FIELD (NM_SETTING_PROXY_SSL_PORT),         /* 6 */
+	SETTING_FIELD (NM_SETTING_PROXY_FTP_PROXY),        /* 7 */
+	SETTING_FIELD (NM_SETTING_PROXY_FTP_PORT),         /* 8 */
+	SETTING_FIELD (NM_SETTING_PROXY_SOCKS_PROXY),      /* 9 */
+	SETTING_FIELD (NM_SETTING_PROXY_SOCKS_PORT),       /* 10 */
+	SETTING_FIELD (NM_SETTING_PROXY_SOCKS_VERSION_5),  /* 11 */
+	SETTING_FIELD (NM_SETTING_PROXY_NO_PROXY_FOR),     /* 12 */
+	SETTING_FIELD (NM_SETTING_PROXY_BROWSER_ONLY),     /* 13 */
+	SETTING_FIELD (NM_SETTING_PROXY_PAC_URL),          /* 14 */
+	SETTING_FIELD (NM_SETTING_PROXY_PAC_SCRIPT),       /* 15 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_PROXY_ALL         "name"","\
+                                             NM_SETTING_PROXY_METHOD","\
+                                             NM_SETTING_PROXY_HTTP_PROXY","\
+                                             NM_SETTING_PROXY_HTTP_PORT","\
+                                             NM_SETTING_PROXY_HTTP_DEFAULT","\
+                                             NM_SETTING_PROXY_SSL_PROXY","\
+                                             NM_SETTING_PROXY_SSL_PORT","\
+                                             NM_SETTING_PROXY_FTP_PROXY","\
+                                             NM_SETTING_PROXY_FTP_PORT","\
+                                             NM_SETTING_PROXY_SOCKS_PROXY","\
+                                             NM_SETTING_PROXY_SOCKS_PORT","\
+                                             NM_SETTING_PROXY_SOCKS_VERSION_5","\
+                                             NM_SETTING_PROXY_NO_PROXY_FOR","\
+                                             NM_SETTING_PROXY_BROWSER_ONLY","\
+                                             NM_SETTING_PROXY_PAC_URL","\
+                                             NM_SETTING_PROXY_PAC_SCRIPT
 /*----------------------------------------------------------------------------*/
 static char *
 wep_key_type_to_string (NMWepKeyType type)
@@ -2100,6 +2136,86 @@ DEFINE_GETTER (nmc_property_vxlan_get_rsc, NM_SETTING_VXLAN_RSC)
 DEFINE_GETTER (nmc_property_vxlan_get_l2_miss, NM_SETTING_VXLAN_L2_MISS)
 DEFINE_GETTER (nmc_property_vxlan_get_l3_miss, NM_SETTING_VXLAN_L3_MISS)
 
+/* --- NM_SETTING_PROXY_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_proxy_get_http_proxy, NM_SETTING_PROXY_HTTP_PROXY)
+DEFINE_GETTER (nmc_property_proxy_get_http_port, NM_SETTING_PROXY_HTTP_PORT)
+DEFINE_GETTER (nmc_property_proxy_get_http_default, NM_SETTING_PROXY_HTTP_DEFAULT)
+DEFINE_GETTER (nmc_property_proxy_get_ssl_proxy, NM_SETTING_PROXY_SSL_PROXY)
+DEFINE_GETTER (nmc_property_proxy_get_ssl_port, NM_SETTING_PROXY_SSL_PORT)
+DEFINE_GETTER (nmc_property_proxy_get_ftp_proxy, NM_SETTING_PROXY_FTP_PROXY)
+DEFINE_GETTER (nmc_property_proxy_get_ftp_port, NM_SETTING_PROXY_FTP_PORT)
+DEFINE_GETTER (nmc_property_proxy_get_socks_proxy, NM_SETTING_PROXY_SOCKS_PROXY)
+DEFINE_GETTER (nmc_property_proxy_get_socks_port, NM_SETTING_PROXY_SOCKS_PORT)
+DEFINE_GETTER (nmc_property_proxy_get_socks_version_5, NM_SETTING_PROXY_SOCKS_VERSION_5)
+DEFINE_GETTER (nmc_property_proxy_get_no_proxy_for, NM_SETTING_PROXY_NO_PROXY_FOR)
+DEFINE_GETTER (nmc_property_proxy_get_browser_only, NM_SETTING_PROXY_BROWSER_ONLY)
+DEFINE_GETTER (nmc_property_proxy_get_pac_url, NM_SETTING_PROXY_PAC_URL)
+DEFINE_GETTER (nmc_property_proxy_get_pac_script, NM_SETTING_PROXY_PAC_SCRIPT)
+
+static char *
+nmc_property_proxy_get_method (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingProxy *s_proxy = NM_SETTING_PROXY (setting);
+	NMSettingProxyMethod method;
+
+	method = nm_setting_proxy_get_method (s_proxy);
+	return nm_utils_enum_to_str (nm_setting_proxy_method_get_type (), method);
+}
+
+static gboolean
+nmc_property_proxy_set_method (NMSetting *setting, const char *prop,
+                                  const char *val, GError **error)
+{
+	NMSettingProxyMethod method;
+	gboolean ret;
+
+	ret = nm_utils_enum_from_str (nm_setting_proxy_method_get_type(), val,
+	                               (int *) &method, NULL);
+
+	if (!ret) {
+		gs_free const char **values = NULL;
+		gs_free char *values_str = NULL;
+
+		values = nm_utils_enum_get_values (nm_setting_proxy_method_get_type (),
+		                                   NM_SETTING_PROXY_METHOD_AUTO,
+		                                   G_MAXINT);
+		values_str = g_strjoinv (",", (char **) values);
+		g_set_error (error, 1, 0, _("invalid method '%s', use one of %s"),
+		             val, values_str);
+
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, method, NULL);
+	return TRUE;
+}
+
+/* No Proxy For */
+static gboolean
+nmc_property_proxy_set_no_proxy_for (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **no_proxy_for = NULL, **iter;
+	GPtrArray *tmp_array = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	tmp_array = g_ptr_array_new ();
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		char *stripped = g_strstrip (*iter);
+
+		if (strlen (stripped))
+			g_ptr_array_add (tmp_array, g_strdup (stripped));
+	}
+	g_strfreev (strv);
+
+	g_ptr_array_add (tmp_array, NULL);
+	no_proxy_for = (char **) g_ptr_array_free (tmp_array, (tmp_array->len == 1));
+
+	g_object_set (setting, prop, no_proxy_for, NULL);
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 
 static void
@@ -2311,6 +2427,56 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
+proxy_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	NMSettingProxyMethod method;
+
+	method = nm_setting_proxy_get_method (NM_SETTING_PROXY (object));
+
+	switch (method) {
+	case NM_SETTING_PROXY_METHOD_AUTO:
+		g_object_set (object,
+		              NM_SETTING_PROXY_HTTP_PROXY, NULL,
+		              NM_SETTING_PROXY_HTTP_PORT, 0,
+		              NM_SETTING_PROXY_HTTP_DEFAULT, FALSE,
+		              NM_SETTING_PROXY_SSL_PROXY, NULL,
+		              NM_SETTING_PROXY_SSL_PORT, 0,
+		              NM_SETTING_PROXY_FTP_PROXY, NULL,
+		              NM_SETTING_PROXY_FTP_PORT, 0,
+		              NM_SETTING_PROXY_SOCKS_PROXY, NULL,
+		              NM_SETTING_PROXY_SOCKS_PORT, 0,
+		              NM_SETTING_PROXY_SOCKS_VERSION_5, FALSE,
+		              NM_SETTING_PROXY_NO_PROXY_FOR, NULL,
+		              NULL);
+
+		break;
+	case NM_SETTING_PROXY_METHOD_MANUAL:
+		g_object_set (object,
+		              NM_SETTING_PROXY_PAC_URL, NULL,
+		              NM_SETTING_PROXY_PAC_SCRIPT, NULL,
+		              NULL);
+
+		break;
+	case NM_SETTING_PROXY_METHOD_NONE:
+		g_object_set (object,
+		              NM_SETTING_PROXY_HTTP_PROXY, NULL,
+		              NM_SETTING_PROXY_HTTP_PORT, 0,
+		              NM_SETTING_PROXY_HTTP_DEFAULT, FALSE,
+		              NM_SETTING_PROXY_SSL_PROXY, NULL,
+		              NM_SETTING_PROXY_SSL_PORT, 0,
+		              NM_SETTING_PROXY_FTP_PROXY, NULL,
+		              NM_SETTING_PROXY_FTP_PORT, 0,
+		              NM_SETTING_PROXY_SOCKS_PROXY, NULL,
+		              NM_SETTING_PROXY_SOCKS_PORT, 0,
+		              NM_SETTING_PROXY_SOCKS_VERSION_5, FALSE,
+		              NM_SETTING_PROXY_NO_PROXY_FOR, NULL,
+		              NM_SETTING_PROXY_PAC_URL, NULL,
+		              NM_SETTING_PROXY_PAC_SCRIPT, NULL,
+		              NULL);
+	}
+}
+
+static void
 wireless_band_channel_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	const char *value = NULL, *mode;
@@ -2388,6 +2554,15 @@ nmc_setting_ip6_connect_handlers (NMSettingIPConfig *setting)
 }
 
 void
+nmc_setting_proxy_connect_handlers (NMSettingProxy *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_PROXY (setting));
+
+	g_signal_connect (setting, "notify::" NM_SETTING_PROXY_METHOD,
+	                  G_CALLBACK (proxy_method_changed_cb), NULL);
+}
+
+void
 nmc_setting_wireless_connect_handlers (NMSettingWireless *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_WIRELESS (setting));
@@ -2459,6 +2634,10 @@ nmc_setting_custom_init (NMSetting *setting)
 	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
 		g_object_set (NM_SETTING_IP_CONFIG (setting),
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		              NULL);
+	} else if (NM_IS_SETTING_PROXY (setting)) {
+		g_object_set (NM_SETTING_PROXY (setting),
+		              NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_NONE,
 		              NULL);
 	} else if (NM_IS_SETTING_TUN (setting)) {
 		g_object_set (NM_SETTING_TUN (setting),
@@ -7787,6 +7966,113 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+
+	/* Add editable properties for NM_SETTING_PROXY_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (PROXY, METHOD),
+	                    nmc_property_proxy_get_method,
+	                    nmc_property_proxy_set_method,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, HTTP_PROXY),
+	                    nmc_property_proxy_get_http_proxy,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, HTTP_PORT),
+	                    nmc_property_proxy_get_http_port,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, HTTP_DEFAULT),
+	                    nmc_property_proxy_get_http_default,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, SSL_PROXY),
+	                    nmc_property_proxy_get_ssl_proxy,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, SSL_PORT),
+	                    nmc_property_proxy_get_ssl_port,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, FTP_PROXY),
+	                    nmc_property_proxy_get_ftp_proxy,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, FTP_PORT),
+	                    nmc_property_proxy_get_ftp_port,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, SOCKS_PROXY),
+	                    nmc_property_proxy_get_socks_proxy,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, SOCKS_PORT),
+	                    nmc_property_proxy_get_socks_port,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, SOCKS_VERSION_5),
+	                    nmc_property_proxy_get_socks_version_5,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, NO_PROXY_FOR),
+	                    nmc_property_proxy_get_no_proxy_for,
+	                    nmc_property_proxy_set_no_proxy_for,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, BROWSER_ONLY),
+	                    nmc_property_proxy_get_browser_only,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, PAC_URL),
+	                    nmc_property_proxy_get_pac_url,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PROXY, PAC_SCRIPT),
+	                    nmc_property_proxy_get_pac_script,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 }
 
 void
@@ -9042,7 +9328,7 @@ setting_macvlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, 
 	return TRUE;
 }
 
- static gboolean
+static gboolean
 setting_vxlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingVxlan *s_vxlan = NM_SETTING_VXLAN (setting);
@@ -9076,6 +9362,46 @@ setting_vxlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 	set_val_str (arr, 14, nmc_property_vxlan_get_rsc (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 15, nmc_property_vxlan_get_l2_miss (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 16, nmc_property_vxlan_get_l3_miss (setting, NMC_PROPERTY_GET_PRETTY));
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	return TRUE;
+}
+
+static gboolean
+setting_proxy_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+{
+	NMSettingProxy *s_proxy = NM_SETTING_PROXY (setting);
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_PROXY (s_proxy), FALSE);
+
+	tmpl = nmc_fields_setting_proxy;
+	tmpl_len = sizeof (nmc_fields_setting_proxy);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_PROXY_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (arr, 1, nmc_property_proxy_get_method (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_proxy_get_http_proxy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_proxy_get_http_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_proxy_get_http_default (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_proxy_get_ssl_proxy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_proxy_get_ssl_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_proxy_get_ftp_proxy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_proxy_get_ftp_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_proxy_get_socks_proxy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_proxy_get_socks_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_proxy_get_socks_version_5 (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_proxy_get_no_proxy_for (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_proxy_get_browser_only (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_proxy_get_pac_url (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_proxy_get_pac_script (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -9118,6 +9444,7 @@ static const SettingDetails detail_printers[] = {
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,         setting_ip_tunnel_details },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,           setting_macvlan_details },
 	{ NM_SETTING_VXLAN_SETTING_NAME,             setting_vxlan_details },
+	{ NM_SETTING_PROXY_SETTING_NAME,             setting_proxy_details },
 	{ NULL },
 };
 

@@ -170,6 +170,7 @@ NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_IP_TUNNEL_SETTING_NAME,         nmc_fields_setting_ip_tunnel + 1),         /* 26 */
 	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 27 */
 	SETTING_FIELD (NM_SETTING_VXLAN_SETTING_NAME,             nmc_fields_setting_vxlan + 1),             /* 28 */
+	SETTING_FIELD (NM_SETTING_PROXY_SETTING_NAME,             nmc_fields_setting_proxy + 1),             /* 29 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -199,7 +200,8 @@ NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_TUN_SETTING_NAME"," \
                                          NM_SETTING_IP_TUNNEL_SETTING_NAME"," \
                                          NM_SETTING_MACVLAN_SETTING_NAME"," \
-                                         NM_SETTING_VXLAN_SETTING_NAME
+                                         NM_SETTING_VXLAN_SETTING_NAME"," \
+                                         NM_SETTING_PROXY_SETTING_NAME
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
 
 /* Active connection data */
@@ -2995,6 +2997,7 @@ static const NameItem nmc_bridge_slave_settings [] = {
 static const NameItem nmc_no_slave_settings [] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_PROXY_SETTING_NAME,      NULL,   NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
@@ -4301,6 +4304,21 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          OPTION_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL,
 	                                                                                                set_ip6_address, NULL },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw6",          OPTION_NONE, N_("IPv6 gateway [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_METHOD,                "method",       OPTION_NONE, N_("Proxy method"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_HTTP_PROXY,            "http-proxy",   OPTION_NONE, N_("HTTP Proxy"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_HTTP_PORT,             "http-port",    OPTION_NONE, N_("HTTP Port"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_HTTP_DEFAULT,          "http-default", OPTION_NONE, N_("HTTP Default"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_SSL_PROXY,             "ssl-proxy",    OPTION_NONE, N_("SSL Proxy"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_SSL_PORT,              "ssl-port",     OPTION_NONE, N_("SSL Port"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_FTP_PROXY,             "ftp-proxy",    OPTION_NONE, N_("FTP Proxy"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_FTP_PORT,              "ftp-port",     OPTION_NONE, N_("FTP Port"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_SOCKS_PROXY,           "socks-proxy",  OPTION_NONE, N_("SOCKS Proxy"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_SOCKS_PORT,            "socks-port",   OPTION_NONE, N_("SOCKS Port"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_SOCKS_VERSION_5,       "socks-version-5", OPTION_NONE, N_("SOCKS V5"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_NO_PROXY_FOR,          "no-proxy-for", OPTION_NONE, N_("NO Proxy For"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_BROWSER_ONLY,          "browser-only", OPTION_NONE, N_("Browser Only"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_URL,               "pac-url",      OPTION_NONE, N_("PAC Url"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_SCRIPT,            "pac-script",   OPTION_NONE, N_("PAC Script"), NULL, NULL, NULL },
 	{ NULL, NULL, NULL, OPTION_NONE, NULL, NULL, NULL, NULL },
 };
 
@@ -4803,6 +4821,8 @@ setting_name_to_name (const char *name)
 		return _("IPv4 protocol");
 	if (strcmp (name, NM_SETTING_IP6_CONFIG_SETTING_NAME) == 0)
 		return _("IPv6 protocol");
+	if (strcmp (name, NM_SETTING_PROXY_SETTING_NAME) == 0)
+		return _("Proxy");
 
 	/* Should not happen; but let's still try to be somewhat sensible. */
 	return name;
@@ -7087,6 +7107,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						nmc_setting_ip4_connect_handlers (NM_SETTING_IP_CONFIG (setting));
 					else if (NM_IS_SETTING_IP6_CONFIG (setting))
 						nmc_setting_ip6_connect_handlers (NM_SETTING_IP_CONFIG (setting));
+					else if (NM_IS_SETTING_PROXY (setting))
+						nmc_setting_proxy_connect_handlers (NM_SETTING_PROXY (setting));
 
 					nm_connection_add_setting (connection, setting);
 				}
@@ -7733,6 +7755,11 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 		setting = nm_setting_ip6_config_new ();
 		nmc_setting_custom_init (setting);
 		nm_connection_add_setting (connection, setting);
+
+		/* Also Proxy Setting */
+		setting = nm_setting_proxy_new ();
+		nmc_setting_custom_init (setting);
+		nm_connection_add_setting (connection, setting);
 	}
 }
 
@@ -7740,11 +7767,13 @@ static void
 editor_init_existing_connection (NMConnection *connection)
 {
 	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingProxy *s_proxy;
 	NMSettingWireless *s_wireless;
 	NMSettingConnection *s_con;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	s_proxy = nm_connection_get_setting_proxy (connection);
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	s_con = nm_connection_get_setting_connection (connection);
 
@@ -7752,6 +7781,8 @@ editor_init_existing_connection (NMConnection *connection)
 		nmc_setting_ip4_connect_handlers (s_ip4);
 	if (s_ip6)
 		nmc_setting_ip6_connect_handlers (s_ip6);
+	if (s_proxy)
+		nmc_setting_proxy_connect_handlers (s_proxy);
 	if (s_wireless)
 		nmc_setting_wireless_connect_handlers (s_wireless);
 	if (s_con)

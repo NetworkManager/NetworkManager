@@ -3313,6 +3313,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingProxy *s_proxy;
 	GBytes *ssid_bytes;
 	GError *error = NULL;
 
@@ -3478,6 +3479,10 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	s_proxy = (NMSettingProxy *) nm_setting_proxy_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_proxy));
+	g_object_set (s_proxy, NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_NONE, NULL);
 
 	/* Activate the connection now */
 	nmc->nowait_flag = (nmc->timeout == 0);
