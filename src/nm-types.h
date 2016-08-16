@@ -42,6 +42,7 @@ typedef struct _NMDefaultRouteManager NMDefaultRouteManager;
 typedef struct _NMDevice             NMDevice;
 typedef struct _NMDhcp4Config        NMDhcp4Config;
 typedef struct _NMDhcp6Config        NMDhcp6Config;
+typedef struct _NMProxyConfig        NMProxyConfig;
 typedef struct _NMIP4Config          NMIP4Config;
 typedef struct _NMIP6Config          NMIP6Config;
 typedef struct _NMManager            NMManager;
