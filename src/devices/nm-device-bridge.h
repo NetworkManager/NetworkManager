@@ -21,10 +21,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_BRIDGE_H__
 #define __NETWORKMANAGER_DEVICE_BRIDGE_H__
 
-#include "nm-default.h"
 #include "nm-device.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_DEVICE_BRIDGE            (nm_device_bridge_get_type ())
 #define NM_DEVICE_BRIDGE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridge))
@@ -38,6 +35,4 @@ typedef NMDeviceClass NMDeviceBridgeClass;
 
 GType nm_device_bridge_get_type (void);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_BRIDGE_H */
+#endif /* __NETWORKMANAGER_DEVICE_BRIDGE_H__ */

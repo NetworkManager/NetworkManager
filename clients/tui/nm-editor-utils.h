@@ -21,8 +21,6 @@
 
 #include <NetworkManager.h>
 
-G_BEGIN_DECLS
-
 typedef struct {
 	const char *name;
 	GType setting_type;
@@ -37,7 +35,5 @@ NMEditorConnectionTypeData  *nm_editor_utils_get_connection_type_data (NMConnect
 NMConnection *nm_editor_utils_create_connection (GType         type,
                                                  NMConnection *master,
                                                  NMClient     *client);
-
-G_END_DECLS
 
 #endif /* NM_EDITOR_UTILS_H */

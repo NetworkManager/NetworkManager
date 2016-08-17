@@ -24,11 +24,8 @@
 #ifndef __NETWORKMANAGER_DNS_MANAGER_H__
 #define __NETWORKMANAGER_DNS_MANAGER_H__
 
-#include "nm-default.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-
-G_BEGIN_DECLS
 
 typedef enum {
 	NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
@@ -116,7 +113,5 @@ typedef enum {
 } NMDnsManagerResolvConfManager;
 
 gboolean nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_DNS_MANAGER_H__ */

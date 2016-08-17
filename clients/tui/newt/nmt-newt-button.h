@@ -21,8 +21,6 @@
 
 #include "nmt-newt-component.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_BUTTON            (nmt_newt_button_get_type ())
 #define NMT_NEWT_BUTTON(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_BUTTON, NmtNewtButton))
 #define NMT_NEWT_BUTTON_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_BUTTON, NmtNewtButtonClass))
@@ -47,7 +45,5 @@ NmtNewtWidget *nmt_newt_button_new       (const char    *label);
 void           nmt_newt_button_set_label (NmtNewtButton *button,
                                           const char    *label);
 const char    *nmt_newt_button_get_label (NmtNewtButton *button);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_BUTTON_H */

@@ -21,8 +21,6 @@
 
 #include "nmt-newt-container.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_GRID            (nmt_newt_grid_get_type ())
 #define NMT_NEWT_GRID(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_GRID, NmtNewtGrid))
 #define NMT_NEWT_GRID_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_GRID, NmtNewtGridClass))
@@ -66,7 +64,5 @@ void           nmt_newt_grid_move        (NmtNewtGrid      *grid,
 void           nmt_newt_grid_set_flags   (NmtNewtGrid      *grid,
                                           NmtNewtWidget    *widget,
                                           NmtNewtGridFlags  flags);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_GRID_H */

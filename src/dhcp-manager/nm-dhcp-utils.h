@@ -24,8 +24,6 @@
 #include <nm-ip4-config.h>
 #include <nm-ip6-config.h>
 
-#include "nm-default.h"
-
 NMIP4Config *nm_dhcp_utils_ip4_config_from_options (int ifindex,
                                                     const char *iface,
                                                     GHashTable *options,

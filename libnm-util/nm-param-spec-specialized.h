@@ -23,8 +23,6 @@
 #ifndef NM_PARAM_SPEC_SPECIALIZED_H
 #define NM_PARAM_SPEC_SPECIALIZED_H
 
-#include "nm-default.h"
-
 typedef struct _NMParamSpecSpecialized NMParamSpecSpecialized;
 
 #define NM_TYPE_PARAM_SPEC_SPECIALIZED (_nm_param_spec_specialized_get_type ())

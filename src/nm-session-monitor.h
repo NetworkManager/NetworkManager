@@ -21,11 +21,6 @@
 #ifndef __NETWORKMANAGER_SESSION_MONITOR_H__
 #define __NETWORKMANAGER_SESSION_MONITOR_H__
 
-
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 #define NM_TYPE_SESSION_MONITOR         (nm_session_monitor_get_type ())
 #define NM_SESSION_MONITOR(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_SESSION_MONITOR, NMSessionMonitor))
 #define NM_SESSION_MONITOR_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST ((k), NM_TYPE_SESSION_MONITOR, NMSessionMonitorClass))
@@ -48,8 +43,6 @@ gboolean          nm_session_monitor_user_to_uid    (const char *user, uid_t *ou
 gboolean          nm_session_monitor_session_exists (NMSessionMonitor *self,
                                                      uid_t uid,
                                                      gboolean active);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_SESSION_MONITOR_H__ */
 

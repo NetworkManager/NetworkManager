@@ -21,8 +21,6 @@
 
 #include "nmt-newt-component.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_SEPARATOR            (nmt_newt_separator_get_type ())
 #define NMT_NEWT_SEPARATOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_SEPARATOR, NmtNewtSeparator))
 #define NMT_NEWT_SEPARATOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_SEPARATOR, NmtNewtSeparatorClass))
@@ -43,7 +41,5 @@ typedef struct {
 GType nmt_newt_separator_get_type (void);
 
 NmtNewtWidget *nmt_newt_separator_new (void);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_SEPARATOR_H */

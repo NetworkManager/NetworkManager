@@ -23,8 +23,6 @@
 
 #include <nm-connection.h>
 
-#include "nm-default.h"
-
 gboolean read_ibft_blocks (const char *iscsiadm_path,
                            GSList **out_blocks,
                            GError **error);

@@ -22,8 +22,6 @@
 #include "nmt-newt-section.h"
 #include "nmt-editor-grid.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_EDITOR_SECTION            (nmt_editor_section_get_type ())
 #define NMT_EDITOR_SECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_EDITOR_SECTION, NmtEditorSection))
 #define NMT_EDITOR_SECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_EDITOR_SECTION, NmtEditorSectionClass))
@@ -50,7 +48,5 @@ NmtEditorSection *nmt_editor_section_new               (const char *title,
 const char       *nmt_editor_section_get_title         (NmtEditorSection *section);
 NmtNewtWidget    *nmt_editor_section_get_header_widget (NmtEditorSection *section);
 NmtEditorGrid    *nmt_editor_section_get_body          (NmtEditorSection *section);
-
-G_END_DECLS
 
 #endif /* NMT_EDITOR_SECTION_H */

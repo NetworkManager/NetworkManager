@@ -34,7 +34,6 @@
  **/
 
 
-#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-setting-8021x.h"

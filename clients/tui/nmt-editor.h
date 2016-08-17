@@ -23,8 +23,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_EDITOR            (nmt_editor_get_type ())
 #define NMT_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_EDITOR, NmtEditor))
 #define NMT_EDITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_EDITOR, NmtEditorClass))
@@ -45,7 +43,5 @@ typedef struct {
 GType nmt_editor_get_type (void);
 
 NmtNewtForm *nmt_editor_new (NMConnection *connection);
-
-G_END_DECLS
 
 #endif /* NMT_EDITOR_H */

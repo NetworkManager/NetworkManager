@@ -25,10 +25,8 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
-#include "nm-default.h"
-#include "nm-supplicant-types.h"
 
-G_BEGIN_DECLS
+#include "nm-supplicant-types.h"
 
 #define NM_TYPE_SUPPLICANT_CONFIG            (nm_supplicant_config_get_type ())
 #define NM_SUPPLICANT_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_CONFIG, NMSupplicantConfig))
@@ -82,6 +80,4 @@ gboolean nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                                  gboolean wired,
                                                  GError **error);
 
-G_END_DECLS
-
-#endif	/* NM_SUPPLICANT_CONFIG_H */
+#endif /* __NETWORKMANAGER_SUPPLICANT_CONFIG_H__ */

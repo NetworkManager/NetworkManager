@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_ROUTE_ENTRY            (nmt_route_entry_get_type ())
 #define NMT_ROUTE_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_ROUTE_ENTRY, NmtRouteEntry))
 #define NMT_ROUTE_ENTRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_ROUTE_ENTRY, NmtRouteEntryClass))
@@ -45,7 +43,5 @@ GType nmt_route_entry_get_type (void);
 NmtNewtWidget *nmt_route_entry_new (int family,
                                     int ip_entry_width,
                                     int metric_entry_width);
-
-G_END_DECLS
 
 #endif /* NMT_ROUTE_ENTRY_H */

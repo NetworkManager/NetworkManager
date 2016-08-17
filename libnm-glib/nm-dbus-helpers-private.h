@@ -24,8 +24,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "nm-default.h"
-
 DBusGConnection *_nm_dbus_new_connection (GError **error);
 
 DBusGProxy *     _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,

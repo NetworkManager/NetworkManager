@@ -22,8 +22,6 @@
 #ifndef _WPA_PARSER_H
 #define _WPA_PARSER_H
 
-#include "nm-default.h"
-
 #define WPA_SUPPLICANT_CONF SYSCONFDIR "/wpa_supplicant/wpa_supplicant.conf"
 
 void wpa_parser_init (const char *wpa_supplicant_conf);

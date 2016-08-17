@@ -21,7 +21,6 @@
 #ifndef NM_OBJECT_CACHE_H
 #define NM_OBJECT_CACHE_H
 
-#include "nm-default.h"
 #include "nm-object.h"
 
 G_BEGIN_DECLS

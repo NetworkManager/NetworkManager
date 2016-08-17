@@ -21,7 +21,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_LOGGING_H__
 #define __NETWORKMANAGER_DEVICE_LOGGING_H__
 
-#include "nm-default.h"
 #include "nm-device.h"
 
 #define _LOG_DECLARE_SELF(t) \

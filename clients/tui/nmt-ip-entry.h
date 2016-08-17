@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_IP_ENTRY            (nmt_ip_entry_get_type ())
 #define NMT_IP_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_IP_ENTRY, NmtIPEntry))
 #define NMT_IP_ENTRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_IP_ENTRY, NmtIPEntryClass))
@@ -46,7 +44,5 @@ NmtNewtWidget *nmt_ip_entry_new (int      width,
                                  int      family,
                                  gboolean prefix,
                                  gboolean optional);
-
-G_END_DECLS
 
 #endif /* NMT_IP_ENTRY_H */

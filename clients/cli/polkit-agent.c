@@ -126,7 +126,6 @@ nmc_start_polkit_agent_start_try (NmCli *nmc)
 #else
 /* polkit agent is not avalable; implement stub functions. */
 
-#include "nm-default.h"
 #include "nmcli.h"
 #include "polkit-agent.h"
 

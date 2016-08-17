@@ -21,8 +21,6 @@
 
 #include "nmt-newt-component.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_LISTBOX            (nmt_newt_listbox_get_type ())
 #define NMT_NEWT_LISTBOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_LISTBOX, NmtNewtListbox))
 #define NMT_NEWT_LISTBOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_LISTBOX, NmtNewtListboxClass))
@@ -65,7 +63,5 @@ void           nmt_newt_listbox_set_active_key (NmtNewtListbox      *listbox,
 
 int            nmt_newt_listbox_get_active     (NmtNewtListbox      *listbox);
 gpointer       nmt_newt_listbox_get_active_key (NmtNewtListbox      *listbox);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_LISTBOX_H */

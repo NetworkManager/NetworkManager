@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_CONNECT_CONNECTION_LIST            (nmt_connect_connection_list_get_type ())
 #define NMT_CONNECT_CONNECTION_LIST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_CONNECT_CONNECTION_LIST, NmtConnectConnectionList))
 #define NMT_CONNECT_CONNECTION_LIST_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_CONNECT_CONNECTION_LIST, NmtConnectConnectionListClass))
@@ -55,7 +53,5 @@ gboolean nmt_connect_connection_list_get_selection  (NmtConnectConnectionList  *
                                                      NMDevice                 **device,
                                                      NMObject                 **specific_object,
                                                      NMActiveConnection       **active);
-
-G_END_DECLS
 
 #endif /* NMT_CONNECT_CONNECTION_LIST_H */

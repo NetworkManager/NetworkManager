@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_PASSWORD_FIELDS            (nmt_password_fields_get_type ())
 #define NMT_PASSWORD_FIELDS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_PASSWORD_FIELDS, NmtPasswordFields))
 #define NMT_PASSWORD_FIELDS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_PASSWORD_FIELDS, NmtPasswordFieldsClass))
@@ -49,7 +47,5 @@ typedef enum {
 
 NmtNewtWidget *nmt_password_fields_new (int                     width,
                                         NmtPasswordFieldsExtras extras);
-
-G_END_DECLS
 
 #endif /* NMT_PASSWORD_FIELDS_H */

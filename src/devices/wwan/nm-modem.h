@@ -22,11 +22,8 @@
 #ifndef __NETWORKMANAGER_MODEM_H__
 #define __NETWORKMANAGER_MODEM_H__
 
-#include "nm-default.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-device.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_MODEM            (nm_modem_get_type ())
 #define NM_MODEM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM, NMModem))
@@ -267,7 +264,5 @@ void nm_modem_emit_ip6_config_result (NMModem *self,
                                       GError *error);
 
 const gchar *nm_modem_ip_type_to_string (NMModemIPType ip_type);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_MODEM_H__ */

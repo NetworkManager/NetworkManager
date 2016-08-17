@@ -22,8 +22,6 @@
 #ifndef __NETWORKMANAGER_POLICY_H__
 #define __NETWORKMANAGER_POLICY_H__
 
-#include "nm-default.h"
-
 #define NM_TYPE_POLICY            (nm_policy_get_type ())
 #define NM_POLICY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_POLICY, NMPolicy))
 #define NM_POLICY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_POLICY, NMPolicyClass))

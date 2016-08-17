@@ -23,8 +23,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_ROUTE_EDITOR            (nmt_route_editor_get_type ())
 #define NMT_ROUTE_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_ROUTE_EDITOR, NmtRouteEditor))
 #define NMT_ROUTE_EDITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_ROUTE_EDITOR, NmtRouteEditorClass))
@@ -45,7 +43,5 @@ typedef struct {
 GType nmt_route_editor_get_type (void);
 
 NmtNewtForm *nmt_route_editor_new (NMSetting *setting);
-
-G_END_DECLS
 
 #endif /* NMT_ROUTE_EDITOR_H */

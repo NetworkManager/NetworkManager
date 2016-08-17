@@ -21,8 +21,6 @@
 
 #include "nmt-newt-grid.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_WIDGET_LIST            (nmt_widget_list_get_type ())
 #define NMT_WIDGET_LIST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_WIDGET_LIST, NmtWidgetList))
 #define NMT_WIDGET_LIST_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_WIDGET_LIST, NmtWidgetListClass))
@@ -63,7 +61,5 @@ NmtNewtWidget *nmt_widget_list_new        (NmtWidgetListCallback  create_callbac
 int            nmt_widget_list_get_length (NmtWidgetList         *list);
 void           nmt_widget_list_set_length (NmtWidgetList         *list,
                                            int                    length);
-
-G_END_DECLS
 
 #endif /* NMT_WIDGET_LIST_H */

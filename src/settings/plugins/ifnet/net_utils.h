@@ -21,12 +21,15 @@
 
 #ifndef _IFNET_UTILS_H
 #define _IFNET_UTILS_H
+
 #define IFNET_PLUGIN_NAME "SettingsPlugin-Ifnet"
+
 #include <arpa/inet.h>
+
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-ip4-config.h>
-#include "nm-default.h"
 #include "net_parser.h"
+
 #define has_default_ip4_route(conn_name) has_default_route((conn_name), &is_ip4_address)
 #define has_default_ip6_route(conn_name) has_default_route((conn_name), &is_ip6_address)
 

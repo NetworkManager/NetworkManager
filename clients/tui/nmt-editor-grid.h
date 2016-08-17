@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_EDITOR_GRID            (nmt_editor_grid_get_type ())
 #define NMT_EDITOR_GRID(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_EDITOR_GRID, NmtEditorGrid))
 #define NMT_EDITOR_GRID_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_EDITOR_GRID, NmtEditorGridClass))
@@ -56,7 +54,5 @@ void           nmt_editor_grid_append           (NmtEditorGrid         *grid,
 void           nmt_editor_grid_set_row_flags    (NmtEditorGrid         *grid,
                                                NmtNewtWidget       *widget,
                                                NmtEditorGridRowFlags  flags);
-
-G_END_DECLS
 
 #endif /* NMT_EDITOR_GRID_H */

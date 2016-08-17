@@ -21,12 +21,8 @@
 
 #include <NetworkManager.h>
 
-G_BEGIN_DECLS
-
 extern NMClient *nm_client;
 
 void nmtui_quit (void);
-
-G_END_DECLS
 
 #endif /* NMTUI_H */

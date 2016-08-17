@@ -22,11 +22,7 @@
 #ifndef __NETWORKMANAGER_SETTINGS_PLUGIN_H__
 #define __NETWORKMANAGER_SETTINGS_PLUGIN_H__
 
-
 #include <nm-connection.h>
-#include "nm-default.h"
-
-G_BEGIN_DECLS
 
 /* Plugin's factory function that returns a GObject that implements
  * NMSettingsPlugin.
@@ -156,6 +152,4 @@ NMSettingsConnection *nm_settings_plugin_add_connection (NMSettingsPlugin *confi
                                                          gboolean save_to_disk,
                                                          GError **error);
 
-G_END_DECLS
-
-#endif	/* NM_SETTINGS_PLUGIN_H */
+#endif /* __NETWORKMANAGER_SETTINGS_PLUGIN_H__ */

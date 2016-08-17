@@ -21,8 +21,6 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-default.h"
-
 #define SETTINGS_TYPE_PLUGIN_IBFT            (settings_plugin_ibft_get_type ())
 #define SETTINGS_PLUGIN_IBFT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbft))
 #define SETTINGS_PLUGIN_IBFT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftClass))

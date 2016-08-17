@@ -19,10 +19,6 @@
 #ifndef NMT_UTILS_H
 #define NMT_UTILS_H
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 typedef struct {
 	gpointer private[3];
 } NmtSyncOp;
@@ -40,7 +36,5 @@ gpointer  nmt_sync_op_wait_pointer     (NmtSyncOp  *op,
 void      nmt_sync_op_complete_pointer (NmtSyncOp  *op,
                                         gpointer    result,
                                         GError     *error);
-
-G_END_DECLS
 
 #endif /* NMT_UTILS_H */

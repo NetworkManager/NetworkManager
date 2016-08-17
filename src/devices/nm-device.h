@@ -92,8 +92,6 @@
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"
 #define NM_DEVICE_STATISTICS_RX_BYTES        "rx-bytes"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
 #define NM_DEVICE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE, NMDeviceClass))
@@ -595,6 +593,4 @@ void nm_device_update_initial_hw_address (NMDevice *self);
 void nm_device_update_permanent_hw_address (NMDevice *self);
 void nm_device_update_dynamic_ip_setup (NMDevice *self);
 
-G_END_DECLS
-
-#endif /* NM_DEVICE_H */
+#endif /* __NETWORKMANAGER_DEVICE_H__ */

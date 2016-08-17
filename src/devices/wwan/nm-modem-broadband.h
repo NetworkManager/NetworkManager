@@ -23,8 +23,6 @@
 
 #include "nm-modem.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_MODEM_BROADBAND            (nm_modem_broadband_get_type ())
 #define NM_MODEM_BROADBAND(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_BROADBAND, NMModemBroadband))
 #define NM_MODEM_BROADBAND_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_MODEM_BROADBAND, NMModemBroadbandClass))
@@ -48,7 +46,5 @@ struct _NMModemBroadbandClass {
 GType nm_modem_broadband_get_type (void);
 
 NMModem *nm_modem_broadband_new (GObject *object, GError **error);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_MODEM_BROADBAND_H__ */

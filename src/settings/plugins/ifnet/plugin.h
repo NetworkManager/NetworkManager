@@ -23,8 +23,6 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-default.h"
-
 #define SETTINGS_TYPE_PLUGIN_IFNET            (settings_plugin_ifnet_get_type ())
 #define SETTINGS_PLUGIN_IFNET(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnet))
 #define SETTINGS_PLUGIN_IFNET_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnetClass))

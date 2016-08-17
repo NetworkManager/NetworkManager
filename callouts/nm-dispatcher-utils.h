@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_DISPATCHER_UTILS_H__
 #define __NETWORKMANAGER_DISPATCHER_UTILS_H__
 
-#include "nm-default.h"
-
 char **
 nm_dispatcher_utils_construct_envp (const char *action,
                                     GVariant *connection_dict,

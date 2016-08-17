@@ -21,8 +21,6 @@
 
 #include "nmt-editor-page-device.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_PAGE_BRIDGE            (nmt_page_bridge_get_type ())
 #define NMT_PAGE_BRIDGE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_PAGE_BRIDGE, NmtPageBridge))
 #define NMT_PAGE_BRIDGE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_PAGE_BRIDGE, NmtPageBridgeClass))
@@ -44,7 +42,5 @@ GType nmt_page_bridge_get_type (void);
 
 NmtEditorPage *nmt_page_bridge_new (NMConnection   *conn,
                                     NmtDeviceEntry *deventry);
-
-G_END_DECLS
 
 #endif /* NMT_PAGE_BRIDGE_H */

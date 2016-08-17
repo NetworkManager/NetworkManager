@@ -20,8 +20,6 @@
 #ifndef __NETWORKMANAGER_SLEEP_MONITOR_H__
 #define __NETWORKMANAGER_SLEEP_MONITOR_H__
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_SLEEP_MONITOR         (nm_sleep_monitor_get_type ())
 #define NM_SLEEP_MONITOR(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_SLEEP_MONITOR, NMSleepMonitor))
 #define NM_SLEEP_MONITOR_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST ((k), NM_TYPE_SLEEP_MONITOR, NMSleepMonitorClass))
@@ -41,8 +39,6 @@ typedef struct _NMSleepMonitorInhibitorHandle NMSleepMonitorInhibitorHandle;
 NMSleepMonitorInhibitorHandle *nm_sleep_monitor_inhibit_take    (NMSleepMonitor *self);
 void                           nm_sleep_monitor_inhibit_release (NMSleepMonitor *self,
                                                                  NMSleepMonitorInhibitorHandle *handle);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_SLEEP_MONITOR_H__ */
 

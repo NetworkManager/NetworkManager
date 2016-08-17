@@ -21,14 +21,15 @@
  * (C) Copyright 2008 Canonical Ltd.
  */
 
+#ifndef __PARSER_H__
+#define __PARSER_H__
+
 #include <nm-connection.h>
 #include "interface_parser.h"
-
-G_BEGIN_DECLS
 
 gboolean
 ifupdown_update_connection_from_if_block (NMConnection *connection,
                                           if_block *block,
                                           GError **error);
 
-G_END_DECLS
+#endif /* __PARSER_H__ */

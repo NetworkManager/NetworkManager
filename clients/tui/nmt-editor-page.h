@@ -24,8 +24,6 @@
 #include "nmt-editor-grid.h"
 #include "nmt-editor-section.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_EDITOR_PAGE            (nmt_editor_page_get_type ())
 #define NMT_EDITOR_PAGE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_EDITOR_PAGE, NmtEditorPage))
 #define NMT_EDITOR_PAGE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_EDITOR_PAGE, NmtEditorPageClass))
@@ -52,7 +50,5 @@ GSList        *nmt_editor_page_get_sections      (NmtEditorPage *page);
 /*< protected >*/
 void           nmt_editor_page_add_section       (NmtEditorPage *page,
                                                   NmtEditorSection *section);
-
-G_END_DECLS
 
 #endif /* NMT_EDITOR_PAGE_H */

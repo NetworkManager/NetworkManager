@@ -24,8 +24,6 @@
 
 #include "nm-device.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE_ETHERNET			(nm_device_ethernet_get_type ())
 #define NM_DEVICE_ETHERNET(obj)			(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernet))
 #define NM_DEVICE_ETHERNET_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetClass))
@@ -49,6 +47,4 @@ typedef struct {
 
 GType nm_device_ethernet_get_type (void);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_ETHERNET_H */
+#endif /* __NETWORKMANAGER_DEVICE_ETHERNET_H__ */

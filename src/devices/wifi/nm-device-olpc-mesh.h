@@ -30,8 +30,6 @@
 
 #include "nm-device.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE_OLPC_MESH            (nm_device_olpc_mesh_get_type ())
 #define NM_DEVICE_OLPC_MESH(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMesh))
 #define NM_DEVICE_OLPC_MESH_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMeshClass))
@@ -67,6 +65,4 @@ GType nm_device_olpc_mesh_get_type (void);
 
 NMDevice *nm_device_olpc_mesh_new (const char *iface);
 
-G_END_DECLS
-
-#endif  /* NM_DEVICE_OLPC_MESH_H */
+#endif /* __NETWORKMANAGER_DEVICE_OLPC_MESH_H__ */

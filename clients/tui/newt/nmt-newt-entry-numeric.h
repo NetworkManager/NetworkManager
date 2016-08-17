@@ -21,8 +21,6 @@
 
 #include "nmt-newt-entry.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_ENTRY_NUMERIC            (nmt_newt_entry_numeric_get_type ())
 #define NMT_NEWT_ENTRY_NUMERIC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_ENTRY_NUMERIC, NmtNewtEntryNumeric))
 #define NMT_NEWT_ENTRY_NUMERIC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_ENTRY_NUMERIC, NmtNewtEntryNumericClass))
@@ -45,7 +43,5 @@ GType nmt_newt_entry_numeric_get_type (void);
 NmtNewtWidget *nmt_newt_entry_numeric_new (int width,
                                            int min,
                                            int max);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_ENTRY_NUMERIC_H */

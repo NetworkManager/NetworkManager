@@ -24,8 +24,6 @@
 
 #include "nm-device.h"
 
-#include "nm-default.h"
-
 /* This file should only be used by subclasses of NMDevice */
 
 enum NMActStageReturn {

@@ -21,8 +21,6 @@
 
 #include "nmt-editor-page-device.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_PAGE_BOND            (nmt_page_bond_get_type ())
 #define NMT_PAGE_BOND(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_PAGE_BOND, NmtPageBond))
 #define NMT_PAGE_BOND_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_PAGE_BOND, NmtPageBondClass))
@@ -44,7 +42,5 @@ GType nmt_page_bond_get_type (void);
 
 NmtEditorPage *nmt_page_bond_new (NMConnection   *conn,
                                   NmtDeviceEntry *deventry);
-
-G_END_DECLS
 
 #endif /* NMT_PAGE_BOND_H */

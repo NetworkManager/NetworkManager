@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_MTU_ENTRY            (nmt_mtu_entry_get_type ())
 #define NMT_MTU_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_MTU_ENTRY, NmtMtuEntry))
 #define NMT_MTU_ENTRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_MTU_ENTRY, NmtMtuEntryClass))
@@ -43,7 +41,5 @@ typedef struct {
 GType nmt_mtu_entry_get_type (void);
 
 NmtNewtWidget *nmt_mtu_entry_new (void);
-
-G_END_DECLS
 
 #endif /* NMT_MTU_ENTRY_H */

@@ -21,8 +21,6 @@
 
 #include "nmt-widget-list.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_ADDRESS_LIST            (nmt_address_list_get_type ())
 #define NMT_ADDRESS_LIST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_ADDRESS_LIST, NmtAddressList))
 #define NMT_ADDRESS_LIST_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_ADDRESS_LIST, NmtAddressListClass))
@@ -51,7 +49,5 @@ typedef enum {
 } NmtAddressListType;
 
 NmtNewtWidget *nmt_address_list_new (NmtAddressListType list_type);
-
-G_END_DECLS
 
 #endif /* NMT_ADDRESS_LIST_H */

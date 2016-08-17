@@ -19,10 +19,7 @@
 #ifndef NMT_PAGE_TEAM_H
 #define NMT_PAGE_TEAM_H
 
-#include "nm-default.h"
 #include "nmt-editor-page-device.h"
-
-G_BEGIN_DECLS
 
 #define NMT_TYPE_PAGE_TEAM            (nmt_page_team_get_type ())
 #define NMT_PAGE_TEAM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_PAGE_TEAM, NmtPageTeam))
@@ -45,7 +42,5 @@ GType nmt_page_team_get_type (void);
 
 NmtEditorPage *nmt_page_team_new (NMConnection   *conn,
                                   NmtDeviceEntry *deventry);
-
-G_END_DECLS
 
 #endif /* NMT_PAGE_TEAM_H */

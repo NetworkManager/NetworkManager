@@ -24,8 +24,6 @@
 
 #include <nm-connection.h>
 
-#include "nm-default.h"
-
 NMConnection *nm_keyfile_plugin_connection_from_file (const char *filename, GError **error);
 
 #endif /* _KEYFILE_PLUGIN_READER_H */

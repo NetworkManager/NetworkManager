@@ -21,7 +21,6 @@
 #ifndef __NETWORKMANAGER_DNSMASQ_UTILS_H__
 #define __NETWORKMANAGER_DNSMASQ_UTILS_H__
 
-#include "nm-default.h"
 #include "nm-platform.h"
 
 gboolean nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,

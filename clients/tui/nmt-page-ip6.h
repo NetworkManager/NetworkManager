@@ -21,8 +21,6 @@
 
 #include "nmt-editor-page.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_PAGE_IP6            (nmt_page_ip6_get_type ())
 #define NMT_PAGE_IP6(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_PAGE_IP6, NmtPageIP6))
 #define NMT_PAGE_IP6_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_PAGE_IP6, NmtPageIP6Class))
@@ -43,7 +41,5 @@ typedef struct {
 GType nmt_page_ip6_get_type (void);
 
 NmtEditorPage *nmt_page_ip6_new          (NMConnection *conn);
-
-G_END_DECLS
 
 #endif /* NMT_PAGE_IP6_H */

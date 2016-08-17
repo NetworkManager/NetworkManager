@@ -21,8 +21,6 @@
 
 #include <NetworkManager.h>
 
-#include "nm-default.h"
-
 struct {
 	const char *name;
 	const char *ui_name;

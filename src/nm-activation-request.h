@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_ACTIVATION_REQUEST_H__
 #define __NETWORKMANAGER_ACTIVATION_REQUEST_H__
 
-
-#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-active-connection.h"
 
