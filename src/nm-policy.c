@@ -180,38 +180,35 @@ _set_hostname (NMPolicy *self,
 	if (new_hostname)
 		g_clear_object (&priv->lookup_addr);
 
-	/* Don't change the hostname or update DNS this is the first time we're
-	 * trying to change the hostname, and it's not actually changing.
-	 */
 	if (   priv->orig_hostname
 	    && (priv->hostname_changed == FALSE)
-	    && g_strcmp0 (priv->orig_hostname, new_hostname) == 0)
-		return;
+	    && g_strcmp0 (priv->orig_hostname, new_hostname) == 0) {
+		/* Don't change the hostname or update DNS this is the first time we're
+		 * trying to change the hostname, and it's not actually changing.
+		 */
+	} else if (g_strcmp0 (priv->cur_hostname, new_hostname) == 0) {
+		/* Don't change the hostname or update DNS if the hostname isn't actually
+		 * going to change.
+		 */
+	} else {
+		g_free (priv->cur_hostname);
+		priv->cur_hostname = g_strdup (new_hostname);
+		priv->hostname_changed = TRUE;
 
-	/* Don't change the hostname or update DNS if the hostname isn't actually
-	 * going to change.
-	 */
-	if (g_strcmp0 (priv->cur_hostname, new_hostname) == 0)
-		return;
-
-	g_free (priv->cur_hostname);
-	priv->cur_hostname = g_strdup (new_hostname);
-	priv->hostname_changed = TRUE;
-
-	/* Notify the DNS manager of the hostname change so that the domain part, if
-	 * present, can be added to the search list.
-	 */
-	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
+		/* Notify the DNS manager of the hostname change so that the domain part, if
+		 * present, can be added to the search list.
+		 */
+		nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
+	}
 
 	 /* Finally, set kernel hostname */
-
-	if (!priv->cur_hostname)
+	if (!new_hostname)
 		name = FALLBACK_HOSTNAME4;
-	else if (!priv->cur_hostname[0]) {
+	else if (!new_hostname[0]) {
 		g_warn_if_reached ();
 		name = FALLBACK_HOSTNAME4;
 	} else
-		name = priv->cur_hostname;
+		name = new_hostname;
 
 	old_hostname[HOST_NAME_MAX] = '\0';
 	errno = 0;
