@@ -1476,6 +1476,15 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		nl_info_data = li[IFLA_INFO_DATA];
 	}
 
+	if (tb[IFLA_STATS64]) {
+		struct rtnl_link_stats64 *stats = nla_data (tb[IFLA_STATS64]);
+
+		obj->link.rx_packets = stats->rx_packets;
+		obj->link.rx_bytes = stats->rx_bytes;
+		obj->link.tx_packets = stats->tx_packets;
+		obj->link.tx_bytes = stats->tx_bytes;
+	}
+
 	obj->link.n_ifi_flags = ifi->ifi_flags;
 	obj->link.connected = NM_FLAGS_HAS (obj->link.n_ifi_flags, IFF_LOWER_UP);
 	obj->link.arptype = ifi->ifi_type;
@@ -1568,7 +1577,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	    && (   lnk_data_complete_from_cache
 	        || address_complete_from_cache
 	        || !af_inet6_token_valid
-	        || !af_inet6_addr_gen_mode_valid)) {
+	        || !af_inet6_addr_gen_mode_valid
+	        || !tb[IFLA_STATS64])) {
 		_lookup_cached_link (cache, obj->link.ifindex, completed_from_cache, &link_cached);
 		if (link_cached) {
 			if (   lnk_data_complete_from_cache
@@ -1591,6 +1601,12 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 				obj->link.inet6_token = link_cached->link.inet6_token;
 			if (!af_inet6_addr_gen_mode_valid)
 				obj->link.inet6_addr_gen_mode_inv = link_cached->link.inet6_addr_gen_mode_inv;
+			if (!tb[IFLA_STATS64]) {
+				obj->link.rx_packets = link_cached->link.rx_packets;
+				obj->link.rx_bytes = link_cached->link.rx_bytes;
+				obj->link.tx_packets = link_cached->link.tx_packets;
+				obj->link.tx_bytes = link_cached->link.tx_bytes;
+			}
 		}
 	}
 
@@ -3732,6 +3748,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	case RTM_NEWLINK:
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
+	case RTM_GETLINK:
 		cache_op = nmp_cache_update_netlink (priv->cache, obj, &obj_cache, &was_visible, cache_pre_hook, platform);
 
 		cache_post (platform, msghdr, cache_op, obj, obj_cache);

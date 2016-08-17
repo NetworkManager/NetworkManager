@@ -4415,6 +4415,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS);
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_RELOAD);
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS);
 
 		g_dbus_method_invocation_return_value (context,
 		                                       g_variant_new ("(a{ss})", &results));
@@ -4455,6 +4456,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS, FALSE);
 }
 
 static void
@@ -4915,6 +4917,10 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		/* ... but set the property on the @object itself. It would be correct to set the property
 		 * on the skeleton interface, but as it is now, the result is the same. */
 		g_object_set (object, pfd->glib_propname, value, NULL);
+	} else if (!strcmp (pfd->glib_propname, NM_DEVICE_STATISTICS_REFRESH_RATE_MS)) {
+		g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32));
+		/* the same here */
+		g_object_set (object, pfd->glib_propname, (guint) g_variant_get_uint32 (value), NULL);
 	} else {
 		g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN));
 		/* the same here */
@@ -5046,6 +5052,15 @@ prop_filter (GDBusConnection *connection,
 			glib_propname = NM_DEVICE_MANAGED;
 			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
 			audit_op = NM_AUDIT_OP_DEVICE_MANAGED;
+		} else
+			return message;
+		interface_type = NMDBUS_TYPE_DEVICE_SKELETON;
+	} else if (!strcmp (propiface, NM_DBUS_INTERFACE_DEVICE_STATISTICS)) {
+		if (!strcmp (propname, "RefreshRateMs")) {
+			glib_propname = NM_DEVICE_STATISTICS_REFRESH_RATE_MS;
+			permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS;
+			audit_op = NM_AUDIT_OP_STATISTICS;
+			expected_type = G_VARIANT_TYPE ("u");
 		} else
 			return message;
 		interface_type = NMDBUS_TYPE_DEVICE_SKELETON;

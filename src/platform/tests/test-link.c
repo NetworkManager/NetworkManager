@@ -567,7 +567,7 @@ test_internal (void)
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL));
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
-	accept_signal (link_changed);
+	accept_signals (link_changed, 1, 2);
 	g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));

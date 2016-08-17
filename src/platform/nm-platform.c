@@ -3115,6 +3115,8 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            "%s%s" /* addr */
 	            "%s%s" /* inet6_token */
 	            "%s%s" /* driver */
+	            " rx:%"G_GUINT64_FORMAT",%"G_GUINT64_FORMAT
+	            " tx:%"G_GUINT64_FORMAT",%"G_GUINT64_FORMAT
 	            ,
 	            link->ifindex,
 	            link->name,
@@ -3133,7 +3135,9 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->inet6_token.id ? " inet6token " : "",
 	            link->inet6_token.id ? nm_utils_inet6_interface_identifier_to_token (link->inet6_token, str_inet6_token) : "",
 	            link->driver ? " driver " : "",
-	            link->driver ? link->driver : "");
+	            link->driver ? link->driver : "",
+	            link->rx_packets, link->rx_bytes,
+	            link->tx_packets, link->tx_bytes);
 	g_string_free (str_flags, TRUE);
 	return buf;
 }
@@ -3794,6 +3798,10 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	if (a->addr.len)
 		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
 	_CMP_FIELD_MEMCMP (a, b, inet6_token);
+	_CMP_FIELD (a, b, rx_packets);
+	_CMP_FIELD (a, b, rx_bytes);
+	_CMP_FIELD (a, b, tx_packets);
+	_CMP_FIELD (a, b, tx_bytes);
 	return 0;
 }
 

@@ -38,6 +38,7 @@
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS "org.freedesktop.NetworkManager.settings.modify.global-dns"
 #define NM_AUTH_PERMISSION_RELOAD                     "org.freedesktop.NetworkManager.reload"
 #define NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK        "org.freedesktop.NetworkManager.checkpoint-rollback"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS  "org.freedesktop.NetworkManager.enable-disable-statistics"
 
 #define NM_CLONED_MAC_PRESERVE                          "preserve"
 #define NM_CLONED_MAC_PERMANENT                         "permanent"

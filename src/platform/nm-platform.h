@@ -156,6 +156,12 @@ struct _NMPlatformLink {
 	 * initialized with memset(0) has and unset value.*/
 	guint8 inet6_addr_gen_mode_inv;
 
+	/* Statistics */
+	guint64 rx_packets;
+	guint64 rx_bytes;
+	guint64 tx_packets;
+	guint64 tx_bytes;
+
 	/* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
 	 * where we coerce the link as disconnect if it has no slaves. */
 	bool connected:1;

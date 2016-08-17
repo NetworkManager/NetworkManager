@@ -71,6 +71,7 @@
 _LOG_DECLARE_SELF (NMDevice);
 
 #include "nmdbus-device.h"
+#include "nmdbus-device-statistics.h"
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
@@ -138,6 +139,9 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_LLDP_NEIGHBORS,
 	PROP_REAL,
 	PROP_SLAVES,
+	PROP_REFRESH_RATE_MS,
+	PROP_TX_BYTES,
+	PROP_RX_BYTES,
 );
 
 #define DEFAULT_AUTOCONNECT TRUE
@@ -407,6 +411,14 @@ typedef struct _NMDevicePrivate {
 	NMLldpListener *lldp_listener;
 
 	guint check_delete_unrealized_id;
+
+	struct {
+		guint timeout_id;
+		guint refresh_rate_ms;
+		guint64 tx_bytes;
+		guint64 rx_bytes;
+	} stats;
+
 } NMDevicePrivate;
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
@@ -768,6 +780,108 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 		_notify (self, PROP_IP_IFACE);
 	g_free (old_ip_iface);
 }
+
+/*****************************************************************************/
+
+static void
+_stats_update_counters (NMDevice *self,
+                        guint64 tx_bytes,
+                        guint64 rx_bytes)
+{
+	NMDevicePrivate *priv;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->stats.tx_bytes != tx_bytes) {
+		priv->stats.tx_bytes = tx_bytes;
+		_notify (self, PROP_TX_BYTES);
+	}
+	if (priv->stats.rx_bytes != rx_bytes) {
+		priv->stats.rx_bytes = rx_bytes;
+		_notify (self, PROP_RX_BYTES);
+	}
+}
+
+static void
+_stats_update_counters_from_pllink (NMDevice *self, const NMPlatformLink *pllink)
+{
+	_stats_update_counters (self, pllink->tx_bytes, pllink->rx_bytes);
+}
+
+static gboolean
+_stats_timeout_cb (gpointer user_data)
+{
+	NMDevice *self = user_data;
+	int ifindex;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+
+	_LOGT (LOGD_DEVICE, "stats: refresh %d", ifindex);
+
+	if (ifindex > 0)
+		nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
+
+	return G_SOURCE_CONTINUE;
+}
+
+static guint
+_stats_refresh_rate_real (guint refresh_rate_ms)
+{
+	const guint STATS_REFRESH_RATE_MS_MIN = 200;
+
+	if (refresh_rate_ms == 0)
+		return 0;
+
+	if (refresh_rate_ms < STATS_REFRESH_RATE_MS_MIN) {
+		/* you cannot set the refresh-rate arbitrarly small. E.g.
+		 * setting to 1ms is just killing. Have a lowest number. */
+		return STATS_REFRESH_RATE_MS_MIN;
+	}
+
+	return refresh_rate_ms;
+}
+
+static void
+_stats_set_refresh_rate (NMDevice *self, guint refresh_rate_ms)
+{
+	NMDevicePrivate *priv;
+	int ifindex;
+	guint old_rate;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->stats.refresh_rate_ms == refresh_rate_ms)
+		return;
+
+	old_rate = priv->stats.refresh_rate_ms;
+	priv->stats.refresh_rate_ms = refresh_rate_ms;
+	_notify (self, PROP_REFRESH_RATE_MS);
+
+	_LOGD (LOGD_DEVICE, "stats: set refresh to %u ms", priv->stats.refresh_rate_ms);
+
+	if (!nm_device_is_real (self))
+		return;
+
+	refresh_rate_ms = _stats_refresh_rate_real (refresh_rate_ms);
+	if (_stats_refresh_rate_real (old_rate) == refresh_rate_ms)
+		return;
+
+	nm_clear_g_source (&priv->stats.timeout_id);
+
+	if (!refresh_rate_ms)
+		return;
+
+	/* trigger an inital refresh of the data whenever the refresh-rate changes.
+	 * As we process the result in an idle handler with device_link_changed(),
+	 * we don't get the result right away. */
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex > 0)
+		nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
+
+	priv->stats.timeout_id = g_timeout_add (refresh_rate_ms, _stats_timeout_cb, self);
+}
+
+/*****************************************************************************/
 
 static gboolean
 get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
@@ -1712,6 +1826,9 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_DRIVER);
 	}
 
+	if (ifindex == nm_device_get_ip_ifindex (self))
+		_stats_update_counters_from_pllink (self, &info);
+
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
 	got_hw_addr = (!had_hw_addr && priv->hw_addr);
@@ -1840,6 +1957,8 @@ device_ip_link_changed (NMDevice *self)
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
+	_stats_update_counters_from_pllink (self, pllink);
+
 	if (pllink->name[0] && g_strcmp0 (priv->ip_iface, pllink->name)) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
 		       priv->ifindex, nm_device_get_ip_ifindex (self),
@@ -1850,6 +1969,7 @@ device_ip_link_changed (NMDevice *self)
 		_notify (self, PROP_IP_IFACE);
 		nm_device_update_dynamic_ip_setup (self);
 	}
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -1955,6 +2075,8 @@ nm_device_realize_start (NMDevice *self,
                          gboolean *out_compatible,
                          GError **error)
 {
+	NMPlatformLink plink_copy;
+
 	NM_SET_OUT (out_compatible, TRUE);
 
 	if (plink) {
@@ -1969,6 +2091,10 @@ nm_device_realize_start (NMDevice *self,
 			return FALSE;
 	}
 
+	if (plink) {
+		plink_copy = *plink;
+		plink = &plink_copy;
+	}
 	realize_start_setup (self, plink);
 
 	return TRUE;
@@ -2102,6 +2228,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	static guint32 id = 0;
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
+	guint real_rate;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2125,6 +2252,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	if (plink) {
 		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
 		update_device_from_platform_link (self, plink);
+		_stats_update_counters_from_pllink (self, plink);
 	}
 
 	if (priv->ifindex > 0) {
@@ -2192,6 +2320,11 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
+
+	nm_assert (!priv->stats.timeout_id);
+	real_rate = _stats_refresh_rate_real (priv->stats.refresh_rate_ms);
+	if (real_rate)
+		priv->stats.timeout_id = g_timeout_add (real_rate, _stats_timeout_cb, self);
 
 	klass->realize_start_notify (self, plink);
 
@@ -2364,6 +2497,9 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		g_clear_pointer (&priv->physical_port_id, g_free);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
 	}
+
+	nm_clear_g_source (&priv->stats.timeout_id);
+	_stats_update_counters (self, 0, 0);
 
 	priv->hw_addr_type = HW_ADDR_TYPE_UNSET;
 	g_clear_pointer (&priv->hw_addr_perm, g_free);
@@ -12080,6 +12216,8 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->check_delete_unrealized_id);
 
+	nm_clear_g_source (&priv->stats.timeout_id);
+
 	link_disconnect_action_cancel (self);
 
 	if (priv->settings) {
@@ -12236,6 +12374,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PERM_HW_ADDRESS:
 		/* construct only */
 		priv->hw_addr_perm = g_value_dup_string (value);
+		break;
+	case PROP_REFRESH_RATE_MS:
+		_stats_set_refresh_rate (self, g_value_get_uint (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -12399,6 +12540,15 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, slave_list);
 		break;
 	}
+	case PROP_REFRESH_RATE_MS:
+		g_value_set_uint (value, priv->stats.refresh_rate_ms);
+		break;
+	case PROP_TX_BYTES:
+		g_value_set_uint64 (value, priv->stats.tx_bytes);
+		break;
+	case PROP_RX_BYTES:
+		g_value_set_uint64 (value, priv->stats.rx_bytes);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -12649,6 +12799,23 @@ nm_device_class_init (NMDeviceClass *klass)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
+	/* Statistics */
+	obj_properties[PROP_REFRESH_RATE_MS] =
+	    g_param_spec_uint (NM_DEVICE_STATISTICS_REFRESH_RATE_MS, "", "",
+	                       0, UINT32_MAX, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_TX_BYTES] =
+	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_TX_BYTES, "", "",
+	                         0, UINT64_MAX, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_RX_BYTES] =
+	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_RX_BYTES, "", "",
+	                         0, UINT64_MAX, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/* Signals */
@@ -12718,5 +12885,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	                                        "GetAppliedConnection", impl_device_get_applied_connection,
 	                                        "Disconnect", impl_device_disconnect,
 	                                        "Delete", impl_device_delete,
+	                                        NULL);
+
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
+	                                        NMDBUS_TYPE_DEVICE_STATISTICS_SKELETON,
 	                                        NULL);
 }

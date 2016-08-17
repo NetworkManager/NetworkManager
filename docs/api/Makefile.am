@@ -73,6 +73,7 @@ content_files = \
 	$(top_builddir)/introspection/nmdbus-settings-org.freedesktop.NetworkManager.Settings.xml \
 	$(top_builddir)/introspection/nmdbus-device-ethernet-org.freedesktop.NetworkManager.Device.Wired.xml \
 	$(top_builddir)/introspection/nmdbus-ip4-config-org.freedesktop.NetworkManager.IP4Config.xml \
+	$(top_builddir)/introspection/nmdbus-device-statistics-org.freedesktop.NetworkManager.Device.Statistics.xml \
 	$(top_builddir)/libnm-core/nm-dbus-types.xml \
 	$(top_builddir)/libnm-core/nm-vpn-dbus-types.xml \
 	$(top_builddir)/man/nmcli.xml \

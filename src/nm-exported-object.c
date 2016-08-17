@@ -257,12 +257,16 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 	g_return_if_fail (NM_IS_EXPORTED_OBJECT_CLASS (object_class));
 	g_return_if_fail (g_type_is_a (dbus_skeleton_type, G_TYPE_DBUS_INTERFACE_SKELETON));
 
-	classinfo = g_slice_new (NMExportedObjectClassInfo);
-	classinfo->skeleton_types = NULL;
-	classinfo->methods = g_array_new (FALSE, FALSE, sizeof (NMExportedObjectDBusMethodImpl));
-	classinfo->properties = g_hash_table_new (g_str_hash, g_str_equal);
-	g_type_set_qdata (G_TYPE_FROM_CLASS (object_class),
-	                  nm_exported_object_class_info_quark (), classinfo);
+	classinfo = g_type_get_qdata (G_TYPE_FROM_CLASS (object_class),
+	                              nm_exported_object_class_info_quark ());
+	if (!classinfo) {
+		classinfo = g_slice_new (NMExportedObjectClassInfo);
+		classinfo->skeleton_types = NULL;
+		classinfo->methods = g_array_new (FALSE, FALSE, sizeof (NMExportedObjectDBusMethodImpl));
+		classinfo->properties = g_hash_table_new (g_str_hash, g_str_equal);
+		g_type_set_qdata (G_TYPE_FROM_CLASS (object_class),
+		                  nm_exported_object_class_info_quark (), classinfo);
+	}
 
 	classinfo->skeleton_types = g_slist_prepend (classinfo->skeleton_types,
 	                                             GSIZE_TO_POINTER (dbus_skeleton_type));
@@ -341,8 +345,6 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 			                            g_free);
 		}
 	}
-
-	g_assert_cmpint (n_method_signals, ==, classinfo->methods->len);
 
 	g_type_class_unref (dbus_object_class);
 }
