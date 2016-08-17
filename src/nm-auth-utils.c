@@ -399,8 +399,8 @@ nm_auth_chain_add_call (NMAuthChain *self,
 		                                                      call);
 #else
 		if (!call->chain->error) {
-			call->chain->error = g_error_new_literal (DBUS_GERROR,
-			                                          DBUS_GERROR_FAILED,
+			call->chain->error = g_error_new_literal (NM_MANAGER_ERROR,
+			                                          NM_MANAGER_ERROR_FAILED,
 			                                          "Polkit support is disabled at compile time");
 		}
 		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
