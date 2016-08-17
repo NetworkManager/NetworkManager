@@ -412,14 +412,6 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex, gboolean routes_fu
 
 		for (i = 0; i < count; i++) {
 			route = nm_ip6_config_get_route (config, i);
-
-			/* Don't add the route if it's more specific than one of the subnets
-			 * the device already has an IP address on.
-			 */
-			if (   IN6_IS_ADDR_UNSPECIFIED (&route->gateway)
-			    && nm_ip6_config_destination_is_direct (config, &route->network, route->plen))
-				continue;
-
 			g_array_append_vals (routes, route, 1);
 		}
 
