@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-08-15 11:40+0200\n"
-"PO-Revision-Date: 2016-08-15 11:44+0200\n"
+"POT-Creation-Date: 2016-08-17 17:15+0200\n"
+"PO-Revision-Date: 2016-08-17 17:17+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -109,7 +109,7 @@ msgstr "Pomyślnie zarejestrowano program nmcli jako agenta polkit.\n"
 
 #: ../clients/cli/agent.c:223 ../clients/cli/connections.c:8748
 #: ../clients/cli/devices.c:3894 ../clients/cli/general.c:346
-#: ../clients/cli/general.c:492 ../clients/cli/general.c:1157
+#: ../clients/cli/general.c:496 ../clients/cli/general.c:1161
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "Błąd: usługa NetworkManager nie jest uruchomiona."
@@ -242,7 +242,7 @@ msgstr "połączenie się nie powiodło"
 #: ../clients/cli/connections.c:2121 ../clients/cli/devices.c:1190
 #: ../clients/cli/devices.c:1231 ../clients/cli/devices.c:1233
 #: ../clients/cli/general.c:251 ../clients/cli/general.c:289
-#: ../clients/cli/general.c:441 ../clients/cli/general.c:456
+#: ../clients/cli/general.c:445 ../clients/cli/general.c:460
 #: ../clients/cli/settings.c:853 ../clients/cli/settings.c:939
 #: ../clients/cli/settings.c:1324 ../clients/cli/settings.c:1965
 #: ../clients/cli/settings.c:3349
@@ -265,7 +265,7 @@ msgstr "nieznane"
 #: ../clients/cli/devices.c:1226 ../clients/cli/devices.c:1227
 #: ../clients/cli/devices.c:1228 ../clients/cli/devices.c:1229
 #: ../clients/cli/devices.c:1230 ../clients/cli/devices.c:1232
-#: ../clients/cli/devices.c:1234 ../clients/cli/general.c:450
+#: ../clients/cli/devices.c:1234 ../clients/cli/general.c:454
 #: ../clients/cli/settings.c:3344
 msgid "yes"
 msgstr "tak"
@@ -284,7 +284,7 @@ msgstr "tak"
 #: ../clients/cli/devices.c:1227 ../clients/cli/devices.c:1228
 #: ../clients/cli/devices.c:1229 ../clients/cli/devices.c:1230
 #: ../clients/cli/devices.c:1232 ../clients/cli/devices.c:1234
-#: ../clients/cli/general.c:452 ../clients/cli/settings.c:3346
+#: ../clients/cli/general.c:456 ../clients/cli/settings.c:3346
 msgid "no"
 msgstr "nie"
 
@@ -590,7 +590,7 @@ msgstr "Błąd: polecenie openconnect się nie powiodło ze stanem %d\n"
 msgid "Error: openconnect failed with signal %d\n"
 msgstr "Błąd: polecenie openconnect się nie powiodło z sygnałem %d\n"
 
-#: ../clients/cli/common.c:1067
+#: ../clients/cli/common.c:1068
 #, c-format
 msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
@@ -599,13 +599,13 @@ msgstr ""
 "Ostrzeżenie: w „passwd-file” nie podano hasła dla „%s”, a program nmcli nie "
 "może zapytać bez opcji „--ask”.\n"
 
-#: ../clients/cli/common.c:1464
+#: ../clients/cli/common.c:1465
 #, c-format
 msgid "Error: argument '%s' not understood. Try passing --help instead."
 msgstr "Błąd: nie zrozumiano parametru „%s”. Można użyć „--help” zamiast tego."
 
 #. No command and no default handler.
-#: ../clients/cli/common.c:1472
+#: ../clients/cli/common.c:1473
 #, c-format
 msgid "Error: missing argument. Try passing --help."
 msgstr "Błąd: brak parametru. Można użyć „--help” zamiast tego."
@@ -815,7 +815,7 @@ msgstr "KONKRETNY-OBIEKT"
 #. 7
 #. 4
 #: ../clients/cli/connections.c:215 ../clients/cli/connections.c:253
-#: ../clients/cli/general.c:1083 ../clients/tui/nm-editor-utils.c:233
+#: ../clients/cli/general.c:1087 ../clients/tui/nm-editor-utils.c:233
 #: ../clients/tui/nmt-connect-connection-list.c:405
 msgid "VPN"
 msgstr "VPN"
@@ -1717,9 +1717,9 @@ msgstr "Błąd: %s — nie ma takiego profilu połączenia."
 #: ../clients/cli/devices.c:2113 ../clients/cli/devices.c:2301
 #: ../clients/cli/devices.c:3506 ../clients/cli/devices.c:3616
 #: ../clients/cli/devices.c:3728 ../clients/cli/devices.c:3786
-#: ../clients/cli/general.c:399 ../clients/cli/general.c:520
-#: ../clients/cli/general.c:564 ../clients/cli/general.c:591
-#: ../clients/cli/general.c:788 ../clients/cli/general.c:837
+#: ../clients/cli/general.c:399 ../clients/cli/general.c:524
+#: ../clients/cli/general.c:568 ../clients/cli/general.c:595
+#: ../clients/cli/general.c:792 ../clients/cli/general.c:841
 #, c-format
 msgid "Error: %s."
 msgstr "Błąd: %s."
@@ -2352,7 +2352,7 @@ msgstr "Urządzenie mostka"
 msgid "Bridge port"
 msgstr "Port mostka"
 
-#: ../clients/cli/connections.c:4711 ../src/nm-manager.c:3713
+#: ../clients/cli/connections.c:4711 ../src/nm-manager.c:3717
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
@@ -5007,171 +5007,171 @@ msgstr "włączone"
 msgid "disabled"
 msgstr "wyłączone"
 
-#: ../clients/cli/general.c:454
+#: ../clients/cli/general.c:458
 msgid "auth"
 msgstr "uwierzytelnianie"
 
-#: ../clients/cli/general.c:483
+#: ../clients/cli/general.c:487
 #, c-format
 msgid "Error: 'general permissions': %s"
 msgstr "Błąd: „general permissions”: %s"
 
-#: ../clients/cli/general.c:497
+#: ../clients/cli/general.c:501
 msgid "NetworkManager permissions"
 msgstr "Uprawnienia usługi NetworkManager"
 
-#: ../clients/cli/general.c:555
+#: ../clients/cli/general.c:559
 #, c-format
 msgid "Error: 'general logging': %s"
 msgstr "Błąd: „general logging”: %s"
 
-#: ../clients/cli/general.c:570
+#: ../clients/cli/general.c:574
 msgid "NetworkManager logging"
 msgstr "Dziennik usługi NetworkManager"
 
-#: ../clients/cli/general.c:620
+#: ../clients/cli/general.c:624
 #, c-format
 msgid "Error: failed to set logging: %s"
 msgstr "Błąd: ustawienie zapisywania w dzienniku się nie powiodło: %s"
 
-#: ../clients/cli/general.c:637
+#: ../clients/cli/general.c:641
 #, c-format
 msgid "Error: failed to set hostname: %s"
 msgstr "Błąd: ustawienie nazwy komputera się nie powiodło: %s"
 
-#: ../clients/cli/general.c:703
+#: ../clients/cli/general.c:707
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here (allowed field: %s)"
 msgstr "Błąd: wartość „--fields” „%s” jest nieprawidłowa (dozwolone pola: %s)"
 
-#: ../clients/cli/general.c:728
+#: ../clients/cli/general.c:732
 #, c-format
 msgid "Error: invalid '%s' argument: '%s' (use on/off)."
 msgstr "Błąd: nieprawidłowy parametr „%s”: „%s” (należy użyć on/off)."
 
-#: ../clients/cli/general.c:739
+#: ../clients/cli/general.c:743
 msgid "Connectivity"
 msgstr "Łączność"
 
-#: ../clients/cli/general.c:756
+#: ../clients/cli/general.c:760
 msgid "Networking"
 msgstr "Sieć"
 
-#: ../clients/cli/general.c:795
+#: ../clients/cli/general.c:799
 #, c-format
 msgid "Error: 'networking connectivity' command '%s' is not valid."
 msgstr "Błąd: polecenie „networking connectivity” „%s” jest nieprawidłowe."
 
-#: ../clients/cli/general.c:815
+#: ../clients/cli/general.c:819
 #, c-format
 msgid "Error: 'networking' command '%s' is not valid."
 msgstr "Błąd: polecenie „networking” „%s” jest nieprawidłowe."
 
-#: ../clients/cli/general.c:840
+#: ../clients/cli/general.c:844
 msgid "Radio switches"
 msgstr "Przełączniki radiowe"
 
 #. no argument, show current WiFi state
-#: ../clients/cli/general.c:870
+#: ../clients/cli/general.c:874
 msgid "Wi-Fi radio switch"
 msgstr "Przełącznik radiowy Wi-Fi"
 
 #. no argument, show current WWAN (mobile broadband) state
-#: ../clients/cli/general.c:897
+#: ../clients/cli/general.c:901
 msgid "WWAN radio switch"
 msgstr "Przełącznik radiowy WWAN"
 
-#: ../clients/cli/general.c:943
+#: ../clients/cli/general.c:947
 msgid "NetworkManager has started"
 msgstr "Uruchomiono usługę NetworkManager"
 
-#: ../clients/cli/general.c:943
+#: ../clients/cli/general.c:947
 msgid "NetworkManager has stopped"
 msgstr "Zatrzymano usługę NetworkManager"
 
-#: ../clients/cli/general.c:954
+#: ../clients/cli/general.c:958
 #, c-format
 msgid "Hostname set to '%s'\n"
 msgstr "Ustawiono nazwę komputera na „%s”\n"
 
-#: ../clients/cli/general.c:969
+#: ../clients/cli/general.c:973
 #, c-format
 msgid "'%s' is now the primary connection\n"
 msgstr "„%s” jest teraz głównym połączeniem\n"
 
-#: ../clients/cli/general.c:971
+#: ../clients/cli/general.c:975
 #, c-format
 msgid "There's no primary connection\n"
 msgstr "Brak głównego połączenia\n"
 
-#: ../clients/cli/general.c:983
+#: ../clients/cli/general.c:987
 #, c-format
 msgid "Connectivity is now '%s'\n"
 msgstr "Łączność wynosi teraz „%s”\n"
 
-#: ../clients/cli/general.c:996
+#: ../clients/cli/general.c:1000
 #, c-format
 msgid "Networkmanager is now in the '%s' state\n"
 msgstr "Usługa NetworkManager jest teraz w stanie „%s”\n"
 
-#: ../clients/cli/general.c:1017
+#: ../clients/cli/general.c:1021
 msgid "connection available"
 msgstr "połączenie jest dostępne"
 
-#: ../clients/cli/general.c:1019
+#: ../clients/cli/general.c:1023
 msgid "connections available"
 msgstr "połączenia są dostępne"
 
-#: ../clients/cli/general.c:1037
+#: ../clients/cli/general.c:1041
 msgid "autoconnect"
 msgstr "łączenie automatyczne"
 
-#: ../clients/cli/general.c:1039
+#: ../clients/cli/general.c:1043
 msgid "fw missing"
 msgstr "brak oprogramowana sprzętowego"
 
-#: ../clients/cli/general.c:1044
+#: ../clients/cli/general.c:1048
 msgid "plugin missing"
 msgstr "brak wtyczki"
 
-#: ../clients/cli/general.c:1049
+#: ../clients/cli/general.c:1053
 msgid "sw"
 msgstr "oprogramowanie"
 
-#: ../clients/cli/general.c:1051
+#: ../clients/cli/general.c:1055
 msgid "hw"
 msgstr "sprzęt"
 
-#: ../clients/cli/general.c:1056
+#: ../clients/cli/general.c:1060
 msgid "iface"
 msgstr "interfejs"
 
-#: ../clients/cli/general.c:1059
+#: ../clients/cli/general.c:1063
 msgid "port"
 msgstr "port"
 
-#: ../clients/cli/general.c:1062
+#: ../clients/cli/general.c:1066
 msgid "mtu"
 msgstr "MTU"
 
-#: ../clients/cli/general.c:1079
+#: ../clients/cli/general.c:1083
 msgid "master"
 msgstr "master"
 
-#: ../clients/cli/general.c:1085
+#: ../clients/cli/general.c:1089
 msgid "ip4 default"
 msgstr "domyślne IPv4"
 
-#: ../clients/cli/general.c:1087
+#: ../clients/cli/general.c:1091
 msgid "ip6 default"
 msgstr "domyślne IPv6"
 
-#: ../clients/cli/general.c:1173
+#: ../clients/cli/general.c:1177
 #, c-format
 msgid "%s VPN connection"
 msgstr "Połączenie VPN %s"
 
-#: ../clients/cli/general.c:1210
+#: ../clients/cli/general.c:1214
 #, c-format
 msgid ""
 "Use \"nmcli device show\" to get complete information about known devices "
@@ -5188,12 +5188,12 @@ msgstr ""
 "Strony podręcznika nmcli(1) i nmcli-examples(5) zawierają pełne informacje\n"
 "o użyciu.\n"
 
-#: ../clients/cli/general.c:1229
+#: ../clients/cli/general.c:1233
 #, c-format
 msgid "Error: 'monitor' command '%s' is not valid."
 msgstr "Błąd: polecenie „monitor” „%s” jest nieprawidłowe."
 
-#: ../clients/cli/general.c:1243
+#: ../clients/cli/general.c:1247
 msgid "Networkmanager is not running (waiting for it)\n"
 msgstr ""
 "Usługa NetworkManager nie jest uruchomiona (oczekiwanie na uruchomienie)\n"
@@ -9105,11 +9105,11 @@ msgstr "Połączenie jest nieprawidłowe: %s"
 msgid "The interface names of the device and the connection didn't match."
 msgstr "Nazwy interfejsu urządzenia i połączenia się nie zgadzają."
 
-#: ../libnm/nm-manager.c:867
+#: ../libnm/nm-manager.c:871
 msgid "Active connection could not be attached to the device"
 msgstr "Nie można podłączyć aktywnego połączenia do urządzenia"
 
-#: ../libnm/nm-manager.c:1091
+#: ../libnm/nm-manager.c:1095
 msgid "Active connection removed before it was initialized"
 msgstr "Usunięto aktywne połączenie przed jego inicjacją"
 
@@ -9250,6 +9250,25 @@ msgid ""
 "configuration"
 msgstr ""
 "Polityka systemu powstrzymuje modyfikację trwałej globalnej konfiguracji DNS"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:27
+msgid "Perform a checkpoint or rollback of interfaces configuration"
+msgstr "Wykonanie punktu kontrolnego lub przywrócenie konfiguracji interfejsów"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:28
+msgid "System policy prevents the the creation of a checkpoint or its rollback"
+msgstr ""
+"Polityka systemu powstrzymuje utworzenie punktu kontrolnego lub jego "
+"przywrócenie"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:29
+msgid "Enable or disable device statistics"
+msgstr "Włączenie lub wyłączenie statystyk urządzenia"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:30
+msgid "System policy prevents enabling or disabling device statistics"
+msgstr ""
+"Polityka systemu powstrzymuje włączanie lub wyłączanie statystyk urządzenia"
 
 #: ../shared/nm-utils/nm-shared-utils.c:185
 #, c-format
