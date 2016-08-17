@@ -420,14 +420,6 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 			const NMPlatformIP4Route *route;
 
 			route = nm_ip4_config_get_route (config, i);
-
-			/* Don't add the route if it's more specific than one of the subnets
-			 * the device already has an IP address on.
-			 */
-			if (   route->gateway == 0
-			    && nm_ip4_config_destination_is_direct (config, route->network, route->plen))
-				continue;
-
 			/* duplicates in @routes are no problem as route-manager handles them
 			 * gracefully (by ignoring them). */
 			g_array_append_vals (routes, route, 1);
