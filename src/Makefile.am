@@ -311,6 +311,12 @@ libNetworkManager_la_SOURCES = \
 	\
 	dhcp-manager/nm-dhcp-dhclient-utils.c \
 	dhcp-manager/nm-dhcp-dhclient-utils.h \
+	\
+	nm-checkpoint-manager.c \
+	nm-checkpoint-manager.h \
+	nm-checkpoint.c \
+	nm-checkpoint.h \
+	\
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-lldp-listener.c \

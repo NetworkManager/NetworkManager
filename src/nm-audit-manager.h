@@ -64,6 +64,10 @@ typedef struct {
 #define NM_AUDIT_OP_DEVICE_MANAGED          "device-managed"
 #define NM_AUDIT_OP_DEVICE_REAPPLY          "device-reapply"
 
+#define NM_AUDIT_OP_CHECKPOINT_CREATE       "checkpoint-create"
+#define NM_AUDIT_OP_CHECKPOINT_ROLLBACK     "checkpoint-rollback"
+#define NM_AUDIT_OP_CHECKPOINT_DESTROY      "checkpoint-destroy"
+
 GType nm_audit_manager_get_type (void);
 NMAuditManager *nm_audit_manager_get (void);
 gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
@@ -84,7 +88,7 @@ gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
 		NMAuditManager *_audit = nm_audit_manager_get (); \
 		\
 		if (nm_audit_manager_audit_enabled (_audit)) { \
-			_nm_audit_manager_log_control_op (_audit, __FILE__, __LINE__, G_STRFUNC, \
+			_nm_audit_manager_log_generic_op (_audit, __FILE__, __LINE__, G_STRFUNC, \
 			                                  (op), (arg), (result), (subject_context), (reason)); \
 		} \
 	} G_STMT_END
@@ -99,18 +103,29 @@ gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
 		} \
 	} G_STMT_END
 
+#define nm_audit_log_checkpoint_op(op, arg, result, subject_context, reason) \
+	G_STMT_START { \
+		NMAuditManager *_audit = nm_audit_manager_get (); \
+		\
+		if (nm_audit_manager_audit_enabled (_audit)) { \
+			_nm_audit_manager_log_generic_op (_audit, __FILE__, __LINE__, G_STRFUNC, \
+			                                  (op), (arg), (result), (subject_context), (reason)); \
+		} \
+	} G_STMT_END
+
 void _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, NMSettingsConnection *connection,
                                           gboolean result, const char *args, gpointer subject_context,
                                           const char *reason);
 
-void _nm_audit_manager_log_control_op    (NMAuditManager *self, const char *file, guint line,
+void _nm_audit_manager_log_generic_op    (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, const char *arg,
                                           gboolean result, gpointer subject_context, const char *reason);
 
 void _nm_audit_manager_log_device_op     (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, NMDevice *device,
                                           gboolean result, gpointer subject_context, const char *reason);
+
 G_END_DECLS
 
 #endif /* __NM_AUDIT_MANAGER_H__ */
