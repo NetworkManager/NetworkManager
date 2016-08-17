@@ -88,6 +88,7 @@ G_BEGIN_DECLS
  *  DNS configuration
  * @NM_CLIENT_PERMISSION_RELOAD: controls access to Reload.
  *  persistent hostname can be changed
+ * @NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK: permission to create checkpoints.
  * @NM_CLIENT_PERMISSION_LAST: a reserved boundary value
  *
  * #NMClientPermission values indicate various permissions that NetworkManager
@@ -108,8 +109,9 @@ typedef enum {
 	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME = 11,
 	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS = 12,
 	NM_CLIENT_PERMISSION_RELOAD = 13,
+	NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK = 14,
 
-	NM_CLIENT_PERMISSION_LAST = 13,
+	NM_CLIENT_PERMISSION_LAST = 14,
 } NMClientPermission;
 
 /**

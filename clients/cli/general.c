@@ -437,6 +437,8 @@ permission_to_string (NMClientPermission perm)
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
 	case NM_CLIENT_PERMISSION_RELOAD:
 		return NM_AUTH_PERMISSION_RELOAD;
+	case NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK:
+		return NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK;
 	default:
 		return _("unknown");
 	}
