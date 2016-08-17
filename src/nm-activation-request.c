@@ -445,9 +445,9 @@ master_failed (NMActiveConnection *self)
 	if (device) {
 		device_state = nm_device_get_state (device);
 		if (nm_device_is_activating (device) || (device_state == NM_DEVICE_STATE_ACTIVATED)) {
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			nm_device_queue_state (device,
+			                       NM_DEVICE_STATE_FAILED,
+			                       NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
 			return;
 		}
 	}
