@@ -21,15 +21,10 @@
 #ifndef __NETWORKMANAGER_FIREWALL_MANAGER_H__
 #define __NETWORKMANAGER_FIREWALL_MANAGER_H__
 
-#include "nm-default.h"
-
 #define FIREWALL_DBUS_SERVICE         "org.fedoraproject.FirewallD1"
 #define FIREWALL_DBUS_PATH            "/org/fedoraproject/FirewallD1"
 #define FIREWALL_DBUS_INTERFACE       "org.fedoraproject.FirewallD1"
 #define FIREWALL_DBUS_INTERFACE_ZONE  "org.fedoraproject.FirewallD1.zone"
-
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_FIREWALL_MANAGER				(nm_firewall_manager_get_type ())
 #define NM_FIREWALL_MANAGER(obj)				(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_FIREWALL_MANAGER, NMFirewallManager))

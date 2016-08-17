@@ -22,8 +22,6 @@
 #include "nmt-edit-connection-list.h"
 #include "nmtui-edit.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_SLAVE_LIST            (nmt_slave_list_get_type ())
 #define NMT_SLAVE_LIST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_SLAVE_LIST, NmtSlaveList))
 #define NMT_SLAVE_LIST_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_SLAVE_LIST, NmtSlaveListClass))
@@ -46,7 +44,5 @@ GType nmt_slave_list_get_type (void);
 NmtNewtWidget *nmt_slave_list_new (NMConnection               *master,
                                    NmtAddConnectionTypeFilter  type_filter,
                                    gpointer                    type_filter_data);
-
-G_END_DECLS
 
 #endif /* NMT_SLAVE_LIST_H */

@@ -21,14 +21,9 @@
 #ifndef __NM_AUDIT_MANAGER_H__
 #define __NM_AUDIT_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
 #include "nm-connection.h"
 #include "nm-device.h"
 #include "nm-types.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_AUDIT_MANAGER            (nm_audit_manager_get_type ())
 #define NM_AUDIT_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AUDIT_MANAGER, NMAuditManager))
@@ -126,7 +121,5 @@ void _nm_audit_manager_log_generic_op    (NMAuditManager *self, const char *file
 void _nm_audit_manager_log_device_op     (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, NMDevice *device,
                                           gboolean result, gpointer subject_context, const char *reason);
-
-G_END_DECLS
 
 #endif /* __NM_AUDIT_MANAGER_H__ */

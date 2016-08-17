@@ -21,12 +21,7 @@
 #ifndef NM_AUTH_MANAGER_H
 #define NM_AUTH_MANAGER_H
 
-
-#include "nm-default.h"
 #include "nm-auth-subject.h"
-
-G_BEGIN_DECLS
-
 
 #define NM_TYPE_AUTH_MANAGER            (nm_auth_manager_get_type ())
 #define NM_AUTH_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AUTH_MANAGER, NMAuthManager))
@@ -71,8 +66,6 @@ gboolean nm_auth_manager_polkit_authority_check_authorization_finish (NMAuthMana
                                                                       GError **error);
 
 #endif
-
-G_END_DECLS
 
 #endif /* NM_AUTH_MANAGER_H */
 

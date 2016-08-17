@@ -24,8 +24,6 @@
 #include "nm-core-types.h"
 #include "nm-device.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE_IP_TUNNEL            (nm_device_ip_tunnel_get_type ())
 #define NM_DEVICE_IP_TUNNEL(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_IP_TUNNEL, NMDeviceIPTunnel))
 #define NM_DEVICE_IP_TUNNEL_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_IP_TUNNEL, NMDeviceIPTunnelClass))
@@ -55,6 +53,4 @@ typedef struct {
 
 GType nm_device_ip_tunnel_get_type (void);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_IP_TUNNEL_H */
+#endif /* __NETWORKMANAGER_DEVICE_IP_TUNNEL_H__ */

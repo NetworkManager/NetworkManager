@@ -21,8 +21,6 @@
 
 #include "nmt-newt-component.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_ENTRY            (nmt_newt_entry_get_type ())
 #define NMT_NEWT_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_ENTRY, NmtNewtEntry))
 #define NMT_NEWT_ENTRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_ENTRY, NmtNewtEntryClass))
@@ -68,7 +66,5 @@ const char    *nmt_newt_entry_get_text      (NmtNewtEntry          *entry);
 void           nmt_newt_entry_set_width     (NmtNewtEntry          *entry,
                                              int                    width);
 int            nmt_newt_entry_get_width     (NmtNewtEntry          *entry);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_ENTRY_H */

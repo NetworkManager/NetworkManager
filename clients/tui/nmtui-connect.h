@@ -19,10 +19,6 @@
 #ifndef NMTUI_CONNECT_H
 #define NMTUI_CONNECT_H
 
-G_BEGIN_DECLS
-
 NmtNewtForm *nmtui_connect (gboolean is_top, int argc, char **argv);
-
-G_END_DECLS
 
 #endif /* NMTUI_CONNECT_H */

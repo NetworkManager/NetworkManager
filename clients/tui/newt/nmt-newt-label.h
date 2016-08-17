@@ -21,8 +21,6 @@
 
 #include "nmt-newt-component.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_LABEL            (nmt_newt_label_get_type ())
 #define NMT_NEWT_LABEL(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_LABEL, NmtNewtLabel))
 #define NMT_NEWT_LABEL_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_LABEL, NmtNewtLabelClass))
@@ -60,7 +58,5 @@ NmtNewtLabelStyle  nmt_newt_label_get_style     (NmtNewtLabel      *label);
 void               nmt_newt_label_set_highlight (NmtNewtLabel      *label,
                                                  gboolean           highlight);
 gboolean           nmt_newt_label_get_highlight (NmtNewtLabel      *label);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_LABEL_H */

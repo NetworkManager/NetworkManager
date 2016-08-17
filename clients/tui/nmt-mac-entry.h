@@ -19,11 +19,8 @@
 #ifndef NMT_MAC_ENTRY_H
 #define NMT_MAC_ENTRY_H
 
-#include "nm-default.h"
 #include "nm-utils.h"
 #include "nmt-newt.h"
-
-G_BEGIN_DECLS
 
 typedef enum { /*< skip >*/
 	NMT_MAC_ENTRY_TYPE_MAC,
@@ -52,7 +49,5 @@ GType nmt_mac_entry_get_type (void);
 NmtNewtWidget *nmt_mac_entry_new (int width,
                                   int mac_length,
                                   NmtMacEntryType type);
-
-G_END_DECLS
 
 #endif /* NMT_MAC_ENTRY_H */

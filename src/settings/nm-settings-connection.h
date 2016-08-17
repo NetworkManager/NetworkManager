@@ -26,9 +26,6 @@
 
 #include "nm-exported-object.h"
 #include <nm-connection.h>
-#include "nm-default.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_SETTINGS_CONNECTION            (nm_settings_connection_get_type ())
 #define NM_SETTINGS_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnection))
@@ -229,7 +226,5 @@ const char *nm_settings_connection_get_filename (NMSettingsConnection *self);
 
 const char *nm_settings_connection_get_id   (NMSettingsConnection *connection);
 const char *nm_settings_connection_get_uuid (NMSettingsConnection *connection);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_SETTINGS_CONNECTION_H__ */

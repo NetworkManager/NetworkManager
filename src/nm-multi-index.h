@@ -21,11 +21,6 @@
 #ifndef __NM_MULTI_INDEX__
 #define __NM_MULTI_INDEX__
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
-
 typedef struct {
 	char _dummy;
 } NMMultiIndexId;
@@ -105,8 +100,6 @@ void nm_multi_index_id_iter_init (NMMultiIndexIdIter *iter,
                                   const NMMultiIndexId *id);
 gboolean nm_multi_index_id_iter_next (NMMultiIndexIdIter *iter,
                                       void **out_value);
-
-G_END_DECLS
 
 #endif /* __NM_MULTI_INDEX__ */
 

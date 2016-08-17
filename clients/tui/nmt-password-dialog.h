@@ -21,8 +21,6 @@
 
 #include "nmt-newt.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_PASSWORD_DIALOG            (nmt_password_dialog_get_type ())
 #define NMT_PASSWORD_DIALOG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_PASSWORD_DIALOG, NmtPasswordDialog))
 #define NMT_PASSWORD_DIALOG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_PASSWORD_DIALOG, NmtPasswordDialogClass))
@@ -51,7 +49,5 @@ gboolean     nmt_password_dialog_succeeded      (NmtPasswordDialog *dialog);
 
 const char  *nmt_password_dialog_get_request_id (NmtPasswordDialog *dialog);
 GPtrArray   *nmt_password_dialog_get_secrets    (NmtPasswordDialog *dialog);
-
-G_END_DECLS
 
 #endif /* NMT_PASSWORD_DIALOG_H */

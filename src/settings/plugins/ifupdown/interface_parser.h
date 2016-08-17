@@ -24,8 +24,6 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
-#include "nm-default.h"
-
 typedef struct _if_data
 {
 	char *key;

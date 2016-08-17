@@ -23,8 +23,6 @@
 
 #include "nm-device.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE_INFINIBAND			(nm_device_infiniband_get_type ())
 #define NM_DEVICE_INFINIBAND(obj)			(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfiniband))
 #define NM_DEVICE_INFINIBAND_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandClass))
@@ -37,6 +35,4 @@ typedef NMDeviceClass NMDeviceInfinibandClass;
 
 GType nm_device_infiniband_get_type (void);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_INFINIBAND_H */
+#endif /* __NETWORKMANAGER_DEVICE_INFINIBAND_H__ */

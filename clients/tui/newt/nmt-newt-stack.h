@@ -21,8 +21,6 @@
 
 #include "nmt-newt-container.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_STACK            (nmt_newt_stack_get_type ())
 #define NMT_NEWT_STACK(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_STACK, NmtNewtStack))
 #define NMT_NEWT_STACK_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_STACK, NmtNewtStackClass))
@@ -55,7 +53,5 @@ guint          nmt_newt_stack_get_active    (NmtNewtStack  *stack);
 void           nmt_newt_stack_set_active_id (NmtNewtStack  *stack,
                                              const char    *id);
 const char *   nmt_newt_stack_get_active_id (NmtNewtStack  *stack);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_STACK_H */

@@ -23,8 +23,6 @@
 
 #include "nm-device.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE_TEAM            (nm_device_team_get_type ())
 #define NM_DEVICE_TEAM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_TEAM, NMDeviceTeam))
 #define NM_DEVICE_TEAM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_TEAM, NMDeviceTeamClass))
@@ -42,6 +40,4 @@ GType nm_device_team_get_type (void);
 
 NMDevice *nm_device_team_new (const char *iface);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_TEAM_H */
+#endif /* __NETWORKMANAGER_DEVICE_TEAM_H__ */

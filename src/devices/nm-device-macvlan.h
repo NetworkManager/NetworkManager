@@ -23,8 +23,6 @@
 
 #include "nm-device.h"
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_DEVICE_MACVLAN            (nm_device_macvlan_get_type ())
 #define NM_DEVICE_MACVLAN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlan))
 #define NM_DEVICE_MACVLAN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanClass))
@@ -42,6 +40,4 @@ typedef NMDeviceClass NMDeviceMacvlanClass;
 
 GType nm_device_macvlan_get_type (void);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_MACVLAN_H */
+#endif /* __NETWORKMANAGER_DEVICE_MACVLAN_H__ */

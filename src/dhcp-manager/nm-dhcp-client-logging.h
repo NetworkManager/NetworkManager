@@ -21,7 +21,6 @@
 #ifndef __NETWORKMANAGER_DHCP_CLIENT_LOGGING_H__
 #define __NETWORKMANAGER_DHCP_CLIENT_LOGGING_H__
 
-#include "nm-default.h"
 #include "nm-dhcp-client.h"
 
 #define _NMLOG_PREFIX_NAME    "dhcp"

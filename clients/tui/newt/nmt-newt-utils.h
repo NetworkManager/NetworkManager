@@ -21,10 +21,6 @@
 
 #include <newt.h>
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 void nmt_newt_init     (void);
 void nmt_newt_finished (void);
 
@@ -48,7 +44,5 @@ int  nmt_newt_choice_dialog (const char *button1,
                              ...)  _nm_printf (3, 4);
 
 char *nmt_newt_edit_string (const char *data);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_UTILS_H */

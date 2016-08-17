@@ -19,9 +19,6 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-
-#include "nm-default.h"
-
 #ifndef __NETWORKMANAGER_RFKILL_MANAGER_H__
 #define __NETWORKMANAGER_RFKILL_MANAGER_H__
 

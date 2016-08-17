@@ -23,10 +23,7 @@
 #define __NETWORKMANAGER_DEVICE_ADSL_H__
 
 // Parent class
-#include "nm-default.h"
 #include "nm-device.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_DEVICE_ADSL            (nm_device_adsl_get_type ())
 #define NM_DEVICE_ADSL(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_ADSL, NMDeviceAdsl))
@@ -52,6 +49,4 @@ NMDevice *nm_device_adsl_new (const char *udi,
                               const char *driver,
                               int atm_index);
 
-G_END_DECLS
-
-#endif	/* NM_DEVICE_ADSL_H */
+#endif /* NM_DEVICE_ADSL_H */

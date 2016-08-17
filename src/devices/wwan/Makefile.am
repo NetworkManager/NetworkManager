@@ -27,7 +27,7 @@ pkglib_LTLIBRARIES = libnm-wwan.la libnm-device-plugin-wwan.la
 
 GLIB_GENERATED = nm-modem-enum-types.h nm-modem-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
-GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 nm_modem_enum_types_sources = $(srcdir)/nm-modem.h
 
 BUILT_SOURCES += $(GLIB_GENERATED)

@@ -21,8 +21,6 @@
 
 #include "nmt-newt-widget.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_COMPONENT            (nmt_newt_component_get_type ())
 #define NMT_NEWT_COMPONENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_COMPONENT, NmtNewtComponent))
 #define NMT_NEWT_COMPONENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_COMPONENT, NmtNewtComponentClass))
@@ -51,7 +49,5 @@ newtComponent nmt_newt_component_get_component (NmtNewtComponent *component);
 gboolean      nmt_newt_component_get_sensitive (NmtNewtComponent *component);
 void          nmt_newt_component_set_sensitive (NmtNewtComponent *component,
                                                 gboolean          sensitive);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_COMPONENT_H */

@@ -21,8 +21,6 @@
 
 #include "nmt-newt-container.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_SECTION            (nmt_newt_section_get_type ())
 #define NMT_NEWT_SECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_SECTION, NmtNewtSection))
 #define NMT_NEWT_SECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_SECTION, NmtNewtSectionClass))
@@ -51,7 +49,5 @@ NmtNewtWidget *nmt_newt_section_get_header (NmtNewtSection *section);
 void           nmt_newt_section_set_body   (NmtNewtSection *section,
                                             NmtNewtWidget  *body);
 NmtNewtWidget *nmt_newt_section_get_body   (NmtNewtSection *section);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_SECTION_H */

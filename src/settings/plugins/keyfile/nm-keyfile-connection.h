@@ -24,8 +24,6 @@
 
 #include <nm-settings-connection.h>
 
-G_BEGIN_DECLS
-
 #define NM_TYPE_KEYFILE_CONNECTION            (nm_keyfile_connection_get_type ())
 #define NM_KEYFILE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnection))
 #define NM_KEYFILE_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionClass))
@@ -46,7 +44,5 @@ GType nm_keyfile_connection_get_type (void);
 NMKeyfileConnection *nm_keyfile_connection_new (NMConnection *source,
                                                 const char *filename,
                                                 GError **error);
-
-G_END_DECLS
 
 #endif /* __NETWORKMANAGER_KEYFILE_CONNECTION_H__ */

@@ -22,10 +22,6 @@
 #define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
 #include <polkitagent/polkitagent.h>
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 #define NM_TYPE_POLKIT_LISTENER            (nm_polkit_listener_get_type ())
 #define NM_POLKIT_LISTENER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_POLKIT_LISTENER, NMPolkitListener))
 #define NM_POLKIT_LISTENER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_POLKIT_LISTENER, NMPolkitListenerClass))
@@ -98,7 +94,5 @@ void nm_polkit_listener_set_show_error_callback (NMPolkitListener *self,
                                                  NMPolkitListenerOnShowErrorFunc show_error_callback);
 void nm_polkit_listener_set_completed_callback  (NMPolkitListener *self,
                                                  NMPolkitListenerOnCompletedFunc completed_callback);
-
-G_END_DECLS
 
 #endif /* __NM_POLKIT_LISTENER_H__ */

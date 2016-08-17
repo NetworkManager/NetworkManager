@@ -21,8 +21,6 @@
 
 #include <NetworkManager.h>
 
-G_BEGIN_DECLS
-
 void nm_editor_bindings_init (void);
 
 void nm_editor_bind_ip_addresses_with_prefix_to_strv  (int            family,
@@ -70,7 +68,5 @@ void nm_editor_bind_wireless_security_wep_key         (NMSettingWirelessSecurity
 
 void nm_editor_bind_vlan_name                         (NMSettingVlan       *s_vlan,
                                                        NMSettingConnection *s_con);
-
-G_END_DECLS
 
 #endif /* NM_EDITOR_BINDINGS_H */

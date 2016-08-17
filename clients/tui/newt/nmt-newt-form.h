@@ -21,8 +21,6 @@
 
 #include "nmt-newt-container.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_FORM            (nmt_newt_form_get_type ())
 #define NMT_NEWT_FORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_FORM, NmtNewtForm))
 #define NMT_NEWT_FORM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_FORM, NmtNewtFormClass))
@@ -60,7 +58,5 @@ void           nmt_newt_form_quit             (NmtNewtForm         *form);
 
 void           nmt_newt_form_set_focus        (NmtNewtForm         *form,
                                                NmtNewtWidget       *widget);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_FORM_H */

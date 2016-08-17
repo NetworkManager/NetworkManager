@@ -21,10 +21,6 @@
 #ifndef __NETWORKMANAGER_BLUEZ4_MANAGER_H__
 #define __NETWORKMANAGER_BLUEZ4_MANAGER_H__
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 #define NM_TYPE_BLUEZ4_MANAGER            (nm_bluez4_manager_get_type ())
 #define NM_BLUEZ4_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ4_MANAGER, NMBluez4Manager))
 #define NM_BLUEZ4_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_BLUEZ4_MANAGER, NMBluez4ManagerClass))

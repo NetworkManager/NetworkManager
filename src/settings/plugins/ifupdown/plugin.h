@@ -24,8 +24,6 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-default.h"
-
 #define PLUGIN_NAME "ifupdown"
 
 #define SETTINGS_TYPE_PLUGIN_IFUPDOWN            (settings_plugin_ifupdown_get_type ())

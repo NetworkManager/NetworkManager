@@ -19,7 +19,6 @@
 #ifndef __NETWORKMANAGER_DHCP_DHCLIENT_H__
 #define __NETWORKMANAGER_DHCP_DHCLIENT_H__
 
-#include "nm-default.h"
 #include "nm-dhcp-client.h"
 
 #define NM_TYPE_DHCP_DHCLIENT            (nm_dhcp_dhclient_get_type ())

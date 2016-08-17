@@ -22,10 +22,6 @@
 #ifndef __NETWORKMANAGER_ATM_MANAGER_H__
 #define __NETWORKMANAGER_ATM_MANAGER_H__
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 #define NM_TYPE_ATM_MANAGER            (nm_atm_manager_get_type ())
 #define NM_ATM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ATM_MANAGER, NMAtmManager))
 

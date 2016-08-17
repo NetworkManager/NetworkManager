@@ -21,8 +21,6 @@
 
 #include "nmt-newt-component.h"
 
-G_BEGIN_DECLS
-
 #define NMT_TYPE_NEWT_TEXTBOX            (nmt_newt_textbox_get_type ())
 #define NMT_NEWT_TEXTBOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_TEXTBOX, NmtNewtTextbox))
 #define NMT_NEWT_TEXTBOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_NEWT_TEXTBOX, NmtNewtTextboxClass))
@@ -53,7 +51,5 @@ NmtNewtWidget *nmt_newt_textbox_new      (NmtNewtTextboxFlags  flags,
 void           nmt_newt_textbox_set_text (NmtNewtTextbox      *textbox,
                                           const char          *text);
 const char    *nmt_newt_textbox_get_text (NmtNewtTextbox      *textbox);
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_TEXTBOX_H */

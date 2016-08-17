@@ -18,13 +18,10 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-
-#include "nm-default.h"
-#include "nm-connection.h"
-
 #ifndef __NETWORKMANAGER_DEFAULT_ROUTE_MANAGER_H__
 #define __NETWORKMANAGER_DEFAULT_ROUTE_MANAGER_H__
 
+#include "nm-connection.h"
 
 #define NM_TYPE_DEFAULT_ROUTE_MANAGER            (nm_default_route_manager_get_type ())
 #define NM_DEFAULT_ROUTE_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManager))

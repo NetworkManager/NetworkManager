@@ -21,10 +21,6 @@
 
 #include <newt.h>
 
-#include "nm-default.h"
-
-G_BEGIN_DECLS
-
 typedef struct _NmtNewtButton        NmtNewtButton;
 typedef struct _NmtNewtButtonBox     NmtNewtButtonBox;
 typedef struct _NmtNewtCheckbox      NmtNewtCheckbox;
@@ -44,7 +40,5 @@ typedef struct _NmtNewtStack         NmtNewtStack;
 typedef struct _NmtNewtTextbox       NmtNewtTextbox;
 typedef struct _NmtNewtToggleButton  NmtNewtToggleButton;
 typedef struct _NmtNewtWidget        NmtNewtWidget;
-
-G_END_DECLS
 
 #endif /* NMT_NEWT_COMPONENT_H */

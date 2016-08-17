@@ -21,7 +21,6 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 #define KEYFILE_PLUGIN_NAME "keyfile"

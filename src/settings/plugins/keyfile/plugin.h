@@ -22,8 +22,6 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-default.h"
-
 #define SETTINGS_TYPE_PLUGIN_KEYFILE            (settings_plugin_keyfile_get_type ())
 #define SETTINGS_PLUGIN_KEYFILE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfile))
 #define SETTINGS_PLUGIN_KEYFILE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfileClass))

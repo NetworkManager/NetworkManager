@@ -24,8 +24,6 @@
 
 #include <nm-connection.h>
 
-#include "nm-default.h"
-
 gboolean nm_keyfile_plugin_write_connection (NMConnection *connection,
                                              const char *existing_path,
                                              gboolean force_rename,

@@ -22,8 +22,6 @@
 #ifndef _NET_PARSER_H
 #define _NET_PARSER_H
 
-#include "nm-default.h"
-
 #define CONF_NET_FILE SYSCONFDIR "/conf.d/net"
 
 gboolean ifnet_init (gchar * config_file);
@@ -40,4 +38,5 @@ gboolean ifnet_flush_to_file (const char *config_file, gchar **out_backup);
 void ifnet_set_data (const char *conn_name, const char *key, const char *value);
 gboolean ifnet_add_network (const char *name, const char *type);
 gboolean ifnet_delete_network (const char *conn_name);
+
 #endif
