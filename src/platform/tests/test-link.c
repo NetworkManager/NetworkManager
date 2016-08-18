@@ -221,7 +221,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, master);
 
 	accept_signals (link_changed, 1, 3);
-	accept_signals (master_changed, 0, 1);
+	accept_signals (master_changed, 0, 2);
 
 	/* enslaveing brings put the slave */
 	if (NM_IN_SET (link_type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
