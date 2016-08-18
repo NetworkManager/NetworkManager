@@ -424,7 +424,7 @@ intltoolize --automake --copy --force
 	--with-dist-version=%{version}-%{release} \
 	--with-setting-plugins-default='ifcfg-rh,ibft' \
 	--with-config-dns-rc-manager-default=symlink \
-	--with-logging-backend-default=journal \
+	--with-config-logging-backend-default=journal \
 	--enable-json-validation
 
 make %{?_smp_mflags}
