@@ -18,6 +18,7 @@
 
 %global snapshot %{nil}
 %global git_sha __COMMIT__
+
 %global rpm_version __VERSION__
 %global real_version __VERSION__
 %global release_version __RELEASE_VERSION__
@@ -363,7 +364,9 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 #%patch1 -p1
 
 %build
+%if %{with regen_docs}
 gtkdocize
+%endif
 autoreconf --install --force
 intltoolize --automake --copy --force
 %configure \
@@ -419,7 +422,10 @@ intltoolize --automake --copy --force
 	--with-system-libndp=yes \
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--with-dist-version=%{version}-%{release} \
-	--with-setting-plugins-default='ifcfg-rh,ibft'
+	--with-setting-plugins-default='ifcfg-rh,ibft' \
+	--with-config-dns-rc-manager-default=symlink \
+	--with-logging-backend-default=journal \
+	--enable-json-validation
 
 make %{?_smp_mflags}
 
