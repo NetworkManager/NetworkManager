@@ -4474,30 +4474,13 @@ impl_manager_set_logging (NMManager *self,
                           const char *level,
                           const char *domains)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
-	gulong caller_uid = G_MAXULONG;
-
-	if (!nm_bus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Failed to get request UID.");
-		goto done;
-	}
-
-	if (0 != caller_uid) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Permission denied");
-		goto done;
-	}
 
 	if (nm_logging_setup (level, domains, NULL, &error)) {
 		_LOGI (LOGD_CORE, "logging: level '%s' domains '%s'",
 		       nm_logging_level_to_string (), nm_logging_domains_to_string ());
 	}
 
-done:
 	if (error)
 		g_dbus_method_invocation_take_error (context, error);
 	else

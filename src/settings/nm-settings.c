@@ -1522,10 +1522,6 @@ impl_settings_load_connections (NMSettings *self,
 	GSList *iter;
 	int i;
 
-	if (!nm_bus_manager_ensure_root (nm_bus_manager_get (), context,
-	                                 NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_PERMISSION_DENIED))
-		return;
-
 	failures = g_ptr_array_new ();
 
 	for (i = 0; filenames[i]; i++) {
@@ -1558,10 +1554,6 @@ impl_settings_reload_connections (NMSettings *self,
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
-
-	if (!nm_bus_manager_ensure_root (nm_bus_manager_get (), context,
-	                                 NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_PERMISSION_DENIED))
-		return;
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
