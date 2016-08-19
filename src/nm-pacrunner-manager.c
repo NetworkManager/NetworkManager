@@ -323,11 +323,8 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
  * @proxy_config: Proxy config of the connection
  * @ip4_conifg: IP4 Cofig of the connection
  * @ip6_config: IP6 Config of the connection
- *
- * Returns: %TRUE if configs were sucessfully sent
- * to PacRunner, %FALSE on error
  */
-gboolean
+void
 nm_pacrunner_manager_send (NMPacRunnerManager *self,
                            const char *iface,
                            NMProxyConfig *proxy_config,
@@ -340,11 +337,10 @@ nm_pacrunner_manager_send (NMPacRunnerManager *self,
 	GVariantBuilder proxy_data;
 	GVariant *pacrunner_manager_args;
 
-	g_return_val_if_fail (NM_IS_PACRUNNER_MANAGER (self), FALSE);
-	priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	g_return_if_fail (NM_IS_PACRUNNER_MANAGER (self));
+	g_return_if_fail (proxy_config);
 
-	if (!proxy_config)
-		return FALSE;
+	priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
 	g_free (priv->iface);
 	priv->iface = g_strdup (iface);
@@ -403,8 +399,6 @@ nm_pacrunner_manager_send (NMPacRunnerManager *self,
 	 * sent when PacRunner appears.
 	 */
 	send_pacrunner_proxy_data (self, pacrunner_manager_args);
-
-	return TRUE;
 }
 
 static void

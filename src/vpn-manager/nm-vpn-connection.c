@@ -567,13 +567,13 @@ _set_vpn_state (NMVpnConnection *self,
 		                        NULL,
 		                        NULL);
 
-		/* Load PacRunner with VPN's config */
-		if (!nm_pacrunner_manager_send (nm_pacrunner_manager_get (),
-		                                priv->ip_iface,
-		                                priv->proxy_config,
-		                                priv->ip4_config,
-		                                priv->ip6_config))
-			_LOGI ("Couldn't update pacrunner for %s", priv->ip_iface);
+		if (priv->proxy_config) {
+			nm_pacrunner_manager_send (nm_pacrunner_manager_get (),
+			                           priv->ip_iface,
+			                           priv->proxy_config,
+			                           priv->ip4_config,
+			                           priv->ip6_config);
+		}
 		break;
 	case STATE_DEACTIVATING:
 		if (quitting) {

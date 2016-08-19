@@ -40,11 +40,11 @@ GType nm_pacrunner_manager_get_type (void);
 
 NMPacRunnerManager *nm_pacrunner_manager_get (void);
 
-gboolean nm_pacrunner_manager_send (NMPacRunnerManager *self,
-                                    const char *iface,
-                                    NMProxyConfig *proxy_config,
-                                    NMIP4Config *ip4_config,
-                                    NMIP6Config *ip6_config);
+void nm_pacrunner_manager_send (NMPacRunnerManager *self,
+                                const char *iface,
+                                NMProxyConfig *proxy_config,
+                                NMIP4Config *ip4_config,
+                                NMIP6Config *ip6_config);
 
 void nm_pacrunner_manager_remove (NMPacRunnerManager *self, const char *iface);
 

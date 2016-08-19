@@ -11408,13 +11408,13 @@ _set_state_full (NMDevice *self,
 		                    nm_act_request_get_applied_connection (req),
 		                    self, NULL, NULL, NULL);
 
-		/* Load PacRunner with Device's config */
-		if (!nm_pacrunner_manager_send (priv->pacrunner_manager,
-		                                nm_device_get_ip_iface (self),
-		                                priv->proxy_config,
-		                                priv->ip4_config,
-		                                priv->ip6_config))
-			_LOGI (LOGD_PROXY, "Couldn't update pacrunner for %s", nm_device_get_ip_iface (self));
+		if (priv->proxy_config) {
+			nm_pacrunner_manager_send (priv->pacrunner_manager,
+			                           nm_device_get_ip_iface (self),
+			                           priv->proxy_config,
+			                           priv->ip4_config,
+			                           priv->ip6_config);
+		}
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		/* Usually upon failure the activation chain is interrupted in
