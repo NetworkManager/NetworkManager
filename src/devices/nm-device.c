@@ -11383,7 +11383,7 @@ _set_state_full (NMDevice *self,
 		}
 
 		/* Remove config from PacRunner */
-		nm_pacrunner_manager_remove (priv->pacrunner_manager, nm_device_get_ip_iface (self));
+		nm_pac_runner_manager_remove (priv->pacrunner_manager, nm_device_get_ip_iface (self));
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (   priv->queued_act_request
@@ -11409,11 +11409,11 @@ _set_state_full (NMDevice *self,
 		                    self, NULL, NULL, NULL);
 
 		if (priv->proxy_config) {
-			nm_pacrunner_manager_send (priv->pacrunner_manager,
-			                           nm_device_get_ip_iface (self),
-			                           priv->proxy_config,
-			                           priv->ip4_config,
-			                           priv->ip6_config);
+			nm_pac_runner_manager_send (priv->pacrunner_manager,
+			                            nm_device_get_ip_iface (self),
+			                            priv->proxy_config,
+			                            priv->ip4_config,
+			                            priv->ip6_config);
 		}
 		break;
 	case NM_DEVICE_STATE_FAILED:
@@ -12231,7 +12231,7 @@ nm_device_init (NMDevice *self)
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
-	priv->pacrunner_manager = g_object_ref (nm_pacrunner_manager_get ());
+	priv->pacrunner_manager = g_object_ref (nm_pac_runner_manager_get ());
 
 	priv->default_route.v4_is_assumed = TRUE;
 	priv->default_route.v6_is_assumed = TRUE;

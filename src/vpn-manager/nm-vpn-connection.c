@@ -568,11 +568,11 @@ _set_vpn_state (NMVpnConnection *self,
 		                        NULL);
 
 		if (priv->proxy_config) {
-			nm_pacrunner_manager_send (nm_pacrunner_manager_get (),
-			                           priv->ip_iface,
-			                           priv->proxy_config,
-			                           priv->ip4_config,
-			                           priv->ip6_config);
+			nm_pac_runner_manager_send (nm_pac_runner_manager_get (),
+			                            priv->ip_iface,
+			                            priv->proxy_config,
+			                            priv->ip4_config,
+			                            priv->ip6_config);
 		}
 		break;
 	case STATE_DEACTIVATING:
@@ -603,7 +603,7 @@ _set_vpn_state (NMVpnConnection *self,
 		}
 
 		/* Remove config from PacRunner */
-		nm_pacrunner_manager_remove (nm_pacrunner_manager_get(), priv->ip_iface);
+		nm_pac_runner_manager_remove (nm_pac_runner_manager_get(), priv->ip_iface);
 		break;
 	case STATE_FAILED:
 	case STATE_DISCONNECTED:

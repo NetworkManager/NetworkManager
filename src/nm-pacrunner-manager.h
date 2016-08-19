@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_PACRUNNER_MANAGER_H__
 #define __NETWORKMANAGER_PACRUNNER_MANAGER_H__
 
-#define NM_TYPE_PACRUNNER_MANAGER            (nm_pacrunner_manager_get_type ())
+#define NM_TYPE_PACRUNNER_MANAGER            (nm_pac_runner_manager_get_type ())
 #define NM_PACRUNNER_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PACRUNNER_MANAGER, NMPacRunnerManager))
 #define NM_PACRUNNER_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_PACRUNNER_MANAGER, NMPacRunnerManagerClass))
 #define NM_IS_PACRUNNER_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_PACRUNNER_MANAGER))
@@ -30,16 +30,16 @@
 
 typedef struct _NMPacRunnerManagerClass NMPacRunnerManagerClass;
 
-GType nm_pacrunner_manager_get_type (void);
+GType nm_pac_runner_manager_get_type (void);
 
-NMPacRunnerManager *nm_pacrunner_manager_get (void);
+NMPacRunnerManager *nm_pac_runner_manager_get (void);
 
-void nm_pacrunner_manager_send (NMPacRunnerManager *self,
-                                const char *iface,
-                                NMProxyConfig *proxy_config,
-                                NMIP4Config *ip4_config,
-                                NMIP6Config *ip6_config);
+void nm_pac_runner_manager_send (NMPacRunnerManager *self,
+                                 const char *iface,
+                                 NMProxyConfig *proxy_config,
+                                 NMIP4Config *ip4_config,
+                                 NMIP6Config *ip6_config);
 
-void nm_pacrunner_manager_remove (NMPacRunnerManager *self, const char *iface);
+void nm_pac_runner_manager_remove (NMPacRunnerManager *self, const char *iface);
 
 #endif /* __NETWORKMANAGER_PACRUNNER_MANAGER_H__ */

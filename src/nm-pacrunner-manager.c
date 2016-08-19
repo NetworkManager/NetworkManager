@@ -57,7 +57,7 @@ struct _NMPacRunnerManagerClass {
 	GObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMPacRunnerManager, nm_pacrunner_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMPacRunnerManager, nm_pac_runner_manager, G_TYPE_OBJECT)
 
 #define NM_PACRUNNER_MANAGER_GET_PRIVATE(self) \
 	({ \
@@ -337,7 +337,7 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 /**
- * nm_pacrunner_manager_send():
+ * nm_pac_runner_manager_send():
  * @self: the #NMPacRunnerManager
  * @iface: the iface for the connection or %NULL
  * @proxy_config: Proxy config of the connection
@@ -345,11 +345,11 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
  * @ip6_config: IP6 Config of the connection
  */
 void
-nm_pacrunner_manager_send (NMPacRunnerManager *self,
-                           const char *iface,
-                           NMProxyConfig *proxy_config,
-                           NMIP4Config *ip4_config,
-                           NMIP6Config *ip6_config)
+nm_pac_runner_manager_send (NMPacRunnerManager *self,
+                            const char *iface,
+                            NMProxyConfig *proxy_config,
+                            NMIP4Config *ip4_config,
+                            NMIP6Config *ip6_config)
 {
 	char **strv = NULL;
 	NMProxyConfigMethod method;
@@ -439,13 +439,13 @@ pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 /**
- * nm_pacrunner_manager_remove():
+ * nm_pac_runner_manager_remove():
  * @self: the #NMPacRunnerManager
  * @iface: the iface for the connection to be removed
  * from PacRunner
  */
 void
-nm_pacrunner_manager_remove (NMPacRunnerManager *self, const char *iface)
+nm_pac_runner_manager_remove (NMPacRunnerManager *self, const char *iface)
 {
 	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	GList *list;
@@ -467,10 +467,10 @@ nm_pacrunner_manager_remove (NMPacRunnerManager *self, const char *iface)
 	}
 }
 
-NM_DEFINE_SINGLETON_GETTER (NMPacRunnerManager, nm_pacrunner_manager_get, NM_TYPE_PACRUNNER_MANAGER);
+NM_DEFINE_SINGLETON_GETTER (NMPacRunnerManager, nm_pac_runner_manager_get, NM_TYPE_PACRUNNER_MANAGER);
 
 static void
-nm_pacrunner_manager_init (NMPacRunnerManager *self)
+nm_pac_runner_manager_init (NMPacRunnerManager *self)
 {
 	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
@@ -504,11 +504,11 @@ dispose (GObject *object)
 	g_list_free_full (priv->remove, (GDestroyNotify) remove_data_destroy);
 	priv->remove = NULL;
 
-	G_OBJECT_CLASS (nm_pacrunner_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_pac_runner_manager_parent_class)->dispose (object);
 }
 
 static void
-nm_pacrunner_manager_class_init (NMPacRunnerManagerClass *klass)
+nm_pac_runner_manager_class_init (NMPacRunnerManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
