@@ -1437,6 +1437,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
 		while (g_variant_iter_next (iter, "@au", &v)) {
 			NMPlatformIP4Route route = { 0, };
+			guint32 plen;
 
 			switch (g_variant_n_children (v)) {
 			case 5:
@@ -1444,14 +1445,15 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				/* fallthrough */
 			case 4:
 				g_variant_get_child (v, 0, "u", &route.network);
-				g_variant_get_child (v, 1, "u", &route.plen);
+				g_variant_get_child (v, 1, "u", &plen);
 				g_variant_get_child (v, 2, "u", &route.gateway);
 				/* 4th item is unused route metric */
 				route.metric = route_metric;
 				route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 
-				if (route.plen > 32)
+				if (plen > 32 || plen == 0)
 					break;
+				route.plen = plen;
 
 				/* Ignore host routes to the VPN gateway since NM adds one itself
 				 * below.  Since NM knows more about the routing situation than
