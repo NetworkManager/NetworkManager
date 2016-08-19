@@ -1373,6 +1373,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	GVariant *v;
 	gboolean b;
 	guint i, n;
+	int ip_ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1400,7 +1401,11 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		priv->has_ip6 = FALSE;
 	}
 
-	config = nm_ip4_config_new (nm_vpn_connection_get_ip_ifindex (self, TRUE));
+	ip_ifindex = nm_vpn_connection_get_ip_ifindex (self, TRUE);
+	if (ip_ifindex <= 0)
+		g_return_if_reached ();
+
+	config = nm_ip4_config_new (ip_ifindex);
 	nm_ip4_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
@@ -1535,6 +1540,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	GVariant *v;
 	gboolean b;
 	guint i, n;
+	int ip_ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1549,7 +1555,11 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 		return;
 	}
 
-	config = nm_ip6_config_new (priv->ip_ifindex);
+	ip_ifindex = nm_vpn_connection_get_ip_ifindex (self, TRUE);
+	if (ip_ifindex <= 0)
+		g_return_if_reached ();
+
+	config = nm_ip6_config_new (ip_ifindex);
 	nm_ip6_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
