@@ -1512,3 +1512,19 @@ nmc_complete_bool (const char *prefix)
 	nmc_complete_strings (prefix, "true", "yes", "on",
 	                              "false", "no", "off", NULL);
 }
+
+/**
+ * nmc_error_get_simple_message:
+ * @error: a GError
+ *
+ * Returns a simplified message for some errors hard to understand.
+ */
+const char *
+nmc_error_get_simple_message (GError *error)
+{
+	/* Return a clear message instead of the obscure D-Bus policy error */
+	if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_ACCESS_DENIED))
+		return _("access denied");
+	else
+		return error->message;
+}

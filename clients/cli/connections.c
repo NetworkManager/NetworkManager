@@ -8336,7 +8336,7 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 
 	if (!nm_client_reload_connections (nmc->client, NULL, &error)) {
 		g_string_printf (nmc->return_text, _("Error: failed to reload connections: %s."),
-		                 error->message);
+		                 nmc_error_get_simple_message (error));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_clear_error (&error);
 	}
@@ -8368,7 +8368,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	g_free (filenames);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: failed to load connection: %s."),
-		                 error->message);
+		                 nmc_error_get_simple_message (error));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_error_free (error);
 	}
