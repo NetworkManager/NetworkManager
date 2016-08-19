@@ -1614,7 +1614,7 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 
 	g_return_if_fail (new != NULL);
 	g_return_if_fail (new->plen > 0 && new->plen <= 32);
-	g_assert (priv->ifindex);
+	g_return_if_fail (priv->ifindex > 0);
 
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP4Route *item = &g_array_index (priv->routes, NMPlatformIP4Route, i);
@@ -2293,7 +2293,7 @@ finalize (GObject *object)
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMIP4Config *config = NM_IP4_CONFIG (object);
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);

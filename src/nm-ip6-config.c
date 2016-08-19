@@ -1487,7 +1487,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 
 	g_return_if_fail (new != NULL);
 	g_return_if_fail (new->plen > 0 && new->plen <= 128);
-	g_assert (priv->ifindex);
+	g_return_if_fail (priv->ifindex > 0);
 
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
@@ -2037,7 +2037,7 @@ nameservers_to_gvalue (GArray *array, GValue *value)
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMIP6Config *config = NM_IP6_CONFIG (object);
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
