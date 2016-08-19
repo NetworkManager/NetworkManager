@@ -50,8 +50,6 @@
 
 #include "nmdbus-vpn-connection.h"
 
-G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
-
 typedef enum {
 	/* Only system secrets */
 	SECRETS_REQ_SYSTEM = 0,
@@ -79,6 +77,27 @@ typedef enum {
 	STATE_DISCONNECTED,
 	STATE_FAILED,
 } VpnState;
+
+enum {
+	VPN_STATE_CHANGED,
+	INTERNAL_STATE_CHANGED,
+	INTERNAL_RETRY_AFTER_FAILURE,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_VPN_STATE,
+	PROP_BANNER,
+	PROP_IP4_CONFIG,
+	PROP_IP6_CONFIG,
+	PROP_MASTER = 2000,
+
+	LAST_PROP
+};
 
 typedef struct {
 	gboolean service_can_persist;
@@ -128,28 +147,44 @@ typedef struct {
 	guint32 mtu;
 } NMVpnConnectionPrivate;
 
-#define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVpnConnectionPrivate))
-
-enum {
-	VPN_STATE_CHANGED,
-	INTERNAL_STATE_CHANGED,
-	INTERNAL_RETRY_AFTER_FAILURE,
-
-	LAST_SIGNAL
+struct _NMVpnConnection {
+	NMActiveConnection parent;
+	NMVpnConnectionPrivate _priv;
 };
 
-static guint signals[LAST_SIGNAL] = { 0 };
+struct _NMVpnConnectionClass {
+	NMActiveConnectionClass parent;
 
-enum {
-	PROP_0,
-	PROP_VPN_STATE,
-	PROP_BANNER,
-	PROP_IP4_CONFIG,
-	PROP_IP6_CONFIG,
-	PROP_MASTER = 2000,
+	/* Signals */
+	void (*vpn_state_changed) (NMVpnConnection *self,
+	                           NMVpnConnectionState new_state,
+	                           NMVpnConnectionStateReason reason);
 
-	LAST_PROP
+	/* not exported over D-Bus */
+	void (*internal_state_changed) (NMVpnConnection *self,
+	                                NMVpnConnectionState new_state,
+	                                NMVpnConnectionState old_state,
+	                                NMVpnConnectionStateReason reason);
+
+	void (*internal_failed_retry)  (NMVpnConnection *self);
 };
+
+G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
+
+#define NM_VPN_CONNECTION_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMVpnConnection *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_VPN_CONNECTION (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static NMSettingsConnection *_get_settings_connection (NMVpnConnection *self,
                                                        gboolean allow_missing);
@@ -2504,7 +2539,7 @@ device_changed (NMActiveConnection *active,
                 NMDevice *new_device,
                 NMDevice *old_device)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (active);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) active);
 
 	if (!_service_and_connection_can_persist (NM_VPN_CONNECTION (active)))
 		return;
@@ -2577,7 +2612,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) object);
 
 	g_free (priv->banner);
 	g_free (priv->ip_iface);
@@ -2598,7 +2633,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) object);
 	NMDevice *parent_dev;
 
 	switch (prop_id) {
@@ -2629,8 +2664,6 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
 	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (connection_class);
-
-	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
 
 	/* virtual methods */
 	object_class->get_property = get_property;
