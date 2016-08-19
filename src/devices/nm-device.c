@@ -8558,10 +8558,10 @@ nm_device_set_proxy_config (NMDevice *self, GHashTable *options)
 		if (pac) {
 			nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_AUTO);
 			nm_proxy_config_set_pac_url (priv->proxy_config, pac);
-			_LOGD (LOGD_PROXY, "PAC url: %s",pac);
+			_LOGD (LOGD_PROXY, "proxy: PAC url \"%s\"", pac);
 		} else {
 			nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_NONE);
-			_LOGI (LOGD_PROXY, "PAC url not obtained from DHCP server");
+			_LOGD (LOGD_PROXY, "proxy: PAC url not obtained from DHCP server");
 		}
 	}
 
