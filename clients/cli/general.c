@@ -622,7 +622,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 		nm_client_set_logging (nmc->client, level, domains, &error);
 		if (error) {
 			g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
-			                 error->message);
+			                 nmc_error_get_simple_message (error));
 			return NMC_RESULT_ERROR_UNKNOWN;
 		}
 	}
