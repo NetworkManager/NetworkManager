@@ -40,38 +40,6 @@
 #include "nm-errors.h"
 #include "nm-core-utils.h"
 
-typedef enum {
-	LOG_FORMAT_FLAG_NONE                                = 0,
-	LOG_FORMAT_FLAG_TIMESTAMP_DEBUG                     = (1LL << 0),
-	LOG_FORMAT_FLAG_TIMESTAMP_INFO                      = (1LL << 1),
-	LOG_FORMAT_FLAG_TIMESTAMP_ERROR                     = (1LL << 2),
-	LOG_FORMAT_FLAG_LOCATION_DEBUG                      = (1LL << 3),
-	LOG_FORMAT_FLAG_LOCATION_INFO                       = (1LL << 4),
-	LOG_FORMAT_FLAG_LOCATION_ERROR                      = (1LL << 5),
-	LOG_FORMAT_FLAG_ALIGN_LOCATION                      = (1LL << 6),
-
-	_LOG_FORMAT_FLAG_TIMESTAMP                          = LOG_FORMAT_FLAG_TIMESTAMP_DEBUG |
-	                                                      LOG_FORMAT_FLAG_TIMESTAMP_INFO |
-	                                                      LOG_FORMAT_FLAG_TIMESTAMP_ERROR,
-	_LOG_FORMAT_FLAG_LOCATION                           = LOG_FORMAT_FLAG_LOCATION_DEBUG |
-	                                                      LOG_FORMAT_FLAG_LOCATION_INFO |
-	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR,
-
-	_LOG_FORMAT_FLAG_LEVEL_DEBUG                        = LOG_FORMAT_FLAG_TIMESTAMP_DEBUG |
-	                                                      LOG_FORMAT_FLAG_LOCATION_DEBUG,
-	_LOG_FORMAT_FLAG_LEVEL_INFO                         = LOG_FORMAT_FLAG_TIMESTAMP_INFO |
-	                                                      LOG_FORMAT_FLAG_LOCATION_INFO,
-	_LOG_FORMAT_FLAG_LEVEL_ERROR                        = LOG_FORMAT_FLAG_TIMESTAMP_ERROR |
-	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR,
-
-	_LOG_FORMAT_FLAG_SYSLOG                             = _LOG_FORMAT_FLAG_TIMESTAMP |
-	                                                      LOG_FORMAT_FLAG_LOCATION_DEBUG |
-	                                                      LOG_FORMAT_FLAG_LOCATION_ERROR |
-	                                                      LOG_FORMAT_FLAG_ALIGN_LOCATION,
-
-	_LOG_FORMAT_FLAG_DEFAULT                            = _LOG_FORMAT_FLAG_TIMESTAMP,
-} LogFormatFlags;
-
 void (*_nm_logging_clear_platform_logging_cache) (void);
 
 static void
@@ -99,7 +67,6 @@ typedef struct {
 	int syslog_level;
 
 	GLogLevelFlags g_log_level;
-	LogFormatFlags log_format_level;
 } LogLevelDesc;
 
 NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
@@ -114,7 +81,6 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 
 static struct {
 	NMLogLevel log_level;
-	LogFormatFlags log_format_flags;
 	bool uses_syslog:1;
 	enum {
 		LOG_BACKEND_GLIB,
@@ -132,15 +98,14 @@ static struct {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
-	.log_format_flags = _LOG_FORMAT_FLAG_DEFAULT,
 	.level_desc = {
-		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
-		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   _LOG_FORMAT_FLAG_LEVEL_DEBUG },
-		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    _LOG_FORMAT_FLAG_LEVEL_INFO },
-		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_INFO },
-		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, _LOG_FORMAT_FLAG_LEVEL_ERROR },
-		[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   0 },
-		[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   0 },
+		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
+		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
+		[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    },
+		[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, },
+		[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, },
+		[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   },
+		[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   },
 	},
 	.domain_desc = {
 		{ LOGD_PLATFORM,  "PLATFORM" },
@@ -527,7 +492,6 @@ _nm_log_impl (const char *file,
 	char *msg;
 	char *fullmsg;
 	char s_buf_timestamp[64];
-	char s_buf_location[1024];
 	GTimeVal tv;
 
 	if ((guint) level >= G_N_ELEMENTS (_nm_logging_enabled_state))
@@ -547,51 +511,8 @@ _nm_log_impl (const char *file,
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	if (NM_FLAGS_ANY (global.log_format_flags, global.level_desc[level].log_format_level & _LOG_FORMAT_FLAG_TIMESTAMP)) {
-		g_get_current_time (&tv);
-		nm_sprintf_buf (s_buf_timestamp, " [%ld.%04ld]", tv.tv_sec, (tv.tv_usec + 50) / 100);
-	} else
-		s_buf_timestamp[0] = '\0';
-
-	s_buf_location[0] = '\0';
-	if (NM_FLAGS_ANY (global.log_format_flags, global.level_desc[level].log_format_level & _LOG_FORMAT_FLAG_LOCATION)) {
-#define MAX_LEN_FILE 37
-#define MAX_LEN_FUNC 26
-		gsize l = sizeof (s_buf_location);
-		char *p = s_buf_location, *p_buf;
-		gsize len;
-		char s_buf[MAX (MAX_LEN_FILE, MAX_LEN_FUNC) + 30];
-
-		if (file) {
-			if (NM_FLAGS_HAS (global.log_format_flags, LOG_FORMAT_FLAG_ALIGN_LOCATION)) {
-				/* left-align the "[file:line]" string, but truncate from left to MAX_LEN_FILE chars. */
-				len = strlen (file);
-				nm_sprintf_buf (s_buf, "[%s:%u]",
-				                len > MAX_LEN_FILE ? &file[len - MAX_LEN_FILE] : file,
-				                line);
-				len = strlen (s_buf);
-				if (len > MAX_LEN_FILE) {
-					p_buf = &s_buf[len - MAX_LEN_FILE];
-					p_buf[0] = '[';
-				} else
-					p_buf = s_buf;
-				nm_utils_strbuf_append (&p, &l, " %-"G_STRINGIFY (MAX_LEN_FILE)"s", p_buf);
-			} else
-				nm_utils_strbuf_append (&p, &l, " [%s:%u]", file, line);
-		}
-		if (func) {
-			if (NM_FLAGS_HAS (global.log_format_flags, LOG_FORMAT_FLAG_ALIGN_LOCATION)) {
-				/* left-align the "func():" string, but truncate from left to MAX_LEN_FUNC chars. */
-				len = strlen (func);
-				nm_sprintf_buf (s_buf, "%s():",
-				                len > MAX_LEN_FUNC ? &func[len - MAX_LEN_FUNC] : func);
-				len = strlen (s_buf);
-				nm_utils_strbuf_append (&p, &l, " %-"G_STRINGIFY (MAX_LEN_FUNC)"s",
-				                        len > MAX_LEN_FUNC ? &s_buf[len - MAX_LEN_FUNC] : s_buf);
-			} else
-				nm_utils_strbuf_append (&p, &l, " %s():", func);
-		}
-	}
+	g_get_current_time (&tv);
+	nm_sprintf_buf (s_buf_timestamp, " [%ld.%04ld]", tv.tv_sec, (tv.tv_usec + 50) / 100);
 
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
@@ -609,10 +530,9 @@ _nm_log_impl (const char *file,
 
 			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", global.level_desc[level].syslog_level);
 			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE="
-			                   "%-7s%s%s %s",
+			                   "%-7s%s %s",
 			                   global.level_desc[level].level_str,
 			                   s_buf_timestamp,
-			                   s_buf_location,
 			                   msg);
 			_iovec_set_literal_string (iov, iov_free, i_field++, "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN);
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
@@ -681,10 +601,9 @@ _nm_log_impl (const char *file,
 		break;
 #endif
 	default:
-		fullmsg = g_strdup_printf ("%-7s%s%s %s",
+		fullmsg = g_strdup_printf ("%-7s%s %s",
 		                           global.level_desc[level].level_str,
 		                           s_buf_timestamp,
-		                           s_buf_location,
 		                           msg);
 
 		if (global.log_backend == LOG_BACKEND_SYSLOG)
@@ -767,15 +686,11 @@ nm_logging_syslog_enabled (void)
 void
 nm_logging_syslog_openlog (const char *logging_backend)
 {
-	LogFormatFlags log_format_flags;
-
 	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
 
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_LOGGING_BACKEND_DEFAULT;
-
-	log_format_flags = _LOG_FORMAT_FLAG_DEFAULT;
 
 	if (strcmp (logging_backend, "debug") == 0) {
 		global.log_backend = LOG_BACKEND_SYSLOG;
@@ -794,8 +709,6 @@ nm_logging_syslog_openlog (const char *logging_backend)
 		global.uses_syslog = TRUE;
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	}
-
-	global.log_format_flags = log_format_flags;
 
 	g_log_set_handler (G_LOG_DOMAIN,
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
