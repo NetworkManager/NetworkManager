@@ -47,9 +47,9 @@ NMProxyConfigMethod nm_proxy_config_get_method (const NMProxyConfig *config);
 
 void nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting);
 
-char ** nm_proxy_config_get_proxies (const NMProxyConfig *config);
+const char *const*nm_proxy_config_get_proxies (const NMProxyConfig *config);
 
-char ** nm_proxy_config_get_excludes (const NMProxyConfig *config);
+const char *const*nm_proxy_config_get_excludes (const NMProxyConfig *config);
 
 gboolean nm_proxy_config_get_browser_only (const NMProxyConfig *config);
 

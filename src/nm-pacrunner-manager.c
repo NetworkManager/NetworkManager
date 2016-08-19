@@ -101,53 +101,50 @@ remove_data_destroy (struct remove_data *data)
 static void
 add_proxy_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config)
 {
-	const char *pac = NULL, *filename = NULL;
-	char **servers = NULL, **excludes = NULL;
-	char *contents = NULL;
+	const char *pac_url, *pac_script;
+	const char *const*proxies;
+	const char *const*excludes;
 	NMProxyConfigMethod method;
 
 	method = nm_proxy_config_get_method (proxy_config);
 	switch (method) {
 	case NM_PROXY_CONFIG_METHOD_AUTO:
-		/* Extract Pac Url */
-		pac = nm_proxy_config_get_pac_url (proxy_config);
-		if (pac)
+		pac_url = nm_proxy_config_get_pac_url (proxy_config);
+		if (pac_url) {
 			g_variant_builder_add (proxy_data, "{sv}",
 			                       "URL",
-			                       g_variant_new_string (pac));
+			                       g_variant_new_string (pac_url));
+		}
 
-		/* Extract Pac Script */
-		filename = nm_proxy_config_get_pac_script (proxy_config);
-		if (filename)
-			if (g_file_get_contents (filename, &contents, NULL, NULL))
+		pac_script = nm_proxy_config_get_pac_script (proxy_config);
+		if (pac_script) {
+			char *contents;
+
+			if (g_file_get_contents (pac_script, &contents, NULL, NULL)) {
 				g_variant_builder_add (proxy_data, "{sv}",
 				                       "Script",
-				                       g_variant_new_string (contents));
+				                       g_variant_new_take_string (contents));
+			}
+		}
 
 		break;
 	case NM_PROXY_CONFIG_METHOD_MANUAL:
-		/* Extract Proxy servers */
-		servers = nm_proxy_config_get_proxies (proxy_config);
-		if (servers && g_strv_length (servers))
+		proxies = nm_proxy_config_get_proxies (proxy_config);
+		if (proxies && proxies[0]) {
 			g_variant_builder_add (proxy_data, "{sv}",
 			                       "Servers",
-			                       g_variant_new_strv ((const char *const *) servers, -1));
+			                       g_variant_new_strv (proxies, -1));
+		}
 
-		/* Extract Excludes */
 		excludes = nm_proxy_config_get_excludes (proxy_config);
-		if (excludes && g_strv_length (excludes))
+		if (excludes && excludes[0]) {
 			g_variant_builder_add (proxy_data, "{sv}",
 			                       "Excludes",
-			                       g_variant_new_strv ((const char *const *) excludes, -1));
-
-		if (servers)
-			g_strfreev (servers);
-		if (excludes)
-			g_strfreev (excludes);
+			                       g_variant_new_strv (excludes, -1));
+		}
 
 		break;
 	case NM_PROXY_CONFIG_METHOD_NONE:
-		/* Do Nothing */
 		break;
 	}
 
