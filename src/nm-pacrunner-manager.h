@@ -28,13 +28,7 @@
 #define NM_IS_PACRUNNER_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_PACRUNNER_MANAGER))
 #define NM_PACRUNNER_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PACRUNNER_MANAGER, NMPacRunnerManagerClass))
 
-struct _NMPacRunnerManager {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMPacRunnerManagerClass;
+typedef struct _NMPacRunnerManagerClass NMPacRunnerManagerClass;
 
 GType nm_pacrunner_manager_get_type (void);
 

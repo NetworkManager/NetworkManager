@@ -26,10 +26,6 @@
 
 #include "nm-core-internal.h"
 
-#define NM_PROXY_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PROXY_CONFIG, NMProxyConfigPrivate))
-
-G_DEFINE_TYPE (NMProxyConfig, nm_proxy_config, G_TYPE_OBJECT)
-
 typedef struct {
 	NMProxyConfigMethod method;
 	GPtrArray *proxies;
@@ -38,6 +34,32 @@ typedef struct {
 	char *pac_url;
 	char *pac_script;
 } NMProxyConfigPrivate;
+
+struct _NMProxyConfig {
+	GObject parent;
+	NMProxyConfigPrivate _priv;
+};
+
+struct _NMProxyConfigClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMProxyConfig, nm_proxy_config, G_TYPE_OBJECT)
+
+#define NM_PROXY_CONFIG_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMProxyConfig *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_PROXY_CONFIG (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 NMProxyConfig *
 nm_proxy_config_new (void)
@@ -56,7 +78,7 @@ nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod method)
 NMProxyConfigMethod
 nm_proxy_config_get_method (const NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	return priv->method;
 }
@@ -153,7 +175,7 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting)
 char **
 nm_proxy_config_get_proxies (const NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	return _nm_utils_ptrarray_to_strv (priv->proxies);
 }
@@ -161,7 +183,7 @@ nm_proxy_config_get_proxies (const NMProxyConfig *config)
 char **
 nm_proxy_config_get_excludes (const NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	return _nm_utils_ptrarray_to_strv (priv->excludes);
 }
@@ -169,7 +191,7 @@ nm_proxy_config_get_excludes (const NMProxyConfig *config)
 gboolean
 nm_proxy_config_get_browser_only (const NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	return priv->browser_only;
 }
@@ -186,7 +208,7 @@ nm_proxy_config_set_pac_url (NMProxyConfig *config, const char *url)
 const char *
 nm_proxy_config_get_pac_url (const NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	return priv->pac_url;
 }
@@ -203,7 +225,7 @@ nm_proxy_config_set_pac_script (NMProxyConfig *config, const char *script)
 const char *
 nm_proxy_config_get_pac_script (const NMProxyConfig *config)
 {
-	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
+	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	return priv->pac_script;
 }
@@ -238,8 +260,6 @@ static void
 nm_proxy_config_class_init (NMProxyConfigClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMProxyConfigPrivate));
 
 	object_class->finalize = finalize;
 }

@@ -28,11 +28,7 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 
-G_DEFINE_TYPE (NMPacRunnerManager, nm_pacrunner_manager, G_TYPE_OBJECT)
-
 NM_DEFINE_SINGLETON_INSTANCE (NMPacRunnerManager);
-
-#define NM_PACRUNNER_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PACRUNNER_MANAGER, NMPacRunnerManagerPrivate))
 
 #define PACRUNNER_DBUS_SERVICE "org.pacrunner"
 #define PACRUNNER_DBUS_INTERFACE "org.pacrunner.Manager"
@@ -51,6 +47,30 @@ typedef struct {
 	GList *args;
 	GList *remove;
 } NMPacRunnerManagerPrivate;
+
+struct _NMPacRunnerManager {
+	GObject parent;
+	NMPacRunnerManagerPrivate _priv;
+};
+
+struct _NMPacRunnerManagerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMPacRunnerManager, nm_pacrunner_manager, G_TYPE_OBJECT)
+
+#define NM_PACRUNNER_MANAGER_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMPacRunnerManager *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_PACRUNNER_MANAGER (_self)); \
+		&_self->_priv; \
+	})
 
 /*****************************************************************************/
 
@@ -470,7 +490,7 @@ nm_pacrunner_manager_init (NMPacRunnerManager *self)
 static void
 dispose (GObject *object)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (object);
+	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE ((NMPacRunnerManager *) object);
 
 	g_clear_pointer (&priv->iface, g_free);
 
@@ -491,8 +511,6 @@ static void
 nm_pacrunner_manager_class_init (NMPacRunnerManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMPacRunnerManagerPrivate));
 
 	object_class->dispose = dispose;
 }

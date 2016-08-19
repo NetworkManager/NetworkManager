@@ -36,13 +36,7 @@ typedef enum {
 #define NM_IS_PROXY_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_PROXY_CONFIG))
 #define NM_PROXY_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PROXY_CONFIG, NMProxyConfigClass))
 
-struct _NMProxyConfig {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMProxyConfigClass;
+typedef struct _NMProxyConfigClass NMProxyConfigClass;
 
 GType nm_proxy_config_get_type (void);
 
