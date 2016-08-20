@@ -1640,7 +1640,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			if (!ip6_addr_from_variant (dest, &route.network))
 				goto next;
 
-			if (prefix > 128)
+			if (prefix > 128 || prefix == 0)
 				goto next;
 
 			route.plen = prefix;
