@@ -45,6 +45,7 @@
 
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
+#include "nm-dns-systemd-resolved.h"
 #include "nm-dns-unbound.h"
 
 #if WITH_LIBSOUP
@@ -1588,6 +1589,37 @@ _check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 
 NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
+static gboolean
+_resolvconf_resolved_managed (void)
+{
+	GFile *f;
+	GFileInfo *info;
+	gboolean ret = FALSE;
+	const gchar *resolved_paths[] = {
+		"/run/systemd/resolve/resolv.conf",
+		"/lib/systemd/resolv.conf",
+		"/usr/lib/systemd/resolv.conf",
+		NULL
+	};
+
+	f = g_file_new_for_path (_PATH_RESCONF);
+	info = g_file_query_info (f,
+							  G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK","\
+							  G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET,
+							  G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+							  NULL, NULL);
+
+	if (info && g_file_info_get_is_symlink (info))
+		ret = _nm_utils_strv_find_first ((gchar **) resolved_paths,
+										 G_N_ELEMENTS (resolved_paths),
+										 g_file_info_get_symlink_target (info)) >= 0;
+
+	g_clear_object(&info);
+	g_clear_object(&f);
+
+	return ret;
+}
+
 static void
 init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 {
@@ -1633,7 +1665,15 @@ again:
 
 	rc_manager = _check_resconf_immutable (rc_manager);
 
-	if (nm_streq0 (mode, "dnsmasq")) {
+	if (   (!mode && _resolvconf_resolved_managed ())
+		|| nm_streq0 (mode, "systemd-resolved")) {
+		if (   force_reload_plugin
+			|| !NM_IS_DNS_SYSTEMD_RESOLVED (priv->plugin)) {
+			_clear_plugin (self);
+			priv->plugin = nm_dns_systemd_resolved_new ();
+			plugin_changed = TRUE;
+		}
+	} else if (nm_streq0 (mode, "dnsmasq")) {
 		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
 			_clear_plugin (self);
 			priv->plugin = nm_dns_dnsmasq_new ();
