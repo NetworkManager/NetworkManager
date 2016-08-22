@@ -1685,8 +1685,6 @@ link_disconnect_action_cb (gpointer user_data)
 
 	priv->carrier_defer_id = 0;
 
-	_LOGI (LOGD_DEVICE, "link disconnected (calling deferred action)");
-
 	NM_DEVICE_GET_CLASS (self)->carrier_changed (self, FALSE);
 
 	return FALSE;
@@ -1728,10 +1726,9 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		}
 	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
 	           && !priv->queued_act_request) {
-		_LOGI (LOGD_DEVICE, "link disconnected");
+		_LOGD (LOGD_DEVICE, "link disconnected");
 		klass->carrier_changed (self, FALSE);
 	} else {
-		_LOGI (LOGD_DEVICE, "link disconnected (deferring action for %d seconds)", LINK_DISCONNECT_DELAY);
 		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
 		                                                link_disconnect_action_cb, self);
 		_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
