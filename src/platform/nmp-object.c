@@ -47,6 +47,10 @@
         } \
     } G_STMT_END
 
+/* logging to trace object lifetime and references.
+ * Disabled by default. */
+#define _LOGr(...) G_STMT_START { if (FALSE) { _LOGt (__VA_ARGS__); } } G_STMT_END
+
 /*********************************************************************************************/
 
 struct _NMPCache {
@@ -211,7 +215,7 @@ nmp_object_ref (NMPObject *obj)
 	g_return_val_if_fail (obj->_ref_count != NMP_REF_COUNT_STACKINIT, NULL);
 	obj->_ref_count++;
 
-	_LOGt (obj, "ref: %d", obj->_ref_count);
+	_LOGr (obj, "ref: %d", obj->_ref_count);
 
 	return obj;
 }
@@ -222,7 +226,7 @@ nmp_object_unref (NMPObject *obj)
 	if (obj) {
 		g_return_if_fail (obj->_ref_count > 0);
 		g_return_if_fail (obj->_ref_count != NMP_REF_COUNT_STACKINIT);
-		_LOGt (obj, "%s: %d",
+		_LOGr (obj, "%s: %d",
 		       obj->_ref_count <= 1 ? "destroy" : "unref",
 		       obj->_ref_count - 1);
 		if (--obj->_ref_count <= 0) {
@@ -262,7 +266,7 @@ _nmp_object_new_from_class (const NMPClass *klass)
 	obj = g_slice_alloc0 (klass->sizeof_data + G_STRUCT_OFFSET (NMPObject, object));
 	obj->_class = klass;
 	obj->_ref_count = 1;
-	_LOGt (obj, "new");
+	_LOGr (obj, "new");
 	return obj;
 }
 
