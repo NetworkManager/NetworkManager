@@ -546,7 +546,7 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 
 		g_signal_connect (device, NM_DEVICE_STATE_CHANGED,
 		                  G_CALLBACK (device_state_changed), self);
-		g_signal_connect (device, "notify::master",
+		g_signal_connect (device, "notify::" NM_DEVICE_MASTER,
 		                  G_CALLBACK (device_master_changed), self);
 		g_signal_connect (device, "notify::" NM_DEVICE_METERED,
 		                  G_CALLBACK (device_metered_changed), self);
