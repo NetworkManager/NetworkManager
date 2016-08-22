@@ -1726,7 +1726,8 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 			nm_device_remove_pending_action (self, "carrier wait", TRUE);
 			_carrier_wait_check_queued_act_request (self);
 		}
-	} else if (state <= NM_DEVICE_STATE_DISCONNECTED) {
+	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
+	           && !priv->queued_act_request) {
 		_LOGI (LOGD_DEVICE, "link disconnected");
 		klass->carrier_changed (self, FALSE);
 	} else {
