@@ -1522,6 +1522,17 @@ impl_settings_load_connections (NMSettings *self,
 	GSList *iter;
 	int i;
 
+	/* The permission is already enforced by the D-Bus daemon, but we ensure
+	 * that the caller is still alive so that clients are forced to wait and
+	 * we'll be able to switch to polkit without breaking behavior.
+	 */
+	if (!nm_bus_manager_ensure_uid (nm_bus_manager_get (),
+	                                context,
+	                                G_MAXULONG,
+	                                NM_SETTINGS_ERROR,
+	                                NM_SETTINGS_ERROR_PERMISSION_DENIED))
+		return;
+
 	failures = g_ptr_array_new ();
 
 	for (i = 0; filenames[i]; i++) {
@@ -1554,6 +1565,17 @@ impl_settings_reload_connections (NMSettings *self,
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
+
+	/* The permission is already enforced by the D-Bus daemon, but we ensure
+	 * that the caller is still alive so that clients are forced to wait and
+	 * we'll be able to switch to polkit without breaking behavior.
+	 */
+	if (!nm_bus_manager_ensure_uid (nm_bus_manager_get (),
+	                                context,
+	                                G_MAXULONG,
+	                                NM_SETTINGS_ERROR,
+	                                NM_SETTINGS_ERROR_PERMISSION_DENIED))
+		return;
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);

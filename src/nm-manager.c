@@ -4476,6 +4476,17 @@ impl_manager_set_logging (NMManager *self,
 {
 	GError *error = NULL;
 
+	/* The permission is already enforced by the D-Bus daemon, but we ensure
+	 * that the caller is still alive so that clients are forced to wait and
+	 * we'll be able to switch to polkit without breaking behavior.
+	 */
+	if (!nm_bus_manager_ensure_uid (nm_bus_manager_get (),
+	                                context,
+	                                G_MAXULONG,
+	                                NM_MANAGER_ERROR,
+	                                NM_MANAGER_ERROR_PERMISSION_DENIED))
+		return;
+
 	if (nm_logging_setup (level, domains, NULL, &error)) {
 		_LOGI (LOGD_CORE, "logging: level '%s' domains '%s'",
 		       nm_logging_level_to_string (), nm_logging_domains_to_string ());

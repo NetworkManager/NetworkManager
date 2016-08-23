@@ -533,11 +533,28 @@ nm_bus_manager_get_caller_info_from_message (NMBusManager *self,
 	return _get_caller_info (self, NULL, connection, message, out_sender, out_uid, out_pid);
 }
 
+/**
+ * nm_bus_manager_ensure_uid:
+ *
+ * @self: bus manager instance
+ * @context: D-Bus method invocation
+ * @uid: a user-id
+ * @error_domain: error domain to return on failure
+ * @error_code: error code to return on failure
+ *
+ * Retrieves the uid of the D-Bus method caller and
+ * checks that it matches @uid, unless @uid is G_MAXULONG.
+ * In case of failure the function returns FALSE and finishes
+ * handling the D-Bus method with an error.
+ *
+ * Returns: %TRUE if the check succeeded, %FALSE otherwise
+ */
 gboolean
-nm_bus_manager_ensure_root (NMBusManager          *self,
-                            GDBusMethodInvocation *context,
-                            GQuark error_domain,
-                            int error_code)
+nm_bus_manager_ensure_uid (NMBusManager          *self,
+                           GDBusMethodInvocation *context,
+                           gulong uid,
+                           GQuark error_domain,
+                           int error_code)
 {
 	gulong caller_uid;
 	GError *error = NULL;
@@ -552,7 +569,8 @@ nm_bus_manager_ensure_root (NMBusManager          *self,
 		g_dbus_method_invocation_take_error (context, error);
 		return FALSE;
 	}
-	if (caller_uid != 0) {
+
+	if (uid != G_MAXULONG && caller_uid != uid) {
 		error = g_error_new_literal (error_domain,
 		                             error_code,
 		                             "Permission denied");
