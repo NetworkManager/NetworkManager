@@ -382,25 +382,6 @@ utils_has_complex_routes (const char *filename)
 	return FALSE;
 }
 
-gboolean
-utils_ignore_ip_config (NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	/* bonding slaves have no IP configuration, and the system
-	 * scripts just ignore it if it's there.
-	 */
-	if (   nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME)
-	    || nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
-		return TRUE;
-
-	return FALSE;
-}
-
 /* Find out if the 'alias' file name might be an alias file for 'ifcfg' file name,
  * or any alias when 'ifcfg' is NULL. Does not check that it's actually a valid
  * alias name; that happens in reader.c
