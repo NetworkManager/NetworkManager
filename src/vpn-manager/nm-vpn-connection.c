@@ -50,8 +50,6 @@
 
 #include "nmdbus-vpn-connection.h"
 
-G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
-
 typedef enum {
 	/* Only system secrets */
 	SECRETS_REQ_SYSTEM = 0,
@@ -79,6 +77,24 @@ typedef enum {
 	STATE_DISCONNECTED,
 	STATE_FAILED,
 } VpnState;
+
+enum {
+	VPN_STATE_CHANGED,
+	INTERNAL_STATE_CHANGED,
+	INTERNAL_RETRY_AFTER_FAILURE,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMVpnConnection,
+	PROP_VPN_STATE,
+	PROP_BANNER,
+#define PROP_IP4_CONFIG 2000
+#define PROP_IP6_CONFIG 2001
+#define PROP_MASTER     2002
+);
 
 typedef struct {
 	gboolean service_can_persist;
@@ -128,28 +144,44 @@ typedef struct {
 	guint32 mtu;
 } NMVpnConnectionPrivate;
 
-#define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVpnConnectionPrivate))
-
-enum {
-	VPN_STATE_CHANGED,
-	INTERNAL_STATE_CHANGED,
-	INTERNAL_RETRY_AFTER_FAILURE,
-
-	LAST_SIGNAL
+struct _NMVpnConnection {
+	NMActiveConnection parent;
+	NMVpnConnectionPrivate _priv;
 };
 
-static guint signals[LAST_SIGNAL] = { 0 };
+struct _NMVpnConnectionClass {
+	NMActiveConnectionClass parent;
 
-enum {
-	PROP_0,
-	PROP_VPN_STATE,
-	PROP_BANNER,
-	PROP_IP4_CONFIG,
-	PROP_IP6_CONFIG,
-	PROP_MASTER = 2000,
+	/* Signals */
+	void (*vpn_state_changed) (NMVpnConnection *self,
+	                           NMVpnConnectionState new_state,
+	                           NMVpnConnectionStateReason reason);
 
-	LAST_PROP
+	/* not exported over D-Bus */
+	void (*internal_state_changed) (NMVpnConnection *self,
+	                                NMVpnConnectionState new_state,
+	                                NMVpnConnectionState old_state,
+	                                NMVpnConnectionStateReason reason);
+
+	void (*internal_failed_retry)  (NMVpnConnection *self);
 };
+
+G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
+
+#define NM_VPN_CONNECTION_GET_PRIVATE(self) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const NMVpnConnection *_self2 = (_self); \
+		\
+		nm_assert (NM_IS_VPN_CONNECTION (_self)); \
+		&_self->_priv; \
+	})
+
+/*****************************************************************************/
 
 static NMSettingsConnection *_get_settings_connection (NMVpnConnection *self,
                                                        gboolean allow_missing);
@@ -495,7 +527,7 @@ _set_vpn_state (NMVpnConnection *self,
 		               new_external_state,
 		               old_external_state,
 		               reason);
-		g_object_notify (G_OBJECT (self), NM_VPN_CONNECTION_VPN_STATE);
+		_notify (self, PROP_VPN_STATE);
 	}
 
 	switch (vpn_state) {
@@ -1248,7 +1280,7 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	g_clear_pointer (&priv->banner, g_free);
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &str)) {
 		priv->banner = g_strdup (str);
-		g_object_notify (G_OBJECT (self), NM_VPN_CONNECTION_BANNER);
+		_notify (self, PROP_BANNER);
 	}
 
 	/* External world-visible address of the VPN server */
@@ -1341,6 +1373,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	GVariant *v;
 	gboolean b;
 	guint i, n;
+	int ip_ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1368,7 +1401,11 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		priv->has_ip6 = FALSE;
 	}
 
-	config = nm_ip4_config_new (nm_vpn_connection_get_ip_ifindex (self, TRUE));
+	ip_ifindex = nm_vpn_connection_get_ip_ifindex (self, TRUE);
+	if (ip_ifindex <= 0)
+		g_return_if_reached ();
+
+	config = nm_ip4_config_new (ip_ifindex);
 	nm_ip4_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
@@ -1485,7 +1522,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	} else {
 		priv->ip4_config = config;
 		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
-		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
+		g_object_notify ((GObject *) self, NM_ACTIVE_CONNECTION_IP4_CONFIG);
 	}
 
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
@@ -1503,6 +1540,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	GVariant *v;
 	gboolean b;
 	guint i, n;
+	int ip_ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1517,7 +1555,11 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 		return;
 	}
 
-	config = nm_ip6_config_new (priv->ip_ifindex);
+	ip_ifindex = nm_vpn_connection_get_ip_ifindex (self, TRUE);
+	if (ip_ifindex <= 0)
+		g_return_if_reached ();
+
+	config = nm_ip6_config_new (ip_ifindex);
 	nm_ip6_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
@@ -1598,7 +1640,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			if (!ip6_addr_from_variant (dest, &route.network))
 				goto next;
 
-			if (prefix > 128)
+			if (prefix > 128 || prefix == 0)
 				goto next;
 
 			route.plen = prefix;
@@ -1635,7 +1677,7 @@ next:
 	} else {
 		priv->ip6_config = config;
 		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
-		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
+		g_object_notify ((GObject *) self, NM_ACTIVE_CONNECTION_IP6_CONFIG);
 	}
 
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
@@ -2504,7 +2546,7 @@ device_changed (NMActiveConnection *active,
                 NMDevice *new_device,
                 NMDevice *old_device)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (active);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) active);
 
 	if (!_service_and_connection_can_persist (NM_VPN_CONNECTION (active)))
 		return;
@@ -2577,7 +2619,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) object);
 
 	g_free (priv->banner);
 	g_free (priv->ip_iface);
@@ -2598,7 +2640,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) object);
 	NMDevice *parent_dev;
 
 	switch (prop_id) {
@@ -2630,8 +2672,6 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
 	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (connection_class);
 
-	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
-
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
@@ -2639,51 +2679,49 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	active_class->device_state_changed = device_state_changed;
 	active_class->device_changed = device_changed;
 
-	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
+	obj_properties[PROP_VPN_STATE] =
+	    g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE, "", "",
+	                       NM_VPN_CONNECTION_STATE_UNKNOWN,
+	                       NM_VPN_CONNECTION_STATE_DISCONNECTED,
+	                       NM_VPN_CONNECTION_STATE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_VPN_STATE,
-		 g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE, "", "",
-		                    NM_VPN_CONNECTION_STATE_UNKNOWN,
-		                    NM_VPN_CONNECTION_STATE_DISCONNECTED,
-		                    NM_VPN_CONNECTION_STATE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BANNER] =
+	    g_param_spec_string (NM_VPN_CONNECTION_BANNER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_BANNER,
-		 g_param_spec_string (NM_VPN_CONNECTION_BANNER, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
+	g_object_class_override_property (object_class, PROP_MASTER,
+	                                  NM_ACTIVE_CONNECTION_MASTER);
 	g_object_class_override_property (object_class, PROP_IP4_CONFIG,
 	                                  NM_ACTIVE_CONNECTION_IP4_CONFIG);
 	g_object_class_override_property (object_class, PROP_IP6_CONFIG,
 	                                  NM_ACTIVE_CONNECTION_IP6_CONFIG);
 
-	/* signals */
 	signals[VPN_STATE_CHANGED] =
-		g_signal_new ("vpn-state-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new ("vpn-state-changed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[INTERNAL_STATE_CHANGED] =
-		g_signal_new (NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new (NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[INTERNAL_RETRY_AFTER_FAILURE] =
-		g_signal_new (NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (connection_class),
 	                                        NMDBUS_TYPE_VPN_CONNECTION_SKELETON,
