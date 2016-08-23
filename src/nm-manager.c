@@ -5545,7 +5545,7 @@ constructed (GObject *object)
 
 	priv->rfkill_mgr = nm_rfkill_manager_new ();
 	g_signal_connect (priv->rfkill_mgr,
-	                  "rfkill-changed",
+	                  NM_RFKILL_MANAGER_SIGNAL_RFKILL_CHANGED,
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  self);
 

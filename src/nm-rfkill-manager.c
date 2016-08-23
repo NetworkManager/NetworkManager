@@ -395,7 +395,7 @@ dispose (GObject *object)
 		priv->killswitches = NULL;
 	}
 
-	G_OBJECT_CLASS (nm_rfkill_manager_parent_class)->dispose (object);	
+	G_OBJECT_CLASS (nm_rfkill_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -410,7 +410,7 @@ nm_rfkill_manager_class_init (NMRfkillManagerClass *klass)
 
 	/* Signals */
 	signals[RFKILL_CHANGED] =
-		g_signal_new ("rfkill-changed",
+		g_signal_new (NM_RFKILL_MANAGER_SIGNAL_RFKILL_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMRfkillManagerClass, rfkill_changed),
