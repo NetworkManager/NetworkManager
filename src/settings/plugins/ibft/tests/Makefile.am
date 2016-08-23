@@ -34,6 +34,9 @@ test_ibft_LDADD = \
 @VALGRIND_RULES@
 TESTS = test-ibft
 
+check-local:
+	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/../.libs/libnm-settings-plugin-ibft.so $(top_builddir)/src/NetworkManager --version >/dev/null
+
 endif
 
 EXTRA_DIST = \

@@ -26,6 +26,9 @@ test_ifupdown_LDADD = \
 @VALGRIND_RULES@
 TESTS = test-ifupdown
 
+check-local:
+	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/../.libs/libnm-settings-plugin-ifupdown.so $(top_builddir)/src/NetworkManager --version >/dev/null
+
 endif
 
 EXTRA_DIST = \

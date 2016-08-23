@@ -76,6 +76,7 @@ if ENABLE_TESTS
 
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-bluetooth.so $(SYMBOL_VIS_FILE)
+	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/.libs/libnm-device-plugin-bluetooth.so $(top_builddir)/src/NetworkManager --version >/dev/null
 
 endif
 
