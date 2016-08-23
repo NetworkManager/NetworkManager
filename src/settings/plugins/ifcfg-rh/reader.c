@@ -4848,7 +4848,7 @@ create_unhandled_connection (const char *filename, shvarFile *ifcfg,
 	NMSetting *s_con;
 	char *value;
 
-	g_assert (out_spec != NULL);
+	nm_assert (out_spec && !*out_spec);
 
 	connection = nm_simple_connection_new ();
 
@@ -4963,8 +4963,7 @@ connection_from_file_full (const char *filename,
 	const char *ifcfg_name = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
-	if (out_unhandled)
-		g_return_val_if_fail (*out_unhandled == NULL, NULL);
+	g_return_val_if_fail (out_unhandled && !*out_unhandled, NULL);
 
 	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
 	if (!network_file)
@@ -4982,8 +4981,6 @@ connection_from_file_full (const char *filename,
 		return NULL;
 
 	if (!svGetValueBoolean (parsed, "NM_CONTROLLED", TRUE)) {
-		g_assert (out_unhandled != NULL);
-
 		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
 		if (!connection)
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -5136,8 +5133,6 @@ connection_from_file_full (const char *filename,
 	else if (!strcasecmp (type, TYPE_BRIDGE))
 		connection = bridge_connection_from_ifcfg (filename, parsed, error);
 	else {
-		g_assert (out_unhandled != NULL);
-
 		connection = create_unhandled_connection (filename, parsed, "unrecognized", out_unhandled);
 		if (!connection)
 			PARSE_WARNING ("connection type was unrecognized but device was not uniquely identified; device may be managed");

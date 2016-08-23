@@ -67,11 +67,14 @@ _connection_from_file (const char *filename,
 {
 	NMConnection *connection;
 	GError *error = NULL;
+	char *unhandled_fallback = NULL;
 
 	g_assert (!out_unhandled || !*out_unhandled);
 
-	connection = connection_from_file_test (filename, network_file, test_type, out_unhandled, &error);
+	connection = connection_from_file_test (filename, network_file, test_type,
+	                                        out_unhandled ?: &unhandled_fallback, &error);
 	g_assert_no_error (error);
+	g_assert (!unhandled_fallback);
 
 	if (out_unhandled && *out_unhandled)
 		nmtst_assert_connection_verifies (connection);
@@ -89,13 +92,12 @@ _connection_from_file_fail (const char *filename,
 	NMConnection *connection;
 	GError *local = NULL;
 	char *unhandled = NULL;
-	char **p_unhandled = (nmtst_get_rand_int () % 2) ? &unhandled : NULL;
 
-	connection = connection_from_file_test (filename, network_file, test_type, p_unhandled, &local);
+	connection = connection_from_file_test (filename, network_file, test_type, &unhandled, &local);
 
 	g_assert (!connection);
 	g_assert (local);
-	g_assert (!p_unhandled || !*p_unhandled);
+	g_assert (!unhandled);
 	g_propagate_error (error, local);
 }
 
