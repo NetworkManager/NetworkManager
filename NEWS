@@ -18,7 +18,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * NetworkManager now follows symlinks when accessing resolv.conf and
     rc-manager is set to 'file'
 * Added support for oFono as modem manager
-* The devices now exposes counters of transferred data.
+* The devices now exposes counters of transferred data
 * The 'may-fail' property of ipv4 and ipv6 settings is now respected
     more accurately
 * The timeout for requests of secrets to agents has been increased
@@ -38,7 +38,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
     executable size
 * Added a new 'VPN_PLUGIN' logging domain
 * It is now possible to change the configuration currently applied on
-    a device with 'nmcli device modify'
+    a device with 'nmcli device modify' and 'nmcli device reapply'
 * nmcli invoked without parameters shows an overview of the current
     network configuration
 * The 'nmcli connection add' syntax has been extended and is now
