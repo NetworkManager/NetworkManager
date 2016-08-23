@@ -8430,15 +8430,15 @@ test_write_fcoe_mode (gconstpointer user_data)
 }
 
 static void
-test_read_team_master (void)
+test_read_team_master (gconstpointer user_data)
 {
+	const char *const PATH_NAME = user_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingTeam *s_team;
 	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
-	                                    NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "team0");
 
@@ -8546,15 +8546,15 @@ test_write_team_master (void)
 }
 
 static void
-test_read_team_port (void)
+test_read_team_port (gconstpointer user_data)
 {
+	const char *const PATH_NAME = user_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingTeamPort *s_team_port;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
-	                                    NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -9048,9 +9048,11 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "bridge/write-component", test_write_bridge_component);
 	g_test_add_func (TPATH "bridge/read-missing-stp", test_read_bridge_missing_stp);
 
-	g_test_add_func (TPATH "team/read-master", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-1", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-2", test_read_team_master);
 	g_test_add_func (TPATH "team/write-master", test_write_team_master);
-	g_test_add_func (TPATH "team/read-port", test_read_team_port);
+	g_test_add_data_func (TPATH "team/read-port-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-1", test_read_team_port);
+	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
 
