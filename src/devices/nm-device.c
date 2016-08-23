@@ -7011,7 +7011,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	s_con = nm_connection_get_setting_connection (connection);
 
 	if (!priv->fw_ready) {
-		if (nm_device_uses_assumed_connection (self))
+		if (nm_device_uses_generated_assumed_connection (self))
 			priv->fw_ready = TRUE;
 		else {
 			if (!priv->fw_call) {
@@ -10187,8 +10187,8 @@ nm_device_update_firewall_zone (NMDevice *self)
 		return;
 
 	s_con = nm_connection_get_setting_connection (applied_connection);
-	if (    nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED
-	    && !nm_device_uses_assumed_connection (self)) {
+	if (   nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED
+	    && !nm_device_uses_generated_assumed_connection (self)) {
 		nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 		                                        nm_device_get_ip_iface (self),
 		                                        nm_setting_connection_get_zone (s_con),
@@ -10679,7 +10679,7 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 	connection = nm_device_get_applied_connection (self);
 	if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 	    && connection
-	    && !nm_device_uses_assumed_connection (self)) {
+	    && !nm_device_uses_generated_assumed_connection (self)) {
 		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
 		                                      nm_device_get_ip_iface (self),
 		                                      NULL,
@@ -11380,7 +11380,7 @@ _set_state_full (NMDevice *self,
 
 		if (   applied_connection
 		    && priv->ifindex != priv->ip_ifindex
-		    && !nm_device_uses_assumed_connection (self)) {
+		    && !nm_device_uses_generated_assumed_connection (self)) {
 			NMSettingConnection *s_con;
 			const char *zone;
 
