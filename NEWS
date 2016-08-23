@@ -18,7 +18,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * NetworkManager now follows symlinks when accessing resolv.conf and
     rc-manager is set to 'file'
 * Added support for oFono as modem manager
-* Tre devices now expose counters of transferred data.
+* The devices now exposes counters of transferred data.
 * The 'may-fail' property of ipv4 and ipv6 settings is now respected
     more accurately
 * The timeout for requests of secrets to agents has been increased
