@@ -1621,26 +1621,29 @@ check_if_bond_slave (shvarFile *ifcfg,
 	 */
 }
 
-static void
+static gboolean
 check_if_team_slave (shvarFile *ifcfg,
                      NMSettingConnection *s_con)
 {
-	char *value;
+	gs_free char *value = NULL;
 
-	value = svGetValue (ifcfg, "DEVICETYPE", FALSE);
-	if (!value)
-		return;
-	if (strcasecmp (value, TYPE_TEAM_PORT)) {
-		g_free (value);
-		return;
-	}
-	g_free (value);
 	value = svGetValue (ifcfg, "TEAM_MASTER", FALSE);
 	if (!value)
-		return;
+		return FALSE;
 	g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
 	g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME, NULL);
-	g_free (value);
+	return TRUE;
+}
+
+static void
+check_if_slave (shvarFile *ifcfg,
+                NMSettingConnection *s_con)
+{
+	g_return_if_fail (NM_IS_SETTING_CONNECTION (s_con));
+
+	if (check_if_team_slave (ifcfg, s_con))
+		return;
+	check_if_bond_slave (ifcfg, s_con);
 }
 
 typedef struct {
@@ -3948,8 +3951,7 @@ wired_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
-	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
+	check_if_slave (ifcfg, (NMSettingConnection *) con_setting);
 	nm_connection_add_setting (connection, con_setting);
 
 	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
@@ -4099,8 +4101,7 @@ infiniband_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
-	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
+	check_if_slave (ifcfg, (NMSettingConnection *) con_setting);
 	nm_connection_add_setting (connection, con_setting);
 
 	infiniband_setting = make_infiniband_setting (ifcfg, file, error);
@@ -4599,8 +4600,6 @@ is_bond_device (const char *name, shvarFile *parsed)
 
 	if (svGetValueBoolean (parsed, "BONDING_MASTER", FALSE))
 		return TRUE;
-	
-	/* XXX: Check for "bond[\d]+"? */
 
 	return FALSE;
 }
@@ -4816,8 +4815,7 @@ vlan_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
-	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
+	check_if_slave (ifcfg, (NMSettingConnection *) con_setting);
 	nm_connection_add_setting (connection, con_setting);
 
 	vlan_setting = make_vlan_setting (ifcfg, file, error);
@@ -5007,6 +5005,16 @@ connection_from_file_full (const char *filename,
 		else if (!strcasecmp (devtype, TYPE_TEAM_PORT))
 			type = g_strdup (TYPE_ETHERNET);
 		g_free (devtype);
+	}
+	if (!type) {
+		gs_free char *t = NULL;
+
+		/* Team and TeamPort types are also accepted by the mere
+		 * presense of TEAM_CONFIG/TEAM_MASTER. They don't require
+		 * DEVICETYPE. */
+		t = svGetValue (parsed, "TEAM_CONFIG", FALSE);
+		if (t)
+			type = g_strdup (TYPE_TEAM);
 	}
 
 	if (!type)
