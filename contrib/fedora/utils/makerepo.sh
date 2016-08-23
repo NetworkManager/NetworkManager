@@ -428,6 +428,9 @@ c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *Netw
 
 # libibverbs
 990ca025d0ad967b6f266bae700bf82a4ceaff1a  1fe85889c8bbc4968b1feba6524ca408 *libibverbs-1.1.8.tar.gz
+
+# initscripts
+cc304f05edab6c408a0f061eb1a104f9f06b8587  86ef789876b65c61751ce854835b91d4  initscripts-9.49.35.tar.bz2
 EOF
 )"
             OLDIFS="$IFS"
