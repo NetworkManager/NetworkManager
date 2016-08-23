@@ -54,8 +54,6 @@ shvarFile *utils_get_route6_ifcfg (const char *parent, gboolean should_create);
 gboolean utils_has_route_file_new_syntax (const char *filename);
 gboolean utils_has_complex_routes (const char *filename);
 
-gboolean utils_ignore_ip_config (NMConnection *connection);
-
 gboolean utils_is_ifcfg_alias_file (const char *alias, const char *ifcfg);
 
 char *utils_detect_ifcfg_path (const char *path, gboolean only_ifcfg);

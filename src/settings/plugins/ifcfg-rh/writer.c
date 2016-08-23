@@ -2015,8 +2015,26 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const char *method = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		method = nm_setting_ip_config_get_method (s_ip4);
+	if (!s_ip4) {
+		/* slave-type: clear IPv4 settings.
+		 *
+		 * Some IPv4 setting related options are not cleared,
+		 * for no strong reason. */
+		svSetValue (ifcfg, "BOOTPROTO", NULL, FALSE);
+
+		svSetValue (ifcfg, "IPADDR", NULL, FALSE);
+		svSetValue (ifcfg, "PREFIX", NULL, FALSE);
+		svSetValue (ifcfg, "NETMASK", NULL, FALSE);
+		svSetValue (ifcfg, "GATEWAY", NULL, FALSE);
+
+		svSetValue (ifcfg, "IPADDR0", NULL, FALSE);
+		svSetValue (ifcfg, "PREFIX0", NULL, FALSE);
+		svSetValue (ifcfg, "NETMASK0", NULL, FALSE);
+		svSetValue (ifcfg, "GATEWAY0", NULL, FALSE);
+		return TRUE;
+	}
+
+	method = nm_setting_ip_config_get_method (s_ip4);
 
 	/* Missing IP4 setting is assumed to be DHCP */
 	if (!method)
@@ -2371,12 +2389,11 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		g_dir_close (dir);
 	}
 
-	if (utils_ignore_ip_config (connection))
-		return;
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (!s_ip4)
+	if (!s_ip4) {
+		/* slave-type: no alias files */
 		return;
+	}
 
 	num = nm_setting_ip_config_get_num_addresses (s_ip4);
 	for (i = 0; i < num; i++) {
@@ -2495,16 +2512,19 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
-		/* Treat missing IPv6 setting as a setting with method "auto" */
-		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
-		svSetValue (ifcfg, "IPV6_AUTOCONF", "yes", FALSE);
+		/* slave-type: clear IPv6 settings
+		 *
+		 * Some IPv6 setting related options are not cleared,
+		 * for no strong reason. */
+		svSetValue (ifcfg, "IPV6INIT", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_AUTOCONF", NULL, FALSE);
 		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
-		svSetValue (ifcfg, "IPV6_DEFROUTE", "yes", FALSE);
-		svSetValue (ifcfg, "IPV6_PEERDNS", "yes", FALSE);
-		svSetValue (ifcfg, "IPV6_PEERROUTES", "yes", FALSE);
-		svSetValue (ifcfg, "IPV6_FAILURE_FATAL", "no", FALSE);
+		svSetValue (ifcfg, "IPV6_DEFROUTE", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_PEERDNS", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_PEERROUTES", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_FAILURE_FATAL", NULL, FALSE);
 		svSetValue (ifcfg, "IPV6_ROUTE_METRIC", NULL, FALSE);
-		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", "stable-privacy", FALSE);
+		svSetValue (ifcfg, "IPV6_ADDR_GEN_MODE", NULL, FALSE);
 		return TRUE;
 	}
 
@@ -2695,34 +2715,37 @@ write_res_options (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingIPConfig *s_ip4;
 	const char *method;
 	int i, num_options;
-	GPtrArray *array;
+	gs_unref_ptrarray GPtrArray *array = NULL;
 	GString *value;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+	if (!s_ip4) {
+		/* slave-type: clear res-options */
+		svSetValue (ifcfg, "RES_OPTIONS", NULL, FALSE);
+		return TRUE;
+	}
+
 	array = g_ptr_array_new ();
 
-	if (s_ip4) {
-		method = nm_setting_ip_config_get_method (s_ip4);
-		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-			num_options = nm_setting_ip_config_get_num_dns_options (s_ip4);
-			for (i = 0; i < num_options; i++)
-				add_dns_option (array, nm_setting_ip_config_get_dns_option (s_ip4, i));
-		}
+	method = nm_setting_ip_config_get_method (s_ip4);
+	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+		num_options = nm_setting_ip_config_get_num_dns_options (s_ip4);
+		for (i = 0; i < num_options; i++)
+			add_dns_option (array, nm_setting_ip_config_get_dns_option (s_ip4, i));
 	}
 
-	if (s_ip6) {
-		method = nm_setting_ip_config_get_method (s_ip6);
-		if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-			num_options = nm_setting_ip_config_get_num_dns_options (s_ip6);
-			for (i = 0; i < num_options; i++)
-				add_dns_option (array, nm_setting_ip_config_get_dns_option (s_ip6, i));
-		}
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	method = nm_setting_ip_config_get_method (s_ip6);
+	if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+		num_options = nm_setting_ip_config_get_num_dns_options (s_ip6);
+		for (i = 0; i < num_options; i++)
+			add_dns_option (array, nm_setting_ip_config_get_dns_option (s_ip6, i));
 	}
 
-	if (array->len > 0
-	    || (s_ip4 && nm_setting_ip_config_has_dns_options (s_ip4))
-	    || (s_ip6 && nm_setting_ip_config_has_dns_options (s_ip6))) {
+	if (   array->len > 0
+	    || nm_setting_ip_config_has_dns_options (s_ip4)
+	    || nm_setting_ip_config_has_dns_options (s_ip6)) {
 		value = g_string_new (NULL);
 		for (i = 0; i < array->len; i++) {
 			if (i > 0)
@@ -2734,7 +2757,6 @@ write_res_options (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	} else
 		svSetValue (ifcfg, "RES_OPTIONS", NULL, FALSE);
 
-	g_ptr_array_unref (array);
 	return TRUE;
 }
 
@@ -2771,6 +2793,9 @@ write_connection (NMConnection *connection,
 	const char *type;
 	gboolean no_8021x = FALSE;
 	gboolean wired = FALSE;
+
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (nm_connection_verify (connection, NULL));
 
 	if (!writer_can_write_connection (connection, error))
 		return FALSE;
@@ -2876,20 +2901,18 @@ write_connection (NMConnection *connection,
 	if (!write_dcb_setting (connection, ifcfg, error))
 		goto out;
 
-	if (!utils_ignore_ip_config (connection)) {
-		svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
-		svSetValue (ifcfg, "DHCP_FQDN", NULL, FALSE);
+	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
+	svSetValue (ifcfg, "DHCP_FQDN", NULL, FALSE);
 
-		if (!write_ip4_setting (connection, ifcfg, error))
-			goto out;
-		write_ip4_aliases (connection, ifcfg_name);
+	if (!write_ip4_setting (connection, ifcfg, error))
+		goto out;
+	write_ip4_aliases (connection, ifcfg_name);
 
-		if (!write_ip6_setting (connection, ifcfg, error))
-			goto out;
+	if (!write_ip6_setting (connection, ifcfg, error))
+		goto out;
 
-		if (!write_res_options (connection, ifcfg, error))
-			goto out;
-	}
+	if (!write_res_options (connection, ifcfg, error))
+		goto out;
 
 	write_connection_setting (s_con, ifcfg);
 

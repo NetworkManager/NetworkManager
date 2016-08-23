@@ -107,11 +107,14 @@ _writer_new_connection (NMConnection *connection,
 	gboolean success;
 	GError *error = NULL;
 	char *filename = NULL;
+	gs_unref_object NMConnection *con_verified = NULL;
 
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (ifcfg_dir);
 
-	success = writer_new_connection (connection,
+	con_verified = nmtst_connection_duplicate_and_normalize (connection);
+
+	success = writer_new_connection (con_verified,
 	                                 ifcfg_dir,
 	                                 &filename,
 	                                 &error);
