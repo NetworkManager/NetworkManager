@@ -1,4 +1,3 @@
-libnm-core/nm-setting-proxy.c
 data/NetworkManager.service.in
 examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c
