@@ -87,16 +87,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
 
-	if (priv->config) {
-		if (!_nm_utils_check_valid_json (priv->config, error)) {
-			g_prefix_error (error,
-			                "%s.%s: ",
-			                NM_SETTING_TEAM_PORT_SETTING_NAME,
-			                NM_SETTING_TEAM_PORT_CONFIG);
-			return FALSE;
-		}
-	}
-
 	if (connection) {
 		NMSettingConnection *s_con;
 		const char *slave_type;
@@ -125,6 +115,26 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			return FALSE;
 		}
 	}
+
+	if (priv->config) {
+		if (!_nm_utils_check_valid_json (priv->config, error)) {
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_TEAM_PORT_SETTING_NAME,
+			                NM_SETTING_TEAM_PORT_CONFIG);
+			/* for backward compatibility, we accept invalid json and normalize it */
+			if (!priv->config[0]) {
+				/* be more forgiving to "" and let it verify() as valid because
+				 * at least anaconda used to write such configs */
+				return NM_SETTING_VERIFY_NORMALIZABLE;
+			}
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+	}
+
+	/* NOTE: normalizable/normalizable-errors must appear at the end with decreasing severity.
+	 * Take care to properly order statements with priv->config above. */
+
 	return TRUE;
 }
 
