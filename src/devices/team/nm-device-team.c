@@ -575,7 +575,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 		 * have a PID, then we must fail.
 		 */
 		cfg = teamdctl_config_get_raw (priv->tdc);
-		if (cfg && strcmp (cfg,  nm_setting_team_get_config (s_team)) == 0) {
+		if (cfg && nm_streq0 (cfg,  nm_setting_team_get_config (s_team))) {
 			_LOGD (LOGD_TEAM, "using existing matching teamd config");
 			return NM_ACT_STAGE_RETURN_SUCCESS;
 		}
