@@ -7045,6 +7045,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						break;
 					}
 					nmc_setting_custom_init (setting);
+
+					if (NM_IS_SETTING_WIRELESS (setting))
+						nmc_setting_wireless_connect_handlers (NM_SETTING_WIRELESS (setting));
+					else if (NM_IS_SETTING_IP4_CONFIG (setting))
+						nmc_setting_ip4_connect_handlers (NM_SETTING_IP_CONFIG (setting));
+					else if (NM_IS_SETTING_IP6_CONFIG (setting))
+						nmc_setting_ip6_connect_handlers (NM_SETTING_IP_CONFIG (setting));
+
 					nm_connection_add_setting (connection, setting);
 				}
 				/* Set global variable for use in TAB completion */

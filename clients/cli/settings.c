@@ -2447,7 +2447,6 @@ nmc_setting_custom_init (NMSetting *setting)
 		g_object_set (NM_SETTING_WIRELESS (setting),
 		              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
 		              NULL);
-		nmc_setting_wireless_connect_handlers (NM_SETTING_WIRELESS (setting));
 	} else if (NM_IS_SETTING_ADSL (setting)) {
 		/* Initialize a protocol */
 		g_object_set (NM_SETTING_ADSL (setting),
@@ -2457,12 +2456,10 @@ nmc_setting_custom_init (NMSetting *setting)
 		g_object_set (NM_SETTING_IP_CONFIG (setting),
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 		              NULL);
-		nmc_setting_ip4_connect_handlers (NM_SETTING_IP_CONFIG (setting));
 	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
 		g_object_set (NM_SETTING_IP_CONFIG (setting),
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
-		nmc_setting_ip6_connect_handlers (NM_SETTING_IP_CONFIG (setting));
 	} else if (NM_IS_SETTING_TUN (setting)) {
 		g_object_set (NM_SETTING_TUN (setting),
 		              NM_SETTING_TUN_MODE, NM_SETTING_TUN_MODE_TUN,
