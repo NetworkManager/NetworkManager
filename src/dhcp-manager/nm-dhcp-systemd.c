@@ -960,6 +960,8 @@ ip6_start (NMDhcpClient *client,
 		goto error;
 	}
 
+	nm_dhcp_client_start_timeout (client);
+
 	return TRUE;
 
 error:
