@@ -94,9 +94,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                "%s.%s: ",
 			                NM_SETTING_TEAM_SETTING_NAME,
 			                NM_SETTING_TEAM_CONFIG);
-			return FALSE;
+			/* for backward compatibility, we accept invalid json and normalize it */
+			if (!priv->config[0]) {
+				/* be more forgiving to "" and let it verify() as valid because
+				 * at least anaconda used to write such configs */
+				return NM_SETTING_VERIFY_NORMALIZABLE;
+			}
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 		}
 	}
+
+	/* NOTE: normalizable/normalizable-errors must appear at the end with decreasing severity.
+	 * Take care to properly order statements with priv->config above. */
 
 	return TRUE;
 }
