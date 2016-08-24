@@ -4117,6 +4117,45 @@ set_yes_no (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value
 	return set_property (con, option->setting_name, option->property, value, '\0', error);
 }
 
+static gboolean
+set_ip4_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+{
+	NMSettingIPConfig *s_ip4;
+
+	if (!value)
+		return TRUE;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (con);
+	if (!s_ip4) {
+		s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+		nm_connection_add_setting (con, NM_SETTING (s_ip4));
+		g_object_set (s_ip4,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+		              NULL);
+	}
+	return set_property (con, option->setting_name, option->property, value, '\0', error);
+}
+
+static gboolean
+set_ip6_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+{
+	NMSettingIPConfig *s_ip6;
+
+	if (!value)
+		return TRUE;
+
+	s_ip6 = nm_connection_get_setting_ip6_config (con);
+	if (!s_ip6) {
+		s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+		nm_connection_add_setting (con, NM_SETTING (s_ip6));
+		g_object_set (s_ip6,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		              NULL);
+	}
+	return set_property (con, option->setting_name, option->property, value, '\0', error);
+}
+
+
 /*----------------------------------------------------------------------------*/
 
 static OptionInfo option_info[] = {
@@ -4230,9 +4269,11 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_LOCAL,             "local",        OPTION_NONE, N_("Local endpoint [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_REMOTE,            "remote",       OPTION_REQD, N_("Remote"), NULL, NULL, NULL },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_PARENT,            "dev",          OPTION_NONE, N_("Parent device [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip4",          OPTION_MULTI, N_("IPv4 address (IP[/plen]) [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip4",          OPTION_MULTI, N_("IPv4 address (IP[/plen]) [none]"), NULL,
+	                                                                                                set_ip4_address, NULL },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw4",          OPTION_NONE, N_("IPv4 gateway [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          OPTION_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          OPTION_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL,
+	                                                                                                set_ip6_address, NULL },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw6",          OPTION_NONE, N_("IPv6 gateway [none]"), NULL, NULL, NULL },
 	{ NULL, NULL, NULL, OPTION_NONE, NULL, NULL, NULL, NULL },
 };
