@@ -2687,6 +2687,7 @@ sysctl_get (NMPlatform *platform, const char *path)
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
 		/* We assume FAILED means EOPNOTSUP */
 		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
+		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)
 		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
 			_LOGD ("error reading %s: %s", path, error->message);
 		else
