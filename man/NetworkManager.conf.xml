@@ -226,7 +226,7 @@ no-auto-default=*
           <para>
             This setting is deprecated for the per-device setting
             <literal>ignore-carrier</literal> which overwrites this setting
-            if specified (See <xref linked="ignore-carrier"/>).
+            if specified (See <xref linkend="ignore-carrier"/>).
             Otherwise, it is a list of matches to specify for which device
             carrier should be ignored. See <xref linkend="device-spec"/> for the
             syntax how to specify a device.
