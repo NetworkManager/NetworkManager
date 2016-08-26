@@ -208,6 +208,7 @@ detect_build_type() {
     local TEST_DIR="./$1/"
     local TEST_SPEC="$2"
     local TEST_BUILD_TYPE="$3"
+    local DIRNAME
 
     if [[ -n "$BUILD_TYPE" || -z "$1" || "x$(ls -1d $TEST_DIR 2>/dev/null)" == x || ! -f "$TEST_SPEC" ]]; then
         return 1
@@ -225,16 +226,40 @@ detect_build_type() {
 }
 
 detect_dirname() {
-	local BUILD_TYPE="$1"
-	local suffix="$2"
-	local DIRNAME
+    local BUILD_TYPE="$1"
+    local DIRS=()
+	local SOURCES
+	local D suffix T
 
-	DIRNAME="$(ls -1 "$BUILD_TYPE"*"$suffix" 2>/dev/null)"
-	if [[ "$(printf '%s\n' "$DIRNAME" | wc -l)" != 1 ]]; then
-		return 1
-	fi
-	printf '%s' "${DIRNAME%$suffix}"
-	return 0
+	SOURCES=$(sed 's/.* //' ./sources 2>/dev/null)
+
+    for suffix in .tar.gz .tar.bz .tar.xz .tgz ; do
+		for T in ${SOURCES[@]}; do
+			if [[ "$T" == *$suffix ]]; then
+				D="${T%$suffix}"
+				[[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
+			fi
+		done
+
+	    # iterate over all tarballs that start with "$BUILD_TYPE" and
+	    # see if there exists a directory with the same name as
+		# the unpacked tarball (that is, stripping the suffix).
+		for T in $(ls -1 "$BUILD_TYPE"*"$suffix" 2>/dev/null); do
+			D="${T%$suffix}"
+			[[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
+		done
+    done
+
+	D=
+    if [[ ${#DIRS[@]} -ge 1 ]]; then
+        # return the newest directory.
+        D="$(ls -1d --sort=time --time=ctime "${DIRS[@]}" 2>/dev/null | head -n1)"
+    fi
+    if [[ "$D" != "" ]]; then
+        printf "%s" "$D"
+        return 0
+    fi
+	return 1
 }
 
 BUILD_TYPE=
@@ -254,19 +279,14 @@ detect_build_type 'iproute2-*' iproute.spec
 detect_build_type 'vpnc-*' vpnc.spec
 
 if [[ -z "$BUILD_TYPE" ]]; then
-	SPEC="$(ls -1 *.spec 2>/dev/null | head -n1)"
-	BUILD_TYPE="${SPEC%.spec}"
-	[[ -n "$BUILD_TYPE" ]] || die "Failed to detect repository type (no spec file)"
+    SPEC="$(ls -1 *.spec 2>/dev/null | head -n1)"
+    BUILD_TYPE="${SPEC%.spec}"
+    [[ -n "$BUILD_TYPE" ]] || die "Failed to detect repository type (no spec file)"
 
-	DIRNAME="$(detect_dirname "$BUILD_TYPE" .tar.gz)"
-	[[ -n "$DIRNAME" ]] || DIRNAME="$(detect_dirname "$BUILD_TYPE" .tar.bz)"
-	[[ -n "$DIRNAME" ]] || DIRNAME="$(detect_dirname "$BUILD_TYPE" .tar.xz)"
-	[[ -n "$DIRNAME" ]] || DIRNAME="$(detect_dirname "$BUILD_TYPE" .tgz)"
-	[[ -n "$DIRNAME" ]] || die "Failed to detect repository type (no package file)"
-
-	[[ -d "$DIRNAME" ]] || die "Failed to detect repository type (no directory)"
-	[[ -f sources ]] || die "Failed to detect repository type (no sources file)"
+    [[ -f sources ]] || die "Failed to detect repository type (no sources file)"
 fi
+
+DIRNAME="$(detect_dirname "$BUILD_TYPE")" || die "Failed to detect repository type (no directory)."
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 if [[ "x$CURRENT_BRANCH" != x && -f "./.git/makerepo.gitignore-$CURRENT_BRANCH" ]]; then
