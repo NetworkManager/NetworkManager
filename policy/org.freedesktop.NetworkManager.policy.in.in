@@ -134,7 +134,7 @@
 
   <action id="org.freedesktop.NetworkManager.checkpoint-rollback">
     <_description>Perform a checkpoint or rollback of interfaces configuration</_description>
-    <_message>System policy prevents the the creation of a checkpoint or its rollback</_message>
+    <_message>System policy prevents the creation of a checkpoint or its rollback</_message>
     <defaults>
       <allow_any>auth_admin_keep</allow_any>
       <allow_inactive>auth_admin_keep</allow_inactive>

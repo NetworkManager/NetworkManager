@@ -127,7 +127,7 @@ typedef enum {
  * key along with the connection identification and the network address as
  * specified by RFC7217.
  *
- * #NMSettingIP6ConfigAddrGenMode controls how the the Interface Identifier for
+ * #NMSettingIP6ConfigAddrGenMode controls how the Interface Identifier for
  * RFC4862 Stateless Address Autoconfiguration is created.
  *
  * Since: 1.2

@@ -56,7 +56,7 @@ nm_vpn_get_editor_plugin (const char *service_type, GError **error)
 		if (   !nm_vpn_plugin_info_get_plugin (plugin_info)
 		    && nm_vpn_plugin_info_lookup_property (plugin_info, NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME, "properties")) {
 			g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED,
-			             _("cannot cannot load legacy-only VPN plugin \"%s\" for \"%s\""),
+			             _("cannot load legacy-only VPN plugin \"%s\" for \"%s\""),
 			             nm_vpn_plugin_info_get_name (plugin_info),
 			             nm_vpn_plugin_info_get_filename (plugin_info));
 		} else if (g_error_matches (local, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
