@@ -1700,9 +1700,6 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 	hostname_eol = g_strdup_printf ("%s\n", hostname);
 #endif
 
-	/* FIXME: g_file_set_contents() writes first to a temporary file
-	 * and renames it atomically. We should hack g_file_set_contents()
-	 * to set the SELINUX labels before renaming the file. */
 	ret = g_file_set_contents (file, hostname_eol, -1, &error);
 
 #if HAVE_SELINUX
