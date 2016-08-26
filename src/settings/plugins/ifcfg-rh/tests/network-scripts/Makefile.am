@@ -132,8 +132,10 @@ EXTRA_DIST = \
 	ifcfg-test-dcb-pgpct-not-100 \
 	ifcfg-test-fcoe-fabric \
 	ifcfg-test-fcoe-vn2vn \
-	ifcfg-test-team-master \
-	ifcfg-test-team-port \
+	ifcfg-test-team-master-1 \
+	ifcfg-test-team-master-2 \
+	ifcfg-test-team-port-1 \
+	ifcfg-test-team-port-2 \
 	ifcfg-test-team-port-empty-config \
 	ifcfg-test-vlan-trailing-spaces \
 	ifcfg-test-dns-options \

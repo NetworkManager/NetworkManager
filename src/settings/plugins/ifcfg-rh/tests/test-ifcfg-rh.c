@@ -67,11 +67,14 @@ _connection_from_file (const char *filename,
 {
 	NMConnection *connection;
 	GError *error = NULL;
+	char *unhandled_fallback = NULL;
 
 	g_assert (!out_unhandled || !*out_unhandled);
 
-	connection = connection_from_file_test (filename, network_file, test_type, out_unhandled, &error);
+	connection = connection_from_file_test (filename, network_file, test_type,
+	                                        out_unhandled ?: &unhandled_fallback, &error);
 	g_assert_no_error (error);
+	g_assert (!unhandled_fallback);
 
 	if (out_unhandled && *out_unhandled)
 		nmtst_assert_connection_verifies (connection);
@@ -89,13 +92,12 @@ _connection_from_file_fail (const char *filename,
 	NMConnection *connection;
 	GError *local = NULL;
 	char *unhandled = NULL;
-	char **p_unhandled = (nmtst_get_rand_int () % 2) ? &unhandled : NULL;
 
-	connection = connection_from_file_test (filename, network_file, test_type, p_unhandled, &local);
+	connection = connection_from_file_test (filename, network_file, test_type, &unhandled, &local);
 
 	g_assert (!connection);
 	g_assert (local);
-	g_assert (!p_unhandled || !*p_unhandled);
+	g_assert (!unhandled);
 	g_propagate_error (error, local);
 }
 
@@ -8428,15 +8430,15 @@ test_write_fcoe_mode (gconstpointer user_data)
 }
 
 static void
-test_read_team_master (void)
+test_read_team_master (gconstpointer user_data)
 {
+	const char *const PATH_NAME = user_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingTeam *s_team;
 	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
-	                                    NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "team0");
 
@@ -8544,15 +8546,15 @@ test_write_team_master (void)
 }
 
 static void
-test_read_team_port (void)
+test_read_team_port (gconstpointer user_data)
 {
+	const char *const PATH_NAME = user_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingTeamPort *s_team_port;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
-	                                    NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -9046,9 +9048,11 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "bridge/write-component", test_write_bridge_component);
 	g_test_add_func (TPATH "bridge/read-missing-stp", test_read_bridge_missing_stp);
 
-	g_test_add_func (TPATH "team/read-master", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-1", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-2", test_read_team_master);
 	g_test_add_func (TPATH "team/write-master", test_write_team_master);
-	g_test_add_func (TPATH "team/read-port", test_read_team_port);
+	g_test_add_data_func (TPATH "team/read-port-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-1", test_read_team_port);
+	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
 
