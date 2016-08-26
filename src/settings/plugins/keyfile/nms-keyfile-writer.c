@@ -39,65 +39,6 @@ typedef struct {
 	const char *keyfile_dir;
 } WriteInfo;
 
-/*****************************************************************************/
-
-static gboolean
-write_cert_key_file (const char *path,
-                     const guint8 *data,
-                     gsize data_len,
-                     GError **error)
-{
-	char *tmppath;
-	int fd = -1, written;
-	gboolean success = FALSE;
-	mode_t saved_umask;
-
-	tmppath = g_malloc0 (strlen (path) + 10);
-	g_assert (tmppath);
-	memcpy (tmppath, path, strlen (path));
-	strcat (tmppath, ".XXXXXX");
-
-	/* Only readable by root */
-	saved_umask = umask (S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
-	errno = 0;
-	fd = mkstemp (tmppath);
-	if (fd < 0) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not create temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-
-	errno = 0;
-	written = write (fd, data, data_len);
-	if (written != data_len) {
-		close (fd);
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not write temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-	close (fd);
-
-	/* Try to rename */
-	errno = 0;
-	if (rename (tmppath, path) == 0)
-		success = TRUE;
-	else {
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not rename temporary file to '%s': %d",
-		             path, errno);
-	}
-
-out:
-	umask (saved_umask);
-	g_free (tmppath);
-	return success;
-}
-
 static void
 cert_writer (NMConnection *connection,
              GKeyFile *file,
@@ -182,7 +123,8 @@ cert_writer (NMConnection *connection,
 		new_path = g_strdup_printf ("%s/%s-%s.%s", info->keyfile_dir, nm_connection_get_uuid (connection),
 		                            cert_data->suffix, ext);
 
-		success = write_cert_key_file (new_path, blob_data, blob_len, &local);
+		success = nm_utils_file_set_contents (new_path, (const gchar *) blob_data,
+		                                      blob_len, 0600, &local);
 		if (success) {
 			/* Write the path value to the keyfile.
 			 * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
@@ -239,8 +181,6 @@ _internal_write_connection (NMConnection *connection,
 	WriteInfo info = { 0 };
 	GError *local_err = NULL;
 	int errsv;
-	gboolean success = FALSE;
-	mode_t saved_umask;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
@@ -324,15 +264,13 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL && strcmp (path, existing_path) != 0)
 		unlink (existing_path);
 
-	saved_umask = umask (S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
-	g_file_set_contents (path, data, len, &local_err);
+	nm_utils_file_set_contents (path, data, len, 0600, &local_err);
 	if (local_err) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "error writing to file '%s': %s",
 		             path, local_err->message);
 		g_error_free (local_err);
-		goto out;
+		return FALSE;
 	}
 
 	if (chown (path, owner_uid, owner_grp) < 0) {
@@ -341,7 +279,7 @@ _internal_write_connection (NMConnection *connection,
 		             "error chowning '%s': %s (%d)",
 		             path, g_strerror (errsv), errsv);
 		unlink (path);
-		goto out;
+		return FALSE;
 	}
 
 	if (out_path && g_strcmp0 (existing_path, path)) {
@@ -349,10 +287,7 @@ _internal_write_connection (NMConnection *connection,
 		path = NULL;
 	}
 
-	success = TRUE;
-out:
-	umask (saved_umask);
-	return success;
+	return TRUE;
 }
 
 gboolean

@@ -3657,3 +3657,104 @@ nm_utils_get_reverse_dns_domains_ip6 (const struct in6_addr *ip, guint8 plen, GP
 
 #undef N_SHIFT
 }
+
+/**
+ * Copied from GLib's g_file_set_contents() et al., but allows
+ * specifying a mode for the new file.
+ */
+gboolean
+nm_utils_file_set_contents (const gchar *filename,
+                            const gchar *contents,
+                            gssize length,
+                            mode_t mode,
+                            GError **error)
+{
+	gs_free char *tmp_name = NULL;
+	struct stat statbuf;
+	int errsv;
+	gssize s;
+	int fd;
+
+	g_return_val_if_fail (filename, FALSE);
+	g_return_val_if_fail (contents || !length, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (length >= -1, FALSE);
+
+	tmp_name = g_strdup_printf ("%s.XXXXXX", filename);
+	fd = g_mkstemp_full (tmp_name, O_RDWR, mode);
+	if (fd < 0) {
+		errsv = errno;
+		g_set_error (error,
+		             G_FILE_ERROR,
+		             g_file_error_from_errno (errsv),
+		             "failed to create file %s: %s",
+		             tmp_name,
+		             g_strerror (errsv));
+		return FALSE;
+	}
+
+	while (length > 0) {
+		s = write (fd, contents, length);
+		if (s < 0) {
+			errsv = errno;
+			if (errsv == EINTR)
+				continue;
+
+			close (fd);
+			unlink (tmp_name);
+
+			g_set_error (error,
+			             G_FILE_ERROR,
+			             g_file_error_from_errno (errsv),
+			             "failed to write to file %s: %s",
+			             tmp_name,
+			             g_strerror (errsv));
+			return FALSE;
+		}
+
+		g_assert (s <= length);
+
+		contents += s;
+		length -= s;
+	}
+
+	/* If the final destination exists and is > 0 bytes, we want to sync the
+	 * newly written file to ensure the data is on disk when we rename over
+	 * the destination. Otherwise if we get a system crash we can lose both
+	 * the new and the old file on some filesystems. (I.E. those that don't
+	 * guarantee the data is written to the disk before the metadata.)
+	 */
+	if (   lstat (filename, &statbuf) == 0
+	    && statbuf.st_size > 0
+	    && fsync (fd) != 0) {
+		errsv = errno;
+
+		close (fd);
+		unlink (tmp_name);
+
+		g_set_error (error,
+		             G_FILE_ERROR,
+		             g_file_error_from_errno (errsv),
+		             "failed to fsync %s: %s",
+		             tmp_name,
+		             g_strerror (errsv));
+		return FALSE;
+	}
+
+	close (fd);
+
+	if (rename (tmp_name, filename)) {
+		errsv = errno;
+		unlink (tmp_name);
+		g_set_error (error,
+		             G_FILE_ERROR,
+		             g_file_error_from_errno (errsv),
+		             "failed to rename %s to %s: %s",
+		             tmp_name,
+		             filename,
+		             g_strerror (errsv));
+		return FALSE;
+	}
+
+	return TRUE;
+}

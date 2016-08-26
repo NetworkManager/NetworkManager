@@ -428,4 +428,10 @@ const char *nm_utils_dnsmasq_status_to_string (int status, char *dest, gsize siz
 void nm_utils_get_reverse_dns_domains_ip4 (guint32 ip, guint8 plen, GPtrArray *domains);
 void nm_utils_get_reverse_dns_domains_ip6 (const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
 
+gboolean nm_utils_file_set_contents (const gchar *filename,
+                                     const gchar *contents,
+                                     gssize length,
+                                     mode_t mode,
+                                     GError **error);
+
 #endif /* __NM_CORE_UTILS_H__ */

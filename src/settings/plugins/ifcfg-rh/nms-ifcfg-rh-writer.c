@@ -146,62 +146,6 @@ error:
 	svSetValue (ifcfg, key, value, FALSE);
 }
 
-static gboolean
-write_secret_file (const char *path,
-                   const char *data,
-                   gsize len,
-                   GError **error)
-{
-	char *tmppath;
-	int fd = -1, written;
-	gboolean success = FALSE;
-	mode_t saved_umask;
-
-	tmppath = g_malloc0 (strlen (path) + 10);
-	memcpy (tmppath, path, strlen (path));
-	strcat (tmppath, ".XXXXXX");
-
-	/* Only readable by root */
-	saved_umask = umask (S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
-	errno = 0;
-	fd = mkstemp (tmppath);
-	if (fd < 0) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not create temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-
-	errno = 0;
-	written = write (fd, data, len);
-	if (written != len) {
-		close (fd);
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not write temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-	close (fd);
-
-	/* Try to rename */
-	errno = 0;
-	if (rename (tmppath, path)) {
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not rename temporary file to '%s': %d",
-		             path, errno);
-		goto out;
-	}
-	success = TRUE;
-
-out:
-	umask (saved_umask);
-	g_free (tmppath);
-	return success;
-}
-
 typedef struct ObjectType {
 	const char *setting_key;
 	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
@@ -356,10 +300,11 @@ write_object (NMSetting8021x *s_8021x,
 		 * can use paths from now on instead of pushing around the certificate
 		 * data itself.
 		 */
-		success = write_secret_file (new_file,
-		                             (const char *) g_bytes_get_data (blob, NULL),
-		                             g_bytes_get_size (blob),
-		                             &write_error);
+		success = nm_utils_file_set_contents (new_file,
+		                                      (const char *) g_bytes_get_data (blob, NULL),
+		                                      g_bytes_get_size (blob),
+		                                      0600,
+		                                      &write_error);
 		if (success) {
 			svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
 			g_free (new_file);
