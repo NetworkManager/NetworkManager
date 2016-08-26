@@ -621,7 +621,7 @@ ipv6.ip6-privacy=0
     </para>
     </refsect2>
 
-    <refsect2 id="connection-sections">
+    <refsect2 id="connection-sections" xreflabel="“Sections” under the section called “CONNECTION SECTION”">
     <title>Sections</title>
     <para>
         You can configure multiple <literal>connection</literal>
