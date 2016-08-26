@@ -270,6 +270,7 @@ detect_build_type 'NetworkManager-openvpn-[0-9]*' NetworkManager-openvpn.spec
 detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-openswan.spec
 detect_build_type 'NetworkManager-libreswan-[0-9]*' NetworkManager-libreswan.spec
 detect_build_type 'NetworkManager-vpnc-[0-9]*' NetworkManager-vpnc.spec
+detect_build_type 'ModemManager-[0-9]*' ModemManager.spec
 detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
 detect_build_type 'initscripts-[0-9]*' initscripts.spec
@@ -334,6 +335,10 @@ pushd "$DIRNAME"
         git config notes.displayRef refs/notes/bugs
         git config --add remote.origin.fetch refs/tags/*:refs/tags/*
         git config --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
+    elif [[ "$BUILD_TYPE" == "ModemManager" ]]; then
+        git remote add origin "git://anongit.freedesktop.org/ModemManager/ModemManager"
+        git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/ModemManager/ModemManager"
+        git config --add remote.origin.fetch refs/tags/*:refs/tags/*
     elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
         git remote add origin "git://github.com/thom311/libnl.git"
         git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
@@ -412,6 +417,9 @@ pushd "$DIRNAME"
             KNOWN_BASE_COMMITS="$(cat <<EOF
 # NetworkManager
 08670c9163a5d0f15c57c7891ef899eb125d9423  7251704430cb206f2c29bfebc45bd0fb *NetworkManager-0.9.9.0.git20131003.tar.bz2
+
+# ModemManager
+397761c9758c3a8c2d130afaf36dab645d6e0ecf  d9d93d2961ee35b4cd8a75a6a8631cb4  ModemManager-1.6.0.tar.xz
 
 # libnl3
 1a510c57e905c4beb06122b9688162c82d9b044f  d1111959652bd6ad87b2071f61c8c20c *libnl-doc-3.2.24.tar.gz
