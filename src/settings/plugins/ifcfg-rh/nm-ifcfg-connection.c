@@ -395,7 +395,9 @@ commit_changes (NMSettingsConnection *connection,
 	 */
 	filename = nm_settings_connection_get_filename (connection);
 	if (filename) {
-		reread = connection_from_file (filename, NULL, NULL, NULL);
+		gs_free char *unhandled = NULL;
+
+		reread = connection_from_file (filename, &unhandled, NULL, NULL);
 		if (reread) {
 			same = nm_connection_compare (NM_CONNECTION (connection),
 			                              reread,
