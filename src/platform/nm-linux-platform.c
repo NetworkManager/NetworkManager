@@ -4450,6 +4450,8 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	gs_free char *mac = NULL;
+	WaitForNlResponseResult seq_result;
+	char s_buf[256];
 
 	if (!address || !length)
 		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
@@ -4469,7 +4471,30 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 
 	NLA_PUT (nlmsg, IFLA_ADDRESS, length, address);
 
-	return do_change_link (platform, ifindex, nlmsg);
+	seq_result = do_change_link_request (platform, ifindex, nlmsg);
+
+	if (NM_IN_SET (-((int) seq_result), ENFILE)) {
+		const NMPObject *obj_cache;
+
+		/* workaround ENFILE which may be wrongly returned (bgo #770456).
+		 * If the MAC address is as expected, assume success? */
+
+		obj_cache = nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex);
+		if (   obj_cache
+		    && obj_cache->link.addr.len == length
+		    && memcmp (obj_cache->link.addr.data, address, length) == 0) {
+			_NMLOG (LOGL_DEBUG,
+			        "do-change-link[%d]: %s changing link: %s%s",
+			        ifindex,
+			        "success",
+			        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
+			        " (assume success changing address)");
+			return NM_PLATFORM_ERROR_SUCCESS;
+		}
+	}
+
+	return do_change_link_result (platform, ifindex, seq_result);
+
 nla_put_failure:
 	g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
 }
