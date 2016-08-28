@@ -4061,18 +4061,14 @@ out:
 	return !!nmp_cache_lookup_obj (priv->cache, obj_id);
 }
 
-static NMPlatformError
-do_change_link (NMPlatform *platform,
-                int ifindex,
-                struct nl_msg *nlmsg)
+static WaitForNlResponseResult
+do_change_link_request (NMPlatform *platform,
+                        int ifindex,
+                        struct nl_msg *nlmsg)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
-	char s_buf[256];
-	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
-	NMLogLevel log_level = LOGL_DEBUG;
-	const char *log_result = "failure", *log_detail = "";
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -4099,6 +4095,18 @@ retry:
 		nlmsg_hdr (nlmsg)->nlmsg_type = RTM_SETLINK;
 		goto retry;
 	}
+	return seq_result;
+}
+
+static NMPlatformError
+do_change_link_result (NMPlatform *platform,
+                       int ifindex,
+                       WaitForNlResponseResult seq_result)
+{
+	char s_buf[256];
+	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
+	NMLogLevel log_level = LOGL_DEBUG;
+	const char *log_result = "failure", *log_detail = "";
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
 		log_result = "success";
@@ -4122,6 +4130,17 @@ retry:
 	        log_detail);
 
 	return result;
+}
+
+static NMPlatformError
+do_change_link (NMPlatform *platform,
+                int ifindex,
+                struct nl_msg *nlmsg)
+{
+	WaitForNlResponseResult seq_result;
+
+	seq_result = do_change_link_request (platform, ifindex, nlmsg);
+	return do_change_link_result (platform, ifindex, seq_result);
 }
 
 static gboolean
