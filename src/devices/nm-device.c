@@ -11774,6 +11774,7 @@ _hw_addr_set (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 	gboolean success = FALSE;
+	gboolean needs_refresh = FALSE;
 	NMPlatformError plerr;
 	const char *cur_addr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
@@ -11819,10 +11820,10 @@ _hw_addr_set (NMDevice *self,
 			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
 			       operation, addr, detail);
 		} else {
-			_LOGW (LOGD_DEVICE,
-			       "set-hw-addr: new MAC address %s not successfully %s (%s)",
+			_LOGD (LOGD_DEVICE,
+			       "set-hw-addr: new MAC address %s not successfully %s (%s) (refresh link)",
 			       addr, operation, detail);
-			success = FALSE;
+			needs_refresh = TRUE;
 		}
 	} else {
 		_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
@@ -11834,6 +11835,27 @@ _hw_addr_set (NMDevice *self,
 	if (was_up) {
 		if (!nm_device_bring_up (self, TRUE, NULL))
 			return FALSE;
+	}
+
+	if (needs_refresh) {
+		/* The platform call indicated success, however the address is not
+		 * as expected. May be a kernel issue and the MAC address takes
+		 * a moment to change (bgo#770456).
+		 *
+		 * Try to reload the link and check again. */
+		nm_platform_link_refresh (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self));
+
+		nm_device_update_hw_address (self);
+		cur_addr = nm_device_get_hw_address (self);
+		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
+			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
+			       operation, addr, detail);
+		} else {
+			_LOGW (LOGD_DEVICE,
+			       "set-hw-addr: new MAC address %s not successfully %s (%s)",
+			       addr, operation, detail);
+			return FALSE;
+		}
 	}
 
 	return success;
