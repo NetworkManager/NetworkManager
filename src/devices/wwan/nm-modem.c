@@ -590,7 +590,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 
 	/* Only Disabled and Auto methods make sense for WWAN */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
-		return NM_ACT_STAGE_RETURN_IP_FAIL;
+		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0) {
 		nm_log_warn (LOGD_MB | LOGD_IP4,
@@ -709,7 +709,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 
 	/* Only Ignore and Auto methods make sense for WWAN */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
-		return NM_ACT_STAGE_RETURN_IP_FAIL;
+		return NM_ACT_STAGE_RETURN_IP_DONE;
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
 		nm_log_warn (LOGD_MB | LOGD_IP6,

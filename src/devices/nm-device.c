@@ -5438,8 +5438,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 			g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
 		apply_mtu_from_config (self);
-		/* Nothing else to do... */
-		ret = NM_ACT_STAGE_RETURN_IP_FAIL;
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
 
@@ -6760,7 +6759,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			restore_ip6_properties (self);
 		}
-		return NM_ACT_STAGE_RETURN_IP_FAIL;
+		return NM_ACT_STAGE_RETURN_IP_DONE;
 	}
 
 	/* Ensure the MTU makes sense. If it was below 1280 the kernel would not
