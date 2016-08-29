@@ -11820,7 +11820,7 @@ _hw_addr_set (NMDevice *self,
 			       operation, addr, detail);
 		} else {
 			_LOGW (LOGD_DEVICE,
-			       "set-hw-addr: new MAC address %s not successfully set to %s (%s)",
+			       "set-hw-addr: new MAC address %s not successfully %s (%s)",
 			       addr, operation, detail);
 			success = FALSE;
 		}
