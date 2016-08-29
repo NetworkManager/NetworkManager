@@ -32,7 +32,6 @@ enum NMActStageReturn {
 	NM_ACT_STAGE_RETURN_POSTPONE,    /* Long-running operation in progress */
 	NM_ACT_STAGE_RETURN_WAIT,        /* Not ready to start stage; wait */
 	NM_ACT_STAGE_RETURN_STOP,        /* Activation not wanted */
-	NM_ACT_STAGE_RETURN_FINISH       /* Activation stage done; nothing to do */
 };
 
 #define NM_DEVICE_CAP_NONSTANDARD_CARRIER 0x80000000
