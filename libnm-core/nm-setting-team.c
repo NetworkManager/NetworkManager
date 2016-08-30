@@ -99,6 +99,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	/* NOTE: normalizable/normalizable-errors must appear at the end with decreasing severity.
+	 * Take care to properly order statements with priv->config above. */
+
 	return TRUE;
 }
 
