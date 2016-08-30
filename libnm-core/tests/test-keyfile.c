@@ -27,6 +27,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-team.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -518,6 +519,52 @@ test_8021x_cert_read (void)
 	CLEAR (&con, &keyfile);
 }
 
+static void
+test_team_conf_read_valid (void)
+{
+	GKeyFile *keyfile = NULL;
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingTeam *s_team;
+
+	con = nmtst_create_connection_from_keyfile (
+	      "[connection]\n"
+	      "type=team\n"
+	      "interface-name=nm-team1\n"
+	      "[team]\n"
+	      "config={\"foo\":\"bar\"}",
+	      "/test_team_conf_read/valid", NULL);
+
+	g_assert (con);
+	s_team = nm_connection_get_setting_team (con);
+	g_assert (s_team);
+	g_assert_cmpstr (nm_setting_team_get_config (s_team), ==, "{\"foo\":\"bar\"}");
+
+	CLEAR (&con, &keyfile);
+}
+
+static void
+test_team_conf_read_invalid (void)
+{
+	GKeyFile *keyfile = NULL;
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingTeam *s_team;
+
+	con = nmtst_create_connection_from_keyfile (
+	      "[connection]\n"
+	      "type=team\n"
+	      "interface-name=nm-team1\n"
+	      "[team]\n"
+	      "config={foobar}",
+	      "/test_team_conf_read/invalid", NULL);
+
+	g_assert (con);
+	s_team = nm_connection_get_setting_team (con);
+	g_assert (s_team);
+	g_assert (nm_setting_team_get_config (s_team) == NULL);
+
+	CLEAR (&con, &keyfile);
+}
+
 /******************************************************************************/
 
 NMTST_DEFINE ();
@@ -528,6 +575,8 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/core/keyfile/test_8021x_cert", test_8021x_cert);
 	g_test_add_func ("/core/keyfile/test_8021x_cert_read", test_8021x_cert_read);
+	g_test_add_func ("/core/keyfile/test_team_conf_read/valid", test_team_conf_read_valid);
+	g_test_add_func ("/core/keyfile/test_team_conf_read/invalid", test_team_conf_read_invalid);
 
 	return g_test_run ();
 }
