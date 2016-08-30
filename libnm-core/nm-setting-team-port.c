@@ -122,13 +122,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                "%s.%s: ",
 			                NM_SETTING_TEAM_PORT_SETTING_NAME,
 			                NM_SETTING_TEAM_PORT_CONFIG);
-			/* for backward compatibility, we accept invalid json and normalize it */
-			if (!priv->config[0]) {
-				/* be more forgiving to "" and let it verify() as valid because
-				 * at least anaconda used to write such configs */
-				return NM_SETTING_VERIFY_NORMALIZABLE;
-			}
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+			/* We treat an empty string as no config for compatibility. */
+			return *priv->config ? FALSE : NM_SETTING_VERIFY_NORMALIZABLE;
 		}
 	}
 

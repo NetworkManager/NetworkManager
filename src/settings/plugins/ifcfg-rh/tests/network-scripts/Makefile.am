@@ -134,6 +134,7 @@ EXTRA_DIST = \
 	ifcfg-test-fcoe-vn2vn \
 	ifcfg-test-team-master-1 \
 	ifcfg-test-team-master-2 \
+	ifcfg-test-team-master-invalid \
 	ifcfg-test-team-port-1 \
 	ifcfg-test-team-port-2 \
 	ifcfg-test-team-port-empty-config \
