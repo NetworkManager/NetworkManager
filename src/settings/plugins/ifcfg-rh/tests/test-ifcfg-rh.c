@@ -8454,6 +8454,31 @@ test_read_team_master (gconstpointer user_data)
 }
 
 static void
+test_read_team_master_invalid (gconstpointer user_data)
+{
+	const char *const PATH_NAME = user_data;
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingTeam *s_team;
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*ignoring invalid team configuration*");
+	connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
+	g_test_assert_expected_messages ();
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "team0");
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
+
+	s_team = nm_connection_get_setting_team (connection);
+	g_assert (s_team);
+	g_assert (nm_setting_team_get_config (s_team) == NULL);
+
+	g_object_unref (connection);
+}
+
+static void
 test_write_team_master (void)
 {
 	NMConnection *connection, *reread;
@@ -9050,6 +9075,7 @@ int main (int argc, char **argv)
 
 	g_test_add_data_func (TPATH "team/read-master-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-1", test_read_team_master);
 	g_test_add_data_func (TPATH "team/read-master-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-2", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-invalid", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-invalid", test_read_team_master_invalid);
 	g_test_add_func (TPATH "team/write-master", test_write_team_master);
 	g_test_add_data_func (TPATH "team/read-port-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-1", test_read_team_port);
 	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);

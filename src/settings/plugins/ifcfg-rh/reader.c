@@ -4238,6 +4238,7 @@ bond_connection_from_ifcfg (const char *file,
 static char *
 read_team_config (shvarFile *ifcfg, const char *key, GError **error)
 {
+	gs_free_error GError *local_error = NULL;
 	char *value;
 	size_t l;
 
@@ -4258,6 +4259,12 @@ read_team_config (shvarFile *ifcfg, const char *key, GError **error)
 		return NULL;
 	}
 	svUnescape (value);
+
+	if (value && value[0] && !_nm_utils_check_valid_json (value, &local_error)) {
+		PARSE_WARNING ("ignoring invalid team configuration: %s", local_error->message);
+		g_clear_pointer (&value, g_free);
+	}
+
 	return value;
 }
 
