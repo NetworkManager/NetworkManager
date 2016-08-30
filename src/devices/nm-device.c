@@ -2526,6 +2526,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	                               NM_UNMANAGED_PARENT |
 	                               NM_UNMANAGED_LOOPBACK |
 	                               NM_UNMANAGED_USER_UDEV |
+	                               NM_UNMANAGED_USER_EXPLICIT |
 	                               NM_UNMANAGED_EXTERNAL_DOWN |
 	                               NM_UNMANAGED_IS_SLAVE,
 	                               NM_UNMAN_FLAG_OP_FORGET);
@@ -12350,21 +12351,22 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
 		break;
-	case PROP_MANAGED: {
-		gboolean managed;
-		NMDeviceStateReason reason;
+	case PROP_MANAGED:
+		if (nm_device_is_real (self)) {
+			gboolean managed;
+			NMDeviceStateReason reason;
 
-		managed = g_value_get_boolean (value);
-		if (managed)
-			reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-		else
-			reason = NM_DEVICE_STATE_REASON_REMOVED;
-		nm_device_set_unmanaged_by_flags (self,
-		                                  NM_UNMANAGED_USER_EXPLICIT,
-		                                  !managed,
-		                                  reason);
+			managed = g_value_get_boolean (value);
+			if (managed)
+				reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+			else
+				reason = NM_DEVICE_STATE_REASON_REMOVED;
+			nm_device_set_unmanaged_by_flags (self,
+			                                  NM_UNMANAGED_USER_EXPLICIT,
+			                                  !managed,
+			                                  reason);
+		}
 		break;
-	}
 	case PROP_AUTOCONNECT:
 		nm_device_set_autoconnect (self, g_value_get_boolean (value));
 		break;
