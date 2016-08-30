@@ -4071,7 +4071,7 @@ do_change_link_request (NMPlatform *platform,
 	int nle;
 
 	if (!nm_platform_netns_push (platform, &netns))
-		return NM_PLATFORM_ERROR_UNSPECIFIED;
+		return seq_result;
 
 retry:
 	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result, NULL);
@@ -4079,7 +4079,7 @@ retry:
 		_LOGE ("do-change-link[%d]: failure sending netlink request \"%s\" (%d)",
 		       ifindex,
 		       nl_geterror (nle), -nle);
-		return NM_PLATFORM_ERROR_UNSPECIFIED;
+		return seq_result;
 	}
 
 	/* always refetch the link after changing it. There seems to be issues
