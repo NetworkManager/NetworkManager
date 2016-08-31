@@ -5388,7 +5388,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP4 | LOGD_DEVICE,
 		       "IPv4 config waiting until carrier is on");
-		return NM_ACT_STAGE_RETURN_WAIT;
+		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
 	if (priv->is_master && ip4_requires_slaves (connection)) {
@@ -5402,7 +5402,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		if (ready_slaves == FALSE) {
 			_LOGI (LOGD_DEVICE | LOGD_IP4,
 			       "IPv4 config waiting until slaves are ready");
-			return NM_ACT_STAGE_RETURN_WAIT;
+			return NM_ACT_STAGE_RETURN_IP_WAIT;
 		}
 	}
 
@@ -5436,7 +5436,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
 		apply_mtu_from_config (self);
 		/* Nothing else to do... */
-		ret = NM_ACT_STAGE_RETURN_STOP;
+		ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 	} else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
 
@@ -6721,7 +6721,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP6 | LOGD_DEVICE,
 		       "IPv6 config waiting until carrier is on");
-		return NM_ACT_STAGE_RETURN_WAIT;
+		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
 	if (priv->is_master && ip6_requires_slaves (connection)) {
@@ -6735,7 +6735,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		if (ready_slaves == FALSE) {
 			_LOGI (LOGD_DEVICE | LOGD_IP6,
 			       "IPv6 config waiting until slaves are ready");
-			return NM_ACT_STAGE_RETURN_WAIT;
+			return NM_ACT_STAGE_RETURN_IP_WAIT;
 		}
 	}
 
@@ -6757,7 +6757,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			restore_ip6_properties (self);
 		}
-		return NM_ACT_STAGE_RETURN_STOP;
+		return NM_ACT_STAGE_RETURN_IP_FAIL;
 	}
 
 	/* Ensure the MTU makes sense. If it was below 1280 the kernel would not
@@ -6782,7 +6782,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		if (!addrconf6_start (self, ip6_privacy)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
-			ret = NM_ACT_STAGE_RETURN_STOP;
+			ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 		} else
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
@@ -6791,7 +6791,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		priv->dhcp6.mode = NM_RDISC_DHCP_LEVEL_MANAGED;
 		if (!dhcp6_start (self, TRUE, reason)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
-			ret = NM_ACT_STAGE_RETURN_STOP;
+			ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 		} else
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0) {
@@ -6850,10 +6850,10 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		return FALSE;
-	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
+	} else if (ret == NM_ACT_STAGE_RETURN_IP_FAIL) {
 		/* Activation not wanted */
 		_set_ip_state (self, AF_INET, IP_FAIL);
-	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
+	} else if (ret == NM_ACT_STAGE_RETURN_IP_WAIT) {
 		/* Wait for something to try IP config again */
 		_set_ip_state (self, AF_INET, IP_WAIT);
 	} else
@@ -6896,10 +6896,10 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		return FALSE;
-	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
+	} else if (ret == NM_ACT_STAGE_RETURN_IP_FAIL) {
 		/* Activation not wanted */
 		_set_ip_state (self, AF_INET6, IP_FAIL);
-	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
+	} else if (ret == NM_ACT_STAGE_RETURN_IP_WAIT) {
 		/* Wait for something to try IP config again */
 		_set_ip_state (self, AF_INET6, IP_WAIT);
 	} else

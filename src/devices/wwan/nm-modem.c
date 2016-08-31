@@ -590,7 +590,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 
 	/* Only Disabled and Auto methods make sense for WWAN */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
-		return NM_ACT_STAGE_RETURN_STOP;
+		return NM_ACT_STAGE_RETURN_IP_FAIL;
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0) {
 		nm_log_warn (LOGD_MB | LOGD_IP4,
@@ -615,7 +615,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		break;
 	default:
 		nm_log_info (LOGD_MB, "(%s): IPv4 configuration disabled", nm_modem_get_uid (self));
-		ret = NM_ACT_STAGE_RETURN_STOP;
+		ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 		break;
 	}
 
@@ -709,7 +709,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 
 	/* Only Ignore and Auto methods make sense for WWAN */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
-		return NM_ACT_STAGE_RETURN_STOP;
+		return NM_ACT_STAGE_RETURN_IP_FAIL;
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
 		nm_log_warn (LOGD_MB | LOGD_IP6,
@@ -734,7 +734,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 		break;
 	default:
 		nm_log_info (LOGD_MB, "(%s): IPv6 configuration disabled", nm_modem_get_uid (self));
-		ret = NM_ACT_STAGE_RETURN_STOP;
+		ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 		break;
 	}
 

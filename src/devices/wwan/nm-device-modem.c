@@ -230,7 +230,7 @@ modem_ip6_config_result (NMModem *modem,
 	case NM_ACT_STAGE_RETURN_FAILURE:
 		nm_device_ip_method_failed (device, AF_INET6, reason);
 		break;
-	case NM_ACT_STAGE_RETURN_STOP:
+	case NM_ACT_STAGE_RETURN_IP_FAIL:
 		/* all done */
 		nm_device_activate_schedule_ip6_config_result (device);
 		break;
