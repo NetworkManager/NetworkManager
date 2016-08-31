@@ -3773,7 +3773,6 @@ test_connection_normalize_may_fail (void)
 {
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingIPConfig *s_ip4, *s_ip6;
-	gs_free_error GError *error = NULL;
 
 	con = nmtst_create_minimal_connection ("test2", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	nmtst_assert_connection_verifies_and_normalizable (con);
