@@ -1856,8 +1856,6 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	nmc->connections = nm_client_get_connections (nmc->client);
-
 	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
 	if (nmc->secret_agent) {

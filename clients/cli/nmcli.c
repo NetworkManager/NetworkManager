@@ -541,8 +541,6 @@ nmc_init (NmCli *nmc)
 
 	nmc->timeout = -1;
 
-	nmc->connections = NULL;
-
 	nmc->secret_agent = NULL;
 	nmc->pwds_hash = NULL;
 	nmc->pk_listener = NULL;

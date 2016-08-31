@@ -1217,6 +1217,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 	NMConnection *connection = NULL;
 	char *path, *p;
 	gboolean success = FALSE;
+	const GPtrArray *connections;
 
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
@@ -1227,7 +1228,8 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		p = strrchr (path, '/');
 		if (p)
 			*p = '\0';
-		connection = nmc_find_connection (nmc->connections, "path", path, NULL, FALSE);
+		connections = nm_client_get_connections (nmc->client);
+		connection = nmc_find_connection (connections, "path", path, NULL, FALSE);
 		g_free (path);
 	}
 

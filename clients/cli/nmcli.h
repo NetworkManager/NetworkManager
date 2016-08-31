@@ -139,8 +139,6 @@ typedef struct _NmCli {
 
 	int timeout;                                      /* Operation timeout */
 
-	const GPtrArray *connections;                     /* List of connections */
-
 	NMSecretAgentOld *secret_agent;                   /* Secret agent */
 	GHashTable *pwds_hash;                            /* Hash table with passwords in passwd-file */
 	NMPolkitListener *pk_listener ;                   /* polkit agent listener */
