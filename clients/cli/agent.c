@@ -209,24 +209,15 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 }
 
 static const NMCCommand agent_cmds[] = {
-	{ "secret",  do_agent_secret,  usage_agent_secret,  FALSE },
-	{ "polkit",  do_agent_polkit,  usage_agent_polkit,  FALSE },
-	{ "all",     do_agent_all,     usage_agent_all,     FALSE },
-	{ NULL,      do_agent_all,     usage,               FALSE },
+	{ "secret",  do_agent_secret,  usage_agent_secret,  TRUE,   TRUE },
+	{ "polkit",  do_agent_polkit,  usage_agent_polkit,  TRUE,   TRUE },
+	{ "all",     do_agent_all,     usage_agent_all,     TRUE,   TRUE },
+	{ NULL,      do_agent_all,     usage,               TRUE,   TRUE },
 };
 
 NMCResultCode
 do_agent (NmCli *nmc, int argc, char **argv)
 {
-	/* Get NMClient object */
-	nmc->get_client (nmc);
-
-	/* Check whether NetworkManager is running */
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		return NMC_RESULT_ERROR_NM_NOT_RUNNING;
-	}
-
 	nmc_do_cmd (nmc, agent_cmds, *argv, argc, argv);
 
 	return nmc->return_value;

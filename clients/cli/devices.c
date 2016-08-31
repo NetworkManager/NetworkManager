@@ -3607,11 +3607,11 @@ finish:
 }
 
 static NMCCommand device_wifi_cmds[] = {
-	{ "list",     do_device_wifi_list,            NULL,             FALSE },
-	{ "connect",  do_device_wifi_connect_network, NULL,             FALSE },
-	{ "hotspot",  do_device_wifi_hotspot,         NULL,             FALSE },
-	{ "rescan",   do_device_wifi_rescan,          NULL,             FALSE },
-	{ NULL,       do_device_wifi_list,            NULL,             FALSE },
+	{ "list",     do_device_wifi_list,            NULL,             TRUE,   TRUE },
+	{ "connect",  do_device_wifi_connect_network, NULL,             TRUE,   TRUE },
+	{ "hotspot",  do_device_wifi_hotspot,         NULL,             TRUE,   TRUE },
+	{ "rescan",   do_device_wifi_rescan,          NULL,             TRUE,   TRUE },
+	{ NULL,       do_device_wifi_list,            NULL,             TRUE,   TRUE },
 };
 
 static NMCResultCode
@@ -3782,8 +3782,8 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCCommand device_lldp_cmds[] = {
-	{ "list",  do_device_lldp_list,  NULL,             FALSE },
-	{ NULL,    do_device_lldp_list,  NULL,             FALSE },
+	{ "list",  do_device_lldp_list,  NULL,             TRUE,   TRUE },
+	{ NULL,    do_device_lldp_list,  NULL,             TRUE,   TRUE },
 };
 
 static NMCResultCode
@@ -3848,18 +3848,18 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 }
 
 static const NMCCommand device_cmds[] = {
-	{ "status",      do_devices_status,      usage_device_status,      FALSE },
-	{ "show",        do_device_show,         usage_device_show,        FALSE },
-	{ "connect",     do_device_connect,      usage_device_connect,     FALSE },
-	{ "reapply",     do_device_reapply,      usage_device_reapply,     FALSE },
-	{ "disconnect",  do_devices_disconnect,  usage_device_disconnect,  FALSE },
-	{ "delete",      do_devices_delete,      usage_device_delete,      FALSE },
-	{ "set",         do_device_set,          usage_device_set,         FALSE },
-	{ "monitor",     do_devices_monitor,     usage_device_monitor,     FALSE },
-	{ "wifi",        do_device_wifi,         usage_device_wifi,        FALSE },
-	{ "lldp",        do_device_lldp,         usage_device_lldp,        FALSE },
-	{ "modify",      do_device_modify,       usage_device_modify,      FALSE },
-	{ NULL,          do_devices_status,      usage,                    FALSE },
+	{ "status",      do_devices_status,      usage_device_status,      TRUE,   TRUE },
+	{ "show",        do_device_show,         usage_device_show,        TRUE,   TRUE },
+	{ "connect",     do_device_connect,      usage_device_connect,     TRUE,   TRUE },
+	{ "reapply",     do_device_reapply,      usage_device_reapply,     TRUE,   TRUE },
+	{ "disconnect",  do_devices_disconnect,  usage_device_disconnect,  TRUE,   TRUE },
+	{ "delete",      do_devices_delete,      usage_device_delete,      TRUE,   TRUE },
+	{ "set",         do_device_set,          usage_device_set,         TRUE,   TRUE },
+	{ "monitor",     do_devices_monitor,     usage_device_monitor,     TRUE,   TRUE },
+	{ "wifi",        do_device_wifi,         usage_device_wifi,        FALSE,  FALSE },
+	{ "lldp",        do_device_lldp,         usage_device_lldp,        FALSE,  FALSE },
+	{ "modify",      do_device_modify,       usage_device_modify,      TRUE,   TRUE },
+	{ NULL,          do_devices_status,      usage,                    TRUE,   TRUE },
 };
 
 NMCResultCode
@@ -3869,15 +3869,6 @@ do_devices (NmCli *nmc, int argc, char **argv)
 	nmc_start_polkit_agent_start_try (nmc);
 
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
-
-	/* Get NMClient object early */
-	nmc->get_client (nmc);
-
-	/* Check whether NetworkManager is running */
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		return NMC_RESULT_ERROR_NM_NOT_RUNNING;
-	}
 
 	nmc_do_cmd (nmc, device_cmds, *argv, argc, argv);
 

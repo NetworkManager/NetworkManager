@@ -1487,7 +1487,6 @@ nmc_rl_gen_func_ifnames (const char *text, int state)
 	const char **ifnames;
 	char *ret;
 
-	nm_cli.get_client (&nm_cli);
 	devices = nm_client_get_devices (nm_cli.client);
 	if (devices->len == 0)
 		return NULL;

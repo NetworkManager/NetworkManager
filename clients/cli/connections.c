@@ -8796,20 +8796,20 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 }
 
 static const NMCCommand connection_cmds[] = {
-	{ "show",     do_connections_show,      usage_connection_show,     FALSE },
-	{ "up",       do_connection_up,         usage_connection_up,       FALSE },
-	{ "down",     do_connection_down,       usage_connection_down,     FALSE },
-	{ "add",      do_connection_add,        usage_connection_add,      FALSE },
-	{ "edit",     do_connection_edit,       usage_connection_edit,     FALSE },
-	{ "delete",   do_connection_delete,     usage_connection_delete,   FALSE },
-	{ "reload",   do_connection_reload,     usage_connection_reload,   FALSE },
-	{ "load",     do_connection_load,       usage_connection_load,     FALSE },
-	{ "modify",   do_connection_modify,     usage_connection_modify,   FALSE },
-	{ "clone",    do_connection_clone,      usage_connection_clone,    FALSE },
-	{ "import",   do_connection_import,     usage_connection_import,   FALSE },
-	{ "export",   do_connection_export,     usage_connection_export,   FALSE },
-	{ "monitor",  do_connection_monitor,    usage_connection_monitor,  FALSE },
-	{ NULL,       do_connections_show,      usage,                     FALSE },
+	{ "show",     do_connections_show,      usage_connection_show,     TRUE,   TRUE },
+	{ "up",       do_connection_up,         usage_connection_up,       TRUE,   TRUE },
+	{ "down",     do_connection_down,       usage_connection_down,     TRUE,   TRUE },
+	{ "add",      do_connection_add,        usage_connection_add,      TRUE,   TRUE },
+	{ "edit",     do_connection_edit,       usage_connection_edit,     TRUE,   TRUE },
+	{ "delete",   do_connection_delete,     usage_connection_delete,   TRUE,   TRUE },
+	{ "reload",   do_connection_reload,     usage_connection_reload,   TRUE,   TRUE },
+	{ "load",     do_connection_load,       usage_connection_load,     TRUE,   TRUE },
+	{ "modify",   do_connection_modify,     usage_connection_modify,   TRUE,   TRUE },
+	{ "clone",    do_connection_clone,      usage_connection_clone,    TRUE,   TRUE },
+	{ "import",   do_connection_import,     usage_connection_import,   TRUE,   TRUE },
+	{ "export",   do_connection_export,     usage_connection_export,   TRUE,   TRUE },
+	{ "monitor",  do_connection_monitor,    usage_connection_monitor,  TRUE,   TRUE },
+	{ NULL,       do_connections_show,      usage,                     TRUE,   TRUE },
 };
 
 /* Entry point function for connections-related commands: 'nmcli connection' */
@@ -8821,18 +8821,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 
 	/* Set completion function for 'nmcli con' */
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;
-
-	/* Get NMClient object early */
-	nmc->get_client (nmc);
-
-	/* Check whether NetworkManager is running */
-	if (!nm_client_get_nm_running (nmc->client)) {
-		if (!nmc->complete) {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
-		return nmc->return_value;
-	}
 
 	nmc_do_cmd (nmc, connection_cmds, *argv, argc, argv);
 

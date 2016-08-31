@@ -205,14 +205,14 @@ usage (void)
 }
 
 static const NMCCommand nmcli_cmds[] = {
-	{ "general",     do_general,      NULL,   FALSE },
-	{ "monitor",     do_monitor,      NULL,   FALSE },
-	{ "networking",  do_networking,   NULL,   FALSE },
-	{ "radio",       do_radio,        NULL,   FALSE },
-	{ "connection",  do_connections,  NULL,   FALSE },
-	{ "device",      do_devices,      NULL,   FALSE },
-	{ "agent",       do_agent,        NULL,   FALSE },
-	{ NULL,          do_overview,     usage,  FALSE },
+	{ "general",     do_general,      NULL,   FALSE,  FALSE },
+	{ "monitor",     do_monitor,      NULL,   TRUE,   FALSE },
+	{ "networking",  do_networking,   NULL,   FALSE,  FALSE },
+	{ "radio",       do_radio,        NULL,   FALSE,  FALSE },
+	{ "connection",  do_connections,  NULL,   FALSE,  FALSE },
+	{ "device",      do_devices,      NULL,   FALSE,  FALSE },
+	{ "agent",       do_agent,        NULL,   FALSE,  FALSE },
+	{ NULL,          do_overview,     usage,  TRUE,   TRUE },
 };
 
 static gboolean
@@ -514,29 +514,11 @@ nmc_value_transforms_register (void)
 	                                 nmc_convert_bytes_to_string);
 }
 
-static NMClient *
-nmc_get_client (NmCli *nmc)
-{
-	GError *error = NULL;
-
-	if (!nmc->client) {
-		nmc->client = nm_client_new (NULL, &error);
-		if (!nmc->client) {
-			g_printerr ("%s\n", error->message);
-			g_clear_error (&error);
-			exit (NMC_RESULT_ERROR_UNKNOWN);
-		}
-	}
-
-	return nmc->client;
-}
-
 /* Initialize NmCli structure - set default values */
 static void
 nmc_init (NmCli *nmc)
 {
 	nmc->client = NULL;
-	nmc->get_client = &nmc_get_client;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->return_text = g_string_new (_("Success"));
@@ -592,8 +574,6 @@ nmc_cleanup (NmCli *nmc)
 int
 main (int argc, char *argv[])
 {
-	ArgsInfo args_info = { &nm_cli, argc, argv };
-
 	/* Set locale to use environment variables */
 	setlocale (LC_ALL, "");
 
