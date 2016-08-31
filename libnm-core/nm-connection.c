@@ -28,7 +28,6 @@
 #include "nm-connection.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-core-internal.h"
 
@@ -916,7 +915,7 @@ _normalize_team_config (NMConnection *self, GHashTable *parameters)
 	if (s_team) {
 		const char *config = nm_setting_team_get_config (s_team);
 
-		if (config && !_nm_utils_check_valid_json (config, NULL)) {
+		if (config && !*config) {
 			g_object_set (s_team, NM_SETTING_TEAM_CONFIG, NULL, NULL);
 			return TRUE;
 		}
@@ -932,7 +931,7 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 	if (s_team_port) {
 		const char *config = nm_setting_team_port_get_config (s_team_port);
 
-		if (config && !_nm_utils_check_valid_json (config, NULL)) {
+		if (config && !*config) {
 			g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, NULL, NULL);
 			return TRUE;
 		}
