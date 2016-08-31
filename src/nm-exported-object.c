@@ -827,9 +827,9 @@ idle_emit_properties_changed (gpointer self)
 		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DBUS_PROPS)) {
 			gs_free char *notification = g_variant_print (variant, TRUE);
 
-			nm_log_dbg (LOGD_DBUS_PROPS, "PropertiesChanged %s, %s, %p: %s",
-			            G_OBJECT_TYPE_NAME (self), G_OBJECT_TYPE_NAME (ifdata->interface),
-			            self, notification);
+			nm_log_dbg (LOGD_DBUS_PROPS, "properties-changed[%p]: type %s, iface %s: %s",
+			            self, G_OBJECT_TYPE_NAME (self), G_OBJECT_TYPE_NAME (ifdata->interface),
+			            notification);
 		}
 
 		g_signal_emit (ifdata->interface, ifdata->property_changed_signal_id, 0, variant);
@@ -866,8 +866,8 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 			break;
 	}
 	if (!dbus_property_name) {
-		nm_log_trace (LOGD_DBUS_PROPS, "ignoring notification for prop %s on type %s",
-		              pspec->name, G_OBJECT_TYPE_NAME (object));
+		nm_log_trace (LOGD_DBUS_PROPS, "properties-changed[%p]: ignoring notification for prop %s on type %s",
+		              object, pspec->name, G_OBJECT_TYPE_NAME (object));
 		return;
 	}
 
