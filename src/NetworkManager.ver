@@ -9,11 +9,7 @@ global:
 	/* The _IO_stdin_used symbol is used by the GNU libc to determine
 	   which version of the I/O function should be used.  Not
 	   exporting it means that the "old" version is used, causing
-	   crashes or other issues on some architectures.  It should be
-	   exported as an anonymous tag, but ld does not support mixing
-	   anonymous version tags with other version tags.  Fortunately
-	   the GNU libc is able to cope with the symbol having the wrong
-	   version tag. */
+	   crashes or other issues on some architectures. */
 	_IO_stdin_used;
 local:
 	*;
