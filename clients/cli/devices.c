@@ -3607,11 +3607,11 @@ finish:
 }
 
 static NMCCommand device_wifi_cmds[] = {
-	{"list",     do_device_wifi_list,            NULL },
-	{"connect",  do_device_wifi_connect_network, NULL },
-	{"hotspot",  do_device_wifi_hotspot,         NULL },
-	{"rescan",   do_device_wifi_rescan,          NULL },
-	{NULL,       do_device_wifi_list,            NULL }
+	{ "list",     do_device_wifi_list,            NULL,             FALSE },
+	{ "connect",  do_device_wifi_connect_network, NULL,             FALSE },
+	{ "hotspot",  do_device_wifi_hotspot,         NULL,             FALSE },
+	{ "rescan",   do_device_wifi_rescan,          NULL,             FALSE },
+	{ NULL,       do_device_wifi_list,            NULL,             FALSE },
 };
 
 static NMCResultCode
@@ -3625,7 +3625,9 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	return nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
+	nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
+
+	return nmc->return_value;
 }
 
 static int
@@ -3780,8 +3782,8 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCCommand device_lldp_cmds[] = {
-	{"list",  do_device_lldp_list,  NULL },
-	{NULL,    do_device_lldp_list,  NULL }
+	{ "list",  do_device_lldp_list,  NULL,             FALSE },
+	{ NULL,    do_device_lldp_list,  NULL,             FALSE },
 };
 
 static NMCResultCode
@@ -3798,7 +3800,9 @@ do_device_lldp (NmCli *nmc, int argc, char **argv)
 	if (!nmc->mode_specified)
 		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 
-	return nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
+	nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
+
+	return nmc->return_value;
 }
 
 static gboolean
@@ -3844,18 +3848,18 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 }
 
 static const NMCCommand device_cmds[] = {
-	{"status",      do_devices_status,      usage_device_status },
-	{"show",        do_device_show,         usage_device_show },
-	{"connect",     do_device_connect,      usage_device_connect },
-	{"reapply",     do_device_reapply,      usage_device_reapply },
-	{"disconnect",  do_devices_disconnect,  usage_device_disconnect },
-	{"delete",      do_devices_delete,      usage_device_delete },
-	{"set",         do_device_set,          usage_device_set },
-	{"monitor",     do_devices_monitor,     usage_device_monitor },
-	{"wifi",        do_device_wifi,         usage_device_wifi },
-	{"lldp",        do_device_lldp,         usage_device_lldp },
-	{"modify",      do_device_modify,       usage_device_modify },
-	{NULL,          do_devices_status,      usage },
+	{ "status",      do_devices_status,      usage_device_status,      FALSE },
+	{ "show",        do_device_show,         usage_device_show,        FALSE },
+	{ "connect",     do_device_connect,      usage_device_connect,     FALSE },
+	{ "reapply",     do_device_reapply,      usage_device_reapply,     FALSE },
+	{ "disconnect",  do_devices_disconnect,  usage_device_disconnect,  FALSE },
+	{ "delete",      do_devices_delete,      usage_device_delete,      FALSE },
+	{ "set",         do_device_set,          usage_device_set,         FALSE },
+	{ "monitor",     do_devices_monitor,     usage_device_monitor,     FALSE },
+	{ "wifi",        do_device_wifi,         usage_device_wifi,        FALSE },
+	{ "lldp",        do_device_lldp,         usage_device_lldp,        FALSE },
+	{ "modify",      do_device_modify,       usage_device_modify,      FALSE },
+	{ NULL,          do_devices_status,      usage,                    FALSE },
 };
 
 NMCResultCode
@@ -3875,7 +3879,9 @@ do_devices (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_NM_NOT_RUNNING;
 	}
 
-	return nmc_do_cmd (nmc, device_cmds, *argv, argc, argv);
+	nmc_do_cmd (nmc, device_cmds, *argv, argc, argv);
+
+	return nmc->return_value;
 }
 
 void

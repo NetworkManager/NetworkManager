@@ -678,11 +678,11 @@ do_general_hostname (NmCli *nmc, int argc, char **argv)
 }
 
 static const NMCCommand general_cmds[] = {
-	{"status",       do_general_status,       usage_general_status },
-	{"hostname",     do_general_hostname,     usage_general_hostname },
-	{"permissions",  do_general_permissions,  usage_general_permissions },
-	{"logging",      do_general_logging,      usage_general_logging },
-	{NULL,           do_general_status,       usage_general }
+	{ "status",       do_general_status,       usage_general_status,       FALSE },
+	{ "hostname",     do_general_hostname,     usage_general_hostname,     FALSE },
+	{ "permissions",  do_general_permissions,  usage_general_permissions,  FALSE },
+	{ "logging",      do_general_logging,      usage_general_logging,      FALSE },
+	{ NULL,           do_general_status,       usage_general,              FALSE },
 };
 
 /*
@@ -694,7 +694,9 @@ do_general (NmCli *nmc, int argc, char **argv)
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	return nmc_do_cmd (nmc, general_cmds, *argv, argc, argv);
+	nmc_do_cmd (nmc, general_cmds, *argv, argc, argv);
+
+	return nmc->return_value;
 }
 
 static gboolean
@@ -916,10 +918,10 @@ do_radio_wwan (NmCli *nmc, int argc, char **argv)
 }
 
 static const NMCCommand radio_cmds[] = {
-	{"all",   do_radio_all,   usage_radio_all },
-	{"wifi",  do_radio_wifi,  usage_radio_wifi },
-	{"wwan",  do_radio_wwan,  usage_radio_wwan },
-	{NULL,    do_radio_all,   usage_radio }
+	{ "all",   do_radio_all,   usage_radio_all,   FALSE },
+	{ "wifi",  do_radio_wifi,  usage_radio_wifi,  FALSE },
+	{ "wwan",  do_radio_wwan,  usage_radio_wwan,  FALSE },
+	{ NULL,    do_radio_all,   usage_radio,       FALSE },
 };
 
 /*
@@ -931,7 +933,9 @@ do_radio (NmCli *nmc, int argc, char **argv)
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	return nmc_do_cmd (nmc, radio_cmds, *argv, argc, argv);
+	nmc_do_cmd (nmc, radio_cmds, *argv, argc, argv);
+
+	return nmc->return_value;
 }
 
 static void

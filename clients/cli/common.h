@@ -80,9 +80,11 @@ typedef struct {
 	const char *cmd;
 	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
 	void (*usage) (void);
+	gboolean needs_client;
+	gboolean needs_nm_running;
 } NMCCommand;
 
-NMCResultCode nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *argv0, int argc, char **argv);
+void nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char **argv);
 
 void nmc_complete_strings (const char *prefix, ...) G_GNUC_NULL_TERMINATED;
 

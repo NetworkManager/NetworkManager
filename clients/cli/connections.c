@@ -8796,20 +8796,20 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 }
 
 static const NMCCommand connection_cmds[] = {
-	{"show",     do_connections_show,      usage_connection_show },
-	{"up",       do_connection_up,         usage_connection_up },
-	{"down",     do_connection_down,       usage_connection_down },
-	{"add",      do_connection_add,        usage_connection_add },
-	{"edit",     do_connection_edit,       usage_connection_edit },
-	{"delete",   do_connection_delete,     usage_connection_delete },
-	{"reload",   do_connection_reload,     usage_connection_reload },
-	{"load",     do_connection_load,       usage_connection_load },
-	{"modify",   do_connection_modify,     usage_connection_modify },
-	{"clone",    do_connection_clone,      usage_connection_clone },
-	{"import",   do_connection_import,     usage_connection_import },
-	{"export",   do_connection_export,     usage_connection_export },
-	{"monitor",  do_connection_monitor,    usage_connection_monitor },
-	{NULL,       do_connections_show,      usage },
+	{ "show",     do_connections_show,      usage_connection_show,     FALSE },
+	{ "up",       do_connection_up,         usage_connection_up,       FALSE },
+	{ "down",     do_connection_down,       usage_connection_down,     FALSE },
+	{ "add",      do_connection_add,        usage_connection_add,      FALSE },
+	{ "edit",     do_connection_edit,       usage_connection_edit,     FALSE },
+	{ "delete",   do_connection_delete,     usage_connection_delete,   FALSE },
+	{ "reload",   do_connection_reload,     usage_connection_reload,   FALSE },
+	{ "load",     do_connection_load,       usage_connection_load,     FALSE },
+	{ "modify",   do_connection_modify,     usage_connection_modify,   FALSE },
+	{ "clone",    do_connection_clone,      usage_connection_clone,    FALSE },
+	{ "import",   do_connection_import,     usage_connection_import,   FALSE },
+	{ "export",   do_connection_export,     usage_connection_export,   FALSE },
+	{ "monitor",  do_connection_monitor,    usage_connection_monitor,  FALSE },
+	{ NULL,       do_connections_show,      usage,                     FALSE },
 };
 
 /* Entry point function for connections-related commands: 'nmcli connection' */
@@ -8834,7 +8834,9 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		return nmc->return_value;
 	}
 
-	return nmc_do_cmd (nmc, connection_cmds, *argv, argc, argv);
+	nmc_do_cmd (nmc, connection_cmds, *argv, argc, argv);
+
+	return nmc->return_value;
 }
 
 void
