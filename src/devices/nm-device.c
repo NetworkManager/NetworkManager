@@ -6707,7 +6707,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	NMConnection *connection;
 	const char *method;
 	NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-	const char *ip6_privacy_str = "0\n";
+	const char *ip6_privacy_str = "0";
 	GSList *slaves;
 	gboolean ready_slaves;
 
@@ -6803,19 +6803,22 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	/* Other methods (shared) aren't implemented yet */
 
-	switch (ip6_privacy) {
-	case NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN:
-	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
-		ip6_privacy_str = "0";
-	break;
-	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
-		ip6_privacy_str = "1";
-	break;
-	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
-		ip6_privacy_str = "2";
-	break;
+	if (   ret != NM_ACT_STAGE_RETURN_FAILURE
+	    && !nm_device_uses_assumed_connection (self)) {
+		switch (ip6_privacy) {
+		case NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN:
+		case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
+			ip6_privacy_str = "0";
+			break;
+		case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
+			ip6_privacy_str = "1";
+			break;
+		case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
+			ip6_privacy_str = "2";
+			break;
+		}
+		nm_device_ipv6_sysctl_set (self, "use_tempaddr", ip6_privacy_str);
 	}
-	nm_device_ipv6_sysctl_set (self, "use_tempaddr", ip6_privacy_str);
 
 	return ret;
 }
