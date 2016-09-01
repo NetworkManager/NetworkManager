@@ -845,7 +845,7 @@ static void
 nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 {
 	NMExportedObject *self = (NMExportedObject *) object;
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (object);
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 	NMExportedObjectClassInfo *classinfo;
 	GType type;
 	const char *dbus_property_name = NULL;
@@ -862,7 +862,7 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	if (priv->num_interfaces == 0)
 		return;
 
-	for (type = G_OBJECT_TYPE (object); type; type = g_type_parent (type)) {
+	for (type = G_OBJECT_TYPE (self); type; type = g_type_parent (type)) {
 		classinfo = g_type_get_qdata (type, nm_exported_object_class_info_quark ());
 		if (!classinfo)
 			continue;
@@ -873,7 +873,7 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	}
 	if (!dbus_property_name) {
 		nm_log_trace (LOGD_DBUS_PROPS, "properties-changed[%p]: ignoring notification for prop %s on type %s",
-		              object, pspec->name, G_OBJECT_TYPE_NAME (object));
+		              self, pspec->name, G_OBJECT_TYPE_NAME (self));
 		return;
 	}
 
@@ -893,7 +893,7 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 
 vtype_found:
 	g_value_init (&value, pspec->value_type);
-	g_object_get_property (G_OBJECT (object), pspec->name, &value);
+	g_object_get_property ((GObject *) self, pspec->name, &value);
 	value_variant = g_dbus_gvalue_to_gvariant (&value, vtype);
 	g_value_unset (&value);
 
@@ -942,7 +942,7 @@ vtype_found:
 		nm_assert_not_reached ();
 
 	if (!priv->notify_idle_id)
-		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, object);
+		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, self);
 }
 
 /*****************************************************************************/
