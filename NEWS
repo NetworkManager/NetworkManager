@@ -7,6 +7,11 @@ This is a new stable release of NetworkManager.  Notable changes include:
 
 * Fix emission of NM-style PropertiesChanged signals and deprecate them
     for PropertiesChanged on "org.freedesktop.DBus.Properties" interface.
+* Change the meaning of unset "cloned-mac-address" settings from "permanent" to
+    "preserve". This changes the default value and affects existing connections
+    during upgrade that did not explicitly configure cloned-mac-address. This
+    has the effect that externally configured MAC addresses are preserved
+    by default instead of setting the permanent address (bgo#770611).
 
 ============================================
 NetworkManager-1.4

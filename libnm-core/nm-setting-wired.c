@@ -1095,8 +1095,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:cloned-mac-address:
 	 *
-	 * If specified, request that the device use this MAC address instead of its
-	 * permanent MAC address.  This is known as MAC cloning or spoofing.
+	 * If specified, request that the device use this MAC address instead.
+	 * This is known as MAC cloning or spoofing.
 	 *
 	 * Beside explicitly specifing a MAC address, the special values "preserve", "permanent",
 	 * "random" and "stable" are supported.
@@ -1107,7 +1107,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 * the connection's UUID) and a machine dependent key.
 	 *
 	 * If unspecified, the value can be overwritten via global defaults, see manual
-	 * of NetworkManager.conf. If still unspecified, it defaults to "permanent".
+	 * of NetworkManager.conf. If still unspecified, it defaults to "preserve"
+	 * (older versions of NetworkManager may use a different default value).
 	 *
 	 * On D-Bus, this field is expressed as "assigned-mac-address" or the deprecated
 	 * "cloned-mac-address".

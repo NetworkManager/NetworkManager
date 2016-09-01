@@ -571,7 +571,7 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ethernet.cloned-mac-address</varname></term>
-          <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
+          <listitem><para>If left unspecified, it defaults to "preserve".</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ethernet.generate-mac-address-mask</varname></term>
@@ -605,7 +605,7 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>wifi.cloned-mac-address</varname></term>
-          <listitem><para>If left unspecified, it defaults to "permanent".</para></listitem>
+          <listitem><para>If left unspecified, it defaults to "preserve".</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>wifi.generate-mac-address-mask</varname></term>
