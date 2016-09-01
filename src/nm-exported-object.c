@@ -75,9 +75,18 @@ G_DEFINE_QUARK (NMExportedObjectClassInfo, nm_exported_object_class_info)
 #define _NMLOG_DOMAIN                     LOGD_CORE
 
 #define _NMLOG(level, ...) \
-    nm_log (level, _NMLOG_DOMAIN, \
+    nm_log ((level), _NMLOG_DOMAIN, \
             "%s[%p]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
             _NMLOG_PREFIX_NAME, (self) \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+#define _NMLOG2_PREFIX_NAME               "properties-changed"
+#define _NMLOG2_DOMAIN                    LOGD_DBUS_PROPS
+
+#define _NMLOG2(level, ...) \
+    nm_log ((level), _NMLOG2_DOMAIN, \
+            "%s[%p]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG2_PREFIX_NAME, (self) \
             _NM_UTILS_MACRO_REST (__VA_ARGS__))
 
 /*****************************************************************************/
@@ -825,12 +834,12 @@ idle_emit_properties_changed (gpointer self)
 		variant = g_variant_ref_sink (g_variant_builder_end (&notifies));
 
 
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DBUS_PROPS)) {
+		if (_LOG2D_ENABLED ()) {
 			gs_free char *notification = g_variant_print (variant, TRUE);
 
-			nm_log_dbg (LOGD_DBUS_PROPS, "properties-changed[%p]: type %s, iface %s: %s",
-			            self, G_OBJECT_TYPE_NAME (self), G_OBJECT_TYPE_NAME (ifdata->interface),
-			            notification);
+			_LOG2D ("type %s, iface %s: %s",
+			        G_OBJECT_TYPE_NAME (self), G_OBJECT_TYPE_NAME (ifdata->interface),
+			        notification);
 		}
 
 		g_signal_emit (ifdata->interface, ifdata->property_changed_signal_id, 0, variant);
@@ -872,8 +881,8 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 			break;
 	}
 	if (!dbus_property_name) {
-		nm_log_trace (LOGD_DBUS_PROPS, "properties-changed[%p]: ignoring notification for prop %s on type %s",
-		              self, pspec->name, G_OBJECT_TYPE_NAME (self));
+		_LOG2T ("ignoring notification for prop %s on type %s",
+		        pspec->name, G_OBJECT_TYPE_NAME (self));
 		return;
 	}
 
