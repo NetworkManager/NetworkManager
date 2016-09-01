@@ -21,11 +21,12 @@
         (0x04) means to restart the DNS plugin. This is for example useful when using
         dnsmasq plugin, which uses additional configuration in /etc/NetworkManager/dnsmasq.d.
         If you edit those files, you can restart the DNS plugin. This action shortly interrupts
-        rename resolution.
+        name resolution.
         Note that flags may affect each other. For example, restarting the DNS plugin (0x04)
         implicitly updates DNS too (0x02). Or when reloading the configuration (0x01), changes
         to DNS setting also cause a DNS update (0x02). However, (0x01) does not involve restarting
-        the DNS plugin (0x02), unless an entirely different plugin is selected.
+        the DNS plugin (0x04) or update resolv.conf (0x02), unless the DNS related configuration
+        changes in NetworkManager.conf.
     -->
     <method name="Reload">
       <arg name="flags" type="u" direction="in"/>
