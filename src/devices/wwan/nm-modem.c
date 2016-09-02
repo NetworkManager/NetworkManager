@@ -1412,9 +1412,11 @@ set_property (GObject *object, guint prop_id,
 		priv->driver = g_value_dup_string (value);
 		break;
 	case PROP_CONTROL_PORT:
+		/* Construct only */
 		priv->control_port = g_value_dup_string (value);
 		break;
 	case PROP_DATA_PORT:
+		g_free (priv->data_port);
 		priv->data_port = g_value_dup_string (value);
 		break;
 	case PROP_UID:

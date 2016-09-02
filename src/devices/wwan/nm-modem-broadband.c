@@ -861,7 +861,7 @@ static gboolean
 static_stage3_ip4_done (NMModemBroadband *self)
 {
 	GError *error = NULL;
-	NMIP4Config *config = NULL;
+	gs_unref_object NMIP4Config *config = NULL;
 	const char *data_port;
 	const gchar *address_string;
 	const gchar *gw_string;
