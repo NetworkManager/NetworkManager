@@ -302,6 +302,22 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
+#define nm_str_not_empty(str) \
+	({ \
+		/* implemented as macro to preserve constness */ \
+		typeof (str) __str = (str); \
+		_nm_unused const char *__str_type_check = __str; \
+		((__str && __str[0]) ? __str : ((char *) NULL)); \
+	})
+
+static inline char *
+nm_strdup_not_empty (const char *str)
+{
+	return str && str[0] ? g_strdup (str) : NULL;
+}
+
+/*****************************************************************************/
+
 #define NM_PRINT_FMT_QUOTED(cond, prefix, str, suffix, str_else) \
 	(cond) ? (prefix) : "", \
 	(cond) ? (str) : (str_else), \
