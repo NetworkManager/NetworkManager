@@ -527,6 +527,8 @@ gboolean nm_config_get_configure_and_quit (gpointer unused);
 gconstpointer nm_bus_manager_get (void);
 void nm_bus_manager_register_object (gpointer unused, gpointer object);
 void nm_bus_manager_unregister_object (gpointer unused, gpointer object);
+GType nm_device_get_type (void);
+GType nm_active_connection_get_type (void);
 
 gconstpointer
 nm_config_get (void)
@@ -560,5 +562,17 @@ nm_bus_manager_register_object (gpointer unused, gpointer object)
 void
 nm_bus_manager_unregister_object (gpointer unused, gpointer object)
 {
+}
+
+GType
+nm_device_get_type (void)
+{
+	g_return_val_if_reached (0);
+}
+
+GType
+nm_active_connection_get_type (void)
+{
+	g_return_val_if_reached (0);
 }
 

@@ -27,7 +27,7 @@
         PropertiesChanged:
         @properties: A dictionary containing the FIXME: check changed parameters.
 
-        Emitted when the wireless device's properties changed.
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
     -->
     <signal name="PropertiesChanged">
       <arg name="properties" type="a{sv}"/>
