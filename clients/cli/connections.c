@@ -6358,6 +6358,7 @@ progress_activation_editor_cb (gpointer user_data)
 	return TRUE;
 
 finish:
+	info->monitor_id = 0;
 	if (device)
 		g_object_unref (device);
 	if (ac)
