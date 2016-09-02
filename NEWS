@@ -1,3 +1,13 @@
+==============================================
+NetworkManager-1.4.2
+Overview of changes since NetworkManager-1.4.0
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix emission of NM-style PropertiesChanged signals and deprecate them
+    for PropertiesChanged on "org.freedesktop.DBus.Properties" interface.
+
 ============================================
 NetworkManager-1.4
 Overview of changes since NetworkManager-1.2
