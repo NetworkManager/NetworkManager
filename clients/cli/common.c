@@ -33,6 +33,8 @@
 #include "common.h"
 #include "utils.h"
 
+extern GMainLoop *loop;
+
 /* Available fields for IPv4 group */
 NmcOutputField nmc_fields_ip4_config[] = {
 	{"GROUP",      N_("GROUP")},    /* 0 */
@@ -1159,6 +1161,11 @@ nmc_unique_connection_name (const GPtrArray *connections, const char *try_name)
 	return new_name;
 }
 
+/* readline state variables */
+static gboolean nmcli_in_readline = FALSE;
+static gboolean rl_got_line;
+static char *rl_string;
+
 /**
  * nmc_cleanup_readline:
  *
@@ -1172,88 +1179,94 @@ nmc_cleanup_readline (void)
 	rl_cleanup_after_signal ();
 }
 
-
-static gboolean nmcli_in_readline = FALSE;
-static pthread_mutex_t readline_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 gboolean
 nmc_get_in_readline (void)
 {
-	gboolean in_readline;
-
-	pthread_mutex_lock (&readline_mutex);
-	in_readline = nmcli_in_readline;
-	pthread_mutex_unlock (&readline_mutex);
-	return in_readline;
+	return nmcli_in_readline;
 }
 
 void
 nmc_set_in_readline (gboolean in_readline)
 {
-	pthread_mutex_lock (&readline_mutex);
 	nmcli_in_readline = in_readline;
-	pthread_mutex_unlock (&readline_mutex);
+}
+
+static void
+readline_cb (char *line)
+{
+	rl_got_line = TRUE;
+	rl_string = line;
+	rl_callback_handler_remove ();
+}
+
+static gboolean
+stdin_ready_cb (GIOChannel * io, GIOCondition condition, gpointer data)
+{
+	rl_callback_read_char ();
+	return TRUE;
 }
 
 static char *
 nmc_readline_helper (const char *prompt)
 {
-	char *str;
-	int b;
+	GIOChannel *io = NULL;
+	guint io_watch_id;
 
-readline_mark:
-	/* We are in readline -> Ctrl-C should not quit nmcli */
 	nmc_set_in_readline (TRUE);
-	str = readline (prompt);
-	/* We are outside readline -> Ctrl-C should quit nmcli */
-	nmc_set_in_readline (FALSE);
 
-	/* Check for an I/O error by attempting to peek into the input buffer.
-	 * Readline just inserts newlines when errors occur so we need to check ourselves. */
-	if (ioctl (0, FIONREAD, &b) == -1) {
-		g_free (str);
-		str = NULL;
+	io = g_io_channel_unix_new (STDIN_FILENO);
+	io_watch_id = g_io_add_watch (io, G_IO_IN, stdin_ready_cb, NULL);
+	g_io_channel_unref (io);
+
+read_again:
+	rl_string = NULL;
+	rl_got_line = FALSE;
+	rl_callback_handler_install (prompt, readline_cb);
+
+	while (   !rl_got_line
+	       && g_main_loop_is_running (loop)
+	       && !nmc_seen_sigint ())
+		g_main_context_iteration (NULL, TRUE);
+
+	/* If Ctrl-C was detected, complete the line */
+	if (nmc_seen_sigint ()) {
+		rl_echo_signal_char (SIGINT);
+		rl_stuff_char ('\n');
+		rl_callback_read_char ();
 	}
 
 	/* Add string to the history */
-	if (str && *str)
-		add_history (str);
+	if (rl_string && *rl_string)
+		add_history (rl_string);
 
-	/*-- React on Ctrl-C and Ctrl-D --*/
-	/* We quit on Ctrl-D when line is empty */
-	if (str == NULL) {
-		/* Send SIGQUIT to itself */
-		nmc_set_sigquit_internal ();
-		kill (getpid (), SIGQUIT);
-		/* Sleep in this thread so that we don't do anything else until exit */
-		for (;;)
-			sleep (3);
-	}
-	/* Ctrl-C */
 	if (nmc_seen_sigint ()) {
+		/* Ctrl-C */
 		nmc_clear_sigint ();
-		if (nm_cli.in_editor || *str) {
+		if (   nm_cli.in_editor
+		    || (rl_string  && *rl_string)) {
 			/* In editor, or the line is not empty */
 			/* Call readline again to get new prompt (repeat) */
-			g_free (str);
-			goto readline_mark;
+			g_free (rl_string);
+			goto read_again;
 		} else {
-			/* Not in editor and line is empty */
-			/* Send SIGQUIT to itself */
-			nmc_set_sigquit_internal ();
-			kill (getpid (), SIGQUIT);
-			/* Sleep in this thread so that we don't do anything else until exit */
-			for (;;)
-				sleep (3);
+			/* Not in editor and line is empty, exit */
+			nmc_exit ();
 		}
+	} else if (!rl_string) {
+		/* Ctrl-D, exit */
+		nmc_exit ();
 	}
 
 	/* Return NULL, not empty string */
-	if (str && *str == '\0') {
-		g_free (str);
-		str = NULL;
+	if (rl_string && *rl_string == '\0') {
+		g_free (rl_string);
+		rl_string = NULL;
 	}
-	return str;
+
+	g_source_remove (io_watch_id);
+	nmc_set_in_readline (FALSE);
+
+	return rl_string;
 }
 
 /**

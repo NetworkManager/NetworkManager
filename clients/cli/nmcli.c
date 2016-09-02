@@ -25,10 +25,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <pthread.h>
 #include <termios.h>
 #include <unistd.h>
 #include <locale.h>
+#include <glib-unix.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -61,7 +61,6 @@ typedef struct {
 
 /* --- Global variables --- */
 GMainLoop *loop = NULL;
-static sigset_t signal_set;
 struct termios termios_orig;
 
 static void
@@ -385,124 +384,50 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 }
 
 static gboolean nmcli_sigint = FALSE;
-static pthread_mutex_t sigint_mutex = PTHREAD_MUTEX_INITIALIZER;
-static gboolean nmcli_sigquit_internal = FALSE;
 
 gboolean
 nmc_seen_sigint (void)
 {
-	gboolean sigint;
-
-	pthread_mutex_lock (&sigint_mutex);
-	sigint = nmcli_sigint;
-	pthread_mutex_unlock (&sigint_mutex);
-	return sigint;
+	return nmcli_sigint;
 }
 
 void
 nmc_clear_sigint (void)
 {
-	pthread_mutex_lock (&sigint_mutex);
 	nmcli_sigint = FALSE;
-	pthread_mutex_unlock (&sigint_mutex);
 }
 
-void
-nmc_set_sigquit_internal (void)
+void nmc_exit (void)
 {
-	nmcli_sigquit_internal = TRUE;
+	tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
+	nmc_cleanup_readline ();
+	exit (1);
 }
 
-static int
-event_hook_for_readline (void)
-{
-	/* Make readline() exit on SIGINT */
-	if (nmc_seen_sigint ()) {
-		rl_echo_signal_char (SIGINT);
-		rl_stuff_char ('\n');
-	}
-	return 0;
-}
-
-void *signal_handling_thread (void *arg);
-/*
- * Thread function waiting for signals and processing them.
- * Wait for signals in signal set. The semantics of sigwait() require that all
- * threads (including the thread calling sigwait()) have the signal masked, for
- * reliable operation. Otherwise, a signal that arrives while this thread is
- * not blocked in sigwait() might be delivered to another thread.
- */
-void *
-signal_handling_thread (void *arg) {
-	int signo;
-
-	while (1) {
-		sigwait (&signal_set, &signo);
-
-		switch (signo) {
-		case SIGINT:
-			if (nmc_get_in_readline ()) {
-				/* Don't quit when in readline, only signal we received SIGINT */
-				pthread_mutex_lock (&sigint_mutex);
-				nmcli_sigint = TRUE;
-				pthread_mutex_unlock (&sigint_mutex);
-			} else {
-				/* We can quit nmcli */
-				tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
-				nmc_cleanup_readline ();
-				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
-				         strsignal (signo), signo);
-				exit (1);
-			}
-			break;
-		case SIGQUIT:
-		case SIGTERM:
-			tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
-			nmc_cleanup_readline ();
-			if (!nmcli_sigquit_internal)
-				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
-				         strsignal (signo), signo);
-			exit (1);
-			break;
-		default:
-			break;
-		}
-	}
-	return NULL;
-}
-
-/*
- * Mask the signals we are interested in and create a signal handling thread.
- * Because all threads inherit the signal mask from their creator, all threads
- * in the process will have the signals masked. That's why setup_signals() has
- * to be called before creating other threads.
- */
 static gboolean
-setup_signals (void)
+signal_handler (gpointer user_data)
 {
-	pthread_t signal_thread_id;
-	int status;
+	int signo = GPOINTER_TO_INT (user_data);
 
-	sigemptyset (&signal_set);
-	sigaddset (&signal_set, SIGINT);
-	sigaddset (&signal_set, SIGQUIT);
-	sigaddset (&signal_set, SIGTERM);
-
-	/* Block all signals of interest. */
-	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
-	if (status != 0) {
-		g_printerr (_("Failed to set signal mask: %d\n"), status);
-		return FALSE;
+	switch (signo) {
+	case SIGINT:
+		if (nmc_get_in_readline ()) {
+			nmcli_sigint = TRUE;
+		} else {
+			g_print (_("Error: nmcli terminated by signal %s (%d)\n"),
+			         strsignal (signo),
+			         signo);
+			g_main_loop_quit (loop);
+		}
+		break;
+	case SIGTERM:
+		g_print (_("Error: nmcli terminated by signal %s (%d)\n"),
+		         strsignal (signo), signo);
+		nmc_exit ();
+		break;
 	}
 
-	/* Create the signal handling thread. */
-	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);
-	if (status != 0) {
-		g_printerr (_("Failed to create signal handling thread: %d\n"), status);
-		return FALSE;
-	}
-
-	return TRUE;
+	return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -682,10 +607,6 @@ main (int argc, char *argv[])
 {
 	ArgsInfo args_info = { &nm_cli, argc, argv };
 
-	/* Set up unix signal handling */
-	if (!setup_signals ())
-		exit (NMC_RESULT_ERROR_UNKNOWN);
-
 	/* Set locale to use environment variables */
 	setlocale (LC_ALL, "");
 
@@ -701,12 +622,8 @@ main (int argc, char *argv[])
 	/* Save terminal settings */
 	tcgetattr (STDIN_FILENO, &termios_orig);
 
-	/* readline init */
-	rl_event_hook = event_hook_for_readline;
-	/* Set 0.01s timeout to mitigate slowness in readline when a broken version is used.
-	 * See https://bugzilla.redhat.com/show_bug.cgi?id=1109946
-	 */
-	rl_set_keyboard_input_timeout (10000);
+	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
+	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
 
 	nmc_value_transforms_register ();
 
