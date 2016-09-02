@@ -3425,7 +3425,22 @@ _nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
 	              "cloned-mac-address",
 	              &addr,
 	              NULL);
-	return addr ? g_variant_new_string (addr) : NULL;
+
+	/* Before introducing the extended "cloned-mac-address" (and its D-Bus
+	 * field "assigned-mac-address"), libnm's _nm_utils_hwaddr_to_dbus()
+	 * would drop invalid values as it was unable to serialize them.
+	 *
+	 * Now, we would like to send invalid values as "assigned-mac-address"
+	 * over D-Bus and let the server reject them.
+	 *
+	 * However, clients used to set the cloned-mac-address property
+	 * to "" and it just worked as the value was not serialized in
+	 * an ill form.
+	 *
+	 * To preserve that behavior, seralize "" as NULL.
+	 */
+
+	return addr && addr[0] ? g_variant_new_string (addr) : NULL;
 }
 
 gboolean
@@ -3443,7 +3458,7 @@ _nm_utils_hwaddr_cloned_data_set (NMSetting *setting,
 
 	g_object_set (setting,
 	              "cloned-mac-address",
-	              g_variant_get_string (value, NULL),
+	              nm_str_not_empty (g_variant_get_string (value, NULL)),
 	              NULL);
 	return TRUE;
 }
