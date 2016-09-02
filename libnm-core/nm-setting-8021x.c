@@ -2915,15 +2915,6 @@ set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error
 	return bytes;
 }
 
-static char *
-_g_value_dup_string_not_empty (const GValue *value)
-{
-	const gchar *str;
-
-	str = g_value_get_string (value);
-	return str && str[0] ? g_strdup (str) : NULL;
-}
-
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -2964,7 +2955,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SUBJECT_MATCH:
 		g_free (priv->subject_match);
-		priv->subject_match = _g_value_dup_string_not_empty (value);
+		priv->subject_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->altsubject_matches, g_free);
@@ -2972,7 +2963,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DOMAIN_SUFFIX_MATCH:
 		g_free (priv->domain_suffix_match);
-		priv->domain_suffix_match = _g_value_dup_string_not_empty (value);
+		priv->domain_suffix_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_CLIENT_CERT:
 		if (priv->client_cert)
@@ -3018,7 +3009,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_SUBJECT_MATCH:
 		g_free (priv->phase2_subject_match);
-		priv->phase2_subject_match = _g_value_dup_string_not_empty (value);
+		priv->phase2_subject_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->phase2_altsubject_matches, g_free);
@@ -3026,7 +3017,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
 		g_free (priv->phase2_domain_suffix_match);
-		priv->phase2_domain_suffix_match = _g_value_dup_string_not_empty (value);
+		priv->phase2_domain_suffix_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		if (priv->phase2_client_cert)
