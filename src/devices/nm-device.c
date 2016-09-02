@@ -4044,7 +4044,7 @@ activate_stage2_device_config (NMDevice *self)
 			nm_device_queue_recheck_assume (info->slave);
 	}
 
-	if (lldp_rx_enabled (self)) {
+	if (lldp_rx_enabled (self) && priv->ifindex > 0) {
 		gs_free_error GError *error = NULL;
 		gconstpointer addr;
 		size_t addr_length;
