@@ -6385,7 +6385,7 @@ activate_connection_editor_cb (GObject *client,
 			device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
 		}
 		if (device) {
-			monitor_ac_info = g_malloc0 (sizeof (AddConnectionInfo));
+			monitor_ac_info = g_malloc0 (sizeof (MonitorACInfo));
 			monitor_ac_info->device = g_object_ref (device);
 			monitor_ac_info->ac = active;
 			monitor_ac_info->monitor_id = g_timeout_add (120, progress_activation_editor_cb, monitor_ac_info);
