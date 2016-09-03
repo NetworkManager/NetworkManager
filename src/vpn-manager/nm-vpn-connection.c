@@ -356,7 +356,11 @@ _get_applied_connection (NMVpnConnection *connection)
 static void
 disconnect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-	g_dbus_proxy_call_finish (proxy, result, NULL);
+	GVariant *variant;
+
+	variant = g_dbus_proxy_call_finish (proxy, result, NULL);
+	if (variant)
+		g_variant_unref (variant);
 	g_object_unref (user_data);
 }
 
