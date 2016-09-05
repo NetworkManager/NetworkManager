@@ -105,7 +105,7 @@ build_signal_parameters (void)
 		g_free (name);
 	}
 
-	return g_variant_new ("(a{sv})", &builder);
+	return g_variant_ref_sink (g_variant_new ("(a{sv})", &builder));
 }
 
 static void
@@ -128,7 +128,11 @@ main (int argc, char *argv[])
 {
 	gs_unref_object GDBusConnection *connection = NULL;
 	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *parameters = NULL;
+	gs_unref_variant GVariant *result = NULL;
 	gboolean success = FALSE;
+	guint try_count = 0;
+	gint64 time_end;
 
 	nm_g_type_init ();
 
@@ -142,25 +146,73 @@ main (int argc, char *argv[])
 		goto out;
 	}
 
-	if (!g_dbus_connection_emit_signal (connection,
-	                                    NULL,
-	                                    "/",
-	                                    NM_DHCP_CLIENT_DBUS_IFACE,
-	                                    "Event",
-	                                    build_signal_parameters (),
-	                                    &error)) {
-		g_dbus_error_strip_remote_error (error);
-		_LOGE ("could not send DHCP Event signal: %s", error->message);
-		goto out;
-	}
+	parameters = build_signal_parameters ();
+
+	time_end = g_get_monotonic_time () + (200 * 1000L); /* retry for at most 200 milliseconds */
+
+do_notify:
+	try_count++;
+	result = g_dbus_connection_call_sync (connection,
+	                                      NULL,
+	                                      NM_DHCP_HELPER_SERVER_OBJECT_PATH,
+	                                      NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
+	                                      NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
+	                                      parameters,
+	                                      NULL,
+	                                      G_DBUS_CALL_FLAGS_NONE,
+	                                      1000,
+	                                      NULL,
+	                                      &error);
+
+	if (!result) {
+		gs_free char *s_err = NULL;
+
+		s_err = g_dbus_error_get_remote_error (error);
+		if (NM_IN_STRSET (s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
+			gint64 remaining_time = time_end - g_get_monotonic_time ();
+
+			/* I am not sure that a race can actually happen, as we register the object
+			 * on the server side during GDBusServer:new-connection signal.
+			 *
+			 * However, there was also a race for subscribing to an event, so let's just
+			 * do some retry. */
+			if (remaining_time > 0) {
+				_LOGi ("failure to call notify: %s (retry %u)", error->message, try_count);
+				g_usleep (NM_MIN (NM_CLAMP ((gint64) (100L * (1L << try_count)), 5000, 25000), remaining_time));
+				g_clear_error (&error);
+				goto do_notify;
+			}
+		}
+		_LOGW ("failure to call notify: %s (try signal via Event)", error->message);
+		g_clear_error (&error);
+
+		/* for backward compatibilty, try to emit the signal. There is no stable
+		 * API between the dhcp-helper and NetworkManager. However, while upgrading
+		 * the NetworkManager package, a newer helper might want to notify an
+		 * older server, which still uses the "Event". */
+		if (!g_dbus_connection_emit_signal (connection,
+		                                    NULL,
+		                                    "/",
+		                                    NM_DHCP_CLIENT_DBUS_IFACE,
+		                                    "Event",
+		                                    parameters,
+		                                    &error)) {
+			g_dbus_error_strip_remote_error (error);
+			_LOGE ("could not send DHCP Event signal: %s", error->message);
+			goto out;
+		}
+		/* We were able to send the asynchronous Event. Consider that a success. */
+		success = TRUE;
+	} else
+		success = TRUE;
 
 	if (!g_dbus_connection_flush_sync (connection, NULL, &error)) {
 		g_dbus_error_strip_remote_error (error);
 		_LOGE ("could not flush D-Bus connection: %s", error->message);
+		success = FALSE;
 		goto out;
 	}
 
-	success = TRUE;
 out:
 	if (!success)
 		kill_pid ();
