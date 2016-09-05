@@ -28,8 +28,6 @@
 
 typedef struct {
 	NMProxyConfigMethod method;
-	char **proxies;
-	char **excludes;
 	gboolean browser_only;
 	char *pac_url;
 	char *pac_script;
@@ -61,12 +59,6 @@ G_DEFINE_TYPE (NMProxyConfig, nm_proxy_config, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static char **
-_strdupv_nonempty (const char *const* strv)
-{
-	return (!strv || !strv[0]) ? NULL : g_strdupv ((char **) strv);
-}
-
 NMProxyConfig *
 nm_proxy_config_new (void)
 {
@@ -93,10 +85,8 @@ void
 nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting)
 {
 	const char *tmp = NULL;
-	guint32 port = 0;
 	NMProxyConfigPrivate *priv;
 	NMSettingProxyMethod method;
-	GPtrArray *proxies;
 
 	if (!setting)
 		return;
@@ -105,8 +95,6 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting)
 
 	priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
-	g_clear_pointer (&priv->proxies, g_strfreev);
-	g_clear_pointer (&priv->excludes, g_strfreev);
 	g_clear_pointer (&priv->pac_script, g_free);
 
 	method = nm_setting_proxy_get_method (setting);
@@ -127,71 +115,12 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting)
 		priv->pac_script = g_strdup (tmp);
 
 		break;
-	case NM_SETTING_PROXY_METHOD_MANUAL:
-		priv->method = NM_PROXY_CONFIG_METHOD_MANUAL;
-
-		priv->excludes = _strdupv_nonempty (nm_setting_proxy_get_no_proxy_for (setting));
-
-
-		tmp = nm_setting_proxy_get_http_proxy (setting);
-		port = nm_setting_proxy_get_http_port (setting);
-
-		/* If HTTP Proxy has been selected for all Protocols
-		 * set up a generic proxy in PacRunner i.e without a
-		 * protocol prefix.
-		 */
-		proxies = g_ptr_array_new ();
-		if (nm_setting_proxy_get_http_default (setting)) {
-			if (tmp && port)
-				g_ptr_array_add (proxies, g_strdup_printf ("%s:%u/", tmp, port));
-		} else {
-			if (tmp && port)
-				g_ptr_array_add (proxies, g_strdup_printf ("http://%s:%u/", tmp, port));
-
-			tmp = nm_setting_proxy_get_ssl_proxy (setting);
-			port = nm_setting_proxy_get_ssl_port (setting);
-			if (tmp && port)
-				g_ptr_array_add (proxies, g_strdup_printf ("https://%s:%u/", tmp, port));
-
-			tmp = nm_setting_proxy_get_ftp_proxy (setting);
-			port = nm_setting_proxy_get_ftp_port (setting);
-			if (tmp && port)
-				g_ptr_array_add (proxies, g_strdup_printf ("ftp://%s:%u/", tmp, port));
-
-			tmp = nm_setting_proxy_get_socks_proxy (setting);
-			port = nm_setting_proxy_get_socks_port (setting);
-			if (tmp && port) {
-				g_ptr_array_add (proxies, g_strdup_printf (nm_setting_proxy_get_socks_version_5 (setting) ?
-				                                           "socks5://%s:%u/" : "socks4://%s:%u/", tmp, port));
-			}
-		}
-
-		priv->proxies = (char **) g_ptr_array_free (proxies, proxies->len == 0);
-		break;
 	case NM_SETTING_PROXY_METHOD_NONE:
 		priv->method = NM_PROXY_CONFIG_METHOD_NONE;
 		break;
 	}
 
 	priv->browser_only = nm_setting_proxy_get_browser_only (setting);
-}
-
-const char *const*
-nm_proxy_config_get_proxies (const NMProxyConfig *config)
-{
-	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
-
-	/* don't return NULL */
-	return priv->proxies ? ((const char *const*) priv->proxies) : ((const char *const*) &priv->proxies);
-}
-
-const char *const*
-nm_proxy_config_get_excludes (const NMProxyConfig *config)
-{
-	const NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
-
-	/* don't return NULL */
-	return priv->excludes ? ((const char *const*) priv->excludes) : ((const char *const*) &priv->excludes);
 }
 
 gboolean
@@ -250,8 +179,6 @@ finalize (GObject *object)
 	NMProxyConfig *self = NM_PROXY_CONFIG (object);
 	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (self);
 
-	g_strfreev (priv->proxies);
-	g_strfreev (priv->excludes);
 	g_free (priv->pac_url);
 	g_free (priv->pac_script);
 

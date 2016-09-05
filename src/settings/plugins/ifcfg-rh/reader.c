@@ -913,8 +913,6 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 
 	if (!g_ascii_strcasecmp (value, "auto"))
 		method = NM_SETTING_PROXY_METHOD_AUTO;
-	else if (!g_ascii_strcasecmp (value, "manual"))
-		method = NM_SETTING_PROXY_METHOD_MANUAL;
 	else
 		method = NM_SETTING_PROXY_METHOD_NONE;
 	g_free (value);
@@ -939,118 +937,6 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 			value = g_strstrip (value);
 			g_object_set (s_proxy, NM_SETTING_PROXY_PAC_SCRIPT, value, NULL);
 			g_free (value);
-		}
-
-		break;
-	case NM_SETTING_PROXY_METHOD_MANUAL:
-		g_object_set (s_proxy,
-		              NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_MANUAL,
-		              NULL);
-
-		value = svGetValue (ifcfg, "NO_PROXY_FOR", FALSE);
-		if (value) {
-			char **excludes = NULL;
-
-			excludes = g_strsplit (value, " ", 0);
-			if (excludes)
-				g_object_set (s_proxy,
-				              NM_SETTING_PROXY_NO_PROXY_FOR, excludes,
-				              NULL);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "HTTP_PROXY", FALSE);
-		if (value) {
-			value = g_strstrip (value);
-			g_object_set (s_proxy, NM_SETTING_PROXY_HTTP_PROXY, value, NULL);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "HTTP_PORT", FALSE);
-		if (value) {
-			int port;
-
-			port = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
-			if (port > 0)
-				g_object_set (s_proxy, NM_SETTING_PROXY_HTTP_PORT, (guint) port, NULL);
-			else
-				PARSE_WARNING ("invalid PORT '%s'", value);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "HTTP_DEFAULT", FALSE);
-		if (value) {
-			if (!g_ascii_strcasecmp (value, "yes")) {
-				g_object_set (s_proxy, NM_SETTING_PROXY_HTTP_DEFAULT, TRUE, NULL);
-				g_free (value);
-				break;
-			}
-		}
-
-		value = svGetValue (ifcfg, "SSL_PROXY", FALSE);
-		if (value) {
-			value = g_strstrip (value);
-			g_object_set (s_proxy, NM_SETTING_PROXY_SSL_PROXY, value, NULL);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "SSL_PORT", FALSE);
-		if (value) {
-			int port;
-
-			port = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
-			if (port > 0)
-				g_object_set (s_proxy, NM_SETTING_PROXY_SSL_PORT, (guint) port, NULL);
-			else
-				PARSE_WARNING ("invalid PORT '%s'", value);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "FTP_PROXY", FALSE);
-		if (value) {
-			value = g_strstrip (value);
-			g_object_set (s_proxy, NM_SETTING_PROXY_FTP_PROXY, value, NULL);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "FTP_PORT", FALSE);
-		if (value) {
-			int port;
-
-			port = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
-			if (port > 0)
-				g_object_set (s_proxy, NM_SETTING_PROXY_FTP_PORT, (guint) port, NULL);
-			else
-				PARSE_WARNING ("invalid PORT '%s'", value);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "SOCKS_PROXY", FALSE);
-		if (value) {
-			value = g_strstrip (value);
-			g_object_set (s_proxy, NM_SETTING_PROXY_SOCKS_PROXY, value, NULL);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "SOCKS_PORT", FALSE);
-		if (value) {
-			int port;
-
-			port = _nm_utils_ascii_str_to_int64 (value, 0, 0, 65535, -1);
-			if (port > 0)
-				g_object_set (s_proxy, NM_SETTING_PROXY_SOCKS_PORT, (guint) port, NULL);
-			else
-				PARSE_WARNING ("invalid PORT '%s'", value);
-			g_free (value);
-		}
-
-		value = svGetValue (ifcfg, "SOCKS_VERSION_5", FALSE);
-		if (value) {
-			if (!g_ascii_strcasecmp (value, "yes")) {
-				g_object_set (s_proxy, NM_SETTING_PROXY_SOCKS_VERSION_5, TRUE, NULL);
-				g_free (value);
-				break;
-			}
 		}
 
 		break;

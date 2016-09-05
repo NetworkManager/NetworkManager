@@ -102,13 +102,11 @@ static void
 add_proxy_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config)
 {
 	const char *pac_url, *pac_script;
-	const char *const*proxies;
-	const char *const*excludes;
 	NMProxyConfigMethod method;
 
 	method = nm_proxy_config_get_method (proxy_config);
-	switch (method) {
-	case NM_PROXY_CONFIG_METHOD_AUTO:
+
+	if (method == NM_PROXY_CONFIG_METHOD_AUTO) {
 		pac_url = nm_proxy_config_get_pac_url (proxy_config);
 		if (pac_url) {
 			g_variant_builder_add (proxy_data, "{sv}",
@@ -126,26 +124,6 @@ add_proxy_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, const N
 				                       g_variant_new_take_string (contents));
 			}
 		}
-
-		break;
-	case NM_PROXY_CONFIG_METHOD_MANUAL:
-		proxies = nm_proxy_config_get_proxies (proxy_config);
-		if (proxies && proxies[0]) {
-			g_variant_builder_add (proxy_data, "{sv}",
-			                       "Servers",
-			                       g_variant_new_strv (proxies, -1));
-		}
-
-		excludes = nm_proxy_config_get_excludes (proxy_config);
-		if (excludes && excludes[0]) {
-			g_variant_builder_add (proxy_data, "{sv}",
-			                       "Excludes",
-			                       g_variant_new_strv (excludes, -1));
-		}
-
-		break;
-	case NM_PROXY_CONFIG_METHOD_NONE:
-		break;
 	}
 
 	g_variant_builder_add (proxy_data, "{sv}",
@@ -374,12 +352,6 @@ nm_pac_runner_manager_send (NMPacRunnerManager *self,
 		g_variant_builder_add (&proxy_data, "{sv}",
 		                       "Method",
 		                       g_variant_new_string ("auto"));
-
-		break;
-	case NM_PROXY_CONFIG_METHOD_MANUAL:
-		g_variant_builder_add (&proxy_data, "{sv}",
-		                       "Method",
-		                       g_variant_new_string ("manual"));
 
 		break;
 	case NM_PROXY_CONFIG_METHOD_NONE:

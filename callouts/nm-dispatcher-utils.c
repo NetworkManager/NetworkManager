@@ -111,14 +111,6 @@ construct_proxy_items (GSList *items, GVariant *proxy_config, const char *prefix
 	if (prefix == NULL)
 		prefix = "";
 
-	/* Proxies */
-	val = g_variant_lookup_value (proxy_config, "proxies", G_VARIANT_TYPE_STRING_ARRAY);
-	if (val) {
-		items = _list_append_val_strv (items, g_variant_dup_strv (val, NULL),
-		                               "%sPROXIES=", prefix);
-		g_variant_unref (val);
-	}
-
 	/* PAC Url */
 	val = g_variant_lookup_value (proxy_config, "pac-url", G_VARIANT_TYPE_STRING);
 	if (val) {

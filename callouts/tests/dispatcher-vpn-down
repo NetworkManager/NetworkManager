@@ -26,7 +26,6 @@ subnet_mask=255.255.255.0
 expiry=1304349405
 
 [proxy]
-proxies=http://test.proxy.com https://sec.proxy.com
 pac-url=http://networkmanager.com/proxy.pac
 pac-script=path/to/script
 
@@ -43,7 +42,6 @@ CONNECTION_ID=Random Connection
 CONNECTION_FILENAME=/callouts/tests/dispatcher-vpn-down
 DEVICE_IFACE=wlan0
 DEVICE_IP_IFACE=tun0
-PROXIES=http://test.proxy.com https://sec.proxy.com
 PROXY_PAC_URL=http://networkmanager.com/proxy.pac
 PROXY_PAC_SCRIPT=path/to/script
 IP4_ADDRESS_0=192.168.1.119/24 192.168.1.1

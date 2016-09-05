@@ -25,7 +25,6 @@
 
 typedef enum {
 	NM_PROXY_CONFIG_METHOD_AUTO = 0,
-	NM_PROXY_CONFIG_METHOD_MANUAL,
 	NM_PROXY_CONFIG_METHOD_NONE
 } NMProxyConfigMethod;
 
@@ -46,10 +45,6 @@ void nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod meth
 NMProxyConfigMethod nm_proxy_config_get_method (const NMProxyConfig *config);
 
 void nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting);
-
-const char *const*nm_proxy_config_get_proxies (const NMProxyConfig *config);
-
-const char *const*nm_proxy_config_get_excludes (const NMProxyConfig *config);
 
 gboolean nm_proxy_config_get_browser_only (const NMProxyConfig *config);
 

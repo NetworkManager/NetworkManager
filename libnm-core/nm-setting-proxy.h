@@ -32,8 +32,7 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingProxyMethod:
- * @NM_SETTING_PROXY_METHOD_AUTO:   DHCP obtained Proxy
- * @NM_SETTING_PROXY_METHOD_MANUAL: Manual mode
+ * @NM_SETTING_PROXY_METHOD_AUTO:   DHCP obtained Proxy/ Manual override
  * @NM_SETTING_PROXY_METHOD_NONE:   No Proxy for the Connection
  *
  * The Proxy method.
@@ -42,7 +41,6 @@ G_BEGIN_DECLS
  */
 typedef enum {
 	NM_SETTING_PROXY_METHOD_AUTO = 0,
-	NM_SETTING_PROXY_METHOD_MANUAL,
 	NM_SETTING_PROXY_METHOD_NONE
 } NMSettingProxyMethod;
 
@@ -56,17 +54,6 @@ typedef enum {
 #define NM_SETTING_PROXY_SETTING_NAME "proxy"
 
 #define NM_SETTING_PROXY_METHOD "method"
-#define NM_SETTING_PROXY_HTTP_PROXY "http-proxy"
-#define NM_SETTING_PROXY_HTTP_PORT "http-port"
-#define NM_SETTING_PROXY_HTTP_DEFAULT "http-default"
-#define NM_SETTING_PROXY_SSL_PROXY "ssl-proxy"
-#define NM_SETTING_PROXY_SSL_PORT "ssl-port"
-#define NM_SETTING_PROXY_FTP_PROXY "ftp-proxy"
-#define NM_SETTING_PROXY_FTP_PORT "ftp-port"
-#define NM_SETTING_PROXY_SOCKS_PROXY "socks-proxy"
-#define NM_SETTING_PROXY_SOCKS_PORT "socks-port"
-#define NM_SETTING_PROXY_SOCKS_VERSION_5 "socks-version-5"
-#define NM_SETTING_PROXY_NO_PROXY_FOR "no-proxy-for"
 #define NM_SETTING_PROXY_BROWSER_ONLY "browser-only"
 #define NM_SETTING_PROXY_PAC_URL "pac-url"
 #define NM_SETTING_PROXY_PAC_SCRIPT "pac-script"
@@ -89,28 +76,6 @@ NMSetting *nm_setting_proxy_new (void);
 
 NM_AVAILABLE_IN_1_6
 NMSettingProxyMethod nm_setting_proxy_get_method (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-const char *nm_setting_proxy_get_http_proxy (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-guint32 nm_setting_proxy_get_http_port (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-gboolean nm_setting_proxy_get_http_default (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-const char *nm_setting_proxy_get_ssl_proxy (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-guint32 nm_setting_proxy_get_ssl_port (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-const char *nm_setting_proxy_get_ftp_proxy (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-guint32 nm_setting_proxy_get_ftp_port (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-const char *nm_setting_proxy_get_socks_proxy (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-guint32 nm_setting_proxy_get_socks_port (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-gboolean nm_setting_proxy_get_socks_version_5 (NMSettingProxy *setting);
-NM_AVAILABLE_IN_1_6
-const char *const*nm_setting_proxy_get_no_proxy_for (NMSettingProxy *setting);
 NM_AVAILABLE_IN_1_6
 gboolean nm_setting_proxy_get_browser_only (NMSettingProxy *setting);
 NM_AVAILABLE_IN_1_6

@@ -198,22 +198,8 @@ parse_proxy (GKeyFile *kf, GVariant **out_props, const char *section, GError **e
 {
 	GVariantBuilder props;
 	char *tmp;
-	char **split, **iter;
 
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
-
-	tmp = g_key_file_get_string (kf, section, "proxies", error);
-	if (tmp == NULL)
-		return FALSE;
-	split = g_strsplit_set (tmp, " ", -1);
-	g_free (tmp);
-
-	if (split && g_strv_length (split) > 0) {
-		for (iter = split; iter && *iter; iter++)
-			g_strstrip (*iter);
-		g_variant_builder_add (&props, "{sv}", "proxies", g_variant_new_strv ((gpointer) split, -1));
-	}
-	g_strfreev (split);
 
 	tmp = g_key_file_get_string (kf, section, "pac-url", error);
 	if (tmp == NULL)

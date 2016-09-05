@@ -13,7 +13,6 @@ interface=virbr0
 path=/org/freedesktop/NetworkManager/Devices/0
 
 [proxy]
-proxies=http://test.proxy.com https://sec.proxy.com
 pac-url=http://networkmanager.com/proxy.pac
 pac-script=path/to/script
 
@@ -31,7 +30,6 @@ CONNECTION_ID=virbr0
 CONNECTION_EXTERNAL=1
 DEVICE_IFACE=virbr0
 DEVICE_IP_IFACE=virbr0
-PROXIES=http://test.proxy.com https://sec.proxy.com
 PROXY_PAC_URL=http://networkmanager.com/proxy.pac
 PROXY_PAC_SCRIPT=path/to/script
 IP4_NUM_ADDRESSES=1
