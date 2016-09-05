@@ -55,15 +55,34 @@ struct _NMDhcpListenerClass {
 	GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE (NMDhcpListener, nm_dhcp_listener, G_TYPE_OBJECT)
-
-#define NM_DHCP_LISTENER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpListener, NM_IS_DHCP_LISTENER)
-
 enum {
 	EVENT,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
+
+G_DEFINE_TYPE (NMDhcpListener, nm_dhcp_listener, G_TYPE_OBJECT)
+
+#define NM_DHCP_LISTENER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpListener, NM_IS_DHCP_LISTENER)
+
+NM_DEFINE_SINGLETON_GETTER (NMDhcpListener, nm_dhcp_listener_get, NM_TYPE_DHCP_LISTENER);
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME    "dhcp-listener"
+#define _NMLOG_DOMAIN         LOGD_DHCP
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMDhcpListener *_self = (self); \
+        char _prefix[64]; \
+        \
+        nm_log ((level), (_NMLOG_DOMAIN), \
+                "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                (_self != singleton_instance \
+                    ? nm_sprintf_buf (_prefix, "%s[%p]", _NMLOG_PREFIX_NAME, _self) \
+                    : _NMLOG_PREFIX_NAME )\
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
 
 /*****************************************************************************/
 
@@ -123,20 +142,20 @@ handle_event (GDBusConnection  *connection,
 
 	iface = get_option (options, "interface");
 	if (iface == NULL) {
-		nm_log_warn (LOGD_DHCP, "dhcp-event: didn't have associated interface.");
+		_LOGW ("dhcp-event: didn't have associated interface.");
 		goto out;
 	}
 
 	pid_str = get_option (options, "pid");
 	pid = _nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
 	if (pid == -1) {
-		nm_log_warn (LOGD_DHCP, "dhcp-event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
+		_LOGW ("dhcp-event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
 		goto out;
 	}
 
 	reason = get_option (options, "reason");
 	if (reason == NULL) {
-		nm_log_warn (LOGD_DHCP, "dhcp-event: (pid %d) DHCP event didn't have a reason", pid);
+		_LOGW ("dhcp-event: (pid %d) DHCP event didn't have a reason", pid);
 		goto out;
 	}
 
@@ -144,9 +163,9 @@ handle_event (GDBusConnection  *connection,
 	if (!handled) {
 		if (g_ascii_strcasecmp (reason, "RELEASE") == 0) {
 			/* Ignore event when the dhcp client gets killed and we receive its last message */
-			nm_log_dbg (LOGD_DHCP, "dhcp-event: (pid %d) unhandled RELEASE DHCP event for interface %s", pid, iface);
+			_LOGD ("dhcp-event: (pid %d) unhandled RELEASE DHCP event for interface %s", pid, iface);
 		} else
-			nm_log_warn (LOGD_DHCP, "dhcp-event: (pid %d) unhandled DHCP event for interface %s", pid, iface);
+			_LOGW ("dhcp-event: (pid %d) unhandled DHCP event for interface %s", pid, iface);
 	}
 
 out:
@@ -192,8 +211,6 @@ dis_connection_cb (NMBusManager *mgr,
 }
 
 /***************************************************/
-
-NM_DEFINE_SINGLETON_GETTER (NMDhcpListener, nm_dhcp_listener_get, NM_TYPE_DHCP_LISTENER);
 
 static void
 nm_dhcp_listener_init (NMDhcpListener *self)
