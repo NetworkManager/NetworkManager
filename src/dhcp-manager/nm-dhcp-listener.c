@@ -119,13 +119,14 @@ get_option (GVariant *options, const char *key)
 }
 
 static void
-handle_event (GDBusConnection  *connection,
-              const char       *sender_name,
-              const char       *object_path,
-              const char       *interface_name,
-              const char       *signal_name,
-              GVariant         *parameters,
-              gpointer          user_data)
+_method_call (GDBusConnection *connection,
+              const char *sender,
+              const char *object_path,
+              const char *interface_name,
+              const char *method_name,
+              GVariant *parameters,
+              GDBusMethodInvocation *invocation,
+              gpointer user_data)
 {
 	NMDhcpListener *self = NM_DHCP_LISTENER (user_data);
 	char *iface = NULL;
@@ -135,8 +136,12 @@ handle_event (GDBusConnection  *connection,
 	gboolean handled = FALSE;
 	GVariant *options;
 
+	if (!nm_streq0 (interface_name, NM_DHCP_HELPER_SERVER_INTERFACE_NAME))
+		g_return_if_reached ();
+	if (!nm_streq0 (method_name, NM_DHCP_HELPER_SERVER_METHOD_NOTIFY))
+		g_return_if_reached ();
 	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
-		return;
+		g_return_if_reached ();
 
 	g_variant_get (parameters, "(@a{sv})", &options);
 
@@ -173,6 +178,57 @@ out:
 	g_free (pid_str);
 	g_free (reason);
 	g_variant_unref (options);
+	g_dbus_method_invocation_return_value (invocation, NULL);
+}
+
+static guint
+_dbus_connection_register_object (NMDhcpListener *self,
+                                  GDBusConnection *connection,
+                                  GError **error)
+{
+	static GDBusArgInfo arg_info_notify_in = {
+		.ref_count = -1,
+		.name = "data",
+		.signature = "a{sv}",
+		.annotations = NULL,
+	};
+	static GDBusArgInfo *arg_infos_notify[] = {
+		&arg_info_notify_in,
+		NULL,
+	};
+	static GDBusMethodInfo method_info_notify = {
+		.ref_count = -1,
+		.name = NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
+		.in_args = arg_infos_notify,
+		.out_args = NULL,
+		.annotations = NULL,
+	};
+	static GDBusMethodInfo *method_infos[] = {
+		&method_info_notify,
+		NULL,
+	};
+	static GDBusInterfaceInfo interface_info = {
+		.ref_count = -1,
+		.name = NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
+		.methods = method_infos,
+		.signals = NULL,
+		.properties = NULL,
+		.annotations = NULL,
+	};
+
+	static GDBusInterfaceVTable interface_vtable = {
+		.method_call = _method_call,
+		.get_property = NULL,
+		.set_property = NULL,
+	};
+
+	return g_dbus_connection_register_object (connection,
+	                                          NM_DHCP_HELPER_SERVER_OBJECT_PATH,
+	                                          &interface_info,
+	                                          &interface_vtable,
+	                                          self,
+	                                          NULL,
+	                                          error);
 }
 
 static void
@@ -182,17 +238,20 @@ new_connection_cb (NMBusManager *mgr,
                    NMDhcpListener *self)
 {
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (self);
-	guint id;
+	guint registration_id;
+	GError *error = NULL;
 
-	id = g_dbus_connection_signal_subscribe (connection,
-	                                         NULL,
-	                                         NM_DHCP_CLIENT_DBUS_IFACE,
-	                                         "Event",
-	                                         NULL,
-	                                         NULL,
-	                                         G_DBUS_SIGNAL_FLAGS_NONE,
-	                                         handle_event, self, NULL);
-	g_hash_table_insert (priv->connections, connection, GUINT_TO_POINTER (id));
+	/* it is important to register the object during the new-connection signal,
+	 * as this avoids races with the connecting object. */
+	registration_id = _dbus_connection_register_object (self, connection, &error);
+	if (!registration_id) {
+		_LOGE ("failure to register %s for connection %p: %s",
+		       NM_DHCP_HELPER_SERVER_OBJECT_PATH, connection, error->message);
+		g_error_free (error);
+		return;
+	}
+
+	g_hash_table_insert (priv->connections, connection, GUINT_TO_POINTER (registration_id));
 }
 
 static void
@@ -205,7 +264,7 @@ dis_connection_cb (NMBusManager *mgr,
 
 	id = GPOINTER_TO_UINT (g_hash_table_lookup (priv->connections, connection));
 	if (id) {
-		g_dbus_connection_signal_unsubscribe (connection, id);
+		g_dbus_connection_unregister_object (connection, id);
 		g_hash_table_remove (priv->connections, connection);
 	}
 }
