@@ -372,6 +372,24 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
+#define __NM_GET_PRIVATE(self, type, is_check, result_cmd) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const type *_self2 = (_self); \
+		\
+		nm_assert (is_check (_self)); \
+		( result_cmd ); \
+	})
+
+#define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &_self->_priv)
+#define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  _self->_priv)
+
+/*****************************************************************************/
+
 static inline gpointer
 nm_g_object_ref (gpointer obj)
 {
