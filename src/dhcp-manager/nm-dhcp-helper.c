@@ -74,26 +74,26 @@ build_signal_parameters (void)
 }
 
 static void
-fatal_error (void)
+kill_pid (void)
 {
-	const char *pid_str = getenv ("pid");
-	int pid = 0;
+	const char *pid_str;
+	pid_t pid = 0;
 
+	pid_str = getenv ("pid");
 	if (pid_str)
 		pid = strtol (pid_str, NULL, 10);
 	if (pid) {
 		g_printerr ("Fatal error occured, killing dhclient instance with pid %d.\n", pid);
 		kill (pid, SIGTERM);
 	}
-
-	exit (1);
 }
 
 int
 main (int argc, char *argv[])
 {
-	GDBusConnection *connection;
-	GError *error = NULL;
+	gs_unref_object GDBusConnection *connection = NULL;
+	gs_free_error GError *error = NULL;
+	gboolean success = FALSE;
 
 	nm_g_type_init ();
 
@@ -104,8 +104,7 @@ main (int argc, char *argv[])
 		g_dbus_error_strip_remote_error (error);
 		g_printerr ("Error: could not connect to NetworkManager D-Bus socket: %s\n",
 		            error->message);
-		g_error_free (error);
-		fatal_error ();
+		goto out;
 	}
 
 	if (!g_dbus_connection_emit_signal (connection,
@@ -117,18 +116,19 @@ main (int argc, char *argv[])
 	                                    &error)) {
 		g_dbus_error_strip_remote_error (error);
 		g_printerr ("Error: Could not send DHCP Event signal: %s\n", error->message);
-		g_error_free (error);
-		fatal_error ();
+		goto out;
 	}
 
 	if (!g_dbus_connection_flush_sync (connection, NULL, &error)) {
 		g_dbus_error_strip_remote_error (error);
 		g_printerr ("Error: Could not flush D-Bus connection: %s\n", error->message);
-		g_error_free (error);
-		fatal_error ();
+		goto out;
 	}
 
-	g_object_unref (connection);
-	return 0;
+	success = TRUE;
+out:
+	if (!success)
+		kill_pid ();
+	return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
