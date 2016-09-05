@@ -3206,6 +3206,12 @@ make_wpa_setting (shvarFile *ifcfg,
 	}
 
 	g_free (value);
+
+	value = svGetValue (ifcfg, "SECURITYMODE", FALSE);
+	if (NM_IN_STRSET (value, NULL, "open"))
+		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, value, NULL);
+
+	g_free (value);
 	return (NMSetting *) wsec;
 
 error:
