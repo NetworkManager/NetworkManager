@@ -13,11 +13,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 Red Hat, Inc.
+ * Copyright 2014 - 2016 Red Hat, Inc.
  *
  */
 
 #include "nm-default.h"
+
+#include "nm-dhcp-listener.h"
 
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -27,7 +29,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "nm-dhcp-listener.h"
 #include "nm-core-internal.h"
 #include "nm-bus-manager.h"
 #include "NetworkManagerUtils.h"
@@ -36,6 +37,8 @@
 #define PRIV_SOCK_PATH            NMRUNDIR "/private-dhcp"
 #define PRIV_SOCK_TAG             "dhcp"
 
+/*****************************************************************************/
+
 typedef struct {
 	NMBusManager *      dbus_mgr;
 	gulong              new_conn_id;
@@ -43,9 +46,18 @@ typedef struct {
 	GHashTable *        signal_handlers;
 } NMDhcpListenerPrivate;
 
-#define NM_DHCP_LISTENER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_LISTENER, NMDhcpListenerPrivate))
+struct _NMDhcpListener {
+	GObject parent;
+	NMDhcpListenerPrivate _priv;
+};
+
+struct _NMDhcpListenerClass {
+	GObjectClass parent_class;
+};
 
 G_DEFINE_TYPE (NMDhcpListener, nm_dhcp_listener, G_TYPE_OBJECT)
+
+#define NM_DHCP_LISTENER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpListener, NM_IS_DHCP_LISTENER)
 
 enum {
 	EVENT,
@@ -53,7 +65,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/***************************************************/
+/*****************************************************************************/
 
 static char *
 get_option (GVariant *options, const char *key)
@@ -188,7 +200,7 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 {
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (self);
 
-	/* Maps GDBusConnection :: GDBusProxy */
+	/* Maps GDBusConnection :: signal-id */
 	priv->signal_handlers = g_hash_table_new (NULL, NULL);
 
 	priv->dbus_mgr = nm_bus_manager_get ();
@@ -208,7 +220,7 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (object);
+	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE ((NMDhcpListener *) object);
 
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->new_conn_id);
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->dis_conn_id);
@@ -224,22 +236,18 @@ nm_dhcp_listener_class_init (NMDhcpListenerClass *listener_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (listener_class);
 
-	g_type_class_add_private (listener_class, sizeof (NMDhcpListenerPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 
-	/* signals */
 	signals[EVENT] =
-		g_signal_new (NM_DHCP_LISTENER_EVENT,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST, 0,
-		              g_signal_accumulator_true_handled,
-		              NULL, NULL,
-		              G_TYPE_BOOLEAN,     /* listeners return TRUE if handled */
-		              4,
-		              G_TYPE_STRING,      /* iface */
-		              G_TYPE_INT,         /* pid */
-		              G_TYPE_VARIANT,     /* options */
-		              G_TYPE_STRING);     /* reason */
+	    g_signal_new (NM_DHCP_LISTENER_EVENT,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST, 0,
+	                  g_signal_accumulator_true_handled,
+	                  NULL, NULL,
+	                  G_TYPE_BOOLEAN,     /* listeners return TRUE if handled */
+	                  4,
+	                  G_TYPE_STRING,      /* iface */
+	                  G_TYPE_INT,         /* pid */
+	                  G_TYPE_VARIANT,     /* options */
+	                  G_TYPE_STRING);     /* reason */
 }
