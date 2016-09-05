@@ -25,7 +25,42 @@
 #include <string.h>
 #include <signal.h>
 
+#include "nm-vpn-plugin-macros.h"
+
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
+
+/*****************************************************************************/
+
+#ifdef NM_MORE_LOGGING
+#define _NMLOG_ENABLED(level) TRUE
+#else
+#define _NMLOG_ENABLED(level) ((level) <= LOG_ERR)
+#endif
+
+#define _NMLOG(always_enabled, level, ...) \
+	G_STMT_START { \
+		if ((always_enabled) || _NMLOG_ENABLED (level)) { \
+			GTimeVal _tv; \
+			\
+			g_get_current_time (&_tv); \
+			g_print ("nm-dhcp-helper[%ld] %-7s [%ld.%04ld] " _NM_UTILS_MACRO_FIRST (__VA_ARGS__) "\n", \
+			         (long) getpid (), \
+			         nm_utils_syslog_to_str (level), \
+			         _tv.tv_sec, _tv.tv_usec / 100 \
+			         _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+		} \
+	} G_STMT_END
+
+#define _LOGD(...) _NMLOG(TRUE,  LOG_INFO,    __VA_ARGS__)
+#define _LOGI(...) _NMLOG(TRUE,  LOG_NOTICE,  __VA_ARGS__)
+#define _LOGW(...) _NMLOG(TRUE,  LOG_WARNING, __VA_ARGS__)
+#define _LOGE(...) _NMLOG(TRUE,  LOG_ERR,     __VA_ARGS__)
+
+#define _LOGd(...) _NMLOG(FALSE, LOG_INFO,    __VA_ARGS__)
+#define _LOGi(...) _NMLOG(FALSE, LOG_NOTICE,  __VA_ARGS__)
+#define _LOGw(...) _NMLOG(FALSE, LOG_WARNING, __VA_ARGS__)
+
+/*****************************************************************************/
 
 static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
 
@@ -83,7 +118,7 @@ kill_pid (void)
 	if (pid_str)
 		pid = strtol (pid_str, NULL, 10);
 	if (pid) {
-		g_printerr ("Fatal error occured, killing dhclient instance with pid %d.\n", pid);
+		_LOGI ("a fatal error occured, kill dhclient instance with pid %d\n", pid);
 		kill (pid, SIGTERM);
 	}
 }
@@ -102,8 +137,8 @@ main (int argc, char *argv[])
 	                                                     NULL, NULL, &error);
 	if (!connection) {
 		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: could not connect to NetworkManager D-Bus socket: %s\n",
-		            error->message);
+		_LOGE ("could not connect to NetworkManager D-Bus socket: %s",
+		       error->message);
 		goto out;
 	}
 
@@ -115,13 +150,13 @@ main (int argc, char *argv[])
 	                                    build_signal_parameters (),
 	                                    &error)) {
 		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: Could not send DHCP Event signal: %s\n", error->message);
+		_LOGE ("could not send DHCP Event signal: %s", error->message);
 		goto out;
 	}
 
 	if (!g_dbus_connection_flush_sync (connection, NULL, &error)) {
 		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: Could not flush D-Bus connection: %s\n", error->message);
+		_LOGE ("could not flush D-Bus connection: %s", error->message);
 		goto out;
 	}
 
