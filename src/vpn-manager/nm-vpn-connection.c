@@ -168,18 +168,7 @@ struct _NMVpnConnectionClass {
 
 G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
-#define NM_VPN_CONNECTION_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMVpnConnection *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_VPN_CONNECTION (_self)); \
-		&_self->_priv; \
-	})
+#define NM_VPN_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMVpnConnection, NM_IS_VPN_CONNECTION)
 
 /*****************************************************************************/
 
