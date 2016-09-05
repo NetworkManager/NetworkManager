@@ -43,7 +43,7 @@ typedef struct {
 	NMBusManager *      dbus_mgr;
 	gulong              new_conn_id;
 	gulong              dis_conn_id;
-	GHashTable *        signal_handlers;
+	GHashTable *        connections;
 } NMDhcpListenerPrivate;
 
 struct _NMDhcpListener {
@@ -192,7 +192,7 @@ new_connection_cb (NMBusManager *mgr,
 	                                         NULL,
 	                                         G_DBUS_SIGNAL_FLAGS_NONE,
 	                                         handle_event, self, NULL);
-	g_hash_table_insert (priv->signal_handlers, connection, GUINT_TO_POINTER (id));
+	g_hash_table_insert (priv->connections, connection, GUINT_TO_POINTER (id));
 }
 
 static void
@@ -203,10 +203,10 @@ dis_connection_cb (NMBusManager *mgr,
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (self);
 	guint id;
 
-	id = GPOINTER_TO_UINT (g_hash_table_lookup (priv->signal_handlers, connection));
+	id = GPOINTER_TO_UINT (g_hash_table_lookup (priv->connections, connection));
 	if (id) {
 		g_dbus_connection_signal_unsubscribe (connection, id);
-		g_hash_table_remove (priv->signal_handlers, connection);
+		g_hash_table_remove (priv->connections, connection);
 	}
 }
 
@@ -218,7 +218,7 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (self);
 
 	/* Maps GDBusConnection :: signal-id */
-	priv->signal_handlers = g_hash_table_new (NULL, NULL);
+	priv->connections = g_hash_table_new (NULL, NULL);
 
 	priv->dbus_mgr = nm_bus_manager_get ();
 
@@ -243,7 +243,7 @@ dispose (GObject *object)
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->dis_conn_id);
 	priv->dbus_mgr = NULL;
 
-	g_clear_pointer (&priv->signal_handlers, g_hash_table_destroy);
+	g_clear_pointer (&priv->connections, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_dhcp_listener_parent_class)->dispose (object);
 }
