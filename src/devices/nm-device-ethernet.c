@@ -127,18 +127,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceEthernet,
 
 G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_ETHERNET_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMDeviceEthernet *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_DEVICE_ETHERNET (_self)); \
-		_self->_priv; \
-	})
+#define NM_DEVICE_ETHERNET_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDeviceEthernet, NM_IS_DEVICE_ETHERNET)
 
 /*****************************************************************************/
 

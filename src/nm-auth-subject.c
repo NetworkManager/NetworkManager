@@ -68,18 +68,7 @@ struct _NMAuthSubjectClass {
 
 G_DEFINE_TYPE (NMAuthSubject, nm_auth_subject, G_TYPE_OBJECT)
 
-#define NM_AUTH_SUBJECT_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMAuthSubject *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_AUTH_SUBJECT (_self)); \
-		&_self->_priv; \
-	})
+#define NM_AUTH_SUBJECT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMAuthSubject, NM_IS_AUTH_SUBJECT)
 
 /**************************************************************/
 

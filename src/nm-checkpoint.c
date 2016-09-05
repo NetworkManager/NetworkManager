@@ -70,7 +70,7 @@ typedef struct {
 
 struct _NMCheckpoint {
 	NMExportedObject parent;
-	NMCheckpointPrivate priv;
+	NMCheckpointPrivate _priv;
 };
 
 typedef struct {
@@ -79,18 +79,7 @@ typedef struct {
 
 G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_CHECKPOINT_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMCheckpoint *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_CHECKPOINT (_self)); \
-		&_self->priv; \
-	})
+#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMCheckpoint, NM_IS_CHECKPOINT)
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DEVICES,
