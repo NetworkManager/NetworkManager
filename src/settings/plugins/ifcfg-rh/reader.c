@@ -3160,14 +3160,6 @@ make_wpa_setting (shvarFile *ifcfg,
 		if (allow_rsn && svGetValueBoolean (ifcfg, "WPA_ALLOW_WPA2", TRUE))
 			nm_setting_wireless_security_add_proto (wsec, "rsn");
 
-		/* If neither WPA_ALLOW_WPA or WPA_ALLOW_WPA2 were present, default
-		 * to both WPA and RSN allowed.
-		 */
-		if (!allow_wpa && !allow_rsn && !ieee8021x) {
-			nm_setting_wireless_security_add_proto (wsec, "wpa");
-			nm_setting_wireless_security_add_proto (wsec, "rsn");
-		}
-
 		g_free (allow_wpa);
 		g_free (allow_rsn);
 	}
