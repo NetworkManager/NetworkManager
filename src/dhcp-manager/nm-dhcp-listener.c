@@ -29,11 +29,11 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include "nm-dhcp-helper-api.h"
 #include "nm-core-internal.h"
 #include "nm-bus-manager.h"
 #include "NetworkManagerUtils.h"
 
-#define NM_DHCP_CLIENT_DBUS_IFACE "org.freedesktop.nm_dhcp_client"
 #define PRIV_SOCK_PATH            NMRUNDIR "/private-dhcp"
 #define PRIV_SOCK_TAG             "dhcp"
 

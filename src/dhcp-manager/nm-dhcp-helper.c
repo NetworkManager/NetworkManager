@@ -27,7 +27,7 @@
 
 #include "nm-vpn-plugin-macros.h"
 
-#define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
+#include "nm-dhcp-helper-api.h"
 
 /*****************************************************************************/
 
