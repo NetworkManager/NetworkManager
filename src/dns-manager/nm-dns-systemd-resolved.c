@@ -83,7 +83,7 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 {
 	GVariant *v;
 	GError *error = NULL;
-	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (user_data);
+	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
 
 	v = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), r, &error);
 
@@ -251,8 +251,12 @@ send_updates (NMDnsSystemdResolved *self)
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	GVariant *v;
 
+	nm_clear_g_cancellable (&priv->update_cancellable);
+
 	if (!priv->resolve)
 		return;
+
+	priv->update_cancellable = g_cancellable_new ();
 
 	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL) {
 		g_dbus_proxy_call (priv->resolve, "SetLinkDNS", v,
@@ -276,7 +280,6 @@ update (NMDnsPlugin *plugin,
         const char *hostname)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
-	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
 	const NMDnsIPConfigData **c;
 	int i;
@@ -285,9 +288,6 @@ update (NMDnsPlugin *plugin,
 		add_interface_configuration (self, interfaces, *c);
 
 	free_pending_updates (self);
-	g_clear_object (&priv->update_cancellable);
-
-	priv->update_cancellable = g_cancellable_new ();
 
 	for (i = 0; i < interfaces->len; i++) {
 		InterfaceConfig *ic = &g_array_index (interfaces, InterfaceConfig, i);
@@ -328,21 +328,25 @@ nm_dns_systemd_resolved_new (void)
 static void
 resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 {
-	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (user_data);
-	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GError *error = NULL;
+	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
+	NMDnsSystemdResolvedPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *resolve;
 
+	resolve = g_dbus_proxy_new_finish (r, &error);
+	if (   !resolve
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	g_clear_object (&priv->init_cancellable);
-
-	priv->resolve = g_dbus_proxy_new_finish (r, &error);
-
-	if (priv->resolve == NULL) {
+	if (!resolve) {
 		_LOGW ("failed to connect to resolved via DBus: %s", error->message);
 		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
-		g_error_free (error);
 		return;
 	}
 
+	priv->resolve = resolve;
 	send_updates (self);
 }
 

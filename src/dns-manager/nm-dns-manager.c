@@ -1592,15 +1592,14 @@ NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGE
 static gboolean
 _resolvconf_resolved_managed (void)
 {
-	GFile *f;
-	GFileInfo *info;
-	gboolean ret = FALSE;
-	const gchar *resolved_paths[] = {
+	static const char *const resolved_paths[] = {
 		"/run/systemd/resolve/resolv.conf",
 		"/lib/systemd/resolv.conf",
 		"/usr/lib/systemd/resolv.conf",
-		NULL
 	};
+	GFile *f;
+	GFileInfo *info;
+	gboolean ret = FALSE;
 
 	f = g_file_new_for_path (_PATH_RESCONF);
 	info = g_file_query_info (f,
@@ -1674,6 +1673,7 @@ again:
 			priv->plugin = nm_dns_systemd_resolved_new ();
 			plugin_changed = TRUE;
 		}
+		mode = "systemd-resolved";
 	} else if (nm_streq0 (mode, "dnsmasq")) {
 		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
 			_clear_plugin (self);
