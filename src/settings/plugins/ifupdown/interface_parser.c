@@ -100,7 +100,7 @@ static char *join_values_with_spaces(char *dst, char **src)
 	return(dst);
 }
 
-static void _ifparser_source (const char *path, const char *en_dir, int quiet);
+static void _ifparser_source (const char *path, const char *en_dir, int quiet, int dir);
 
 static void
 _recursive_ifparser (const char *eni_file, int quiet)
@@ -189,9 +189,9 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			continue;
 		}
 
-		/* There are five different stanzas:
-		 * iface, mapping, auto, allow-* and source.
-		 * Create a block for each of them except source.  */
+		/* There are six different stanzas:
+		 * iface, mapping, auto, allow-*, source, and source-directory.
+		 * Create a block for each of them except source and source-directory.  */
 
 		/* iface stanza takes at least 3 parameters */
 		if (strcmp(token[0], "iface") == 0) {
@@ -226,22 +226,28 @@ _recursive_ifparser (const char *eni_file, int quiet)
 				add_block(token[0], token[i]);
 			skip_to_block = 0;
 		}
-		/* source stanza takes one or more filepaths as parameters */
-		else if (strcmp(token[0], "source") == 0) {
+		/* source and source-directory stanzas take one or more paths as parameters */
+		else if (strcmp (token[0], "source") == 0 || strcmp (token[0], "source-directory") == 0) {
 			int i;
 			char *en_dir;
 
 			skip_to_block = 0;
 
 			if (toknum == 1) {
-				if (!quiet)
-					nm_log_warn (LOGD_SETTINGS, "Invalid source line without parameters\n");
+				if (!quiet) {
+					nm_log_warn (LOGD_SETTINGS, "Invalid %s line without parameters\n",
+					             token[0]);
+				}
 				continue;
 			}
 
 			en_dir = g_path_get_dirname (eni_file);
-			for (i = 1; i < toknum; ++i)
-				_ifparser_source (token[i], en_dir, quiet);
+			for (i = 1; i < toknum; ++i) {
+				if (strcmp (token[0], "source-directory") == 0)
+					_ifparser_source (token[i], en_dir, quiet, TRUE);
+				else
+					_ifparser_source (token[i], en_dir, quiet, FALSE);
+			}
 			g_free (en_dir);
 		}
 		else {
@@ -261,10 +267,13 @@ _recursive_ifparser (const char *eni_file, int quiet)
 }
 
 static void
-_ifparser_source (const char *path, const char *en_dir, int quiet)
+_ifparser_source (const char *path, const char *en_dir, int quiet, int dir)
 {
 	char *abs_path;
+	const char *item;
 	wordexp_t we;
+	GDir *source_dir;
+	GError *error = NULL;
 	uint i;
 
 	if (g_path_is_absolute (path))
@@ -281,7 +290,21 @@ _ifparser_source (const char *path, const char *en_dir, int quiet)
 			nm_log_warn (LOGD_SETTINGS, "word expansion for %s failed\n", abs_path);
 	} else {
 		for (i = 0; i < we.we_wordc; i++)
-			_recursive_ifparser (we.we_wordv[i], quiet);
+			if (dir) {
+				source_dir = g_dir_open (we.we_wordv[i], 0, &error);
+				if (!source_dir) {
+					if (!quiet) {
+						nm_log_warn (LOGD_SETTINGS, "Failed to open directory %s: %s",
+						             we.we_wordv[i], error->message);
+					}
+					g_clear_error (&error);
+				} else {
+					while ((item = g_dir_read_name (source_dir)))
+						_ifparser_source (item, we.we_wordv[i], quiet, FALSE);
+					g_dir_close (source_dir);
+				}
+			} else
+				_recursive_ifparser (we.we_wordv[i], quiet);
 		wordfree (&we);
 	}
 	g_free (abs_path);
