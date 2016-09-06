@@ -201,7 +201,8 @@ nmt_mac_entry_get_property (GObject    *object,
 		g_value_set_int (value, priv->mac_length);
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, nmt_newt_entry_get_text (NMT_NEWT_ENTRY (object)));
+		g_value_set_string (value,
+		                    nm_str_not_empty (nmt_newt_entry_get_text (NMT_NEWT_ENTRY (object))));
 		break;
 	case PROP_ENTRY_TYPE:
 		g_value_set_int (value, priv->entry_type);
