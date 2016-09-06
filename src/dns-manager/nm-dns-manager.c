@@ -1604,15 +1604,16 @@ _resolvconf_resolved_managed (void)
 
 	f = g_file_new_for_path (_PATH_RESCONF);
 	info = g_file_query_info (f,
-							  G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK","\
-							  G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET,
-							  G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-							  NULL, NULL);
+	                          G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK","\
+	                          G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET,
+	                          G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+	                          NULL, NULL);
 
-	if (info && g_file_info_get_is_symlink (info))
+	if (info && g_file_info_get_is_symlink (info)) {
 		ret = _nm_utils_strv_find_first ((gchar **) resolved_paths,
-										 G_N_ELEMENTS (resolved_paths),
-										 g_file_info_get_symlink_target (info)) >= 0;
+		                                 G_N_ELEMENTS (resolved_paths),
+		                                 g_file_info_get_symlink_target (info)) >= 0;
+	}
 
 	g_clear_object(&info);
 	g_clear_object(&f);
@@ -1666,9 +1667,9 @@ again:
 	rc_manager = _check_resconf_immutable (rc_manager);
 
 	if (   (!mode && _resolvconf_resolved_managed ())
-		|| nm_streq0 (mode, "systemd-resolved")) {
+	    || nm_streq0 (mode, "systemd-resolved")) {
 		if (   force_reload_plugin
-			|| !NM_IS_DNS_SYSTEMD_RESOLVED (priv->plugin)) {
+		    || !NM_IS_DNS_SYSTEMD_RESOLVED (priv->plugin)) {
 			_clear_plugin (self);
 			priv->plugin = nm_dns_systemd_resolved_new ();
 			plugin_changed = TRUE;

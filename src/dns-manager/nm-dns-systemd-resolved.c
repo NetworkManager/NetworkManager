@@ -20,6 +20,7 @@
  */
 
 #include "nm-default.h"
+
 #include "nm-dns-systemd-resolved.h"
 
 #include <stdlib.h>
@@ -97,8 +98,8 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 
 static void
 add_interface_configuration (NMDnsSystemdResolved *self,
-							 GArray *interfaces,
-							 const NMDnsIPConfigData *data)
+                             GArray *interfaces,
+                             const NMDnsIPConfigData *data)
 {
 	int i;
 	InterfaceConfig *ic = NULL;
@@ -128,7 +129,7 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 	if (!ic) {
 		g_array_set_size (interfaces, interfaces->len + 1);
 		ic = &g_array_index (interfaces, InterfaceConfig,
-							 interfaces->len - 1);
+		                     interfaces->len - 1);
 		ic->ifindex = ifindex;
 	}
 
@@ -137,9 +138,10 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 
 static void
 update_add_ip6_config (NMDnsSystemdResolved *self,
-					   GVariantBuilder *dns,
-					   GVariantBuilder *domains,
-					   const NMIP6Config *config) {
+                       GVariantBuilder *dns,
+                       GVariantBuilder *domains,
+                       const NMIP6Config *config)
+{
 	int i;
 
 	for (i = 0 ; i < nm_ip6_config_get_num_nameservers (config); i++) {
@@ -155,22 +157,23 @@ update_add_ip6_config (NMDnsSystemdResolved *self,
 
 	for (i = 0; i < nm_ip6_config_get_num_searches (config); i++) {
 		g_variant_builder_add (domains, "(sb)",
-							   nm_ip6_config_get_search(config, i),
-							   FALSE);
+		                       nm_ip6_config_get_search (config, i),
+		                       FALSE);
 	}
 
 	for (i = 0; i < nm_ip6_config_get_num_domains (config); i++) {
 		g_variant_builder_add (domains, "(sb)",
-							   nm_ip6_config_get_domain (config, i),
-							   TRUE);
+		                       nm_ip6_config_get_domain (config, i),
+		                       TRUE);
 	}
 }
 
 static void
 update_add_ip4_config (NMDnsSystemdResolved *self,
-					   GVariantBuilder *dns,
-					   GVariantBuilder *domains,
-					   const NMIP4Config *config) {
+                       GVariantBuilder *dns,
+                       GVariantBuilder *domains,
+                       const NMIP4Config *config)
+{
 	int i;
 
 	for (i = 0 ; i < nm_ip4_config_get_num_nameservers (config); i++) {
@@ -186,14 +189,14 @@ update_add_ip4_config (NMDnsSystemdResolved *self,
 
 	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++) {
 		g_variant_builder_add (domains, "(sb)",
-							   nm_ip4_config_get_search (config, i),
-							   FALSE);
+		                       nm_ip4_config_get_search (config, i),
+		                       FALSE);
 	}
 
 	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++) {
 		g_variant_builder_add (domains, "(sb)",
-							   nm_ip4_config_get_domain (config, i),
-							   TRUE);
+		                       nm_ip4_config_get_domain (config, i),
+		                       TRUE);
 	}
 }
 
@@ -203,10 +206,10 @@ free_pending_updates (NMDnsSystemdResolved *self)
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	GVariant *v;
 
-	while ((v = g_queue_pop_head(&priv->dns_updates)) != NULL)
+	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL)
 		g_variant_unref (v);
 
-	while ((v = g_queue_pop_head(&priv->domain_updates)) != NULL)
+	while ((v = g_queue_pop_head (&priv->domain_updates)) != NULL)
 		g_variant_unref (v);
 }
 
@@ -237,9 +240,9 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	g_variant_builder_close (&domains);
 
 	g_queue_push_tail (&priv->dns_updates,
-					   g_variant_ref_sink(g_variant_builder_end (&dns)));
+	                   g_variant_ref_sink (g_variant_builder_end (&dns)));
 	g_queue_push_tail (&priv->domain_updates,
-					   g_variant_ref_sink(g_variant_builder_end (&domains)));
+	                   g_variant_ref_sink (g_variant_builder_end (&domains)));
 }
 
 static void
@@ -251,17 +254,17 @@ send_updates (NMDnsSystemdResolved *self)
 	if (!priv->resolve)
 		return;
 
-	while ((v = g_queue_pop_head(&priv->dns_updates)) != NULL) {
+	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL) {
 		g_dbus_proxy_call (priv->resolve, "SetLinkDNS", v,
-						   G_DBUS_CALL_FLAGS_NONE,
-						   -1, priv->update_cancellable, call_done, self);
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1, priv->update_cancellable, call_done, self);
 		g_variant_unref (v);
 	}
 
-	while ((v = g_queue_pop_head(&priv->domain_updates)) != NULL) {
+	while ((v = g_queue_pop_head (&priv->domain_updates)) != NULL) {
 		g_dbus_proxy_call (priv->resolve, "SetLinkDomains", v,
-						   G_DBUS_CALL_FLAGS_NONE,
-						   -1, priv->update_cancellable, call_done, self);
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1, priv->update_cancellable, call_done, self);
 		g_variant_unref (v);
 	}
 }
@@ -274,7 +277,7 @@ update (NMDnsPlugin *plugin,
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof(InterfaceConfig));
+	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
 	const NMDnsIPConfigData **c;
 	int i;
 
@@ -288,6 +291,7 @@ update (NMDnsPlugin *plugin,
 
 	for (i = 0; i < interfaces->len; i++) {
 		InterfaceConfig *ic = &g_array_index (interfaces, InterfaceConfig, i);
+
 		prepare_one_interface (self, ic);
 		g_list_free (ic->configs);
 	}
@@ -330,7 +334,7 @@ resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 
 	g_clear_object (&priv->init_cancellable);
 
-	priv->resolve = g_dbus_proxy_new_finish(r, &error);
+	priv->resolve = g_dbus_proxy_new_finish (r, &error);
 
 	if (priv->resolve == NULL) {
 		_LOGW ("failed to connect to resolved via DBus: %s", error->message);
@@ -339,7 +343,7 @@ resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 		return;
 	}
 
-	send_updates(self);
+	send_updates (self);
 }
 
 
@@ -350,8 +354,8 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	NMBusManager *dbus_mgr;
 	GDBusConnection *connection;
 
-	g_queue_init(&priv->dns_updates);
-	g_queue_init(&priv->domain_updates);
+	g_queue_init (&priv->dns_updates);
+	g_queue_init (&priv->domain_updates);
 
 	dbus_mgr = nm_bus_manager_get ();
 	g_return_if_fail (dbus_mgr);
@@ -361,15 +365,15 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 
 	priv->init_cancellable = g_cancellable_new ();
 	g_dbus_proxy_new (connection,
-					  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-					  G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-					  NULL,
-					  SYSTEMD_RESOLVED_DBUS_SERVICE,
-					  SYSTEMD_RESOLVED_DBUS_PATH,
-					  SYSTEMD_RESOLVED_DBUS_SERVICE ".Manager",
-					  priv->init_cancellable,
-					  resolved_proxy_created,
-					  self);
+	                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+	                  G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                  NULL,
+	                  SYSTEMD_RESOLVED_DBUS_SERVICE,
+	                  SYSTEMD_RESOLVED_DBUS_PATH,
+	                  SYSTEMD_RESOLVED_DBUS_SERVICE ".Manager",
+	                  priv->init_cancellable,
+	                  resolved_proxy_created,
+	                  self);
 }
 
 static void
