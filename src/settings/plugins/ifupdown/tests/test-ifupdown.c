@@ -627,6 +627,27 @@ test20_source_stanza (const char *path)
 	expected_free (e);
 }
 
+static void
+test21_source_dir_stanza (const char *path)
+{
+	Expected *e;
+	ExpectedBlock *b;
+
+	e = expected_new ();
+
+	b = expected_block_new ("auto", "eth0");
+	expected_add_block (e, b);
+	b = expected_block_new ("iface", "eth0");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
+
+	init_ifparser_with_file (path, "test21-source-dir-stanza");
+	compare_expected_to_ifparser (e);
+
+	ifparser_destroy ();
+	expected_free (e);
+}
+
 NMTST_DEFINE ();
 
 int
@@ -675,6 +696,8 @@ main (int argc, char **argv)
 	                      (GTestDataFunc) test19_read_static_ipv4_plen);
 	g_test_add_data_func ("/ifupdate/source_stanza", TEST_ENI_DIR,
 	                      (GTestDataFunc) test20_source_stanza);
+	g_test_add_data_func ("/ifupdate/source_dir_stanza", TEST_ENI_DIR,
+	                      (GTestDataFunc) test21_source_dir_stanza);
 
 	return g_test_run ();
 }
