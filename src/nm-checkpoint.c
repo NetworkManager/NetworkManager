@@ -125,7 +125,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 	while (g_hash_table_iter_next (&iter, (gpointer *) &device, (gpointer *) &dev_checkpoint)) {
 		gs_unref_object NMAuthSubject *subject = NULL;
 		guint32 result = NM_ROLLBACK_RESULT_OK;
-		const char *con_path;
+		const char *con_uuid;
 
 		_LOGD ("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d)",
 		       nm_device_get_iface (device),
@@ -173,14 +173,14 @@ activate:
 			/* The device had an active connection, check if the
 			 * connection still exists
 			 * */
-			con_path = nm_connection_get_path (dev_checkpoint->connection);
-			connection = nm_settings_get_connection_by_path (nm_settings_get(), con_path);
+			con_uuid = nm_connection_get_uuid (dev_checkpoint->connection);
+			connection = nm_settings_get_connection_by_uuid (nm_settings_get (), con_uuid);
 
 			if (connection) {
 				/* If the connection is still there, restore its content
 				 * and save it
 				 * */
-				_LOGD ("rollback: connection %s still exists", con_path);
+				_LOGD ("rollback: connection %s still exists", con_uuid);
 
 				nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
 				                                                dev_checkpoint->connection);
@@ -190,7 +190,7 @@ activate:
 				                                       NULL);
 			} else {
 				/* The connection was deleted, recreate it */
-				_LOGD ("rollback: adding connection %s again", con_path);
+				_LOGD ("rollback: adding connection %s again", con_uuid);
 
 				connection = nm_settings_add_connection (nm_settings_get (),
 				                                         dev_checkpoint->connection,
