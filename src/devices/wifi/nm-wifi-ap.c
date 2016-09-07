@@ -68,18 +68,7 @@ struct _NMAccessPointClass{
 	NMExportedObjectClass parent;
 };
 
-#define NM_AP_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMAccessPoint *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_AP (_self)); \
-		&_self->_priv; \
-	})
+#define NM_AP_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMAccessPoint, NM_IS_AP)
 
 G_DEFINE_TYPE (NMAccessPoint, nm_ap, NM_TYPE_EXPORTED_OBJECT)
 

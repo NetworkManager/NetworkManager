@@ -335,6 +335,7 @@ libNetworkManager_la_SOURCES = \
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
 	dhcp-manager/nm-dhcp-client-logging.h \
+	dhcp-manager/nm-dhcp-helper-api.h \
 	dhcp-manager/nm-dhcp-utils.c \
 	dhcp-manager/nm-dhcp-utils.h \
 	dhcp-manager/nm-dhcp-listener.c \

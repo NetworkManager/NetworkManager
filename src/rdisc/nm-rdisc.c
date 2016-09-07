@@ -87,18 +87,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 G_DEFINE_TYPE (NMRDisc, nm_rdisc, G_TYPE_OBJECT)
 
-#define NM_RDISC_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMRDisc *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_RDISC (_self)); \
-		_self->_priv; \
-	})
+#define NM_RDISC_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMRDisc, NM_IS_RDISC)
 
 /*****************************************************************************/
 

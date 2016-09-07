@@ -75,18 +75,7 @@ _LOG_DECLARE_SELF (NMDevice);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_DEVICE_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMDevice *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_DEVICE (_self)); \
-		_self->priv; \
-	})
+#define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE)
 
 enum {
 	STATE_CHANGED,
@@ -2029,7 +2018,7 @@ link_type_compatible (NMDevice *self,
 		return FALSE;
 	}
 
-	device_type = self->priv->link_type;
+	device_type = self->_priv->link_type;
 	if (device_type > NM_LINK_TYPE_UNKNOWN && device_type != link_type) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "Needed link type 0x%x does not match the platform link type 0x%X",
@@ -10064,7 +10053,7 @@ nm_device_set_unmanaged_by_user_udev (NMDevice *self)
 	int ifindex;
 	gboolean platform_unmanaged = FALSE;
 
-	ifindex = self->priv->ifindex;
+	ifindex = self->_priv->ifindex;
 
 	if (   ifindex <= 0
 	    || !nm_platform_link_get_unmanaged (NM_PLATFORM_GET, ifindex, &platform_unmanaged))
@@ -10151,7 +10140,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
 	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
 
-		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->priv->act_request);
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request);
 		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (long long unsigned) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
@@ -10163,7 +10152,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 
 	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
 
-		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->priv->act_request);
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request);
 		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d (version-id %llu)", (int) metered, (long long unsigned) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
@@ -10342,22 +10331,22 @@ nm_device_check_connection_available (NMDevice *self,
 static gboolean
 available_connections_del_all (NMDevice *self)
 {
-	if (g_hash_table_size (self->priv->available_connections) == 0)
+	if (g_hash_table_size (self->_priv->available_connections) == 0)
 		return FALSE;
-	g_hash_table_remove_all (self->priv->available_connections);
+	g_hash_table_remove_all (self->_priv->available_connections);
 	return TRUE;
 }
 
 static gboolean
 available_connections_add (NMDevice *self, NMConnection *connection)
 {
-	return nm_g_hash_table_add (self->priv->available_connections, g_object_ref (connection));
+	return nm_g_hash_table_add (self->_priv->available_connections, g_object_ref (connection));
 }
 
 static gboolean
 available_connections_del (NMDevice *self, NMConnection *connection)
 {
-	return g_hash_table_remove (self->priv->available_connections, connection);
+	return g_hash_table_remove (self->_priv->available_connections, connection);
 }
 
 static gboolean
@@ -12103,7 +12092,7 @@ nm_device_init (NMDevice *self)
 
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DEVICE, NMDevicePrivate);
 
-	self->priv = priv;
+	self->_priv = priv;
 
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;

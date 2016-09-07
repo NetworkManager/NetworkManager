@@ -25,7 +25,42 @@
 #include <string.h>
 #include <signal.h>
 
-#define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
+#include "nm-utils/nm-vpn-plugin-macros.h"
+
+#include "nm-dhcp-helper-api.h"
+
+/*****************************************************************************/
+
+#ifdef NM_MORE_LOGGING
+#define _NMLOG_ENABLED(level) TRUE
+#else
+#define _NMLOG_ENABLED(level) ((level) <= LOG_ERR)
+#endif
+
+#define _NMLOG(always_enabled, level, ...) \
+	G_STMT_START { \
+		if ((always_enabled) || _NMLOG_ENABLED (level)) { \
+			GTimeVal _tv; \
+			\
+			g_get_current_time (&_tv); \
+			g_print ("nm-dhcp-helper[%ld] %-7s [%ld.%04ld] " _NM_UTILS_MACRO_FIRST (__VA_ARGS__) "\n", \
+			         (long) getpid (), \
+			         nm_utils_syslog_to_str (level), \
+			         _tv.tv_sec, _tv.tv_usec / 100 \
+			         _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+		} \
+	} G_STMT_END
+
+#define _LOGD(...) _NMLOG(TRUE,  LOG_INFO,    __VA_ARGS__)
+#define _LOGI(...) _NMLOG(TRUE,  LOG_NOTICE,  __VA_ARGS__)
+#define _LOGW(...) _NMLOG(TRUE,  LOG_WARNING, __VA_ARGS__)
+#define _LOGE(...) _NMLOG(TRUE,  LOG_ERR,     __VA_ARGS__)
+
+#define _LOGd(...) _NMLOG(FALSE, LOG_INFO,    __VA_ARGS__)
+#define _LOGi(...) _NMLOG(FALSE, LOG_NOTICE,  __VA_ARGS__)
+#define _LOGw(...) _NMLOG(FALSE, LOG_WARNING, __VA_ARGS__)
+
+/*****************************************************************************/
 
 static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
 
@@ -70,30 +105,34 @@ build_signal_parameters (void)
 		g_free (name);
 	}
 
-	return g_variant_new ("(a{sv})", &builder);
+	return g_variant_ref_sink (g_variant_new ("(a{sv})", &builder));
 }
 
 static void
-fatal_error (void)
+kill_pid (void)
 {
-	const char *pid_str = getenv ("pid");
-	int pid = 0;
+	const char *pid_str;
+	pid_t pid = 0;
 
+	pid_str = getenv ("pid");
 	if (pid_str)
 		pid = strtol (pid_str, NULL, 10);
 	if (pid) {
-		g_printerr ("Fatal error occured, killing dhclient instance with pid %d.\n", pid);
+		_LOGI ("a fatal error occured, kill dhclient instance with pid %d\n", pid);
 		kill (pid, SIGTERM);
 	}
-
-	exit (1);
 }
 
 int
 main (int argc, char *argv[])
 {
-	GDBusConnection *connection;
-	GError *error = NULL;
+	gs_unref_object GDBusConnection *connection = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *parameters = NULL;
+	gs_unref_variant GVariant *result = NULL;
+	gboolean success = FALSE;
+	guint try_count = 0;
+	gint64 time_end;
 
 	nm_g_type_init ();
 
@@ -102,33 +141,81 @@ main (int argc, char *argv[])
 	                                                     NULL, NULL, &error);
 	if (!connection) {
 		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: could not connect to NetworkManager D-Bus socket: %s\n",
-		            error->message);
-		g_error_free (error);
-		fatal_error ();
+		_LOGE ("could not connect to NetworkManager D-Bus socket: %s",
+		       error->message);
+		goto out;
 	}
 
-	if (!g_dbus_connection_emit_signal (connection,
-	                                    NULL,
-	                                    "/",
-	                                    NM_DHCP_CLIENT_DBUS_IFACE,
-	                                    "Event",
-	                                    build_signal_parameters (),
-	                                    &error)) {
-		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: Could not send DHCP Event signal: %s\n", error->message);
-		g_error_free (error);
-		fatal_error ();
-	}
+	parameters = build_signal_parameters ();
+
+	time_end = g_get_monotonic_time () + (200 * 1000L); /* retry for at most 200 milliseconds */
+
+do_notify:
+	try_count++;
+	result = g_dbus_connection_call_sync (connection,
+	                                      NULL,
+	                                      NM_DHCP_HELPER_SERVER_OBJECT_PATH,
+	                                      NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
+	                                      NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
+	                                      parameters,
+	                                      NULL,
+	                                      G_DBUS_CALL_FLAGS_NONE,
+	                                      1000,
+	                                      NULL,
+	                                      &error);
+
+	if (!result) {
+		gs_free char *s_err = NULL;
+
+		s_err = g_dbus_error_get_remote_error (error);
+		if (NM_IN_STRSET (s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
+			gint64 remaining_time = time_end - g_get_monotonic_time ();
+
+			/* I am not sure that a race can actually happen, as we register the object
+			 * on the server side during GDBusServer:new-connection signal.
+			 *
+			 * However, there was also a race for subscribing to an event, so let's just
+			 * do some retry. */
+			if (remaining_time > 0) {
+				_LOGi ("failure to call notify: %s (retry %u)", error->message, try_count);
+				g_usleep (NM_MIN (NM_CLAMP ((gint64) (100L * (1L << try_count)), 5000, 25000), remaining_time));
+				g_clear_error (&error);
+				goto do_notify;
+			}
+		}
+		_LOGW ("failure to call notify: %s (try signal via Event)", error->message);
+		g_clear_error (&error);
+
+		/* for backward compatibilty, try to emit the signal. There is no stable
+		 * API between the dhcp-helper and NetworkManager. However, while upgrading
+		 * the NetworkManager package, a newer helper might want to notify an
+		 * older server, which still uses the "Event". */
+		if (!g_dbus_connection_emit_signal (connection,
+		                                    NULL,
+		                                    "/",
+		                                    NM_DHCP_CLIENT_DBUS_IFACE,
+		                                    "Event",
+		                                    parameters,
+		                                    &error)) {
+			g_dbus_error_strip_remote_error (error);
+			_LOGE ("could not send DHCP Event signal: %s", error->message);
+			goto out;
+		}
+		/* We were able to send the asynchronous Event. Consider that a success. */
+		success = TRUE;
+	} else
+		success = TRUE;
 
 	if (!g_dbus_connection_flush_sync (connection, NULL, &error)) {
 		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: Could not flush D-Bus connection: %s\n", error->message);
-		g_error_free (error);
-		fatal_error ();
+		_LOGE ("could not flush D-Bus connection: %s", error->message);
+		success = FALSE;
+		goto out;
 	}
 
-	g_object_unref (connection);
-	return 0;
+out:
+	if (!success)
+		kill_pid ();
+	return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
