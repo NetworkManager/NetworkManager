@@ -56,6 +56,9 @@ typedef struct {
 	char *original_dev_path;
 	NMDevice *device;
 	NMConnection *connection;
+	NMDeviceState state;
+	bool realized:1;
+	bool unmanaged_explicit:1;
 } DeviceCheckpoint;
 
 typedef struct {
@@ -124,17 +127,45 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 		guint32 result = NM_ROLLBACK_RESULT_OK;
 		const char *con_path;
 
-		_LOGD ("rollback: restoring state of device %s", nm_device_get_iface (device));
+		_LOGD ("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d)",
+		       nm_device_get_iface (device),
+		       (int) dev_checkpoint->state,
+		       dev_checkpoint->realized,
+		       dev_checkpoint->unmanaged_explicit);
 
-		if (!nm_device_is_real (device)) {
-			result = NM_ROLLBACK_RESULT_ERR_NO_DEVICE;
-			_LOGD ("rollback: device is not realized");
+		if (nm_device_is_real (device)) {
+			if (!dev_checkpoint->realized) {
+				_LOGD ("rollback: device was not realized, unmanage it");
+				nm_device_set_unmanaged_by_flags_queue (device,
+				                                        NM_UNMANAGED_USER_EXPLICIT,
+				                                        TRUE,
+				                                        NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+				goto next_dev;
+			}
+		} else {
+			if (dev_checkpoint->realized) {
+				if (nm_device_is_software (device)) {
+					/* try to recreate software device */
+					_LOGD ("rollback: software device not realized, will re-activate");
+					goto activate;
+				} else {
+					_LOGD ("rollback: device is not realized");
+					result = NM_ROLLBACK_RESULT_ERR_FAILED;
+				}
+			}
 			goto next_dev;
 		}
 
-		if (nm_device_get_state (device) <= NM_DEVICE_STATE_UNMANAGED) {
-			result = NM_ROLLBACK_RESULT_ERR_DEVICE_UNMANAGED;
-			_LOGD ("rollback: device is unmanaged");
+activate:
+		if (dev_checkpoint->state == NM_DEVICE_STATE_UNMANAGED) {
+			if (   nm_device_get_state (device) != NM_DEVICE_STATE_UNMANAGED
+			    || dev_checkpoint->unmanaged_explicit) {
+				_LOGD ("rollback: explicitly unmanage device");
+				nm_device_set_unmanaged_by_flags_queue (device,
+				                                        NM_UNMANAGED_USER_EXPLICIT,
+				                                        TRUE,
+				                                        NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+			}
 			goto next_dev;
 		}
 
@@ -216,30 +247,18 @@ device_checkpoint_create (NMDevice *device,
 	DeviceCheckpoint *dev_checkpoint;
 	NMConnection *connection;
 	const char *path;
-
-	if (!nm_device_is_real (device)) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		             "device '%s' is not realized",
-		             nm_device_get_iface (device));
-		return NULL;
-	}
-
-	if (nm_device_get_state (device) <= NM_DEVICE_STATE_UNMANAGED) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		             "device '%s' is unmanaged",
-		             nm_device_get_iface (device));
-		return NULL;
-	}
+	gboolean unmanaged_explicit;
 
 	path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
+	unmanaged_explicit = !!nm_device_get_unmanaged_flags (device,
+	                                                      NM_UNMANAGED_USER_EXPLICIT);
 
 	dev_checkpoint = g_slice_new0 (DeviceCheckpoint);
 	dev_checkpoint->device = g_object_ref (device);
 	dev_checkpoint->original_dev_path = g_strdup (path);
+	dev_checkpoint->state = nm_device_get_state (device);
+	dev_checkpoint->realized = nm_device_is_real (device);
+	dev_checkpoint->unmanaged_explicit = unmanaged_explicit;
 
 	connection = nm_device_get_applied_connection (device);
 	if (connection)
