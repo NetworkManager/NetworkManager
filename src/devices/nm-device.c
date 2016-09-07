@@ -11555,16 +11555,17 @@ nm_device_get_hw_address (NMDevice *self)
 	return priv->hw_addr;
 }
 
-void
+gboolean
 nm_device_update_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv;
 	const guint8 *hwaddr;
 	gsize hwaddrlen = 0;
+	gboolean changed = FALSE;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->ifindex <= 0)
-		return;
+		return FALSE;
 
 	hwaddr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &hwaddrlen);
 
@@ -11591,6 +11592,7 @@ nm_device_update_hw_address (NMDevice *self)
 				 * update our inital hw-address as well. */
 				nm_device_update_initial_hw_address (self);
 			}
+			changed = TRUE;
 		}
 	} else {
 		/* Invalid or no hardware address */
@@ -11603,6 +11605,7 @@ nm_device_update_hw_address (NMDevice *self)
 			       "hw-addr: failed reading current MAC address");
 		}
 	}
+	return changed;
 }
 
 void
@@ -11762,6 +11765,15 @@ nm_device_hw_addr_is_explict (NMDevice *self)
 }
 
 static gboolean
+_hw_addr_matches (NMDevice *self, const char *addr)
+{
+	const char *cur_addr;
+
+	cur_addr = nm_device_get_hw_address (self);
+	return cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1);
+}
+
+static gboolean
 _hw_addr_set (NMDevice *self,
               const char *addr,
               const char *operation,
@@ -11771,7 +11783,6 @@ _hw_addr_set (NMDevice *self,
 	gboolean success = FALSE;
 	gboolean needs_refresh = FALSE;
 	NMPlatformError plerr;
-	const char *cur_addr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	guint hw_addr_len;
 	gboolean was_up;
@@ -11782,11 +11793,9 @@ _hw_addr_set (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	cur_addr = nm_device_get_hw_address (self);
-
 	/* Do nothing if current MAC is same */
-	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-		_LOGT (LOGD_DEVICE, "set-hw-addr: no MAC address change needed (%s)", cur_addr);
+	if (_hw_addr_matches (self, addr)) {
+		_LOGT (LOGD_DEVICE, "set-hw-addr: no MAC address change needed (%s)", addr);
 		return TRUE;
 	}
 
@@ -11810,8 +11819,7 @@ _hw_addr_set (NMDevice *self,
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
-		cur_addr = nm_device_get_hw_address (self);
-		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
+		if (_hw_addr_matches (self, addr)) {
 			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
 			       operation, addr, detail);
 		} else {
@@ -11833,24 +11841,51 @@ _hw_addr_set (NMDevice *self,
 	}
 
 	if (needs_refresh) {
-		/* The platform call indicated success, however the address is not
-		 * as expected. May be a kernel issue and the MAC address takes
-		 * a moment to change (bgo#770456).
-		 *
-		 * Try to reload the link and check again. */
-		nm_platform_link_refresh (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self));
-
-		nm_device_update_hw_address (self);
-		cur_addr = nm_device_get_hw_address (self);
-		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
-			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
-			       operation, addr, detail);
+		if (_hw_addr_matches (self, addr)) {
+			/* the MAC address already changed during nm_device_bring_up() above. */
 		} else {
-			_LOGW (LOGD_DEVICE,
-			       "set-hw-addr: new MAC address %s not successfully %s (%s)",
-			       addr, operation, detail);
-			return FALSE;
+			gint64 poll_end, now;
+
+			/* The platform call indicated success, however the address is not
+			 * as expected. That is either due to a driver issue (brcmfmac, bgo#770456,
+			 * rh#1374023) or a race where externally the MAC address was reset.
+			 * The race is rather unlikely.
+			 *
+			 * The alternative would be to postpone the activation in case the
+			 * MAC address is not yet ready and poll without blocking. However,
+			 * that is rather complicated and it is not expected that this case
+			 * happens for regular drivers.
+			 * Note that brcmfmac can block NetworkManager for 500 msec while
+			 * taking down the device. Let's add annother 100 msec to that.
+			 *
+			 * wait/poll up to 100 msec until it changes. */
+
+			poll_end = nm_utils_get_monotonic_timestamp_us () + (100 * 1000);
+			for (;;) {
+				if (!nm_platform_link_refresh (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self)))
+					goto handle_fail;
+				if (!nm_device_update_hw_address (self))
+					goto handle_wait;
+				if (!_hw_addr_matches (self, addr))
+					goto handle_fail;
+
+				break;
+handle_wait:
+				now = nm_utils_get_monotonic_timestamp_us ();
+				if (now < poll_end) {
+					g_usleep (NM_MIN (poll_end - now, 500));
+					continue;
+				}
+handle_fail:
+				_LOGW (LOGD_DEVICE,
+				       "set-hw-addr: new MAC address %s not successfully %s (%s)",
+				       addr, operation, detail);
+				return FALSE;
+			}
 		}
+
+		_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
+		       operation, addr, detail);
 	}
 
 	return success;
