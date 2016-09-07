@@ -512,7 +512,7 @@ _nm_log_impl (const char *file,
 	va_end (args);
 
 	g_get_current_time (&tv);
-	nm_sprintf_buf (s_buf_timestamp, " [%ld.%04ld]", tv.tv_sec, (tv.tv_usec + 50) / 100);
+	nm_sprintf_buf (s_buf_timestamp, " [%ld.%04ld]", tv.tv_sec, tv.tv_usec / 100);
 
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL

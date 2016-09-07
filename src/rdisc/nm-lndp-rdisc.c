@@ -60,18 +60,7 @@ struct _NMLndpRDiscClass {
 
 G_DEFINE_TYPE (NMLndpRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 
-#define NM_LNDP_RDISC_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMLndpRDisc *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_LNDP_RDISC (_self)); \
-		&_self->_priv; \
-	})
+#define NM_LNDP_RDISC_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMLndpRDisc, NM_IS_LNDP_RDISC)
 
 /*****************************************************************************/
 

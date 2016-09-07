@@ -61,18 +61,7 @@ struct _NMIP6ConfigClass {
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_IP6_CONFIG_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMIP6Config *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_IP6_CONFIG (_self)); \
-		&_self->_priv; \
-	})
+#define NM_IP6_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMIP6Config, NM_IS_IP6_CONFIG)
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
 	PROP_IFINDEX,

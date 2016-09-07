@@ -68,18 +68,7 @@ struct _NMIP4ConfigClass {
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
-#define NM_IP4_CONFIG_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMIP4Config *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_IP4_CONFIG (_self)); \
-		&_self->_priv; \
-	})
+#define NM_IP4_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMIP4Config, NM_IS_IP4_CONFIG)
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
 G_STATIC_ASSERT (sizeof (uint) >= sizeof (guint32));

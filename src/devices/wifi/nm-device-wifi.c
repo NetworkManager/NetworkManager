@@ -138,18 +138,7 @@ struct _NMDeviceWifiClass
 
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_WIFI_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMDeviceWifi *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_DEVICE_WIFI (_self)); \
-		&_self->_priv; \
-	})
+#define NM_DEVICE_WIFI_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWifi, NM_IS_DEVICE_WIFI)
 
 /*****************************************************************************/
 

@@ -125,7 +125,7 @@ struct _NMDevice {
 	NMExportedObject parent;
 
 	/* private */
-	struct _NMDevicePrivate *priv;
+	struct _NMDevicePrivate *_priv;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make

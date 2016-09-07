@@ -221,7 +221,11 @@ private_server_new_connection (GDBusServer *server,
 
 	_LOGD ("(%s) accepted connection %p on private socket", s->tag, conn);
 
-	/* Emit this for the manager */
+	/* Emit this for the manager.
+	 *
+	 * It is essential to do this from the "new-connection" signal handler, as
+	 * at that point no messages from the connection are yet processed
+	 * (which avoids races with registering objects). */
 	g_signal_emit (s->manager,
 	               signals[PRIVATE_CONNECTION_NEW],
 	               s->detail,

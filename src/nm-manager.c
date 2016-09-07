@@ -158,20 +158,9 @@ typedef struct {
 	NMExportedObjectClass parent;
 } NMManagerClass;
 
-#define NM_MANAGER_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMManager *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_MANAGER (_self)); \
-		&_self->_priv; \
-	})
-
 G_DEFINE_TYPE (NMManager, nm_manager, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMManager, NM_IS_MANAGER)
 
 enum {
 	DEVICE_ADDED,
