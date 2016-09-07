@@ -724,6 +724,7 @@ auto_activate_device (gpointer user_data)
 		subject = nm_auth_subject_new_internal ();
 		if (!nm_manager_activate_connection (priv->manager,
 		                                     best_connection,
+		                                     NULL,
 		                                     specific_object,
 		                                     data->device,
 		                                     subject,
@@ -1117,6 +1118,7 @@ activate_secondary_connections (NMPolicy *self,
 		       nm_connection_get_id (connection), nm_connection_get_uuid (connection));
 		ac = nm_manager_activate_connection (priv->manager,
 		                                     settings_con,
+		                                     NULL,
 		                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (req)),
 		                                     device,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
@@ -1518,6 +1520,7 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *self)
 	/* Attempt to reconnect VPN connections that failed after being connected */
 	if (!nm_manager_activate_connection (priv->manager,
 	                                     connection,
+	                                     NULL,
 	                                     NULL,
 	                                     NULL,
 	                                     nm_active_connection_get_subject (ac),

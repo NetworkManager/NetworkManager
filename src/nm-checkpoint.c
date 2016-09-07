@@ -178,6 +178,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 			if (!nm_manager_activate_connection (priv->manager,
 			                                     connection,
 			                                     NULL,
+			                                     NULL,
 			                                     device,
 			                                     subject,
 			                                     &local_error)) {

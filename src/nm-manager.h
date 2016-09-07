@@ -105,6 +105,7 @@ char *              nm_manager_get_connection_iface (NMManager *self,
 
 NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
                                                         NMSettingsConnection *connection,
+                                                        NMConnection *applied_connection,
                                                         const char *specific_object,
                                                         NMDevice *device,
                                                         NMAuthSubject *subject,
