@@ -145,19 +145,27 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
                               NMCheckpointCreateFlags flags,
                               GError **error)
 {
+	NMManager *manager;
 	NMCheckpoint *checkpoint;
 	const char * const *path;
 	gs_unref_ptrarray GPtrArray *devices = NULL;
 	NMDevice *device;
 	const char *checkpoint_path;
+	gs_free const char **device_paths_free = NULL;
 	guint i;
 
 	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
+	manager = GET_MANAGER (self);
+
+	if (!device_paths || !device_paths[0]) {
+		device_paths_free = nm_manager_get_device_paths (manager);
+		device_paths = (const char *const *) device_paths_free;
+	}
 
 	devices = g_ptr_array_new ();
 	for (path = device_paths; *path; path++) {
-		device = nm_manager_get_device_by_path (GET_MANAGER (self), *path);
+		device = nm_manager_get_device_by_path (manager, *path);
 		if (!device) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 			             "device %s does not exist", *path);
@@ -178,8 +186,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 		}
 	}
 
-	checkpoint = nm_checkpoint_new (GET_MANAGER (self), devices,
-	                                rollback_timeout, error);
+	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, error);
 	if (!checkpoint)
 		return NULL;
 

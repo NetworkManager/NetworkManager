@@ -209,7 +209,7 @@
     <!--
         CheckpointCreate:
 
-        @devices: a list of device paths for which a checkpoint should be created. An empty list means all managed devices.
+        @devices: a list of device paths for which a checkpoint should be created. An empty list means all devices.
         @rollback_timeout: the time in seconds until NetworkManager will automatically rollback to the checkpoint. Set to zero for infinite.
         @flags: optional flags that influence the creation.
         @checkpoint: on success, returns the path of the checkpoint.

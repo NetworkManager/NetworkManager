@@ -288,29 +288,6 @@ nm_checkpoint_init (NMCheckpoint *self)
 	                                       NULL, device_checkpoint_destroy);
 }
 
-static void
-get_all_devices (NMManager *manager, GPtrArray *devices)
-{
-	const GSList *list, *iter;
-	NMDevice *dev;
-
-	list = nm_manager_get_devices (manager);
-
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		dev = iter->data;
-
-		if (!nm_device_is_real (dev))
-			continue;
-		if (nm_device_get_state (dev) <= NM_DEVICE_STATE_UNMANAGED)
-			continue;
-		/* We never touch assumed connections, unless told explicitly */
-		if (nm_device_uses_assumed_connection (dev))
-			continue;
-
-		g_ptr_array_add (devices, dev);
-	}
-}
-
 NMCheckpoint *
 nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout,
                    GError **error)
@@ -324,9 +301,6 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	g_return_val_if_fail (manager, NULL);
 	g_return_val_if_fail (devices, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
-
-	if (!devices->len)
-		get_all_devices (manager, devices);
 
 	if (!devices->len) {
 		g_set_error_literal (error,
