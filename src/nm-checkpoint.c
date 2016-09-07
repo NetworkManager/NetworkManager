@@ -55,7 +55,8 @@
 typedef struct {
 	char *original_dev_path;
 	NMDevice *device;
-	NMConnection *connection;
+	NMConnection *applied_connection;
+	NMConnection *settings_connection;
 	NMDeviceState state;
 	bool realized:1;
 	bool unmanaged_explicit:1;
@@ -169,11 +170,11 @@ activate:
 			goto next_dev;
 		}
 
-		if (dev_checkpoint->connection) {
+		if (dev_checkpoint->applied_connection) {
 			/* The device had an active connection, check if the
 			 * connection still exists
 			 * */
-			con_uuid = nm_connection_get_uuid (dev_checkpoint->connection);
+			con_uuid = nm_connection_get_uuid (dev_checkpoint->settings_connection);
 			connection = nm_settings_get_connection_by_uuid (nm_settings_get (), con_uuid);
 
 			if (connection) {
@@ -183,7 +184,7 @@ activate:
 				_LOGD ("rollback: connection %s still exists", con_uuid);
 
 				nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
-				                                                dev_checkpoint->connection);
+				                                                dev_checkpoint->settings_connection);
 				nm_settings_connection_commit_changes (connection,
 				                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 				                                       NULL,
@@ -193,7 +194,7 @@ activate:
 				_LOGD ("rollback: adding connection %s again", con_uuid);
 
 				connection = nm_settings_add_connection (nm_settings_get (),
-				                                         dev_checkpoint->connection,
+				                                         dev_checkpoint->settings_connection,
 				                                         TRUE,
 				                                         &local_error);
 				if (!connection) {
@@ -208,7 +209,7 @@ activate:
 			subject = nm_auth_subject_new_internal ();
 			if (!nm_manager_activate_connection (priv->manager,
 			                                     connection,
-			                                     NULL,
+			                                     dev_checkpoint->applied_connection,
 			                                     NULL,
 			                                     device,
 			                                     subject,
@@ -245,7 +246,8 @@ device_checkpoint_create (NMDevice *device,
                           GError **error)
 {
 	DeviceCheckpoint *dev_checkpoint;
-	NMConnection *connection;
+	NMConnection *applied_connection;
+	NMSettingsConnection *settings_connection;
 	const char *path;
 	gboolean unmanaged_explicit;
 
@@ -260,9 +262,16 @@ device_checkpoint_create (NMDevice *device,
 	dev_checkpoint->realized = nm_device_is_real (device);
 	dev_checkpoint->unmanaged_explicit = unmanaged_explicit;
 
-	connection = nm_device_get_applied_connection (device);
-	if (connection)
-		dev_checkpoint->connection = nm_simple_connection_new_clone (connection);
+	applied_connection = nm_device_get_applied_connection (device);
+	if (applied_connection) {
+		dev_checkpoint->applied_connection =
+			nm_simple_connection_new_clone (applied_connection);
+
+		settings_connection = nm_device_get_settings_connection (device);
+		g_return_val_if_fail (settings_connection, NULL);
+		dev_checkpoint->settings_connection =
+			nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
+	}
 
 	return dev_checkpoint;
 }
@@ -272,7 +281,8 @@ device_checkpoint_destroy (gpointer data)
 {
 	DeviceCheckpoint *dev_checkpoint = data;
 
-	g_clear_object (&dev_checkpoint->connection);
+	g_clear_object (&dev_checkpoint->applied_connection);
+	g_clear_object (&dev_checkpoint->settings_connection);
 	g_clear_object (&dev_checkpoint->device);
 	g_free (dev_checkpoint->original_dev_path);
 
