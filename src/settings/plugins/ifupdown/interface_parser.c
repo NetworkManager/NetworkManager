@@ -289,7 +289,7 @@ _ifparser_source (const char *path, const char *en_dir, int quiet, int dir)
 		if (!quiet)
 			nm_log_warn (LOGD_SETTINGS, "word expansion for %s failed\n", abs_path);
 	} else {
-		for (i = 0; i < we.we_wordc; i++)
+		for (i = 0; i < we.we_wordc; i++) {
 			if (dir) {
 				source_dir = g_dir_open (we.we_wordv[i], 0, &error);
 				if (!source_dir) {
@@ -305,6 +305,7 @@ _ifparser_source (const char *path, const char *en_dir, int quiet, int dir)
 				}
 			} else
 				_recursive_ifparser (we.we_wordv[i], quiet);
+		}
 		wordfree (&we);
 	}
 	g_free (abs_path);
