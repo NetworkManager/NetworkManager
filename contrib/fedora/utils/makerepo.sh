@@ -228,29 +228,31 @@ detect_build_type() {
 detect_dirname() {
     local BUILD_TYPE="$1"
     local DIRS=()
-	local SOURCES
-	local D suffix T
+    local SOURCES
+    local D suffix T
 
-	SOURCES=$(sed 's/.* //' ./sources 2>/dev/null)
+    SOURCES=$(sed 's/.* //' ./sources 2>/dev/null)
 
-    for suffix in .tar.gz .tar.bz .tar.xz .tgz ; do
-		for T in ${SOURCES[@]}; do
-			if [[ "$T" == *$suffix ]]; then
-				D="${T%$suffix}"
-				[[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
-			fi
-		done
+    for suffix in .tar.gz .tar.bz .tar.xz .tgz .tar.bz2 ; do
+        for T in ${SOURCES[@]}; do
+            if [[ "$T" == *$suffix ]]; then
+                D="${T%$suffix}"
+                [[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
+                D="$(tar -tf "$T" | sed 's#/.*##' | sort | uniq)"
+                [[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
+            fi
+        done
 
-	    # iterate over all tarballs that start with "$BUILD_TYPE" and
-	    # see if there exists a directory with the same name as
-		# the unpacked tarball (that is, stripping the suffix).
-		for T in $(ls -1 "$BUILD_TYPE"*"$suffix" 2>/dev/null); do
-			D="${T%$suffix}"
-			[[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
-		done
+        # iterate over all tarballs that start with "$BUILD_TYPE" and
+        # see if there exists a directory with the same name as
+        # the unpacked tarball (that is, stripping the suffix).
+        for T in $(ls -1 "$BUILD_TYPE"*"$suffix" 2>/dev/null); do
+            D="${T%$suffix}"
+            [[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
+        done
     done
 
-	D=
+    D=
     if [[ ${#DIRS[@]} -ge 1 ]]; then
         # return the newest directory.
         D="$(ls -1d --sort=time --time=ctime "${DIRS[@]}" 2>/dev/null | head -n1)"
@@ -259,7 +261,7 @@ detect_dirname() {
         printf "%s" "$D"
         return 0
     fi
-	return 1
+    return 1
 }
 
 BUILD_TYPE=
