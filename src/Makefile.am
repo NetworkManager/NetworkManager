@@ -345,6 +345,8 @@ libNetworkManager_la_SOURCES = \
 	\
 	dns-manager/nm-dns-dnsmasq.c \
 	dns-manager/nm-dns-dnsmasq.h \
+	dns-manager/nm-dns-systemd-resolved.c \
+	dns-manager/nm-dns-systemd-resolved.h \
 	dns-manager/nm-dns-unbound.c \
 	dns-manager/nm-dns-unbound.h \
 	dns-manager/nm-dns-manager.c \
