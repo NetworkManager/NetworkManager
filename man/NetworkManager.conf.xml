@@ -275,10 +275,12 @@ no-auto-default=*
       <varlistentry>
         <term><varname>dns</varname></term>
         <listitem><para>Set the DNS (<filename>resolv.conf</filename>) processing mode.</para>
-        <para><literal>default</literal>: The default if the key is
-        not specified. NetworkManager will update
+        <para><literal>default</literal>: NetworkManager will update
         <filename>resolv.conf</filename> to reflect the nameservers
-        provided by currently active connections.</para>
+        provided by currently active connections.  This is the default
+        if the key is not specified, unless the system is configured
+        to use systemd-resolved; in this case the default is
+        <literal>systemd-resolved</literal></para>
         <para><literal>dnsmasq</literal>: NetworkManager will run
         dnsmasq as a local caching nameserver, using a "split DNS"
         configuration if you are connected to a VPN, and then update
@@ -288,6 +290,8 @@ no-auto-default=*
         to unbound and dnssec-triggerd, providing a "split DNS"
         configuration with DNSSEC support. The /etc/resolv.conf
         will be managed by dnssec-trigger daemon.</para>
+        <para><literal>systemd-resolved</literal>: NetworkManager will
+        push the DNS configuration to systemd-resolved</para>
         <para><literal>none</literal>: NetworkManager will not
         modify resolv.conf. This implies
         <literal>rc-manager</literal>&nbsp;<literal>unmanaged</literal></para>
