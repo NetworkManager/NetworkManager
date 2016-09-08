@@ -738,7 +738,7 @@ nm_vpn_plugin_info_list_get_service_types (GSList *list,
 			n = _service_type_get_default_abbreviation (priv->service);
 			if (n)
 				g_ptr_array_add (l, g_strdup (n));
-			for (i = 0; priv->aliases[i]; i++) {
+			for (i = 0; priv->aliases && priv->aliases[i]; i++) {
 				n = _service_type_get_default_abbreviation (priv->aliases[i]);
 				if (n)
 					g_ptr_array_add (l, g_strdup (n));
