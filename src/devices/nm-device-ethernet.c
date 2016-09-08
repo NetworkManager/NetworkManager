@@ -799,40 +799,39 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-	}
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
 
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		/* If we're re-activating a PPPoE connection a short while after
-		 * a previous PPPoE connection was torn down, wait a bit to allow the
-		 * remote side to handle the disconnection.  Otherwise the peer may
-		 * get confused and fail to negotiate the new connection. (rh #1023503)
-		 */
-		if (priv->last_pppoe_time) {
-			gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
+	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
-			if (   delay < PPPOE_RECONNECT_DELAY
-			    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
-				_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
-				       delay);
-				g_assert (!priv->pppoe_wait_id);
-				priv->pppoe_wait_id = g_timeout_add_seconds (delay,
-				                                             pppoe_reconnect_delay,
-				                                             self);
-				ret = NM_ACT_STAGE_RETURN_POSTPONE;
-			} else
-				priv->last_pppoe_time = 0;
+	/* If we're re-activating a PPPoE connection a short while after
+	 * a previous PPPoE connection was torn down, wait a bit to allow the
+	 * remote side to handle the disconnection.  Otherwise the peer may
+	 * get confused and fail to negotiate the new connection. (rh #1023503)
+	 */
+	if (priv->last_pppoe_time) {
+		gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
+
+		if (   delay < PPPOE_RECONNECT_DELAY
+		    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
+			_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
+			       delay);
+			g_assert (!priv->pppoe_wait_id);
+			priv->pppoe_wait_id = g_timeout_add_seconds (delay,
+								     pppoe_reconnect_delay,
+								     self);
+			return NM_ACT_STAGE_RETURN_POSTPONE;
 		}
+		priv->last_pppoe_time = 0;
 	}
 
-	return ret;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn
