@@ -1800,8 +1800,6 @@ DEFINE_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
 
 /* --- NM_SETTING_WIRED_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
-DEFINE_GETTER (nmc_property_wired_get_speed, NM_SETTING_WIRED_SPEED)
-DEFINE_GETTER (nmc_property_wired_get_duplex, NM_SETTING_WIRED_DUPLEX)
 DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
 DEFINE_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
@@ -1811,6 +1809,30 @@ DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SU
 DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
 DEFINE_GETTER (nmc_property_wired_get_s390_options, NM_SETTING_WIRED_S390_OPTIONS)
 DEFINE_GETTER (nmc_property_wired_get_wake_on_lan_password, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD)
+
+static char *
+nmc_property_wired_get_speed (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	guint32 speed;
+
+	speed = nm_setting_wired_get_speed (s_wired);
+	return g_strdup_printf ("%d", speed);
+}
+
+static char *
+nmc_property_wired_get_duplex (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	const char *str;
+
+	str = nm_setting_wired_get_duplex (s_wired);
+	if (!str)
+		return NULL;
+	else
+		return g_strdup (str);
+
+}
 
 static char *
 nmc_property_wired_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)

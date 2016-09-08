@@ -1071,7 +1071,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/* ---ifcfg-rh---
 	 * property: auto-negotiate
 	 * variable: ETHTOOL_OPTS
-	 * description: Wether link speed and duplex autonegotiation is enabled.
+	 * description: Whether link speed and duplex autonegotiation is enabled.
 	 *    It is not saved only if disabled and no values are provided for the
 	 *    "speed" and "duplex" parameters (skips link configuration).
 	 * ---end---

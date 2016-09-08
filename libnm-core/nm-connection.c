@@ -724,16 +724,16 @@ _normalize_ethernet_link_neg (NMConnection *self)
 
 	if (s_wired) {
 		gboolean autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
-		guint speed = nm_setting_wired_get_speed (s_wired);
+		guint32 speed = nm_setting_wired_get_speed (s_wired);
 		const char *duplex = nm_setting_wired_get_duplex (s_wired);
 
-		if ((autoneg) && (speed || duplex)) {
+		if (autoneg && (speed || duplex)) {
 			speed = 0;
 			duplex = NULL;
 			g_object_set (s_wired,
-				      NM_SETTING_WIRED_SPEED, speed,
-				      NM_SETTING_WIRED_DUPLEX, duplex,
-				      NULL);
+			              NM_SETTING_WIRED_SPEED, (guint) speed,
+			              NM_SETTING_WIRED_DUPLEX, duplex,
+			              NULL);
 			return TRUE;
 		}
 	}
