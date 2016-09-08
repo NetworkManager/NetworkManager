@@ -2010,8 +2010,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint priority;
 	int timeout;
 	GString *searches;
-	gboolean success = FALSE;
-	gboolean fake_ip4 = FALSE;
 	const char *method = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2073,12 +2071,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		result = unlink (route_path);
 		g_free (route_path);
 		return TRUE;
-	}
-
-	/* Temporarily create fake IP4 setting if missing; method set to DHCP above */
-	if (!s_ip4) {
-		s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
-		fake_ip4 = TRUE;
 	}
 
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
@@ -2255,7 +2247,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (!route_path) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not get route file path for '%s'", ifcfg->fileName);
-		goto out;
+		return FALSE;
 	}
 
 	if (utils_has_route_file_new_syntax (route_path)) {
@@ -2266,7 +2258,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create route file '%s'", route_path);
 			g_free (route_path);
-			goto out;
+			return FALSE;
 		}
 		g_free (route_path);
 
@@ -2317,14 +2309,14 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 		if (!svWriteFile (routefile, 0644, error)) {
 			svCloseFile (routefile);
-			goto out;
+			return FALSE;
 		}
 		svCloseFile (routefile);
 	} else {
 		write_route_file_legacy (route_path, s_ip4, error);
 		g_free (route_path);
 		if (error && *error)
-			goto out;
+			return FALSE;
 	}
 
 	timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
@@ -2343,13 +2335,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else
 		svSetValue (ifcfg, "IPV4_DNS_PRIORITY", NULL, FALSE);
 
-	success = TRUE;
-
-out:
-	if (fake_ip4)
-		g_object_unref (s_ip4);
-
-	return success;
+	return TRUE;
 }
 
 static void
