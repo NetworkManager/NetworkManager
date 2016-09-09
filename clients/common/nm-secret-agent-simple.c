@@ -455,19 +455,14 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		s_con = nm_connection_get_setting_connection (request->connection);
 
 		title = _("Wired 802.1X authentication");
-		msg = NULL;
+		msg = g_strdup_printf (_("Secrets are required to access the wired network '%s'"),
+		                       nm_connection_get_id (request->connection));
 
-		secret = nm_secret_agent_simple_secret_new (_("Network name"),
-		                                            NM_SETTING (s_con),
-		                                            NM_SETTING_CONNECTION_ID,
-		                                            NULL,
-		                                            NULL,
-		                                            FALSE);
-		g_ptr_array_add (secrets, secret);
 		ok = add_8021x_secrets (request, secrets);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_PPPOE_SETTING_NAME)) {
 		title = _("DSL authentication");
-		msg = NULL;
+		msg = g_strdup_printf (_("Secrets are required for the DSL connection '%s'"),
+		                       nm_connection_get_id (request->connection));
 
 		ok = add_pppoe_secrets (request, secrets);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_GSM_SETTING_NAME)) {
