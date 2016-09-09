@@ -807,7 +807,7 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 	 * When the dialog is complete, the app must call
 	 * nm_secret_agent_simple_response() with the results.
 	 */
-	signals[REQUEST_SECRETS] = g_signal_new ("request-secrets",
+	signals[REQUEST_SECRETS] = g_signal_new (NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
 	                                         G_TYPE_FROM_CLASS (klass),
 	                                         0, 0, NULL, NULL, NULL,
 	                                         G_TYPE_NONE,

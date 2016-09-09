@@ -2534,7 +2534,10 @@ nmc_activate_connection (NmCli *nmc,
 	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
 	if (nmc->secret_agent) {
-		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (nmc_secrets_requested), nmc);
+		g_signal_connect (nmc->secret_agent,
+		                  NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+		                  G_CALLBACK (nmc_secrets_requested),
+		                  nmc);
 		if (connection) {
 			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
 			                               nm_object_get_path (NM_OBJECT (connection)));

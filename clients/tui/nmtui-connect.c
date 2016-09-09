@@ -239,7 +239,10 @@ activate_connection (NMConnection *connection,
 			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent),
 			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
-		g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), connection);
+		g_signal_connect (agent,
+		                  NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+		                  G_CALLBACK (secrets_requested),
+		                  connection);
 	}
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;
