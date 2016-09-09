@@ -27,12 +27,15 @@
 /* This file should only be used by subclasses of NMDevice */
 
 enum NMActStageReturn {
-	NM_ACT_STAGE_RETURN_FAILURE = 0,
+	NM_ACT_STAGE_RETURN_FAILURE = 0, /* Hard failure of activation */
 	NM_ACT_STAGE_RETURN_SUCCESS,     /* Activation stage done */
 	NM_ACT_STAGE_RETURN_POSTPONE,    /* Long-running operation in progress */
-	NM_ACT_STAGE_RETURN_WAIT,        /* Not ready to start stage; wait */
-	NM_ACT_STAGE_RETURN_STOP,        /* Activation not wanted */
-	NM_ACT_STAGE_RETURN_FINISH       /* Activation stage done; nothing to do */
+	NM_ACT_STAGE_RETURN_IP_WAIT,     /* IP config stage is waiting (state IP_WAIT) */
+	NM_ACT_STAGE_RETURN_IP_DONE,     /* IP config stage is done (state IP_DONE),
+	                                    For the ip-config stage, this is similar to
+	                                    NM_ACT_STAGE_RETURN_SUCCESS, except that no
+	                                    IP config should be commited. */
+	NM_ACT_STAGE_RETURN_IP_FAIL,     /* IP config stage failed (state IP_FAIL), activation may proceed */
 };
 
 #define NM_DEVICE_CAP_NONSTANDARD_CARRIER 0x80000000
