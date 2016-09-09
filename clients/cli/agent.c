@@ -96,7 +96,8 @@ get_secrets_from_user (const char *request_id,
 		char *pwd = NULL;
 
 		/* Ask user for the password */
-		g_print ("%s\n", msg);
+		if (msg)
+			g_print ("%s\n", msg);
 		if (secret->value) {
 			/* Prefill the password if we have it. */
 			rl_startup_hook = set_deftext;
