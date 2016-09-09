@@ -2178,6 +2178,10 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, Activ
 		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
 		activate_connection_info_finish (info);
+	} else if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		activate_connection_info_finish (info);
 	} else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		/* activating master connection does not automatically activate any slaves, so their
 		 * active connection state will not progress beyond ACTIVATING state.
