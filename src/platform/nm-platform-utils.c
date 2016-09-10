@@ -40,6 +40,13 @@
 /******************************************************************
  * ethtool
  ******************************************************************/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+#define ethtool_cmd_speed(pedata) ((pedata)->speed)
+
+#define ethtool_cmd_speed_set(pedata, speed) \
+	G_STMT_START { (pedata)->speed = (guint16) (speed); } G_STMT_END
+#endif
+
 
 static gboolean
 ethtool_get (const char *name, gpointer edata)
@@ -261,27 +268,83 @@ nmp_utils_ethtool_get_wake_on_lan (const char *ifname)
 }
 
 gboolean
-nmp_utils_ethtool_get_link_speed (const char *ifname, guint32 *out_speed)
+nmp_utils_ethtool_get_link_settings (const char *ifname,
+                                     gboolean *out_autoneg,
+                                     guint32 *out_speed,
+                                     NMPlatformLinkDuplexType *out_duplex)
 {
 	struct ethtool_cmd edata = {
 		.cmd = ETHTOOL_GSET,
 	};
-	guint32 speed;
 
 	if (!ethtool_get (ifname, &edata))
 		return FALSE;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	speed = edata.speed;
-#else
-	speed = ethtool_cmd_speed (&edata);
-#endif
-	if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
-		speed = 0;
+	if (out_autoneg)
+		*out_autoneg = (edata.autoneg == AUTONEG_ENABLE);
 
-	if (out_speed)
+	if (out_speed) {
+		guint32 speed;
+
+		speed = ethtool_cmd_speed (&edata);
+		if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
+			speed = 0;
+
 		*out_speed = speed;
+	}
+
+	if (out_duplex) {
+		switch (edata.duplex) {
+		case DUPLEX_HALF:
+			*out_duplex = NM_PLATFORM_LINK_DUPLEX_HALF;
+			break;
+		case DUPLEX_FULL:
+			*out_duplex = NM_PLATFORM_LINK_DUPLEX_FULL;
+			break;
+		default: /* DUPLEX_UNKNOWN */
+			*out_duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+			break;
+		}
+	}
+
 	return TRUE;
+}
+
+gboolean
+nmp_utils_ethtool_set_link_settings (const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
+{
+	struct ethtool_cmd edata = {
+		.cmd = ETHTOOL_GSET,
+	};
+
+	/* retrieve first current settings */
+	if (!ethtool_get (ifname, &edata))
+		return FALSE;
+
+	/* then change the needed ones */
+	edata.cmd = ETHTOOL_SSET;
+	if (autoneg) {
+		edata.autoneg = AUTONEG_ENABLE;
+		edata.advertising = edata.supported;
+	} else {
+		edata.autoneg = AUTONEG_DISABLE;
+
+		if (speed)
+			ethtool_cmd_speed_set (&edata, speed);
+
+		switch (duplex) {
+		case NM_PLATFORM_LINK_DUPLEX_HALF:
+			edata.duplex = DUPLEX_HALF;
+			break;
+		case NM_PLATFORM_LINK_DUPLEX_FULL:
+			edata.duplex = DUPLEX_FULL;
+			break;
+		default: /* NM_PLATFORM_LINK_DUPLEX_UNSET */
+			break;
+		}
+	}
+
+	return ethtool_get (ifname, &edata);
 }
 
 gboolean

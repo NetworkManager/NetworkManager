@@ -1522,7 +1522,7 @@ get_link_speed (NMDevice *device)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 speed;
 
-	if (!nm_platform_ethtool_get_link_speed (NM_PLATFORM_GET, nm_device_get_iface (device), &speed))
+	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_iface (device), NULL, &speed, NULL))
 		return;
 	if (priv->speed == speed)
 		return;
