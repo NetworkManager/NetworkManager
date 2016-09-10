@@ -782,6 +782,97 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	return TRUE;
 }
 
+static const char *
+link_duplex_to_string (NMPlatformLinkDuplexType duplex)
+{
+	switch (duplex) {
+	case NM_PLATFORM_LINK_DUPLEX_FULL:
+		return "full";
+		break;
+	case NM_PLATFORM_LINK_DUPLEX_HALF:
+		return "half";
+		break;
+	default:
+		return "unknown";
+		break;
+	}
+}
+
+static NMPlatformLinkDuplexType
+link_duplex_to_platform (const char *duplex)
+{
+	if (!duplex)
+		return NM_PLATFORM_LINK_DUPLEX_UNSET;
+
+	if (nm_streq (duplex, "full"))
+		return NM_PLATFORM_LINK_DUPLEX_FULL;
+
+	if (nm_streq (duplex, "half"))
+		return NM_PLATFORM_LINK_DUPLEX_HALF;
+
+	return NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+}
+
+static void
+link_negotiation_set (NMDevice *device)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMSettingWired *s_wired;
+	gboolean autoneg = TRUE, link_autoneg;
+	NMPlatformLinkDuplexType link_duplex, duplex = NM_PLATFORM_LINK_DUPLEX_UNSET;
+	guint32 speed = 0, link_speed;
+
+	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
+	if (s_wired) {
+		autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
+		if (!autoneg) {
+			speed = nm_setting_wired_get_speed (s_wired);
+			duplex = link_duplex_to_platform (nm_setting_wired_get_duplex (s_wired));
+			if (!speed && !duplex) {
+				_LOGD (LOGD_DEVICE, "set-link: ignore link negotiation");
+				return;
+			}
+		}
+	}
+
+	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_iface (device),
+	                                            &link_autoneg, &link_speed, &link_duplex)) {
+		_LOGW (LOGD_DEVICE, "set-link: unable to retrieve link negotiation");
+		return;
+	}
+
+	/* If link negotiation setting are already in place do nothing and return with success */
+	if (autoneg != link_autoneg)
+		goto set_link;
+
+	if (speed && (speed != link_speed))
+		goto set_link;
+
+	if (duplex && (duplex != link_duplex))
+		goto set_link;
+
+	_LOGW (LOGD_DEVICE, "set-link: link negotiation is already configured");
+	return;
+
+set_link:
+	if (!nm_platform_ethtool_set_link_settings (NM_PLATFORM_GET,
+	                                            nm_device_get_iface (device),
+	                                            autoneg,
+	                                            speed,
+	                                            duplex)) {
+		_LOGW (LOGD_DEVICE, "set-link: failure to set link negotiation");
+		return;
+	}
+
+	if (autoneg)
+		_LOGD (LOGD_DEVICE, "set-link: configure autonegotiation");
+	else {
+		_LOGD (LOGD_DEVICE, "set-link: configure static negotiation (%u Mbit - %s duplex)",
+		       speed ?: link_speed,
+		       duplex ? link_duplex_to_string (duplex) : link_duplex_to_string (link_duplex));
+	}
+}
+
 static gboolean
 pppoe_reconnect_delay (gpointer user_data)
 {
@@ -806,6 +897,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
+
+	link_negotiation_set (dev);
 
 	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
 		return NM_ACT_STAGE_RETURN_FAILURE;
