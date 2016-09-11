@@ -11835,12 +11835,8 @@ _hw_addr_set (NMDevice *self,
 		        nm_platform_error_to_string (plerr));
 	}
 
-	if (was_up) {
-		if (!nm_device_bring_up (self, TRUE, NULL))
-			return FALSE;
-	}
-
 	if (needs_refresh) {
+		success = TRUE;
 		if (_hw_addr_matches (self, addr)) {
 			/* the MAC address already changed during nm_device_bring_up() above. */
 		} else {
@@ -11877,15 +11873,24 @@ handle_wait:
 					continue;
 				}
 handle_fail:
-				_LOGW (LOGD_DEVICE,
-				       "set-hw-addr: new MAC address %s not successfully %s (%s)",
-				       addr, operation, detail);
-				return FALSE;
+				success = FALSE;
+				break;
 			}
 		}
 
-		_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
-		       operation, addr, detail);
+		if (success) {
+			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
+			       operation, addr, detail);
+		} else {
+			_LOGW (LOGD_DEVICE,
+			       "set-hw-addr: new MAC address %s not successfully %s (%s)",
+			       addr, operation, detail);
+		}
+	}
+
+	if (was_up) {
+		if (!nm_device_bring_up (self, TRUE, NULL))
+			return FALSE;
 	}
 
 	return success;
