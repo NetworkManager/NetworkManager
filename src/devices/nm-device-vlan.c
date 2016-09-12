@@ -282,20 +282,6 @@ get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-static gboolean
-bring_up (NMDevice *dev, gboolean *no_firmware)
-{
-	gboolean success = FALSE;
-	guint i = 20;
-
-	while (i-- > 0 && !success) {
-		success = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->bring_up (dev, no_firmware);
-		g_usleep (50);
-	}
-
-	return success;
-}
-
 /******************************************************************/
 
 static gboolean
@@ -673,7 +659,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->unrealize_notify = unrealize_notify;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->bring_up = bring_up;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->is_available = is_available;

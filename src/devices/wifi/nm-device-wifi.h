@@ -39,6 +39,13 @@
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
 
+/* signals */
+#define NM_DEVICE_WIFI_ACCESS_POINT_ADDED  "access-point-added"
+#define NM_DEVICE_WIFI_ACCESS_POINT_REMOVED "access-point-removed"
+
+/* internal signals */
+#define NM_DEVICE_WIFI_SCANNING_ALLOWED    "scanning-allowed"
+
 typedef struct _NMDeviceWifi NMDeviceWifi;
 typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
 

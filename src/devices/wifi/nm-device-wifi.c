@@ -452,15 +452,6 @@ periodic_update_cb (gpointer user_data)
 	return TRUE;
 }
 
-static gboolean
-bring_up (NMDevice *device, gboolean *no_firmware)
-{
-	if (!NM_DEVICE_WIFI_GET_PRIVATE ((NMDeviceWifi *) device)->enabled)
-		return FALSE;
-
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->bring_up (device, no_firmware);
-}
-
 static void
 ap_add_remove (NMDeviceWifi *self,
                guint signum,
@@ -2945,6 +2936,12 @@ device_state_changed (NMDevice *device,
 		remove_all_aps (self);
 }
 
+static gboolean
+get_enabled (NMDevice *device)
+{
+	return NM_DEVICE_WIFI_GET_PRIVATE ((NMDeviceWifi *) device)->enabled;
+}
+
 static void
 set_enabled (NMDevice *device, gboolean enabled)
 {
@@ -3132,12 +3129,12 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	parent_class->bring_up = bring_up;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
+	parent_class->get_enabled = get_enabled;
 	parent_class->set_enabled = set_enabled;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
@@ -3199,7 +3196,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
-	    g_signal_new ("access-point-added",
+	    g_signal_new (NM_DEVICE_WIFI_ACCESS_POINT_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -3208,7 +3205,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                  NM_TYPE_AP);
 
 	signals[ACCESS_POINT_REMOVED] =
-	    g_signal_new ("access-point-removed",
+	    g_signal_new (NM_DEVICE_WIFI_ACCESS_POINT_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -3217,7 +3214,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                  NM_TYPE_AP);
 
 	signals[SCANNING_ALLOWED] =
-	    g_signal_new ("scanning-allowed",
+	    g_signal_new (NM_DEVICE_WIFI_SCANNING_ALLOWED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),

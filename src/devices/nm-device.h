@@ -87,6 +87,7 @@
 #define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
 #define NM_DEVICE_STATE_CHANGED         "state-changed"
 #define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
+#define NM_DEVICE_AUTOCONNECT_ALLOWED   "autoconnect-allowed"
 
 #define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"
@@ -204,9 +205,6 @@ typedef struct {
 
 	/* Hardware state (IFF_UP) */
 	gboolean        (*can_unmanaged_external_down)  (NMDevice *self);
-	gboolean        (*is_up)                        (NMDevice *self);
-	gboolean        (*bring_up)                     (NMDevice *self, gboolean *no_firmware);
-	gboolean        (*take_down)                    (NMDevice *self);
 
 	/* Carrier state (IFF_LOWER_UP) */
 	void            (*carrier_changed) (NMDevice *, gboolean carrier);
