@@ -9120,6 +9120,11 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	_LOGD (LOGD_HW, "bringing up device");
 
+	NM_SET_OUT (no_firmware, FALSE);
+
+	if (!nm_device_get_enabled (self))
+		return FALSE;
+
 	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
 		if (!NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware))
 			return FALSE;

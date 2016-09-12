@@ -452,15 +452,6 @@ periodic_update_cb (gpointer user_data)
 	return TRUE;
 }
 
-static gboolean
-bring_up (NMDevice *device, gboolean *no_firmware)
-{
-	if (!NM_DEVICE_WIFI_GET_PRIVATE ((NMDeviceWifi *) device)->enabled)
-		return FALSE;
-
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->bring_up (device, no_firmware);
-}
-
 static void
 ap_add_remove (NMDeviceWifi *self,
                guint signum,
@@ -3138,7 +3129,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	parent_class->bring_up = bring_up;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
