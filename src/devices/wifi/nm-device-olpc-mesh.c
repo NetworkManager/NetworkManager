@@ -178,7 +178,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 
 	/* wait with continuing configuration untill the companion device is done scanning */
-	g_object_get (priv->companion, "scanning", &scanning, NULL);
+	g_object_get (priv->companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
 	if (scanning) {
 		priv->stage1_waiting = TRUE;
 		return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -267,7 +267,7 @@ companion_notify_cb (NMDeviceWifi *companion, GParamSpec *pspec, gpointer user_d
 	if (!priv->stage1_waiting)
 		return;
 
-	g_object_get (companion, "scanning", &scanning, NULL);
+	g_object_get (companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
 
 	if (!scanning) {
 		priv->stage1_waiting = FALSE;
@@ -343,13 +343,13 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	g_signal_connect (G_OBJECT (other), NM_DEVICE_STATE_CHANGED,
 	                  G_CALLBACK (companion_state_changed_cb), self);
 
-	g_signal_connect (G_OBJECT (other), "notify::scanning",
+	g_signal_connect (G_OBJECT (other), "notify::" NM_DEVICE_WIFI_SCANNING,
 	                  G_CALLBACK (companion_notify_cb), self);
 
-	g_signal_connect (G_OBJECT (other), "scanning-allowed",
+	g_signal_connect (G_OBJECT (other), NM_DEVICE_WIFI_SCANNING_ALLOWED,
 	                  G_CALLBACK (companion_scan_allowed_cb), self);
 
-	g_signal_connect (G_OBJECT (other), "autoconnect-allowed",
+	g_signal_connect (G_OBJECT (other), NM_DEVICE_AUTOCONNECT_ALLOWED,
 	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);

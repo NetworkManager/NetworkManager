@@ -12921,7 +12921,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[AUTOCONNECT_ALLOWED] =
-	    g_signal_new ("autoconnect-allowed",
+	    g_signal_new (NM_DEVICE_AUTOCONNECT_ALLOWED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  0,

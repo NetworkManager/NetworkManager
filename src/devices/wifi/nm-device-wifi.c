@@ -3199,7 +3199,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
-	    g_signal_new ("access-point-added",
+	    g_signal_new (NM_DEVICE_WIFI_ACCESS_POINT_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -3208,7 +3208,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                  NM_TYPE_AP);
 
 	signals[ACCESS_POINT_REMOVED] =
-	    g_signal_new ("access-point-removed",
+	    g_signal_new (NM_DEVICE_WIFI_ACCESS_POINT_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -3217,7 +3217,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                  NM_TYPE_AP);
 
 	signals[SCANNING_ALLOWED] =
-	    g_signal_new ("scanning-allowed",
+	    g_signal_new (NM_DEVICE_WIFI_SCANNING_ALLOWED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),
