@@ -726,6 +726,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSetting *setting;
 	gboolean changed = FALSE;
+	guint num, i;
 
 	if (parameters)
 		default_ip6_method = g_hash_table_lookup (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
@@ -769,6 +770,15 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			                  NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
 			    && !nm_setting_ip_config_get_may_fail (s_ip4)) {
 				g_object_set (s_ip4, NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE, NULL);
+				changed = TRUE;
+			}
+
+			num = nm_setting_ip_config_get_num_addresses (s_ip4);
+			if (   num > 1
+			    && nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
+			                  NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+				for (i = num - 1; i > 0; i--)
+					nm_setting_ip_config_remove_address (s_ip4, i);
 				changed = TRUE;
 			}
 		}

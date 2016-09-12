@@ -225,6 +225,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	/* Failures from here on are NORMALIZABLE_ERROR... */
+
+	if (   nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)
+	    && nm_setting_ip_config_get_num_addresses (s_ip) > 1) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("multiple addresses are not allowed for '%s=%s'"),
+		             NM_SETTING_IP_CONFIG_METHOD,
+		             NM_SETTING_IP4_CONFIG_METHOD_SHARED);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_ADDRESSES);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
 	/* Failures from here on are NORMALIZABLE... */
 
 	if (   !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
