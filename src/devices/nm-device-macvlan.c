@@ -267,20 +267,6 @@ get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-static gboolean
-bring_up (NMDevice *dev, gboolean *no_firmware)
-{
-	gboolean success = FALSE;
-	guint i = 20;
-
-	while (i-- > 0 && !success) {
-		success = NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->bring_up (dev, no_firmware);
-		g_usleep (50);
-	}
-
-	return success;
-}
-
 /******************************************************************/
 
 static gboolean
@@ -616,7 +602,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	object_class->set_property = set_property;
 
 	device_class->act_stage1_prepare = act_stage1_prepare;
-	device_class->bring_up = bring_up;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->connection_type = NM_SETTING_MACVLAN_SETTING_NAME;
