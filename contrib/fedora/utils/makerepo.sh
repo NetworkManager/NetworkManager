@@ -359,6 +359,8 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-vpnc";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
+    elif [[ "$BUILD_TYPE" == "wpa_supplicant" ]]; then
+        git remote add origin "git://w1.fi/hostap.git"
     elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
     elif [[ "$BUILD_TYPE" == "libqmi" ]]; then
@@ -455,6 +457,9 @@ c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *Netw
 
 # libqmi
 7d688f382f9756027bf92338e413e425365d2835  17d6c2b404ee1eb4d1e60050fef64491 *libqmi-1.6.0.tar.xz
+
+# wpa_supplicant
+22760dd94722a61175ff90c59d88c4cda1ed5e23  3be2ebfdcced52e00eda0afe2889839d *wpa_supplicant-2.0.tar.gz
 
 # libibverbs
 990ca025d0ad967b6f266bae700bf82a4ceaff1a  1fe85889c8bbc4968b1feba6524ca408 *libibverbs-1.1.8.tar.gz
