@@ -9093,19 +9093,11 @@ carrier_wait_timeout (gpointer user_data)
 static gboolean
 nm_device_is_up (NMDevice *self)
 {
+	int ifindex;
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (NM_DEVICE_GET_CLASS (self)->is_up)
-		return NM_DEVICE_GET_CLASS (self)->is_up (self);
-
-	return TRUE;
-}
-
-static gboolean
-is_up (NMDevice *self)
-{
-	int ifindex = nm_device_get_ip_ifindex (self);
-
+	ifindex = nm_device_get_ip_ifindex (self);
 	return ifindex > 0 ? nm_platform_link_is_up (NM_PLATFORM_GET, ifindex) : TRUE;
 }
 
@@ -9115,18 +9107,23 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean device_is_up = FALSE;
 	NMDeviceCapabilities capabilities;
+	int ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	_LOGD (LOGD_HW, "bringing up device");
-
 	NM_SET_OUT (no_firmware, FALSE);
 
-	if (!nm_device_get_enabled (self))
+	if (!nm_device_get_enabled (self)) {
+		_LOGD (LOGD_HW, "bringing up device ignored due to disabled");
 		return FALSE;
+	}
 
-	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
-		if (!NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware))
+	ifindex = nm_device_get_ip_ifindex (self);
+	_LOGD (LOGD_HW, "bringing up device %d", ifindex);
+	if (ifindex <= 0) {
+		/* assume success. */
+	} else {
+		if (!nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, no_firmware))
 			return FALSE;
 	}
 
@@ -9136,7 +9133,6 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	device_is_up = nm_device_is_up (self);
 	if (block && !device_is_up) {
-		int ifindex = nm_device_get_ip_ifindex (self);
 		gint64 wait_until = nm_utils_get_monotonic_timestamp_us () + 10000 /* microseconds */;
 
 		do {
@@ -9191,40 +9187,26 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	return TRUE;
 }
 
-static gboolean
-bring_up (NMDevice *self, gboolean *no_firmware)
-{
-	int ifindex = nm_device_get_ip_ifindex (self);
-	gboolean result;
-
-	if (ifindex <= 0) {
-		if (no_firmware)
-			*no_firmware = FALSE;
-		return TRUE;
-	}
-
-	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, no_firmware);
-
-	return result;
-}
-
 void
 nm_device_take_down (NMDevice *self, gboolean block)
 {
+	int ifindex;
 	gboolean device_is_up;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	_LOGD (LOGD_HW, "taking down device");
-
-	if (NM_DEVICE_GET_CLASS (self)->take_down) {
-		if (!NM_DEVICE_GET_CLASS (self)->take_down (self))
-			return;
+	ifindex = nm_device_get_ip_ifindex (self);
+	_LOGD (LOGD_HW, "taking down device %d", ifindex);
+	if (ifindex <= 0) {
+		/* devices without ifindex are always up. */
+		return;
 	}
+
+	if (!nm_platform_link_set_down (NM_PLATFORM_GET, ifindex))
+		return;
 
 	device_is_up = nm_device_is_up (self);
 	if (block && device_is_up) {
-		int ifindex = nm_device_get_ip_ifindex (self);
 		gint64 wait_until = nm_utils_get_monotonic_timestamp_us () + 10000 /* microseconds */;
 
 		do {
@@ -9241,19 +9223,6 @@ nm_device_take_down (NMDevice *self, gboolean block)
 		else
 			_LOGD (LOGD_HW, "device not down immediately");
 	}
-}
-
-static gboolean
-take_down (NMDevice *self)
-{
-	int ifindex = nm_device_get_ip_ifindex (self);
-
-	if (ifindex > 0)
-		return nm_platform_link_set_down (NM_PLATFORM_GET, ifindex);
-
-	/* devices without ifindex are always up. */
-	_LOGD (LOGD_HW, "cannot take down device without ifindex");
-	return FALSE;
 }
 
 void
@@ -12689,9 +12658,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
 	klass->realize_start_notify = realize_start_notify;
 	klass->unrealize_notify = unrealize_notify;
-	klass->is_up = is_up;
-	klass->bring_up = bring_up;
-	klass->take_down = take_down;
 	klass->carrier_changed = carrier_changed;
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 	klass->unmanaged_on_quit = unmanaged_on_quit;
