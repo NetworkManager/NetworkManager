@@ -2945,6 +2945,12 @@ device_state_changed (NMDevice *device,
 		remove_all_aps (self);
 }
 
+static gboolean
+get_enabled (NMDevice *device)
+{
+	return NM_DEVICE_WIFI_GET_PRIVATE ((NMDeviceWifi *) device)->enabled;
+}
+
 static void
 set_enabled (NMDevice *device, gboolean enabled)
 {
@@ -3138,6 +3144,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
+	parent_class->get_enabled = get_enabled;
 	parent_class->set_enabled = set_enabled;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
