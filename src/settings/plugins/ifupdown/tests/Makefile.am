@@ -35,4 +35,5 @@ EXTRA_DIST = \
 	test1 test2 test3 test4 test5 test6 test7 test8 test9 test11 test12 \
 	test13 test14 test15 test16 test17-wired-static-verify-ip4 \
 	test18-wired-static-verify-ip6 test19-wired-static-verify-ip4-plen \
-	test20-source-stanza test20-source-stanza.eth0 test20-source-stanza.eth1
+	test20-source-stanza test20-source-stanza.eth0 test20-source-stanza.eth1 \
+	test21-source-dir-stanza test21-source-dir-stanza.d
