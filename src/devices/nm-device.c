@@ -11793,7 +11793,6 @@ _hw_addr_set (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 	gboolean success = FALSE;
-	gboolean needs_refresh = FALSE;
 	NMPlatformError plerr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 	guint hw_addr_len;
@@ -11835,24 +11834,11 @@ _hw_addr_set (NMDevice *self,
 			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
 			       operation, addr, detail);
 		} else {
+			gint64 poll_end, now;
+
 			_LOGD (LOGD_DEVICE,
 			       "set-hw-addr: new MAC address %s not successfully %s (%s) (refresh link)",
 			       addr, operation, detail);
-			needs_refresh = TRUE;
-		}
-	} else {
-		_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
-		        LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s) (%s)",
-		        operation, addr, detail,
-		        nm_platform_error_to_string (plerr));
-	}
-
-	if (needs_refresh) {
-		success = TRUE;
-		if (_hw_addr_matches (self, addr)) {
-			/* the MAC address already changed during nm_device_bring_up() above. */
-		} else {
-			gint64 poll_end, now;
 
 			/* The platform call indicated success, however the address is not
 			 * as expected. That is either due to a driver issue (brcmfmac, bgo#770456,
@@ -11888,16 +11874,21 @@ handle_fail:
 				success = FALSE;
 				break;
 			}
-		}
 
-		if (success) {
-			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
-			       operation, addr, detail);
-		} else {
-			_LOGW (LOGD_DEVICE,
-			       "set-hw-addr: new MAC address %s not successfully %s (%s)",
-			       addr, operation, detail);
+			if (success) {
+				_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
+				       operation, addr, detail);
+			} else {
+				_LOGW (LOGD_DEVICE,
+				       "set-hw-addr: new MAC address %s not successfully %s (%s)",
+				       addr, operation, detail);
+			}
 		}
+	} else {
+		_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
+		        LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s) (%s)",
+		        operation, addr, detail,
+		        nm_platform_error_to_string (plerr));
 	}
 
 	if (was_up) {
