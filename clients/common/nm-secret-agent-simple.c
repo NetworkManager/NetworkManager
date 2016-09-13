@@ -428,10 +428,27 @@ static void
 request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 {
 	GPtrArray *secrets;
+	NMSecretAgentSimplePrivate *priv;
 	NMSecretAgentSimpleSecret *secret;
 	const char *title;
 	char *msg;
 	gboolean ok = TRUE;
+
+	priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (request->self);
+	g_return_if_fail (priv->enabled);
+
+	/* We only handle requests for connection with @path if set. */
+	if (!g_str_has_prefix (request->request_id, priv->path)) {
+		gs_free_error GError *error = NULL;
+
+		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		                     "Request for %s secrets doesn't match path %s",
+		                     request->request_id, priv->path);
+		request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
+		                   NULL, error, request->callback_data);
+		g_hash_table_remove (priv->requests, request->request_id);
+		return;
+	}
 
 	secrets = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_secret_agent_simple_secret_free);
 
@@ -734,7 +751,6 @@ nm_secret_agent_simple_enable (NMSecretAgentSimple *self, const char *path)
 {
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
 	GList *requests, *iter;
-	GError *error;
 
 	if (g_strcmp0 (path, priv->path) != 0) {
 		g_free (priv->path);
@@ -747,21 +763,9 @@ nm_secret_agent_simple_enable (NMSecretAgentSimple *self, const char *path)
 
 	/* Service pending secret requests. */
 	requests = g_hash_table_get_values (priv->requests);
-	for (iter = requests; iter; iter = g_list_next (iter)) {
-		NMSecretAgentSimpleRequest *request = iter->data;
+	for (iter = requests; iter; iter = g_list_next (iter))
+		request_secrets_from_ui (iter->data);
 
-		if (g_str_has_prefix (request->request_id, priv->path)) {
-			request_secrets_from_ui (request);
-		} else {
-			/* We only handle requests for connection with @path if set. */
-			error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
-			                     "Request for %s secrets doesn't match path %s",
-			                     request->request_id, priv->path);
-			request->callback (NM_SECRET_AGENT_OLD (self), request->connection, NULL, error, request->callback_data);
-			g_hash_table_remove (priv->requests, request->request_id);
-			g_error_free (error);
-		}
-	}
 	g_list_free (requests);
 }
 
