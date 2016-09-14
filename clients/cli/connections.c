@@ -4228,7 +4228,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_HELLO_TIME,           "hello-time",   OPTION_NONE, N_("Hello time [2]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAX_AGE,              "max-age",      OPTION_NONE, N_("Max age [20]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_AGEING_TIME,          "ageing-time",  OPTION_NONE, N_("MAC address ageing time [300]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", OPTION_NONE, N_("Enable IGMP snooping %s [no]"), NULL,
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", OPTION_NONE, N_("Enable IGMP snooping [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAC_ADDRESS,          "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PRIORITY,        "priority",     OPTION_NONE, N_("Bridge port priority [32]"), NULL, NULL, NULL },
