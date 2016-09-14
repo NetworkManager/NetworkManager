@@ -1920,8 +1920,10 @@ device_realized (NMDevice *device,
                  GParamSpec *pspec,
                  NMManager *self)
 {
+	gboolean real = nm_device_is_real (device);
+
 	/* Emit D-Bus signals */
-	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
+	g_signal_emit (self, signals[real ? DEVICE_ADDED : DEVICE_REMOVED], 0, device);
 	_notify (self, PROP_DEVICES);
 }
 
@@ -5957,7 +5959,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
-	/* D-Bus exported; emitted only for realized devices */
+	/* D-Bus exported; emitted only for realized devices when a device
+	 * becomes unrealized or removed */
 	signals[DEVICE_REMOVED] =
 	    g_signal_new (NM_MANAGER_DEVICE_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
