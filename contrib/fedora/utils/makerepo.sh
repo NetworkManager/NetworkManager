@@ -399,22 +399,25 @@ pushd "$DIRNAME"
     if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
         # if RELEASE_BASE_COMMIT is not set, try detecting the BASE_COMMIT...
 
-        if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
-            # try to find the commit from which the original tarball originates
-            # and base the new branch on to of it.
+        if [[ "$BUILD_TYPE" == "NetworkManager" ||
+              "$BUILD_TYPE" == "NetworkManager-libreswan" ||
+              "$BUILD_TYPE" == "NetworkManager-pptp" ||
+              "$BUILD_TYPE" == "NetworkManager-openconnect" ||
+              "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
-            # try to find the commit from which the original tarball originates
-            # and base the new branch on to of it.
             RELEASE_BASE_COMMIT="$(sed -n 's/^LIBNL_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NMA_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "iproute" ]]; then
             RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<iproute2-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\..*/v\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
-            DATE="$(sed -n 's/%global snapshot .git\(20[0-3][0-9]\)\([0-1][0-9]\)\([0-3][0-9]\)/\1-\2-\3/p' "../$SPEC")"
-            if [[ "x$DATE" != x ]]; then
-                RELEASE_BASE_COMMIT="$(git rev-list -n1 --date-order --before="$DATE" origin/master 2>/dev/null)"
+            RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+            if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
+                DATE="$(sed -n 's/%global snapshot .git\(20[0-3][0-9]\)\([0-1][0-9]\)\([0-3][0-9]\)/\1-\2-\3/p' "../$SPEC")"
+                if [[ "x$DATE" != x ]]; then
+                    RELEASE_BASE_COMMIT="$(git rev-list -n1 --date-order --before="$DATE" origin/master 2>/dev/null)"
+                fi
             fi
         fi
         if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
