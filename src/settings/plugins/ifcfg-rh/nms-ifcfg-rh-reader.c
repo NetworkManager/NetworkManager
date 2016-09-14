@@ -3656,11 +3656,69 @@ wireless_connection_from_ifcfg (const char *file,
 }
 
 static void
+parse_ethtool_option_wol (const char *value, NMSettingWiredWakeOnLan *out_flags)
+{
+	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+
+	if (!value) {
+		PARSE_WARNING ("Wake-on-LAN options missing");
+		return;
+	}
+
+	for (; *value; value++) {
+		switch (*value) {
+		case 'p':
+			wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_PHY;
+			break;
+		case 'u':
+			wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST;
+			break;
+		case 'm':
+			wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST;
+			break;
+		case 'b':
+			wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST;
+			break;
+		case 'a':
+			wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_ARP;
+			break;
+		case 'g':
+			wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC;
+			break;
+		case 's':
+			break;
+		case 'd':
+			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+			break;
+		default:
+			PARSE_WARNING ("unrecognized Wake-on-LAN option '%c'", *value);
+		}
+	}
+
+	*out_flags = wol_flags;
+}
+
+static void parse_ethtool_option_sopass (const char *value, char **out_password)
+{
+	if (!value) {
+		PARSE_WARNING ("Wake-on-LAN password missing");
+		return;
+	}
+
+	g_clear_pointer (out_password, g_free);
+	if (!nm_utils_hwaddr_valid (value, ETH_ALEN)) {
+		PARSE_WARNING ("Wake-on-LAN password '%s' is invalid", value);
+		return;
+	}
+
+	*out_password = g_strdup (value);
+}
+
+static void
 parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, char **out_password)
 {
 	gs_strfreev char **words = NULL;
-	const char **iter = NULL, *flag;
-
+	const char **iter = NULL, *opt_val, *opt;
 	if (!value || !value[0])
 		return;
 
@@ -3668,77 +3726,31 @@ parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, cha
 	iter = (const char **) words;
 
 	while (iter[0]) {
-		gboolean is_wol;
-
-		if (g_str_equal (iter[0], "wol"))
-			is_wol = TRUE;
-		else if (g_str_equal (iter[0], "sopass"))
-			is_wol = FALSE;
-		else {
-			/* Silently skip unknown options */
+		/* g_strsplit_set() returns empty tokens when extra spaces are found: skip them */
+		if (!*iter[0]) {
 			iter++;
 			continue;
 		}
 
-		iter++;
+		opt = iter++[0];
 
-		/* g_strsplit_set() returns empty tokens, meaning that we must skip over repeated
-		 * space characters like to parse "wol     d". */
+		/* skip over repeated space characters like to parse "wol     d". */
 		while (iter[0] && !*iter[0])
 			iter++;
 
-		if (is_wol) {
-			NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+		opt_val = iter[0];
 
-			if (!iter[0]) {
-				PARSE_WARNING ("Wake-on-LAN options missing");
-				break;
-			}
-
-			for (flag = iter[0]; *flag; flag++) {
-				switch (*flag) {
-				case 'p':
-					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_PHY;
-					break;
-				case 'u':
-					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST;
-					break;
-				case 'm':
-					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST;
-					break;
-				case 'b':
-					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST;
-					break;
-				case 'a':
-					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_ARP;
-					break;
-				case 'g':
-					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC;
-					break;
-				case 's':
-					break;
-				case 'd':
-					wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
-					break;
-				default:
-					PARSE_WARNING ("unrecognized Wake-on-LAN option '%c'", *flag);
-				}
-			}
-
-			*out_flags = wol_flags;
-		} else {
-			if (!iter[0]) {
-				PARSE_WARNING ("Wake-on-LAN password missing");
-				break;
-			}
-
-			g_clear_pointer (out_password, g_free);
-			if (nm_utils_hwaddr_valid (iter[0], ETH_ALEN))
-				*out_password = g_strdup (iter[0]);
-			else
-				PARSE_WARNING ("Wake-on-LAN password '%s' is invalid", iter[0]);
+		if (g_str_equal (opt, "wol"))
+			parse_ethtool_option_wol (opt_val, out_flags);
+		else if (g_str_equal (opt, "sopass"))
+			parse_ethtool_option_sopass (opt_val, out_password);
+		else {
+			/* Silently skip unknown options */
+			continue;
 		}
-		iter++;
+
+		if (iter[0])
+			iter++;
 	}
 }
 
