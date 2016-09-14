@@ -718,6 +718,30 @@ _normalize_connection_slave_type (NMConnection *self)
 }
 
 static gboolean
+_normalize_ethernet_link_neg (NMConnection *self)
+{
+	NMSettingWired *s_wired = nm_connection_get_setting_wired (self);
+
+	if (s_wired) {
+		gboolean autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
+		guint speed = nm_setting_wired_get_speed (s_wired);
+		const char *duplex = nm_setting_wired_get_duplex (s_wired);
+
+		if ((autoneg) && (speed || duplex)) {
+			speed = 0;
+			duplex = NULL;
+			g_object_set (s_wired,
+				      NM_SETTING_WIRED_SPEED, speed,
+				      NM_SETTING_WIRED_DUPLEX, duplex,
+				      NULL);
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+static gboolean
 _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -1207,6 +1231,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_connection_uuid (connection);
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
+	was_modified |= _normalize_ethernet_link_neg (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 	was_modified |= _normalize_bond_mode (connection, parameters);

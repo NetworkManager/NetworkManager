@@ -3656,6 +3656,52 @@ wireless_connection_from_ifcfg (const char *file,
 }
 
 static void
+parse_ethtool_option_autoneg (const char *value, gboolean *out_autoneg)
+{
+	if (!value) {
+		PARSE_WARNING ("Auto-negotiation option missing");
+		return;
+	}
+
+	if (g_str_equal (value, "off"))
+		*out_autoneg = FALSE;
+	else if (g_str_equal (value, "on"))
+		*out_autoneg = TRUE;
+	else
+		PARSE_WARNING ("Auto-negotiation unknown value: %s", value);
+}
+
+static void
+parse_ethtool_option_speed (const char *value, guint32 *out_speed)
+{
+	if (!value) {
+		PARSE_WARNING ("Speed option missing");
+		return;
+	}
+
+	*out_speed =  _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, 0);
+	if (errno)
+		PARSE_WARNING ("Speed value '%s' is invalid", value);
+}
+
+static void
+parse_ethtool_option_duplex (const char *value, const char **out_duplex)
+{
+	if (!value) {
+		PARSE_WARNING ("Duplex option missing");
+		return;
+	}
+
+	if (g_str_equal (value, "half"))
+		*out_duplex = "half";
+	else if (g_str_equal (value, "full"))
+		*out_duplex = "full";
+	else
+		PARSE_WARNING ("Duplex unknown value: %s", value);
+
+}
+
+static void
 parse_ethtool_option_wol (const char *value, NMSettingWiredWakeOnLan *out_flags)
 {
 	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
@@ -3715,10 +3761,16 @@ static void parse_ethtool_option_sopass (const char *value, char **out_password)
 }
 
 static void
-parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, char **out_password)
+parse_ethtool_option (const char *value,
+                      NMSettingWiredWakeOnLan *out_flags,
+                      char **out_password,
+                      gboolean *out_autoneg,
+                      guint32 *out_speed,
+                      const char **out_duplex)
 {
 	gs_strfreev char **words = NULL;
 	const char **iter = NULL, *opt_val, *opt;
+
 	if (!value || !value[0])
 		return;
 
@@ -3740,7 +3792,13 @@ parse_ethtool_option (const char *value, NMSettingWiredWakeOnLan *out_flags, cha
 
 		opt_val = iter[0];
 
-		if (g_str_equal (opt, "wol"))
+		if (g_str_equal (opt, "autoneg"))
+			parse_ethtool_option_autoneg (opt_val, out_autoneg);
+		else if (g_str_equal (opt, "speed"))
+			parse_ethtool_option_speed (opt_val, out_speed);
+		else if (g_str_equal (opt, "duplex"))
+			parse_ethtool_option_duplex (opt_val, out_duplex);
+		else if (g_str_equal (opt, "wol"))
 			parse_ethtool_option_wol (opt_val, out_flags);
 		else if (g_str_equal (opt, "sopass"))
 			parse_ethtool_option_sopass (opt_val, out_password);
@@ -3758,21 +3816,34 @@ static void
 parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, const char *value)
 {
 	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
-	gs_free char *wol_password = NULL;
-	gboolean ignore_wol_password = FALSE;
+	gs_free char *wol_password = NULL, *wol_value = NULL;
+	gboolean ignore_wol_password = FALSE, autoneg = FALSE;
+	guint32 speed = 0;
+	const char *duplex = NULL;
 
 	if (value) {
 		gs_strfreev char **opts = NULL;
 		const char **iter;
 
-		wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
+		/* WAKE_ON_LAN_IGNORE is inferred from a specified but empty ETHTOOL_OPTS */
+		if (!value[0])
+			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 
 		opts = g_strsplit_set (value, ";", 0);
 		for (iter = (const char **) opts; iter[0]; iter++) {
 			/* in case of repeated wol_passwords, parse_ethtool_option()
 			 * will do the right thing and clear wol_password before resetting. */
-			parse_ethtool_option (iter[0], &wol_flags, &wol_password);
+			parse_ethtool_option (iter[0], &wol_flags, &wol_password, &autoneg, &speed, &duplex);
 		}
+	}
+
+	/* ETHTOOL_WAKE_ON_LAN = ignore overrides WoL settings in ETHTOOL_OPTS */
+	wol_value = svGetValueString (ifcfg, "ETHTOOL_WAKE_ON_LAN");
+	if (wol_value) {
+		if (strcmp (wol_value, "ignore") == 0)
+			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
+		else
+			PARSE_WARNING ("invalid ETHTOOL_WAKE_ON_LAN value '%s'", wol_value);
 	}
 
 	if (   wol_password
@@ -3780,9 +3851,13 @@ parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, const char *va
 		PARSE_WARNING ("Wake-on-LAN password not expected");
 		ignore_wol_password = TRUE;
 	}
+
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags,
 	              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, ignore_wol_password ? NULL : wol_password,
+	              NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg,
+	              NM_SETTING_WIRED_SPEED, autoneg ? 0 : speed,
+	              NM_SETTING_WIRED_DUPLEX, autoneg ? NULL : duplex,
 	              NULL);
 }
 
