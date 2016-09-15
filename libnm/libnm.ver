@@ -752,6 +752,7 @@ global:
 	nm_simple_connection_new_clone;
 	nm_simple_connection_new_from_dbus;
 	nm_state_get_type;
+	nm_capability_get_type;
 	nm_utils_ap_mode_security_valid;
 	nm_utils_bin2hexstr;
 	nm_utils_check_virtual_device_compatibility;
