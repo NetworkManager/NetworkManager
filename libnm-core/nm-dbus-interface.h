@@ -84,6 +84,14 @@
 #define NM_DBUS_PATH_SECRET_AGENT         "/org/freedesktop/NetworkManager/SecretAgent"
 
 /**
+ * NMCapability:
+ *
+ * #NMCapability names the numbers in the Capabilities property.
+ **/
+typedef enum {
+} NMCapability;
+
+/**
  * NMState:
  * @NM_STATE_UNKNOWN: networking state is unknown
  * @NM_STATE_ASLEEP: networking is not enabled

@@ -381,6 +381,15 @@
     <property name="Version" type="s" access="read"/>
 
     <!--
+        Capabilities:
+
+        The current set of capabilities. See <link
+        linkend="NMCapability">NMCapability</link> for currently
+        defined capability numbers.
+    -->
+    <property name="Capabilities" type="ai" access="read"/>
+
+    <!--
         State:
 
         The overall state of the NetworkManager daemon.
