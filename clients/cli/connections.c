@@ -65,6 +65,7 @@ struct _OptionInfo {
 
 /* define some other prompts */
 #define PROMPT_CON_TYPE    N_("Connection type")
+#define PROMPT_IFNAME      N_("Interface name [*]")
 #define PROMPT_VPN_TYPE    N_("VPN type")
 #define PROMPT_MASTER      N_("Master")
 
@@ -4179,7 +4180,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_ID,               "con-name",     OPTION_DONT_ASK, NULL, NULL, NULL, NULL },
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_AUTOCONNECT,      "autoconnect",  OPTION_DONT_ASK, NULL, NULL, NULL,
                                                                                                         gen_func_bool_values_l10n },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       OPTION_REQD, N_("Interface name [*]"), NULL,
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       OPTION_REQD, PROMPT_IFNAME, NULL,
                                                                                                         set_connection_iface, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_MASTER,           "master",       OPTION_DONT_ASK, PROMPT_MASTER, NULL,
                                                                                                         set_connection_master, gen_func_master_ifnames },
@@ -4420,6 +4421,7 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
 		run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4647,6 +4649,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 
 	if (g_str_has_prefix (rl_prompt, PROMPT_CON_TYPE))
 		generator_func = gen_connection_types;
+	else if (g_str_has_prefix (rl_prompt, PROMPT_IFNAME))
+		generator_func = nmc_rl_gen_func_ifnames;
 	else if (g_str_has_prefix (rl_prompt, PROMPT_VPN_TYPE))
 		generator_func = gen_func_vpn_types;
 	else if (g_str_has_prefix (rl_prompt, PROMPT_MASTER))
