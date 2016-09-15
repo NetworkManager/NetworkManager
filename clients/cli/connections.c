@@ -4635,8 +4635,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	rl_compentry_func_t *generator_func = NULL;
-	gs_free char *no = g_strdup_printf (": [%s]", gettext ("no"));
-	gs_free char *yes = g_strdup_printf (": [%s]", gettext ("yes"));
+	gs_free char *no = g_strdup_printf ("[%s]: ", gettext ("no"));
+	gs_free char *yes = g_strdup_printf ("[%s]: ", gettext ("yes"));
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
