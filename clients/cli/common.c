@@ -1058,13 +1058,15 @@ get_secrets_from_user (const char *request_id,
 						nmc_rl_pre_input_deftext = g_strdup (secret->value);
 					}
 				}
-				g_print ("%s\n", msg);
+				if (msg)
+					g_print ("%s\n", msg);
 				pwd = nmc_readline_echo (secret->password ? echo_on : TRUE,
 				                         "%s (%s): ", secret->name, secret->prop_name);
 				if (!pwd)
 					pwd = g_strdup ("");
 			} else {
-				g_print ("%s\n", msg);
+				if (msg)
+					g_print ("%s\n", msg);
 				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
 				              "and nmcli cannot ask without '--ask' option.\n"),
 				            secret->prop_name);

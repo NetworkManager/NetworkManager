@@ -96,7 +96,8 @@ get_secrets_from_user (const char *request_id,
 		char *pwd = NULL;
 
 		/* Ask user for the password */
-		g_print ("%s\n", msg);
+		if (msg)
+			g_print ("%s\n", msg);
 		if (secret->value) {
 			/* Prefill the password if we have it. */
 			rl_startup_hook = set_deftext;
@@ -148,7 +149,10 @@ do_agent_secret (NmCli *nmc, int argc, char **argv)
 		nmc->should_wait++;
 
 		nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent), NULL);
-		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
+		g_signal_connect (nmc->secret_agent,
+		                  NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+		                  G_CALLBACK (secrets_requested),
+		                  nmc);
 		g_print (_("nmcli successfully registered as a NetworkManager's secret agent.\n"));
 	} else {
 		g_string_printf (nmc->return_text, _("Error: secret agent initialization failed"));

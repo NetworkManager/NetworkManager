@@ -1860,8 +1860,12 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 
 	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
-	if (nmc->secret_agent)
-		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (nmc_secrets_requested), nmc);
+	if (nmc->secret_agent) {
+		g_signal_connect (nmc->secret_agent,
+		                  NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+		                  G_CALLBACK (nmc_secrets_requested),
+		                  nmc);
+	}
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
