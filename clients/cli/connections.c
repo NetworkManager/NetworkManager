@@ -4383,6 +4383,8 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			run_rl_generator (gen_connection_types, prefix);
 		else if (strcmp (property, NM_SETTING_CONNECTION_MASTER) == 0)
 			run_rl_generator (gen_func_master_ifnames, prefix);
+		else if (strcmp (property, NM_SETTING_CONNECTION_INTERFACE_NAME) == 0)
+			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 	} else if (   strcmp (setting_name, NM_SETTING_VPN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_VPN_SERVICE_TYPE) == 0)
 		run_rl_generator (gen_func_vpn_types, prefix);
@@ -4403,13 +4405,21 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 	} else if (   strcmp (setting_name, NM_SETTING_TUN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_TUN_MODE) == 0)
 		run_rl_generator (gen_func_tun_mode, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_IP_TUNNEL_MODE) == 0)
-		run_rl_generator (gen_func_ip_tunnel_mode, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_MACVLAN_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_MACVLAN_MODE) == 0)
-		run_rl_generator (gen_func_macvlan_mode, prefix);
-
+	else if (strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0) {
+		if (strcmp (property, NM_SETTING_IP_TUNNEL_MODE) == 0)
+			run_rl_generator (gen_func_ip_tunnel_mode, prefix);
+		else if (strcmp (property, NM_SETTING_IP_TUNNEL_PARENT) == 0)
+			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
+	} else if (strcmp (setting_name, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
+		if (strcmp (property, NM_SETTING_MACVLAN_MODE) == 0)
+			run_rl_generator (gen_func_macvlan_mode, prefix);
+		else if (strcmp (property, NM_SETTING_MACVLAN_PARENT) == 0)
+			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
+		else if (strcmp (property, NM_SETTING_MACVLAN_TAP) == 0)
+			run_rl_generator (gen_func_bool_values_l10n, prefix);
+	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
+	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
+		run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 }
 
 /*----------------------------------------------------------------------------*/
