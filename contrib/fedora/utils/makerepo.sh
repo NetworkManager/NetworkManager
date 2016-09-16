@@ -361,6 +361,8 @@ pushd "$DIRNAME"
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
     elif [[ "$BUILD_TYPE" == "wpa_supplicant" ]]; then
         git remote add origin "git://w1.fi/hostap.git"
+        git remote add nm "https://github.com/NetworkManager/hostap.git"
+        git remote set-url --push nm 'git@github.com:NetworkManager/hostap.git'
     elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
     elif [[ "$BUILD_TYPE" == "libqmi" ]]; then
