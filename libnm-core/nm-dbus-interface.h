@@ -85,10 +85,12 @@
 
 /**
  * NMCapability:
+ * @NM_CAPABILITY_TEAM: Teams can be managed
  *
  * #NMCapability names the numbers in the Capabilities property.
  **/
 typedef enum {
+	NM_CAPABILITY_TEAM
 } NMCapability;
 
 /**
