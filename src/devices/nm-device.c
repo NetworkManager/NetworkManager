@@ -7819,6 +7819,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
                                  NMSettingIPConfig *s_ip4_new)
 {
 	NMDevicePrivate *priv;
+	const char *method_old, *method_new;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7831,8 +7832,14 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 		                             s_ip4_new,
 		                             nm_device_get_ip4_route_metric (self));
 
-		if (strcmp (nm_setting_ip_config_get_method (s_ip4_new),
-		            nm_setting_ip_config_get_method (s_ip4_old))) {
+		method_old = s_ip4_old ?
+			nm_setting_ip_config_get_method (s_ip4_old) :
+			NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+		method_new = s_ip4_new ?
+			nm_setting_ip_config_get_method (s_ip4_new) :
+			NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+
+		if (!nm_streq0 (method_old, method_new)) {
 			_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET, IP_WAIT);
 			if (!nm_device_activate_stage3_ip4_start (self))
@@ -7850,6 +7857,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
                                  NMSettingIPConfig *s_ip6_new)
 {
 	NMDevicePrivate *priv;
+	const char *method_old, *method_new;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7862,8 +7870,14 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		                             s_ip6_new,
 		                             nm_device_get_ip6_route_metric (self));
 
-		if (strcmp (nm_setting_ip_config_get_method (s_ip6_new),
-		            nm_setting_ip_config_get_method (s_ip6_old))) {
+		method_old = s_ip6_old ?
+			nm_setting_ip_config_get_method (s_ip6_old) :
+			NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+		method_new = s_ip6_new ?
+			nm_setting_ip_config_get_method (s_ip6_new) :
+			NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+
+		if (!nm_streq0 (method_old, method_new)) {
 			_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET6, IP_WAIT);
 			if (!nm_device_activate_stage3_ip6_start (self))
