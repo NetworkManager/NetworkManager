@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/src \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/platform \
+	-I${top_srcdir}/src/settings \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
@@ -52,4 +53,3 @@ check-local:
 	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/.libs/libnm-device-plugin-team.so $(top_builddir)/src/NetworkManager --version >/dev/null
 
 endif
-
