@@ -93,6 +93,7 @@ class ExportedObj(dbus.service.Object):
         self._bus = bus
         self.path = object_path
         self.__ensure_dbus_ifaces()
+        object_manager.add_object(self)
 
     def __ensure_dbus_ifaces(self):
         if not hasattr(self, '_ExportedObj__dbus_ifaces'):
@@ -131,6 +132,16 @@ class ExportedObj(dbus.service.Object):
     @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
     def Get(self, dbus_iface, name):
         return self._dbus_property_get(dbus_iface, name)
+
+    def get_managed_ifaces(self):
+        my_ifaces = {}
+        for iface in self.__dbus_ifaces:
+            my_ifaces[iface] = self.__dbus_ifaces[iface].get_props_func()
+        return self.path, my_ifaces
+
+    def remove_from_connection(self):
+        object_manager.remove_object(self)
+        dbus.service.Object.remove_from_connection(self)
 
 ###################################################################
 IFACE_DEVICE = 'org.freedesktop.NetworkManager.Device'
@@ -1209,6 +1220,45 @@ class AgentManager(dbus.service.Object):
         return secrets
 
 ###################################################################
+IFACE_OBJECT_MANAGER = 'org.freedesktop.DBus.ObjectManager'
+
+PATH_OBJECT_MANAGER = '/org/freedesktop'
+
+class ObjectManager(dbus.service.Object):
+    def __init__(self, bus, object_path):
+        dbus.service.Object.__init__(self, bus, object_path)
+        self.objs = []
+        self.bus = bus
+
+    @dbus.service.method(dbus_interface=IFACE_OBJECT_MANAGER,
+                         in_signature='', out_signature='a{oa{sa{sv}}}',
+                         sender_keyword='sender')
+    def GetManagedObjects(self, sender=None):
+        managed_objects = {}
+        for obj in self.objs:
+            name, ifaces = obj.get_managed_ifaces()
+            managed_objects[name] = ifaces
+        return managed_objects
+
+    def add_object(self, obj):
+        self.objs.append(obj)
+        name, ifaces = obj.get_managed_ifaces()
+        self.InterfacesAdded(name, ifaces)
+
+    def remove_object(self, obj):
+        self.objs.remove(obj)
+        name, ifaces = obj.get_managed_ifaces()
+        self.InterfacesRemoved(name, ifaces.keys())
+
+    @dbus.service.signal(IFACE_OBJECT_MANAGER, signature='oa{sa{sv}}')
+    def InterfacesAdded(self, name, ifaces):
+        pass
+
+    @dbus.service.signal(IFACE_OBJECT_MANAGER, signature='oas')
+    def InterfacesRemoved(self, name, ifaces):
+        pass
+
+###################################################################
 
 def stdin_cb(io, condition):
     mainloop.quit()
@@ -1223,7 +1273,8 @@ def main():
 
     bus = dbus.SessionBus()
 
-    global manager, settings, agent_manager
+    global manager, settings, agent_manager, object_manager
+    object_manager = ObjectManager(bus, "/org/freedesktop")
     manager = NetworkManager(bus, "/org/freedesktop/NetworkManager")
     settings = Settings(bus, "/org/freedesktop/NetworkManager/Settings")
     agent_manager = AgentManager(bus, "/org/freedesktop/NetworkManager/AgentManager")
