@@ -708,7 +708,7 @@ crypto_verify_private_key_data (const GByteArray *contents,
 		/* Maybe it's PKCS#8 */
 		tmp = parse_pkcs8_key_file (contents, &is_encrypted, error);
 		if (tmp) {
-			if (crypto_verify_pkcs8 (tmp, is_encrypted, password, error))
+			if (!password || crypto_verify_pkcs8 (tmp, is_encrypted, password, error))
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 		} else {
 			g_clear_error (error);

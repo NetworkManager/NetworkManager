@@ -394,7 +394,7 @@ crypto_verify_pkcs8 (const guint8 *data,
 
 	if (err < 0) {
 		if (err == GNUTLS_E_UNKNOWN_CIPHER_TYPE) {
-			/* HACK: gnutls doesn't support all the cipher types that openssl
+			/* HACK: gnutls < 3.5.4 doesn't support all the cipher types that openssl
 			 * can use with PKCS#8, so if we encounter one, we have to assume
 			 * the given password works.  gnutls needs to unsuckify, apparently.
 			 * Specifically, by default openssl uses pbeWithMD5AndDES-CBC
