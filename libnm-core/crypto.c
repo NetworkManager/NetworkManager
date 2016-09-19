@@ -712,7 +712,7 @@ crypto_verify_private_key_data (const guint8 *data,
 		/* Maybe it's PKCS#8 */
 		tmp = parse_pkcs8_key_file (data, data_len, &is_encrypted, NULL);
 		if (tmp) {
-			if (crypto_verify_pkcs8 (tmp->data, tmp->len, is_encrypted, password, error))
+			if (!password || crypto_verify_pkcs8 (tmp->data, tmp->len, is_encrypted, password, error))
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 		} else {
 			char *cipher, *iv;

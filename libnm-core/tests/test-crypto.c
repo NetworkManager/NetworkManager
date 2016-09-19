@@ -364,12 +364,11 @@ test_pkcs8 (gconstpointer test_data)
 	password = parts[1];
 
 	test_is_pkcs12 (path, TRUE);
-	test_load_pkcs8 (path, password, -1);
-	/* Until gnutls and NSS grow support for all the ciphers that openssl
-	 * can use with PKCS#8, we can't actually verify the password.  So we
-	 * expect a bad password to work for the time being.
+	/* Note: NSS and gnutls < 3.5.4 don't support all the ciphers that openssl
+	 * can use with PKCS#8 and thus the password can't be actually verified with
+	 * such libraries.
 	 */
-	test_load_pkcs8 (path, "blahblahblah", -1);
+	test_load_pkcs8 (path, password, -1);
 
 	g_free (path);
 	g_strfreev (parts);

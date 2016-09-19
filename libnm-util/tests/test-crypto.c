@@ -334,11 +334,6 @@ test_pkcs8 (gconstpointer test_data)
 
 	test_is_pkcs12 (path, TRUE, "not-pkcs12");
 	test_load_pkcs8 (path, password, FALSE, "pkcs8-private-key");
-	/* Until gnutls and NSS grow support for all the ciphers that openssl
-	 * can use with PKCS#8, we can't actually verify the password.  So we
-	 * expect a bad password to work for the time being.
-	 */
-	test_load_pkcs8 (path, "blahblahblah", FALSE, "pkcs8-private-key-bad-password");
 
 	g_free (path);
 	g_strfreev (parts);
