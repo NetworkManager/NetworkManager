@@ -4148,40 +4148,81 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 }
 
 /*
- * check_ip_failed
+ * check_ip_state
  *
- * Progress the device to appropriate state if both IPv4 and IPv6 failed
+ * Transition the device from IP_CONFIG to the next state according to the
+ * outcome of IPv4 and IPv6 configuration. @may_fail indicates that we are
+ * called just after the initial configuration and thus IPv4/IPv6 are allowed to
+ * fail if the ipvx.may-fail properties say so, because the IP methods couldn't
+ * even be started.
  */
 static void
-check_ip_failed (NMDevice *self, gboolean may_fail)
+check_ip_state (NMDevice *self, gboolean may_fail)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean ip4_disabled = FALSE, ip6_ignore = FALSE;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMDeviceState state;
 
-	if (   priv->ip4_state != IP_FAIL
-	    || priv->ip6_state != IP_FAIL)
+	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
 		return;
 
-	if (nm_device_uses_assumed_connection (self)) {
-		/* We have assumed configuration, but couldn't
-		 * redo it. No problem, move to check state. */
-		_set_ip_state (self, AF_INET, IP_DONE);
-		_set_ip_state (self, AF_INET6, IP_DONE);
-		state = NM_DEVICE_STATE_IP_CHECK;
-	} else if (   may_fail
-	           && get_ip_config_may_fail (self, AF_INET)
-	           && get_ip_config_may_fail (self, AF_INET6)) {
-		/* Couldn't start either IPv6 and IPv4 autoconfiguration,
-		 * but both are allowed to fail. */
-		state = NM_DEVICE_STATE_SECONDARIES;
-	} else {
-		/* Autoconfiguration attempted without success. */
-		state = NM_DEVICE_STATE_FAILED;
+	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
+	if (s_ip4 && nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
+	                        NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+		ip4_disabled = TRUE;
+
+	s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+	if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
+	                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+		ip6_ignore = TRUE;
+
+	if (   priv->ip4_state == IP_DONE
+	    && priv->ip6_state == IP_DONE) {
+		/* Both method completed (or disabled), proceed with activation */
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		return;
 	}
 
-	nm_device_state_changed (self,
-	                         state,
-	                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+	if (   (priv->ip4_state == IP_FAIL || (ip4_disabled && priv->ip4_state == IP_DONE))
+	    && (priv->ip6_state == IP_FAIL || (ip6_ignore && priv->ip6_state == IP_DONE))) {
+		/* Either both methods failed, or only one failed and the other is
+		 * disabled */
+		if (nm_device_uses_assumed_connection (self)) {
+			/* We have assumed configuration, but couldn't redo it. No problem,
+			 * move to check state. */
+			_set_ip_state (self, AF_INET, IP_DONE);
+			_set_ip_state (self, AF_INET6, IP_DONE);
+			state = NM_DEVICE_STATE_IP_CHECK;
+		} else if (   may_fail
+		           && get_ip_config_may_fail (self, AF_INET)
+		           && get_ip_config_may_fail (self, AF_INET6)) {
+			/* Couldn't start either IPv6 and IPv4 autoconfiguration,
+			 * but both are allowed to fail. */
+			state = NM_DEVICE_STATE_SECONDARIES;
+		} else {
+			/* Autoconfiguration attempted without success. */
+			state = NM_DEVICE_STATE_FAILED;
+		}
+
+		nm_device_state_changed (self,
+		                         state,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		return;
+	}
+
+	/* If a method is still pending but required, wait */
+	if (priv->ip4_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET))
+		return;
+	if (priv->ip6_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET6))
+		return;
+
+	/* If at least a method has completed, proceed with activation */
+	if (   (priv->ip4_state == IP_DONE && !ip4_disabled)
+	    || (priv->ip6_state == IP_DONE && !ip6_ignore)) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		return;
+	}
 }
 
 void
@@ -4197,31 +4238,9 @@ nm_device_ip_method_failed (NMDevice *self, int family, NMDeviceStateReason reas
 	_set_ip_state (self, family, IP_FAIL);
 
 	if (get_ip_config_may_fail (self, family))
-		check_ip_failed (self, FALSE);
+		check_ip_state (self, FALSE);
 	else
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-}
-
-/*
- * check_ip_done
- *
- * Progress the device to ip connectivity check state if IPv4 or IPv6 succeeded
- */
-static void
-check_ip_done (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
-		return;
-
-	if (priv->ip4_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET))
-		return;
-
-	if (priv->ip6_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET6))
-		return;
-
-	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 }
 
 /*********************************************/
@@ -6848,7 +6867,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 		g_object_unref (ip4_config);
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET, IP_DONE);
-		check_ip_done (self);
+		check_ip_state (self, FALSE);
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		return FALSE;
@@ -6893,7 +6912,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		nm_device_activate_schedule_ip6_config_result (self);
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET6, IP_DONE);
-		check_ip_done (self);
+		check_ip_state (self, FALSE);
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		return FALSE;
@@ -6961,7 +6980,7 @@ activate_stage3_ip_config_start (NMDevice *self)
 	    && !nm_device_activate_stage3_ip6_start (self))
 		return;
 
-	check_ip_failed (self, TRUE);
+	check_ip_state (self, TRUE);
 }
 
 static gboolean
@@ -7094,7 +7113,7 @@ activate_stage4_ip4_config_timeout (NMDevice *self)
 
 	_set_ip_state (self, AF_INET, IP_FAIL);
 
-	check_ip_failed (self, FALSE);
+	check_ip_state (self, FALSE);
 }
 
 /*
@@ -7150,7 +7169,7 @@ activate_stage4_ip6_config_timeout (NMDevice *self)
 
 	_set_ip_state (self, AF_INET6, IP_FAIL);
 
-	check_ip_failed (self, FALSE);
+	check_ip_state (self, FALSE);
 }
 
 /*
@@ -7389,7 +7408,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	_set_ip_state (self, AF_INET, IP_DONE);
-	check_ip_done (self);
+	check_ip_state (self, FALSE);
 }
 
 void
@@ -7531,7 +7550,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 			} else {
 				/* No tentative addresses, proceed right away */
 				_set_ip_state (self, AF_INET6, IP_DONE);
-				check_ip_done (self);
+				check_ip_state (self, FALSE);
 			}
 		}
 	} else {
@@ -9653,7 +9672,7 @@ queued_ip6_config_change (gpointer user_data)
 			_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
 			g_clear_object (&priv->dad6_ip6_config);
 			_set_ip_state (self, AF_INET6, IP_DONE);
-			check_ip_done (self);
+			check_ip_state (self, FALSE);
 		}
 	}
 
