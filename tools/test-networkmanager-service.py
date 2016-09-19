@@ -113,6 +113,11 @@ class ExportedObj(dbus.service.Object):
     def _dbus_property_notify(self, dbus_iface, propname):
         prop = self._dbus_property_get(dbus_iface, propname)
         self.__dbus_interface_get(dbus_iface).prop_changed_func(self, { propname: prop })
+        ExportedObj.PropertiesChanged(self, dbus_iface, { propname: prop }, [])
+
+    @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
+    def PropertiesChanged(self, iface, changed, invalidated):
+        pass
 
     @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, dbus_iface):
