@@ -3813,33 +3813,6 @@ is_single_word (const char* line)
 		return FALSE;
 }
 
-static char *
-gen_func_ifnames (const char *text, int state)
-{
-	int i;
-	const GPtrArray *devices;
-	const char **ifnames;
-	char *ret;
-
-	nm_cli.get_client (&nm_cli);
-	devices = nm_client_get_devices (nm_cli.client);
-	if (devices->len == 0)
-		return NULL;
-
-	ifnames = g_new (const char *, devices->len + 1);
-	for (i = 0; i < devices->len; i++) {
-		NMDevice *dev = g_ptr_array_index (devices, i);
-		const char *ifname = nm_device_get_iface (dev);
-		ifnames[i] = ifname;
-	}
-	ifnames[i] = NULL;
-
-	ret = nmc_rl_gen_func_basic (text, state, ifnames);
-
-	g_free (ifnames);
-	return ret;
-}
-
 static char **
 nmcli_device_tab_completion (const char *text, int start, int end)
 {
@@ -3856,9 +3829,9 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 		if (!is_single_word (rl_line_buffer))
 			return NULL;
 
-		generator_func = gen_func_ifnames;
+		generator_func = nmc_rl_gen_func_ifnames;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_INTERFACES) == 0) {
-		generator_func = gen_func_ifnames;
+		generator_func = nmc_rl_gen_func_ifnames;
 	}
 
 	if (generator_func)
