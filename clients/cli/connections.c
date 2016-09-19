@@ -65,6 +65,7 @@ struct _OptionInfo {
 
 /* define some other prompts */
 #define PROMPT_CON_TYPE    N_("Connection type")
+#define PROMPT_IFNAME      N_("Interface name [*]")
 #define PROMPT_VPN_TYPE    N_("VPN type")
 #define PROMPT_MASTER      N_("Master")
 
@@ -3756,6 +3757,12 @@ ensure_settings (NMConnection *connection, const NameItem *item)
 
 /*----------------------------------------------------------------------------*/
 
+static char *
+gen_func_slave_type (const char *text, int state)
+{
+	const char *words[] = { "bond", "team", "bridge", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
 
 static char *
 gen_func_vpn_types (const char *text, int state)
@@ -3805,6 +3812,12 @@ static char *
 gen_func_bond_mon_mode (const char *text, int state)
 {
 	const char *words[] = { "miimon", "arp", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+static char *
+gen_func_bond_lacp_rate (const char *text, int state)
+{
+	const char *words[] = { "slow", "fast", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -4165,11 +4178,14 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_TYPE,             "type",         OPTION_REQD, PROMPT_CON_TYPE, NULL,
                                                                                                         set_connection_type, gen_connection_types },
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_ID,               "con-name",     OPTION_DONT_ASK, NULL, NULL, NULL, NULL },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_AUTOCONNECT,      "autoconnect",  OPTION_DONT_ASK, NULL, NULL, NULL, gen_func_bool_values_l10n },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       OPTION_REQD, N_("Interface name [*]"), NULL, set_connection_iface, NULL },
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_AUTOCONNECT,      "autoconnect",  OPTION_DONT_ASK, NULL, NULL, NULL,
+                                                                                                        gen_func_bool_values_l10n },
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       OPTION_REQD, PROMPT_IFNAME, NULL,
+                                                                                                        set_connection_iface, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_MASTER,           "master",       OPTION_DONT_ASK, PROMPT_MASTER, NULL,
                                                                                                         set_connection_master, gen_func_master_ifnames },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_SLAVE_TYPE,       "slave-type",   OPTION_DONT_ASK, NULL, NULL, NULL, NULL },
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_SLAVE_TYPE,       "slave-type",   OPTION_DONT_ASK, NULL, NULL, NULL,
+                                                                                                        gen_func_slave_type },
 	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_USERNAME,              "username",     OPTION_REQD, N_("PPPoE username"), NULL, NULL, NULL },
 	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_PASSWORD,              "password",     OPTION_NONE, N_("Password [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_SERVICE,               "service",      OPTION_NONE, N_("Service [none]"), NULL, NULL, NULL },
@@ -4199,7 +4215,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_TYPE,              "bt-type",      OPTION_NONE, PROMPT_BT_TYPE, PROMPT_BT_TYPE_CHOICES,
                                                                                                         set_bluetooth_type, gen_func_bt_type },
 	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_PARENT,                 "dev",          OPTION_REQD, N_("VLAN parent device or connection UUID"), NULL,
-                                                                                                        NULL, NULL },
+                                                                                                        NULL, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_ID,                     "id",           OPTION_REQD, N_("VLAN ID (<0-4094>)"), NULL, NULL, NULL },
 	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_FLAGS,                  "flags",        OPTION_NONE, N_("VLAN flags (<0-7>) [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,   "ingress",      OPTION_NONE, N_("Ingress priority maps [none]"), NULL, NULL, NULL },
@@ -4207,7 +4223,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "mode",         OPTION_NONE, PROMPT_BOND_MODE, "[balance-rr]",
                                                                                                         set_bond_option, gen_func_bond_mode },
 	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "primary",      OPTION_DONT_ASK, N_("Bonding primary interface [none]"),
-                                                                                                        NULL, set_bond_option, NULL },
+                                                                                                        NULL, set_bond_option, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                NULL,           OPTION_NONE, N_("Bonding monitoring mode"), PROMPT_BOND_MON_MODE_CHOICES,
                                                                                                         set_bond_monitoring_mode, gen_func_bond_mon_mode },
 	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "miimon",       OPTION_DONT_ASK, N_("Bonding miimon [100]"), NULL, set_bond_option, NULL },
@@ -4218,7 +4234,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-ip-target", OPTION_DONT_ASK, N_("Bonding arp-ip-target [none]"),
                                                                                                         NULL, set_bond_option, NULL },
 	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "lacp-rate",    OPTION_DONT_ASK, N_("LACP rate ('slow' or 'fast') [slow]"), NULL,
-                                                                                                        set_bond_option, NULL },
+                                                                                                        set_bond_option, gen_func_bond_lacp_rate },
 	{ NM_SETTING_TEAM_SETTING_NAME,         NM_SETTING_TEAM_CONFIG,                 "config",       OPTION_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_SETTING_TEAM_PORT_CONFIG,            "config",       OPTION_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_STP,                  "stp",          OPTION_NONE, N_("Enable STP [no]"), NULL,
@@ -4228,7 +4244,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_HELLO_TIME,           "hello-time",   OPTION_NONE, N_("Hello time [2]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAX_AGE,              "max-age",      OPTION_NONE, N_("Max age [20]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_AGEING_TIME,          "ageing-time",  OPTION_NONE, N_("MAC address ageing time [300]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", OPTION_NONE, N_("Enable IGMP snooping %s [no]"), NULL,
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", OPTION_NONE, N_("Enable IGMP snooping [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAC_ADDRESS,          "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PRIORITY,        "priority",     OPTION_NONE, N_("Bridge port priority [32]"), NULL, NULL, NULL },
@@ -4247,13 +4263,15 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_ENCAPSULATION,          "encapsulation", OPTION_NONE, PROMPT_ADSL_ENCAP, PROMPT_ADSL_ENCAP_CHOICES,
                                                                                                         NULL, gen_func_adsl_encap },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_PARENT,              "dev",          OPTION_REQD, N_("MACVLAN parent device or connection UUID"), NULL,
-                                                                                                        NULL, NULL },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_MODE,                "mode",         OPTION_REQD, PROMPT_MACVLAN_MODE, NULL, NULL, gen_func_macvlan_mode },
+                                                                                                        NULL, nmc_rl_gen_func_ifnames },
+	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_MODE,                "mode",         OPTION_REQD, PROMPT_MACVLAN_MODE, NULL,
+                                                                                                        NULL, gen_func_macvlan_mode },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_TAP,                 "tap",          OPTION_NONE, N_("Tap [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
 	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_ID,                    "id",           OPTION_REQD, N_("VXLAN ID"), NULL, NULL, NULL },
 	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_REMOTE,                "remote",       OPTION_REQD, N_("Remote"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_PARENT,                "dev",          OPTION_NONE, N_("Parent device [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_PARENT,                "dev",          OPTION_NONE, N_("Parent device [none]"), NULL,
+                                                                                                        NULL, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_LOCAL,                 "local",        OPTION_NONE, N_("Local address [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MIN,       "source-port-min", OPTION_NONE, N_("Minimum source port [0]"), NULL, NULL, NULL },
 	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MAX,       "source-port-max", OPTION_NONE, N_("Maximum source port [0]"), NULL, NULL, NULL },
@@ -4271,7 +4289,8 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_MODE,              "mode",         OPTION_REQD, PROMPT_IP_TUNNEL_MODE, NULL, NULL, gen_func_ip_tunnel_mode },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_LOCAL,             "local",        OPTION_NONE, N_("Local endpoint [none]"), NULL, NULL, NULL },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_REMOTE,            "remote",       OPTION_REQD, N_("Remote"), NULL, NULL, NULL },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_PARENT,            "dev",          OPTION_NONE, N_("Parent device [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_PARENT,            "dev",          OPTION_NONE, N_("Parent device [none]"), NULL,
+                                                                                                        NULL, nmc_rl_gen_func_ifnames },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip4",          OPTION_MULTI, N_("IPv4 address (IP[/plen]) [none]"), NULL,
 	                                                                                                set_ip4_address, NULL },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw4",          OPTION_NONE, N_("IPv4 gateway [none]"), NULL, NULL, NULL },
@@ -4365,6 +4384,8 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			run_rl_generator (gen_connection_types, prefix);
 		else if (strcmp (property, NM_SETTING_CONNECTION_MASTER) == 0)
 			run_rl_generator (gen_func_master_ifnames, prefix);
+		else if (strcmp (property, NM_SETTING_CONNECTION_INTERFACE_NAME) == 0)
+			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 	} else if (   strcmp (setting_name, NM_SETTING_VPN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_VPN_SERVICE_TYPE) == 0)
 		run_rl_generator (gen_func_vpn_types, prefix);
@@ -4385,12 +4406,21 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 	} else if (   strcmp (setting_name, NM_SETTING_TUN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_TUN_MODE) == 0)
 		run_rl_generator (gen_func_tun_mode, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_IP_TUNNEL_MODE) == 0)
-		run_rl_generator (gen_func_ip_tunnel_mode, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_MACVLAN_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_MACVLAN_MODE) == 0)
-		run_rl_generator (gen_func_macvlan_mode, prefix);
+	else if (strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0) {
+		if (strcmp (property, NM_SETTING_IP_TUNNEL_MODE) == 0)
+			run_rl_generator (gen_func_ip_tunnel_mode, prefix);
+		else if (strcmp (property, NM_SETTING_IP_TUNNEL_PARENT) == 0)
+			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
+	} else if (strcmp (setting_name, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
+		if (strcmp (property, NM_SETTING_MACVLAN_MODE) == 0)
+			run_rl_generator (gen_func_macvlan_mode, prefix);
+		else if (strcmp (property, NM_SETTING_MACVLAN_PARENT) == 0)
+			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
+		else if (strcmp (property, NM_SETTING_MACVLAN_TAP) == 0)
+			run_rl_generator (gen_func_bool_values_l10n, prefix);
+	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
+	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
+		run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 
 }
 
@@ -4605,8 +4635,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	rl_compentry_func_t *generator_func = NULL;
-	gs_free char *no = g_strdup_printf (": [%s]", gettext ("no"));
-	gs_free char *yes = g_strdup_printf (": [%s]", gettext ("yes"));
+	gs_free char *no = g_strdup_printf ("[%s]: ", gettext ("no"));
+	gs_free char *yes = g_strdup_printf ("[%s]: ", gettext ("yes"));
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -4619,6 +4649,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 
 	if (g_str_has_prefix (rl_prompt, PROMPT_CON_TYPE))
 		generator_func = gen_connection_types;
+	else if (g_str_has_prefix (rl_prompt, PROMPT_IFNAME))
+		generator_func = nmc_rl_gen_func_ifnames;
 	else if (g_str_has_prefix (rl_prompt, PROMPT_VPN_TYPE))
 		generator_func = gen_func_vpn_types;
 	else if (g_str_has_prefix (rl_prompt, PROMPT_MASTER))

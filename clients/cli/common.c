@@ -1356,6 +1356,33 @@ nmc_rl_gen_func_basic (const char *text, int state, const char **words)
 	return NULL;
 }
 
+char *
+nmc_rl_gen_func_ifnames (const char *text, int state)
+{
+	int i;
+	const GPtrArray *devices;
+	const char **ifnames;
+	char *ret;
+
+	nm_cli.get_client (&nm_cli);
+	devices = nm_client_get_devices (nm_cli.client);
+	if (devices->len == 0)
+		return NULL;
+
+	ifnames = g_new (const char *, devices->len + 1);
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *dev = g_ptr_array_index (devices, i);
+		const char *ifname = nm_device_get_iface (dev);
+		ifnames[i] = ifname;
+	}
+	ifnames[i] = NULL;
+
+	ret = nmc_rl_gen_func_basic (text, state, ifnames);
+
+	g_free (ifnames);
+	return ret;
+}
+
 /* for pre-filling a string to readline prompt */
 char *nmc_rl_pre_input_deftext;
 
