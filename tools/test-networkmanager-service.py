@@ -741,6 +741,7 @@ class NetworkManager(ExportedObj):
 
         if s_con['id'] == 'object-creation-failed-test':
             self.active_connections.remove(ac)
+            self.__notify(PM_ACTIVE_CONNECTIONS)
             ac.remove_from_connection()
         else:
             GLib.timeout_add(50, set_device_ac_cb, device, ac)
