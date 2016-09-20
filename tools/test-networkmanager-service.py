@@ -153,8 +153,6 @@ class Device(ExportedObj):
     def __init__(self, bus, iface, devtype):
         object_path = "/org/freedesktop/NetworkManager/Devices/%d" % Device.counter
         Device.counter = Device.counter + 1
-        ExportedObj.__init__(self, bus, object_path)
-        self.add_dbus_interface(IFACE_DEVICE, self.__get_props, Device.PropertiesChanged)
 
         self.iface = iface
         self.udi = "/sys/devices/virtual/%s" % iface
@@ -166,6 +164,9 @@ class Device(ExportedObj):
         self.dhcp4_config = None
         self.dhcp6_config = None
         self.available_connections = []
+
+        self.add_dbus_interface(IFACE_DEVICE, self.__get_props, Device.PropertiesChanged)
+        ExportedObj.__init__(self, bus, object_path)
 
     # Properties interface
     def __get_props(self):
@@ -226,8 +227,6 @@ PE_S390_SUBCHANNELS = "S390Subchannels"
 
 class WiredDevice(Device):
     def __init__(self, bus, iface, mac, subchannels):
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_ETHERNET)
-        self.add_dbus_interface(IFACE_WIRED, self.__get_props, WiredDevice.PropertiesChanged)
 
         if mac is None:
             self.mac = random_mac()
@@ -235,6 +234,9 @@ class WiredDevice(Device):
             self.mac = mac
         self.carrier = False
         self.s390_subchannels = subchannels
+
+        self.add_dbus_interface(IFACE_WIRED, self.__get_props, WiredDevice.PropertiesChanged)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_ETHERNET)
 
     # Properties interface
     def __get_props(self):
@@ -262,12 +264,12 @@ PV_VLAN_ID = "VlanId"
 
 class VlanDevice(Device):
     def __init__(self, bus, iface):
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_VLAN)
-        self.add_dbus_interface(IFACE_VLAN, self.__get_props, VlanDevice.PropertiesChanged)
-
         self.mac = random_mac()
         self.carrier = False
         self.vlan_id = 1
+
+        self.add_dbus_interface(IFACE_VLAN, self.__get_props, VlanDevice.PropertiesChanged)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_VLAN)
 
     # Properties interface
     def __get_props(self):
@@ -300,8 +302,6 @@ class WifiAp(ExportedObj):
     def __init__(self, bus, ssid, mac, flags, wpaf, rsnf, freq):
         path = "/org/freedesktop/NetworkManager/AccessPoint/%d" % WifiAp.counter
         WifiAp.counter = WifiAp.counter + 1
-        ExportedObj.__init__(self, bus, path)
-        self.add_dbus_interface(IFACE_WIFI_AP, self.__get_props, WifiAp.PropertiesChanged)
 
         self.ssid = ssid
         if mac:
@@ -314,6 +314,9 @@ class WifiAp(ExportedObj):
         self.freq = freq
         self.strength = random.randint(0, 100)
         self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
+
+        self.add_dbus_interface(IFACE_WIFI_AP, self.__get_props, WifiAp.PropertiesChanged)
+        ExportedObj.__init__(self, bus, path)
 
     def __del__(self):
         if self.strength_id > 0:
@@ -362,12 +365,12 @@ PW_WIRELESS_CAPABILITIES = "WirelessCapabilities"
 
 class WifiDevice(Device):
     def __init__(self, bus, iface):
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIFI)
-        self.add_dbus_interface(IFACE_WIFI, self.__get_props, WifiDevice.PropertiesChanged)
-
         self.mac = random_mac()
         self.aps = []
         self.active_ap = None
+
+        self.add_dbus_interface(IFACE_WIFI, self.__get_props, WifiDevice.PropertiesChanged)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIFI)
 
     # methods
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
@@ -448,12 +451,13 @@ class WimaxNsp(ExportedObj):
     def __init__(self, bus, name):
         path = "/org/freedesktop/NetworkManager/Nsp/%d" % WimaxNsp.counter
         WimaxNsp.counter = WimaxNsp.counter + 1
-        ExportedObj.__init__(self, bus, path)
-        self.add_dbus_interface(IFACE_WIMAX_NSP, self.__get_props, WimaxNsp.PropertiesChanged)
 
         self.name = name
         self.strength = random.randint(0, 100)
         self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
+
+        self.add_dbus_interface(IFACE_WIMAX_NSP, self.__get_props, WimaxNsp.PropertiesChanged)
+        ExportedObj.__init__(self, bus, path)
 
     def __del__(self):
         if self.strength_id > 0:
@@ -497,13 +501,13 @@ PX_ACTIVE_NSP = "ActiveNsp"
 
 class WimaxDevice(Device):
     def __init__(self, bus, iface):
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIMAX)
-        self.add_dbus_interface(IFACE_WIMAX, self.__get_props, WimaxDevice.PropertiesChanged)
-
         self.mac = random_mac()
         self.bsid = random_mac()
         self.nsps = []
         self.active_nsp = None
+
+        self.add_dbus_interface(IFACE_WIMAX, self.__get_props, WimaxDevice.PropertiesChanged)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIMAX)
 
     # methods
     @dbus.service.method(dbus_interface=IFACE_WIMAX, in_signature='', out_signature='ao')
@@ -587,8 +591,6 @@ class ActiveConnection(ExportedObj):
     def __init__(self, bus, device, connection, specific_object):
         object_path = "/org/freedesktop/NetworkManager/ActiveConnection/%d" % ActiveConnection.counter
         ActiveConnection.counter = ActiveConnection.counter + 1
-        ExportedObj.__init__(self, bus, object_path)
-        self.add_dbus_interface(IFACE_ACTIVE_CONNECTION, self.__get_props, ActiveConnection.PropertiesChanged)
 
         self.device = device
         self.conn = connection
@@ -602,6 +604,9 @@ class ActiveConnection(ExportedObj):
         self.dhcp6config = None
         self.vpn = False
         self.master = None
+
+        self.add_dbus_interface(IFACE_ACTIVE_CONNECTION, self.__get_props, ActiveConnection.PropertiesChanged)
+        ExportedObj.__init__(self, bus, object_path)
 
     # Properties interface
     def __get_props(self):
@@ -664,9 +669,6 @@ def set_device_ac_cb(device, ac):
 
 class NetworkManager(ExportedObj):
     def __init__(self, bus, object_path):
-        ExportedObj.__init__(self, bus, object_path)
-        self.add_dbus_interface(IFACE_NM, self.__get_props, NetworkManager.PropertiesChanged)
-
         self._bus = bus;
         self.devices = []
         self.active_connections = []
@@ -674,6 +676,9 @@ class NetworkManager(ExportedObj):
         self.activating_connection = None
         self.state = NM_STATE_DISCONNECTED
         self.connectivity = 1
+
+        self.add_dbus_interface(IFACE_NM, self.__get_props, NetworkManager.PropertiesChanged)
+        ExportedObj.__init__(self, bus, object_path)
 
     @dbus.service.signal(IFACE_NM, signature='u')
     def StateChanged(self, new_state):
