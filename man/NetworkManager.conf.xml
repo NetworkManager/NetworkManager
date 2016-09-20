@@ -285,7 +285,15 @@ no-auto-default=*
         dnsmasq as a local caching nameserver, using a "split DNS"
         configuration if you are connected to a VPN, and then update
         <filename>resolv.conf</filename> to point to the local
-        nameserver.</para>
+        nameserver. It is possible to pass custom options to the
+        dnsmasq instance by adding them to files in the
+        "<filename>&sysconfdir;/NetworkManager/dnsmasq.d/</filename>"
+        directory. Note that when multiple upstream servers are
+        available, dnsmasq will initially contact them in parallel and
+        then use the fastest to respond, probing again other servers
+        after some time. This behavior can be modified passing the
+        'all-servers' or 'strict-order' options to dnsmasq (see the
+        manual page for more details).</para>
         <para><literal>unbound</literal>: NetworkManager will talk
         to unbound and dnssec-triggerd, providing a "split DNS"
         configuration with DNSSEC support. The /etc/resolv.conf
