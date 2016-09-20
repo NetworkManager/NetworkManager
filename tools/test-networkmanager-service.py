@@ -274,7 +274,7 @@ class VlanDevice(Device):
         props = {}
         props[PV_HW_ADDRESS] = self.mac
         props[PV_CARRIER] = self.carrier
-        props[PV_VLAN_ID] = self.vlan_id
+        props[PV_VLAN_ID] = dbus.UInt32(self.vlan_id)
         return props
 
     @dbus.service.signal(IFACE_VLAN, signature='a{sv}')
