@@ -1,5 +1,7 @@
 if ENABLE_TESTS
 
+include $(top_srcdir)/nm.mk
+
 SUBDIRS=network-scripts
 
 @GNOME_CODE_COVERAGE_RULES@
@@ -50,7 +52,7 @@ test_ifcfg_rh_utils_LDADD = \
 TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 
 check-local:
-	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/../.libs/libnm-settings-plugin-ifcfg-rh.so $(top_builddir)/src/NetworkManager --version >/dev/null
+	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifcfg-rh.so)
 
 endif
 

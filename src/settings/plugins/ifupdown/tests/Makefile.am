@@ -1,5 +1,7 @@
 if ENABLE_TESTS
 
+include $(top_srcdir)/nm.mk
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
@@ -27,7 +29,7 @@ test_ifupdown_LDADD = \
 TESTS = test-ifupdown
 
 check-local:
-	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/../.libs/libnm-settings-plugin-ifupdown.so $(top_builddir)/src/NetworkManager --version >/dev/null
+	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifupdown.so)
 
 endif
 

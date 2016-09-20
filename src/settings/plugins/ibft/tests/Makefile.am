@@ -1,5 +1,7 @@
 if ENABLE_TESTS
 
+include $(top_srcdir)/nm.mk
+
 @GNOME_CODE_COVERAGE_RULES@
 
 AM_CPPFLAGS = \
@@ -35,7 +37,7 @@ test_ibft_LDADD = \
 TESTS = test-ibft
 
 check-local:
-	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/../.libs/libnm-settings-plugin-ibft.so $(top_builddir)/src/NetworkManager --version >/dev/null
+	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ibft.so)
 
 endif
 

@@ -1,5 +1,7 @@
 if ENABLE_TESTS
 
+include $(top_srcdir)/nm.mk
+
 @GNOME_CODE_COVERAGE_RULES@
 
 AM_CPPFLAGS= \
@@ -38,7 +40,7 @@ test_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
 TESTS = test-ifnet
 
 check-local:
-	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/../.libs/libnm-settings-plugin-ifnet.so $(top_builddir)/src/NetworkManager --version >/dev/null
+	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifnet.so)
 
 endif
 

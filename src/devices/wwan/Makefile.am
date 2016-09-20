@@ -1,5 +1,7 @@
 include $(GLIB_MAKEFILE)
 
+include $(top_srcdir)/nm.mk
+
 @GNOME_CODE_COVERAGE_RULES@
 
 AM_CPPFLAGS = \
@@ -88,9 +90,10 @@ if ENABLE_TESTS
 
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wwan.so $(SYMBOL_VIS_FILE)
-	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/.libs/libnm-device-plugin-wwan.so $(top_builddir)/src/NetworkManager --version >/dev/null
+	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-wwan.so)
+
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-wwan.so $(WWAN_SYMBOL_VIS_FILE)
-	LD_BIND_NOW=1 LD_PRELOAD=$(builddir)/.libs/libnm-wwan.so $(top_builddir)/src/NetworkManager --version >/dev/null
+	$(call check_so_symbols,$(builddir)/.libs/libnm-wwan.so)
 
 endif
 
