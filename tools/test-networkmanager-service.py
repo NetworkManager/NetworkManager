@@ -957,6 +957,11 @@ class NetworkManager(ExportedObj):
     def UpdateConnection(self, path, connection, verify_connection):
         return settings.update_connection(connection, path, verify_connection)
 
+    @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='', out_signature='')
+    def Restart(self):
+        bus.release_name("org.freedesktop.NetworkManager")
+        bus.request_name("org.freedesktop.NetworkManager")
+
 
 ###################################################################
 IFACE_CONNECTION = 'org.freedesktop.NetworkManager.Settings.Connection'
@@ -1271,9 +1276,9 @@ def main():
 
     random.seed()
 
-    bus = dbus.SessionBus()
+    global manager, settings, agent_manager, object_manager, bus
 
-    global manager, settings, agent_manager, object_manager
+    bus = dbus.SessionBus()
     object_manager = ObjectManager(bus, "/org/freedesktop")
     manager = NetworkManager(bus, "/org/freedesktop/NetworkManager")
     settings = Settings(bus, "/org/freedesktop/NetworkManager/Settings")
