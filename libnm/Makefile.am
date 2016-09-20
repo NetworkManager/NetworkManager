@@ -1,5 +1,7 @@
 include $(GLIB_MAKEFILE)
 
+include $(top_srcdir)/nm.mk
+
 @GNOME_CODE_COVERAGE_RULES@
 
 SUBDIRS = . tests
@@ -222,10 +224,7 @@ nm-setting-docs-overrides.xml: generate-plugin-docs.pl $(docs_sources)
 nm-property-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1.0.typelib libnm.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
-	if echo $(CFLAGS) | grep -e -fsanitize=address; then \
-		export LD_PRELOAD="$${LD_PRELOAD} $$(ldd $(abs_builddir)/.libs/libnm.so | grep libasan\.so\.. -o | head -n 1)"; \
-	fi; \
-	[ -n "$(SANITIZER_ENV)" ] && export $(SANITIZER_ENV) ; \
+	$(call set_sanitizer_env,$(abs_builddir)/.libs/libnm.so); \
 	$(srcdir)/generate-setting-docs.py \
 		--gir $(builddir)/NM-1.0.gir \
 		--output $@
@@ -233,10 +232,7 @@ nm-property-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1
 nm-setting-docs.xml: generate-setting-docs.py $(docs_sources) nm-setting-docs-overrides.xml | NM-1.0.gir NM-1.0.typelib libnm.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
-	if echo $(CFLAGS) | grep -e -fsanitize=address; then \
-		export LD_PRELOAD="$${LD_PRELOAD} $$(ldd $(abs_builddir)/.libs/libnm.so | grep libasan\.so\.. -o | head -n 1)"; \
-	fi; \
-	[ -n "$(SANITIZER_ENV)" ] && export $(SANITIZER_ENV) ; \
+	$(call set_sanitizer_env,$(abs_builddir)/.libs/libnm.so); \
 	$(srcdir)/generate-setting-docs.py \
 		--gir $(builddir)/NM-1.0.gir \
 		--overrides $(builddir)/nm-setting-docs-overrides.xml \
