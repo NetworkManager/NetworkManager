@@ -2985,6 +2985,81 @@ test_read_wired_wake_on_lan (void)
 }
 
 static void
+test_read_wired_auto_negotiate_off (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-wake-on-lan",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+
+	g_assert (!nm_setting_wired_get_auto_negotiate (s_wired));
+	g_assert_cmpint (nm_setting_wired_get_speed (s_wired), ==, 100);
+	g_assert_cmpstr (nm_setting_wired_get_duplex (s_wired), ==, "full");
+}
+
+static void
+test_read_wired_auto_negotiate_on (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-auto-negotiate-on",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+
+	g_assert (nm_setting_wired_get_auto_negotiate (s_wired));
+	g_assert_cmpint (nm_setting_wired_get_speed (s_wired), ==, 0);
+	g_assert_cmpstr (nm_setting_wired_get_duplex (s_wired), ==, NULL);
+}
+
+static void
+test_read_wired_unknown_ethtool_opt (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-unknown-ethtool-opt",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+
+	g_assert (!nm_setting_wired_get_auto_negotiate (s_wired));
+	g_assert (!nm_setting_wired_get_speed (s_wired));
+	g_assert (!nm_setting_wired_get_duplex (s_wired));
+
+	g_assert_cmpint (nm_setting_wired_get_wake_on_lan (s_wired),
+	                 ==,
+	                 NM_SETTING_WIRED_WAKE_ON_LAN_ARP |
+	                 NM_SETTING_WIRED_WAKE_ON_LAN_PHY |
+	                 NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC);
+	g_assert_cmpstr (nm_setting_wired_get_wake_on_lan_password (s_wired),
+	                 ==,
+	                 "00:11:22:33:44:55");
+}
+
+static void
 test_read_wifi_hidden (void)
 {
 	NMConnection *connection;
@@ -3189,6 +3264,76 @@ test_write_wired_wake_on_lan (void)
 	g_assert (val);
 	g_assert (strstr (val, "wol"));
 	g_assert (strstr (val, "sopass 00:00:00:11:22:33"));
+	g_free (val);
+	svCloseFile (f);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
+test_write_wired_auto_negotiate_off (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingWired *s_wired;
+	char *val;
+	shvarFile *f;
+
+	connection = nmtst_create_minimal_connection ("Test Write Wired Auto-Negotiate", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_AUTO_NEGOTIATE, FALSE,
+	              NM_SETTING_WIRED_DUPLEX, "half",
+	              NM_SETTING_WIRED_SPEED, 10,
+	              NULL);
+
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
+
+	f = _svOpenFile (testfile);
+	val = svGetValueString (f, "ETHTOOL_OPTS");
+	g_assert (val);
+	g_assert (strstr (val, "autoneg off"));
+	g_assert (strstr (val, "speed 10"));
+	g_assert (strstr (val, "duplex half"));
+	g_free (val);
+	svCloseFile (f);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
+test_write_wired_auto_negotiate_on (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingWired *s_wired;
+	char *val;
+	shvarFile *f;
+
+	connection = nmtst_create_minimal_connection ("Test Write Wired Auto-Negotiate", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE,
+	              NULL);
+
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
+
+	f = _svOpenFile (testfile);
+	val = svGetValueString (f, "ETHTOOL_OPTS");
+	g_assert (val);
+	g_assert (strstr (val, "autoneg on"));
+	g_assert (!strstr (val, "speed"));
+	g_assert (!strstr (val, "duplex"));
 	g_free (val);
 	svCloseFile (f);
 
@@ -8780,6 +8925,9 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "vlan/read/reorder-hdr-1", test_read_vlan_reorder_hdr_1);
 	g_test_add_func (TPATH "vlan/read/reorder-hdr-2", test_read_vlan_reorder_hdr_2);
 	g_test_add_func (TPATH "wired/read/read-wake-on-lan", test_read_wired_wake_on_lan);
+	g_test_add_func (TPATH "wired/read/read-auto-negotiate-off", test_read_wired_auto_negotiate_off);
+	g_test_add_func (TPATH "wired/read/read-auto-negotiate-on", test_read_wired_auto_negotiate_on);
+	g_test_add_func (TPATH "wired/read/unkwnown-ethtool-opt", test_read_wired_unknown_ethtool_opt);
 
 	g_test_add_func (TPATH "wired/write/static", test_write_wired_static);
 	g_test_add_func (TPATH "wired/write/static-ip6-only", test_write_wired_static_ip6_only);
@@ -8799,6 +8947,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/write-aliases", test_write_wired_aliases);
 	g_test_add_func (TPATH "ipv4/write-static-addresses-GATEWAY", test_write_gateway);
 	g_test_add_func (TPATH "wired/write-wake-on-lan", test_write_wired_wake_on_lan);
+	g_test_add_func (TPATH "wired/write-auto-negotiate-off", test_write_wired_auto_negotiate_off);
+	g_test_add_func (TPATH "wired/write-auto-negotiate-on", test_write_wired_auto_negotiate_on);
 	g_test_add_func (TPATH "wifi/write/open", test_write_wifi_open);
 	g_test_add_func (TPATH "wifi/write/open/hex-ssid", test_write_wifi_open_hex_ssid);
 	g_test_add_func (TPATH "wifi/write/wep", test_write_wifi_wep);
