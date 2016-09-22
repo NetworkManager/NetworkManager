@@ -6001,7 +6001,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason)
 	}
 
 	if (!dhcp6_start_with_link_ready (self, connection)) {
-		*reason = NM_DEVICE_STATE_REASON_DHCP_START_FAILED;
+		NM_SET_OUT (reason, NM_DEVICE_STATE_REASON_DHCP_START_FAILED);
 		return FALSE;
 	}
 
