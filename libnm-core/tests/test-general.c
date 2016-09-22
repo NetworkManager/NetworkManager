@@ -5222,6 +5222,8 @@ test_nm_in_set (void)
 
 	_ASSERT (5,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
 	_ASSERT (6,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G( 4), G( 5), G(-1)));
+
+	(void) NM_IN_SET ("a",  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16");
 #undef G
 #undef N
 #undef _ASSERT
@@ -5348,6 +5350,8 @@ test_nm_in_strset (void)
 	_ASSERT (5,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("a"),  N("a")));
 	_ASSERT (6,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("e"),  G("a")));
 	_ASSERT (6, !NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("d"),  G("e"),  G("f")));
+
+	(void) NM_IN_STRSET ("a",  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16");
 #undef G
 #undef N
 #undef _ASSERT
