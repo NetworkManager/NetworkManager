@@ -775,13 +775,27 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static gboolean
-options_hash_match (NMSettingBond *s_bond, GHashTable *options1, GHashTable *options2)
+options_hash_match (NMSettingBond *s_bond,
+                    GHashTable *options1,
+                    GHashTable *options2,
+                    NMSettingCompareFlags flags)
 {
 	GHashTableIter iter;
 	const char *key, *value, *value2;
 
 	g_hash_table_iter_init (&iter, options1);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+
+		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
+			/* when doing an inferrable match, the active-slave should be ignored
+			 * as it might be differ from the setting in the connection.
+			 *
+			 * Also, the fail_over_mac setting can change, see for example
+			 * https://bugzilla.redhat.com/show_bug.cgi?id=1375558#c8 */
+			if (NM_IN_STRSET (key, "fail_over_mac", "active_slave"))
+				continue;
+		}
+
 		value2 = g_hash_table_lookup (options2, key);
 
 		if (!value2) {
@@ -806,10 +820,13 @@ options_hash_match (NMSettingBond *s_bond, GHashTable *options1, GHashTable *opt
 }
 
 static gboolean
-options_equal (NMSettingBond *s_bond, GHashTable *options1, GHashTable *options2)
+options_equal (NMSettingBond *s_bond,
+               GHashTable *options1,
+               GHashTable *options2,
+               NMSettingCompareFlags flags)
 {
-	return    options_hash_match (s_bond, options1, options2)
-	       && options_hash_match (s_bond, options2, options1);
+	return    options_hash_match (s_bond, options1, options2, flags)
+	       && options_hash_match (s_bond, options2, options1, flags);
 }
 
 static gboolean
@@ -823,7 +840,8 @@ compare_property (NMSetting *setting,
 	if (nm_streq0 (prop_spec->name, NM_SETTING_BOND_OPTIONS)) {
 		return options_equal (NM_SETTING_BOND (setting),
 		                      NM_SETTING_BOND_GET_PRIVATE (setting)->options,
-		                      NM_SETTING_BOND_GET_PRIVATE (other)->options);
+		                      NM_SETTING_BOND_GET_PRIVATE (other)->options,
+		                      flags);
 	}
 
 	/* Otherwise chain up to parent to handle generic compare */
