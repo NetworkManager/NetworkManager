@@ -10,11 +10,11 @@
 %global dbus_version 1.1
 %global dbus_glib_version 0.100
 
-%global glib2_version 2.32.0
 %global wireless_tools_version 1:28-0pre9
 %global libnl3_version 3.2.7
 
 %global ppp_version %(sed -n 's/^#define\\s*VERSION\\s*"\\([^\\s]*\\)"$/\\1/p' %{_includedir}/pppd/patchlevel.h 2>/dev/null | grep . || echo bad)
+%global glib2_version %(pkg-config --modversion glib-2.0 2>/dev/null || echo bad)
 
 %global snapshot %{nil}
 %global git_sha __COMMIT__
@@ -139,7 +139,7 @@ BuildRequires: dbus-glib-devel >= %{dbus_glib_version}
 %if 0%{?fedora}
 BuildRequires: wireless-tools-devel >= %{wireless_tools_version}
 %endif
-BuildRequires: glib2-devel >= %{glib2_version}
+BuildRequires: glib2-devel >= 2.32.0
 BuildRequires: gobject-introspection-devel >= 0.10.3
 BuildRequires: gettext-devel
 BuildRequires: pkgconfig
