@@ -89,6 +89,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 
 	if (priv->config) {
+		if (strlen (priv->config) > 1*1024*1024) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("team config exceeds size limit"));
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_TEAM_SETTING_NAME,
+			                NM_SETTING_TEAM_CONFIG);
+			return FALSE;
+		}
+
 		if (!nm_utils_is_json_object (priv->config, error)) {
 			g_prefix_error (error,
 			                "%s.%s: ",
