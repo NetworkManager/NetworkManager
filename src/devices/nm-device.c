@@ -1549,7 +1549,7 @@ is_unmanaged_external_down (NMDevice *self, gboolean consider_can)
 	/* Manage externally-created software interfaces only when they are IFF_UP */
 	if (   priv->ifindex <= 0
 	    || !priv->up
-	    || !nm_platform_link_can_assume (NM_PLATFORM_GET, priv->ifindex))
+	    || !(priv->slaves || nm_platform_link_can_assume (NM_PLATFORM_GET, priv->ifindex)))
 		return NM_UNMAN_FLAG_OP_SET_UNMANAGED;
 
 	return NM_UNMAN_FLAG_OP_SET_MANAGED;
@@ -3246,8 +3246,8 @@ device_has_config (NMDevice *self)
 	if (nm_device_is_software (self) && nm_device_is_real (self))
 		return TRUE;
 
-	/* Slaves are also configured by definition */
-	if (nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex) > 0)
+	/* Master-slave relationship is also a configuration */
+	if (priv->slaves || nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex) > 0)
 		return TRUE;
 
 	return FALSE;
