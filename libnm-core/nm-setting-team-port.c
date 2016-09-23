@@ -117,7 +117,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->config) {
-		if (!_nm_utils_check_valid_json (priv->config, error)) {
+		if (!nm_utils_is_json_object (priv->config, error)) {
 			g_prefix_error (error,
 			                "%s.%s: ",
 			                NM_SETTING_TEAM_PORT_SETTING_NAME,

@@ -4258,7 +4258,7 @@ read_team_config (shvarFile *ifcfg, const char *key, GError **error)
 	}
 	svUnescape (value);
 
-	if (value && value[0] && !_nm_utils_check_valid_json (value, &local_error)) {
+	if (value && value[0] && !nm_utils_is_json_object (value, &local_error)) {
 		PARSE_WARNING ("ignoring invalid team configuration: %s", local_error->message);
 		g_clear_pointer (&value, g_free);
 	}

@@ -1175,7 +1175,7 @@ team_config_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 	gs_free_error GError *error = NULL;
 
 	conf = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
-	if (conf && conf[0] && !_nm_utils_check_valid_json (conf, &error)) {
+	if (conf && conf[0] && !nm_utils_is_json_object (conf, &error)) {
 		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid team configuration: %s"),
 		             error->message);
