@@ -6278,8 +6278,6 @@ typedef struct {
 static gboolean nmc_editor_cb_called;
 static GError *nmc_editor_error;
 static MonitorACInfo *nmc_editor_monitor_ac;
-static GMutex nmc_editor_mutex;
-static GCond nmc_editor_cond;
 
 /*
  * Store 'error' to shared 'nmc_editor_error' and monitoring info to
@@ -6289,12 +6287,9 @@ static GCond nmc_editor_cond;
 static void
 set_info_and_signal_editor_thread (GError *error, MonitorACInfo *monitor_ac_info)
 {
-	g_mutex_lock (&nmc_editor_mutex);
 	nmc_editor_cb_called = TRUE;
 	nmc_editor_error = error ? g_error_copy (error) : NULL;
 	nmc_editor_monitor_ac = monitor_ac_info;
-	g_cond_signal (&nmc_editor_cond);
-	g_mutex_unlock (&nmc_editor_mutex);
 }
 
 static void
@@ -6358,6 +6353,7 @@ progress_activation_editor_cb (gpointer user_data)
 	return TRUE;
 
 finish:
+	info->monitor_id = 0;
 	if (device)
 		g_object_unref (device);
 	if (ac)
@@ -6385,7 +6381,7 @@ activate_connection_editor_cb (GObject *client,
 			device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
 		}
 		if (device) {
-			monitor_ac_info = g_malloc0 (sizeof (AddConnectionInfo));
+			monitor_ac_info = g_malloc0 (sizeof (MonitorACInfo));
 			monitor_ac_info->device = g_object_ref (device);
 			monitor_ac_info->ac = active;
 			monitor_ac_info->monitor_id = g_timeout_add (120, progress_activation_editor_cb, monitor_ac_info);
@@ -7437,10 +7433,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					update_connection (persistent, rem_con, update_connection_editor_cb, NULL);
 				}
 
-				g_mutex_lock (&nmc_editor_mutex);
 				//FIXME: add also a timeout for cases the callback is not called
 				while (!nmc_editor_cb_called)
-					g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
+					g_main_context_iteration (NULL, TRUE);
 
 				if (nmc_editor_error) {
 					g_print (_("Error: Failed to save '%s' (%s) connection: %s\n"),
@@ -7482,7 +7477,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				nmc_editor_cb_called = FALSE;
 				nmc_editor_error = NULL;
-				g_mutex_unlock (&nmc_editor_mutex);
 			} else {
 				g_print (_("Error: connection verification failed: %s\n"),
 				         err1 ? err1->message : _("(unknown error)"));
@@ -7527,9 +7521,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				break;
 			}
 
-			g_mutex_lock (&nmc_editor_mutex);
 			while (!nmc_editor_cb_called)
-				g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
+				g_main_context_iteration (NULL, TRUE);
 
 			if (nmc_editor_error) {
 				g_print (_("Error: Failed to activate '%s' (%s) connection: %s\n"),
@@ -7538,8 +7531,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				         nmc_editor_error->message);
 				g_error_free (nmc_editor_error);
 			} else {
-				g_print (_("Monitoring connection activation (press any key to continue)\n"));
-				nmc_get_user_input ("");
+				nmc_readline (_("Monitoring connection activation (press any key to continue)\n"));
 			}
 
 			if (nmc_editor_monitor_ac) {
@@ -7550,7 +7542,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			nmc_editor_cb_called = FALSE;
 			nmc_editor_error = NULL;
 			nmc_editor_monitor_ac = NULL;
-			g_mutex_unlock (&nmc_editor_mutex);
 
 			/* Update timestamp in local connection */
 			update_connection_timestamp (NM_CONNECTION (rem_con), connection);
@@ -7768,7 +7759,7 @@ editor_init_existing_connection (NMConnection *connection)
 }
 
 static NMCResultCode
-do_connection_edit_func (NmCli *nmc, int argc, char **argv)
+do_connection_edit (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
@@ -7942,54 +7933,11 @@ do_connection_edit_func (NmCli *nmc, int argc, char **argv)
 		g_object_unref (connection);
 	g_free (nmc_tab_completion.con_type);
 
-	nmc->should_wait++;
 	return nmc->return_value;
 
 error:
 	g_assert (!connection);
 	g_free (type_ask);
-
-	nmc->should_wait++;
-	return nmc->return_value;
-}
-
-typedef struct {
-	NmCli *nmc;
-	int argc;
-	char **argv;
-} NmcEditorThreadData;
-
-static GThread *editor_thread;
-static NmcEditorThreadData editor_thread_data;
-
-/*
- * We need to run do_connection_edit_func() in a thread so that
- * glib main loop is not blocked and could receive and process D-Bus
- * return messages.
- */
-static gpointer
-connection_editor_thread_func (gpointer data)
-{
-	NmcEditorThreadData *td = (NmcEditorThreadData *) data;
-
-	/* run editor for editing/adding connections */
-	td->nmc->return_value = do_connection_edit_func (td->nmc, td->argc, td->argv);
-
-	/* quit glib main loop now that we are done with this thread */
-	quit ();
-
-	return NULL;
-}
-
-static NMCResultCode
-do_connection_edit (NmCli *nmc, int argc, char **argv)
-{
-	nmc->should_wait++;
-	editor_thread_data.nmc = nmc;
-	editor_thread_data.argc = argc;
-	editor_thread_data.argv = argv;
-	editor_thread = g_thread_new ("editor-thread", connection_editor_thread_func, &editor_thread_data);
-	g_thread_unref (editor_thread);
 
 	return nmc->return_value;
 }
