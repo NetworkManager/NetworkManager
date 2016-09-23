@@ -826,10 +826,11 @@ nmc_bond_validate_mode (const char *mode, GError **error)
 /*
  * nmc_team_check_config:
  * @config: file name with team config, or raw team JSON config data
- * @out_config: raw team JSON config data (with removed new-line characters)
+ * @out_config: raw team JSON config data
+ *   The value must be freed with g_free().
  * @error: location to store error, or %NUL
  *
- * Check team config from @config parameter and return the checked/sanitized
+ * Check team config from @config parameter and return the checked
  * config in @out_config.
  *
  * Returns: %TRUE if the config is valid, %FALSE if it is invalid
@@ -837,33 +838,58 @@ nmc_bond_validate_mode (const char *mode, GError **error)
 gboolean
 nmc_team_check_config (const char *config, char **out_config, GError **error)
 {
-	char *contents = NULL;
+	enum {
+		_TEAM_CONFIG_TYPE_GUESS,
+		_TEAM_CONFIG_TYPE_FILE,
+		_TEAM_CONFIG_TYPE_JSON,
+	} desired_type = _TEAM_CONFIG_TYPE_GUESS;
+	const char *filename = NULL;
 	size_t c_len = 0;
+	gs_free char *config_clone = NULL;
 
 	*out_config = NULL;
 
-	if (!config || strlen (config) == strspn (config, " \t"))
+	if (!config || !config[0])
 		return TRUE;
 
-	/* 'config' can be either a file name or raw JSON config data */
-	if (g_file_test (config, G_FILE_TEST_EXISTS))
-		(void) g_file_get_contents (config, &contents, NULL, NULL);
-	else
-		contents = g_strdup (config);
-
-	if (contents) {
-		g_strstrip (contents);
-		c_len = strlen (contents);
+	if (g_str_has_prefix (config, "file://")) {
+		config += NM_STRLEN ("file://");
+		desired_type = _TEAM_CONFIG_TYPE_FILE;
+	} else if (g_str_has_prefix (config, "json://")) {
+		config += NM_STRLEN ("json://");
+		desired_type = _TEAM_CONFIG_TYPE_JSON;
 	}
 
-	/* Do a simple validity check */
-	if (!contents || !contents[0] || c_len > 100000 || contents[0] != '{' || contents[c_len-1] != '}') {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("'%s' is not a valid team configuration or file name."), config);
-		g_free (contents);
+	if (NM_IN_SET (desired_type, _TEAM_CONFIG_TYPE_FILE, _TEAM_CONFIG_TYPE_GUESS)) {
+		gs_free char *contents = NULL;
+
+		if (!g_file_get_contents (config, &contents, &c_len, NULL)) {
+			if (desired_type == _TEAM_CONFIG_TYPE_FILE) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("cannot read team config from file '%s'"),
+				             config);
+				return FALSE;
+			}
+		} else {
+			filename = config;
+			config = config_clone = g_steal_pointer (&contents);
+		}
+	}
+
+	if (!nm_utils_is_json_object (config, NULL)) {
+		if (filename) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("'%s' does not contain a valid team configuration"), filename);
+		} else {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("team configuration must be a JSON object"));
+		}
 		return FALSE;
 	}
-	*out_config = g_strdelimit (contents, "\r\n", ' ');
+
+	*out_config = (config == config_clone)
+	              ? g_steal_pointer (&config_clone)
+	              : g_strdup (config);
 	return TRUE;
 }
 

@@ -1827,21 +1827,25 @@ It's equivalent of using the <literal>+bond.options 'option=value'</literal> syn
     </tbody>
     </tgroup></table>
 
-    <table><title>Team options</title><tgroup cols="2">
+    <table><title>Team options</title><tgroup cols="3">
     <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
     </thead>
     <tbody>
-      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team.config">team.config</link></entry></row>
+      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team.config">team.config</link></entry>
+           <entry align="left">Either a filename or a team configuration in JSON format. To enforce one or the other, the value can be prefixed with "file://" or "json://".</entry>
+      </row>
     </tbody>
     </tgroup></table>
 
-    <table><title>Team port options</title><tgroup cols="2">
+    <table><title>Team port options</title><tgroup cols="3">
     <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
     </thead>
     <tbody>
-      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team-port.config">team-port.config</link></entry></row>
+      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team-port.config">team-port.config</link></entry>
+           <entry align="left">Either a filename or a team configuration in JSON format. To enforce one or the other, the value can be prefixed with "file://" or "json://".</entry>
+      </row>
     </tbody>
     </tgroup></table>
 
