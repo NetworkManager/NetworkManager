@@ -5450,7 +5450,7 @@ nm_manager_check_capability (NMManager *self,
 	int i;
 
 	for (i = 0; i < priv->capabilities->len; i++) {
-		NMCapability test = g_array_index (priv->capabilities, gint, i);
+		NMCapability test = g_array_index (priv->capabilities, guint32, i);
 		if (test == cap)
 			return TRUE;
 		if (test > cap)
@@ -5527,7 +5527,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
 
-	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (gint));
+	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
 
 	_set_prop_filter (self, nm_bus_manager_get_connection (priv->dbus_mgr));
 
@@ -5688,10 +5688,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, VERSION);
 		break;
 	case PROP_CAPABILITIES:
-		g_value_set_variant (value, g_variant_new_fixed_array (G_VARIANT_TYPE ("i"),
+		g_value_set_variant (value, g_variant_new_fixed_array (G_VARIANT_TYPE ("u"),
 		                                                       priv->capabilities->data,
 		                                                       priv->capabilities->len,
-		                                                       sizeof(gint)));
+		                                                       sizeof (guint32)));
 		break;
 	case PROP_STATE:
 		nm_manager_update_state (self);

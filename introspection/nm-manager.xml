@@ -387,7 +387,7 @@
         linkend="NMCapability">NMCapability</link> for currently
         defined capability numbers.
     -->
-    <property name="Capabilities" type="ai" access="read"/>
+    <property name="Capabilities" type="au" access="read"/>
 
     <!--
         State:
