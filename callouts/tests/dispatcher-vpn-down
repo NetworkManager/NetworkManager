@@ -27,7 +27,7 @@ expiry=1304349405
 
 [proxy]
 pac-url=http://networkmanager.com/proxy.pac
-pac-script=path/to/script
+pac-script="function FindProxyForURL (url, host) {}"
 
 [ip4]
 addresses=192.168.1.119/24 192.168.1.1
@@ -43,7 +43,7 @@ CONNECTION_FILENAME=/callouts/tests/dispatcher-vpn-down
 DEVICE_IFACE=wlan0
 DEVICE_IP_IFACE=tun0
 PROXY_PAC_URL=http://networkmanager.com/proxy.pac
-PROXY_PAC_SCRIPT=path/to/script
+PROXY_PAC_SCRIPT="function FindProxyForURL (url, host) {}"
 IP4_ADDRESS_0=192.168.1.119/24 192.168.1.1
 IP4_NUM_ADDRESSES=1
 IP4_NAMESERVERS=68.87.77.134 68.87.72.134 192.168.1.1

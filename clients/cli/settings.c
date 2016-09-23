@@ -2131,7 +2131,7 @@ nmc_property_proxy_get_method (NMSetting *setting, NmcPropertyGetType get_type)
 
 static gboolean
 nmc_property_proxy_set_method (NMSetting *setting, const char *prop,
-                                  const char *val, GError **error)
+                               const char *val, GError **error)
 {
 	NMSettingProxyMethod method;
 	gboolean ret;
@@ -2154,6 +2154,22 @@ nmc_property_proxy_set_method (NMSetting *setting, const char *prop,
 	}
 
 	g_object_set (setting, prop, method, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_proxy_set_pac_script (NMSetting *setting, const char *prop,
+                                   const char *val, GError **error)
+{
+	char *script = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_proxy_check_script (val, &script, error)) {
+		return FALSE;
+	}
+	g_object_set (setting, prop, script, NULL);
+	g_free (script);
 	return TRUE;
 }
 
@@ -7897,7 +7913,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PROXY, PAC_SCRIPT),
 	                    nmc_property_proxy_get_pac_script,
-	                    nmc_property_set_string,
+	                    nmc_property_proxy_set_pac_script,
 	                    NULL,
 	                    NULL,
 	                    NULL,

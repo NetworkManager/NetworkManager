@@ -134,7 +134,7 @@ nm_setting_proxy_get_pac_url (NMSettingProxy *setting)
  * nm_setting_proxy_get_pac_script:
  * @setting: the #NMSettingProxy
  *
- * Returns: the path to PAC Script
+ * Returns: the PAC Script
  *
  * Since: 1.6
  **/
@@ -308,7 +308,7 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	/**
 	 * NMSettingProxy:pac-script:
 	 *
-	 * PAC Script location.
+	 * PAC Script For the connection.
 	 *
 	 * Since: 1.6
 	 **/

@@ -900,6 +900,50 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 }
 
 /*
+ * nmc_proxy_check_script:
+ * @script: file name with PAC script, or raw PAC Script data
+ * @out_script: raw PAC Script (with removed new-line characters)
+ * @error: location to store error, or %NULL
+ *
+ * Check PAC Script from @script parameter and return the checked/sanitized
+ * config in @out_script.
+ *
+ * Returns: %TRUE if the script is valid, %FALSE if it is invalid
+ */
+gboolean
+nmc_proxy_check_script (const char *script, char **out_script, GError **error)
+{
+	char *contents = NULL;
+	size_t c_len = 0;
+
+	*out_script = NULL;
+
+	if (!script || strlen (script) == strspn (script, " \t"))
+		return TRUE;
+
+	/* 'script' can be either a file name or raw PAC Script data */
+	if (g_file_test (script, G_FILE_TEST_EXISTS))
+		(void) g_file_get_contents (script, &contents, NULL, NULL);
+	else
+		contents = g_strdup (script);
+
+	if (contents) {
+		g_strstrip (contents);
+		c_len = strlen (contents);
+	}
+
+	/* Do a simple validity check */
+	if (!contents || !contents[0] || c_len > 100000 || !strstr (contents, "FindProxyForURL")) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("'%s' is not a valid PAC Script or file name."), script);
+		g_free (contents);
+		return FALSE;
+	}
+	*out_script = g_strdelimit (contents, "\t\r\n", ' ');
+	return TRUE;
+}
+
+/*
  * nmc_find_connection:
  * @connections: array of NMConnections to search in
  * @filter_type: "id", "uuid", "path" or %NULL

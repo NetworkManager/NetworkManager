@@ -14,7 +14,7 @@ path=/org/freedesktop/NetworkManager/Devices/0
 
 [proxy]
 pac-url=http://networkmanager.com/proxy.pac
-pac-script=path/to/script
+pac-script="function FindProxyForURL (url, host) {}"
 
 [ip4]
 addresses=192.168.122.1/24 0.0.0.0
@@ -31,7 +31,7 @@ CONNECTION_EXTERNAL=1
 DEVICE_IFACE=virbr0
 DEVICE_IP_IFACE=virbr0
 PROXY_PAC_URL=http://networkmanager.com/proxy.pac
-PROXY_PAC_SCRIPT=path/to/script
+PROXY_PAC_SCRIPT="function FindProxyForURL (url, host) {}"
 IP4_NUM_ADDRESSES=1
 IP4_ADDRESS_0=192.168.122.1/24 0.0.0.0
 IP4_GATEWAY=0.0.0.0

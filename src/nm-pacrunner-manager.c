@@ -116,13 +116,9 @@ add_proxy_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, const N
 
 		pac_script = nm_proxy_config_get_pac_script (proxy_config);
 		if (pac_script) {
-			char *contents;
-
-			if (g_file_get_contents (pac_script, &contents, NULL, NULL)) {
-				g_variant_builder_add (proxy_data, "{sv}",
-				                       "Script",
-				                       g_variant_new_take_string (contents));
-			}
+			g_variant_builder_add (proxy_data, "{sv}",
+			                       "Script",
+			                       g_variant_new_string (pac_script));
 		}
 	}
 
