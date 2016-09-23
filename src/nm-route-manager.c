@@ -296,7 +296,7 @@ _route_index_find (const VTableIP *vtable, const RouteIndex *index, const NMPlat
 {
 	gssize idx, idx2;
 
-	idx = _nm_utils_ptrarray_find_binary_search ((gpointer *) index->entries, index->len, (gpointer) needle, (GCompareDataFunc) _vx_route_id_cmp_full, (gpointer) vtable);
+	idx = _nm_utils_ptrarray_find_binary_search ((gconstpointer *) index->entries, index->len, needle, (GCompareDataFunc) _vx_route_id_cmp_full, (gpointer) vtable);
 	if (idx < 0)
 		return idx;
 

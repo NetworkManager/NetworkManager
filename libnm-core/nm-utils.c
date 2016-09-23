@@ -667,10 +667,8 @@ _nm_utils_copy_object_array (const GPtrArray *array)
 	return _nm_utils_copy_array (array, g_object_ref, g_object_unref);
 }
 
-/* have @list of type 'gpointer *' instead of 'gconstpointer *' to
- * reduce the necessity for annoying const-casts. */
 gssize
-_nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle)
+_nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer needle)
 {
 	gssize i;
 
@@ -694,7 +692,7 @@ _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle)
 }
 
 gssize
-_nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
+_nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
 {
 	gssize imin, imax, imid;
 	int cmp;
