@@ -5527,8 +5527,6 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
 
-	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
-
 	_set_prop_filter (self, nm_bus_manager_get_connection (priv->dbus_mgr));
 
 	priv->settings = nm_settings_new ();
@@ -5599,6 +5597,8 @@ nm_manager_init (NMManager *self)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	guint i;
 	GFile *file;
+
+	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -5909,9 +5909,17 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->timestamp_update_id);
 
+	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE ((NMManager *) object);
+
 	g_array_free (priv->capabilities, TRUE);
 
-	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
 }
 
 static void
@@ -5927,6 +5935,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	/* properties */
 	obj_properties[PROP_VERSION] =
