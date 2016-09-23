@@ -90,7 +90,7 @@
  * #NMCapability names the numbers in the Capabilities property.
  **/
 typedef enum {
-	NM_CAPABILITY_TEAM
+	NM_CAPABILITY_TEAM = 1,
 } NMCapability;
 
 /**
