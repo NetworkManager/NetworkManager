@@ -88,14 +88,14 @@
  * @NM_CAPABILITY_TEAM: Teams can be managed
  *
  * #NMCapability names the numbers in the Capabilities property.
- **/
+ * Capabilities are positive numbers. They are part of stable API
+ * and a certain capability number is guaranteed not to change.
+ *
+ * The range 0x7000 - 0x7FFF of capabilities is guaranteed not to be
+ * used by upstream NetworkManager. It could thus be used for downstream
+ * extensions.
+ */
 typedef enum {
-	/* Capabilities are positive numbers. They are part of stable API
-	 * and a certain capability number is guaranteed not to change.
-	 *
-	 * The range 0x7000 - 0x7FFF of capabilities is guaranteed not to be
-	 * used by upstream NetworkManager. It could thus be used for downstream
-	 * extensions. */
 	NM_CAPABILITY_TEAM = 1,
 } NMCapability;
 
