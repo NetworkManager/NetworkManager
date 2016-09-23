@@ -5442,41 +5442,35 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
 
 /**********************************************************************/
 
-gboolean
-nm_manager_check_capability (NMManager *self,
-                             NMCapability cap)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	int i;
-
-	for (i = 0; i < priv->capabilities->len; i++) {
-		NMCapability test = g_array_index (priv->capabilities, guint32, i);
-		if (test == cap)
-			return TRUE;
-		if (test > cap)
-			return FALSE;
-	}
-
-	return FALSE;
-}
-
-static int
-cmp_caps (gconstpointer a, gconstpointer b)
-{
-	return *(gint *)a - *(gint *)b;
-}
-
 void
 nm_manager_set_capability (NMManager *self,
                            NMCapability cap)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMManagerPrivate *priv;
+	guint32 cap_i;
+	gssize idx;
 
-	if (!nm_manager_check_capability (self, cap)) {
-		g_array_append_val (priv->capabilities, cap);
-		g_array_sort (priv->capabilities, cmp_caps);
-		_notify (self, PROP_CAPABILITIES);
-	}
+	g_return_if_fail (NM_IS_MANAGER (self));
+	if (cap < 1 || cap > NM_CAPABILITY_TEAM)
+		g_return_if_reached ();
+
+	cap_i = (guint32) cap;
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	idx = _nm_utils_array_find_binary_search (&g_array_index (priv->capabilities, guint32, 0),
+	                                          sizeof (guint32),
+	                                          priv->capabilities->len,
+	                                          &cap_i,
+	                                          nm_cmp_uint32_p_with_data,
+	                                          NULL);
+	if (idx >= 0)
+		return;
+
+	nm_assert ((~idx) <= (gssize) priv->capabilities->len);
+
+	g_array_insert_val (priv->capabilities, ~idx, cap_i);
+	_notify (self, PROP_CAPABILITIES);
 }
 
 /**********************************************************************/
