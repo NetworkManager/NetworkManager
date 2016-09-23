@@ -4960,9 +4960,9 @@ _test_find_binary_search_do (const int *array, gsize len)
 {
 	gsize i;
 	gssize idx;
-	gs_free gpointer *parray = g_new (gpointer, len);
-	const int needle = 0;
-	gpointer pneedle = GINT_TO_POINTER (needle);
+	gs_free gconstpointer *parray = g_new (gconstpointer, len);
+	const int NEEDLE = 0;
+	gconstpointer pneedle = GINT_TO_POINTER (NEEDLE);
 	gssize expected_result;
 
 	for (i = 0; i < len; i++)
@@ -5006,16 +5006,56 @@ _test_find_binary_search_do (const int *array, gsize len)
 		}
 	}
 }
+
+static void
+_test_find_binary_search_do_uint32 (const int *int_array, gsize len)
+{
+	gssize idx;
+	const int OFFSET = 100;
+	const int NEEDLE = 0 + OFFSET;
+	gssize expected_result = -1;
+	guint32 array[len];
+
+	/* the test data has negative values. Shift them... */
+	for (idx = 0; idx < len; idx++) {
+		int v = int_array[idx];
+
+		g_assert (v > -OFFSET);
+		g_assert (v < OFFSET);
+		g_assert (idx == 0 || v > int_array[idx - 1]);
+		array[idx] = (guint32) (int_array[idx] + OFFSET);
+		if (array[idx] == NEEDLE)
+			expected_result = idx;
+	}
+
+	idx = _nm_utils_array_find_binary_search (array,
+	                                          sizeof (guint32),
+	                                          len,
+	                                          &NEEDLE,
+	                                          nm_cmp_uint32_p_with_data,
+	                                          NULL);
+	if (expected_result >= 0)
+		g_assert_cmpint (expected_result, ==, idx);
+	else {
+		gssize idx2 = ~idx;
+		g_assert_cmpint (idx, <, 0);
+
+		g_assert (idx2 >= 0);
+		g_assert (idx2 <= len);
+		g_assert (idx2 - 1 < 0 || array[idx2 - 1] < NEEDLE);
+		g_assert (idx2 >= len || array[idx2] > NEEDLE);
+	}
+}
 #define test_find_binary_search_do(...) \
 	G_STMT_START { \
-		const int _array[] = { __VA_ARGS__ } ; \
+		const int _array[] = { __VA_ARGS__ }; \
 		_test_find_binary_search_do (_array, G_N_ELEMENTS (_array)); \
+		_test_find_binary_search_do_uint32 (_array, G_N_ELEMENTS (_array)); \
 	} G_STMT_END
 
 static void
 test_nm_utils_ptrarray_find_binary_search (void)
 {
-#define _NOT(idx) (~ ((gssize) (idx)))
 	test_find_binary_search_do (            0);
 	test_find_binary_search_do (        -1, 0);
 	test_find_binary_search_do (    -2, -1, 0);

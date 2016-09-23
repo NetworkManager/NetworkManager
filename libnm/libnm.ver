@@ -1083,3 +1083,7 @@ global:
 	nm_vpn_plugin_info_new_search_file;
 	nm_vpn_plugin_info_supports_hints;
 } libnm_1_2_0;
+
+libnm_1_6_0 {
+	nm_capability_get_type;
+} libnm_1_4_0;

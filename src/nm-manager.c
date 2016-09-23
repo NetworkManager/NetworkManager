@@ -100,6 +100,8 @@ typedef struct {
 } RadioState;
 
 typedef struct {
+	GArray *capabilities;
+
 	GSList *active_connections;
 	GSList *authorizing_connections;
 	guint ac_cleanup_id;
@@ -180,6 +182,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_VERSION,
+	PROP_CAPABILITIES,
 	PROP_STATE,
 	PROP_STARTUP,
 	PROP_NETWORKING_ENABLED,
@@ -5439,6 +5442,39 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
 
 /**********************************************************************/
 
+void
+nm_manager_set_capability (NMManager *self,
+                           NMCapability cap)
+{
+	NMManagerPrivate *priv;
+	guint32 cap_i;
+	gssize idx;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+	if (cap < 1 || cap > NM_CAPABILITY_TEAM)
+		g_return_if_reached ();
+
+	cap_i = (guint32) cap;
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	idx = _nm_utils_array_find_binary_search (&g_array_index (priv->capabilities, guint32, 0),
+	                                          sizeof (guint32),
+	                                          priv->capabilities->len,
+	                                          &cap_i,
+	                                          nm_cmp_uint32_p_with_data,
+	                                          NULL);
+	if (idx >= 0)
+		return;
+
+	nm_assert ((~idx) <= (gssize) priv->capabilities->len);
+
+	g_array_insert_val (priv->capabilities, ~idx, cap_i);
+	_notify (self, PROP_CAPABILITIES);
+}
+
+/**********************************************************************/
+
 NM_DEFINE_SINGLETON_REGISTER (NMManager);
 
 NMManager *
@@ -5556,6 +5592,8 @@ nm_manager_init (NMManager *self)
 	guint i;
 	GFile *file;
 
+	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
+
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
 
@@ -5642,6 +5680,12 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_VERSION:
 		g_value_set_string (value, VERSION);
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_variant (value, g_variant_new_fixed_array (G_VARIANT_TYPE ("u"),
+		                                                       priv->capabilities->data,
+		                                                       priv->capabilities->len,
+		                                                       sizeof (guint32)));
 		break;
 	case PROP_STATE:
 		nm_manager_update_state (self);
@@ -5863,6 +5907,16 @@ dispose (GObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE ((NMManager *) object);
+
+	g_array_free (priv->capabilities, TRUE);
+
+	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
+}
+
+static void
 nm_manager_class_init (NMManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
@@ -5875,6 +5929,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	/* properties */
 	obj_properties[PROP_VERSION] =
@@ -5882,6 +5937,13 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CAPABILITIES] =
+		g_param_spec_variant (NM_MANAGER_CAPABILITIES, "", "",
+		                      G_VARIANT_TYPE ("au"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_STATE] =
 	    g_param_spec_uint (NM_MANAGER_STATE, "", "",
@@ -6120,4 +6182,3 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                                        "CheckpointRollback", impl_manager_checkpoint_rollback,
 	                                        NULL);
 }
-

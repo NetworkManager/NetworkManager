@@ -144,9 +144,10 @@ GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
                                  GDestroyNotify free_func);
 GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 
-gssize _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle);
+gssize _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer needle);
 
-gssize _nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
+gssize _nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
+gssize _nm_utils_array_find_binary_search (gconstpointer list, gsize elem_size, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 
 gssize      _nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 

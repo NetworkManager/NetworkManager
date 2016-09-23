@@ -84,6 +84,16 @@
 #define NM_DBUS_PATH_SECRET_AGENT         "/org/freedesktop/NetworkManager/SecretAgent"
 
 /**
+ * NMCapability:
+ * @NM_CAPABILITY_TEAM: Teams can be managed
+ *
+ * #NMCapability names the numbers in the Capabilities property.
+ **/
+typedef enum {
+	NM_CAPABILITY_TEAM = 1,
+} NMCapability;
+
+/**
  * NMState:
  * @NM_STATE_UNKNOWN: networking state is unknown
  * @NM_STATE_ASLEEP: networking is not enabled

@@ -667,10 +667,8 @@ _nm_utils_copy_object_array (const GPtrArray *array)
 	return _nm_utils_copy_array (array, g_object_ref, g_object_unref);
 }
 
-/* have @list of type 'gpointer *' instead of 'gconstpointer *' to
- * reduce the necessity for annoying const-casts. */
 gssize
-_nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle)
+_nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer needle)
 {
 	gssize i;
 
@@ -694,7 +692,7 @@ _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle)
 }
 
 gssize
-_nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
+_nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
 {
 	gssize imin, imax, imid;
 	int cmp;
@@ -712,6 +710,40 @@ _nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needl
 		imid = imin + (imax - imin) / 2;
 
 		cmp = cmpfcn (list[imid], needle, user_data);
+		if (cmp == 0)
+			return imid;
+
+		if (cmp < 0)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+
+	/* return the inverse of @imin. This is a negative number, but
+	 * also is ~imin the position where the value should be inserted. */
+	return ~imin;
+}
+
+gssize
+_nm_utils_array_find_binary_search (gconstpointer list, gsize elem_size, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
+{
+	gssize imin, imax, imid;
+	int cmp;
+
+	g_return_val_if_fail (list || !len, ~((gssize) 0));
+	g_return_val_if_fail (cmpfcn, ~((gssize) 0));
+	g_return_val_if_fail (elem_size > 0, ~((gssize) 0));
+
+	imin = 0;
+	if (len == 0)
+		return ~imin;
+
+	imax = len - 1;
+
+	while (imin <= imax) {
+		imid = imin + (imax - imin) / 2;
+
+		cmp = cmpfcn (&((const char *) list)[elem_size * imid], needle, user_data);
 		if (cmp == 0)
 			return imid;
 
