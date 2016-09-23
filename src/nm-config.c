@@ -1870,6 +1870,184 @@ _nm_config_state_set (NMConfig *self,
 
 /*****************************************************************************/
 
+#define DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE                   "device"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED             "managed"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID     "connection-uuid"
+
+static NMConfigDeviceStateData *
+_config_device_state_data_new (int ifindex, GKeyFile *kf)
+{
+	NMConfigDeviceStateData *device_state;
+	NMConfigDeviceStateManagedType managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN;
+	gs_free char *connection_uuid = NULL;
+	gsize len_plus_1;
+
+	nm_assert (ifindex > 0);
+
+	if (kf) {
+		gboolean managed;
+
+		managed = nm_config_keyfile_get_boolean (kf,
+		                                         DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                                         DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
+		                                         FALSE);
+		managed_type = managed
+		               ? NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED
+		               : NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
+
+		if (managed) {
+			connection_uuid = nm_config_keyfile_get_value (kf,
+			                                               DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+			                                               DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
+			                                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+		}
+	}
+
+	len_plus_1 = connection_uuid ? strlen (connection_uuid) + 1 : 0;
+
+	device_state = g_malloc (sizeof (NMConfigDeviceStateData) + len_plus_1);
+
+	device_state->ifindex = ifindex;
+	device_state->managed = managed_type;
+	device_state->connection_uuid = NULL;
+	if (connection_uuid) {
+		char *device_state_data;
+
+		device_state_data = (char *) (&device_state[1]);
+		memcpy (device_state_data, connection_uuid, len_plus_1);
+		device_state->connection_uuid = device_state_data;
+	}
+
+	return device_state;
+}
+
+/**
+ * nm_config_device_state_load:
+ * @self: the NMConfig instance
+ * @ifindex: the ifindex for which the state is to load
+ *
+ * Returns: (transfer full): a run state object.
+ *   Must be freed with g_free().
+ */
+NMConfigDeviceStateData *
+nm_config_device_state_load (NMConfig *self,
+                             int ifindex)
+{
+	NMConfigDeviceStateData *device_state;
+	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
+	gs_unref_keyfile GKeyFile *kf = NULL;
+	gs_free_error GError *error = NULL;
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	nm_sprintf_buf (path, "%s/%d", NM_CONFIG_DEVICE_STATE_DIR, ifindex);
+
+	kf = nm_config_create_keyfile ();
+	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, &error))
+		g_clear_pointer (&kf, g_key_file_unref);
+
+	device_state = _config_device_state_data_new (ifindex, kf);
+
+	if (kf) {
+		_LOGT ("device-state: read #%d (%s); managed=%d, connection-uuid=%s%s%s",
+		       ifindex, path,
+		       device_state->managed,
+		       NM_PRINT_FMT_QUOTE_STRING (device_state->connection_uuid));
+	} else {
+		_LOGT ("device-state: read #%d (%s); no persistent state",
+		       ifindex, path);
+	}
+
+	return device_state;
+}
+
+gboolean
+nm_config_device_state_write (NMConfig *self,
+                              int ifindex,
+                              gboolean managed,
+                              const char *connection_uuid)
+{
+	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
+	GError *local = NULL;
+	gs_unref_keyfile GKeyFile *kf = NULL;
+
+	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
+	g_return_val_if_fail (managed || !connection_uuid, FALSE);
+
+	nm_sprintf_buf (path, "%s/%d", NM_CONFIG_DEVICE_STATE_DIR, ifindex);
+
+	kf = nm_config_create_keyfile ();
+	g_key_file_set_boolean (kf,
+	                        DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+	                        DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
+	                        !!managed);
+	if (connection_uuid) {
+		g_key_file_set_string (kf,
+		                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
+		                       connection_uuid);
+	}
+
+	if (!g_key_file_save_to_file (kf, path, &local)) {
+		_LOGW ("device-state: write #%d (%s) failed: %s", ifindex, path, local->message);
+		g_error_free (local);
+		return FALSE;
+	}
+	_LOGT ("device-state: write #%d (%s); managed=%d, connection-uuid=%s%s%s",
+	       ifindex, path,
+	       (bool) managed,
+	       NM_PRINT_FMT_QUOTE_STRING (connection_uuid));
+	return TRUE;
+}
+
+void
+nm_config_device_state_prune_unseen (NMConfig *self,
+                                     GHashTable *seen_ifindexes)
+{
+	GDir *dir;
+	const char *fn;
+	int ifindex;
+	gsize fn_len;
+	gsize i;
+	char buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + 30 + 3] = NM_CONFIG_DEVICE_STATE_DIR"/";
+	char *buf_p = &buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/")];
+
+	g_return_if_fail (seen_ifindexes);
+
+	dir = g_dir_open (NM_CONFIG_DEVICE_STATE_DIR, 0, NULL);
+	if (!dir)
+		return;
+
+	while ((fn = g_dir_read_name (dir))) {
+		fn_len = strlen (fn);
+
+		/* skip over file names that are not plain integers. */
+		for (i = 0; i < fn_len; i++) {
+			if (!g_ascii_isdigit (fn[i]))
+				break;
+		}
+		if (fn_len == 0 || i != fn_len)
+			continue;
+
+		ifindex = _nm_utils_ascii_str_to_int64 (fn, 10, 1, G_MAXINT, 0);
+		if (!ifindex)
+			continue;
+
+		if (g_hash_table_contains (seen_ifindexes, GINT_TO_POINTER (ifindex)))
+			continue;
+
+		memcpy (buf_p, fn, fn_len + 1);
+		_LOGT ("device-state: prune #%d (%s)", ifindex, buf);
+		(void) unlink (buf);
+	}
+
+	g_dir_close (dir);
+}
+
+/*****************************************************************************/
+
 void
 nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags)
 {

@@ -86,6 +86,8 @@ NMState       nm_manager_get_state                     (NMManager *manager);
 const GSList *nm_manager_get_active_connections        (NMManager *manager);
 GSList *      nm_manager_get_activatable_connections   (NMManager *manager);
 
+void          nm_manager_write_device_state (NMManager *manager);
+
 /* Device handling */
 
 const GSList *      nm_manager_get_devices             (NMManager *manager);

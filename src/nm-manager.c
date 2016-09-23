@@ -2083,7 +2083,8 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 static void
 platform_link_added (NMManager *self,
                      int ifindex,
-                     const NMPlatformLink *plink)
+                     const NMPlatformLink *plink,
+                     const NMConfigDeviceStateData *dev_state)
 {
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
@@ -2194,7 +2195,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 		NMPlatformLink pllink;
 
 		pllink = *l; /* make a copy of the link instance */
-		platform_link_added (self, data->ifindex, &pllink);
+		platform_link_added (self, data->ifindex, &pllink, NULL);
 	} else {
 		NMDevice *device;
 		GError *error = NULL;
@@ -2249,14 +2250,24 @@ platform_link_cb (NMPlatform *platform,
 static void
 platform_query_devices (NMManager *self)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GArray *links_array;
 	NMPlatformLink *links;
 	int i;
 
 	links_array = nm_platform_link_get_all (NM_PLATFORM_GET);
 	links = (NMPlatformLink *) links_array->data;
-	for (i = 0; i < links_array->len; i++)
-		platform_link_added (self, links[i].ifindex, &links[i]);
+	for (i = 0; i < links_array->len; i++) {
+		gs_free NMConfigDeviceStateData *dev_state = NULL;
+
+		dev_state = nm_config_device_state_load (priv->config,
+		                                         links[i].ifindex);
+
+		platform_link_added (self,
+		                     links[i].ifindex,
+		                     &links[i],
+		                     dev_state);
+	}
 
 	g_array_unref (links_array);
 }
@@ -4584,6 +4595,51 @@ static void
 start_factory (NMDeviceFactory *factory, gpointer user_data)
 {
 	nm_device_factory_start (factory);
+}
+
+void
+nm_manager_write_device_state (NMManager *self)
+{
+	const GSList *devices;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
+
+	seen_ifindexes = g_hash_table_new (NULL, NULL);
+
+	for (devices = priv->devices; devices; devices = devices->next) {
+		NMDevice *device = NM_DEVICE (devices->data);
+		int ifindex;
+		gboolean managed;
+		NMConnection *settings_connection;
+		const char *uuid = NULL;
+
+		ifindex = nm_device_get_ip_ifindex (device);
+		if (ifindex <= 0)
+			continue;
+		if (ifindex == 1) {
+			/* ignore loopback */
+			continue;
+		}
+
+		if (!nm_platform_link_get (NM_PLATFORM_GET, ifindex))
+			continue;
+
+		managed = nm_device_get_managed (device, FALSE);
+		if (managed) {
+			settings_connection = NM_CONNECTION (nm_device_get_settings_connection (device));
+			if (settings_connection)
+				uuid = nm_connection_get_uuid (settings_connection);
+		}
+
+		if (nm_config_device_state_write (priv->config,
+		                                  ifindex,
+		                                  managed,
+		                                  uuid))
+			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
+	}
+
+	nm_config_device_state_prune_unseen (priv->config,
+	                                     seen_ifindexes);
 }
 
 gboolean

@@ -189,6 +189,29 @@ extern char *_nm_config_match_env;
 
 #define NM_CONFIG_DEVICE_STATE_DIR ""NMRUNDIR"/devices"
 
+typedef enum {
+	NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN   = -1,
+	NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED = 0,
+	NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED   = 1,
+} NMConfigDeviceStateManagedType;
+
+typedef struct {
+	int ifindex;
+	NMConfigDeviceStateManagedType managed;
+
+	/* the UUID of the last settings-connection active
+	 * on the device. */
+	const char *connection_uuid;
+} NMConfigDeviceStateData;
+
+NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
+                                                      int ifindex);
+gboolean nm_config_device_state_write (NMConfig *self,
+                                       int ifindex,
+                                       gboolean managed,
+                                       const char *connection_uuid);
+void nm_config_device_state_prune_unseen (NMConfig *self, GHashTable *seen_ifindexes);
+
 /*****************************************************************************/
 
 #endif /* __NETWORKMANAGER_CONFIG_H__ */

@@ -412,6 +412,13 @@ main (int argc, char *argv[])
 	}
 
 done:
+
+	/* write the device-state to file. Note that we only persist the
+	 * state here. We don't bother updating the state as devices
+	 * change during regular operation. If NM is killed with SIGKILL,
+	 * it misses to update the state. */
+	nm_manager_write_device_state (nm_manager_get ());
+
 	nm_exported_object_class_set_quitting ();
 
 	nm_manager_stop (nm_manager_get ());
