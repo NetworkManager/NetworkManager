@@ -385,7 +385,8 @@
 
         The current set of capabilities. See <link
         linkend="NMCapability">NMCapability</link> for currently
-        defined capability numbers.
+        defined capability numbers. The array is guaranteed to
+        be sorted in ascending order without duplicates.
     -->
     <property name="Capabilities" type="au" access="read"/>
 
