@@ -33,6 +33,7 @@
 #define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
 
 #define NM_MANAGER_VERSION "version"
+#define NM_MANAGER_CAPABILITIES "capabilities"
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_STARTUP "startup"
 #define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
@@ -111,5 +112,7 @@ gboolean            nm_manager_deactivate_connection   (NMManager *manager,
                                                         NMDeviceStateReason reason,
                                                         GError **error);
 
+gboolean            nm_manager_check_capability (NMManager *self, NMCapability cap);
+void                nm_manager_set_capability   (NMManager *self, NMCapability cap);
 
 #endif /* __NETWORKMANAGER_MANAGER_H__ */
