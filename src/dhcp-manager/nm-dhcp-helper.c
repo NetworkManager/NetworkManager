@@ -136,6 +136,12 @@ main (int argc, char *argv[])
 
 	nm_g_type_init ();
 
+	/* FIXME: g_dbus_connection_new_for_address_sync() tries to connect to the socket in
+	 * non-blocking mode, which can easily fail with EAGAIN, causing the creation of the
+	 * socket to fail with "Could not connect: Resource temporarily unavailable".
+	 *
+	 * We should instead create the GIOStream ourself and block on connecting to
+	 * the socket. */
 	connection = g_dbus_connection_new_for_address_sync ("unix:path=" NMRUNDIR "/private-dhcp",
 	                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
 	                                                     NULL, NULL, &error);
