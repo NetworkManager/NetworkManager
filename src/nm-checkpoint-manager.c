@@ -155,6 +155,10 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 	if (!device_paths || !device_paths[0]) {
 		device_paths_free = nm_manager_get_device_paths (manager);
 		device_paths = (const char *const *) device_paths_free;
+	} else if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+		                     "the DISCONNECT_NEW_DEVICES flag can only be used with an empty device list");
+		return NULL;
 	}
 
 	devices = g_ptr_array_new ();
@@ -180,7 +184,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 		}
 	}
 
-	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, error);
+	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, flags, error);
 	if (!checkpoint)
 		return NULL;
 

@@ -61,6 +61,8 @@ typedef struct {
 	/* private members */
 	NMManager *manager;
 	gint64 rollback_ts;
+	NMCheckpointCreateFlags flags;
+	GHashTable *connection_uuids;
 } NMCheckpointPrivate;
 
 struct _NMCheckpoint {
@@ -245,6 +247,47 @@ next_dev:
 		g_variant_builder_add (&builder, "{su}", dev_checkpoint->original_dev_path, result);
 	}
 
+	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
+		NMSettingsConnection *con;
+		gs_free_slist GSList *list = NULL;
+		GSList *item;
+
+		g_return_val_if_fail (priv->connection_uuids, NULL);
+		list = nm_settings_get_connections_sorted (nm_settings_get ());
+
+		for (item = list; item; item = g_slist_next (item)) {
+			con = item->data;
+			if (!g_hash_table_contains (priv->connection_uuids,
+			                            nm_settings_connection_get_uuid (con))) {
+				_LOGD ("rollback: deleting new connection %s (%s)",
+				       nm_settings_connection_get_uuid (con),
+				       nm_settings_connection_get_id (con));
+				nm_settings_connection_delete (con, NULL, NULL);
+			}
+		}
+	}
+
+	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
+		const GSList *list = nm_manager_get_devices (priv->manager);
+		NMDeviceState state;
+		NMDevice *dev;
+
+		for (list = nm_manager_get_devices (priv->manager); list ; list = g_slist_next (list)) {
+			dev = list->data;
+			if (!g_hash_table_contains (priv->devices, dev)) {
+				state = nm_device_get_state (dev);
+				if (   state > NM_DEVICE_STATE_DISCONNECTED
+				    && state < NM_DEVICE_STATE_DEACTIVATING) {
+					_LOGD ("rollback: disconnecting new device %s", nm_device_get_iface (dev));
+					nm_device_state_changed (dev,
+					                         NM_DEVICE_STATE_DEACTIVATING,
+					                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+				}
+			}
+		}
+
+	}
+
 	return g_variant_new ("(a{su})", &builder);
 }
 
@@ -340,10 +383,11 @@ nm_checkpoint_init (NMCheckpoint *self)
 
 NMCheckpoint *
 nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout,
-                   GError **error)
+                   NMCheckpointCreateFlags flags, GError **error)
 {
 	NMCheckpoint *self;
 	NMCheckpointPrivate *priv;
+	NMSettingsConnection *const *con;
 	DeviceCheckpoint *dev_checkpoint;
 	NMDevice *device;
 	guint i;
@@ -370,6 +414,15 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	priv->rollback_ts = rollback_timeout ?
 	    (nm_utils_get_monotonic_timestamp_ms () + ((gint64) rollback_timeout * 1000)) :
 	    0;
+	priv->flags = flags;
+
+	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
+		priv->connection_uuids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+		for (con = nm_settings_get_connections (nm_settings_get (), NULL); *con; con++) {
+			g_hash_table_add (priv->connection_uuids,
+			                  g_strdup (nm_settings_connection_get_uuid (*con)));
+		}
+	}
 
 	for (i = 0; i < devices->len; i++) {
 		device = (NMDevice *) devices->pdata[i];
@@ -391,6 +444,7 @@ dispose (GObject *object)
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
 
 	g_clear_pointer (&priv->devices, g_hash_table_unref);
+	g_clear_pointer (&priv->connection_uuids, g_hash_table_unref);
 
 	G_OBJECT_CLASS (nm_checkpoint_parent_class)->dispose (object);
 }

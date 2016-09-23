@@ -712,14 +712,20 @@ typedef enum {
  * @NM_CHECKPOINT_CREATE_FLAG_NONE: no flags
  * @NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL: when creating
  *   a new checkpoint, destroy all existing ones.
+ * @NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS: upon rollback,
+ *   delete any new connection added after the checkpoint.
+ * @NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES: upon rollback,
+ *   disconnect any new device appeared after the checkpoint.
  *
  * The flags for CheckpointCreate call
  *
  * Since: 1.4
  */
 typedef enum { /*< skip >*/
-	NM_CHECKPOINT_CREATE_FLAG_NONE              = 0,
-	NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL       = 0x01,
+	NM_CHECKPOINT_CREATE_FLAG_NONE                        = 0,
+	NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL                 = 0x01,
+	NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS      = 0x02,
+	NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES      = 0x04,
 } NMCheckpointCreateFlags;
 
 /**
