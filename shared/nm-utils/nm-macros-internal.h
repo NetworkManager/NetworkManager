@@ -516,6 +516,19 @@ nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
 	return strcmp (s1, s2);
 }
 
+static inline int
+nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+{
+	const guint32 a = *((const guint32 *) p_a);
+	const guint32 b = *((const guint32 *) p_b);
+
+	if (a < b)
+		return -1;
+	if (a > b)
+		return 1;
+	return 0;
+}
+
 /*****************************************************************************/
 
 /* Taken from systemd's UNIQ_T and UNIQ macros. */
