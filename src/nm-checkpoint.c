@@ -55,7 +55,11 @@
 typedef struct {
 	char *original_dev_path;
 	NMDevice *device;
-	NMConnection *connection;
+	NMConnection *applied_connection;
+	NMConnection *settings_connection;
+	NMDeviceState state;
+	bool realized:1;
+	bool unmanaged_explicit:1;
 } DeviceCheckpoint;
 
 typedef struct {
@@ -122,47 +126,75 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 	while (g_hash_table_iter_next (&iter, (gpointer *) &device, (gpointer *) &dev_checkpoint)) {
 		gs_unref_object NMAuthSubject *subject = NULL;
 		guint32 result = NM_ROLLBACK_RESULT_OK;
-		const char *con_path;
+		const char *con_uuid;
 
-		_LOGD ("rollback: restoring state of device %s", nm_device_get_iface (device));
+		_LOGD ("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d)",
+		       nm_device_get_iface (device),
+		       (int) dev_checkpoint->state,
+		       dev_checkpoint->realized,
+		       dev_checkpoint->unmanaged_explicit);
 
-		if (!nm_device_is_real (device)) {
-			result = NM_ROLLBACK_RESULT_ERR_NO_DEVICE;
-			_LOGD ("rollback: device is not realized");
+		if (nm_device_is_real (device)) {
+			if (!dev_checkpoint->realized) {
+				_LOGD ("rollback: device was not realized, unmanage it");
+				nm_device_set_unmanaged_by_flags_queue (device,
+				                                        NM_UNMANAGED_USER_EXPLICIT,
+				                                        TRUE,
+				                                        NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+				goto next_dev;
+			}
+		} else {
+			if (dev_checkpoint->realized) {
+				if (nm_device_is_software (device)) {
+					/* try to recreate software device */
+					_LOGD ("rollback: software device not realized, will re-activate");
+					goto activate;
+				} else {
+					_LOGD ("rollback: device is not realized");
+					result = NM_ROLLBACK_RESULT_ERR_FAILED;
+				}
+			}
 			goto next_dev;
 		}
 
-		if (nm_device_get_state (device) <= NM_DEVICE_STATE_UNMANAGED) {
-			result = NM_ROLLBACK_RESULT_ERR_DEVICE_UNMANAGED;
-			_LOGD ("rollback: device is unmanaged");
+activate:
+		if (dev_checkpoint->state == NM_DEVICE_STATE_UNMANAGED) {
+			if (   nm_device_get_state (device) != NM_DEVICE_STATE_UNMANAGED
+			    || dev_checkpoint->unmanaged_explicit) {
+				_LOGD ("rollback: explicitly unmanage device");
+				nm_device_set_unmanaged_by_flags_queue (device,
+				                                        NM_UNMANAGED_USER_EXPLICIT,
+				                                        TRUE,
+				                                        NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+			}
 			goto next_dev;
 		}
 
-		if (dev_checkpoint->connection) {
+		if (dev_checkpoint->applied_connection) {
 			/* The device had an active connection, check if the
 			 * connection still exists
 			 * */
-			con_path = nm_connection_get_path (dev_checkpoint->connection);
-			connection = nm_settings_get_connection_by_path (nm_settings_get(), con_path);
+			con_uuid = nm_connection_get_uuid (dev_checkpoint->settings_connection);
+			connection = nm_settings_get_connection_by_uuid (nm_settings_get (), con_uuid);
 
 			if (connection) {
 				/* If the connection is still there, restore its content
 				 * and save it
 				 * */
-				_LOGD ("rollback: connection %s still exists", con_path);
+				_LOGD ("rollback: connection %s still exists", con_uuid);
 
 				nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
-				                                                dev_checkpoint->connection);
+				                                                dev_checkpoint->settings_connection);
 				nm_settings_connection_commit_changes (connection,
 				                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 				                                       NULL,
 				                                       NULL);
 			} else {
 				/* The connection was deleted, recreate it */
-				_LOGD ("rollback: adding connection %s again", con_path);
+				_LOGD ("rollback: adding connection %s again", con_uuid);
 
 				connection = nm_settings_add_connection (nm_settings_get (),
-				                                         dev_checkpoint->connection,
+				                                         dev_checkpoint->settings_connection,
 				                                         TRUE,
 				                                         &local_error);
 				if (!connection) {
@@ -177,6 +209,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 			subject = nm_auth_subject_new_internal ();
 			if (!nm_manager_activate_connection (priv->manager,
 			                                     connection,
+			                                     dev_checkpoint->applied_connection,
 			                                     NULL,
 			                                     device,
 			                                     subject,
@@ -213,36 +246,32 @@ device_checkpoint_create (NMDevice *device,
                           GError **error)
 {
 	DeviceCheckpoint *dev_checkpoint;
-	NMConnection *connection;
+	NMConnection *applied_connection;
+	NMSettingsConnection *settings_connection;
 	const char *path;
-
-	if (!nm_device_is_real (device)) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		             "device '%s' is not realized",
-		             nm_device_get_iface (device));
-		return NULL;
-	}
-
-	if (nm_device_get_state (device) <= NM_DEVICE_STATE_UNMANAGED) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		             "device '%s' is unmanaged",
-		             nm_device_get_iface (device));
-		return NULL;
-	}
+	gboolean unmanaged_explicit;
 
 	path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
+	unmanaged_explicit = !!nm_device_get_unmanaged_flags (device,
+	                                                      NM_UNMANAGED_USER_EXPLICIT);
 
 	dev_checkpoint = g_slice_new0 (DeviceCheckpoint);
 	dev_checkpoint->device = g_object_ref (device);
 	dev_checkpoint->original_dev_path = g_strdup (path);
+	dev_checkpoint->state = nm_device_get_state (device);
+	dev_checkpoint->realized = nm_device_is_real (device);
+	dev_checkpoint->unmanaged_explicit = unmanaged_explicit;
 
-	connection = nm_device_get_applied_connection (device);
-	if (connection)
-		dev_checkpoint->connection = nm_simple_connection_new_clone (connection);
+	applied_connection = nm_device_get_applied_connection (device);
+	if (applied_connection) {
+		dev_checkpoint->applied_connection =
+			nm_simple_connection_new_clone (applied_connection);
+
+		settings_connection = nm_device_get_settings_connection (device);
+		g_return_val_if_fail (settings_connection, NULL);
+		dev_checkpoint->settings_connection =
+			nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
+	}
 
 	return dev_checkpoint;
 }
@@ -252,7 +281,8 @@ device_checkpoint_destroy (gpointer data)
 {
 	DeviceCheckpoint *dev_checkpoint = data;
 
-	g_clear_object (&dev_checkpoint->connection);
+	g_clear_object (&dev_checkpoint->applied_connection);
+	g_clear_object (&dev_checkpoint->settings_connection);
 	g_clear_object (&dev_checkpoint->device);
 	g_free (dev_checkpoint->original_dev_path);
 
@@ -268,29 +298,6 @@ nm_checkpoint_init (NMCheckpoint *self)
 	                                       NULL, device_checkpoint_destroy);
 }
 
-static void
-get_all_devices (NMManager *manager, GPtrArray *devices)
-{
-	const GSList *list, *iter;
-	NMDevice *dev;
-
-	list = nm_manager_get_devices (manager);
-
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		dev = iter->data;
-
-		if (!nm_device_is_real (dev))
-			continue;
-		if (nm_device_get_state (dev) <= NM_DEVICE_STATE_UNMANAGED)
-			continue;
-		/* We never touch assumed connections, unless told explicitly */
-		if (nm_device_uses_assumed_connection (dev))
-			continue;
-
-		g_ptr_array_add (devices, dev);
-	}
-}
-
 NMCheckpoint *
 nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout,
                    GError **error)
@@ -304,9 +311,6 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	g_return_val_if_fail (manager, NULL);
 	g_return_val_if_fail (devices, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
-
-	if (!devices->len)
-		get_all_devices (manager, devices);
 
 	if (!devices->len) {
 		g_set_error_literal (error,

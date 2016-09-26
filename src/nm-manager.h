@@ -91,6 +91,7 @@ void          nm_manager_write_device_state (NMManager *manager);
 /* Device handling */
 
 const GSList *      nm_manager_get_devices             (NMManager *manager);
+const char **       nm_manager_get_device_paths        (NMManager *self);
 
 NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);
@@ -104,6 +105,7 @@ char *              nm_manager_get_connection_iface (NMManager *self,
 
 NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
                                                         NMSettingsConnection *connection,
+                                                        NMConnection *applied_connection,
                                                         const char *specific_object,
                                                         NMDevice *device,
                                                         NMAuthSubject *subject,

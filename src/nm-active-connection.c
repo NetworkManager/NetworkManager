@@ -90,6 +90,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_MASTER,
 
 	PROP_INT_SETTINGS_CONNECTION,
+	PROP_INT_APPLIED_CONNECTION,
 	PROP_INT_DEVICE,
 	PROP_INT_SUBJECT,
 	PROP_INT_MASTER,
@@ -951,6 +952,14 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 
+	if (!priv->applied_connection && priv->settings_connection) {
+		priv->applied_connection =
+			nm_simple_connection_new_clone ((NMConnection *) priv->settings_connection);
+	}
+
+	if (priv->applied_connection)
+		nm_connection_clear_secrets (priv->applied_connection);
+
 	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (long long unsigned) priv->version_id);
 
 	g_return_if_fail (priv->subject);
@@ -964,16 +973,20 @@ set_property (GObject *object, guint prop_id,
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	const char *tmp;
 	NMSettingsConnection *con;
+	NMConnection *acon;
 
 	switch (prop_id) {
 	case PROP_INT_SETTINGS_CONNECTION:
 		/* construct-only */
 		con = g_value_get_object (value);
-		if (con) {
+		if (con)
 			_set_settings_connection (self, con);
-			priv->applied_connection = nm_simple_connection_new_clone ((NMConnection *) priv->settings_connection);
-			nm_connection_clear_secrets (priv->applied_connection);
-		}
+		break;
+	case PROP_INT_APPLIED_CONNECTION:
+		/* construct-only */
+		acon = g_value_get_object (value);
+		if (acon)
+			priv->applied_connection = g_object_ref (acon);
 		break;
 	case PROP_INT_DEVICE:
 		/* construct-only */
@@ -1256,6 +1269,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	obj_properties[PROP_INT_SETTINGS_CONNECTION] =
 	     g_param_spec_object (NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION, "", "",
 	                          NM_TYPE_SETTINGS_CONNECTION,
+	                          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_INT_APPLIED_CONNECTION] =
+	     g_param_spec_object (NM_ACTIVE_CONNECTION_INT_APPLIED_CONNECTION, "", "",
+	                          NM_TYPE_CONNECTION,
 	                          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
 	                          G_PARAM_STATIC_STRINGS);
 

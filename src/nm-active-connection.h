@@ -50,6 +50,7 @@
 
 /* Internal non-exported properties */
 #define NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION "int-settings-connection"
+#define NM_ACTIVE_CONNECTION_INT_APPLIED_CONNECTION  "int-applied-connection"
 #define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
 #define NM_ACTIVE_CONNECTION_INT_SUBJECT        "int-subject"
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"

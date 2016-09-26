@@ -46,6 +46,7 @@ typedef struct {
 GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new          (NMSettingsConnection *settings_connection,
+                                           NMConnection *applied_connection,
                                            const char *specific_object,
                                            NMAuthSubject *subject,
                                            NMDevice *device);

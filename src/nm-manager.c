@@ -64,6 +64,7 @@ static gboolean add_device (NMManager *self, NMDevice *device, GError **error);
 
 static NMActiveConnection *_new_active_connection (NMManager *self,
                                                    NMConnection *connection,
+                                                   NMConnection *applied,
                                                    const char *specific_object,
                                                    NMDevice *device,
                                                    NMAuthSubject *subject,
@@ -1745,7 +1746,7 @@ assume_connection (NMManager *self, NMDevice *device, NMSettingsConnection *conn
 	g_return_val_if_fail (nm_device_get_state (device) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
 	subject = nm_auth_subject_new_internal ();
-	active = _new_active_connection (self, NM_CONNECTION (connection), NULL, device, subject, &error);
+	active = _new_active_connection (self, NM_CONNECTION (connection), NULL, NULL, device, subject, &error);
 	g_object_unref (subject);
 
 	if (!active) {
@@ -2288,6 +2289,28 @@ nm_manager_get_devices (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->devices;
 }
 
+const char **
+nm_manager_get_device_paths (NMManager *self)
+{
+	const GSList *devices, *iter;
+	GPtrArray *paths;
+	const char *path;
+
+	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
+	devices = NM_MANAGER_GET_PRIVATE (self)->devices;
+	paths = g_ptr_array_new ();
+
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data));
+		if (path)
+			g_ptr_array_add (paths, (gpointer) path);
+	}
+
+	g_ptr_array_add (paths, NULL);
+
+	return (const char **) g_ptr_array_free (paths, FALSE);
+}
+
 static NMDevice *
 nm_manager_get_connection_device (NMManager *self,
                                   NMConnection *connection)
@@ -2612,6 +2635,7 @@ ensure_master_active_connection (NMManager *self,
 					master_ac = nm_manager_activate_connection (self,
 					                                            candidate,
 					                                            NULL,
+					                                            NULL,
 					                                            master_device,
 					                                            subject,
 					                                            error);
@@ -2657,6 +2681,7 @@ ensure_master_active_connection (NMManager *self,
 
 			master_ac = nm_manager_activate_connection (self,
 			                                            master_connection,
+			                                            NULL,
 			                                            NULL,
 			                                            candidate,
 			                                            subject,
@@ -2781,6 +2806,7 @@ autoconnect_slaves (NMManager *self,
 			/* Schedule slave activation */
 			nm_manager_activate_connection (self,
 			                                slave_connection,
+			                                NULL,
 			                                NULL,
 			                                nm_manager_get_best_device_for_connection (self, NM_CONNECTION (slave_connection), FALSE),
 			                                subject,
@@ -2941,7 +2967,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 				return FALSE;
 			}
 
-			parent_ac = nm_manager_activate_connection (self, parent_con, NULL, parent, subject, error);
+			parent_ac = nm_manager_activate_connection (self, parent_con, NULL, NULL, parent, subject, error);
 			if (!parent_ac) {
 				g_prefix_error (error, "%s failed to activate parent: ", nm_device_get_iface (device));
 				return FALSE;
@@ -3123,6 +3149,7 @@ _new_vpn_active_connection (NMManager *self,
 static NMActiveConnection *
 _new_active_connection (NMManager *self,
                         NMConnection *connection,
+                        NMConnection *applied,
                         const char *specific_object,
                         NMDevice *device,
                         NMAuthSubject *subject,
@@ -3162,6 +3189,7 @@ _new_active_connection (NMManager *self,
 	}
 
 	return (NMActiveConnection *) nm_act_request_new (settings_connection,
+	                                                  applied,
 	                                                  specific_object,
 	                                                  subject,
 	                                                  device);
@@ -3212,6 +3240,7 @@ _internal_activation_auth_done (NMActiveConnection *active,
  * nm_manager_activate_connection():
  * @self: the #NMManager
  * @connection: the #NMSettingsConnection to activate on @device
+ * @applied: (allow-none): the applied connection to activate on @device
  * @specific_object: the specific object path, if any, for the activation
  * @device: the #NMDevice to activate @connection on
  * @subject: the subject which requested activation
@@ -3221,7 +3250,8 @@ _internal_activation_auth_done (NMActiveConnection *active,
  * @subject should be the subject of the activation that triggered this
  * one, or if this is an autoconnect request, a new internal subject.
  * The returned #NMActiveConnection is owned by the Manager and should be
- * referenced by the caller if the caller continues to use it.
+ * referenced by the caller if the caller continues to use it. If @applied
+ * is supplied, it shall not be modified by the caller afterwards.
  *
  * Returns: (transfer none): the new #NMActiveConnection that tracks
  * activation of @connection on @device
@@ -3229,6 +3259,7 @@ _internal_activation_auth_done (NMActiveConnection *active,
 NMActiveConnection *
 nm_manager_activate_connection (NMManager *self,
                                 NMSettingsConnection *connection,
+                                NMConnection *applied,
                                 const char *specific_object,
                                 NMDevice *device,
                                 NMAuthSubject *subject,
@@ -3274,6 +3305,7 @@ nm_manager_activate_connection (NMManager *self,
 
 	active = _new_active_connection (self,
 	                                 NM_CONNECTION (connection),
+	                                 applied,
 	                                 specific_object,
 	                                 device,
 	                                 subject,
@@ -3528,6 +3560,7 @@ impl_manager_activate_connection (NMManager *self,
 
 	active = _new_active_connection (self,
 	                                 NM_CONNECTION (connection),
+	                                 NULL,
 	                                 specific_object_path,
 	                                 device,
 	                                 subject,
@@ -3735,6 +3768,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 
 	active = _new_active_connection (self,
 	                                 connection,
+	                                 NULL,
 	                                 specific_object_path,
 	                                 device,
 	                                 subject,
