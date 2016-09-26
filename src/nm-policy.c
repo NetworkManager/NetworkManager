@@ -665,11 +665,10 @@ activate_data_free (ActivateData *data)
 	g_slice_free (ActivateData, data);
 }
 
-static gboolean
-auto_activate_device (gpointer user_data)
+static void
+auto_activate_device (NMPolicy *self,
+                      NMDevice *device)
 {
-	ActivateData *data = (ActivateData *) user_data;
-	NMPolicy *self;
 	NMPolicyPrivate *priv;
 	NMSettingsConnection *best_connection;
 	gs_free char *specific_object = NULL;
@@ -677,22 +676,21 @@ auto_activate_device (gpointer user_data)
 	GSList *connection_list;
 	guint i;
 
-	g_assert (data);
-	self = data->policy;
-	priv = NM_POLICY_GET_PRIVATE (self);
+	nm_assert (NM_IS_POLICY (self));
+	nm_assert (NM_IS_DEVICE (device));
 
-	data->autoactivate_id = 0;
+	priv = NM_POLICY_GET_PRIVATE (self);
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
 	// deactivate the device and activate the new connection instead of just
 	// bailing if the device is already active
-	if (nm_device_get_act_request (data->device))
-		goto out;
+	if (nm_device_get_act_request (device))
+		return;
 
 	connection_list = nm_manager_get_activatable_connections (priv->manager);
 	if (!connection_list)
-		goto out;
+		return;
 
 	connections = _nm_utils_copy_slist_to_array (connection_list, NULL, NULL);
 	g_slist_free (connection_list);
@@ -708,7 +706,7 @@ auto_activate_device (gpointer user_data)
 
 		if (!nm_settings_connection_can_autoconnect (candidate))
 			continue;
-		if (nm_device_can_auto_connect (data->device, (NMConnection *) candidate, &specific_object)) {
+		if (nm_device_can_auto_connect (device, (NMConnection *) candidate, &specific_object)) {
 			best_connection = candidate;
 			break;
 		}
@@ -726,7 +724,7 @@ auto_activate_device (gpointer user_data)
 		                                     best_connection,
 		                                     NULL,
 		                                     specific_object,
-		                                     data->device,
+		                                     device,
 		                                     subject,
 		                                     &error)) {
 			_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
@@ -737,8 +735,19 @@ auto_activate_device (gpointer user_data)
 		}
 		g_object_unref (subject);
 	}
+}
 
- out:
+static gboolean
+auto_activate_device_cb (gpointer user_data)
+{
+	ActivateData *data = user_data;
+
+	g_assert (data);
+	g_assert (NM_IS_POLICY (data->policy));
+	g_assert (NM_IS_DEVICE (data->device));
+
+	data->autoactivate_id = 0;
+	auto_activate_device (data->policy, data->device);
 	activate_data_free (data);
 	return G_SOURCE_REMOVE;
 }
@@ -961,7 +970,7 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 	data = g_slice_new0 (ActivateData);
 	data->policy = self;
 	data->device = g_object_ref (device);
-	data->autoactivate_id = g_idle_add (auto_activate_device, data);
+	data->autoactivate_id = g_idle_add (auto_activate_device_cb, data);
 	priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
 }
 
