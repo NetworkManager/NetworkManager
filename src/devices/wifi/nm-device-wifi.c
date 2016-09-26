@@ -961,7 +961,9 @@ can_auto_connect (NMDevice *device,
 	const char *method, *mode;
 	guint64 timestamp = 0;
 
-	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (device, connection, specific_object))
+	nm_assert (!specific_object || !*specific_object);
+
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (device, connection, NULL))
 		return FALSE;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -988,7 +990,7 @@ can_auto_connect (NMDevice *device,
 	ap = find_first_compatible_ap (self, connection, FALSE);
 	if (ap) {
 		/* All good; connection is usable */
-		*specific_object = (char *) nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap));
+		NM_SET_OUT (specific_object, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
 		return TRUE;
 	}
 

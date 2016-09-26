@@ -672,7 +672,7 @@ auto_activate_device (gpointer user_data)
 	NMPolicy *self;
 	NMPolicyPrivate *priv;
 	NMSettingsConnection *best_connection;
-	char *specific_object = NULL;
+	gs_free char *specific_object = NULL;
 	GPtrArray *connections;
 	GSList *connection_list;
 	guint i;

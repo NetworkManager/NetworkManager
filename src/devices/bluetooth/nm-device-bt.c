@@ -136,7 +136,9 @@ can_auto_connect (NMDevice *device,
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	guint32 bt_type;
 
-	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->can_auto_connect (device, connection, specific_object))
+	nm_assert (!specific_object || !*specific_object);
+
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->can_auto_connect (device, connection, NULL))
 		return FALSE;
 
 	/* Can't auto-activate a DUN connection without ModemManager */
@@ -351,9 +353,9 @@ complete_connection (NMDevice *device,
 
 static void
 ppp_stats (NMModem *modem,
-		   guint32 in_bytes,
-		   guint32 out_bytes,
-		   gpointer user_data)
+           guint32 in_bytes,
+           guint32 out_bytes,
+           gpointer user_data)
 {
 	g_signal_emit (NM_DEVICE_BT (user_data), signals[PPP_STATS], 0, in_bytes, out_bytes);
 }

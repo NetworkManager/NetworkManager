@@ -103,6 +103,8 @@ can_auto_connect (NMDevice *device,
                   NMConnection *connection,
                   char **specific_object)
 {
+	nm_assert (!specific_object || !*specific_object);
+
 	return FALSE;
 }
 

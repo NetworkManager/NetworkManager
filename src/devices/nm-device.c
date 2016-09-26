@@ -3191,6 +3191,8 @@ can_auto_connect (NMDevice *self,
 {
 	NMSettingConnection *s_con;
 
+	nm_assert (!specific_object || !*specific_object);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!nm_setting_connection_get_autoconnect (s_con))
 		return FALSE;
