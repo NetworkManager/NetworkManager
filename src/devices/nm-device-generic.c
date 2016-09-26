@@ -111,7 +111,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 /**************************************************************/
 
 NMDevice *
-nm_device_generic_new (const NMPlatformLink *plink)
+nm_device_generic_new (const NMPlatformLink *plink, gboolean nm_plugin_missing)
 {
 	g_return_val_if_fail (plink != NULL, NULL);
 
@@ -119,6 +119,7 @@ nm_device_generic_new (const NMPlatformLink *plink)
 	                                  NM_DEVICE_IFACE, plink->name,
 	                                  NM_DEVICE_TYPE_DESC, "Generic",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+	                                  NM_DEVICE_NM_PLUGIN_MISSING, nm_plugin_missing,
 	                                  NULL);
 }
 

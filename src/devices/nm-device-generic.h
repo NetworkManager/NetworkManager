@@ -43,6 +43,7 @@ typedef struct {
 
 GType nm_device_generic_get_type (void);
 
-NMDevice *nm_device_generic_new (const NMPlatformLink *plink);
+NMDevice *nm_device_generic_new (const NMPlatformLink *plink,
+                                 gboolean nm_plugin_missing);
 
 #endif /* __NETWORKMANAGER_DEVICE_GENERIC_H__ */

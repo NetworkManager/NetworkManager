@@ -9278,26 +9278,6 @@ nm_device_get_firmware_missing (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->firmware_missing;
 }
 
-void
-nm_device_set_nm_plugin_missing (NMDevice *self, gboolean new_missing)
-{
-	NMDevicePrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (priv->nm_plugin_missing != new_missing) {
-		priv->nm_plugin_missing = new_missing;
-		_notify (self, PROP_NM_PLUGIN_MISSING);
-	}
-}
-
-gboolean
-nm_device_get_nm_plugin_missing (NMDevice *self)
-{
-	return NM_DEVICE_GET_PRIVATE (self)->nm_plugin_missing;
-}
-
 static NMIP4Config *
 find_ip4_lease_config (NMDevice *self,
                        NMConnection *connection,
@@ -12397,7 +12377,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_IFACE:
-		/* construct only */
+		/* construct-only */
 		g_return_if_fail (!priv->iface);
 		priv->iface = g_value_dup_string (value);
 		break;
@@ -12441,10 +12421,11 @@ set_property (GObject *object, guint prop_id,
 		nm_device_set_autoconnect (self, g_value_get_boolean (value));
 		break;
 	case PROP_FIRMWARE_MISSING:
-		/* construct only */
+		/* construct-only */
 		priv->firmware_missing = g_value_get_boolean (value);
 		break;
 	case PROP_NM_PLUGIN_MISSING:
+		/* construct-only */
 		priv->nm_plugin_missing = g_value_get_boolean (value);
 		break;
 	case PROP_DEVICE_TYPE:
@@ -12452,7 +12433,7 @@ set_property (GObject *object, guint prop_id,
 		priv->type = g_value_get_uint (value);
 		break;
 	case PROP_LINK_TYPE:
-		/* construct only */
+		/* construct-only */
 		g_return_if_fail (priv->link_type == NM_LINK_TYPE_NONE);
 		priv->link_type = g_value_get_uint (value);
 		break;
@@ -12467,7 +12448,7 @@ set_property (GObject *object, guint prop_id,
 		priv->is_master = g_value_get_boolean (value);
 		break;
 	case PROP_PERM_HW_ADDRESS:
-		/* construct only */
+		/* construct-only */
 		priv->hw_addr_perm = g_value_dup_string (value);
 		break;
 	case PROP_REFRESH_RATE_MS:

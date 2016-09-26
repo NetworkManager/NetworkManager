@@ -2088,7 +2088,6 @@ platform_link_added (NMManager *self,
 {
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
-	gboolean nm_plugin_missing = FALSE;
 	GSList *iter;
 
 	g_return_if_fail (ifindex > 0);
@@ -2142,6 +2141,8 @@ platform_link_added (NMManager *self,
 	}
 
 	if (device == NULL) {
+		gboolean nm_plugin_missing = FALSE;
+
 		switch (plink->type) {
 		case NM_LINK_TYPE_WWAN_NET:
 		case NM_LINK_TYPE_BNEP:
@@ -2153,7 +2154,7 @@ platform_link_added (NMManager *self,
 			nm_plugin_missing = TRUE;
 			/* fall through */
 		default:
-			device = nm_device_generic_new (plink);
+			device = nm_device_generic_new (plink, nm_plugin_missing);
 			break;
 		}
 	}
@@ -2161,8 +2162,6 @@ platform_link_added (NMManager *self,
 	if (device) {
 		gs_free_error GError *error = NULL;
 
-		if (nm_plugin_missing)
-			nm_device_set_nm_plugin_missing (device, TRUE);
 		if (nm_device_realize_start (device, plink, NULL, &error)) {
 			add_device (self, device, NULL);
 			_device_realize_finish (self, device, plink);

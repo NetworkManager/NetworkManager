@@ -540,9 +540,6 @@ void nm_device_queue_state   (NMDevice *self,
                               NMDeviceStateReason reason);
 
 gboolean nm_device_get_firmware_missing (NMDevice *self);
-gboolean nm_device_get_nm_plugin_missing (NMDevice *self);
-void     nm_device_set_nm_plugin_missing (NMDevice *self,
-                                          gboolean missing);
 
 void nm_device_steal_connection (NMDevice *device, NMSettingsConnection *connection);
 
