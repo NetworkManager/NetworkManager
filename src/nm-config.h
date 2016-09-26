@@ -195,14 +195,14 @@ typedef enum {
 	NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED   = 1,
 } NMConfigDeviceStateManagedType;
 
-typedef struct {
+struct _NMConfigDeviceStateData {
 	int ifindex;
 	NMConfigDeviceStateManagedType managed;
 
 	/* the UUID of the last settings-connection active
 	 * on the device. */
 	const char *connection_uuid;
-} NMConfigDeviceStateData;
+};
 
 NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
                                                       int ifindex);
