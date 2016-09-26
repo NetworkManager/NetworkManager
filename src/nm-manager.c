@@ -233,6 +233,9 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
 
 /*****************************************************************************/
 
+GQuark autoconnect_root_quark (void);
+G_DEFINE_QUARK (autoconnect-root, autoconnect_root);
+
 static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,
                                              NMManager *self);
@@ -315,6 +318,7 @@ active_connection_state_changed (NMActiveConnection *active,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnectionState state;
+	NMSettingsConnection *con;
 
 	state = nm_active_connection_get_state (active);
 	if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
@@ -325,6 +329,10 @@ active_connection_state_changed (NMActiveConnection *active,
 		 */
 		if (!priv->ac_cleanup_id)
 			priv->ac_cleanup_id = g_idle_add (_active_connection_cleanup, self);
+
+		con = nm_active_connection_get_settings_connection (active);
+		if (con)
+			g_object_set_qdata (G_OBJECT (con), autoconnect_root_quark (), NULL);
 	}
 
 	nm_manager_update_state (self);
@@ -2719,14 +2727,9 @@ find_slaves (NMManager *manager,
 	GSList *all_connections, *iter;
 	GSList *slaves = NULL;
 	NMSettingConnection *s_con;
-	const char *master;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 	g_assert (s_con);
-	master = nm_setting_connection_get_master (s_con);
-
-	if (master != NULL)
-		return NULL;  /* connection is not master */
 
 	/* Search through all connections, not only inactive ones, because
 	 * even if a slave was already active, it might be deactivated during
@@ -2795,8 +2798,34 @@ autoconnect_slaves (NMManager *self,
 
 		while (iter) {
 			NMSettingsConnection *slave_connection = iter->data;
+			const char *uuid;
 
 			iter = iter->next;
+
+			/* To avoid loops when autoconnecting slaves, we propagate
+			 * the UUID of the initial connection down to slaves until
+			 * the same connection is found.
+			 */
+			uuid = g_object_get_qdata (G_OBJECT (master_connection),
+			                           autoconnect_root_quark ());
+			if (nm_streq0 (nm_settings_connection_get_uuid (slave_connection), uuid)) {
+				_LOGI (LOGD_CORE,
+				       "will NOT activate slave connection '%s' (%s) as a dependency for master '%s' (%s): "
+				       "circular dependency detected",
+				       nm_settings_connection_get_id (slave_connection),
+				       nm_settings_connection_get_uuid (slave_connection),
+				       nm_settings_connection_get_id (master_connection),
+				       nm_settings_connection_get_uuid (master_connection));
+				continue;
+			}
+
+			if (!uuid)
+				uuid = nm_settings_connection_get_uuid (master_connection);
+			g_object_set_qdata_full (G_OBJECT (slave_connection),
+			                         autoconnect_root_quark (),
+			                         g_strdup (uuid),
+			                         g_free);
+
 			_LOGD (LOGD_CORE, "will activate slave connection '%s' (%s) as a dependency for master '%s' (%s)",
 			       nm_settings_connection_get_id (slave_connection),
 			       nm_settings_connection_get_uuid (slave_connection),
