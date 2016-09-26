@@ -164,6 +164,11 @@ NM_G_ERROR_MSG (GError *error)
 /* macro to return strlen() of a compile time string. */
 #define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
 
+/* Note: @value is only evaluated when *out_val is present.
+ * Thus,
+ *    NM_SET_OUT (out_str, g_strdup ("hallo"));
+ * does the right thing.
+ */
 #define NM_SET_OUT(out_val, value) \
 	G_STMT_START { \
 		typeof(*(out_val)) *_out_val = (out_val); \

@@ -5399,6 +5399,36 @@ test_nm_in_strset (void)
 
 /******************************************************************************/
 
+static gboolean
+do_test_nm_set_out_called (gint *call_count)
+{
+	(*call_count)++;
+	return TRUE;
+}
+
+static void
+test_nm_set_out (void)
+{
+	gboolean val;
+	gboolean *p_val;
+	int call_count;
+
+	/* NM_SET_OUT() has an unexpected non-function like behavior
+	 * wrt. side-effects of the value argument. Test it */
+
+	p_val = &val;
+	call_count = 0;
+	NM_SET_OUT (p_val, do_test_nm_set_out_called (&call_count));
+	g_assert_cmpint (call_count, ==, 1);
+
+	p_val = NULL;
+	call_count = 0;
+	NM_SET_OUT (p_val, do_test_nm_set_out_called (&call_count));
+	g_assert_cmpint (call_count, ==, 0);
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -5521,6 +5551,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_validate_json", test_nm_utils_check_valid_json);
 	g_test_add_func ("/core/general/_nm_utils_team_config_equal", test_nm_utils_team_config_equal);
 	g_test_add_func ("/core/general/test_nm_utils_enum", test_nm_utils_enum);
+	g_test_add_func ("/core/general/nm-set-out", test_nm_set_out);
 
 	return g_test_run ();
 }
