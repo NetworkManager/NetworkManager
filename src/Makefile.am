@@ -76,9 +76,6 @@ AM_CPPFLAGS = \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	\
-	-I$(top_srcdir)/src/systemd/src/systemd/ \
-	-I$(top_srcdir)/src/systemd/ \
-	\
 	$(NULL)
 
 AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)

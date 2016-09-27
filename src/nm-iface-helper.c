@@ -44,7 +44,7 @@ extern unsigned int if_nametoindex (const char *__ifname);
 #include "nm-lndp-rdisc.h"
 #include "nm-utils.h"
 #include "nm-setting-ip6-config.h"
-#include "nm-sd.h"
+#include "systemd/nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION

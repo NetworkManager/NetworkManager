@@ -5,9 +5,6 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src/systemd/ \
-	-I$(top_srcdir)/src/systemd/src/systemd/ \
-	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \

@@ -19,6 +19,13 @@
 #ifndef __NM_SD_H__
 #define __NM_SD_H__
 
+#include "systemd/src/systemd/sd-dhcp-client.h"
+#include "systemd/src/systemd/sd-dhcp6-client.h"
+#include "systemd/src/systemd/sd-lldp.h"
+#include "systemd/src/systemd/sd-ipv4ll.h"
+
+/*****************************************************************************/
+
 guint nm_sd_event_attach_default (void);
 
 /*****************************************************************************

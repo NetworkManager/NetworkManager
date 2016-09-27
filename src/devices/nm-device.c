@@ -62,8 +62,8 @@
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
 #include "nm-route-manager.h"
+#include "systemd/nm-sd.h"
 #include "nm-lldp-listener.h"
-#include "sd-ipv4ll.h"
 #include "nm-audit-manager.h"
 #include "nm-arping-manager.h"
 

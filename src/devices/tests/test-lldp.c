@@ -27,9 +27,7 @@
 #include <sys/types.h>
 
 #include "nm-lldp-listener.h"
-#include "nm-sd.h"
-
-#include "sd-lldp.h"
+#include "systemd/nm-sd.h"
 
 #include "test-common.h"
 

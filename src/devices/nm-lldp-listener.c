@@ -28,7 +28,7 @@
 #include "nm-platform.h"
 #include "nm-utils.h"
 
-#include "sd-lldp.h"
+#include "systemd/nm-sd.h"
 
 #define MAX_NEIGHBORS         4096
 #define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NS_PER_SECOND)

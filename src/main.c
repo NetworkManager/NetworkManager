@@ -49,7 +49,7 @@
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
 #include "nm-exported-object.h"
-#include "nm-sd.h"
+#include "systemd/nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
