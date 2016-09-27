@@ -560,16 +560,14 @@ else
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
 
-PKG_CHECK_MODULES(JANSSON, jansson, [have_jansson=yes], [have_jansson=no])
-AC_ARG_ENABLE(json-validation, AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]),
-		[enable_json_validation=${enableval}], [enable_json_validation=${have_jansson}])
-if (test "${enable_json_validation}" = "yes"); then
-	if test x"$have_jansson" = x"no"; then
-		AC_MSG_ERROR(Jansson is required for JSON validation)
-	fi
-	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+# Jansson for team configuration validation
+AC_ARG_ENABLE(json-validation, AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]))
+if (test "${enable_json_validation}" == "no"); then
+    AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
 else
-	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
+    PKG_CHECK_MODULES(JANSSON, jansson,,
+                      AC_MSG_ERROR([jansson is needed for team configuration validation. Use --disable-json-validation to build without it.]))
+    AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
 fi
 
 # we usually compile with polkit support. --enable-polkit=yes|no only sets the
