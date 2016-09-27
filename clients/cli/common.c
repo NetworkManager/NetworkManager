@@ -913,33 +913,65 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 gboolean
 nmc_proxy_check_script (const char *script, char **out_script, GError **error)
 {
-	char *contents = NULL;
+	enum {
+		_PAC_SCRIPT_TYPE_GUESS,
+		_PAC_SCRIPT_TYPE_FILE,
+		_PAC_SCRIPT_TYPE_JSON,
+	} desired_type = _PAC_SCRIPT_TYPE_GUESS;
+	const char *filename = NULL;
 	size_t c_len = 0;
+	gs_free char *script_clone = NULL;
 
 	*out_script = NULL;
 
-	if (!script || strlen (script) == strspn (script, " \t"))
+	if (!script || !script[0])
 		return TRUE;
 
-	/* 'script' can be either a file name or raw PAC Script data */
-	if (g_file_test (script, G_FILE_TEST_EXISTS))
-		(void) g_file_get_contents (script, &contents, NULL, NULL);
-	else
-		contents = g_strdup (script);
-
-	if (contents) {
-		g_strstrip (contents);
-		c_len = strlen (contents);
+	if (g_str_has_prefix (script, "file://")) {
+		script += NM_STRLEN ("file://");
+		desired_type = _PAC_SCRIPT_TYPE_FILE;
+	} else if (g_str_has_prefix (script, "js://")) {
+		script += NM_STRLEN ("js://");
+		desired_type = _PAC_SCRIPT_TYPE_JSON;
 	}
 
-	/* Do a simple validity check */
-	if (!contents || !contents[0] || c_len > 100000 || !strstr (contents, "FindProxyForURL")) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("'%s' is not a valid PAC Script or file name."), script);
-		g_free (contents);
+	if (NM_IN_SET (desired_type, _PAC_SCRIPT_TYPE_FILE, _PAC_SCRIPT_TYPE_GUESS)) {
+		gs_free char *contents = NULL;
+
+		if (!g_file_get_contents (script, &contents, &c_len, NULL)) {
+			if (desired_type == _PAC_SCRIPT_TYPE_FILE) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("cannot read pac-script from file '%s'"),
+				             script);
+				return FALSE;
+			}
+		} else {
+			if (c_len != strlen (contents)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("file '%s' contains non-valid utf-8"),
+				             script);
+				return FALSE;
+			}
+			filename = script;
+			script = script_clone = g_steal_pointer (&contents);
+		}
+	}
+
+	if (   !strstr (script, "FindProxyForURL")
+	    || !g_utf8_validate (script, -1, NULL)) {
+		if (filename) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("'%s' does not contain a valid PAC Script"), filename);
+		} else {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Not a valid PAC Script"));
+		}
 		return FALSE;
 	}
-	*out_script = g_strdelimit (contents, "\t\r\n", ' ');
+
+	*out_script = (script == script_clone)
+	              ? g_steal_pointer (&script_clone)
+	              : g_strdup (script);
 	return TRUE;
 }
 
