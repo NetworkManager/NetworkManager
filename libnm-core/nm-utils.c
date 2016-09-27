@@ -4571,7 +4571,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 
 	/* do some very basic validation to see if this might be a JSON object. */
 	if (str[0] == '{') {
-		g_size l;
+		gsize l;
 
 		l = strlen (str) - 1;
 		while (l > 0 && g_ascii_isspace (str[l]))
