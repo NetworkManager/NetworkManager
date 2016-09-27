@@ -173,6 +173,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->pac_script && strlen (priv->pac_script) > 1*1024*1024) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("the script is too large"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_PROXY_SETTING_NAME, NM_SETTING_PROXY_PAC_SCRIPT);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
