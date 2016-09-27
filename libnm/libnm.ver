@@ -1086,4 +1086,5 @@ global:
 
 libnm_1_6_0 {
 	nm_capability_get_type;
+	nm_utils_is_json_object;
 } libnm_1_4_0;

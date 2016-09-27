@@ -90,6 +90,9 @@ gboolean nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 gboolean nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type);
 gboolean nm_utils_wpa_psk_valid (const char *psk);
 
+NM_AVAILABLE_IN_1_6
+gboolean nm_utils_is_json_object (const char *json, GError **error);
+
 GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
 char     **nm_utils_ip4_dns_from_variant (GVariant *value);
 GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses,

@@ -4685,7 +4685,7 @@ _json_config_check_valid (const char *conf, gboolean expected)
 	gs_free_error GError *error = NULL;
 	gboolean res;
 
-	res = _nm_utils_check_valid_json (conf, &error);
+	res = nm_utils_is_json_object (conf, &error);
 	g_assert_cmpint (res, ==, expected);
 	g_assert (res || error);
 }

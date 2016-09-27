@@ -329,7 +329,6 @@ gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /***********************************************************/
 
-gboolean    _nm_utils_check_valid_json  (const char *json, GError **error);
 gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
 
 #endif

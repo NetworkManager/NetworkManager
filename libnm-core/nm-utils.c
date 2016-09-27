@@ -4407,8 +4407,20 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 }
 
 #if WITH_JANSSON
+/**
+ * nm_utils_is_json_object:
+ * @str: the JSON string to test
+ * @error: optional error reason
+ *
+ * Returns: whether the passed string is valid JSON.
+ *   If libnm is not compiled with libjansson support, this check will
+ *   also return %TRUE for possibly invalid inputs. If that is a problem
+ *   for you, you must validate the JSON yourself.
+ *
+ * Since: 1.6
+ */
 gboolean
-_nm_utils_check_valid_json (const char *str, GError **error)
+nm_utils_is_json_object (const char *str, GError **error)
 {
 	json_t *json;
 	json_error_t jerror;
@@ -4419,7 +4431,7 @@ _nm_utils_check_valid_json (const char *str, GError **error)
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     "value is NULL or empty");
+		                     str ? _("value is NULL") : _("value is empty"));
 		return FALSE;
 	}
 
@@ -4428,9 +4440,19 @@ _nm_utils_check_valid_json (const char *str, GError **error)
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             "%s at position %d",
-		             jerror.text,
-		             jerror.position);
+		             _("invalid JSON at position %d (%s)"),
+		             jerror.position,
+		             jerror.text);
+		return FALSE;
+	}
+
+	/* valid JSON (depending on the definition) can also be a literal.
+	 * Here we only allow objects. */
+	if (!json_is_object (json)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("is not a JSON object"));
 		return FALSE;
 	}
 
@@ -4522,17 +4544,48 @@ out:
 #else /* WITH_JANSSON */
 
 gboolean
-_nm_utils_check_valid_json (const char *str, GError **error)
+nm_utils_is_json_object (const char *str, GError **error)
 {
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (str) {
+		/* libjansson also requires only utf-8 encoding. */
+		if (!g_utf8_validate (str, -1, NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("not valid utf-8"));
+			return FALSE;
+		}
+		while (g_ascii_isspace (str[0]))
+			str++;
+	}
+
 	if (!str || !str[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     "value is NULL or empty");
+		                     str ? _("value is NULL") : _("value is empty"));
 		return FALSE;
 	}
 
-	return TRUE;
+	/* do some very basic validation to see if this might be a JSON object. */
+	if (str[0] == '{') {
+		g_size l;
+
+		l = strlen (str) - 1;
+		while (l > 0 && g_ascii_isspace (str[l]))
+			l--;
+
+		if (str[l] == '}')
+			return TRUE;
+	}
+
+	g_set_error_literal (error,
+	                     NM_CONNECTION_ERROR,
+	                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+	                     _("is not a JSON object"));
+	return FALSE;
 }
 
 gboolean
