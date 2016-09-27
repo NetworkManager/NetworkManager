@@ -871,6 +871,12 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 				return FALSE;
 			}
 		} else {
+			if (c_len != strlen (contents)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("team config file '%s' contains non-valid utf-8"),
+				             config);
+				return FALSE;
+			}
 			filename = config;
 			config = config_clone = g_steal_pointer (&contents);
 		}
