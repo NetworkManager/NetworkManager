@@ -226,7 +226,7 @@ dispose (GObject *object)
 		g_clear_object (&priv->dhcp_listener);
 	}
 
-	g_free (priv->pid_file);
+	nm_clear_g_free (&priv->pid_file);
 
 	G_OBJECT_CLASS (nm_dhcp_dhcpcd_parent_class)->dispose (object);
 }
