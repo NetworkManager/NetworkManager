@@ -579,18 +579,17 @@ AC_ARG_ENABLE(polkit, AS_HELP_STRING([--enable-polkit=yes|no|disabled], [set def
                      [enable_polkit=${enableval}], [enable_polkit=yes])
 if (test "${enable_polkit}" != "no" -a "${enable_polkit}" != "disabled"); then
 	enable_polkit=yes
-	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, TRUE, [The default value of the auth-polkit configuration option])
-	NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT='true'
+	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, "true", [The default value of the auth-polkit configuration option])
+	AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT, true)
 else
-	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, FALSE, [The default value of the auth-polkit configuration option])
-	NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT='false'
+	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, "false", [The default value of the auth-polkit configuration option])
+	AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT, false)
 fi
 if (test "${enable_polkit}" != "disabled"); then
 	AC_DEFINE(WITH_POLKIT, 1, [whether to compile polkit support])
 else
 	AC_DEFINE(WITH_POLKIT, 0, [whether to compile polkit support])
 fi
-AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT)
 
 PKG_CHECK_MODULES(POLKIT, [polkit-agent-1 >= 0.97], [have_pk_agent=yes],[have_pk_agent=no])
 AC_ARG_ENABLE(polkit-agent, AS_HELP_STRING([--enable-polkit-agent], [enable polkit agent for clients]),

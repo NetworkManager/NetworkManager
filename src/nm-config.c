@@ -285,7 +285,7 @@ nm_config_get_monitor_connection_files (NMConfig *config)
 gboolean
 nm_config_get_auth_polkit (NMConfig *config)
 {
-	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_AUTH_POLKIT);
+	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->auth_polkit;
 }
@@ -2302,7 +2302,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
 
-	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT);
+	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
 
 	priv->dhcp_client = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dhcp", NULL));
 
@@ -2343,7 +2343,7 @@ nm_config_init (NMConfig *config)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 
-	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
+	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL;
 }
 
 NMConfig *
