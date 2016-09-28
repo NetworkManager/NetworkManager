@@ -932,94 +932,25 @@ nm_active_connection_version_id_bump (NMActiveConnection *self)
 /*****************************************************************************/
 
 static void
-nm_active_connection_init (NMActiveConnection *self)
+_device_cleanup (NMActiveConnection *self)
 {
-	NMActiveConnectionPrivate *priv;
-
-	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
-	self->_priv = priv;
-
-	_LOGT ("creating");
-
-	priv->version_id = _version_id_new ();
-}
-
-static void
-constructed (GObject *object)
-{
-	NMActiveConnection *self = (NMActiveConnection *) object;
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
-
-	if (!priv->applied_connection && priv->settings_connection) {
-		priv->applied_connection =
-			nm_simple_connection_new_clone ((NMConnection *) priv->settings_connection);
+	if (priv->device) {
+		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_state_changed), self);
+		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_master_changed), self);
+		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_metered_changed), self);
 	}
 
-	if (priv->applied_connection)
-		nm_connection_clear_secrets (priv->applied_connection);
-
-	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (long long unsigned) priv->version_id);
-
-	g_return_if_fail (priv->subject);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMActiveConnection *self = (NMActiveConnection *) object;
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
-	const char *tmp;
-	NMSettingsConnection *con;
-	NMConnection *acon;
-
-	switch (prop_id) {
-	case PROP_INT_SETTINGS_CONNECTION:
-		/* construct-only */
-		con = g_value_get_object (value);
-		if (con)
-			_set_settings_connection (self, con);
-		break;
-	case PROP_INT_APPLIED_CONNECTION:
-		/* construct-only */
-		acon = g_value_get_object (value);
-		if (acon)
-			priv->applied_connection = g_object_ref (acon);
-		break;
-	case PROP_INT_DEVICE:
-		/* construct-only */
-		nm_active_connection_set_device (self, g_value_get_object (value));
-		break;
-	case PROP_INT_SUBJECT:
-		priv->subject = g_value_dup_object (value);
-		break;
-	case PROP_INT_MASTER:
-		nm_active_connection_set_master (self, g_value_get_object (value));
-		break;
-	case PROP_SPECIFIC_OBJECT:
-		tmp = g_value_get_string (value);
-		/* NM uses "/" to mean NULL */
-		if (g_strcmp0 (tmp, "/") != 0)
-			priv->specific_object = g_strdup (tmp);
-		break;
-	case PROP_DEFAULT:
-		priv->is_default = !!g_value_get_boolean (value);
-		break;
-	case PROP_DEFAULT6:
-		priv->is_default6 = !!g_value_get_boolean (value);
-		break;
-	case PROP_VPN:
-		priv->vpn = g_value_get_boolean (value);
-		break;
-	case PROP_MASTER:
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
+	if (priv->pending_activation_id) {
+		nm_device_remove_pending_action (priv->device, priv->pending_activation_id, TRUE);
+		g_clear_pointer (&priv->pending_activation_id, g_free);
 	}
+
+	g_clear_object (&priv->device);
 }
+
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -1102,22 +1033,95 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-_device_cleanup (NMActiveConnection *self)
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
 {
+	NMActiveConnection *self = (NMActiveConnection *) object;
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	const char *tmp;
+	NMSettingsConnection *con;
+	NMConnection *acon;
+
+	switch (prop_id) {
+	case PROP_INT_SETTINGS_CONNECTION:
+		/* construct-only */
+		con = g_value_get_object (value);
+		if (con)
+			_set_settings_connection (self, con);
+		break;
+	case PROP_INT_APPLIED_CONNECTION:
+		/* construct-only */
+		acon = g_value_get_object (value);
+		if (acon)
+			priv->applied_connection = g_object_ref (acon);
+		break;
+	case PROP_INT_DEVICE:
+		/* construct-only */
+		nm_active_connection_set_device (self, g_value_get_object (value));
+		break;
+	case PROP_INT_SUBJECT:
+		priv->subject = g_value_dup_object (value);
+		break;
+	case PROP_INT_MASTER:
+		nm_active_connection_set_master (self, g_value_get_object (value));
+		break;
+	case PROP_SPECIFIC_OBJECT:
+		tmp = g_value_get_string (value);
+		/* NM uses "/" to mean NULL */
+		if (g_strcmp0 (tmp, "/") != 0)
+			priv->specific_object = g_strdup (tmp);
+		break;
+	case PROP_DEFAULT:
+		priv->is_default = !!g_value_get_boolean (value);
+		break;
+	case PROP_DEFAULT6:
+		priv->is_default6 = !!g_value_get_boolean (value);
+		break;
+	case PROP_VPN:
+		priv->vpn = g_value_get_boolean (value);
+		break;
+	case PROP_MASTER:
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_active_connection_init (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
+	self->_priv = priv;
+
+	_LOGT ("creating");
+
+	priv->version_id = _version_id_new ();
+}
+
+static void
+constructed (GObject *object)
+{
+	NMActiveConnection *self = (NMActiveConnection *) object;
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->device) {
-		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_state_changed), self);
-		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_master_changed), self);
-		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_metered_changed), self);
+	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
+
+	if (!priv->applied_connection && priv->settings_connection) {
+		priv->applied_connection =
+			nm_simple_connection_new_clone ((NMConnection *) priv->settings_connection);
 	}
 
-	if (priv->pending_activation_id) {
-		nm_device_remove_pending_action (priv->device, priv->pending_activation_id, TRUE);
-		g_clear_pointer (&priv->pending_activation_id, g_free);
-	}
+	if (priv->applied_connection)
+		nm_connection_clear_secrets (priv->applied_connection);
 
-	g_clear_object (&priv->device);
+	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (long long unsigned) priv->version_id);
+
+	g_return_if_fail (priv->subject);
 }
 
 static void

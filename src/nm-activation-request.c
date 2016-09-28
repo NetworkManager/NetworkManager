@@ -466,6 +466,42 @@ master_failed (NMActiveConnection *self)
 
 /*****************************************************************************/
 
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDevice *device;
+
+	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
+	if (!device) {
+		g_value_set_string (value, "/");
+		return;
+	}
+
+	switch (prop_id) {
+	case PROP_IP4_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP4_CONFIG, value);
+		break;
+	case PROP_DHCP4_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG, value);
+		break;
+	case PROP_IP6_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP6_CONFIG, value);
+		break;
+	case PROP_DHCP6_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG, value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_act_request_init (NMActRequest *req)
+{
+}
+
 /**
  * nm_act_request_new:
  *
@@ -502,11 +538,6 @@ nm_act_request_new (NMSettingsConnection *settings_connection,
 }
 
 static void
-nm_act_request_init (NMActRequest *req)
-{
-}
-
-static void
 dispose (GObject *object)
 {
 	NMActRequest *self = NM_ACT_REQUEST (object);
@@ -523,37 +554,6 @@ dispose (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDevice *device;
-
-	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-	if (!device) {
-		g_value_set_string (value, "/");
-		return;
-	}
-
-	switch (prop_id) {
-	case PROP_IP4_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP4_CONFIG, value);
-		break;
-	case PROP_DHCP4_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG, value);
-		break;
-	case PROP_IP6_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP6_CONFIG, value);
-		break;
-	case PROP_DHCP6_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG, value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static void
