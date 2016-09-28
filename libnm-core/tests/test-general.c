@@ -2527,7 +2527,7 @@ test_setting_compare_wireless_cloned_mac_address (void)
 	g_assert_cmpstr ("stable-bia", ==, nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) new));
 	g_object_get (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, &str1, NULL);
 	g_assert_cmpstr ("stable-bia", ==, str1);
-	g_clear_pointer (&str1, g_free);
+	nm_clear_g_free (&str1);
 
 	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (!success);
