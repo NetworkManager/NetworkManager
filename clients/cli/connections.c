@@ -4149,7 +4149,8 @@ set_ip4_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	return set_property (con, option->setting_name, option->property, value, '\0', error);
+	return set_property (con, option->setting_name, option->property, value,
+	                     option->flags & OPTION_MULTI ? '+' : '\0', error);
 }
 
 static gboolean
@@ -4168,7 +4169,8 @@ set_ip6_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	return set_property (con, option->setting_name, option->property, value, '\0', error);
+	return set_property (con, option->setting_name, option->property, value,
+	                     option->flags & OPTION_MULTI ? '+' : '\0', error);
 }
 
 
