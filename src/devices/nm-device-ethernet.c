@@ -32,7 +32,7 @@
 #include <gudev/gudev.h>
 
 #include "nm-device-private.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"

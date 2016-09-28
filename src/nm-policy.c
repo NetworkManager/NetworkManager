@@ -28,7 +28,7 @@
 
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-device.h"
 #include "nm-default-route-manager.h"
 #include "nm-setting-ip4-config.h"

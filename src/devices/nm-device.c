@@ -44,7 +44,7 @@
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-dhcp-manager.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dnsmasq-manager.h"

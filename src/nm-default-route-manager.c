@@ -30,7 +30,7 @@
 #include "nm-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 
 typedef struct {
 	GPtrArray *entries_ip4;

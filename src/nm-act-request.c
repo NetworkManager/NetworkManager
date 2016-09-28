@@ -21,7 +21,7 @@
 
 #include "nm-default.h"
 
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 
 #include <string.h>
 #include <stdlib.h>

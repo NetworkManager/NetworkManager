@@ -34,7 +34,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "nm-settings.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
 #include "nmdbus-device-ip-tunnel.h"

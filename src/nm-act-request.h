@@ -18,8 +18,8 @@
  * (C) Copyright 2005 - 2012 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_ACTIVATION_REQUEST_H__
-#define __NETWORKMANAGER_ACTIVATION_REQUEST_H__
+#ifndef __NM_ACT_REQUEST_H__
+#define __NM_ACT_REQUEST_H__
 
 #include "nm-connection.h"
 #include "nm-active-connection.h"
@@ -72,5 +72,5 @@ NMActRequestGetSecretsCallId nm_act_request_get_secrets (NMActRequest *req,
 void nm_act_request_cancel_secrets (NMActRequest *req, NMActRequestGetSecretsCallId call_id);
 void nm_act_request_clear_secrets (NMActRequest *self);
 
-#endif /* __NETWORKMANAGER_ACTIVATION_REQUEST_H__ */
+#endif /* __NM_ACT_REQUEST_H__ */
 

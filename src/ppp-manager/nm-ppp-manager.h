@@ -25,7 +25,7 @@
 
 #include "nm-exported-object.h"
 #include "nm-ppp-status.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

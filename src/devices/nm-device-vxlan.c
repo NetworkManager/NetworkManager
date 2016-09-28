@@ -32,7 +32,7 @@
 #include "nm-setting-vxlan.h"
 #include "nm-setting-wired.h"
 #include "nm-settings.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
 #include "nmdbus-device-vxlan.h"

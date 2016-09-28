@@ -48,7 +48,7 @@
 #include "nm-connectivity.h"
 #include "nm-policy.h"
 #include "nm-session-monitor.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"

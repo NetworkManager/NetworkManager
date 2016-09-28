@@ -30,7 +30,7 @@
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
 #include "nm-settings.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"

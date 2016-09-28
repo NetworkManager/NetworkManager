@@ -41,7 +41,7 @@
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
