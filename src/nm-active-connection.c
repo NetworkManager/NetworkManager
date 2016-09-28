@@ -34,14 +34,7 @@
 
 #include "nmdbus-active-connection.h"
 
-/* Base class for anything implementing the Connection.Active D-Bus interface */
-G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_EXPORTED_OBJECT)
-
-#define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                             NM_TYPE_ACTIVE_CONNECTION, \
-                                             NMActiveConnectionPrivate))
-
-typedef struct {
+typedef struct _NMActiveConnectionPrivate {
 	NMSettingsConnection *settings_connection;
 	NMConnection *applied_connection;
 	char *specific_object;
@@ -104,6 +97,10 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
+
+G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_ACTIVE_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMActiveConnection, NM_IS_ACTIVE_CONNECTION)
 
 static void check_master_ready (NMActiveConnection *self);
 static void _device_cleanup (NMActiveConnection *self);
@@ -937,7 +934,10 @@ nm_active_connection_version_id_bump (NMActiveConnection *self)
 static void
 nm_active_connection_init (NMActiveConnection *self)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMActiveConnectionPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
+	self->_priv = priv;
 
 	_LOGT ("creating");
 
@@ -1025,7 +1025,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE ((NMActiveConnection *) object);
 	GPtrArray *devices;
 	NMDevice *master_device = NULL;
 

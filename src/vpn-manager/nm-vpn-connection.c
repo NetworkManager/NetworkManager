@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-vpn-connection.h"
+
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -30,7 +32,6 @@
 #include <unistd.h>
 #include <syslog.h>
 
-#include "nm-vpn-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-platform.h"

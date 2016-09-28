@@ -28,13 +28,8 @@
 #define NM_IS_DHCP_DHCPCD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_DHCPCD))
 #define NM_DHCP_DHCPCD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
 
-typedef struct {
-	NMDhcpClient parent;
-} NMDhcpDhcpcd;
-
-typedef struct {
-	NMDhcpClientClass parent;
-} NMDhcpDhcpcdClass;
+typedef struct _NMDhcpDhcpcd NMDhcpDhcpcd;
+typedef struct _NMDhcpDhcpcdClass NMDhcpDhcpcdClass;
 
 GType nm_dhcp_dhcpcd_get_type (void);
 

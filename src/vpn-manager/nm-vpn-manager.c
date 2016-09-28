@@ -21,19 +21,16 @@
 
 #include "nm-default.h"
 
+#include "nm-vpn-manager.h"
+
 #include <string.h>
 
-#include "nm-vpn-manager.h"
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"
 #include "nm-enum-types.h"
-
-G_DEFINE_TYPE (NMVpnManager, nm_vpn_manager, G_TYPE_OBJECT)
-
-#define NM_VPN_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_MANAGER, NMVpnManagerPrivate))
 
 typedef struct {
 	GSList *plugins;
@@ -46,6 +43,19 @@ typedef struct {
 	 * connections, to guard access to them. */
 	GHashTable *active_services;
 } NMVpnManagerPrivate;
+
+struct _NMVpnManager {
+	GObject parent;
+	NMVpnManagerPrivate _priv;
+};
+
+struct _NMVpnManagerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMVpnManager, nm_vpn_manager, G_TYPE_OBJECT)
+
+#define NM_VPN_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMVpnManager, NM_IS_VPN_MANAGER)
 
 /*****************************************************************************/
 
@@ -252,7 +262,7 @@ nm_vpn_manager_init (NMVpnManager *self)
 static void
 dispose (GObject *object)
 {
-	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (object);
+	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE ((NMVpnManager *) object);
 
 	if (priv->monitor_etc) {
 		if (priv->monitor_id_etc)
@@ -281,9 +291,6 @@ nm_vpn_manager_class_init (NMVpnManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
 
-	g_type_class_add_private (manager_class, sizeof (NMVpnManagerPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 }
 

@@ -20,11 +20,12 @@
 
 #include "nm-default.h"
 
+#include "nm-secret-agent.h"
+
 #include <sys/types.h>
 #include <pwd.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-secret-agent.h"
 #include "nm-bus-manager.h"
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
@@ -32,31 +33,14 @@
 
 #include "nmdbus-secret-agent.h"
 
-#define _NMLOG_PREFIX_NAME    "secret-agent"
-#define _NMLOG_DOMAIN         LOGD_AGENTS
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
-            char __prefix[32]; \
-            \
-            if ((self)) \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", ""_NMLOG_PREFIX_NAME"", (self)); \
-            else \
-                g_strlcpy (__prefix, _NMLOG_PREFIX_NAME, sizeof (__prefix)); \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-        } \
-    } G_STMT_END
+/*****************************************************************************/
 
-#define LOG_REQ_FMT          "req[%p,%s,%s%s%s%s]"
-#define LOG_REQ_ARG(req)     (req), (req)->dbus_command, NM_PRINT_FMT_QUOTE_STRING ((req)->path), ((req)->cancellable ? "" : " (cancelled)")
+enum {
+	DISCONNECTED,
 
-G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
-
-#define NM_SECRET_AGENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                        NM_TYPE_SECRET_AGENT, \
-                                        NMSecretAgentPrivate))
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	char *description;
@@ -77,12 +61,40 @@ typedef struct {
 	GHashTable *requests;
 } NMSecretAgentPrivate;
 
-enum {
-	DISCONNECTED,
-
-	LAST_SIGNAL
+struct _NMSecretAgent {
+	GObject parent;
+	NMSecretAgentPrivate _priv;
 };
-static guint signals[LAST_SIGNAL] = { 0 };
+
+struct _NMSecretAgentClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
+
+#define NM_SECRET_AGENT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSecretAgent, NM_IS_SECRET_AGENT)
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME    "secret-agent"
+#define _NMLOG_DOMAIN         LOGD_AGENTS
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
+            char __prefix[32]; \
+            \
+            if ((self)) \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", ""_NMLOG_PREFIX_NAME"", (self)); \
+            else \
+                g_strlcpy (__prefix, _NMLOG_PREFIX_NAME, sizeof (__prefix)); \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+#define LOG_REQ_FMT          "req[%p,%s,%s%s%s%s]"
+#define LOG_REQ_ARG(req)     (req), (req)->dbus_command, NM_PRINT_FMT_QUOTE_STRING ((req)->path), ((req)->cancellable ? "" : " (cancelled)")
 
 /*****************************************************************************/
 
@@ -783,20 +795,16 @@ nm_secret_agent_class_init (NMSecretAgentClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMSecretAgentPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	/* signals */
 	signals[DISCONNECTED] =
-		g_signal_new (NM_SECRET_AGENT_DISCONNECTED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMSecretAgentClass, disconnected),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_SECRET_AGENT_DISCONNECTED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 }
 

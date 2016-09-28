@@ -33,13 +33,8 @@
 #define NM_IS_DHCP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_MANAGER))
 #define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManagerClass))
 
-typedef struct {
-	GObject parent;
-} NMDhcpManager;
-
-typedef struct {
-	GObjectClass parent;
-} NMDhcpManagerClass;
+typedef struct _NMDhcpManager NMDhcpManager;
+typedef struct _NMDhcpManagerClass NMDhcpManagerClass;
 
 GType nm_dhcp_manager_get_type (void);
 

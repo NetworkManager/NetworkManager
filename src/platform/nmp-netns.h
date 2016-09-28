@@ -33,16 +33,7 @@
 #define NMP_NETNS_FD_NET          "fd-net"
 #define NMP_NETNS_FD_MNT          "fd-mnt"
 
-struct _NMPNetnsPrivate;
-
-struct _NMPNetns {
-	GObject parent;
-	struct _NMPNetnsPrivate *priv;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMPNetnsClass;
+typedef struct _NMPNetnsClass NMPNetnsClass;
 
 GType nmp_netns_get_type (void);
 

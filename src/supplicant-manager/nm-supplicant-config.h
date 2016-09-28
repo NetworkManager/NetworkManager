@@ -35,16 +35,7 @@
 #define NM_IS_SUPPLICANT_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_CONFIG))
 #define NM_SUPPLICANT_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_CONFIG, NMSupplicantConfigClass))
 
-struct _NMSupplicantConfig
-{
-	GObject parent;
-};
-
-typedef struct
-{
-	GObjectClass parent;
-} NMSupplicantConfigClass;
-
+typedef struct _NMSupplicantConfigClass NMSupplicantConfigClass;
 
 GType nm_supplicant_config_get_type (void);
 

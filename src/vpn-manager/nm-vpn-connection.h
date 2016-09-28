@@ -19,14 +19,16 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef __NETWORKMANAGER_VPN_CONNECTION_H__
-#define __NETWORKMANAGER_VPN_CONNECTION_H__
+#ifndef __NM_VPN_CONNECTION_H__
+#define __NM_VPN_CONNECTION_H__
 
 #include "nm-vpn-dbus-interface.h"
 #include "nm-device.h"
 #include "nm-auth-subject.h"
 #include "nm-active-connection.h"
 #include "nm-vpn-plugin-info.h"
+
+#define NM_VPN_ROUTE_METRIC_DEFAULT     50
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVpnConnection))
@@ -43,9 +45,6 @@
 /* not exported: includes old reason code */
 #define NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED       "internal-state-changed"
 #define NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE "internal-retry-after-failure"
-
-
-#define NM_VPN_ROUTE_METRIC_DEFAULT     50
 
 typedef struct _NMVpnConnectionClass NMVpnConnectionClass;
 
@@ -79,4 +78,4 @@ struct in6_addr *    nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection
 guint32              nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *self);
 guint32              nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *self);
 
-#endif /* __NETWORKMANAGER_VPN_CONNECTION_H__ */
+#endif /* __NM_VPN_CONNECTION_H__ */

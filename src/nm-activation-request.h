@@ -34,15 +34,6 @@
 struct _NMActRequestGetSecretsCallId;
 typedef struct _NMActRequestGetSecretsCallId *NMActRequestGetSecretsCallId;
 
-struct _NMActRequest {
-	NMActiveConnection parent;
-};
-
-typedef struct {
-	NMActiveConnectionClass parent;
-
-} NMActRequestClass;
-
 GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new          (NMSettingsConnection *settings_connection,

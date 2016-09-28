@@ -16,8 +16,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP_SYSTEMD_H
-#define NM_DHCP_SYSTEMD_H
+#ifndef __NM_DHCP_SYSTEMD_H__
+#define __NM_DHCP_SYSTEMD_H__
 
 #include "nm-dhcp-client.h"
 
@@ -28,15 +28,10 @@
 #define NM_IS_DHCP_SYSTEMD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_SYSTEMD))
 #define NM_DHCP_SYSTEMD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdClass))
 
-typedef struct {
-	NMDhcpClient parent;
-} NMDhcpSystemd;
-
-typedef struct {
-	NMDhcpClientClass parent;
-} NMDhcpSystemdClass;
+typedef struct _NMDhcpSystemd NMDhcpSystemd;
+typedef struct _NMDhcpSystemdClass NMDhcpSystemdClass;
 
 GType nm_dhcp_systemd_get_type (void);
 
-#endif /* NM_DHCP_SYSTEMD_H */
+#endif /* __NM_DHCP_SYSTEMD_H__ */
 

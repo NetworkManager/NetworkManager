@@ -21,24 +21,19 @@
 
 #include "nm-default.h"
 
+#include "nm-activation-request.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "nm-activation-request.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-device.h"
 #include "nm-active-connection.h"
 #include "nm-settings-connection.h"
 #include "nm-auth-subject.h"
-
-G_DEFINE_TYPE (NMActRequest, nm_act_request, NM_TYPE_ACTIVE_CONNECTION)
-
-#define NM_ACT_REQUEST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                       NM_TYPE_ACT_REQUEST, \
-                                       NMActRequestPrivate))
 
 typedef struct {
 	char *table;
@@ -51,6 +46,15 @@ typedef struct {
 	GSList *share_rules;
 } NMActRequestPrivate;
 
+struct _NMActRequest {
+	NMActiveConnection parent;
+	NMActRequestPrivate _priv;
+};
+
+typedef struct {
+	NMActiveConnectionClass parent;
+} NMActRequestClass;
+
 enum {
 	PROP_0,
 	PROP_IP4_CONFIG,
@@ -60,6 +64,10 @@ enum {
 
 	LAST_PROP
 };
+
+G_DEFINE_TYPE (NMActRequest, nm_act_request, NM_TYPE_ACTIVE_CONNECTION)
+
+#define NM_ACT_REQUEST_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMActRequest, NM_IS_ACT_REQUEST)
 
 /*****************************************************************************/
 
@@ -553,8 +561,6 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (req_class);
-
-	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;

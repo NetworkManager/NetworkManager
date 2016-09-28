@@ -80,10 +80,6 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
 
 /*****************************************************************************/
 
-#define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
-
-G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
-
 static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 
 enum {
@@ -93,9 +89,13 @@ enum {
 	LAST_PROP,
 };
 
-typedef struct {
-	gboolean register_singleton;
+typedef struct _NMPlatformPrivate {
+	bool register_singleton:1;
 } NMPlatformPrivate;
+
+G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
+
+#define NM_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMPlatform, NM_IS_PLATFORM)
 
 /*****************************************************************************/
 
@@ -4246,8 +4246,9 @@ constructed (GObject *object)
 }
 
 static void
-nm_platform_init (NMPlatform *object)
+nm_platform_init (NMPlatform *self)
 {
+	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_PLATFORM, NMPlatformPrivate);
 }
 
 static void

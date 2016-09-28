@@ -20,12 +20,12 @@
 
 #include "nm-default.h"
 
+#include "nm-supplicant-settings-verify.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#include "nm-supplicant-settings-verify.h"
 
 struct Opt {
 	const char *     key;

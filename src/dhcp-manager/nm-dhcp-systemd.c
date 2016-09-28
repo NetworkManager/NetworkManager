@@ -18,6 +18,8 @@
 
 #include "nm-default.h"
 
+#include "nm-dhcp-systemd.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -28,17 +30,12 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-dhcp-systemd.h"
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "systemd/nm-sd.h"
-
-G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
-
-#define NM_DHCP_SYSTEMD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdPrivate))
 
 typedef struct {
 	sd_dhcp_client *client4;
@@ -50,6 +47,19 @@ typedef struct {
 	gboolean privacy;
 	gboolean info_only;
 } NMDhcpSystemdPrivate;
+
+struct _NMDhcpSystemd {
+	NMDhcpClient parent;
+	NMDhcpSystemdPrivate _priv;
+};
+
+struct _NMDhcpSystemdClass {
+	NMDhcpClientClass parent;
+};
+
+G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
+
+#define NM_DHCP_SYSTEMD_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcpSystemd, NM_IS_DHCP_SYSTEMD)
 
 /*****************************************************************************/
 
@@ -1000,7 +1010,7 @@ nm_dhcp_systemd_init (NMDhcpSystemd *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (object);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE ((NMDhcpSystemd *) object);
 
 	g_clear_pointer (&priv->lease_file, g_free);
 
@@ -1025,9 +1035,6 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS (sdhcp_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (sdhcp_class);
 
-	g_type_class_add_private (sdhcp_class, sizeof (NMDhcpSystemdPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = ip4_start;

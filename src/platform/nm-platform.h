@@ -483,10 +483,12 @@ typedef struct {
 
 /*****************************************************************************/
 
+struct _NMPlatformPrivate;
+
 struct _NMPlatform {
 	GObject parent;
-
 	NMPNetns *_netns;
+	struct _NMPlatformPrivate *_priv;
 };
 
 typedef struct {

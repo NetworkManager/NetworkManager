@@ -22,6 +22,8 @@
 
 #include "nm-default.h"
 
+#include "nm-dhcp-manager.h"
+
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -32,7 +34,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-systemd.h"
@@ -41,10 +42,7 @@
 
 #define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
 
-/* default to installed helper, but can be modified for testing */
-const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
-
-typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid, gboolean ipv6);
+/*****************************************************************************/
 
 typedef struct {
 	GType               client_type;
@@ -52,9 +50,23 @@ typedef struct {
 	char *              default_hostname;
 } NMDhcpManagerPrivate;
 
-#define NM_DHCP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_MANAGER, NMDhcpManagerPrivate))
+struct _NMDhcpManager {
+	GObject parent;
+	NMDhcpManagerPrivate _priv;
+};
+
+struct _NMDhcpManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
+
+#define NM_DHCP_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcpManager, NM_IS_DHCP_MANAGER)
+
+/*****************************************************************************/
+
+/* default to installed helper, but can be modified for testing */
+const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
 
 /*****************************************************************************/
 
@@ -412,7 +424,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE ((NMDhcpManager *) object);
 	GList *values, *iter;
 
 	if (priv->clients) {
@@ -428,7 +440,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE ((NMDhcpManager *) object);
 
 	g_free (priv->default_hostname);
 
@@ -443,9 +455,6 @@ nm_dhcp_manager_class_init (NMDhcpManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
 
-	g_type_class_add_private (manager_class, sizeof (NMDhcpManagerPrivate));
-
-	/* virtual methods */
 	object_class->finalize = finalize;
 	object_class->dispose = dispose;
 }

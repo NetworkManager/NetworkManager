@@ -37,15 +37,13 @@
 
 static gboolean quitting = FALSE;
 
-G_DEFINE_ABSTRACT_TYPE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON);
-
 typedef struct {
 	GDBusInterfaceSkeleton *interface;
 	guint property_changed_signal_id;
 	GHashTable *pending_notifies;
 } InterfaceData;
 
-typedef struct {
+typedef struct _NMExportedObjectPrivate {
 	NMBusManager *bus_mgr;
 	char *path;
 
@@ -59,7 +57,11 @@ typedef struct {
 #endif
 } NMExportedObjectPrivate;
 
-#define NM_EXPORTED_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_EXPORTED_OBJECT, NMExportedObjectPrivate))
+G_DEFINE_ABSTRACT_TYPE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON);
+
+#define NM_EXPORTED_OBJECT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMExportedObject, NM_IS_EXPORTED_OBJECT)
+
+/*****************************************************************************/
 
 typedef struct {
 	GHashTable *properties;
@@ -800,7 +802,7 @@ _sort_pending_notifies (gconstpointer a, gconstpointer b, gpointer       user_da
 static gboolean
 idle_emit_properties_changed (gpointer self)
 {
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (NM_EXPORTED_OBJECT (self));
 	guint k;
 
 	priv->notify_idle_id = 0;
@@ -969,6 +971,10 @@ vtype_found:
 static void
 nm_exported_object_init (NMExportedObject *self)
 {
+	NMExportedObjectPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_EXPORTED_OBJECT, NMExportedObjectPrivate);
+	self->_priv = priv;
 }
 
 static void
@@ -979,7 +985,7 @@ constructed (GObject *object)
 	G_OBJECT_CLASS (nm_exported_object_parent_class)->constructed (object);
 
 #ifdef _ASSERT_NO_EARLY_EXPORT
-	NM_EXPORTED_OBJECT_GET_PRIVATE (object)->_constructed = TRUE;
+	NM_EXPORTED_OBJECT_GET_PRIVATE (NM_EXPORTED_OBJECT (object))->_constructed = TRUE;
 #endif
 
 	klass = NM_EXPORTED_OBJECT_GET_CLASS (object);
@@ -991,7 +997,7 @@ constructed (GObject *object)
 static void
 nm_exported_object_dispose (GObject *object)
 {
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (object);
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (NM_EXPORTED_OBJECT (object));
 
 	/* Objects should have already been unexported by their owner, unless
 	 * we are quitting, where many objects stick around until exit.

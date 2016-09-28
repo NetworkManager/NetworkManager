@@ -21,11 +21,12 @@
 
 #include "nm-default.h"
 
+#include "nm-supplicant-interface.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
@@ -36,13 +37,8 @@
 #define WPAS_ERROR_INVALID_IFACE    WPAS_DBUS_INTERFACE ".InvalidInterface"
 #define WPAS_ERROR_EXISTS_ERROR     WPAS_DBUS_INTERFACE ".InterfaceExists"
 
-G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_SUPPLICANT_INTERFACE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                                 NM_TYPE_SUPPLICANT_INTERFACE, \
-                                                 NMSupplicantInterfacePrivate))
-
-/* Signals */
 enum {
 	STATE,               /* change in the interface's state */
 	REMOVED,             /* interface was removed by the supplicant */
@@ -56,8 +52,6 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-
-/* Properties */
 NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_IFACE,
 	PROP_SCANNING,
@@ -97,6 +91,19 @@ typedef struct {
 
 	NMSupplicantConfig *cfg;
 } NMSupplicantInterfacePrivate;
+
+struct _NMSupplicantInterface {
+	GObject parent;
+	NMSupplicantInterfacePrivate _priv;
+};
+
+struct _NMSupplicantInterfaceClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
+
+#define NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSupplicantInterface, NM_IS_SUPPLICANT_INTERFACE)
 
 /*****************************************************************************/
 
@@ -1469,7 +1476,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
 
 	switch (prop_id) {
 	case PROP_IFACE:
@@ -1501,7 +1508,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
 
 	switch (prop_id) {
 	case PROP_SCANNING:
@@ -1519,10 +1526,10 @@ get_property (GObject *object,
 static void
 dispose (GObject *object)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
 
 	if (priv->iface_proxy)
-		g_signal_handlers_disconnect_by_data (priv->iface_proxy, NM_SUPPLICANT_INTERFACE (object));
+		g_signal_handlers_disconnect_by_data (priv->iface_proxy, object);
 	g_clear_object (&priv->iface_proxy);
 
 	if (priv->init_cancellable)
@@ -1552,13 +1559,10 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMSupplicantInterfacePrivate));
-
 	object_class->dispose = dispose;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
-	/* Properties */
 	obj_properties[PROP_SCANNING] =
 	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_SCANNING, "", "",
 	                          FALSE,
@@ -1598,69 +1602,68 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	/* Signals */
 	signals[STATE] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_STATE,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INT);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_STATE,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INT);
 
 	signals[REMOVED] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[NEW_BSS] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_NEW_BSS,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, new_bss),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_NEW_BSS,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
 
 	signals[BSS_UPDATED] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, bss_updated),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
 
 	signals[BSS_REMOVED] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, bss_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_STRING);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_STRING);
 
 	signals[SCAN_DONE] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_SCAN_DONE,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_done),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_SCAN_DONE,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
 	signals[CONNECTION_ERROR] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 
 	signals[CREDENTIALS_REQUEST] =
-		g_signal_new (NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, credentials_request),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 

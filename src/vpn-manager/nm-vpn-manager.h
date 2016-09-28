@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef __NETWORKMANAGER_VPN_MANAGER_H__
-#define __NETWORKMANAGER_VPN_MANAGER_H__
+#ifndef __NM_VPN_MANAGER_H__
+#define __NM_VPN_MANAGER_H__
 
 #include "nm-vpn-connection.h"
 
@@ -31,13 +31,8 @@
 #define NM_IS_VPN_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_VPN_MANAGER))
 #define NM_VPN_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_MANAGER, NMVpnManagerClass))
 
-typedef struct {
-	GObject parent;
-} NMVpnManager;
-
-typedef struct {
-	GObjectClass parent;
-} NMVpnManagerClass;
+typedef struct _NMVpnManager NMVpnManager;
+typedef struct _NMVpnManagerClass NMVpnManagerClass;
 
 GType nm_vpn_manager_get_type (void);
 
@@ -47,4 +42,4 @@ gboolean nm_vpn_manager_activate_connection (NMVpnManager *manager,
                                              NMVpnConnection *vpn,
                                              GError **error);
 
-#endif /* __NETWORKMANAGER_VPN_MANAGER_H__ */
+#endif /* __NM_VPN_MANAGER_H__ */

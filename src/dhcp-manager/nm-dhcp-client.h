@@ -52,8 +52,11 @@ typedef enum {
 	NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
 } NMDhcpState;
 
+struct _NMDhcpClientPrivate;
+
 typedef struct {
 	GObject parent;
+	struct _NMDhcpClientPrivate *_priv;
 } NMDhcpClient;
 
 typedef struct {
@@ -171,4 +174,3 @@ gboolean nm_dhcp_client_handle_event (gpointer unused,
 void nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id);
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */
-

@@ -20,8 +20,9 @@
  *
  */
 
-
 #include "nm-default.h"
+
+#include "nm-dhcp-dhcpcd.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -31,21 +32,33 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
 #include "nm-dhcp-client-logging.h"
 
-G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
-
-#define NM_DHCP_DHCPCD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdPrivate))
+/*****************************************************************************/
 
 typedef struct {
 	char *pid_file;
 	NMDhcpListener *dhcp_listener;
 } NMDhcpDhcpcdPrivate;
+
+struct _NMDhcpDhcpcd {
+	NMDhcpClient parent;
+	NMDhcpDhcpcdPrivate _priv;
+};
+
+struct _NMDhcpDhcpcdClass {
+	NMDhcpClientClass parent;
+};
+
+G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
+
+#define NM_DHCP_DHCPCD_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcpDhcpcd, NM_IS_DHCP_DHCPCD)
+
+/*****************************************************************************/
 
 static const char *
 nm_dhcp_dhcpcd_get_path (void)
@@ -204,7 +217,7 @@ nm_dhcp_dhcpcd_init (NMDhcpDhcpcd *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (object);
+	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE ((NMDhcpDhcpcd *) object);
 
 	if (priv->dhcp_listener) {
 		g_signal_handlers_disconnect_by_func (priv->dhcp_listener,
@@ -224,9 +237,6 @@ nm_dhcp_dhcpcd_class_init (NMDhcpDhcpcdClass *dhcpcd_class)
 	NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS (dhcpcd_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (dhcpcd_class);
 
-	g_type_class_add_private (dhcpcd_class, sizeof (NMDhcpDhcpcdPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = ip4_start;

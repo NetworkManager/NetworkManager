@@ -37,30 +37,7 @@
 
 #include "nm-dhcp-client-logging.h"
 
-typedef struct {
-	char *       iface;
-	int          ifindex;
-	GByteArray * hwaddr;
-	gboolean     ipv6;
-	char *       uuid;
-	guint32      priority;
-	guint32      timeout;
-	GByteArray * duid;
-	GBytes *     client_id;
-	char *       hostname;
-	char *       fqdn;
-
-	NMDhcpState  state;
-	pid_t        pid;
-	guint        timeout_id;
-	guint        watch_id;
-	gboolean     info_only;
-
-} NMDhcpClientPrivate;
-
-#define NM_DHCP_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_CLIENT, NMDhcpClientPrivate))
-
-G_DEFINE_TYPE_EXTENDED (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
+/*****************************************************************************/
 
 enum {
 	SIGNAL_STATE_CHANGED,
@@ -80,6 +57,30 @@ enum {
 	PROP_TIMEOUT,
 	LAST_PROP
 };
+
+typedef struct _NMDhcpClientPrivate {
+	char *       iface;
+	int          ifindex;
+	GByteArray * hwaddr;
+	gboolean     ipv6;
+	char *       uuid;
+	guint32      priority;
+	guint32      timeout;
+	GByteArray * duid;
+	GBytes *     client_id;
+	char *       hostname;
+	char *       fqdn;
+
+	NMDhcpState  state;
+	pid_t        pid;
+	guint        timeout_id;
+	guint        watch_id;
+	gboolean     info_only;
+} NMDhcpClientPrivate;
+
+G_DEFINE_TYPE_EXTENDED (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
+
+#define NM_DHCP_CLIENT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMDhcpClient, NM_IS_DHCP_CLIENT)
 
 /*****************************************************************************/
 
@@ -781,14 +782,19 @@ nm_dhcp_client_handle_event (gpointer unused,
 static void
 nm_dhcp_client_init (NMDhcpClient *self)
 {
-	NM_DHCP_CLIENT_GET_PRIVATE (self)->pid = -1;
+	NMDhcpClientPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DHCP_CLIENT, NMDhcpClientPrivate);
+	self->_priv = priv;
+
+	priv->pid = -1;
 }
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (object);
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
 
 	switch (prop_id) {
 	case PROP_IFACE:
@@ -820,10 +826,10 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
-	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (object);
- 
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
+
 	switch (prop_id) {
 	case PROP_IFACE:
 		/* construct-only */
