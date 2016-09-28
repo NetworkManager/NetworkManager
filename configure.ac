@@ -134,7 +134,7 @@ test "$enable_ifupdown" = "yes"           && distro_plugins="$distro_plugins,ifu
 test "$enable_ifnet" = "yes"              && distro_plugins="$distro_plugins,ifnet"
 distro_plugins="${distro_plugins#,}"
 
-AC_DEFINE_UNQUOTED(CONFIG_PLUGINS_DEFAULT, "$config_plugins_default", [Default configuration option for main.plugins setting])
+AC_DEFINE_UNQUOTED(NM_CONFIG_PLUGINS_DEFAULT, "$config_plugins_default", [Default configuration option for main.plugins setting])
 if test "${enable_config_plugin_ibft}" = yes; then
 	AC_DEFINE(WITH_SETTINGS_PLUGIN_IBFT, 1, [Whether compilation of ibft setting plugin is enabled])
 else
