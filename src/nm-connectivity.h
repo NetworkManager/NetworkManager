@@ -30,19 +30,12 @@
 #define NM_IS_CONNECTIVITY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_CONNECTIVITY))
 #define NM_CONNECTIVITY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTIVITY, NMConnectivityClass))
 
-/* Properties */
 #define NM_CONNECTIVITY_URI       "uri"
 #define NM_CONNECTIVITY_INTERVAL  "interval"
 #define NM_CONNECTIVITY_RESPONSE  "response"
 #define NM_CONNECTIVITY_STATE     "state"
 
-struct _NMConnectivity {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMConnectivityClass;
+typedef struct _NMConnectivityClass NMConnectivityClass;
 
 GType nm_connectivity_get_type (void);
 

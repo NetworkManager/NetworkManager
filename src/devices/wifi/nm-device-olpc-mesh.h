@@ -41,25 +41,8 @@
 #define NM_DEVICE_OLPC_MESH_BITRATE        "bitrate"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"
 
-#ifndef NM_DEVICE_OLPC_MESH_DEFINED
-#define NM_DEVICE_OLPC_MESH_DEFINED
 typedef struct _NMDeviceOlpcMesh NMDeviceOlpcMesh;
-#endif
-
 typedef struct _NMDeviceOlpcMeshClass NMDeviceOlpcMeshClass;
-typedef struct _NMDeviceOlpcMeshPrivate NMDeviceOlpcMeshPrivate;
-
-struct _NMDeviceOlpcMesh
-{
-	NMDevice parent;
-};
-
-struct _NMDeviceOlpcMeshClass
-{
-	NMDeviceClass parent;
-
-};
-
 
 GType nm_device_olpc_mesh_get_type (void);
 

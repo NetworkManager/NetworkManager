@@ -33,13 +33,6 @@
 typedef struct _SettingsPluginIfnet SettingsPluginIfnet;
 typedef struct _SettingsPluginIfnetClass SettingsPluginIfnetClass;
 
-struct _SettingsPluginIfnet {
-	GObject parent;
-};
-
-struct _SettingsPluginIfnetClass {
-	GObjectClass parent;
-};
-
 GType settings_plugin_ifnet_get_type (void);
+
 #endif

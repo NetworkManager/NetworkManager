@@ -24,15 +24,14 @@
 
 #include "nm-default.h"
 
+#include "plugin.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 #include <gudev/gudev.h>
 #include <gmodule.h>
 
 #include "nm-setting-connection.h"
-
-#include "interface_parser.h"
-
 #include "nm-dbus-interface.h"
 #include "nm-settings-plugin.h"
 #include "nm-setting-ip4-config.h"
@@ -42,12 +41,11 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-
-#include "nm-ifupdown-connection.h"
-#include "plugin.h"
-#include "parser.h"
-
 #include "nm-config.h"
+
+#include "interface_parser.h"
+#include "nm-ifupdown-connection.h"
+#include "parser.h"
 
 #define ENI_INTERFACES_FILE "/etc/network/interfaces"
 
@@ -58,8 +56,10 @@
 
 /* #define ALWAYS_UNMANAGE TRUE */
 #ifndef ALWAYS_UNMANAGE
-#	define ALWAYS_UNMANAGE FALSE
+#define ALWAYS_UNMANAGE FALSE
 #endif
+
+/*****************************************************************************/
 
 typedef struct {
 	GUdevClient *client;
@@ -77,82 +77,29 @@ typedef struct {
 	gboolean unmanage_well_known;
 } SettingsPluginIfupdownPrivate;
 
-static void
-settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
+struct _SettingsPluginIfupdown {
+	GObject parent;
+	SettingsPluginIfupdownPrivate _priv;
+};
+
+struct _SettingsPluginIfupdownClass {
+	GObjectClass parent;
+};
+
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginIfupdown, settings_plugin_ifupdown, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
                                                settings_plugin_interface_init))
 
-#define SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdownPrivate))
+#define SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfupdown, SETTINGS_IS_PLUGIN_IFUPDOWN)
+
+/*****************************************************************************/
 
 static SettingsPluginIfupdown *settings_plugin_ifupdown_get (void);
 NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfupdown, settings_plugin_ifupdown_get, SETTINGS_TYPE_PLUGIN_IFUPDOWN);
 
-static void
-settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class);
-
-static void
-init (NMSettingsPlugin *config);
-
-/* Returns the plugins currently known list of connections.  The returned
- * list is freed by the system settings service.
- */
-static GSList*
-get_connections (NMSettingsPlugin *config);
-
-/*
- * Return a list of device specifications which NetworkManager should not
- * manage.  Returned list will be freed by the system settings service, and
- * each element must be allocated using g_malloc() or its variants.
- */
-static GSList*
-get_unmanaged_specs (NMSettingsPlugin *config);
-
-
-/*  GObject */
-static void
-get_property (GObject *object, guint prop_id,
-				   GValue *value, GParamSpec *pspec);
-
-static void
-set_property (GObject *object, guint prop_id,
-				   const GValue *value, GParamSpec *pspec);
-
-static void
-dispose (GObject *object);
-
-static void
-settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
-{
-	plugin_iface->init = init;
-	plugin_iface->get_connections = get_connections;
-	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
-}
-
-static void
-settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
-
-	g_type_class_add_private (req_class, sizeof (SettingsPluginIfupdownPrivate));
-
-	object_class->dispose = dispose;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
-	                                  NM_SETTINGS_PLUGIN_NAME);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
-	                                  NM_SETTINGS_PLUGIN_INFO);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
-	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
-}
+/*****************************************************************************/
 
 static void
 bind_device_to_connection (SettingsPluginIfupdown *self,
@@ -192,7 +139,7 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 	}
 
 	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, NULL, NULL);
-}    
+}
 
 static void
 udev_device_added (SettingsPluginIfupdown *self, GUdevDevice *device)
@@ -290,6 +237,85 @@ handle_uevent (GUdevClient *client,
 	else if (!strcmp (action, "change"))
 		udev_device_changed (self, device);
 }
+
+/* Returns the plugins currently known list of connections.  The returned
+ * list is freed by the system settings service.
+ */
+static GSList*
+get_connections (NMSettingsPlugin *config)
+{
+	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE ((SettingsPluginIfupdown *) config);
+	GSList *connections;
+
+	nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections.", GPOINTER_TO_UINT(config));
+
+	if(priv->unmanage_well_known) {
+		nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections (managed=false): return empty list.", GPOINTER_TO_UINT(config));
+		return NULL;
+	}
+
+	connections = _nm_utils_hash_values_to_slist (priv->connections);
+
+	nm_log_info (LOGD_SETTINGS, "(%d) connections count: %d", GPOINTER_TO_UINT(config), g_slist_length(connections));
+	return connections;
+}
+
+/*
+ * Return a list of device specifications which NetworkManager should not
+ * manage.  Returned list will be freed by the system settings service, and
+ * each element must be allocated using g_malloc() or its variants.
+ */
+static GSList*
+get_unmanaged_specs (NMSettingsPlugin *config)
+{
+	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE ((SettingsPluginIfupdown *) config);
+	GSList *specs = NULL;
+	GHashTableIter iter;
+	GUdevDevice *device;
+	const char *iface;
+
+	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
+		return NULL;
+
+	nm_log_info (LOGD_SETTINGS, "get unmanaged devices count: %d",
+	             g_hash_table_size (priv->kernel_ifaces));
+
+	g_hash_table_iter_init (&iter, priv->kernel_ifaces);
+	while (g_hash_table_iter_next (&iter, (gpointer) &iface, (gpointer) &device)) {
+		const char *address;
+
+		address = g_udev_device_get_sysfs_attr (device, "address");
+		if (address)
+			specs = g_slist_append (specs, g_strdup_printf ("mac:%s", address));
+		else
+			specs = g_slist_append (specs, g_strdup_printf ("interface-name:%s", iface));
+	}
+	return specs;
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
+		g_value_set_string (value, IFUPDOWN_PLUGIN_NAME);
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
+		g_value_set_string (value, IFUPDOWN_PLUGIN_INFO);
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
 
 static void
 init (NMSettingsPlugin *config)
@@ -442,96 +468,11 @@ init (NMSettingsPlugin *config)
 	nm_log_info (LOGD_SETTINGS, "end _init.");
 }
 
-
-/* Returns the plugins currently known list of connections.  The returned
- * list is freed by the system settings service.
- */
-static GSList*
-get_connections (NMSettingsPlugin *config)
-{
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
-	GSList *connections;
-
-	nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections.", GPOINTER_TO_UINT(config));
-
-	if(priv->unmanage_well_known) {
-		nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections (managed=false): return empty list.", GPOINTER_TO_UINT(config));
-		return NULL;
-	}
-
-	connections = _nm_utils_hash_values_to_slist (priv->connections);
-
-	nm_log_info (LOGD_SETTINGS, "(%d) connections count: %d", GPOINTER_TO_UINT(config), g_slist_length(connections));
-	return connections;
-}
-
-/*
- * Return a list of device specifications which NetworkManager should not
- * manage.  Returned list will be freed by the system settings service, and
- * each element must be allocated using g_malloc() or its variants.
- */
-static GSList*
-get_unmanaged_specs (NMSettingsPlugin *config)
-{
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
-	GSList *specs = NULL;
-	GHashTableIter iter;
-	GUdevDevice *device;
-	const char *iface;
-
-	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
-		return NULL;
-
-	nm_log_info (LOGD_SETTINGS, "get unmanaged devices count: %d",
-	             g_hash_table_size (priv->kernel_ifaces));
-
-	g_hash_table_iter_init (&iter, priv->kernel_ifaces);
-	while (g_hash_table_iter_next (&iter, (gpointer) &iface, (gpointer) &device)) {
-		const char *address;
-
-		address = g_udev_device_get_sysfs_attr (device, "address");
-		if (address)
-			specs = g_slist_append (specs, g_strdup_printf ("mac:%s", address));
-		else
-			specs = g_slist_append (specs, g_strdup_printf ("interface-name:%s", iface));
-	}
-	return specs;
-}
+/*****************************************************************************/
 
 static void
 settings_plugin_ifupdown_init (SettingsPluginIfupdown *plugin)
 {
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-                       GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, IFUPDOWN_PLUGIN_NAME);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, IFUPDOWN_PLUGIN_INFO);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-				   const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static void
@@ -540,18 +481,43 @@ dispose (GObject *object)
 	SettingsPluginIfupdown *plugin = SETTINGS_PLUGIN_IFUPDOWN (object);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
 
-	if (priv->kernel_ifaces)
-		g_hash_table_destroy(priv->kernel_ifaces);
-
-	if (priv->eni_ifaces)
-		g_hash_table_destroy(priv->eni_ifaces);
-
-	if (priv->client)
-		g_object_unref (priv->client);
-
+	g_clear_pointer (&priv->kernel_ifaces, g_hash_table_destroy);
+	g_clear_pointer (&priv->eni_ifaces, g_hash_table_destroy);
+	g_clear_object (&priv->client);
 
 	G_OBJECT_CLASS (settings_plugin_ifupdown_parent_class)->dispose (object);
 }
+
+static void
+settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+
+	object_class->dispose = dispose;
+	object_class->get_property = get_property;
+
+	g_object_class_override_property (object_class,
+	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
+	                                  NM_SETTINGS_PLUGIN_NAME);
+
+	g_object_class_override_property (object_class,
+	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
+	                                  NM_SETTINGS_PLUGIN_INFO);
+
+	g_object_class_override_property (object_class,
+	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
+	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
+}
+
+static void
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
+{
+	plugin_iface->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+}
+
+/*****************************************************************************/
 
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)

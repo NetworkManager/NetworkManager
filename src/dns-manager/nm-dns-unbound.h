@@ -27,13 +27,8 @@
 #define NM_IS_DNS_UNBOUND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DNS_UNBOUND))
 #define NM_DNS_UNBOUND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DNS_UNBOUND, NMDnsUnboundClass))
 
-typedef struct {
-	NMDnsPlugin parent;
-} NMDnsUnbound;
-
-typedef struct {
-	NMDnsPluginClass parent;
-} NMDnsUnboundClass;
+typedef struct _NMDnsUnbound NMDnsUnbound;
+typedef struct _NMDnsUnboundClass NMDnsUnboundClass;
 
 GType nm_dns_unbound_get_type (void);
 

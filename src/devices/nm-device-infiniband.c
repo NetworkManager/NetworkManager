@@ -20,9 +20,10 @@
 
 #include "nm-default.h"
 
+#include "nm-device-infiniband.h"
+
 #include <linux/if_infiniband.h>
 
-#include "nm-device-infiniband.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
@@ -34,32 +35,41 @@
 
 #include "nmdbus-device-infiniband.h"
 
-G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
-
 #define NM_DEVICE_INFINIBAND_IS_PARTITION "is-partition"
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_IS_PARTITION,
+);
 
 typedef struct {
 	gboolean is_partition;
-	int parent_ifindex, p_key;
+	int parent_ifindex;
+	int p_key;
 } NMDeviceInfinibandPrivate;
 
-enum {
-	PROP_0,
-	PROP_IS_PARTITION,
-
-	LAST_PROP
+struct _NMDeviceInfiniband {
+	NMDevice parent;
+	NMDeviceInfinibandPrivate _priv;
 };
+
+struct _NMDeviceInfinibandClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_INFINIBAND_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceInfiniband, NM_IS_DEVICE_INFINIBAND)
 
 /*****************************************************************************/
 
 static NMDeviceCapabilities
-get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *device)
 {
 	guint32 caps = NM_DEVICE_CAP_CARRIER_DETECT;
 
-	if (NM_DEVICE_INFINIBAND_GET_PRIVATE (dev)->is_partition)
+	if (NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device)->is_partition)
 		caps |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 	return caps;
@@ -241,7 +251,7 @@ create_and_realize (NMDevice *device,
                     const NMPlatformLink **out_plink,
                     GError **error)
 {
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device);
 	NMSettingInfiniband *s_infiniband;
 	NMPlatformError plerr;
 
@@ -294,10 +304,12 @@ create_and_realize (NMDevice *device,
 static gboolean
 unrealize (NMDevice *device, GError **error)
 {
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
+	NMDeviceInfinibandPrivate *priv;
 	NMPlatformError plerr;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), FALSE);
+
+	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device);
 
 	if (priv->p_key < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
@@ -320,17 +332,12 @@ unrealize (NMDevice *device, GError **error)
 /*****************************************************************************/
 
 static void
-nm_device_infiniband_init (NMDeviceInfiniband * self)
-{
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
 	case PROP_IS_PARTITION:
-		g_value_set_boolean (value, NM_DEVICE_INFINIBAND_GET_PRIVATE (object)->is_partition);
+		g_value_set_boolean (value, NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) object)->is_partition);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -340,16 +347,23 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
 	case PROP_IS_PARTITION:
-		NM_DEVICE_INFINIBAND_GET_PRIVATE (object)->is_partition = g_value_get_boolean (value);
+		NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) object)->is_partition = g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_device_infiniband_init (NMDeviceInfiniband * self)
+{
 }
 
 static void
@@ -358,11 +372,8 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMDeviceInfinibandPrivate));
-
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_INFINIBAND_SETTING_NAME, NM_LINK_TYPE_INFINIBAND)
 
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
@@ -376,13 +387,13 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_IS_PARTITION,
-		 g_param_spec_boolean (NM_DEVICE_INFINIBAND_IS_PARTITION, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IS_PARTITION] =
+	     g_param_spec_boolean (NM_DEVICE_INFINIBAND_IS_PARTITION, "", "",
+	                           FALSE,
+	                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_INFINIBAND_SKELETON,
@@ -464,5 +475,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL (INFINIBAND, Infiniband, infiniband,
 	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
 	factory_iface->get_connection_iface = get_connection_iface;
-	)
-
+)

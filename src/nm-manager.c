@@ -5613,6 +5613,9 @@ constructed (GObject *object)
 	_set_prop_filter (self, nm_bus_manager_get_connection (priv->dbus_mgr));
 
 	priv->settings = nm_settings_new ();
+
+	nm_exported_object_export (NM_EXPORTED_OBJECT (priv->settings));
+
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
 	                  G_CALLBACK (settings_startup_complete_changed), self);
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,

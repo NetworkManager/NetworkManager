@@ -40,8 +40,8 @@ typedef enum {
 #define NM_DEVICE_VLAN_PARENT     "parent"
 #define NM_DEVICE_VLAN_ID         "vlan-id"
 
-typedef NMDevice NMDeviceVlan;
-typedef NMDeviceClass NMDeviceVlanClass;
+typedef struct _NMDeviceVlan NMDeviceVlan;
+typedef struct _NMDeviceVlanClass NMDeviceVlanClass;
 
 GType nm_device_vlan_get_type (void);
 

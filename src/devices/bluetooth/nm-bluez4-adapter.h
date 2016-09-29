@@ -33,20 +33,8 @@
 #define NM_BLUEZ4_ADAPTER_PATH    "path"
 #define NM_BLUEZ4_ADAPTER_ADDRESS "address"
 
-typedef struct {
-	GObject parent;
-} NMBluez4Adapter;
-
-typedef struct {
-	GObjectClass parent;
-
-	/* virtual functions */
-	void (*initialized)    (NMBluez4Adapter *self, gboolean success);
-
-	void (*device_added)   (NMBluez4Adapter *self, NMBluezDevice *device);
-
-	void (*device_removed) (NMBluez4Adapter *self, NMBluezDevice *device);
-} NMBluez4AdapterClass;
+typedef struct _NMBluez4Adapter NMBluez4Adapter;
+typedef struct _NMBluez4AdapterClass NMBluez4AdapterClass;
 
 GType nm_bluez4_adapter_get_type (void);
 
@@ -62,4 +50,3 @@ gboolean nm_bluez4_adapter_get_initialized (NMBluez4Adapter *self);
 GSList *nm_bluez4_adapter_get_devices (NMBluez4Adapter *self);
 
 #endif /* __NETWORKMANAGER_BLUEZ4_ADAPTER_H__ */
-

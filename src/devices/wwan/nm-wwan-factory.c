@@ -24,33 +24,47 @@
 #include <gmodule.h>
 
 #include "nm-device-factory.h"
-#include "nm-wwan-factory.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
 #include "nm-modem-manager.h"
 #include "nm-device-modem.h"
 #include "nm-platform.h"
 
+/*****************************************************************************/
+
+#define NM_TYPE_WWAN_FACTORY            (nm_wwan_factory_get_type ())
+#define NM_WWAN_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_WWAN_FACTORY, NMWwanFactory))
+#define NM_WWAN_FACTORY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_WWAN_FACTORY, NMWwanFactoryClass))
+#define NM_IS_WWAN_FACTORY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_WWAN_FACTORY))
+#define NM_IS_WWAN_FACTORY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_WWAN_FACTORY))
+#define NM_WWAN_FACTORY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_WWAN_FACTORY, NMWwanFactoryClass))
+
+typedef struct _NMWwanFactory NMWwanFactory;
+typedef struct _NMWwanFactoryClass NMWwanFactoryClass;
+
 static GType nm_wwan_factory_get_type (void);
+
+/*****************************************************************************/
+
+typedef struct {
+	NMModemManager *mm;
+} NMWwanFactoryPrivate;
+
+struct _NMWwanFactory {
+	GObject parent;
+	NMWwanFactoryPrivate _priv;
+};
+
+struct _NMWwanFactoryClass {
+	GObjectClass parent;
+};
 
 static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
 
 G_DEFINE_TYPE_EXTENDED (NMWwanFactory, nm_wwan_factory, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
-#define NM_WWAN_FACTORY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_WWAN_FACTORY, NMWwanFactoryPrivate))
-
-typedef struct {
-	NMModemManager *mm;
-} NMWwanFactoryPrivate;
-
-/*****************************************************************************/
-
-G_MODULE_EXPORT NMDeviceFactory *
-nm_device_factory_create (GError **error)
-{
-	return (NMDeviceFactory *) g_object_new (NM_TYPE_WWAN_FACTORY, NULL);
-}
+#define NM_WWAN_FACTORY_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMWwanFactory, NM_IS_WWAN_FACTORY)
 
 /*****************************************************************************/
 
@@ -121,17 +135,11 @@ start (NMDeviceFactory *factory)
 	                  self);
 }
 
+/*****************************************************************************/
+
 static void
 nm_wwan_factory_init (NMWwanFactory *self)
 {
-}
-
-static void
-device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
-{
-	factory_iface->get_supported_types = get_supported_types;
-	factory_iface->create_device = create_device;
-	factory_iface->start = start;
 }
 
 static void
@@ -153,7 +161,21 @@ nm_wwan_factory_class_init (NMWwanFactoryClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMWwanFactoryPrivate));
-
 	object_class->dispose = dispose;
+}
+
+static void
+device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
+{
+	factory_iface->get_supported_types = get_supported_types;
+	factory_iface->create_device = create_device;
+	factory_iface->start = start;
+}
+
+/*****************************************************************************/
+
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
+{
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_WWAN_FACTORY, NULL);
 }

@@ -21,9 +21,10 @@
 
 #include "nm-default.h"
 
+#include "nm-default-route-manager.h"
+
 #include <string.h>
 
-#include "nm-default-route-manager.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 #include "nm-platform.h"
@@ -31,6 +32,12 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-act-request.h"
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PLATFORM,
+);
 
 typedef struct {
 	GPtrArray *entries_ip4;
@@ -54,15 +61,22 @@ typedef struct {
 	NMPlatform *platform;
 } NMDefaultRouteManagerPrivate;
 
-#define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManagerPrivate))
+struct _NMDefaultRouteManager {
+	GObject parent;
+	NMDefaultRouteManagerPrivate _priv;
+};
+
+struct _NMDefaultRouteManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMDefaultRouteManager, nm_default_route_manager, G_TYPE_OBJECT)
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PLATFORM,
-);
+#define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDefaultRouteManager, NM_IS_DEFAULT_ROUTE_MANAGER)
 
 NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get, NM_TYPE_DEFAULT_ROUTE_MANAGER);
+
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME   "default-route"
 #undef  _NMLOG_ENABLED
@@ -1397,6 +1411,8 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
 nm_default_route_manager_init (NMDefaultRouteManager *self)
 {
@@ -1464,9 +1480,6 @@ nm_default_route_manager_class_init (NMDefaultRouteManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMDefaultRouteManagerPrivate));
-
-	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->set_property = set_property;
@@ -1477,7 +1490,6 @@ nm_default_route_manager_class_init (NMDefaultRouteManagerClass *klass)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
 }
-

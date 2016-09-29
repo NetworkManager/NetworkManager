@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-ppp-manager.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -28,7 +30,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
-
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -43,27 +44,35 @@
 #include <linux/if_ppp.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-ppp-manager.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
+#include "nm-act-request.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
+#include "nm-pppd-plugin.h"
+#include "nm-ppp-status.h"
 
 #include "nmdbus-ppp-manager.h"
 
-#define _NMLOG_DOMAIN         LOGD_PPP
-#define _NMLOG_PREFIX_NAME    "ppp-manager"
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), _NMLOG_DOMAIN, \
-                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME": " \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
-
-static void _ppp_cleanup  (NMPPPManager *manager);
-static void _ppp_kill (NMPPPManager *manager);
-
 #define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
+
+/*****************************************************************************/
+
+enum {
+	STATE_CHANGED,
+	IP4_CONFIG,
+	IP6_CONFIG,
+	STATS,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PARENT_IFACE,
+);
 
 typedef struct {
 	GPid pid;
@@ -84,99 +93,35 @@ typedef struct {
 	guint monitor_id;
 } NMPPPManagerPrivate;
 
-#define NM_PPP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPP_MANAGER, NMPPPManagerPrivate))
+struct _NMPPPManager {
+	NMExportedObject parent;
+	NMPPPManagerPrivate _priv;
+};
+
+struct _NMPPPManagerClass {
+	NMExportedObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_EXPORTED_OBJECT)
 
-enum {
-	STATE_CHANGED,
-	IP4_CONFIG,
-	IP6_CONFIG,
-	STATS,
+#define NM_PPP_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMPPPManager, NM_IS_PPP_MANAGER)
 
-	LAST_SIGNAL
-};
+/*****************************************************************************/
 
-static guint signals[LAST_SIGNAL] = { 0 };
+#define _NMLOG_DOMAIN         LOGD_PPP
+#define _NMLOG_PREFIX_NAME    "ppp-manager"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
 
-enum {
-	PROP_0,
-	PROP_PARENT_IFACE,
-	LAST_PROP
-};
+/*****************************************************************************/
 
-static void
-nm_ppp_manager_init (NMPPPManager *manager)
-{
-	NM_PPP_MANAGER_GET_PRIVATE (manager)->monitor_fd = -1;
-}
-
-static void
-dispose (GObject *object)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-
-	_ppp_cleanup (NM_PPP_MANAGER (object));
-	_ppp_kill (NM_PPP_MANAGER (object));
-
-	g_clear_object (&priv->act_req);
-
-	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-
-	g_free (priv->ip_iface);
-	g_free (priv->parent_iface);
-
-	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PARENT_IFACE:
-		g_free (priv->parent_iface);
-		priv->parent_iface = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PARENT_IFACE:
-		g_value_set_string (value, priv->parent_iface);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-NMPPPManager *
-nm_ppp_manager_new (const char *iface)
-{
-	g_return_val_if_fail (iface != NULL, NULL);
-
-	return (NMPPPManager *) g_object_new (NM_TYPE_PPP_MANAGER,
-	                                      NM_PPP_MANAGER_PARENT_IFACE, iface,
-	                                      NULL);
-}
+static void _ppp_cleanup  (NMPPPManager *manager);
+static void _ppp_kill (NMPPPManager *manager);
 
 /*****************************************************************************/
 
@@ -587,79 +532,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
-static void
-nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
-
-	exported_object_class->export_path = NM_DBUS_PATH "/PPP";
-	exported_object_class->export_on_construction = TRUE;
-
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
-
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PARENT_IFACE,
-		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new (NM_PPP_MANAGER_STATE_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_UINT);
-
-	signals[IP4_CONFIG] =
-		g_signal_new ("ip4-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_STRING,
-		              G_TYPE_OBJECT);
-
-	signals[IP6_CONFIG] =
-		g_signal_new ("ip6-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, ip6_config),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
-
-	signals[STATS] =
-		g_signal_new ("stats",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, stats),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_UINT, G_TYPE_UINT);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
-	                                        NMDBUS_TYPE_PPP_MANAGER_SKELETON,
-	                                        "NeedSecrets", impl_ppp_manager_need_secrets,
-	                                        "SetIp4Config", impl_ppp_manager_set_ip4_config,
-	                                        "SetIp6Config", impl_ppp_manager_set_ip6_config,
-	                                        "SetState", impl_ppp_manager_set_state,
-	                                        NULL);
-}
-
 /*****************************************************************************/
-
-
 
 typedef struct {
 	GPtrArray *array;
@@ -1239,3 +1112,149 @@ nm_ppp_manager_stop (NMPPPManager *manager,
 	                           ctx);
 	priv->pid = 0;
 }
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
+
+	switch (prop_id) {
+	case PROP_PARENT_IFACE:
+		g_value_set_string (value, priv->parent_iface);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
+
+	switch (prop_id) {
+	case PROP_PARENT_IFACE:
+		g_free (priv->parent_iface);
+		priv->parent_iface = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_ppp_manager_init (NMPPPManager *manager)
+{
+	NM_PPP_MANAGER_GET_PRIVATE (manager)->monitor_fd = -1;
+}
+
+NMPPPManager *
+nm_ppp_manager_new (const char *iface)
+{
+	g_return_val_if_fail (iface != NULL, NULL);
+
+	return (NMPPPManager *) g_object_new (NM_TYPE_PPP_MANAGER,
+	                                      NM_PPP_MANAGER_PARENT_IFACE, iface,
+	                                      NULL);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMPPPManager *self = (NMPPPManager *) object;
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
+
+	_ppp_cleanup (self);
+	_ppp_kill (self);
+
+	g_clear_object (&priv->act_req);
+
+	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
+
+	g_free (priv->ip_iface);
+	g_free (priv->parent_iface);
+
+	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->finalize (object);
+}
+
+static void
+nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (manager_class);
+
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
+	exported_object_class->export_path = NM_DBUS_PATH "/PPP";
+	exported_object_class->export_on_construction = TRUE;
+
+	obj_properties[PROP_PARENT_IFACE] =
+	     g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	signals[STATE_CHANGED] =
+	    g_signal_new (NM_PPP_MANAGER_STATE_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_UINT);
+
+	signals[IP4_CONFIG] =
+	    g_signal_new ("ip4-config",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2,
+	                  G_TYPE_STRING,
+	                  G_TYPE_OBJECT);
+
+	signals[IP6_CONFIG] =
+	    g_signal_new ("ip6-config",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
+
+	signals[STATS] =
+	    g_signal_new ("stats",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2,
+	                  G_TYPE_UINT, G_TYPE_UINT);
+
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
+	                                        NMDBUS_TYPE_PPP_MANAGER_SKELETON,
+	                                        "NeedSecrets", impl_ppp_manager_need_secrets,
+	                                        "SetIp4Config", impl_ppp_manager_set_ip4_config,
+	                                        "SetIp6Config", impl_ppp_manager_set_ip6_config,
+	                                        "SetState", impl_ppp_manager_set_state,
+	                                        NULL);
+}
+

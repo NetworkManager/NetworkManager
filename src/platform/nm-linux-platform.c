@@ -2404,9 +2404,7 @@ typedef struct {
 	gint *out_refresh_all_in_progess;
 } DelayedActionWaitForNlResponseData;
 
-typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
-
-struct _NMLinuxPlatformPrivate {
+typedef struct {
 	struct nl_sock *nlh;
 	guint32 nlh_seq_next;
 #ifdef NM_MORE_LOGGING
@@ -2441,17 +2439,26 @@ struct _NMLinuxPlatformPrivate {
 	GHashTable *prune_candidates;
 
 	GHashTable *wifi_data;
+} NMLinuxPlatformPrivate;
+
+struct _NMLinuxPlatform {
+	NMPlatform parent;
+	NMLinuxPlatformPrivate _priv;
 };
+
+struct _NMLinuxPlatformClass {
+	NMPlatformClass parent;
+};
+
+G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
 static inline NMLinuxPlatformPrivate *
 NM_LINUX_PLATFORM_GET_PRIVATE (const void *self)
 {
 	nm_assert (NM_IS_LINUX_PLATFORM (self));
 
-	return ((NMLinuxPlatform *) self)->priv;
+	return &(((NMLinuxPlatform *) self)->_priv);
 }
-
-G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
 NMPlatform *
 nm_linux_platform_new (gboolean netns_support)
@@ -6357,13 +6364,11 @@ handle_udev_event (GUdevClient *client,
 static void
 nm_linux_platform_init (NMLinuxPlatform *self)
 {
-	NMLinuxPlatformPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (self);
 	gboolean use_udev;
 
 	use_udev =    nmp_netns_is_initial ()
 	           && access ("/sys", W_OK) == 0;
-
-	self->priv = priv;
 
 	priv->nlh_seq_next = 1;
 	priv->cache = nmp_cache_new (use_udev);
@@ -6496,7 +6501,7 @@ dispose (GObject *object)
 }
 
 static void
-nm_linux_platform_finalize (GObject *object)
+finalize (GObject *object)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (object);
 
@@ -6506,7 +6511,6 @@ nm_linux_platform_finalize (GObject *object)
 	g_ptr_array_unref (priv->delayed_action.list_refresh_link);
 	g_array_unref (priv->delayed_action.list_wait_for_nl_response);
 
-	/* Free netlink resources */
 	g_source_remove (priv->event_id);
 	g_io_channel_unref (priv->event_channel);
 	nl_socket_free (priv->nlh);
@@ -6521,20 +6525,15 @@ nm_linux_platform_finalize (GObject *object)
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }
 
-#define OVERRIDE(function) platform_class->function = function
-
 static void
 nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMPlatformClass *platform_class = NM_PLATFORM_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMLinuxPlatformPrivate));
-
-	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-	object_class->finalize = nm_linux_platform_finalize;
+	object_class->finalize = finalize;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;

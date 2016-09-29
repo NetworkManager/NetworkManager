@@ -20,9 +20,10 @@
 
 #include "nm-default.h"
 
+#include "nm-route-manager.h"
+
 #include <string.h>
 
-#include "nm-route-manager.h"
 #include "nm-platform.h"
 #include "nmp-object.h"
 #include "nm-core-internal.h"
@@ -33,6 +34,8 @@
 #define IP4_DEVICE_ROUTES_WAIT_TIME_NS                 (NM_UTILS_NS_PER_SECOND / 2)
 
 #define IP4_DEVICE_ROUTES_GC_INTERVAL_SEC              (IP4_DEVICE_ROUTES_WAIT_TIME_NS * 2)
+
+/*****************************************************************************/
 
 typedef struct {
 	guint len;
@@ -58,6 +61,12 @@ typedef struct {
 	NMPObject *obj;
 } IP4DeviceRoutePurgeEntry;
 
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PLATFORM,
+);
+
 typedef struct {
 	NMPlatform *platform;
 
@@ -69,13 +78,20 @@ typedef struct {
 	} ip4_device_routes;
 } NMRouteManagerPrivate;
 
-#define NM_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ROUTE_MANAGER, NMRouteManagerPrivate))
+struct _NMRouteManager {
+	GObject parent;
+	NMRouteManagerPrivate _priv;
+};
+
+struct _NMRouteManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMRouteManager, nm_route_manager, G_TYPE_OBJECT);
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PLATFORM,
-);
+#define NM_ROUTE_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMRouteManager, NM_IS_ROUTE_MANAGER)
+
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMRouteManager, nm_route_manager_get, NM_TYPE_ROUTE_MANAGER);
 
@@ -1163,6 +1179,8 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
 nm_route_manager_init (NMRouteManager *self)
 {
@@ -1194,7 +1212,7 @@ static void
 dispose (GObject *object)
 {
 	NMRouteManager *self = NM_ROUTE_MANAGER (object);
-	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (object);
+	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
 
 	g_hash_table_remove_all (priv->ip4_device_routes.entries);
 	_ip4_device_routes_cancel (self);
@@ -1205,7 +1223,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (object);
+	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE ((NMRouteManager *) object);
 
 	g_array_free (priv->ip4_routes.entries, TRUE);
 	g_array_free (priv->ip6_routes.entries, TRUE);
@@ -1228,9 +1246,6 @@ nm_route_manager_class_init (NMRouteManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMRouteManagerPrivate));
-
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;

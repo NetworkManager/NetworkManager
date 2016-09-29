@@ -26,18 +26,18 @@
 
 #include "NetworkManagerUtils.h"
 
-#define NM_FIREWALL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                              NM_TYPE_FIREWALL_MANAGER, \
-                                              NMFirewallManagerPrivate))
+/*****************************************************************************/
 
-G_DEFINE_TYPE (NMFirewallManager, nm_firewall_manager, G_TYPE_OBJECT)
-
-/* Properties */
-enum {
-	PROP_0 = 0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMFirewallManager,
 	PROP_AVAILABLE,
-	LAST_PROP
+);
+
+enum {
+	STARTED,
+	LAST_SIGNAL
 };
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	GDBusProxy *    proxy;
@@ -46,13 +46,20 @@ typedef struct {
 	GHashTable     *pending_calls;
 } NMFirewallManagerPrivate;
 
-enum {
-	STARTED,
-
-	LAST_SIGNAL
+struct _NMFirewallManager {
+	GObject parent;
+	NMFirewallManagerPrivate _priv;
 };
 
-static guint signals[LAST_SIGNAL] = { 0 };
+struct _NMFirewallManagerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMFirewallManager, nm_firewall_manager, G_TYPE_OBJECT)
+
+#define NM_FIREWALL_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFirewallManager, NM_IS_FIREWALL_MANAGER)
+
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMFirewallManager, nm_firewall_manager_get, NM_TYPE_FIREWALL_MANAGER);
 
@@ -406,7 +413,7 @@ set_running (NMFirewallManager *self, gboolean now_running)
 
 	priv->running = now_running;
 	if (old_running != priv->running)
-		g_object_notify (G_OBJECT (self), NM_FIREWALL_MANAGER_AVAILABLE);
+		_notify (self, PROP_AVAILABLE);
 }
 
 static void
@@ -425,6 +432,21 @@ name_owner_changed (GObject    *object,
 	} else {
 		_LOGD (NULL, "firewall stopped");
 		set_running (self, FALSE);
+	}
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_AVAILABLE:
+		g_value_set_boolean (value, NM_FIREWALL_MANAGER_GET_PRIVATE ((NMFirewallManager *) object)->running);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
 	}
 }
 
@@ -456,29 +478,15 @@ constructed (GObject *object)
 	                                             FIREWALL_DBUS_PATH,
 	                                             FIREWALL_DBUS_INTERFACE_ZONE,
 	                                             NULL, &error);
-        if (priv->proxy) {
+	if (priv->proxy) {
 		g_signal_connect (priv->proxy, "notify::g-name-owner",
-				  G_CALLBACK (name_owner_changed), self);
+		                  G_CALLBACK (name_owner_changed), self);
 		owner = g_dbus_proxy_get_name_owner (priv->proxy);
 		priv->running = (owner != NULL);
-        } else {
-                _LOGW (NULL, "could not connect to system D-Bus (%s)", error->message);
-	}
+	} else
+		_LOGW (NULL, "could not connect to system D-Bus (%s)", error->message);
 
 	_LOGD (NULL, "firewall constructed (%srunning)", priv->running ? "" : "not");
-}
-
-static void
-get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_AVAILABLE:
-		g_value_set_boolean (value, NM_FIREWALL_MANAGER_GET_PRIVATE (object)->running);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static void
@@ -497,7 +505,6 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->proxy);
 
-	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_firewall_manager_parent_class)->dispose (object);
 }
 
@@ -506,27 +513,24 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMFirewallManagerPrivate));
-
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	g_object_class_install_property
-	    (object_class, PROP_AVAILABLE,
+	obj_properties[PROP_AVAILABLE] =
 	     g_param_spec_boolean (NM_FIREWALL_MANAGER_AVAILABLE, "", "",
 	                           FALSE,
 	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS));
+	                           G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[STARTED] =
 	    g_signal_new (NM_FIREWALL_MANAGER_STARTED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMFirewallManagerClass, started),
+	                  0,
 	                  NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
-
 }
-

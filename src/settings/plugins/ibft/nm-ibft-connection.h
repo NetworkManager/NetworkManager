@@ -30,13 +30,8 @@
 #define NM_IS_IBFT_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IBFT_CONNECTION))
 #define NM_IBFT_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IBFT_CONNECTION, NMIbftConnectionClass))
 
-typedef struct {
-	NMSettingsConnection parent;
-} NMIbftConnection;
-
-typedef struct {
-	NMSettingsConnectionClass parent;
-} NMIbftConnectionClass;
+typedef struct _NMIbftConnection NMIbftConnection;
+typedef struct _NMIbftConnectionClass NMIbftConnectionClass;
 
 GType nm_ibft_connection_get_type (void);
 

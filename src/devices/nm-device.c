@@ -12643,7 +12643,6 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	exported_object_class->export_path = NM_DBUS_PATH "/Devices/%u";
 
-	/* Virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->set_property = set_property;
@@ -12675,7 +12674,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->unmanaged_on_quit = unmanaged_on_quit;
 	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 
-	/* Properties */
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
 	                         NULL,
@@ -12893,7 +12891,6 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	/* Signals */
 	signals[STATE_CHANGED] =
 	    g_signal_new (NM_DEVICE_STATE_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),

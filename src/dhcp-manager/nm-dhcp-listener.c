@@ -52,7 +52,7 @@ struct _NMDhcpListener {
 };
 
 struct _NMDhcpListenerClass {
-	GObjectClass parent_class;
+	GObjectClass parent;
 };
 
 enum {

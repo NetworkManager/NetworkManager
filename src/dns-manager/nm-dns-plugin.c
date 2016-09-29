@@ -19,6 +19,8 @@
 
 #include "nm-default.h"
 
+#include "nm-dns-plugin.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,27 +28,28 @@
 #include <sys/wait.h>
 
 #include "nm-core-internal.h"
-
-#include "nm-dns-plugin.h"
 #include "NetworkManagerUtils.h"
 
-typedef struct {
+/*****************************************************************************/
+
+enum {
+	FAILED,
+	CHILD_QUIT,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct _NMDnsPluginPrivate {
 	GPid pid;
 	guint watch_id;
 	char *progname;
 	char *pidfile;
 } NMDnsPluginPrivate;
 
-#define NM_DNS_PLUGIN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNS_PLUGIN, NMDnsPluginPrivate))
-
 G_DEFINE_TYPE_EXTENDED (NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
 
-enum {
-	FAILED,
-	CHILD_QUIT,
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
+#define NM_DNS_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMDnsPlugin, NM_IS_DNS_PLUGIN)
 
 /*****************************************************************************/
 
@@ -265,6 +268,7 @@ nm_dns_plugin_stop (NMDnsPlugin *self)
 static void
 nm_dns_plugin_init (NMDnsPlugin *self)
 {
+	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DNS_PLUGIN, NMDnsPluginPrivate);
 }
 
 static void
@@ -284,17 +288,20 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 
 	g_type_class_add_private (plugin_class, sizeof (NMDnsPluginPrivate));
 
-	/* virtual methods */
 	object_class->dispose = dispose;
+
 	plugin_class->is_caching = is_caching;
 
-	/* signals */
+	/* Emitted by the plugin and consumed by NMDnsManager when
+	 * some error happens with the nameserver subprocess.  Causes NM to fall
+	 * back to writing out a non-local-caching resolv.conf until the next
+	 * DNS update.
+	 */
 	signals[FAILED] =
 	    g_signal_new (NM_DNS_PLUGIN_FAILED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDnsPluginClass, failed),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 
@@ -307,4 +314,3 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 	                  g_cclosure_marshal_VOID__INT,
 	                  G_TYPE_NONE, 1, G_TYPE_INT);
 }
-

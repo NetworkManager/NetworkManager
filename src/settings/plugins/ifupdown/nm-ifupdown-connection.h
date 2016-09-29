@@ -35,13 +35,8 @@
 #define NM_IS_IFUPDOWN_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IFUPDOWN_CONNECTION))
 #define NM_IFUPDOWN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionClass))
 
-typedef struct {
-	NMSettingsConnection parent;
-} NMIfupdownConnection;
-
-typedef struct {
-	NMSettingsConnectionClass parent;
-} NMIfupdownConnectionClass;
+typedef struct _NMIfupdownConnection NMIfupdownConnection;
+typedef struct _NMIfupdownConnectionClass NMIfupdownConnectionClass;
 
 GType nm_ifupdown_connection_get_type (void);
 

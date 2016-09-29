@@ -20,20 +20,35 @@
 
 #include "nm-default.h"
 
+#include "plugin.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <gmodule.h>
 
 #include "nm-setting-connection.h"
-
 #include "nm-settings-plugin.h"
 #include "NetworkManagerUtils.h"
 
-#include "plugin.h"
 #include "reader.h"
 #include "nm-ibft-connection.h"
+
+/*****************************************************************************/
+
+typedef struct {
+	GHashTable *connections;  /* uuid::connection */
+	gboolean initialized;
+} SettingsPluginIbftPrivate;
+
+struct _SettingsPluginIbft {
+	GObject parent;
+	SettingsPluginIbftPrivate _priv;
+};
+
+struct _SettingsPluginIbftClass {
+	GObjectClass parent;
+};
 
 static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
@@ -41,16 +56,15 @@ G_DEFINE_TYPE_EXTENDED (SettingsPluginIbft, settings_plugin_ibft, G_TYPE_OBJECT,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
                                                settings_plugin_interface_init))
 
-#define SETTINGS_PLUGIN_IBFT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftPrivate))
+#define SETTINGS_PLUGIN_IBFT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIbft, SETTINGS_IS_PLUGIN_IBFT)
 
-
-typedef struct {
-	GHashTable *connections;  /* uuid::connection */
-	gboolean initialized;
-} SettingsPluginIbftPrivate;
+/*****************************************************************************/
 
 static SettingsPluginIbft *settings_plugin_ibft_get (void);
+
 NM_DEFINE_SINGLETON_GETTER (SettingsPluginIbft, settings_plugin_ibft_get, SETTINGS_TYPE_PLUGIN_IBFT);
+
+/*****************************************************************************/
 
 static void
 read_connections (SettingsPluginIbft *self)
@@ -104,6 +118,30 @@ get_connections (NMSettingsPlugin *config)
 	return list;
 }
 
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
+		g_value_set_string (value, "iBFT");
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
+		g_value_set_string (value, "(c) 2014 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list.");
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
 static void
 init (NMSettingsPlugin *config)
 {
@@ -132,42 +170,12 @@ dispose (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, "iBFT");
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, "(c) 2014 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list.");
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-}
-
-static void
 settings_plugin_ibft_class_init (SettingsPluginIbftClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SettingsPluginIbftPrivate));
-
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
 	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
@@ -185,10 +193,11 @@ settings_plugin_ibft_class_init (SettingsPluginIbftClass *req_class)
 static void
 settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	/* interface implementation */
 	plugin_iface->get_connections = get_connections;
 	plugin_iface->init = init;
 }
+
+/*****************************************************************************/
 
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)

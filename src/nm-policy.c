@@ -21,12 +21,13 @@
 
 #include "nm-default.h"
 
+#include "nm-policy.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
 
-#include "nm-policy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-act-request.h"
 #include "nm-device.h"
@@ -47,19 +48,18 @@
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 
-#define _NMLOG_PREFIX_NAME    "policy"
-#define _NMLOG(level, domain, ...) \
-    G_STMT_START { \
-        nm_log ((level), (domain), \
-                "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME": " \
-                _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-    } G_STMT_END
+/*****************************************************************************/
 
-typedef struct _NMPolicyPrivate NMPolicyPrivate;
+NM_GOBJECT_PROPERTIES_DEFINE (NMPolicy,
+	PROP_MANAGER,
+	PROP_SETTINGS,
+	PROP_DEFAULT_IP4_DEVICE,
+	PROP_DEFAULT_IP6_DEVICE,
+	PROP_ACTIVATING_IP4_DEVICE,
+	PROP_ACTIVATING_IP6_DEVICE,
+);
 
-struct _NMPolicyPrivate {
-	NMPolicy *self;
+typedef struct {
 	NMManager *manager;
 	NMFirewallManager *firewall_manager;
 	GSList *pending_activation_checks;
@@ -88,28 +88,50 @@ struct _NMPolicyPrivate {
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
 	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
+} NMPolicyPrivate;
+
+struct _NMPolicy {
+	GObject parent;
+	NMPolicyPrivate _priv;
 };
 
-static NMPolicyPrivate *
-NM_POLICY_GET_PRIVATE(NMPolicy *self)
-{
-	nm_assert (NM_IS_POLICY (self));
-	return self->priv;
-}
+struct _NMPolicyClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMPolicy, nm_policy, G_TYPE_OBJECT)
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMPolicy,
-	PROP_MANAGER,
-	PROP_SETTINGS,
-	PROP_DEFAULT_IP4_DEVICE,
-	PROP_DEFAULT_IP6_DEVICE,
-	PROP_ACTIVATING_IP4_DEVICE,
-	PROP_ACTIVATING_IP6_DEVICE,
-);
+#define NM_POLICY_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMPolicy, NM_IS_POLICY)
+
+static NMPolicy *
+_PRIV_TO_SELF (NMPolicyPrivate *priv)
+{
+	NMPolicy *self;
+
+	nm_assert (priv);
+
+	self = (NMPolicy *) (((char *) priv) - G_STRUCT_OFFSET (NMPolicy, _priv));
+
+	nm_assert (NM_IS_POLICY (self));
+	return self;
+}
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME    "policy"
+#define _NMLOG(level, domain, ...) \
+    G_STMT_START { \
+        nm_log ((level), (domain), \
+                "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 static void schedule_activate_all (NMPolicy *self);
 
+/*****************************************************************************/
 
 static NMDevice *
 get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
@@ -852,7 +874,7 @@ static void
 hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	update_system_hostname (self, NULL, NULL);
 }
@@ -929,7 +951,7 @@ static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 	gboolean sleeping = FALSE, enabled = FALSE;
 
 	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
@@ -1162,7 +1184,7 @@ device_state_changed (NMDevice *device,
                       gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
 
@@ -1308,7 +1330,7 @@ device_ip4_config_changed (NMDevice *device,
                            gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
@@ -1343,7 +1365,7 @@ device_ip6_config_changed (NMDevice *device,
                            gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
@@ -1377,7 +1399,7 @@ device_autoconnect_changed (NMDevice *device,
                             gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	if (nm_device_autoconnect_allowed (device))
 		schedule_activate_check (self, device);
@@ -1387,7 +1409,7 @@ static void
 device_recheck_auto_activate (NMDevice *device, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	schedule_activate_check (self, device);
 }
@@ -1417,7 +1439,7 @@ static void
 device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	g_return_if_fail (NM_IS_POLICY (self));
 
@@ -1433,7 +1455,7 @@ static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	/* Clear any idle callbacks for this device */
 	clear_pending_activate_check (self, device);
@@ -1560,7 +1582,7 @@ active_connection_added (NMManager *manager,
                          gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	if (NM_IS_VPN_CONNECTION (active)) {
 		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
@@ -1582,7 +1604,7 @@ active_connection_removed (NMManager *manager,
                            gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	g_signal_handlers_disconnect_by_func (active,
 	                                      vpn_connection_state_changed,
@@ -1629,7 +1651,7 @@ connection_added (NMSettings *settings,
                   gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	schedule_activate_all (self);
 }
@@ -1687,7 +1709,7 @@ connection_updated (NMSettings *settings,
                     gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 	const GSList *iter;
 	NMDevice *device = NULL;
 
@@ -1755,7 +1777,7 @@ connection_visibility_changed (NMSettings *settings,
                                gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	if (nm_settings_connection_is_visible (connection))
 		schedule_activate_all (self);
@@ -1769,7 +1791,7 @@ secret_agent_registered (NMSettings *settings,
                          gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = priv->self;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	/* The registered secret agent may provide some missing secrets. Thus we
 	 * reset retries count here and schedule activation, so that the
@@ -1860,10 +1882,7 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_policy_init (NMPolicy *self)
 {
-	NMPolicyPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_POLICY, NMPolicyPrivate);
-
-	self->priv = priv;
-	priv->self = self;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 
 	priv->devices = g_hash_table_new (NULL, NULL);
 }
@@ -2000,16 +2019,12 @@ finalize (GObject *object)
 	g_hash_table_unref (priv->devices);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->finalize (object);
-
-	priv->self = NULL;
 }
 
 static void
 nm_policy_class_init (NMPolicyClass *policy_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (policy_class);
-
-	g_type_class_add_private (policy_class, sizeof (NMPolicyPrivate));
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -2049,5 +2064,6 @@ nm_policy_class_init (NMPolicyClass *policy_class)
 	                         NM_TYPE_DEVICE,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
+
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

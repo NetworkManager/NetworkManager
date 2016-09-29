@@ -30,10 +30,18 @@
 
 #include "nm-core-internal.h"
 
-#include "nm-bluez-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 #include "nm-settings.h"
+
+/*****************************************************************************/
+
+enum {
+	BDADDR_ADDED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	NMSettings *settings;
@@ -43,19 +51,25 @@ typedef struct {
 	GHashTable *devices;
 } NMBluez5ManagerPrivate;
 
-#define NM_BLUEZ5_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ5_MANAGER, NMBluez5ManagerPrivate))
+struct _NMBluez5Manager {
+	GObject parent;
+	NMBluez5ManagerPrivate _priv;
+};
+
+struct _NMBluez5ManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 
-enum {
-	BDADDR_ADDED,
-	LAST_SIGNAL
-};
+#define NM_BLUEZ5_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluez5Manager, NM_IS_BLUEZ5_MANAGER)
 
-static guint signals[LAST_SIGNAL] = { 0 };
+/*****************************************************************************/
 
 static void device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *self);
 static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self);
+
+/*****************************************************************************/
 
 static void
 emit_bdaddr_added (NMBluez5Manager *self, NMBluezDevice *device)
@@ -310,6 +324,17 @@ bluez_cleanup (NMBluez5Manager *self, gboolean do_signal)
 
 /*****************************************************************************/
 
+static void
+nm_bluez5_manager_init (NMBluez5Manager *self)
+{
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+
+	bluez_connect (self);
+
+	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                       NULL, g_object_unref);
+}
+
 NMBluez5Manager *
 nm_bluez5_manager_new (NMSettings *settings)
 {
@@ -320,17 +345,6 @@ nm_bluez5_manager_new (NMSettings *settings)
 	instance = g_object_new (NM_TYPE_BLUEZ5_MANAGER, NULL);
 	NM_BLUEZ5_MANAGER_GET_PRIVATE (instance)->settings = g_object_ref (settings);
 	return instance;
-}
-
-static void
-nm_bluez5_manager_init (NMBluez5Manager *self)
-{
-	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
-
-	bluez_connect (self);
-
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                       NULL, g_object_unref);
 }
 
 static void
@@ -346,7 +360,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (object);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE ((NMBluez5Manager *) object);
 
 	g_hash_table_destroy (priv->devices);
 
@@ -360,19 +374,14 @@ nm_bluez5_manager_class_init (NMBluez5ManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMBluez5ManagerPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	/* Signals */
 	signals[BDADDR_ADDED] =
-		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluez5ManagerClass, bdaddr_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
-		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
+	    g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
+	                  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
 }

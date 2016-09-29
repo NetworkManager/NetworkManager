@@ -30,8 +30,8 @@
 #define NM_IS_DEVICE_BOND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_BOND))
 #define NM_DEVICE_BOND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_BOND, NMDeviceBondClass))
 
-typedef NMDevice NMDeviceBond;
-typedef NMDeviceClass NMDeviceBondClass;
+typedef struct _NMDeviceBond NMDeviceBond;
+typedef struct _NMDeviceBondClass NMDeviceBondClass;
 
 GType nm_device_bond_get_type (void);
 

@@ -20,10 +20,11 @@
 
 #include "nm-default.h"
 
+#include "nm-device-bond.h"
+
 #include <errno.h>
 #include <stdlib.h>
 
-#include "nm-device-bond.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
@@ -37,13 +38,17 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBond);
 
+/*****************************************************************************/
+
+struct _NMDeviceBond {
+	NMDevice parent;
+};
+
+struct _NMDeviceBondClass {
+	NMDeviceClass parent;
+};
+
 G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BOND, NMDeviceBondPrivate))
-
-typedef struct {
-	int dummy;
-} NMDeviceBondPrivate;
 
 /*****************************************************************************/
 
@@ -492,10 +497,7 @@ nm_device_bond_init (NMDeviceBond * self)
 static void
 nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMDeviceBondPrivate));
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BOND_SETTING_NAME, NM_LINK_TYPE_BOND)
 
@@ -545,5 +547,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL (BOND, Bond, bond,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BOND)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BOND_SETTING_NAME),
 	factory_iface->create_device = create_device;
-	)
-
+);

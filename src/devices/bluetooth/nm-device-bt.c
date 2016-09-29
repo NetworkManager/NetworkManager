@@ -44,18 +44,27 @@
 
 #include "nmdbus-device-bt.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceBt);
+
 #define MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"
 #define MM_DBUS_PATH      "/org/freedesktop/ModemManager1"
 #define MM_DBUS_INTERFACE "org.freedesktop.ModemManager1"
 
-#include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceBt);
+/*****************************************************************************/
 
-G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_BT_NAME,
+	PROP_BT_CAPABILITIES,
+	PROP_BT_DEVICE,
+);
 
-#define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))
+enum {
+	PPP_STATS,
+	LAST_SIGNAL,
+};
 
-static gboolean modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason);
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	GDBusProxy *mm_proxy;
@@ -77,22 +86,24 @@ typedef struct {
 	guint32 bt_type;  /* BT type of the current connection */
 } NMDeviceBtPrivate;
 
-enum {
-	PROP_0,
-	PROP_BT_NAME,
-	PROP_BT_CAPABILITIES,
-	PROP_BT_DEVICE,
-
-	LAST_PROP
+struct _NMDeviceBt {
+	NMDevice parent;
+	NMDeviceBtPrivate _priv;
 };
 
-enum {
-	PPP_STATS,
-
-	LAST_SIGNAL
+struct _NMDeviceBtClass {
+	NMDeviceClass parent;
 };
-static guint signals[LAST_SIGNAL] = { 0 };
 
+G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_BT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceBt, NM_IS_DEVICE_BT)
+
+/*****************************************************************************/
+
+static gboolean modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason);
+
+/*****************************************************************************/
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 {
@@ -133,7 +144,7 @@ can_auto_connect (NMDevice *device,
                   NMConnection *connection,
                   char **specific_object)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	guint32 bt_type;
 
 	nm_assert (!specific_object || !*specific_object);
@@ -152,7 +163,7 @@ can_auto_connect (NMDevice *device,
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
 	const char *bdaddr;
@@ -190,7 +201,7 @@ check_connection_available (NMDevice *device,
                             NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	guint32 bt_type;
 
 	bt_type = get_connection_bt_type (connection);
@@ -211,7 +222,7 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	NMSettingBluetooth *s_bt;
 	const char *setting_bdaddr;
 	const char *ctype;
@@ -420,7 +431,7 @@ static void
 modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	if (error) {
@@ -488,7 +499,7 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 
 	if (priv->modem)
 		nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
@@ -828,7 +839,7 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (device);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	NMConnection *connection;
 
 	connection = nm_device_get_applied_connection (device);
@@ -863,11 +874,11 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	NMActStageReturn ret;
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
-		ret = nm_modem_stage3_ip4_config_start (NM_DEVICE_BT_GET_PRIVATE (device)->modem,
+		ret = nm_modem_stage3_ip4_config_start (priv->modem,
 		                                        device,
 		                                        NM_DEVICE_CLASS (nm_device_bt_parent_class),
 		                                        reason);
@@ -882,11 +893,11 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	NMActStageReturn ret;
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
-		ret = nm_modem_stage3_ip6_config_start (NM_DEVICE_BT_GET_PRIVATE (device)->modem,
+		ret = nm_modem_stage3_ip6_config_start (priv->modem,
 		                                        nm_device_get_act_request (device),
 		                                        reason);
 	} else
@@ -898,7 +909,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 static void
 deactivate (NMDevice *device)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 
 	priv->have_iface = FALSE;
 	priv->connected = FALSE;
@@ -987,31 +998,55 @@ mm_name_owner_changed (GObject *object,
 
 /*****************************************************************************/
 
-NMDevice *
-nm_device_bt_new (NMBluezDevice *bt_device,
-                  const char *udi,
-                  const char *bdaddr,
-                  const char *name,
-                  guint32 capabilities)
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	g_return_val_if_fail (udi != NULL, NULL);
-	g_return_val_if_fail (bdaddr != NULL, NULL);
-	g_return_val_if_fail (name != NULL, NULL);
-	g_return_val_if_fail (capabilities != NM_BT_CAPABILITY_NONE, NULL);
-	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (bt_device), NULL);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
 
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BT,
-	                                  NM_DEVICE_UDI, udi,
-	                                  NM_DEVICE_IFACE, bdaddr,
-	                                  NM_DEVICE_DRIVER, "bluez",
-	                                  NM_DEVICE_PERM_HW_ADDRESS, bdaddr,
-	                                  NM_DEVICE_BT_DEVICE, bt_device,
-	                                  NM_DEVICE_BT_NAME, name,
-	                                  NM_DEVICE_BT_CAPABILITIES, capabilities,
-	                                  NM_DEVICE_TYPE_DESC, "Bluetooth",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BT,
-	                                  NULL);
+	switch (prop_id) {
+	case PROP_BT_NAME:
+		g_value_set_string (value, priv->name);
+		break;
+	case PROP_BT_CAPABILITIES:
+		g_value_set_uint (value, priv->capabilities);
+		break;
+	case PROP_BT_DEVICE:
+		g_value_set_object (value, priv->bt_device);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
+
+	switch (prop_id) {
+	case PROP_BT_NAME:
+		/* Construct only */
+		priv->name = g_value_dup_string (value);
+		break;
+	case PROP_BT_CAPABILITIES:
+		/* Construct only */
+		priv->capabilities = g_value_get_uint (value);
+		break;
+	case PROP_BT_DEVICE:
+		/* Construct only */
+		priv->bt_device = g_value_dup_object (value);
+		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
 
 static void
 nm_device_bt_init (NMDeviceBt *self)
@@ -1043,7 +1078,7 @@ nm_device_bt_init (NMDeviceBt *self)
 static void
 constructed (GObject *object)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
 	const char *my_hwaddr;
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->constructed (object);
@@ -1058,58 +1093,36 @@ constructed (GObject *object)
 	                  object);
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+NMDevice *
+nm_device_bt_new (NMBluezDevice *bt_device,
+                  const char *udi,
+                  const char *bdaddr,
+                  const char *name,
+                  guint32 capabilities)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
+	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (bdaddr != NULL, NULL);
+	g_return_val_if_fail (name != NULL, NULL);
+	g_return_val_if_fail (capabilities != NM_BT_CAPABILITY_NONE, NULL);
+	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (bt_device), NULL);
 
-	switch (prop_id) {
-	case PROP_BT_NAME:
-		/* Construct only */
-		priv->name = g_value_dup_string (value);
-		break;
-	case PROP_BT_CAPABILITIES:
-		/* Construct only */
-		priv->capabilities = g_value_get_uint (value);
-		break;
-	case PROP_BT_DEVICE:
-		/* Construct only */
-		priv->bt_device = g_value_dup_object (value);
-		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_BT_NAME:
-		g_value_set_string (value, priv->name);
-		break;
-	case PROP_BT_CAPABILITIES:
-		g_value_set_uint (value, priv->capabilities);
-		break;
-	case PROP_BT_DEVICE:
-		g_value_set_object (value, priv->bt_device);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BT,
+	                                  NM_DEVICE_UDI, udi,
+	                                  NM_DEVICE_IFACE, bdaddr,
+	                                  NM_DEVICE_DRIVER, "bluez",
+	                                  NM_DEVICE_PERM_HW_ADDRESS, bdaddr,
+	                                  NM_DEVICE_BT_DEVICE, bt_device,
+	                                  NM_DEVICE_BT_NAME, name,
+	                                  NM_DEVICE_BT_CAPABILITIES, capabilities,
+	                                  NM_DEVICE_TYPE_DESC, "Bluetooth",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BT,
+	                                  NULL);
 }
 
 static void
 dispose (GObject *object)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
 
 	nm_clear_g_source (&priv->timeout_id);
 
@@ -1129,7 +1142,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
 
 	g_free (priv->rfcomm_iface);
 	g_free (priv->name);
@@ -1143,8 +1156,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMDeviceBtPrivate));
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
@@ -1166,37 +1177,33 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	device_class->state_changed = device_state_changed;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_BT_NAME,
-		 g_param_spec_string (NM_DEVICE_BT_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BT_NAME] =
+	     g_param_spec_string (NM_DEVICE_BT_NAME, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_BT_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES, "", "",
-		                    NM_BT_CAPABILITY_NONE, G_MAXUINT, NM_BT_CAPABILITY_NONE,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BT_CAPABILITIES] =
+	     g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES, "", "",
+	                        NM_BT_CAPABILITY_NONE, G_MAXUINT, NM_BT_CAPABILITY_NONE,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_BT_DEVICE,
-		 g_param_spec_object (NM_DEVICE_BT_DEVICE, "", "",
-		                      NM_TYPE_BLUEZ_DEVICE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BT_DEVICE] =
+	     g_param_spec_object (NM_DEVICE_BT_DEVICE, "", "",
+	                          NM_TYPE_BLUEZ_DEVICE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	/* Signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
 	signals[PPP_STATS] =
-		g_signal_new ("ppp-stats",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceBtClass, ppp_stats),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new ("ppp-stats",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2,
+	                  G_TYPE_UINT, G_TYPE_UINT);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_BLUETOOTH_SKELETON,

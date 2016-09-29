@@ -41,19 +41,17 @@
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
 
-G_DEFINE_TYPE (NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN)
-
-#define NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNS_SYSTEMD_RESOLVED, \
-    NMDnsSystemdResolvedPrivate))
-
 #define SYSTEMD_RESOLVED_DBUS_SERVICE "org.freedesktop.resolve1"
 #define SYSTEMD_RESOLVED_DBUS_PATH "/org/freedesktop/resolve1"
+
+/*****************************************************************************/
 
 typedef struct {
 	int ifindex;
 	GList *configs;
 } InterfaceConfig;
+
+/*****************************************************************************/
 
 typedef struct {
 	GDBusProxy *resolve;
@@ -62,6 +60,19 @@ typedef struct {
 	GQueue dns_updates;
 	GQueue domain_updates;
 } NMDnsSystemdResolvedPrivate;
+
+struct _NMDnsSystemdResolved {
+	NMDnsPlugin parent;
+	NMDnsSystemdResolvedPrivate _priv;
+};
+
+struct _NMDnsSystemdResolvedClass {
+	NMDnsPluginClass parent;
+};
+
+G_DEFINE_TYPE (NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN)
+
+#define NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDnsSystemdResolved, NM_IS_DNS_SYSTEMD_RESOLVED)
 
 /*****************************************************************************/
 
@@ -319,12 +330,6 @@ get_name (NMDnsPlugin *plugin)
 
 /*****************************************************************************/
 
-NMDnsPlugin *
-nm_dns_systemd_resolved_new (void)
-{
-	return g_object_new (NM_TYPE_DNS_SYSTEMD_RESOLVED, NULL);
-}
-
 static void
 resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 {
@@ -350,6 +355,7 @@ resolved_proxy_created (GObject *source, GAsyncResult *r, gpointer user_data)
 	send_updates (self);
 }
 
+/*****************************************************************************/
 
 static void
 nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
@@ -380,6 +386,12 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	                  self);
 }
 
+NMDnsPlugin *
+nm_dns_systemd_resolved_new (void)
+{
+	return g_object_new (NM_TYPE_DNS_SYSTEMD_RESOLVED, NULL);
+}
+
 static void
 dispose (GObject *object)
 {
@@ -400,12 +412,9 @@ nm_dns_systemd_resolved_class_init (NMDnsSystemdResolvedClass *dns_class)
 	NMDnsPluginClass *plugin_class = NM_DNS_PLUGIN_CLASS (dns_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (dns_class);
 
-	g_type_class_add_private (dns_class, sizeof (NMDnsSystemdResolvedPrivate));
-
 	object_class->dispose = dispose;
 
 	plugin_class->is_caching = is_caching;
 	plugin_class->update = update;
 	plugin_class->get_name = get_name;
 }
-

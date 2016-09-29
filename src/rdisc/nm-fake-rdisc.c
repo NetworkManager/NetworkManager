@@ -20,13 +20,16 @@
 
 #include "nm-default.h"
 
+#include "nm-fake-rdisc.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-fake-rdisc.h"
 #include "nm-rdisc-private.h"
 
 #define _NMLOG_PREFIX_NAME                "rdisc-fake"
+
+/*****************************************************************************/
 
 typedef struct {
 	guint id;
@@ -51,20 +54,31 @@ typedef struct {
         NMRDiscPreference preference;
 } FakePrefix;
 
+/*****************************************************************************/
+
+enum {
+	RS_SENT,
+	LAST_SIGNAL,
+};
+static guint signals[LAST_SIGNAL] = { 0 };
+
 typedef struct {
 	guint receive_ra_id;
 	GSList *ras;
 } NMFakeRDiscPrivate;
 
-#define NM_FAKE_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_RDISC, NMFakeRDiscPrivate))
+struct _NMFakeRRDisc {
+	NMRDisc parent;
+	NMFakeRDiscPrivate _priv;
+};
+
+struct _NMFakeRRDiscClass {
+	NMRDiscClass parent;
+};
 
 G_DEFINE_TYPE (NMFakeRDisc, nm_fake_rdisc, NM_TYPE_RDISC)
 
-enum {
-	RS_SENT,
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
+#define NM_FAKE_RDISC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakeRDisc, NM_IS_FAKE_RDISC)
 
 /*****************************************************************************/
 
@@ -328,12 +342,12 @@ receive_ra (gpointer user_data)
 static void
 start (NMRDisc *rdisc)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (rdisc);
+	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE ((NMFakeRDisc *) rdisc);
 	FakeRa *ra;
 
 	/* Queue up the first fake RA */
 	g_assert (priv->ras);
-	ra = NM_FAKE_RDISC_GET_PRIVATE (rdisc)->ras->data;
+	ra = priv->ras->data;
 
 	g_assert (!priv->receive_ra_id);
 	priv->receive_ra_id = g_timeout_add_seconds (ra->when, receive_ra, rdisc);
@@ -348,6 +362,11 @@ nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self)
 
 /*****************************************************************************/
 
+static void
+nm_fake_rdisc_init (NMFakeRDisc *fake_rdisc)
+{
+}
+
 NMRDisc *
 nm_fake_rdisc_new (int ifindex, const char *ifname)
 {
@@ -358,14 +377,9 @@ nm_fake_rdisc_new (int ifindex, const char *ifname)
 }
 
 static void
-nm_fake_rdisc_init (NMFakeRDisc *fake_rdisc)
-{
-}
-
-static void
 dispose (GObject *object)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (object);
+	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE ((NMFakeRDisc *) object);
 
 	nm_clear_g_source (&priv->receive_ra_id);
 
@@ -381,9 +395,8 @@ nm_fake_rdisc_class_init (NMFakeRDiscClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMRDiscClass *rdisc_class = NM_RDISC_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMFakeRDiscPrivate));
-
 	object_class->dispose = dispose;
+
 	rdisc_class->start = start;
 	rdisc_class->send_rs = send_rs;
 

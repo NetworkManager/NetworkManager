@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "nm-dnsmasq-manager.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -28,11 +30,43 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-#include "nm-dnsmasq-manager.h"
 #include "nm-dnsmasq-utils.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+
+#define CONFDIR NMCONFDIR "/dnsmasq-shared.d"
+
+/*****************************************************************************/
+
+enum {
+	STATE_CHANGED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	char *iface;
+	char *pidfile;
+	GPid pid;
+	guint dm_watch_id;
+} NMDnsMasqManagerPrivate;
+
+struct _NMDnsMasqManager {
+	GObject parent;
+	NMDnsMasqManagerPrivate _priv;
+};
+
+struct _NMDnsMasqManagerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMDnsMasqManager, nm_dnsmasq_manager, G_TYPE_OBJECT)
+
+#define NM_DNSMASQ_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDnsMasqManager, NM_IS_DNSMASQ_MANAGER)
+
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN         LOGD_SHARING
 #define _NMLOG_PREFIX_NAME    "dnsmasq-manager"
@@ -44,26 +78,7 @@
                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
 
-typedef struct {
-	char *iface;
-	char *pidfile;
-	GPid pid;
-	guint dm_watch_id;
-} NMDnsMasqManagerPrivate;
-
-#define NM_DNSMASQ_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNSMASQ_MANAGER, NMDnsMasqManagerPrivate))
-
-#define CONFDIR NMCONFDIR "/dnsmasq-shared.d"
-
-G_DEFINE_TYPE (NMDnsMasqManager, nm_dnsmasq_manager, G_TYPE_OBJECT)
-
-enum {
-	STATE_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
+/*****************************************************************************/
 
 typedef struct {
 	GPtrArray *array;
@@ -334,6 +349,13 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 	unlink (priv->pidfile);
 }
 
+/*****************************************************************************/
+
+static void
+nm_dnsmasq_manager_init (NMDnsMasqManager *manager)
+{
+}
+
 NMDnsMasqManager *
 nm_dnsmasq_manager_new (const char *iface)
 {
@@ -350,14 +372,9 @@ nm_dnsmasq_manager_new (const char *iface)
 }
 
 static void
-nm_dnsmasq_manager_init (NMDnsMasqManager *manager)
-{
-}
-
-static void
 finalize (GObject *object)
 {
-	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (object);
+	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE ((NMDnsMasqManager *) object);
 
 	nm_dnsmasq_manager_stop (NM_DNSMASQ_MANAGER (object));
 
@@ -372,11 +389,8 @@ nm_dnsmasq_manager_class_init (NMDnsMasqManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
 
-	g_type_class_add_private (manager_class, sizeof (NMDnsMasqManagerPrivate));
-
 	object_class->finalize = finalize;
 
-	/* signals */
 	signals[STATE_CHANGED] =
 	     g_signal_new (NM_DNS_MASQ_MANAGER_STATE_CHANGED,
 	                   G_OBJECT_CLASS_TYPE (object_class),

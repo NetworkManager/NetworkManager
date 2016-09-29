@@ -18,10 +18,8 @@
  * (C) Copyright 2008 Red Hat, Inc.
  */
 
-#ifndef __INOTIFY_HELPER_H__
-#define __INOTIFY_HELPER_H__
-
-#include <sys/inotify.h>
+#ifndef __NM_INOTIFY_HELPER_H__
+#define __NM_INOTIFY_HELPER_H__
 
 /* NOTE: this code should be killed once we depend on a new enough glib to
  * include the patches from https://bugzilla.gnome.org/show_bug.cgi?id=532815
@@ -34,16 +32,8 @@
 #define NM_IS_INOTIFY_HELPER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_INOTIFY_HELPER))
 #define NM_INOTIFY_HELPER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_INOTIFY_HELPER, NMInotifyHelperClass))
 
-typedef struct {
-	GObject parent;
-} NMInotifyHelper;
-
-typedef struct {
-	GObjectClass parent;
-
-	/* signals */
-	void (* event) (NMInotifyHelper *helper, struct inotify_event *evt, const char *filename);
-} NMInotifyHelperClass;
+typedef struct _NMInotifyHelper NMInotifyHelper;
+typedef struct _NMInotifyHelperClass NMInotifyHelperClass;
 
 GType nm_inotify_helper_get_type (void);
 
@@ -53,4 +43,4 @@ int nm_inotify_helper_add_watch (NMInotifyHelper *helper, const char *path);
 
 void nm_inotify_helper_remove_watch (NMInotifyHelper *helper, int wd);
 
-#endif  /* __INOTIFY_HELPER_H__ */
+#endif  /* __NM_INOTIFY_HELPER_H__ */

@@ -33,19 +33,9 @@
 #define NM_IS_AGENT_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_AGENT_MANAGER))
 #define NM_AGENT_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManagerClass))
 
-struct _NMAgentManagerCallId;
 typedef struct _NMAgentManagerCallId *NMAgentManagerCallId;
 
-struct _NMAgentManager {
-	NMExportedObject parent;
-};
-
-typedef struct {
-	NMExportedObjectClass parent;
-
-	/* Signals */
-	void (*agent_registered)   (NMAgentManager *agent_mgr, NMSecretAgent *agent);
-} NMAgentManagerClass;
+typedef struct _NMAgentManagerClass NMAgentManagerClass;
 
 GType nm_agent_manager_get_type (void);
 

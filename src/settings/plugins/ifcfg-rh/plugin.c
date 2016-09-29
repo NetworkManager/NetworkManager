@@ -30,15 +30,14 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <gmodule.h>
 
 #include "nm-dbus-compat.h"
 #include "nm-setting-connection.h"
-
 #include "nm-settings-plugin.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
+#include "nm-exported-object.h"
 
 #include "nm-ifcfg-connection.h"
 #include "shvar.h"
@@ -46,39 +45,13 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
-#include "nm-exported-object.h"
 
 #include "nmdbus-ifcfg-rh.h"
 
 #define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
 #define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
 
-#define _NMLOG_DOMAIN  LOGD_SETTINGS
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), (_NMLOG_DOMAIN), \
-                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                "ifcfg-rh: " \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
-
-
-static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
-                                             NMConnection *source,
-                                             const char *full_path,
-                                             NMIfcfgConnection *connection,
-                                             gboolean protect_existing_connection,
-                                             GHashTable *protected_connections,
-                                             GError **error);
-
-static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
-
-G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_interface_init))
-
-#define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgPrivate))
-
+/*****************************************************************************/
 
 typedef struct {
 	NMConfig *config;
@@ -97,8 +70,51 @@ typedef struct {
 	gulong ifcfg_monitor_id;
 } SettingsPluginIfcfgPrivate;
 
+struct _SettingsPluginIfcfg {
+	GObject parent;
+	SettingsPluginIfcfgPrivate _priv;
+};
+
+struct _SettingsPluginIfcfgClass {
+	GObjectClass parent;
+};
+
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
+
+G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_interface_init))
+
+#define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfcfg, SETTINGS_IS_PLUGIN_IFCFG)
+
+/*****************************************************************************/
+
 static SettingsPluginIfcfg *settings_plugin_ifcfg_get (void);
+
 NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfcfg, settings_plugin_ifcfg_get, SETTINGS_TYPE_PLUGIN_IFCFG);
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN  LOGD_SETTINGS
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), (_NMLOG_DOMAIN), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                "ifcfg-rh: " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
+
+static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
+                                             NMConnection *source,
+                                             const char *full_path,
+                                             NMIfcfgConnection *connection,
+                                             gboolean protect_existing_connection,
+                                             GHashTable *protected_connections,
+                                             GError **error);
+
+/*****************************************************************************/
 
 static void
 connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
@@ -124,7 +140,7 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
-	g_hash_table_remove (SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (user_data)->connections,
+	g_hash_table_remove (SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) user_data)->connections,
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
@@ -616,7 +632,7 @@ static GSList *
 get_unhandled_specs (NMSettingsPlugin *config,
                      const char *property)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (config);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) config);
 	GSList *list = NULL, *list_iter;
 	GHashTableIter iter;
 	gpointer connection;
@@ -944,6 +960,28 @@ config_changed_cb (NMConfig *config,
 /*****************************************************************************/
 
 static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
+		g_value_set_string (value, IFCFG_PLUGIN_NAME);
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
+		g_value_set_string (value, IFCFG_PLUGIN_INFO);
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
 init (NMSettingsPlugin *config)
 {
 }
@@ -951,7 +989,7 @@ init (NMSettingsPlugin *config)
 static void
 settings_plugin_ifcfg_init (SettingsPluginIfcfg *plugin)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) plugin);
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
@@ -1005,47 +1043,13 @@ dispose (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, IFCFG_PLUGIN_NAME);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, IFCFG_PLUGIN_INFO);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SettingsPluginIfcfgPrivate));
-
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
 	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
@@ -1063,7 +1067,6 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 static void
 settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	/* interface implementation */
 	plugin_iface->get_connections = get_connections;
 	plugin_iface->add_connection = add_connection;
 	plugin_iface->load_connection = load_connection;
@@ -1072,6 +1075,8 @@ settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 	plugin_iface->get_unrecognized_specs = get_unrecognized_specs;
 	plugin_iface->init = init;
 }
+
+/*****************************************************************************/
 
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)

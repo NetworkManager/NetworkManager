@@ -22,16 +22,6 @@
 #ifndef __NETWORKMANAGER_PPP_MANAGER_H__
 #define __NETWORKMANAGER_PPP_MANAGER_H__
 
-
-#include "nm-exported-object.h"
-#include "nm-ppp-status.h"
-#include "nm-act-request.h"
-#include "nm-connection.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
-#include "nm-pppd-plugin.h"
-#include "NetworkManagerUtils.h"
-
 #define NM_TYPE_PPP_MANAGER            (nm_ppp_manager_get_type ())
 #define NM_PPP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PPP_MANAGER, NMPPPManager))
 #define NM_PPP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
@@ -41,25 +31,10 @@
 
 #define NM_PPP_MANAGER_PARENT_IFACE "parent-iface"
 
-/* signals */
 #define NM_PPP_MANAGER_STATE_CHANGED "state-changed"
 
-typedef struct {
-	NMExportedObject parent;
-} NMPPPManager;
-
-typedef struct {
-	NMExportedObjectClass parent;
-
-	/* Signals */
-	void (*state_changed) (NMPPPManager *manager, NMPPPStatus status);
-	void (*ip4_config) (NMPPPManager *manager, const char *iface, NMIP4Config *config);
-	void (*ip6_config) (NMPPPManager *manager,
-	                    const char *iface,
-	                    const NMUtilsIPv6IfaceId *iid,
-	                    NMIP6Config *config);
-	void (*stats) (NMPPPManager *manager, guint32 in_bytes, guint32 out_bytes);
-} NMPPPManagerClass;
+typedef struct _NMPPPManager NMPPPManager;
+typedef struct _NMPPPManagerClass NMPPPManagerClass;
 
 GType nm_ppp_manager_get_type (void);
 

@@ -37,8 +37,8 @@
 #define NM_DEVICE_TUN_VNET_HDR    "vnet-hdr"
 #define NM_DEVICE_TUN_MULTI_QUEUE "multi-queue"
 
-typedef NMDevice NMDeviceTun;
-typedef NMDeviceClass NMDeviceTunClass;
+typedef struct _NMDeviceTun NMDeviceTun;
+typedef struct _NMDeviceTunClass NMDeviceTunClass;
 
 GType nm_device_tun_get_type (void);
 

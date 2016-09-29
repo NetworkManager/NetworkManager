@@ -302,4 +302,3 @@ nm_checkpoint_manager_unref (NMCheckpointManager *self)
 
 	g_slice_free (NMCheckpointManager, self);
 }
-

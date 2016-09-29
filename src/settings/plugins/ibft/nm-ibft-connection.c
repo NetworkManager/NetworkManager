@@ -20,16 +20,33 @@
 
 #include "nm-default.h"
 
+#include "nm-ibft-connection.h"
+
 #include <string.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
-
 #include <glib/gstdio.h>
 
-#include "nm-ibft-connection.h"
 #include "reader.h"
 
+/*****************************************************************************/
+
+struct _NMIbftConnection {
+	NMSettingsConnection parent;
+};
+
+struct _NMIbftConnectionClass {
+	NMSettingsConnectionClass parent;
+};
+
 G_DEFINE_TYPE (NMIbftConnection, nm_ibft_connection, NM_TYPE_SETTINGS_CONNECTION)
+
+/*****************************************************************************/
+
+static void
+nm_ibft_connection_init (NMIbftConnection *connection)
+{
+}
 
 NMIbftConnection *
 nm_ibft_connection_new (const GPtrArray *block, GError **error)
@@ -51,13 +68,6 @@ nm_ibft_connection_new (const GPtrArray *block, GError **error)
 		g_clear_object (&object);
 
 	return (NMIbftConnection *) object;
-}
-
-/* GObject */
-
-static void
-nm_ibft_connection_init (NMIbftConnection *connection)
-{
 }
 
 static void

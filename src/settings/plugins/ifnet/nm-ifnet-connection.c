@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nm-ifnet-connection.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 
@@ -29,16 +31,14 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
-#include "nm-ifnet-connection.h"
+
 #include "connection_parser.h"
 #include "net_parser.h"
 #include "net_utils.h"
 #include "wpa_parser.h"
 #include "plugin.h"
 
-G_DEFINE_TYPE (NMIfnetConnection, nm_ifnet_connection, NM_TYPE_SETTINGS_CONNECTION)
-
-#define NM_IFNET_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionPrivate))
+/*****************************************************************************/
 
 enum {
 	IFNET_SETUP_MONITORS,
@@ -53,51 +53,20 @@ typedef struct {
 	NMSettingsPlugin *config;
 } NMIfnetConnectionPrivate;
 
-NMIfnetConnection *
-nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
-{
-	NMConnection *tmp;
-	GObject *object;
-	GError *error = NULL;
-	gboolean update_unsaved = TRUE;
+struct _NMIfnetConnection {
+	NMSettingsConnection parent;
+	NMIfnetConnectionPrivate _priv;
+};
 
-	g_return_val_if_fail (source || conn_name, NULL);
+struct _NMIfnetConnectionClass {
+	NMSettingsConnectionClass parent;
+};
 
-	if (source)
-		tmp = g_object_ref (source);
-	else {
-		tmp = ifnet_update_connection_from_config_block (conn_name, NULL, &error);
-		if (!tmp) {
-			nm_log_warn (LOGD_SETTINGS, "Could not read connection '%s': %s",
-			             conn_name, error->message);
-			g_error_free (error);
-			return NULL;
-		}
+G_DEFINE_TYPE (NMIfnetConnection, nm_ifnet_connection, NM_TYPE_SETTINGS_CONNECTION)
 
-		/* If we just read the connection from disk, it's clearly not Unsaved */
-		update_unsaved = FALSE;
-	}
+#define NM_IFNET_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMIfnetConnection, NM_IS_IFNET_CONNECTION)
 
-	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
-	g_assert (object);
-	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                              tmp,
-	                                              update_unsaved,
-	                                              NULL,
-	                                              NULL)) {
-		g_object_unref (object);
-		return NULL;
-	}
-	g_object_unref (tmp);
-
-	return NM_IFNET_CONNECTION (object);
-}
-
-static void
-nm_ifnet_connection_init (NMIfnetConnection * connection)
-{
-}
+/*****************************************************************************/
 
 const char *
 nm_ifnet_connection_get_conn_name (NMIfnetConnection *connection)
@@ -112,7 +81,7 @@ commit_changes (NMSettingsConnection *connection,
                 gpointer user_data)
 {
 	GError *error = NULL;
-	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) connection);
 	gchar *new_name = NULL;
 	gboolean success = FALSE;
 
@@ -159,13 +128,13 @@ commit_changes (NMSettingsConnection *connection,
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 }
 
-static void 
+static void
 do_delete (NMSettingsConnection *connection,
-	       NMSettingsConnectionDeleteFunc callback,
-	       gpointer user_data)
+           NMSettingsConnectionDeleteFunc callback,
+           gpointer user_data)
 {
 	GError *error = NULL;
-	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) connection);
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
@@ -190,10 +159,58 @@ do_delete (NMSettingsConnection *connection,
 	             nm_connection_get_id (NM_CONNECTION (connection)));
 }
 
+/*****************************************************************************/
+
+static void
+nm_ifnet_connection_init (NMIfnetConnection * connection)
+{
+}
+
+NMIfnetConnection *
+nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
+{
+	NMConnection *tmp;
+	GObject *object;
+	GError *error = NULL;
+	gboolean update_unsaved = TRUE;
+
+	g_return_val_if_fail (source || conn_name, NULL);
+
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = ifnet_update_connection_from_config_block (conn_name, NULL, &error);
+		if (!tmp) {
+			nm_log_warn (LOGD_SETTINGS, "Could not read connection '%s': %s",
+			             conn_name, error->message);
+			g_error_free (error);
+			return NULL;
+		}
+
+		/* If we just read the connection from disk, it's clearly not Unsaved */
+		update_unsaved = FALSE;
+	}
+
+	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
+
+	NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) object)->conn_name = g_strdup (conn_name);
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                              tmp,
+	                                              update_unsaved,
+	                                              NULL,
+	                                              NULL)) {
+		g_object_unref (object);
+		return NULL;
+	}
+	g_object_unref (tmp);
+
+	return NM_IFNET_CONNECTION (object);
+}
+
 static void
 finalize (GObject * object)
 {
-	g_free (NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name);
+	g_free (NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) object)->conn_name);
 	G_OBJECT_CLASS (nm_ifnet_connection_parent_class)->finalize (object);
 }
 
@@ -203,21 +220,19 @@ nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (ifnet_connection_class);
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (ifnet_connection_class);
 
-	g_type_class_add_private (ifnet_connection_class, sizeof (NMIfnetConnectionPrivate));
-
 	object_class->finalize = finalize;
+
 	settings_class->delete = do_delete;
 	settings_class->commit_changes = commit_changes;
 
 	signals[IFNET_SETUP_MONITORS] =
 	    g_signal_new ("ifnet_setup_monitors",
-			  G_OBJECT_CLASS_TYPE (object_class), G_SIGNAL_RUN_LAST,
-			  0, NULL, NULL, g_cclosure_marshal_VOID__VOID,
-			  G_TYPE_NONE, 0);
+	                  G_OBJECT_CLASS_TYPE (object_class), G_SIGNAL_RUN_LAST,
+	                  0, NULL, NULL, g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 	signals[IFNET_CANCEL_MONITORS] =
 	    g_signal_new ("ifnet_cancel_monitors",
-			  G_OBJECT_CLASS_TYPE (object_class), G_SIGNAL_RUN_LAST,
-			  0, NULL, NULL, g_cclosure_marshal_VOID__VOID,
-			  G_TYPE_NONE, 0);
-
+	                  G_OBJECT_CLASS_TYPE (object_class), G_SIGNAL_RUN_LAST,
+	                  0, NULL, NULL, g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 }

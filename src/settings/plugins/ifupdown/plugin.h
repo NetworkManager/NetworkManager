@@ -36,14 +36,6 @@
 typedef struct _SettingsPluginIfupdown SettingsPluginIfupdown;
 typedef struct _SettingsPluginIfupdownClass SettingsPluginIfupdownClass;
 
-struct _SettingsPluginIfupdown {
-	GObject parent;
-};
-
-struct _SettingsPluginIfupdownClass {
-	GObjectClass parent;
-};
-
 GType settings_plugin_ifupdown_get_type (void);
 
-#endif	/* _PLUGIN_H_ */
+#endif /* _PLUGIN_H_ */

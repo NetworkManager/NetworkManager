@@ -33,8 +33,8 @@
 /* Properties */
 #define NM_DEVICE_TEAM_CONFIG          "config"
 
-typedef NMDevice NMDeviceTeam;
-typedef NMDeviceClass NMDeviceTeamClass;
+typedef struct _NMDeviceTeam NMDeviceTeam;
+typedef struct _NMDeviceTeamClass NMDeviceTeamClass;
 
 GType nm_device_team_get_type (void);
 

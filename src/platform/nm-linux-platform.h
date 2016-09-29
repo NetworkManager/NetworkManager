@@ -30,21 +30,8 @@
 #define NM_IS_LINUX_PLATFORM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_LINUX_PLATFORM))
 #define NM_LINUX_PLATFORM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformClass))
 
-/*****************************************************************************/
-
-struct _NMLinuxPlatformPrivate;
-
-typedef struct {
-	NMPlatform parent;
-
-	struct _NMLinuxPlatformPrivate *priv;
-} NMLinuxPlatform;
-
-typedef struct {
-	NMPlatformClass parent;
-} NMLinuxPlatformClass;
-
-/*****************************************************************************/
+typedef struct _NMLinuxPlatform NMLinuxPlatform;
+typedef struct _NMLinuxPlatformClass NMLinuxPlatformClass;
 
 GType nm_linux_platform_get_type (void);
 

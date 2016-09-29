@@ -32,13 +32,14 @@
 #include "nm-device-private.h"
 #include "nm-modem-enum-types.h"
 #include "nm-route-manager.h"
+#include "nm-act-request.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
+#include "ppp-manager/nm-ppp-status.h"
 
-G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM, NMModemPrivate))
-
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMModem,
 	PROP_CONTROL_PORT,
 	PROP_DATA_PORT,
 	PROP_PATH,
@@ -52,11 +53,24 @@ enum {
 	PROP_SIM_ID,
 	PROP_IP_TYPES,
 	PROP_SIM_OPERATOR_ID,
+);
 
-	LAST_PROP
+enum {
+	PPP_STATS,
+	PPP_FAILED,
+	PREPARE_RESULT,
+	IP4_CONFIG_RESULT,
+	IP6_CONFIG_RESULT,
+	AUTH_REQUESTED,
+	AUTH_RESULT,
+	REMOVED,
+	STATE_CHANGED,
+	LAST_SIGNAL,
 };
 
-typedef struct {
+static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct _NMModemPrivate {
 	char *uid;
 	char *path;
 	char *driver;
@@ -86,22 +100,9 @@ typedef struct {
 	guint32 out_bytes;
 } NMModemPrivate;
 
-enum {
-	PPP_STATS,
-	PPP_FAILED,
-	PREPARE_RESULT,
-	IP4_CONFIG_RESULT,
-	IP6_CONFIG_RESULT,
-	AUTH_REQUESTED,
-	AUTH_RESULT,
-	REMOVED,
-	STATE_CHANGED,
+G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
+#define NM_MODEM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMModem, NM_IS_MODEM)
 
 /*****************************************************************************/
 /* State/enabled/connected */
@@ -154,7 +155,7 @@ nm_modem_set_state (NMModem *self,
 		             reason ? reason : "none");
 
 		priv->state = new_state;
-		g_object_notify (G_OBJECT (self), NM_MODEM_STATE);
+		_notify (self, PROP_STATE);
 		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
 	}
 }
@@ -397,7 +398,7 @@ set_data_port (NMModem *self, const char *new_data_port)
 	if (g_strcmp0 (priv->data_port, new_data_port) != 0) {
 		g_free (priv->data_port);
 		priv->data_port = g_strdup (new_data_port);
-		g_object_notify (G_OBJECT (self), NM_MODEM_DATA_PORT);
+		_notify (self, PROP_DATA_PORT);
 	}
 }
 
@@ -1306,48 +1307,10 @@ nm_modem_get_capabilities (NMModem *self,
 /*****************************************************************************/
 
 static void
-nm_modem_init (NMModem *self)
-{
-}
-
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMModemPrivate *priv;
-
-	object = G_OBJECT_CLASS (nm_modem_parent_class)->constructor (type,
-	                                                              n_construct_params,
-	                                                              construct_params);
-	if (!object)
-		return NULL;
-
-	priv = NM_MODEM_GET_PRIVATE (object);
-
-	if (!priv->data_port && !priv->control_port) {
-		nm_log_err (LOGD_HW, "neither modem command nor data interface provided");
-		goto err;
-	}
-
-	if (!priv->path) {
-		nm_log_err (LOGD_HW, "D-Bus path not provided");
-		goto err;
-	}
-
-	return object;
-
-err:
-	g_object_unref (object);
-	return NULL;
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
 
 	switch (prop_id) {
 	case PROP_PATH:
@@ -1399,7 +1362,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
 	const char *s;
 
 	switch (prop_id) {
@@ -1458,10 +1421,53 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_modem_init (NMModem *self)
+{
+	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_MODEM, NMModemPrivate);
+}
+
+static GObject*
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMModemPrivate *priv;
+
+	object = G_OBJECT_CLASS (nm_modem_parent_class)->constructor (type,
+	                                                              n_construct_params,
+	                                                              construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
+
+	if (!priv->data_port && !priv->control_port) {
+		nm_log_err (LOGD_HW, "neither modem command nor data interface provided");
+		goto err;
+	}
+
+	if (!priv->path) {
+		nm_log_err (LOGD_HW, "D-Bus path not provided");
+		goto err;
+	}
+
+	return object;
+
+err:
+	g_object_unref (object);
+	return NULL;
+}
+
+/*****************************************************************************/
+
 static void
 dispose (GObject *object)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
 
 	if (priv->act_request) {
 		g_object_unref (priv->act_request);
@@ -1474,7 +1480,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
 
 	g_free (priv->uid);
 	g_free (priv->path);
@@ -1495,7 +1501,6 @@ nm_modem_class_init (NMModemClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMModemPrivate));
 
-	/* Virtual methods */
 	object_class->constructor = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
@@ -1506,131 +1511,114 @@ nm_modem_class_init (NMModemClass *klass)
 	klass->stage3_ip6_config_request = stage3_ip6_config_request;
 	klass->deactivate_cleanup = deactivate_cleanup;
 
-	/* Properties */
+	obj_properties[PROP_UID] =
+	     g_param_spec_string (NM_MODEM_UID, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_UID,
-		 g_param_spec_string (NM_MODEM_UID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH] =
+	     g_param_spec_string (NM_MODEM_PATH, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_MODEM_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DRIVER] =
+	     g_param_spec_string (NM_MODEM_DRIVER, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_DRIVER,
-		 g_param_spec_string (NM_MODEM_DRIVER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONTROL_PORT] =
+	     g_param_spec_string (NM_MODEM_CONTROL_PORT, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CONTROL_PORT,
-		 g_param_spec_string (NM_MODEM_CONTROL_PORT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DATA_PORT] =
+	     g_param_spec_string (NM_MODEM_DATA_PORT, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_DATA_PORT,
-		 g_param_spec_string (NM_MODEM_DATA_PORT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP4_METHOD] =
+	     g_param_spec_uint (NM_MODEM_IP4_METHOD, "", "",
+	                        NM_MODEM_IP_METHOD_UNKNOWN,
+	                        NM_MODEM_IP_METHOD_AUTO,
+	                        NM_MODEM_IP_METHOD_UNKNOWN,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_IP4_METHOD,
-		 g_param_spec_uint (NM_MODEM_IP4_METHOD, "", "",
-		                    NM_MODEM_IP_METHOD_UNKNOWN,
-		                    NM_MODEM_IP_METHOD_AUTO,
-		                    NM_MODEM_IP_METHOD_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP6_METHOD] =
+	     g_param_spec_uint (NM_MODEM_IP6_METHOD, "", "",
+	                        NM_MODEM_IP_METHOD_UNKNOWN,
+	                        NM_MODEM_IP_METHOD_AUTO,
+	                        NM_MODEM_IP_METHOD_UNKNOWN,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_IP6_METHOD,
-		 g_param_spec_uint (NM_MODEM_IP6_METHOD, "", "",
-		                    NM_MODEM_IP_METHOD_UNKNOWN,
-		                    NM_MODEM_IP_METHOD_AUTO,
-		                    NM_MODEM_IP_METHOD_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP_TIMEOUT] =
+	     g_param_spec_uint (NM_MODEM_IP_TIMEOUT, "", "",
+	                        0, 360, 20,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_IP_TIMEOUT,
-		 g_param_spec_uint (NM_MODEM_IP_TIMEOUT, "", "",
-		                    0, 360, 20,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STATE] =
+	     g_param_spec_enum (NM_MODEM_STATE, "", "",
+	                        NM_TYPE_MODEM_STATE,
+	                        NM_MODEM_STATE_UNKNOWN,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_MODEM_STATE, "", "",
-		                    NM_TYPE_MODEM_STATE,
-		                    NM_MODEM_STATE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DEVICE_ID] =
+	     g_param_spec_string (NM_MODEM_DEVICE_ID, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_DEVICE_ID,
-		 g_param_spec_string (NM_MODEM_DEVICE_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SIM_ID] =
+	     g_param_spec_string (NM_MODEM_SIM_ID, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_SIM_ID,
-		 g_param_spec_string (NM_MODEM_SIM_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP_TYPES] =
+	     g_param_spec_uint (NM_MODEM_IP_TYPES,
+	                        "IP Types",
+	                        "Supported IP types",
+	                        0, G_MAXUINT32, NM_MODEM_IP_TYPE_IPV4,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_IP_TYPES,
-		 g_param_spec_uint (NM_MODEM_IP_TYPES,
-		                    "IP Types",
-		                    "Supported IP types",
-		                    0, G_MAXUINT32, NM_MODEM_IP_TYPE_IPV4,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+	obj_properties[PROP_SIM_OPERATOR_ID] =
+	     g_param_spec_string (NM_MODEM_SIM_OPERATOR_ID, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_SIM_OPERATOR_ID,
-		 g_param_spec_string (NM_MODEM_SIM_OPERATOR_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/* Signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[PPP_STATS] =
-		g_signal_new ("ppp-stats",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, ppp_stats),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new ("ppp-stats",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2,
+	                  G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[PPP_FAILED] =
-		g_signal_new ("ppp-failed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, ppp_failed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_UINT);
+	    g_signal_new ("ppp-failed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[IP4_CONFIG_RESULT] =
-		g_signal_new (NM_MODEM_IP4_CONFIG_RESULT,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, ip4_config_result),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
+	    g_signal_new (NM_MODEM_IP4_CONFIG_RESULT,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
 
 	/**
 	 * NMModem::ip6-config-result:
@@ -1646,50 +1634,44 @@ nm_modem_class_init (NMModemClass *klass)
 	 * should be started after applying @config to the data port.
 	 */
 	signals[IP6_CONFIG_RESULT] =
-		g_signal_new (NM_MODEM_IP6_CONFIG_RESULT,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, ip6_config_result),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_OBJECT, G_TYPE_BOOLEAN, G_TYPE_POINTER);
+	    g_signal_new (NM_MODEM_IP6_CONFIG_RESULT,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 3, G_TYPE_OBJECT, G_TYPE_BOOLEAN, G_TYPE_POINTER);
 
 	signals[PREPARE_RESULT] =
-		g_signal_new (NM_MODEM_PREPARE_RESULT,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, prepare_result),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_BOOLEAN, G_TYPE_UINT);
+	    g_signal_new (NM_MODEM_PREPARE_RESULT,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_BOOLEAN, G_TYPE_UINT);
 
 	signals[AUTH_REQUESTED] =
-		g_signal_new (NM_MODEM_AUTH_REQUESTED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, auth_requested),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_MODEM_AUTH_REQUESTED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[AUTH_RESULT] =
-		g_signal_new (NM_MODEM_AUTH_RESULT,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, auth_result),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+	    g_signal_new (NM_MODEM_AUTH_RESULT,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[REMOVED] =
-		g_signal_new (NM_MODEM_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_MODEM_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[STATE_CHANGED] =
-		g_signal_new (NM_MODEM_STATE_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMModemClass, state_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, NM_TYPE_MODEM_STATE, NM_TYPE_MODEM_STATE);
+	    g_signal_new (NM_MODEM_STATE_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, NM_TYPE_MODEM_STATE, NM_TYPE_MODEM_STATE);
 }

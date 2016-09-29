@@ -20,9 +20,10 @@
 
 #include "nm-default.h"
 
+#include "nm-device-modem.h"
+
 #include <string.h>
 
-#include "nm-device-modem.h"
 #include "nm-modem.h"
 #include "nm-device-private.h"
 #include "nm-rfkill-manager.h"
@@ -31,14 +32,18 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
+#include "nmdbus-device-modem.h"
+
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceModem);
 
-#include "nmdbus-device-modem.h"
+/*****************************************************************************/
 
-G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MODEM,
+	PROP_CAPABILITIES,
+	PROP_CURRENT_CAPABILITIES,
+);
 
 typedef struct {
 	NMModem *modem;
@@ -47,12 +52,18 @@ typedef struct {
 	gboolean rf_enabled;
 } NMDeviceModemPrivate;
 
-enum {
-	PROP_0,
-	PROP_MODEM,
-	PROP_CAPABILITIES,
-	PROP_CURRENT_CAPABILITIES,
+struct _NMDeviceModem {
+	NMDevice parent;
+	NMDeviceModemPrivate _priv;
 };
+
+struct _NMDeviceModemClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_MODEM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceModem, NM_IS_DEVICE_MODEM)
 
 /*****************************************************************************/
 
@@ -281,7 +292,7 @@ modem_state_cb (NMModem *modem,
                 gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 	NMDeviceState dev_state = nm_device_get_state (device);
 
 	if (new_state <= NM_MODEM_STATE_DISABLING &&
@@ -335,9 +346,10 @@ modem_removed_cb (NMModem *modem, gpointer user_data)
 static gboolean
 owns_iface (NMDevice *device, const char *iface)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 
-	g_assert (priv->modem);
+	g_return_val_if_fail (priv->modem, FALSE);
+
 	return nm_modem_owns_port (priv->modem, iface);
 }
 
@@ -350,7 +362,7 @@ device_state_changed (NMDevice *device,
                       NMDeviceStateReason reason)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 	NMConnection *connection = nm_device_get_applied_connection (device);
 
 	g_assert (priv->modem);
@@ -394,7 +406,7 @@ get_generic_capabilities (NMDevice *device)
 static const char *
 get_type_description (NMDevice *device)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 
 	if (NM_FLAGS_HAS (priv->current_caps, NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS))
 		return "gsm";
@@ -409,7 +421,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
-	return nm_modem_check_connection_compatible (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, connection);
+	return nm_modem_check_connection_compatible (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, connection);
 }
 
 static gboolean
@@ -444,7 +456,7 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 
 	return nm_modem_complete_connection (priv->modem, connection, existing_connections, error);
 }
@@ -452,7 +464,7 @@ complete_connection (NMDevice *device,
 static void
 deactivate (NMDevice *device)
 {
-	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
+	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, device);
 }
 
 /*****************************************************************************/
@@ -490,7 +502,7 @@ deactivate_async (NMDevice *self,
 	                                    callback,
 	                                    user_data,
 	                                    deactivate_async);
-	nm_modem_deactivate_async (NM_DEVICE_MODEM_GET_PRIVATE (self)->modem,
+	nm_modem_deactivate_async (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) self)->modem,
 	                           self,
 	                           cancellable,
 	                           (GAsyncReadyCallback) modem_deactivate_async_ready,
@@ -512,7 +524,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, req, reason);
+	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, req, reason);
 }
 
 static NMActStageReturn
@@ -523,7 +535,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	return nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, req, reason);
+	return nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, req, reason);
 }
 
 static NMActStageReturn
@@ -531,7 +543,7 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	return nm_modem_stage3_ip4_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
+	return nm_modem_stage3_ip4_config_start (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem,
 	                                         device,
 	                                         NM_DEVICE_CLASS (nm_device_modem_parent_class),
 	                                         reason);
@@ -540,7 +552,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 static void
 ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
-	nm_modem_ip4_pre_commit (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device, config);
+	nm_modem_ip4_pre_commit (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, device, config);
 }
 
 static NMActStageReturn
@@ -548,7 +560,7 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
+	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem,
 	                                         nm_device_get_act_request (device),
 	                                         reason);
 }
@@ -572,7 +584,7 @@ get_ip_iface_identifier (NMDevice *device, NMUtilsIPv6IfaceId *out_iid)
 static gboolean
 get_enabled (NMDevice *device)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 	NMModemState modem_state = nm_modem_get_state (priv->modem);
 
 	return priv->rf_enabled && (modem_state >= NM_MODEM_STATE_LOCKED);
@@ -621,6 +633,100 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 
 /*****************************************************************************/
 
+static void
+set_modem (NMDeviceModem *self, NMModem *modem)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
+
+	g_return_if_fail (modem != NULL);
+
+	priv->modem = g_object_ref (modem);
+
+	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
+	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
+	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
+	g_signal_connect (modem, NM_MODEM_IP6_CONFIG_RESULT, G_CALLBACK (modem_ip6_config_result), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
+	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
+	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
+
+	/* In the old ModemManager the data port is known from the very beginning;
+	 * while in the new ModemManager the data port is set afterwards when the bearer gets
+	 * created */
+	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
+
+	g_signal_connect (modem, "notify::" NM_MODEM_DEVICE_ID, G_CALLBACK (ids_changed_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_SIM_ID, G_CALLBACK (ids_changed_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_SIM_OPERATOR_ID, G_CALLBACK (ids_changed_cb), self);
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) object);
+
+	switch (prop_id) {
+	case PROP_MODEM:
+		g_value_set_object (value, priv->modem);
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, priv->caps);
+		break;
+	case PROP_CURRENT_CAPABILITIES:
+		g_value_set_uint (value, priv->current_caps);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) object);
+
+	switch (prop_id) {
+	case PROP_MODEM:
+		/* construct-only */
+		set_modem (NM_DEVICE_MODEM (object), g_value_get_object (value));
+		break;
+	case PROP_CAPABILITIES:
+		priv->caps = g_value_get_uint (value);
+		break;
+	case PROP_CURRENT_CAPABILITIES:
+		priv->current_caps = g_value_get_uint (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_device_modem_init (NMDeviceModem *self)
+{
+}
+
+static void
+constructed (GObject *object)
+{
+	G_OBJECT_CLASS (nm_device_modem_parent_class)->constructed (object);
+
+	/* DHCP is always done by the modem firmware, not by the network, and
+	 * by the time we get around to DHCP the firmware should already know
+	 * the IP addressing details.  So the DHCP timeout can be much shorter.
+	 */
+	nm_device_set_dhcp_timeout (NM_DEVICE (object), 15);
+}
+
 NMDevice *
 nm_device_modem_new (NMModem *modem)
 {
@@ -657,99 +763,9 @@ nm_device_modem_new (NMModem *modem)
 }
 
 static void
-nm_device_modem_init (NMDeviceModem *self)
-{
-}
-
-static void
-constructed (GObject *object)
-{
-	G_OBJECT_CLASS (nm_device_modem_parent_class)->constructed (object);
-
-	/* DHCP is always done by the modem firmware, not by the network, and
-	 * by the time we get around to DHCP the firmware should already know
-	 * the IP addressing details.  So the DHCP timeout can be much shorter.
-	 */
-	nm_device_set_dhcp_timeout (NM_DEVICE (object), 15);
-}
-
-static void
-set_modem (NMDeviceModem *self, NMModem *modem)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
-
-	g_return_if_fail (modem != NULL);
-
-	priv->modem = g_object_ref (modem);
-
-	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
-	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
-	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
-	g_signal_connect (modem, NM_MODEM_IP6_CONFIG_RESULT, G_CALLBACK (modem_ip6_config_result), self);
-	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
-	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
-	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
-	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
-
-	/* In the old ModemManager the data port is known from the very beginning;
-	 * while in the new ModemManager the data port is set afterwards when the bearer gets
-	 * created */
-	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
-
-	g_signal_connect (modem, "notify::" NM_MODEM_DEVICE_ID, G_CALLBACK (ids_changed_cb), self);
-	g_signal_connect (modem, "notify::" NM_MODEM_SIM_ID, G_CALLBACK (ids_changed_cb), self);
-	g_signal_connect (modem, "notify::" NM_MODEM_SIM_OPERATOR_ID, G_CALLBACK (ids_changed_cb), self);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_MODEM:
-		/* construct-only */
-		set_modem (NM_DEVICE_MODEM (object), g_value_get_object (value));
-		break;
-	case PROP_CAPABILITIES:
-		priv->caps = g_value_get_uint (value);
-		break;
-	case PROP_CURRENT_CAPABILITIES:
-		priv->current_caps = g_value_get_uint (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_MODEM:
-		g_value_set_object (value, priv->modem);
-		break;
-	case PROP_CAPABILITIES:
-		g_value_set_uint (value, priv->caps);
-		break;
-	case PROP_CURRENT_CAPABILITIES:
-		g_value_set_uint (value, priv->current_caps);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) object);
 
 	if (priv->modem)
 		g_signal_handlers_disconnect_by_data (priv->modem, NM_DEVICE_MODEM (object));
@@ -764,9 +780,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	GObjectClass *object_class = G_OBJECT_CLASS (mclass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (mclass);
 
-	g_type_class_add_private (object_class, sizeof (NMDeviceModemPrivate));
-
-	/* Virtual methods */
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -793,27 +806,25 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 
 	device_class->state_changed = device_state_changed;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_MODEM,
-		 g_param_spec_object (NM_DEVICE_MODEM_MODEM, "", "",
-		                      NM_TYPE_MODEM,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODEM] =
+	     g_param_spec_object (NM_DEVICE_MODEM_MODEM, "", "",
+	                          NM_TYPE_MODEM,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_MODEM_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAPABILITIES] =
+	     g_param_spec_uint (NM_DEVICE_MODEM_CAPABILITIES, "", "",
+	                        0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CURRENT_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CURRENT_CAPABILITIES] =
+	     g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
+	                        0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (mclass),
 	                                        NMDBUS_TYPE_DEVICE_MODEM_SKELETON,

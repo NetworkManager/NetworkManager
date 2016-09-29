@@ -33,11 +33,13 @@
 
 #include "nm-device-private.h"
 #include "nm-act-request.h"
+#include "nm-ip4-config.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
 #include "ppp-manager/nm-ppp-manager.h"
+#include "ppp-manager/nm-ppp-status.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
@@ -1633,7 +1635,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
 
-	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;

@@ -35,18 +35,12 @@
 
 typedef enum {
 	NM_DNSMASQ_STATUS_UNKNOWN,
-
 	NM_DNSMASQ_STATUS_DEAD,
 	NM_DNSMASQ_STATUS_RUNNING,
 } NMDnsMasqStatus;
 
-typedef struct {
-	GObject parent;
-} NMDnsMasqManager;
-
-typedef struct {
-	GObjectClass parent;
-} NMDnsMasqManagerClass;
+typedef struct _NMDnsMasqManager NMDnsMasqManager;
+typedef struct _NMDnsMasqManagerClass NMDnsMasqManagerClass;
 
 GType nm_dnsmasq_manager_get_type (void);
 

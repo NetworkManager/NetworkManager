@@ -39,5 +39,6 @@
 #define BLUEZ4_SERIAL_INTERFACE  "org.bluez.Serial"
 #define BLUEZ4_NETWORK_INTERFACE "org.bluez.Network"
 
-#endif  /* NM_BLUEZ_COMMON_H */
+#define NM_BLUEZ_MANAGER_BDADDR_ADDED "bdaddr-added"
 
+#endif  /* NM_BLUEZ_COMMON_H */

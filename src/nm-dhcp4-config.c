@@ -20,36 +20,40 @@
 
 #include "nm-default.h"
 
+#include "nm-dhcp4-config.h"
+
 #include <string.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-dhcp4-config.h"
 #include "nm-utils.h"
+#include "nm-exported-object.h"
 
 #include "nmdbus-dhcp4-config.h"
 
-G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_EXPORTED_OBJECT)
+/*****************************************************************************/
 
-#define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMDhcp4Config,
+	PROP_OPTIONS,
+);
 
 typedef struct {
 	GVariant *options;
 } NMDhcp4ConfigPrivate;
 
-
-enum {
-	PROP_0,
-	PROP_OPTIONS,
-
-	LAST_PROP
+struct _NMDhcp4Config {
+	NMExportedObject parent;
+	NMDhcp4ConfigPrivate _priv;
 };
 
+struct _NMDhcp4ConfigClass {
+	NMExportedObjectClass parent;
+};
 
-NMDhcp4Config *
-nm_dhcp4_config_new (void)
-{
-	return NM_DHCP4_CONFIG (g_object_new (NM_TYPE_DHCP4_CONFIG, NULL));
-}
+G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_DHCP4_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcp4Config, NM_IS_DHCP4_CONFIG)
+
+/*****************************************************************************/
 
 void
 nm_dhcp4_config_set_options (NMDhcp4Config *self,
@@ -72,7 +76,7 @@ nm_dhcp4_config_set_options (NMDhcp4Config *self,
 
 	priv->options = g_variant_builder_end (&builder);
 	g_variant_ref_sink (priv->options);
-	g_object_notify (G_OBJECT (self), NM_DHCP4_CONFIG_OPTIONS);
+	_notify (self, PROP_OPTIONS);
 }
 
 const char *
@@ -98,30 +102,13 @@ nm_dhcp4_config_get_options (NMDhcp4Config *self)
 	return g_variant_ref (NM_DHCP4_CONFIG_GET_PRIVATE (self)->options);
 }
 
-static void
-nm_dhcp4_config_init (NMDhcp4Config *self)
-{
-	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
-
-	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
-	g_variant_ref_sink (priv->options);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
-
-	g_variant_unref (priv->options);
-
-	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->finalize (object);
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE ((NMDhcp4Config *) object);
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
@@ -133,29 +120,53 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_dhcp4_config_init (NMDhcp4Config *self)
+{
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
+
+	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	g_variant_ref_sink (priv->options);
+}
+
+NMDhcp4Config *
+nm_dhcp4_config_new (void)
+{
+	return NM_DHCP4_CONFIG (g_object_new (NM_TYPE_DHCP4_CONFIG, NULL));
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE ((NMDhcp4Config *) object);
+
+	g_variant_unref (priv->options);
+
+	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->finalize (object);
+}
+
 static void
 nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
+	object_class->get_property = get_property;
+	object_class->finalize = finalize;
 
 	exported_object_class->export_path = NM_DBUS_PATH "/DHCP4Config/%u";
 	exported_object_class->export_on_construction = TRUE;
 
-	/* virtual methods */
-	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	obj_properties[PROP_OPTIONS] =
+	     g_param_spec_variant (NM_DHCP4_CONFIG_OPTIONS, "", "",
+	                           G_VARIANT_TYPE ("a{sv}"),
+	                           NULL,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_OPTIONS,
-		 g_param_spec_variant (NM_DHCP4_CONFIG_OPTIONS, "", "",
-		                       G_VARIANT_TYPE ("a{sv}"),
-		                       NULL,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
 	                                        NMDBUS_TYPE_DHCP4_CONFIG_SKELETON,

@@ -36,17 +36,7 @@
 #define NM_POLICY_ACTIVATING_IP4_DEVICE "activating-ip4-device"
 #define NM_POLICY_ACTIVATING_IP6_DEVICE "activating-ip6-device"
 
-struct _NMPolicyPrivate;
-
-struct _NMPolicy {
-	GObject parent;
-	struct _NMPolicyPrivate *priv;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-} NMPolicyClass;
+typedef struct _NMPolicyClass NMPolicyClass;
 
 GType nm_policy_get_type (void);
 

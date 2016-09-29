@@ -995,7 +995,7 @@ constructed (GObject *object)
 }
 
 static void
-nm_exported_object_dispose (GObject *object)
+dispose (GObject *object)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (NM_EXPORTED_OBJECT (object));
 
@@ -1024,7 +1024,5 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 
 	object_class->constructed = constructed;
 	object_class->notify = nm_exported_object_notify;
-	object_class->dispose = nm_exported_object_dispose;
+	object_class->dispose = dispose;
 }
-
-

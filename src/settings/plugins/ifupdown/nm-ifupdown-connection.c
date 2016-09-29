@@ -22,6 +22,8 @@
 
 #include "nm-default.h"
 
+#include "nm-ifupdown-connection.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 
@@ -30,10 +32,36 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
-#include "nm-ifupdown-connection.h"
 #include "parser.h"
 
+/*****************************************************************************/
+
+struct _NMIfupdownConnection {
+	NMSettingsConnection parent;
+};
+
+struct _NMIfupdownConnectionClass {
+	NMSettingsConnectionClass parent;
+};
+
 G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SETTINGS_CONNECTION)
+
+/*****************************************************************************/
+
+static gboolean
+supports_secrets (NMSettingsConnection *connection, const char *setting_name)
+{
+	nm_log_info (LOGD_SETTINGS, "supports_secrets() for setting_name: '%s'", setting_name);
+
+	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
+}
+
+/*****************************************************************************/
+
+static void
+nm_ifupdown_connection_init (NMIfupdownConnection *connection)
+{
+}
 
 NMIfupdownConnection*
 nm_ifupdown_connection_new (if_block *block)
@@ -55,19 +83,6 @@ nm_ifupdown_connection_new (if_block *block)
 	}
 
 	return (NMIfupdownConnection *) object;
-}
-
-static gboolean
-supports_secrets (NMSettingsConnection *connection, const char *setting_name)
-{
-	nm_log_info (LOGD_SETTINGS, "supports_secrets() for setting_name: '%s'", setting_name);
-
-	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
-}
-
-static void
-nm_ifupdown_connection_init (NMIfupdownConnection *connection)
-{
 }
 
 static void

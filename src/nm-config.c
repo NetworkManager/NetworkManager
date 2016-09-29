@@ -43,17 +43,6 @@
 
 /*****************************************************************************/
 
-#define _NMLOG_PREFIX_NAME                "config"
-#define _NMLOG_DOMAIN                     LOGD_CORE
-
-#define _NMLOG(level, ...) \
-	nm_log (level, _NMLOG_DOMAIN, \
-	        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-	        _NMLOG_PREFIX_NAME \
-	        _NM_UTILS_MACRO_REST(__VA_ARGS__))
-
-/*****************************************************************************/
-
 struct NMConfigCmdLineOptions {
 	char *config_main_file;
 	char *intern_config_file;
@@ -76,6 +65,20 @@ struct NMConfigCmdLineOptions {
 typedef struct {
 	NMConfigState p;
 } State;
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_CMD_LINE_OPTIONS,
+	PROP_ATOMIC_SECTION_PREFIXES,
+);
+
+enum {
+	SIGNAL_CONFIG_CHANGED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	NMConfigCmdLineOptions cli;
@@ -116,20 +119,14 @@ typedef struct {
 	State *state;
 } NMConfigPrivate;
 
-enum {
-	PROP_0,
-	PROP_CMD_LINE_OPTIONS,
-	PROP_ATOMIC_SECTION_PREFIXES,
-	LAST_PROP,
+struct _NMConfig {
+	GObject parent;
+	NMConfigPrivate _priv;
 };
 
-enum {
-	SIGNAL_CONFIG_CHANGED,
-
-	LAST_SIGNAL
+struct _NMConfigClass {
+	GObjectClass parent;
 };
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 static void nm_config_initable_iface_init (GInitableIface *iface);
 
@@ -137,8 +134,18 @@ G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_config_initable_iface_init);
                          )
 
+#define NM_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMConfig, NM_IS_CONFIG)
 
-#define NM_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG, NMConfigPrivate))
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "config"
+#define _NMLOG_DOMAIN                     LOGD_CORE
+
+#define _NMLOG(level, ...) \
+	nm_log (level, _NMLOG_DOMAIN, \
+	        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+	        _NMLOG_PREFIX_NAME \
+	        _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
 /*****************************************************************************/
 
@@ -162,7 +169,7 @@ nm_config_parse_boolean (const char *str,
 }
 
 gint
-nm_config_keyfile_get_boolean (GKeyFile *keyfile,
+nm_config_keyfile_get_boolean (const GKeyFile *keyfile,
                                const char *section,
                                const char *key,
                                gint default_value)
@@ -173,12 +180,12 @@ nm_config_keyfile_get_boolean (GKeyFile *keyfile,
 	g_return_val_if_fail (section != NULL, default_value);
 	g_return_val_if_fail (key != NULL, default_value);
 
-	str = g_key_file_get_value (keyfile, section, key, NULL);
+	str = g_key_file_get_value ((GKeyFile *) keyfile, section, key, NULL);
 	return nm_config_parse_boolean (str, default_value);
 }
 
 char *
-nm_config_keyfile_get_value (GKeyFile *keyfile,
+nm_config_keyfile_get_value (const GKeyFile *keyfile,
                              const char *section,
                              const char *key,
                              NMConfigGetValueFlags flags)
@@ -186,9 +193,9 @@ nm_config_keyfile_get_value (GKeyFile *keyfile,
 	char *value;
 
 	if (NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_RAW))
-		value = g_key_file_get_value (keyfile, section, key, NULL);
+		value = g_key_file_get_value ((GKeyFile *) keyfile, section, key, NULL);
 	else
-		value = g_key_file_get_string (keyfile, section, key, NULL);
+		value = g_key_file_get_string ((GKeyFile *) keyfile, section, key, NULL);
 
 	if (!value)
 		return NULL;
@@ -2208,6 +2215,37 @@ nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefix
 	return singleton_instance;
 }
 
+/*****************************************************************************/
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMConfig *self = NM_CONFIG (object);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
+	NMConfigCmdLineOptions *cli;
+
+	switch (prop_id) {
+	case PROP_CMD_LINE_OPTIONS:
+		/* construct only */
+		cli = g_value_get_pointer (value);
+		if (!cli)
+			_nm_config_cmd_line_options_clear (&priv->cli);
+		else
+			_nm_config_cmd_line_options_copy (cli, &priv->cli);
+		break;
+	case PROP_ATOMIC_SECTION_PREFIXES:
+		/* construct only */
+		priv->atomic_section_prefixes = g_strdupv (g_value_get_boxed (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
 static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
@@ -2306,6 +2344,16 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+static void
+nm_config_init (NMConfig *config)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+
+	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
+}
+
 NMConfig *
 nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error)
 {
@@ -2318,17 +2366,9 @@ nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes
 }
 
 static void
-nm_config_init (NMConfig *config)
-{
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-
-	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
-}
-
-static void
 finalize (GObject *gobject)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (gobject);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE ((NMConfig *) gobject);
 
 	state_free (priv->state);
 
@@ -2352,55 +2392,27 @@ finalize (GObject *gobject)
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMConfig *self = NM_CONFIG (object);
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
-	NMConfigCmdLineOptions *cli;
-
-	switch (prop_id) {
-	case PROP_CMD_LINE_OPTIONS:
-		/* construct only */
-		cli = g_value_get_pointer (value);
-		if (!cli)
-			_nm_config_cmd_line_options_clear (&priv->cli);
-		else
-			_nm_config_cmd_line_options_copy (cli, &priv->cli);
-		break;
-	case PROP_ATOMIC_SECTION_PREFIXES:
-		/* construct only */
-		priv->atomic_section_prefixes = g_strdupv (g_value_get_boxed (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_config_class_init (NMConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMConfigPrivate));
 	object_class->finalize = finalize;
 	object_class->set_property = set_property;
 
-	g_object_class_install_property
-	    (object_class, PROP_CMD_LINE_OPTIONS,
+	obj_properties[PROP_CMD_LINE_OPTIONS] =
 	     g_param_spec_pointer (NM_CONFIG_CMD_LINE_OPTIONS, "", "",
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
-	                           G_PARAM_STATIC_STRINGS));
+	                           G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-	    (object_class, PROP_ATOMIC_SECTION_PREFIXES,
+	obj_properties[PROP_ATOMIC_SECTION_PREFIXES] =
 	     g_param_spec_boxed (NM_CONFIG_ATOMIC_SECTION_PREFIXES, "", "",
 	                         G_TYPE_STRV,
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
-	                         G_PARAM_STATIC_STRINGS));
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[SIGNAL_CONFIG_CHANGED] =
 	    g_signal_new (NM_CONFIG_SIGNAL_CONFIG_CHANGED,
@@ -2426,4 +2438,3 @@ nm_config_initable_iface_init (GInitableIface *iface)
 {
 	iface->init = init_sync;
 }
-

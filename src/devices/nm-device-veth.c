@@ -51,7 +51,7 @@ struct _NMDeviceVeth {
 };
 
 struct _NMDeviceVethClass {
-	NMDeviceEthernetClass parent_class;
+	NMDeviceEthernetClass parent;
 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVeth,

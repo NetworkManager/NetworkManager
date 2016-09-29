@@ -35,8 +35,8 @@
 #define NM_DEVICE_MACVLAN_NO_PROMISC "no-promisc"
 #define NM_DEVICE_MACVLAN_TAP        "tap"
 
-typedef NMDevice NMDeviceMacvlan;
-typedef NMDeviceClass NMDeviceMacvlanClass;
+typedef struct _NMDeviceMacvlan NMDeviceMacvlan;
+typedef struct _NMDeviceMacvlanClass NMDeviceMacvlanClass;
 
 GType nm_device_macvlan_get_type (void);
 

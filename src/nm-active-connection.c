@@ -1170,7 +1170,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	exported_object_class->export_path = NM_DBUS_PATH "/ActiveConnection/%u";
 
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;

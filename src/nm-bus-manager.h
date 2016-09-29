@@ -33,23 +33,7 @@
 #define NM_BUS_MANAGER_PRIVATE_CONNECTION_NEW           "private-connection-new"
 #define NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED  "private-connection-disconnected"
 
-struct _NMBusManager {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Signals */
-	void (*dbus_connection_changed) (NMBusManager *mgr,
-	                                 GDBusConnection *connection);
-
-	void (*private_connection_new) (NMBusManager *mgr,
-	                                GDBusConnection *connection);
-
-	void (*private_connection_disconnected) (NMBusManager *mgr,
-	                                         GDBusConnection *connection);
-} NMBusManagerClass;
+typedef struct _NMBusManagerClass NMBusManagerClass;
 
 GType nm_bus_manager_get_type (void);
 

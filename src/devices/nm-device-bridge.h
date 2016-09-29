@@ -30,8 +30,8 @@
 #define NM_IS_DEVICE_BRIDGE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_BRIDGE))
 #define NM_DEVICE_BRIDGE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgeClass))
 
-typedef NMDevice NMDeviceBridge;
-typedef NMDeviceClass NMDeviceBridgeClass;
+typedef struct _NMDeviceBridge NMDeviceBridge;
+typedef struct _NMDeviceBridgeClass NMDeviceBridgeClass;
 
 GType nm_device_bridge_get_type (void);
 
