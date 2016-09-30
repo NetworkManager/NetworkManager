@@ -5,8 +5,17 @@ Overview of changes since NetworkManager-1.4.0
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Fix emission of NM-style PropertiesChanged signals and deprecate them
-    for PropertiesChanged on "org.freedesktop.DBus.Properties" interface.
+* Fixed emission of NM-style PropertiesChanged signals and deprecated them
+    for PropertiesChanged on "org.freedesktop.DBus.Properties" interface
+* Fixed race condition in the communication between NetworkManager and
+    the DHCP helper which caused loss of events
+* Added workaround for failures in changing MAC address with some
+    wireless drivers
+* Improved bash autocompletion
+* Restored check on JSON syntax when built with Jansson support
+* Fixed a regression in the serialization of empty
+    "cloned-mac-address" property in libnm
+* Other fixes and improvements
 
 ============================================
 NetworkManager-1.4
