@@ -1152,12 +1152,12 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 const char *const NM_PATHS_DEFAULT[] = {
 	PREFIX "/sbin/",
 	PREFIX "/bin/",
+	"/usr/local/sbin/",
 	"/sbin/",
 	"/usr/sbin/",
-	"/usr/local/sbin/",
+	"/usr/local/bin/",
 	"/bin/",
 	"/usr/bin/",
-	"/usr/local/bin/",
 	NULL,
 };
 
