@@ -18,8 +18,6 @@
 
 #include "nm-default.h"
 
-#include "nm-dhcp-systemd.h"
-
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -36,6 +34,22 @@
 #include "nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "systemd/nm-sd.h"
+
+/*****************************************************************************/
+
+#define NM_TYPE_DHCP_SYSTEMD            (nm_dhcp_systemd_get_type ())
+#define NM_DHCP_SYSTEMD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemd))
+#define NM_DHCP_SYSTEMD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdClass))
+#define NM_IS_DHCP_SYSTEMD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_SYSTEMD))
+#define NM_IS_DHCP_SYSTEMD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_SYSTEMD))
+#define NM_DHCP_SYSTEMD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdClass))
+
+typedef struct _NMDhcpSystemd NMDhcpSystemd;
+typedef struct _NMDhcpSystemdClass NMDhcpSystemdClass;
+
+static GType nm_dhcp_systemd_get_type (void);
+
+/*****************************************************************************/
 
 typedef struct {
 	sd_dhcp_client *client4;
@@ -1042,13 +1056,9 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	client_class->stop = stop;
 }
 
-static void __attribute__((constructor))
-register_dhcp_dhclient (void)
-{
-	nm_g_type_init ();
-	_nm_dhcp_client_register (NM_TYPE_DHCP_SYSTEMD,
-	                          "internal",
-	                          NULL,
-	                          nm_dhcp_systemd_get_lease_ip_configs);
-}
-
+const NMDhcpClientFactory _nm_dhcp_client_factory_internal = {
+	.name = "internal",
+	.get_type = nm_dhcp_systemd_get_type,
+	.get_path = NULL,
+	.get_lease_ip_configs = nm_dhcp_systemd_get_lease_ip_configs,
+};

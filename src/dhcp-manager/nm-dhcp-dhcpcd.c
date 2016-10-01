@@ -22,7 +22,7 @@
 
 #include "nm-default.h"
 
-#include "nm-dhcp-dhcpcd.h"
+#if WITH_DHCPCD
 
 #include <string.h>
 #include <stdlib.h>
@@ -37,6 +37,20 @@
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
 #include "nm-dhcp-client-logging.h"
+
+/*****************************************************************************/
+
+#define NM_TYPE_DHCP_DHCPCD            (nm_dhcp_dhcpcd_get_type ())
+#define NM_DHCP_DHCPCD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcd))
+#define NM_DHCP_DHCPCD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
+#define NM_IS_DHCP_DHCPCD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_DHCPCD))
+#define NM_IS_DHCP_DHCPCD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_DHCPCD))
+#define NM_DHCP_DHCPCD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
+
+typedef struct _NMDhcpDhcpcd NMDhcpDhcpcd;
+typedef struct _NMDhcpDhcpcdClass NMDhcpDhcpcdClass;
+
+static GType nm_dhcp_dhcpcd_get_type (void);
 
 /*****************************************************************************/
 
@@ -63,11 +77,7 @@ G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 static const char *
 nm_dhcp_dhcpcd_get_path (void)
 {
-	const char *path = NULL;
-
-	if (WITH_DHCPCD)
-		path = nm_utils_find_helper ("dhcpcd", DHCPCD_PATH, NULL);
-	return path;
+	return nm_utils_find_helper ("dhcpcd", DHCPCD_PATH, NULL);
 }
 
 static gboolean
@@ -244,13 +254,11 @@ nm_dhcp_dhcpcd_class_init (NMDhcpDhcpcdClass *dhcpcd_class)
 	client_class->stop = stop;
 }
 
-static void __attribute__((constructor))
-register_dhcp_dhclient (void)
-{
-	nm_g_type_init ();
-	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCPCD,
-	                          "dhcpcd",
-	                          nm_dhcp_dhcpcd_get_path,
-	                          NULL);
-}
+const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcd = {
+	.name = "dhcpcd",
+	.get_type = nm_dhcp_dhcpcd_get_type,
+	.get_path = nm_dhcp_dhcpcd_get_path,
+	.get_lease_ip_configs = NULL,
+};
 
+#endif /* WITH_DHCPCD */

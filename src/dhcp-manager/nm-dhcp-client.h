@@ -99,19 +99,6 @@ typedef struct {
 
 GType nm_dhcp_client_get_type (void);
 
-typedef const char *(*NMDhcpClientGetPathFunc) (void);
-
-typedef GSList *    (*NMDhcpClientGetLeaseConfigsFunc) (const char *iface,
-                                                        int ifindex,
-                                                        const char *uuid,
-                                                        gboolean ipv6,
-                                                        guint32 default_route_metric);
-
-void _nm_dhcp_client_register (GType gtype,
-                               const char *name,
-                               NMDhcpClientGetPathFunc get_path_func,
-                               NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func);
-
 pid_t nm_dhcp_client_get_pid (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDhcpClient *self);
@@ -172,5 +159,24 @@ gboolean nm_dhcp_client_handle_event (gpointer unused,
                                       NMDhcpClient *self);
 
 void nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id);
+
+/*****************************************************************************
+ * Client data
+ *****************************************************************************/
+
+typedef struct {
+	GType (*get_type)(void);
+	const char *name;
+	const char *(*get_path) (void);
+	GSList *(*get_lease_ip_configs) (const char *iface,
+	                                 int ifindex,
+	                                 const char *uuid,
+	                                 gboolean ipv6,
+	                                 guint32 default_route_metric);
+} NMDhcpClientFactory;
+
+extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient;
+extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcd;
+extern const NMDhcpClientFactory _nm_dhcp_client_factory_internal;
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */

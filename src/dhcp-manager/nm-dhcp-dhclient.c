@@ -27,7 +27,7 @@
 
 #include "nm-default.h"
 
-#include "nm-dhcp-dhclient.h"
+#if WITH_DHCLIENT
 
 #include <string.h>
 #include <stdlib.h>
@@ -44,6 +44,20 @@
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
 #include "nm-dhcp-client-logging.h"
+
+/*****************************************************************************/
+
+#define NM_TYPE_DHCP_DHCLIENT            (nm_dhcp_dhclient_get_type ())
+#define NM_DHCP_DHCLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
+#define NM_DHCP_DHCLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
+#define NM_IS_DHCP_DHCLIENT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_DHCLIENT))
+#define NM_IS_DHCP_DHCLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_DHCLIENT))
+#define NM_DHCP_DHCLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
+
+typedef struct _NMDhcpDhclient NMDhcpDhclient;
+typedef struct _NMDhcpDhclientClass NMDhcpDhclientClass;
+
+static GType nm_dhcp_dhclient_get_type (void);
 
 /*****************************************************************************/
 
@@ -73,11 +87,7 @@ G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 static const char *
 nm_dhcp_dhclient_get_path (void)
 {
-	const char *path = NULL;
-
-	if (WITH_DHCLIENT)
-		path = nm_utils_find_helper ("dhclient", DHCLIENT_PATH, NULL);
-	return path;
+	return nm_utils_find_helper ("dhclient", DHCLIENT_PATH, NULL);
 }
 
 /**
@@ -682,13 +692,11 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	client_class->state_changed = state_changed;
 }
 
-static void __attribute__((constructor))
-register_dhcp_dhclient (void)
-{
-	nm_g_type_init ();
-	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCLIENT,
-	                          "dhclient",
-	                          nm_dhcp_dhclient_get_path,
-	                          nm_dhcp_dhclient_get_lease_ip_configs);
-}
+const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient = {
+	.name = "dhclient",
+	.get_type = nm_dhcp_dhclient_get_type,
+	.get_path = nm_dhcp_dhclient_get_path,
+	.get_lease_ip_configs = nm_dhcp_dhclient_get_lease_ip_configs,
+};
 
+#endif /* WITH_DHCLIENT */

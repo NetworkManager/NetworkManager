@@ -34,9 +34,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "nm-dhcp-dhclient.h"
-#include "nm-dhcp-dhcpcd.h"
-#include "nm-dhcp-systemd.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
@@ -45,7 +42,7 @@
 /*****************************************************************************/
 
 typedef struct {
-	GType               client_type;
+	const NMDhcpClientFactory *client_factory;
 	GHashTable *        clients;
 	char *              default_hostname;
 } NMDhcpManagerPrivate;
@@ -70,70 +67,45 @@ const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
 
 /*****************************************************************************/
 
-typedef struct {
-	GType gtype;
-	const char *name;
-	NMDhcpClientGetPathFunc get_path_func;
-	NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func;
-} ClientDesc;
+const NMDhcpClientFactory *const _factories[] = {
 
-static GSList *client_descs = NULL;
+	/* the order here matters, as we will try the plugins in this order to find
+	 * the first available plugin. */
 
-void
-_nm_dhcp_client_register (GType gtype,
-                          const char *name,
-                          NMDhcpClientGetPathFunc get_path_func,
-                          NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func)
+#ifndef NM_DHCP_INTERNAL_ONLY
+#if WITH_DHCLIENT
+	&_nm_dhcp_client_factory_dhclient,
+#endif
+#if WITH_DHCPCD
+	&_nm_dhcp_client_factory_dhcpcd,
+#endif
+#endif
+	&_nm_dhcp_client_factory_internal,
+};
+
+static const NMDhcpClientFactory *
+_client_factory_find_by_name (const char *name)
 {
-	ClientDesc *desc;
-	GSList *iter;
+	int i;
 
-	g_return_if_fail (gtype != G_TYPE_INVALID);
-	g_return_if_fail (name != NULL);
+	g_return_val_if_fail (name, NULL);
 
-	for (iter = client_descs; iter; iter = iter->next) {
-		desc = iter->data;
-		g_return_if_fail (desc->gtype != gtype);
-		g_return_if_fail (strcmp (desc->name, name) != 0);
-	}
+	for (i = 0; i < G_N_ELEMENTS (_factories); i++) {
+		const NMDhcpClientFactory *f = _factories[i];
 
-	desc = g_slice_new0 (ClientDesc);
-	desc->gtype = gtype;
-	desc->name = name;
-	desc->get_path_func = get_path_func;
-	desc->get_lease_configs_func = get_lease_configs_func;
-	client_descs = g_slist_prepend (client_descs, desc);
-}
-
-static ClientDesc *
-find_client_desc (const char *name, GType gtype)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (name || gtype, NULL);
-
-	for (iter = client_descs; iter; iter = iter->next) {
-		ClientDesc *desc = iter->data;
-
-		if (name && strcmp (desc->name, name) != 0)
-			continue;
-		if (gtype && desc->gtype != gtype)
-			continue;
-		return desc;
+		if (nm_streq (f->name, name))
+			return f;
 	}
 	return NULL;
 }
 
-static GType
-is_client_enabled (const char *name)
+static const NMDhcpClientFactory *
+_client_factory_available (const NMDhcpClientFactory *client_factory)
 {
-	ClientDesc *desc;
-
-	desc = find_client_desc (name, G_TYPE_INVALID);
-	if (desc && (!desc->get_path_func || desc->get_path_func()))
-		return desc->gtype;
-
-	return G_TYPE_INVALID;
+	if (   client_factory
+	    && (!client_factory->get_path || client_factory->get_path ()))
+		return client_factory;
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -224,7 +196,7 @@ client_start (NMDhcpManager *self,
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
 	/* Ensure we have a usable DHCP client */
-	if (priv->client_type == G_TYPE_INVALID)
+	if (!priv->client_factory)
 		return NULL;
 
 	/* Kill any old client instance */
@@ -237,7 +209,7 @@ client_start (NMDhcpManager *self,
 	}
 
 	/* And make a new one */
-	client = g_object_new (priv->client_type,
+	client = g_object_new (priv->client_factory->get_type (),
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
 	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
@@ -351,7 +323,6 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       guint32 default_route_metric)
 {
 	NMDhcpManagerPrivate *priv;
-	ClientDesc *desc;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -359,12 +330,9 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	if (priv->client_type == G_TYPE_INVALID)
-		return NULL;
-
-	desc = find_client_desc (NULL, priv->client_type);
-	if (desc && desc->get_lease_configs_func)
-		return desc->get_lease_configs_func (iface, ifindex, uuid, ipv6, default_route_metric);
+	if (   priv->client_factory
+	    && priv->client_factory->get_lease_ip_configs)
+		return priv->client_factory->get_lease_ip_configs (iface, ifindex, uuid, ipv6, default_route_metric);
 	return NULL;
 }
 
@@ -378,44 +346,43 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	NMConfig *config = nm_config_get ();
 	const char *client;
-	GSList *iter;
-	GType type = G_TYPE_INVALID;
+	int i;
+	const NMDhcpClientFactory *client_factory = NULL;
 
-	for (iter = client_descs; iter; iter = iter->next) {
-		ClientDesc *desc = iter->data;
+	for (i = 0; i < G_N_ELEMENTS (_factories); i++) {
+		const NMDhcpClientFactory *f = _factories[i];
 
-		nm_log_dbg (LOGD_DHCP, "dhcp-init: Registered DHCP client '%s' (%s)",
-		            desc->name, g_type_name (desc->gtype));
+		nm_log_dbg (LOGD_DHCP, "dhcp-init: enabled DHCP client '%s' (%s)%s",
+		            f->name, g_type_name (f->get_type ()),
+		            _client_factory_available (f) ? "" : " (not available)");
 	}
 
 	/* Client-specific setup */
 	client = nm_config_get_dhcp_client (config);
 	if (nm_config_get_configure_and_quit (config)) {
-		if (g_strcmp0 (client, "internal") != 0)
+		client_factory = &_nm_dhcp_client_factory_internal;
+		if (client && !nm_streq (client, client_factory->name))
 			nm_log_warn (LOGD_DHCP, "dhcp-init: Using internal DHCP client since configure-and-quit is set.");
-		client = "internal";
+	} else {
+		if (client) {
+			client_factory = _client_factory_available (_client_factory_find_by_name (client));
+			if (!client_factory)
+				nm_log_warn (LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
+		}
+		if (!client_factory) {
+			for (i = 0; i < G_N_ELEMENTS (_factories); i++) {
+				client_factory = _client_factory_available (_factories[i]);
+				if (client_factory)
+					break;
+			}
+		}
 	}
 
-	if (client)
-		type = is_client_enabled (client);
+	nm_assert (client_factory);
 
-	if (type == G_TYPE_INVALID) {
-		if (client)
-			nm_log_warn (LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
+	nm_log_info (LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", client_factory->name);
 
-		type = is_client_enabled ("dhclient");
-		if (type == G_TYPE_INVALID)
-			type = is_client_enabled ("dhcpcd");
-		if (type == G_TYPE_INVALID)
-			type = is_client_enabled ("internal");
-	}
-
-	if (type == G_TYPE_INVALID)
-		nm_log_warn (LOGD_DHCP, "dhcp-init: No usable DHCP client found! DHCP configurations will fail");
-	else
-		nm_log_info (LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", find_client_desc (NULL, type)->name);
-
-	priv->client_type = type;
+	priv->client_factory = client_factory;
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
@@ -429,7 +396,7 @@ dispose (GObject *object)
 
 	if (priv->clients) {
 		values = g_hash_table_get_values (priv->clients);
-		for (iter = values; iter; iter = g_list_next (iter))
+	for (iter = values; iter; iter = g_list_next (iter))
 			remove_client (NM_DHCP_MANAGER (object), NM_DHCP_CLIENT (iter->data));
 		g_list_free (values);
 	}
