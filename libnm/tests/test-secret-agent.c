@@ -599,6 +599,12 @@ test_secret_agent_auto_register (void)
 	g_assert_no_error (error);
 	g_assert (nm_secret_agent_old_get_registered (agent));
 
+	/* The GLib ObjectManager doesn't like when we drop the service
+	 * in between it sees the service disappear and the call to
+	 * GetManagedObjects. Give it a chance to do its business.
+	 * Arguably a bug. */
+	g_main_context_iteration (NULL, FALSE);
+
 	/* Shut down test service */
 	nmtstc_service_cleanup (sinfo);
 	g_main_loop_run (loop);
@@ -608,6 +614,9 @@ test_secret_agent_auto_register (void)
 	sinfo = nmtstc_service_init ();
 	g_main_loop_run (loop);
 	g_assert (nm_secret_agent_old_get_registered (agent));
+
+	/* Let ObjectManager initialize (see above). */
+	g_main_context_iteration (NULL, FALSE);
 
 	/* Shut down test service again */
 	nmtstc_service_cleanup (sinfo);
